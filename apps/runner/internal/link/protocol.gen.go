@@ -109,6 +109,7 @@ const (
 	CapabilityWhatsapp                 = "whatsapp"
 	CapabilityWhatsappVoice            = "whatsapp.voice"
 	CapabilityWhatsappVoiceSend        = "whatsapp.voice.send"
+	CapabilityWhatsappReact            = "whatsapp.react"
 	CapabilityWhatsappImage            = "whatsapp.image"
 	CapabilityTelegram                 = "telegram"
 	CapabilitySharedPreview            = "shared.preview"
@@ -195,6 +196,7 @@ const (
 	TypeWhatsappAck             = "whatsapp.ack"
 	TypeWhatsappSend            = "whatsapp.send"
 	TypeWhatsappSendVoice       = "whatsapp.send.voice"
+	TypeWhatsappReact           = "whatsapp.react"
 	TypeWhatsappSent            = "whatsapp.sent"
 	TypeWhatsappMediaGet        = "whatsapp.media.get"
 	TypeWhatsappMedia           = "whatsapp.media"
@@ -285,6 +287,7 @@ var MessageTypes = []string{
 	TypeWhatsappAck,
 	TypeWhatsappSend,
 	TypeWhatsappSendVoice,
+	TypeWhatsappReact,
 	TypeWhatsappSent,
 	TypeWhatsappMediaGet,
 	TypeWhatsappMedia,
@@ -449,6 +452,8 @@ func NewMessage(messageType string) (any, bool) {
 		return new(WhatsappSend), true
 	case TypeWhatsappSendVoice:
 		return new(WhatsappSendVoice), true
+	case TypeWhatsappReact:
+		return new(WhatsappReact), true
 	case TypeWhatsappSent:
 		return new(WhatsappSent), true
 	case TypeWhatsappMediaGet:
@@ -1257,6 +1262,16 @@ type WhatsappSendVoice struct {
 	Mimetype  string `json:"mimetype"`
 	Data      string `json:"data"`
 	Seconds   int    `json:"seconds"`
+}
+
+// WhatsappReact is the `whatsapp.react` message.
+type WhatsappReact struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	ChatID    string `json:"chatId"`
+	MessageID string `json:"messageId"`
+	SenderID  string `json:"senderId"`
+	Emoji     string `json:"emoji"`
 }
 
 // WhatsappSent is the `whatsapp.sent` message.

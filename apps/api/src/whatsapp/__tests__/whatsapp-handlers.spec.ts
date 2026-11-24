@@ -7,10 +7,13 @@ import { describe, expect, it, vi } from 'vitest';
 import type { BotEntity } from '../../bots/domain/bot.entity';
 import type { HostAccessPort } from '../../hosts/application/host-access.port';
 import { WhatsappAnswerResolver } from '../application/whatsapp-answer.resolver';
+import { WhatsappAnsweringBotResolver } from '../application/whatsapp-answering-bot.resolver';
 import type { WhatsappDevicePort } from '../application/whatsapp-device.port';
 import { WhatsappReplyResolver } from '../application/whatsapp-reply.resolver';
 import { LinkWhatsappCommand } from '../commands/link-whatsapp/link-whatsapp.command';
 import { LinkWhatsappCommandHandler } from '../commands/link-whatsapp/link-whatsapp.command-handler';
+import { ReactOnWhatsappCommand } from '../commands/react-on-whatsapp/react-on-whatsapp.command';
+import { ReactOnWhatsappCommandHandler } from '../commands/react-on-whatsapp/react-on-whatsapp.command-handler';
 import { ReceiveWhatsappMessagesCommand } from '../commands/receive-whatsapp-messages/receive-whatsapp-messages.command';
 import { ReceiveWhatsappMessagesCommandHandler } from '../commands/receive-whatsapp-messages/receive-whatsapp-messages.command-handler';
 import { RecordWhatsappStateCommand } from '../commands/record-whatsapp-state/record-whatsapp-state.command';
@@ -790,9 +793,12 @@ describe('ReplyOnWhatsappCommandHandler', () => {
       ...overrides,
     });
     const handler = new ReplyOnWhatsappCommandHandler(
-      fakeAccounts([linked]).repository,
       messages,
-      fakeGrants(allowed),
+      new WhatsappAnsweringBotResolver(
+        fakeAccounts([linked]).repository,
+        messages,
+        fakeGrants(allowed),
+      ),
       new WhatsappReplyResolver(device, messages, new WhatsappMessageMapper()),
     );
     const run = (text: string, botId = BOT, chatId = OWNER) =>
@@ -859,6 +865,99 @@ describe('ReplyOnWhatsappCommandHandler', () => {
     const stranger = reply(owned(), {}, allowed);
     await expect(stranger.run('Hi', BOT, '34699000000@s.whatsapp.net')).resolves.toBe(0);
     expect(stranger.device.send).not.toHaveBeenCalled();
+  });
+});
+
+describe('ReactOnWhatsappCommandHandler', () => {
+  const OWNER = '34600999888@s.whatsapp.net';
+  const GROUP = '120363000000000001@g.us';
+  const BOT = 'bot-1';
+  const ROW = '0b3e2a1c-9999-4c5d-8e6f-70819203b4c5';
+
+  function owned() {
+    const linked = account({ status: 'connected' });
+    const named = linked.nameOwner(OWNER, new Date());
+    linked.confirmOwner(named?.code ?? '', new Date());
+    linked.answerAs(BOT);
+    return linked;
+  }
+
+  function reactOn(
+    linked: WhatsappAccountEntity,
+    stored: { chatId: string; externalId: string; senderId: string } | null,
+    allowed: WhatsappChatGrantEntity[] = [],
+    react: WhatsappDevicePort['react'] = vi.fn(async () => ({
+      kind: 'sent' as const,
+      id: 'r1',
+      sentAt: new Date(),
+    })),
+  ) {
+    const device = fakeDevice({ react });
+    const messages = fakeMessages({ findById: vi.fn(async () => stored as never) });
+    const handler = new ReactOnWhatsappCommandHandler(
+      device,
+      messages,
+      new WhatsappAnsweringBotResolver(
+        fakeAccounts([linked]).repository,
+        messages,
+        fakeGrants(allowed),
+      ),
+    );
+    const run = (chatId: string, emoji = '👍', botId = BOT) =>
+      handler.execute(
+        new ReactOnWhatsappCommand({
+          organizationId: ORG,
+          accountId: linked.id,
+          chatId,
+          messageRowId: ROW,
+          emoji,
+          botId,
+        }),
+      );
+    return { device, run };
+  }
+
+  // What breaks this: a reaction landing on the wrong message, or on a
+  // contact's message as if the number wrote it (WhatsApp keys a reaction by
+  // the message's id and its sender).
+  it('reacts to the stored message by its WhatsApp id and sender, in a chat the bot answers', async () => {
+    const MARTA = '34600111333@s.whatsapp.net';
+    const { device, run } = reactOn(
+      owned(),
+      { chatId: GROUP, externalId: '3EB0', senderId: MARTA },
+      [grant(GROUP, 'group', null)],
+    );
+    await expect(run(GROUP, '❤️')).resolves.toBe(true);
+    expect(device.react).toHaveBeenCalledWith(
+      expect.any(String),
+      GROUP,
+      { id: '3EB0', senderId: MARTA },
+      '❤️',
+    );
+  });
+
+  // What breaks this: a bot reacting as the owner in a chat it no longer
+  // answers, or on a message of another chat named by its row.
+  it('sends nothing for a chat the bot does not answer, or a message of another chat', async () => {
+    const other = reactOn(owned(), { chatId: GROUP, externalId: '3EB0', senderId: OWNER });
+    await expect(other.run(GROUP)).resolves.toBe(false);
+    await expect(other.run(OWNER)).resolves.toBe(false);
+    expect(other.device.react).not.toHaveBeenCalled();
+
+    const notThisBot = reactOn(owned(), { chatId: OWNER, externalId: '3EB0', senderId: OWNER });
+    await expect(notThisBot.run(OWNER, '👍', 'bot-shop')).resolves.toBe(false);
+    expect(notThisBot.device.react).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a host too old to react (or offline) drawn as a reaction sent.
+  it('answers false when the host did not send it', async () => {
+    const old = reactOn(
+      owned(),
+      { chatId: OWNER, externalId: '3EB0', senderId: OWNER },
+      [],
+      vi.fn(async () => ({ kind: 'not_supported' as const })),
+    );
+    await expect(old.run(OWNER)).resolves.toBe(false);
   });
 });
 

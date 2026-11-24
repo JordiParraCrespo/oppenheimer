@@ -412,8 +412,9 @@ export class BotSelfToolsFactory implements BotToolArea {
    */
   /**
    * A reaction to the person's message, as a person leaves one: shown on
-   * their bubble in the console chat. On a channel conversation it would be
-   * stored where nobody sees it, so the tool says to answer in words there.
+   * their bubble in the console chat, and on Slack and WhatsApp on the
+   * message there (`ReactAsBotCommandHandler`). Where it cannot land, the
+   * tool says why and to answer in words.
    */
   private react(): BotToolDefinition {
     return defineBotTool({
@@ -425,9 +426,6 @@ export class BotSelfToolsFactory implements BotToolArea {
         message_id: z.uuid().optional().describe(promptText('core/tools-self.react-message-id')),
       }),
       run: async (input, context) => {
-        if (context.conversationId !== context.botId) {
-          throw new BotToolRefusal(promptText('core/tools-self.react-console-only'));
-        }
         const emoji = input.emoji === '' ? null : input.emoji;
         if (emoji !== null && !isReactionEmoji(emoji)) {
           throw new BotToolRefusal(promptText('core/tools-self.react-not-emoji', { emoji }));
@@ -448,6 +446,23 @@ export class BotSelfToolsFactory implements BotToolArea {
         }
         if (outcome.kind === 'not_yours') {
           throw new BotToolRefusal(promptText('core/tools-self.react-not-yours'));
+        }
+        if (outcome.kind === 'no_name') {
+          throw new BotToolRefusal(
+            promptText('core/tools-self.react-no-name', { emoji: emoji ?? '' }),
+          );
+        }
+        if (outcome.kind === 'working_sign') {
+          throw new BotToolRefusal(promptText('core/tools-self.react-working-sign'));
+        }
+        if (outcome.kind === 'unreachable') {
+          throw new BotToolRefusal(promptText('core/tools-self.react-unreachable'));
+        }
+        if (outcome.kind === 'unsupported') {
+          throw new BotToolRefusal(promptText('core/tools-self.react-unsupported'));
+        }
+        if (outcome.kind !== 'reacted') {
+          throw new BotToolRefusal(promptText('core/tools-self.react-not-sent'));
         }
         return emoji
           ? promptText('core/tools-self.react-done', { emoji, messageId: outcome.messageId })
