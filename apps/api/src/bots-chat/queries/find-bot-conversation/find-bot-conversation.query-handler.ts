@@ -11,6 +11,8 @@ import { FindBotConversationQuery } from './find-bot-conversation.query';
 
 export interface BotConversation {
   messages: BotMessageEntity[];
+  /** The chat holds messages older than these: the next page is before the first. */
+  hasOlder: boolean;
   turns: BotTurnEntity[];
   /** Every message the chat holds, not only these: Settings' history line. */
   messageCount: number;
@@ -19,7 +21,9 @@ export interface BotConversation {
 }
 
 /**
- * A bot's chat as the console draws it: its newest messages, oldest first,
+ * A bot's chat as the console draws it: its newest messages, oldest first
+ * (or, with `before`, the page just older than that message, for a chat
+ * scrolled up past its window), whether older ones remain,
  * the turns they belong to (how each ended, why one failed), and any turn
  * still queued or running, which the chat shows as working; and how many
  * messages it holds in all, past the window. For a turn still running, how
@@ -36,9 +40,17 @@ export class FindBotConversationQueryHandler
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
   ) {}
 
-  async execute({ scope, botId, limit }: FindBotConversationQuery): Promise<BotConversation> {
+  async execute({
+    scope,
+    botId,
+    limit,
+    before,
+  }: FindBotConversationQuery): Promise<BotConversation> {
     await this.lookup.bot(scope, botId);
-    const messages = await this.messages.findConversation(scope, botId, limit);
+    // One more than asked for, to tell whether an older page remains.
+    const read = await this.messages.findConversation(scope, botId, limit + 1, before);
+    const hasOlder = read.length > limit;
+    const messages = hasOlder ? read.slice(1) : read;
     const turnIds = [
       ...new Set(messages.flatMap((message) => (message.turnId === null ? [] : [message.turnId]))),
     ];
@@ -52,6 +64,6 @@ export class FindBotConversationQueryHandler
       active.map((turn) => turn.id),
     );
     const storedTextBlocks = new Map(active.map((turn) => [turn.id, counted.get(turn.id) ?? 0]));
-    return { messages, turns, messageCount, storedTextBlocks };
+    return { messages, hasOlder, turns, messageCount, storedTextBlocks };
   }
 }

@@ -2746,6 +2746,31 @@ describe('bots chat (integration)', () => {
     expect(await messages.findExportPage(scopeOf(other), bot.id, null, 3)).toEqual([]);
   });
 
+  // What breaks this: a page boundary that skips or repeats a message (a
+  // cursor on time alone, where a question and its answer share a
+  // millisecond), so a chat scrolled up loses history or draws it twice.
+  it('reads the chat backwards a page at a time before a message, each page oldest first', async () => {
+    const bot = await create('Scrolled');
+    await talked(bot, 10);
+    const read: string[] = [];
+    let page = await messages.findConversation(scope(), bot.id, 3);
+    while (page.length > 0) {
+      read.unshift(...page.map((message) => message.content));
+      page = await messages.findConversation(scope(), bot.id, 3, page[0]?.id);
+    }
+    expect(read).toEqual(
+      [0, 2, 4, 6, 8].flatMap((index) => [`Question ${index}`, `Answer ${index}`]),
+    );
+
+    // A cursor is only ever this chat's, in this workspace.
+    const [newest] = await messages.findConversation(scope(), bot.id, 1);
+    const elsewhere = await create('Elsewhere');
+    await talked(elsewhere, 2);
+    expect(await messages.findConversation(scope(), elsewhere.id, 3, newest?.id)).toEqual([]);
+    const other = await insertOrganization();
+    expect(await messages.findConversation(scopeOf(other), bot.id, 3, newest?.id)).toEqual([]);
+  });
+
   /** A turn `asking` queues on `target` through `message_bot` or `ask_bot`. */
   function fromBot(asking: BotTurnEntity, target: BotEntity, sender: BotEntity, ask = true) {
     const turn = BotTurnEntity.queueFromBot(asking, {

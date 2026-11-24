@@ -1915,6 +1915,8 @@
       "copyMessage": "Copy message",
       "copyReply": "Copy reply",
       "toLatest": "Jump to latest",
+      "loadingOlder": "Loading earlier messages…",
+      "olderFailed": "Earlier messages could not be loaded. Scroll up again to try once more.",
       "switchedModel": "Switched to <model>{{model}}</model>",
       "tokens_one": "{{tokens}} token",
       "tokens_other": "{{tokens}} tokens",
@@ -5087,7 +5089,9 @@
     "badge": {
       "none": "Claude Code sessions",
       "needsYou_one": "{{count}} Claude Code session needs you",
-      "needsYou_other": "{{count}} Claude Code sessions need you"
+      "needsYou_other": "{{count}} Claude Code sessions need you",
+      "runner_one": "{{count}} session on your hosts needs you",
+      "runner_other": "{{count}} sessions on your hosts need you"
     },
     "groups": {
       "needsYou": "Needs you",
@@ -5136,15 +5140,23 @@
     "oppenheimer": {
       "label": "Oppenheimer",
       "apiUrl": "Oppenheimer API URL",
+      "consoleUrl": "Console URL (optional)",
       "token": "API token",
       "connect": "Connect",
       "disconnect": "Disconnect",
       "reportingTo": "Reporting to {{host}}",
       "launched": "Reporting to {{host}} · {{count}} launched there",
       "notReporting": "Not reporting: {{detail}}",
+      "runnerUnread": "Can't read the sessions on your hosts: {{detail}}",
       "notAUrl": "That is not a URL.",
       "permission": "Chrome needs your permission to reach {{origin}}.",
       "refused": "Oppenheimer refused: {{detail}}"
+    },
+    "runner": {
+      "waiting": "{{name}} is waiting on you",
+      "failed": "{{name}} failed",
+      "notice": "{{name}} has news for you",
+      "open": "Open it in Oppenheimer"
     }
   }
 }

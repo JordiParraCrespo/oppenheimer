@@ -724,10 +724,16 @@ export class BotMessageResponseDto {
   createdAt!: string;
 }
 
-/** A bot's chat as the console draws it: the latest messages, and the turns still working. */
+/** A bot's chat as the console draws it: the latest messages (or a page older), and the turns still working. */
 export class BotConversationResponseDto {
   @ApiProperty({ type: BotMessageResponseDto, isArray: true, description: 'Oldest first.' })
   messages!: BotMessageResponseDto[];
+
+  @ApiProperty({
+    description:
+      'Whether the chat holds messages older than these: the next page is `before` the first.',
+  })
+  hasOlder!: boolean;
 
   @ApiProperty({
     type: BotTurnResponseDto,

@@ -269,12 +269,20 @@ export function markersBefore(
   return { day, model };
 }
 
-/** The id of the newest message you sent, which a new send replaces. */
-export function newestSentId(blocks: ChatTurnBlock[]): string | undefined {
+/**
+ * The id of the newest message you sent, which a new send replaces. Only the
+ * live window's count: a message of yours in an older page the reader
+ * scrolled up into was never just sent, even where the window holds none.
+ */
+export function newestSentId(
+  blocks: ChatTurnBlock[],
+  older: ReadonlySet<string> = new Set(),
+): string | undefined {
   for (let index = blocks.length - 1; index >= 0; index--) {
     const asked = blocks[index]?.asked ?? [];
     for (let at = asked.length - 1; at >= 0; at--) {
-      if (asked[at]?.role === 'user') return asked[at]?.id;
+      const message = asked[at];
+      if (message?.role === 'user') return older.has(message.id) ? undefined : message.id;
     }
   }
   return undefined;
