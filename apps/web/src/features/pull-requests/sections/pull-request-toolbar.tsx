@@ -81,7 +81,6 @@ export function PullRequestToolbar({
       </PillTabs>
       {view === 'changes' ? (
         <SegmentedControl
-          size="md"
           value={layout}
           onValueChange={(next) => onLayoutChange(next as DiffLayout)}
           aria-label={t('pullRequests.changes.layout')}
@@ -97,20 +96,23 @@ export function PullRequestToolbar({
       <span className="flex-1" />
       {pull ? (
         <IconButton
+          size="sm"
           aria-label={t('pullRequests.detail.openOnGithub')}
           render={<a href={pull.htmlUrl} target="_blank" rel="noreferrer" />}
         >
           <SquareArrowOutUpRight />
         </IconButton>
       ) : isPending ? (
-        <IconButton aria-label={t('pullRequests.detail.openOnGithub')} disabled>
+        <IconButton size="sm" aria-label={t('pullRequests.detail.openOnGithub')} disabled>
           <SquareArrowOutUpRight />
         </IconButton>
       ) : null}
       {pull?.isOpen ? (
         review
       ) : isPending ? (
-        <SubmitReviewButton disabled>{t('pullRequests.review.submit')}</SubmitReviewButton>
+        <SubmitReviewButton size="sm" disabled>
+          {t('pullRequests.review.submit')}
+        </SubmitReviewButton>
       ) : null}
     </div>
   );
