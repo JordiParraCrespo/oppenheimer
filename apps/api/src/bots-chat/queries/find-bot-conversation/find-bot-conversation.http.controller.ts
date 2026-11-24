@@ -9,9 +9,10 @@ import {
   Version,
 } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { ApiAuthProblemResponses, ApiProblemResponse } from '@oppenheimer/backend-core';
+import { BOT_CONVERSATION_PAGE_DEFAULT, BOT_CONVERSATION_PAGE_MAX } from '@oppenheimer/shared';
 import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
@@ -45,7 +46,23 @@ export class FindBotConversationHttpController {
   @ApiOperation({
     summary: "A bot's chat",
     description:
-      'Its newest `limit` messages, oldest first, with the turns they belong to and any turn still queued or running, and how many messages it holds in all. The whole chat is `GET /bots/:id/conversation/export`.',
+      'Its newest `limit` messages, oldest first, with the turns they belong to and any turn still queued or running, and how many messages it holds in all. With `before` (a message id, the oldest the reader holds), the `limit` messages just older than that one; `hasOlder` says whether more remain. The whole chat is `GET /bots/:id/conversation/export`.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    minimum: 1,
+    maximum: BOT_CONVERSATION_PAGE_MAX,
+    description: `How many messages; ${BOT_CONVERSATION_PAGE_DEFAULT} when absent.`,
+  })
+  @ApiQuery({
+    name: 'before',
+    required: false,
+    type: String,
+    format: 'uuid',
+    description:
+      'A message of this chat, the oldest the reader holds: the page is the messages just older than it.',
   })
   @ApiResponse({ status: 200, type: BotConversationResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })
@@ -55,10 +72,11 @@ export class FindBotConversationHttpController {
     @Query() query: FindBotConversationRequest,
   ): Promise<BotConversationResponseDto> {
     const conversation = await this.queryBus.execute<FindBotConversationQuery, BotConversation>(
-      new FindBotConversationQuery(scope, botId, query.limit),
+      new FindBotConversationQuery(scope, botId, query.limit, query.before ?? null),
     );
     return {
       messages: conversation.messages.map((message) => this.messages.toResponse(message)),
+      hasOlder: conversation.hasOlder,
       turns: conversation.turns.map((turn) => this.turns.toResponse(turn)),
       messageCount: conversation.messageCount,
       storedTextBlocks: Object.fromEntries(conversation.storedTextBlocks),

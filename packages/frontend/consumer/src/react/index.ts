@@ -42,6 +42,7 @@ export {
   useCancelBotTurn,
   useClearBotConversation,
   useExportBotConversation,
+  useLoadOlderBotMessages,
   useSendBotMessage,
   useSuspenseBotConversation,
   useSuspenseBotHistory,

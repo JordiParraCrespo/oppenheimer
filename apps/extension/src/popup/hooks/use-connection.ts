@@ -16,8 +16,12 @@ export function useConnection() {
   async function connect(connection: OppenheimerConnection) {
     setProblem(null);
     let origin: string;
+    let consoleUrl: string | undefined;
     try {
       origin = new URL(connection.apiUrl).origin;
+      consoleUrl = connection.consoleUrl?.trim()
+        ? new URL(connection.consoleUrl.trim()).origin
+        : undefined;
     } catch {
       setProblem(t('oppenheimer.notAUrl'));
       return;
@@ -31,7 +35,7 @@ export function useConnection() {
     try {
       const answer = (await chrome.runtime.sendMessage({
         type: 'connect',
-        connection: { apiUrl: origin, token: connection.token.trim() },
+        connection: { apiUrl: origin, token: connection.token.trim(), consoleUrl },
       })) as { ok: boolean; detail?: string };
       if (!answer.ok) setProblem(t('oppenheimer.refused', { detail: answer.detail ?? '' }));
     } finally {
