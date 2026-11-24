@@ -64,6 +64,7 @@ export function SessionsSidebar({ bots }: { bots?: ReactNode }) {
                     id={id}
                     label={labels.bots}
                     moveLabel={t('sessions.sidebar.moveSection', { name: labels.bots })}
+                    onStep={(step) => sections.step(id, step)}
                   >
                     {bots}
                   </SidebarSectionItem>
@@ -74,6 +75,7 @@ export function SessionsSidebar({ bots }: { bots?: ReactNode }) {
                   id={id}
                   label={labels.sessions}
                   moveLabel={t('sessions.sidebar.moveSection', { name: labels.sessions })}
+                  onStep={(step) => sections.step(id, step)}
                   grow={list.open}
                 >
                   <QueryState>

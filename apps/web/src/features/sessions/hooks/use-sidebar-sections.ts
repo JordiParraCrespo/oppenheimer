@@ -1,5 +1,10 @@
 import { useStoredList } from '@oppenheimer/frontend-web';
-import { movedSection, sectionOrder } from '../lib/sidebar-sections';
+import {
+  movedSection,
+  type SidebarSection,
+  sectionOrder,
+  steppedSection,
+} from '../lib/sidebar-sections';
 
 /** The order the reader dragged the sessions sidebar's sections into, kept on this device. */
 const SIDEBAR_SECTIONS_KEY = 'oppenheimer.sidebar.sessions-sections';
@@ -12,5 +17,8 @@ export function useSidebarSections() {
     order,
     move: (moved: string, target: string) =>
       setStored((current) => movedSection(sectionOrder(current), moved, target)),
+    /** Moves `id` one place up (-1) or down (1); past either end it stays. */
+    step: (id: SidebarSection, step: -1 | 1) =>
+      setStored((current) => steppedSection(sectionOrder(current), id, step)),
   };
 }

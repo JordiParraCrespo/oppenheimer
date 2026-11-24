@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { movedSection, sectionOrder } from '../lib/sidebar-sections';
+import { movedSection, sectionOrder, steppedSection } from '../lib/sidebar-sections';
 
 describe('the sessions sidebar section order', () => {
   it('draws every section once from a stored order that is empty, stale or repeated', () => {
@@ -22,5 +22,13 @@ describe('the sessions sidebar section order', () => {
       'bots',
       'sessions',
     ]);
+  });
+
+  it('steps a section one place from the keyboard and stays put past either end', () => {
+    // Regression: a step past the end moved the section onto `undefined`.
+    expect(steppedSection(['bots', 'sessions'], 'bots', 1)).toEqual(['sessions', 'bots']);
+    expect(steppedSection(['sessions', 'bots'], 'bots', -1)).toEqual(['bots', 'sessions']);
+    expect(steppedSection(['bots', 'sessions'], 'bots', -1)).toEqual(['bots', 'sessions']);
+    expect(steppedSection(['bots', 'sessions'], 'sessions', 1)).toEqual(['bots', 'sessions']);
   });
 });
