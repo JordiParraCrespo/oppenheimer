@@ -10,7 +10,7 @@
 # `node scripts/stack/stack.mjs up --web` detached, logging to
 # `.stack/warmup.log`. The SessionStart hook runs it on every cloud session
 # (`.agents/hooks/session-start.sh`); the stack guard
-# (`.agents/hooks/stack-guard.mjs`) then expects the branch to be checked on it.
+# (`.agents/hooks/verify-guard.mjs`) then expects the branch to be checked on it.
 #
 # It never fails: what went wrong is one line on stdout, and the stack can
 # still be brought up by hand with the `local-stack` skill.

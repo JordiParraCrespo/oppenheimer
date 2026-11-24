@@ -163,7 +163,7 @@ async function main() {
 
   const summary = summarise(results);
   console.log(summary);
-  recordEvalOnSuccess(join(HERE, '../..'), basename(HERE));
+  recordEvalOnSuccess(join(HERE, '../../..'), basename(HERE));
   const dir = join(HERE, 'reports');
   mkdirSync(dir, { recursive: true });
   const file = join(dir, `${new Date().toISOString().replace(/[:.]/g, '-')}.json`);

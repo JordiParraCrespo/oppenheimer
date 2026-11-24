@@ -183,7 +183,7 @@ async function main() {
   }
   const passed = results.filter((result) => result.pass).length;
   console.log(`\n${passed}/${results.length} passed`);
-  recordEvalOnSuccess(join(HERE, '../..'), basename(HERE));
+  recordEvalOnSuccess(join(HERE, '../../..'), basename(HERE));
   mkdirSync(join(HERE, 'reports'), { recursive: true });
   const file = join(HERE, 'reports', `${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
   writeFileSync(file, `${JSON.stringify({ api, botId, project, results }, null, 2)}\n`);

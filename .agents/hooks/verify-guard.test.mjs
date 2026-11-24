@@ -46,6 +46,7 @@ describe('what each check covers', () => {
     'apps/api/src/voice/application/voice-polish.resolver.ts',
     'apps/api/src/pull-requests/application/pull-request-brief.resolver.ts',
     'packages/backend/llm/src/llm.service.ts',
+    'packages/shared/src/guide/guide-pages.gen.ts',
     'apps/api/src/bots-chat/application/bot-skill-tools.factory.ts',
     'apps/api/src/bots/domain/bot-naming.policy.ts',
     'packages/backend/agents/src/claude/claude-tool-server.ts',

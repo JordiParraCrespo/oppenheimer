@@ -66,6 +66,8 @@ export const CHECKS = {
       /^apps\/api\/src\/bots\/domain\//,
       /^packages\/backend\/agents\/src\//,
       /^packages\/backend\/llm\/src\//,
+      // The guide a bot reads to answer how the product works.
+      /^packages\/shared\/src\/guide\//,
       /^apps\/api\/src\/[^/]+\/domain\/prompts\//,
       /^apps\/api\/src\/sessions\/domain\/session-name\.policy\.ts$/,
       /^apps\/api\/src\/sessions\/application\/session-naming\.resolver\.ts$/,

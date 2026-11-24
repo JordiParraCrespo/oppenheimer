@@ -40,7 +40,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { connect } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { record } from '../../.agents/hooks/verification.mjs';
+import { changeFor, record } from '../../.agents/hooks/verification.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const STATE = resolve(process.env.STACK_DIR ?? join(ROOT, '.stack'));
@@ -322,7 +322,52 @@ async function startWeb() {
 
 // -------------------------------------------------------------------- commands
 
+/** The fingerprint of the branch's running code now; what `verified` compares against. */
+function codeFingerprint() {
+  try {
+    return changeFor(ROOT, 'stack', { fetch: false })?.fingerprint ?? 'none';
+  } catch {
+    return 'unknown';
+  }
+}
+
+const lockFile = join(STATE, 'up.lock');
+
+/**
+ * One `up` at a time. The cloud session's background warmup and an `up` typed
+ * while it still builds would otherwise build into the same `dist/`, migrate
+ * at once and leave `state.json` naming an API that died on its port. A
+ * second `up` waits for the first, then finds what it started answering.
+ */
+async function holdUpLock() {
+  mkdirSync(STATE, { recursive: true });
+  for (let waited = 0; ; waited += 1) {
+    try {
+      writeFileSync(lockFile, String(process.pid), { flag: 'wx' });
+      process.on('exit', () => rmSync(lockFile, { force: true }));
+      return;
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+    }
+    const holder = Number(readFileSync(lockFile, 'utf8'));
+    let alive = false;
+    try {
+      process.kill(holder, 0);
+      alive = holder > 0;
+    } catch {}
+    if (!alive) {
+      rmSync(lockFile, { force: true });
+      continue;
+    }
+    if (waited === 0)
+      log(`another \`up\` (pid ${holder}) is bringing the stack up; waiting for it`);
+    if (waited > 900) fail(`the \`up\` in pid ${holder} has held ${lockFile} for 15 minutes`);
+    await new Promise((r) => setTimeout(r, 1_000));
+  }
+}
+
 async function up(flags) {
+  await holdUpLock();
   await startInfrastructure();
   await startStub('github-stub', 4319);
   await startStub('namer-stub', 4320);
@@ -338,13 +383,20 @@ async function up(flags) {
   const startsWeb = flags.has('--web') && !(await httpOk(WEB_URL));
   if (startsWeb) filters.push('--filter=@oppenheimer/web^...');
   // oppenheimer:end web
+  // Taken before the build: an edit made while it builds is not in what runs.
+  const built = codeFingerprint();
   if (filters.length && !flags.has('--no-build'))
     run('pnpm', ['turbo', 'run', 'build', ...filters], { stdio: 'inherit' });
-  if (startsApi) await startApi();
-  else if (flags.has('--no-api')) log('services up; the API is not started (--no-api)');
+  if (startsApi) {
+    await startApi();
+    writeState({ ...readState(), apiFingerprint: built });
+  } else if (flags.has('--no-api')) log('services up; the API is not started (--no-api)');
   else log(`the API is already answering on ${API_URL}; leaving it`);
   // oppenheimer:begin web
-  if (startsWeb) await startWeb();
+  if (startsWeb) {
+    await startWeb();
+    writeState({ ...readState(), webFingerprint: built });
+  }
   // oppenheimer:end web
   log(`up. The API's log is ${join(STATE, 'api.log')}, where the suites read it`);
 }
@@ -391,6 +443,7 @@ async function down(flags) {
   if (flags.has('--api')) {
     if (state.pids.api) await stop(state.pids.api);
     delete state.pids.api;
+    delete state.apiFingerprint;
     if (existsSync(stateFile)) writeState(state);
     log('the API is down; the rest of the stack is left as it was');
     return;
@@ -452,8 +505,27 @@ switch (command) {
       fail(
         `${command} needs ${command === 'skip' ? 'the reason' : 'what you ran and saw'}, in quotes`,
       );
-    if (command === 'verified' && !(await httpOk(API_HEALTH)))
-      fail(`nothing answers on ${API_HEALTH}: bring the stack up and check the change on it first`);
+    if (command === 'verified') {
+      if (!(await httpOk(API_HEALTH)))
+        fail(
+          `nothing answers on ${API_HEALTH}: bring the stack up and check the change on it first`,
+        );
+      // What answers must be the code as it is now: `up` leaves a running API
+      // alone, and the console's Vite serves the packages from their `dist/`.
+      const now = codeFingerprint();
+      const state = readState();
+      const frontend = (changeFor(ROOT, 'stack', { fetch: false })?.files ?? []).some((f) =>
+        f.startsWith('packages/frontend/'),
+      );
+      const stale = [
+        state.apiFingerprint !== now && 'the API',
+        frontend && state.webFingerprint !== now && 'the console',
+      ].filter(Boolean);
+      if (stale.length)
+        fail(
+          `${stale.join(' and ')} on this stack ${stale.length > 1 ? 'were' : 'was'} built from older code than the branch has now. Restart ${frontend ? 'the stack (`node scripts/stack/stack.mjs down`, then `up --web`)' : 'the API (`node scripts/stack/stack.mjs down --api`, then `up --web`)'}, check the change again, then record it`,
+        );
+    }
     const change = record(ROOT, 'stack', { kind: command, note });
     if (!change) log('the branch changes nothing that runs; there is nothing to record');
     else

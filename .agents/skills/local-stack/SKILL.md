@@ -19,9 +19,13 @@ re-login, which no script can do for you.
 In a cloud session it is already coming up: the SessionStart hook runs
 `scripts/stack/cloud-warmup.sh`, which starts Postgres and Redis, creates the
 `oppenheimer` role and database, and runs `stack.mjs up --web` in the
-background (log `.stack/warmup.log`, about a minute). Check with
-`node scripts/stack/stack.mjs status`; run `scripts/stack/cloud-warmup.sh --wait`
-when it is not up. A cloud session's push is refused until the branch, as it
+background (log `.stack/warmup.log`; a minute or a few, as much as the build
+takes). Check with `node scripts/stack/stack.mjs status`; when it is not up,
+`scripts/stack/cloud-warmup.sh --wait` waits for the one already starting
+(one `up` runs at a time) or starts it. The stack runs the code it was
+built from: after editing what the API runs, restart it
+(`node scripts/stack/stack.mjs down --api`, then `up --web`; after a
+`packages/frontend` edit, `down` then `up --web`) before checking. A cloud session's push is refused until the branch, as it
 is now, was checked here (step 2) and recorded:
 
 ```bash
@@ -29,7 +33,8 @@ node scripts/stack/stack.mjs verified "e2e:api green; created a host in the cons
 node scripts/stack/stack.mjs skip "a type only; nothing running changes"
 ```
 
-`verified` needs the API answering. An edit to the code after the record
+`verified` needs the API answering and built from the branch as it is now,
+and refuses with the restart to run when it was not. An edit to the code after the record
 asks again; an edit to a comment does not.
 
 Elsewhere:

@@ -11,7 +11,7 @@ is run through the evals that cover it before the branch is pushed. The
 paths are `CHECKS.evals` in `.agents/hooks/verification.mjs`: the bots
 (`apps/api/src/bots-chat/`, `apps/api/src/bots/domain/`), the agent engines
 (`packages/backend/agents/`), the LLM package (`packages/backend/llm/`), every
-`domain/prompts/` folder, session titles, the voice polish and pull request
+`domain/prompts/` folder, the guide bots read (`packages/shared/src/guide/`), session titles, the voice polish and pull request
 briefs. The verification guard (`.agents/hooks/verify-guard.mjs`) refuses
 the push until one of these answers the change as it is now:
 
