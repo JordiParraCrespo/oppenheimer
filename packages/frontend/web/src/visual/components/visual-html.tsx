@@ -127,7 +127,14 @@ export function VisualHtml({ block }: { block: Html }) {
   const { t } = useTranslation();
   const enabled = useFeatureFlag('visual_html');
   const url = useDeploymentCapabilities({ select: (deployment) => deployment.visual_frame_url });
-  if (url.isPending) return <Skeleton className="h-40 rounded-xl" />;
+  if (url.isPending) {
+    return (
+      <>
+        {/* A block stands in here: the frame's own space, at the height the page will first take. */}
+        <Skeleton className="w-full rounded-xl" style={{ height: block.height ?? 220 }} />
+      </>
+    );
+  }
   if (!enabled || !url.data)
     return <HtmlSource block={block} reason={t('common.visual.html.notRun')} />;
   return <VisualHtmlFrame block={block} url={url.data} />;
