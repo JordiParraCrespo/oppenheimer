@@ -689,6 +689,28 @@
       "dismissed": "You dismissed the questions",
       "noAnswer": "No answer read"
     },
+    "permission": {
+      "command": "Run this command?",
+      "edit": "Make this edit?",
+      "write": "Create this file?",
+      "web": "Open this page?",
+      "tool": "Use this tool?",
+      "allowOnce": "Allow once",
+      "alwaysAllow": "Always allow",
+      "deny": "Deny",
+      "denyHint": "Stop, and tell {{agent}} what to do instead",
+      "keys": "{{first}}–{{last}} to choose · Esc to deny",
+      "withNote": "Deny with a note",
+      "note": "What should {{agent}} do instead?",
+      "noteLabel": "Your note for {{agent}}",
+      "noteHint": "Enter to send · Esc to go back",
+      "sendNote": "Deny and send",
+      "back": "Back",
+      "allowed": "Allowed · {{agent}} goes on",
+      "denied": "Denied · {{agent}} stops here",
+      "caution": "Look closely: this can delete or overwrite work",
+      "truncated": "The rest of this change is longer than the chat shows"
+    },
     "explored": {
       "title": "Explored"
     },

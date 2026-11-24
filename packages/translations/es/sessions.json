@@ -708,6 +708,28 @@
       "dismissed": "Descartaste las preguntas",
       "noAnswer": "No se pudo leer la respuesta"
     },
+    "permission": {
+      "command": "¿Ejecutar este comando?",
+      "edit": "¿Hacer este cambio?",
+      "write": "¿Crear este archivo?",
+      "web": "¿Abrir esta página?",
+      "tool": "¿Usar esta herramienta?",
+      "allowOnce": "Permitir una vez",
+      "alwaysAllow": "Permitir siempre",
+      "deny": "Denegar",
+      "denyHint": "Detener y decirle a {{agent}} qué hacer en su lugar",
+      "keys": "{{first}}–{{last}} para elegir · Esc para denegar",
+      "withNote": "Denegar con una nota",
+      "note": "¿Qué debería hacer {{agent}} en su lugar?",
+      "noteLabel": "Tu nota para {{agent}}",
+      "noteHint": "Enter para enviar · Esc para volver",
+      "sendNote": "Denegar y enviar",
+      "back": "Volver",
+      "allowed": "Permitido · {{agent}} sigue",
+      "denied": "Denegado · {{agent}} se detiene aquí",
+      "caution": "Revísalo bien: puede borrar o sobrescribir trabajo",
+      "truncated": "El resto de este cambio es más largo de lo que muestra el chat"
+    },
     "explored": {
       "title": "Explorado"
     },

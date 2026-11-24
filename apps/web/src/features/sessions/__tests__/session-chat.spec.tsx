@@ -1,4 +1,9 @@
-import { SessionChat as Chat, type ChatFeedbackDraft } from '@oppenheimer/frontend-consumer';
+import {
+  SessionChat as Chat,
+  type ChatFeedbackDraft,
+  readPermissionPrompt,
+} from '@oppenheimer/frontend-consumer';
+import { permissionPromptOf } from '@oppenheimer/shared/sessions';
 import {
   act,
   cleanup,
@@ -7,6 +12,7 @@ import {
   renderHook,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { useChatState } from '../hooks/use-session-chat';
@@ -1497,5 +1503,133 @@ describe('feedback the agent drafted', () => {
     act(() => chat.setFeedback({ ...draft, actions: [], promptHoldsText: true }));
     expect(screen.getByText('sessions.chat.feedback.clearPrompt')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'sessions.chat.feedback.send' })).toBeNull();
+  });
+});
+describe('permissions the agent waits on', () => {
+  const claude = permissionPromptOf('claude-code');
+  const prompt = entry({
+    type: 'user',
+    uuid: 'u1',
+    message: { role: 'user', content: 'Clean the build' },
+  });
+  const call = entry({
+    type: 'assistant',
+    uuid: 'a1',
+    message: {
+      role: 'assistant',
+      content: [
+        {
+          type: 'tool_use',
+          id: 't1',
+          name: 'Bash',
+          input: { command: 'rm -rf dist', description: 'Remove the build output' },
+        },
+      ],
+    },
+  });
+  // Claude Code 2.1.331's dialog for it, as `tmux capture-pane` shows it.
+  const dialog = [
+    '─'.repeat(80),
+    ' Bash command',
+    '',
+    ' Remove the build output',
+    '╌'.repeat(80),
+    ' rm -rf dist',
+    '╌'.repeat(80),
+    ' Do you want to proceed?',
+    ' ❯ 1. Yes',
+    "   2. Yes, and don't ask again for rm commands in /home/runner/app",
+    '   3. Yes, and switch to auto mode · auto mode handles these prompts for you',
+    '   4. No',
+    '',
+    ' Esc to cancel · Tab to amend',
+  ];
+
+  function waiting() {
+    vi.useFakeTimers();
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: [prompt, call] });
+    if (!claude) throw new Error('Claude Code reads a permission dialog');
+    chat.setPermission(readPermissionPrompt(claude, dialog));
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    return { chat, typed };
+  }
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // What breaks this: the chat says only that the agent waits, and the
+  // person has to switch to the terminal to read and answer the dialog.
+  it('takes the composer’s place with the command, and its number keys answer as in the terminal', () => {
+    const { typed } = waiting();
+    expect(
+      screen
+        .getByPlaceholderText('sessions.chat.composer.placeholder{"agent":"Claude Code"}')
+        .closest('[hidden]'),
+    ).not.toBeNull();
+    const card = document.querySelector<HTMLElement>('[data-slot="approval-panel"]');
+    if (!card) throw new Error('the card is drawn');
+    expect(within(card).getByText('sessions.chat.permission.command')).toBeTruthy();
+    expect(within(card).getByText('Remove the build output')).toBeTruthy();
+    expect(card.querySelector('[data-slot="approval-command"]')?.textContent).toBe('rm -rf dist');
+    // A recursive delete is worth a second look.
+    expect(card.getAttribute('data-tone')).toBe('caution');
+    // Switching the whole session to auto mode is the terminal's, not a row here.
+    expect(screen.queryByText(/auto mode/)).toBeNull();
+    const allow = screen.getByRole('button', { name: /sessions\.chat\.permission\.allowOnce/ });
+    expect(document.activeElement).toBe(allow);
+    fireEvent.keyDown(allow, { key: '2' });
+    act(() => vi.runAllTimers());
+    expect(typed).toEqual(['2']);
+  });
+
+  it('denies with Escape, the option the agent numbers last', () => {
+    const { typed } = waiting();
+    fireEvent.keyDown(screen.getByRole('button', { name: /allowOnce/ }), { key: 'Escape' });
+    act(() => vi.runAllTimers());
+    expect(typed).toEqual(['4']);
+  });
+
+  // What breaks this: the note typed as keys into the dialog's options, or
+  // a refusal sent without the words the person wrote for it.
+  it('denies with a note, typed into the field the agent opens on No', () => {
+    const { typed } = waiting();
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.permission.withNote' }));
+    const note = screen.getByLabelText(/sessions\.chat\.permission\.noteLabel/);
+    fireEvent.change(note, { target: { value: 'Only remove dist/cache' } });
+    fireEvent.keyDown(note, { key: 'Enter' });
+    act(() => vi.runAllTimers());
+    const down = '\u001b[B';
+    expect(typed).toEqual([down, down, down, '\t', 'Only remove dist/cache', '\r']);
+  });
+
+  it('holds the answer on the card, then gives the composer back once the call has its result', () => {
+    const { chat } = waiting();
+    fireEvent.click(screen.getByRole('button', { name: /allowOnce/ }));
+    act(() => chat.setPermission(null));
+    expect(screen.getByText(/sessions\.chat\.permission\.allowed/)).toBeTruthy();
+    act(() =>
+      chat.apply({
+        entries: [
+          entry({
+            type: 'user',
+            uuid: 'r1',
+            message: {
+              role: 'user',
+              content: [{ type: 'tool_result', tool_use_id: 't1', content: '' }],
+            },
+          }),
+        ],
+      }),
+    );
+    expect(screen.queryByText(/sessions\.chat\.permission\.allowed/)).toBeNull();
+    expect(
+      screen
+        .getByPlaceholderText('sessions.chat.composer.placeholder{"agent":"Claude Code"}')
+        .closest('[hidden]'),
+    ).toBeNull();
   });
 });
