@@ -67,6 +67,10 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       sourcemap: upload ? 'hidden' : false,
+      // A font is always a file of its own: the CSP's `font-src 'self'`
+      // (`nginx.conf`) refuses a `data:` one, and Vite would inline KaTeX's
+      // smallest fonts under its 4KB limit.
+      assetsInlineLimit: (file: string) => (/\.(woff2?|ttf|otf)$/.test(file) ? false : undefined),
       rollupOptions: {
         // One chunk per library instead of one chunk for all of them, so a
         // release invalidates app code and leaves the dependencies cached. See

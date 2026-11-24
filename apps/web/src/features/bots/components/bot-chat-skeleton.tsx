@@ -1,6 +1,7 @@
 import { ChatComposer, IconButton, Skeleton } from '@oppenheimer/design-system-web';
 import { Ellipsis } from '@oppenheimer/design-system-web/icons';
 import { LoadingStatus, PageBar } from '@oppenheimer/frontend-web';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotTranscriptSkeleton } from './bot-transcript-skeleton';
 
@@ -18,19 +19,23 @@ const chip = (width: string) => (
  * `PageBar` with the face and name as bars and the actions menu in its slot,
  * the transcript's ghost in the scrolling pane at its padding, and the
  * composer's own frame in its one-row layout, the box off and its chips as bars, so
- * nothing moves when the bot lands but the bars turning into words.
+ * nothing moves when the bot lands but the bars turning into words. With
+ * `tabs` (the bot opened inside Sessions) the bar is the tabs, as it will be.
  */
-export function BotChatSkeleton() {
+export function BotChatSkeleton({ tabs }: { tabs?: ReactNode }) {
   const { t } = useTranslation();
   return (
     <div aria-busy className="flex min-h-0 flex-1 flex-col">
       <LoadingStatus />
       <PageBar
-        leading={<Skeleton shape="pill" className="size-6.5" />}
+        tone={tabs ? 'chrome' : 'page'}
+        leading={tabs ? null : <Skeleton shape="pill" className="size-6.5" />}
         title={
-          <span className="flex h-5 items-center">
-            <Skeleton shape="sm" className="h-3.5 w-32" />
-          </span>
+          tabs ?? (
+            <span className="flex h-5 items-center">
+              <Skeleton shape="sm" className="h-3.5 w-32" />
+            </span>
+          )
         }
         actions={
           <IconButton aria-label={t('bots.chat.actions')} size="sm" variant="quiet" disabled>

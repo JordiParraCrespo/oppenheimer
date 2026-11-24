@@ -98,6 +98,7 @@ describe('liveLabel', () => {
     subagents: null,
     allowedBy: null,
     mailDraft: null,
+    visual: null,
     rateLimit: null,
   };
   const run = (state: 'running' | 'completed' | 'failed') => ({

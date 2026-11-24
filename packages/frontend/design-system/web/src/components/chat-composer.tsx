@@ -189,8 +189,10 @@ function ChatComposer({
       rows={inline ? 1 : 2}
       wrapperClassName={inline ? 'flex-1' : undefined}
       // Grows with what is written, from its opening lines (`min-h`, since
-      // `field-sizing-content` overrides `rows`) to eight, then scrolls.
-      className="field-sizing-content max-h-52 resize-none bg-transparent text-fg outline-none placeholder:text-field-placeholder"
+      // `field-sizing-content` overrides `rows`) to eight, then scrolls. The
+      // placeholder keeps to one line, clipped: `field-sizing-content` sizes
+      // to it too, so a long suggestion would otherwise open a second line.
+      className="field-sizing-content max-h-52 resize-none bg-transparent text-fg outline-none placeholder:overflow-hidden placeholder:whitespace-nowrap placeholder:text-field-placeholder"
       box={cn(
         'w-full text-[15px] leading-[1.55] tracking-[-0.011em]',
         inline ? cn('min-h-11 py-2.5 pr-0', onAttach || emoji ? 'pl-1' : 'pl-4.5') : 'min-h-18 px-5 pt-4 pb-2',

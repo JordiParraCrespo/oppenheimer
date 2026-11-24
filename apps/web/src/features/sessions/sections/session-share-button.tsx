@@ -1,4 +1,4 @@
-import { Button } from '@oppenheimer/design-system-web';
+import { IconButton } from '@oppenheimer/design-system-web';
 import { EyeIcon, TerminalIcon, UsersIcon } from '@oppenheimer/design-system-web/icons';
 import { useSessionShare } from '@oppenheimer/frontend-consumer/react';
 import { useTranslation } from 'react-i18next';
@@ -9,7 +9,8 @@ import { useConsoleDialog } from '@/lib/console';
  * shared as — "Shared · can write · 2", "Shared · view only · link". Either
  * opens the Share dialog.
  *
- * It closes the session's bar on the right (a quiet pill), or, where the
+ * It closes the session's bar on the right as a quiet square icon, lit
+ * while the session is shared, the words its label and tooltip; or, where the
  * screen has no bar of its own to put it in (a pull request's review
  * session), the terminal's status line, as a word in the line's own ink
  * (`place="status"`).
@@ -35,10 +36,16 @@ export function SessionShareButton({
 
   if (place === 'bar') {
     return (
-      <Button variant="ghost" size="sm" title={t('sessions.share.statusTitle')} onClick={open}>
-        <Icon />
-        {label}
-      </Button>
+      <IconButton
+        size="sm"
+        shape="square"
+        aria-label={label}
+        title={share ? label : t('sessions.share.statusTitle')}
+        data-dirty={share ? '' : undefined}
+        onClick={open}
+      >
+        <UsersIcon />
+      </IconButton>
     );
   }
   return (

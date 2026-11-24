@@ -9,21 +9,25 @@ import (
 	"time"
 )
 
-// ExecMode is how much a host lets bots run on it (`host.exec`). It
-// is the host's own setting, kept in a file the control plane never reads or
-// writes, so a compromised control plane can still run nothing the person
-// did not allow here.
+// ExecMode is how much a host lets bots run on it (`host.exec`). It is the
+// host's own setting, kept in a file `runner exec` writes, or a bot when the
+// person asked it to (`host.settings.set`).
 type ExecMode string
 
 const (
 	// ExecOff refuses every command. It is the default: a host runs nothing
-	// for a bot until its owner says so on the host itself.
+	// for a bot until its owner says so, on the host or to a bot.
 	ExecOff ExecMode = "off"
 	// ExecAllowlist runs only the programs ExecPolicy.Allow names.
 	ExecAllowlist ExecMode = "allowlist"
 	// ExecFull runs any program.
 	ExecFull ExecMode = "full"
 )
+
+// ExecPolicyMaxBytes bounds the policy file, as written and as read: a mode
+// and a short list. A list a bot grows past it is refused before it is
+// saved, since a file over it can no longer be read.
+const ExecPolicyMaxBytes = 64 << 10
 
 // ExecModes is every mode, in the order `runner exec` lists them.
 var ExecModes = []ExecMode{ExecOff, ExecAllowlist, ExecFull}

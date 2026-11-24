@@ -835,6 +835,9 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_043` <a id="bots_043" />       | The bot answers on a WhatsApp number | 409  |
 | `BOTS_044` <a id="bots_044" />       | Message not found | 404  |
 | `BOTS_045` <a id="bots_045" />       | This message takes no reaction | 422  |
+| `BOTS_046` <a id="bots_046" />       | Form not found | 404  |
+| `BOTS_047` <a id="bots_047" />       | The values do not fit the form | 422  |
+| `BOTS_048` <a id="bots_048" />       | The form was already sent | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -944,6 +947,15 @@ none (Settings → WhatsApp), then delete it.
 (`PUT /bots/:id/messages/:messageId/reaction`). `BOTS_044` is a message that is
 not this bot's or not in the caller's workspace. `BOTS_045` is a reaction to an
 activity line or an event: only your messages and the bot's words take one.
+
+`BOTS_046` to `BOTS_048` are a form a bot asked you to fill (`ask_form`), a
+card of its own beside questions and approvals. `BOTS_046` is a form that is
+not this bot's or not in the caller's workspace. `BOTS_047` is values that do
+not fit it: a required field left blank, a number outside its bounds, words
+where a number goes, an option a select does not list, an address or a day
+that does not read as one, or a field the form does not have; its `detail`
+names which. `BOTS_048` is a form already submitted or dismissed, or retired
+because a message reached the bot first.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
@@ -1355,6 +1367,8 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `EXEC_005` <a id="exec_005" />         | The host's exec policy cannot be read        | 500  |
 | `EXEC_006` <a id="exec_006" />         | This host does not let bots drive a terminal | 403  |
 | `EXEC_007` <a id="exec_007" />         | The session is not a blank terminal          | 409  |
+| `EXEC_008` <a id="exec_008" />         | Not a program name or an absolute path       | 400  |
+| `EXEC_009` <a id="exec_009" />         | The host's allowlist is full                 | 413  |
 | `COMPUTER_001` <a id="computer_001" /> | Using this host's screen is off              | 403  |
 | `COMPUTER_002` <a id="computer_002" /> | This host has no screen the runner can use   | 424  |
 | `COMPUTER_003` <a id="computer_003" /> | The action does not fit the screen           | 400  |
@@ -1434,6 +1448,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_020` <a id="sess_020" />         | Claude Code could not send the message to the cloud session | 502 |
 | `SESS_021` <a id="sess_021" />         | Claude Code did not confirm the message to the cloud session in time | 504 |
 | `SESS_022` <a id="sess_022" />         | Codex on this host is not signed in to ChatGPT | 502 |
+| `SESS_023` <a id="sess_023" />         | The visual cannot be shown                   | 400  |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |

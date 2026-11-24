@@ -85,6 +85,7 @@ import { SendCloudReplyCommandHandler } from './commands/send-cloud-reply/send-c
 import { SendCloudReplyHttpController } from './commands/send-cloud-reply/send-cloud-reply.http.controller';
 import { SendSessionPromptCommandHandler } from './commands/send-session-prompt/send-session-prompt.command-handler';
 import { SendSessionPromptHttpController } from './commands/send-session-prompt/send-session-prompt.http.controller';
+import { SetHostSettingsCommandHandler } from './commands/set-host-settings/set-host-settings.command-handler';
 import { SetSessionSharePeopleCommandHandler } from './commands/set-session-share-people/set-session-share-people.command-handler';
 import { SetSessionSharePeopleHttpController } from './commands/set-session-share-people/set-session-share-people.http.controller';
 import { SetSessionVisibilityCommandHandler } from './commands/set-session-visibility/set-session-visibility.command-handler';
@@ -251,6 +252,7 @@ const commandHandlers: Provider[] = [
   DeliverSessionWakeCommandHandler,
   WakeCloudSessionCommandHandler,
   RunHostCommandCommandHandler,
+  SetHostSettingsCommandHandler,
   UseHostComputerCommandHandler,
   UseHostBrowserCommandHandler,
   DriveSessionTerminalCommandHandler,

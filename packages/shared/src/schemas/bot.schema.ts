@@ -648,6 +648,27 @@ export interface BotQuestionEvent {
   answers: BotAnsweredQuestion[];
 }
 
+/** How a form was decided: submitted, or dismissed. */
+export const BOT_FORM_OUTCOMES = ['submitted', 'dismissed'] as const;
+export type BotFormOutcome = (typeof BOT_FORM_OUTCOMES)[number];
+
+/** A form decided (`ask_form`): how, its title, and what was sent, field by field. */
+export interface BotFormEvent {
+  kind: 'form';
+  outcome: BotFormOutcome;
+  /** The form's title, its line in the chat. */
+  title: string;
+  /** Each field's label and the value sent, in words; empty when dismissed. */
+  values: BotSubmittedFormValue[];
+}
+
+/** One field of a submitted form, as the chat shows it: its label and what was sent. */
+export interface BotSubmittedFormValue {
+  label: string;
+  /** What was sent, in words; empty when an optional field was left blank. */
+  value: string;
+}
+
 /** One answered question of an `ask_user` card, as the chat shows it. */
 export interface BotAnsweredQuestion {
   question: string;
@@ -1209,6 +1230,7 @@ export interface BotCompactionEvent {
 export type BotMessageEvent =
   | BotApprovalEvent
   | BotQuestionEvent
+  | BotFormEvent
   | BotRoutineEvent
   | BotPeerMessageEvent
   | BotPeerReplyEvent
@@ -1226,6 +1248,7 @@ export type BotMessageEvent =
 export const BOT_MESSAGE_EVENT_KINDS = [
   'approval',
   'question',
+  'form',
   'routine',
   'bot_message',
   'bot_reply',
@@ -1482,6 +1505,189 @@ export const dismissBotQuestionSchema = z.object({
 export type DismissBotQuestionDto = z.infer<typeof dismissBotQuestionSchema>;
 
 /**
+ * A form a bot asked its owner to fill (`ask_form`): `pending` until they
+ * submit it or dismiss it, `expired` when they wrote to the bot instead.
+ * Nothing runs on it; the values go to the bot.
+ */
+export const BOT_FORM_STATUSES = ['pending', 'submitted', 'dismissed', 'expired'] as const;
+export type BotFormStatus = (typeof BOT_FORM_STATUSES)[number];
+
+/** What a field takes: a line, a paragraph, a number, one of a list, an address, a day. */
+export const BOT_FORM_FIELD_KINDS = [
+  'text',
+  'textarea',
+  'number',
+  'select',
+  'email',
+  'date',
+] as const;
+export type BotFormFieldKind = (typeof BOT_FORM_FIELD_KINDS)[number];
+
+/** How many fields one form holds. */
+export const BOT_FORM_FIELDS_MIN = 1;
+export const BOT_FORM_FIELDS_MAX = 8;
+export const BOT_FORM_TITLE_MAX = 120;
+export const BOT_FORM_DESCRIPTION_MAX = 500;
+export const BOT_FORM_SUBMIT_LABEL_MAX = 32;
+/** A field's id: what the bot reads its value by (`repo`, `due_date`). */
+export const BOT_FORM_FIELD_ID_PATTERN = /^[a-z][a-z0-9_]{0,31}$/;
+export const BOT_FORM_FIELD_LABEL_MAX = 80;
+export const BOT_FORM_FIELD_PLACEHOLDER_MAX = 120;
+/** How many options a `select` offers, at least and at most. */
+export const BOT_FORM_SELECT_OPTIONS_MIN = 2;
+export const BOT_FORM_SELECT_OPTIONS_MAX = 12;
+export const BOT_FORM_SELECT_OPTION_MAX = 80;
+/** How long a `text` or `email` value may be, and a `textarea`'s. */
+export const BOT_FORM_TEXT_MAX = 300;
+export const BOT_FORM_TEXTAREA_MAX = 2_000;
+/** A `date` field's value: a calendar day, `YYYY-MM-DD`. */
+export const BOT_FORM_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const botFormFieldBase = {
+  id: z.string().regex(BOT_FORM_FIELD_ID_PATTERN),
+  label: z.string().trim().min(1).max(BOT_FORM_FIELD_LABEL_MAX),
+  placeholder: z.string().trim().max(BOT_FORM_FIELD_PLACEHOLDER_MAX).nullable().default(null),
+  required: z.boolean().default(false),
+};
+
+/**
+ * One field of a form, by what it takes. A `number` may bound its value; a
+ * `select` lists its options, and its value is one of them. A default fills
+ * the field before the person edits it. Whether the ids are distinct, the
+ * bounds in order and the default a value the field takes is the API's to
+ * answer, over the whole form.
+ */
+export const botFormFieldSchema = z.discriminatedUnion('kind', [
+  z.object({
+    ...botFormFieldBase,
+    kind: z.literal('text'),
+    default: z.string().trim().max(BOT_FORM_TEXT_MAX).nullable().default(null),
+  }),
+  z.object({
+    ...botFormFieldBase,
+    kind: z.literal('textarea'),
+    default: z.string().trim().max(BOT_FORM_TEXTAREA_MAX).nullable().default(null),
+  }),
+  z.object({
+    ...botFormFieldBase,
+    kind: z.literal('email'),
+    default: z.string().trim().max(BOT_FORM_TEXT_MAX).nullable().default(null),
+  }),
+  z.object({
+    ...botFormFieldBase,
+    kind: z.literal('date'),
+    default: z.string().regex(BOT_FORM_DATE_PATTERN).nullable().default(null),
+  }),
+  z.object({
+    ...botFormFieldBase,
+    kind: z.literal('number'),
+    min: z.number().finite().nullable().default(null),
+    max: z.number().finite().nullable().default(null),
+    default: z.number().finite().nullable().default(null),
+  }),
+  z.object({
+    ...botFormFieldBase,
+    kind: z.literal('select'),
+    options: z
+      .array(z.string().trim().min(1).max(BOT_FORM_SELECT_OPTION_MAX))
+      .min(BOT_FORM_SELECT_OPTIONS_MIN)
+      .max(BOT_FORM_SELECT_OPTIONS_MAX),
+    default: z.string().trim().max(BOT_FORM_SELECT_OPTION_MAX).nullable().default(null),
+  }),
+]);
+export type BotFormField = z.output<typeof botFormFieldSchema>;
+
+/** A form as the bot asked it: a title, what it is for, its fields, and the button's word. */
+export const botFormSpecSchema = z.object({
+  title: z.string().trim().min(1).max(BOT_FORM_TITLE_MAX),
+  description: z.string().trim().max(BOT_FORM_DESCRIPTION_MAX).nullable().default(null),
+  fields: z.array(botFormFieldSchema).min(BOT_FORM_FIELDS_MIN).max(BOT_FORM_FIELDS_MAX),
+  submitLabel: z.string().trim().max(BOT_FORM_SUBMIT_LABEL_MAX).nullable().default(null),
+});
+export type BotFormSpec = z.output<typeof botFormSpecSchema>;
+
+/** One field's value as sent: words, a number, or nothing for a field left blank. */
+export const botFormValueSchema = z.union([
+  z.string().max(BOT_FORM_TEXTAREA_MAX),
+  z.number().finite(),
+  z.null(),
+]);
+export type BotFormValue = z.output<typeof botFormValueSchema>;
+
+/** A form's values, by field id. */
+export type BotFormValues = Record<string, BotFormValue>;
+
+/**
+ * `POST /bots/:id/forms/:formId/submit`: a value per field id. Whether each
+ * fits its field (required, bounds, an option it lists) is the API's to
+ * answer against the form.
+ */
+export const submitBotFormSchema = z.object({
+  values: z.record(z.string().regex(BOT_FORM_FIELD_ID_PATTERN), botFormValueSchema),
+});
+export type SubmitBotFormDto = z.infer<typeof submitBotFormSchema>;
+
+/** Whether words read as a number a form takes. */
+function isFormNumber(text: string): boolean {
+  return text !== '' && Number.isFinite(Number(text));
+}
+
+/**
+ * One field's input as a person types it (always words, `''` for nothing),
+ * checked the way the API reads the value it becomes: required, a number
+ * within its bounds, an option it lists, an address, a day. The API decides
+ * again on what is sent; this is what lets the form say so before.
+ */
+function formFieldInputSchema(field: BotFormField): z.ZodType<string, z.ZodTypeDef, string> {
+  const base = z.string().trim();
+  const filled = field.required ? base.min(1) : base;
+  switch (field.kind) {
+    case 'text':
+      return filled.pipe(z.string().max(BOT_FORM_TEXT_MAX));
+    case 'textarea':
+      return filled.pipe(z.string().max(BOT_FORM_TEXTAREA_MAX));
+    case 'email':
+      return filled.pipe(z.union([z.literal(''), z.string().max(BOT_FORM_TEXT_MAX).email()]));
+    case 'date':
+      return filled.refine((text) => text === '' || BOT_FORM_DATE_PATTERN.test(text), {
+        params: { i18nKey: 'validation.date' },
+      });
+    case 'select':
+      return filled.refine((text) => text === '' || field.options.includes(text), {
+        params: { i18nKey: 'validation.choice' },
+      });
+    case 'number': {
+      const { min, max } = field;
+      return filled
+        .refine((text) => text === '' || isFormNumber(text), {
+          params: { i18nKey: 'validation.invalid' },
+        })
+        .refine((text) => text === '' || min === null || Number(text) >= min, {
+          params: { i18nKey: 'validation.min', min },
+        })
+        .refine((text) => text === '' || max === null || Number(text) <= max, {
+          params: { i18nKey: 'validation.max', max },
+        });
+    }
+  }
+}
+
+/** A form's inputs as the person fills them: one entry of words per field id. */
+export function botFormInputSchema(
+  spec: BotFormSpec,
+): z.ZodObject<Record<string, z.ZodType<string, z.ZodTypeDef, string>>> {
+  return z.object(
+    Object.fromEntries(spec.fields.map((field) => [field.id, formFieldInputSchema(field)])),
+  );
+}
+
+/** `POST /bots/:id/forms/:formId/dismiss`: why not, optionally. */
+export const dismissBotFormSchema = z.object({
+  note: z.string().trim().max(BOT_APPROVAL_NOTE_MAX).optional(),
+});
+export type DismissBotFormDto = z.infer<typeof dismissBotFormSchema>;
+
+/**
  * `POST /bots/:id/approvals/:approvalId/decision`: one of the card's
  * `availableDecisions`. `reach` is the older way to say how far a yes goes
  * (`approve` with `tool` is `approve_always`, with `subject`
@@ -1677,6 +1883,12 @@ export const botStreamEventSchema = z.discriminatedUnion('type', [
     type: z.literal('question'),
     questionId: z.string(),
     status: z.enum(BOT_QUESTION_STATUSES),
+  }),
+  /** A form (`ask_form`) was raised, submitted, dismissed or retired. */
+  z.object({
+    type: z.literal('form'),
+    formId: z.string(),
+    status: z.enum(BOT_FORM_STATUSES),
   }),
   /**
    * Where each child of a running `delegate` call is, the whole set each

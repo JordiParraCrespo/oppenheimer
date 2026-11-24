@@ -327,6 +327,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		TerminalScreenMax    int               `json:"terminalScreenMaxBytes"`
 		ComputerScreenEdge   int               `json:"computerScreenMaxEdge"`
 		ComputerScreenshot   int               `json:"computerScreenshotMaxBytes"`
+		HelloCapabilitiesMax int               `json:"helloCapabilitiesMax"`
 	}
 	var schema struct {
 		Constants json.RawMessage `json:"x-constants"`
@@ -341,6 +342,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 	}
 	for name, pair := range map[string][2]any{
 		"protocolVersion":      {constants.ProtocolVersion, link.ProtocolVersion},
+		"helloCapabilitiesMax": {constants.HelloCapabilitiesMax, link.HelloCapabilitiesMax},
 		"HELLO_EXPECTED":       {constants.CloseCodes["HELLO_EXPECTED"], link.CloseHelloExpected},
 		"HELLO_TIMEOUT":        {constants.CloseCodes["HELLO_TIMEOUT"], link.CloseHelloTimeout},
 		"REPLACED":             {constants.CloseCodes["REPLACED"], link.CloseReplaced},
@@ -391,6 +393,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		link.CapabilityBrowserUse,
 		link.CapabilitySessionWindowsList,
 		link.CapabilitySessionWindowAgent,
+		link.CapabilityHostSettings,
 	}) {
 		t.Errorf("capabilities: the schema says %v", constants.Capabilities)
 	}
