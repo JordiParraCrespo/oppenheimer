@@ -11,18 +11,19 @@ import { Button } from './button';
 type CodeBlockTab = { value: string; label: React.ReactNode };
 
 /**
- * One tab on the panel's band, selected or not. Exported so a placeholder
- * that stands in for the band before its code exists (Add host's, while the
- * token is minted) draws the same pill, at the same 28px, as the tab that
- * loads.
+ * One tab's pill on the panel's band, selected or not: its shape and ink,
+ * nothing it does when pressed. Exported so a placeholder that stands in for
+ * the band before its code exists (Add host's, while the token is minted)
+ * draws the same pill, at the same 28px, as the tab that loads; the real tab
+ * adds its hover and focus.
  */
 const codeBlockTabVariants = cva(
-  'inline-flex h-(--control-h-sm) items-center rounded-pill px-2.5 text-xs leading-tight transition-colors duration-fast ease-standard outline-none focus-visible:outline-2 focus-visible:outline-primary',
+  'inline-flex h-(--control-h-sm) items-center rounded-pill px-2.5 text-xs leading-tight',
   {
     variants: {
       selected: {
         true: 'bg-card text-fg',
-        false: 'text-fg-muted hover:text-fg',
+        false: 'text-fg-muted',
       },
     },
     defaultVariants: { selected: false },
@@ -120,7 +121,11 @@ function CodeBlock({
                     aria-selected={selected}
                     data-slot="code-block-tab"
                     onClick={() => onTabChange?.(option.value)}
-                    className={codeBlockTabVariants({ selected })}
+                    className={cn(
+                      codeBlockTabVariants({ selected }),
+                      'transition-colors duration-fast ease-standard outline-none focus-visible:outline-2 focus-visible:outline-primary',
+                      !selected && 'hover:text-fg',
+                    )}
                   >
                     {option.label}
                   </button>
