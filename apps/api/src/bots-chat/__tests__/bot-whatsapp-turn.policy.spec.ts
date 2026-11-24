@@ -60,6 +60,20 @@ describe('whatsappTurn', () => {
     expect(opening.pendingMedia).toEqual({ kind: 'whatsapp_voice_note' });
   });
 
+  // What breaks this: a photo the bot is never shown because its turn has
+  // nothing pending, or one sent as a steer into a running turn that cannot
+  // fetch it.
+  it('opens an image’s turn with its caption and the image pending, as a turn of its own', () => {
+    const { turn, opening } = whatsappTurn(props, {
+      ...message,
+      text: 'Which plant?',
+      image: true,
+    });
+    expect(opening.content).toBe('Which plant?');
+    expect(opening.pendingMedia).toEqual({ kind: 'whatsapp_image' });
+    expect(turn.steer).toBe(false);
+  });
+
   // What breaks this: a key built from the chat's JID and WhatsApp's own
   // id, which reach 128 characters each, refused by bot_turn."sourceKey"
   // varchar(128); or the reply unable to find the message it quotes.
