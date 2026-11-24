@@ -61,6 +61,7 @@ export function InboxList() {
   const [alerts, setAlerts] = useAlertSwitch();
   const selection = useMultiSelection(open.map((item) => item.key));
   const picked = open.filter((item) => selection.has(item.key));
+  const noneMatching = Boolean(search.dirty || search.query) && inbox.open.length > 0;
   // Select (the head's button) shows every row's checkbox before anything is
   // checked; checking a row does as much on its own.
   const [selectMode, setSelectMode] = useState(false);
@@ -212,31 +213,22 @@ export function InboxList() {
         ) : null}
 
         {rows.length === 0 ? (
-          (search.dirty || search.query) && inbox.open.length > 0 ? (
-            <EmptyState className="px-4 py-14">
-              <EmptyState.Header>
-                <EmptyState.Media variant="icon">
-                  <SearchX />
-                </EmptyState.Media>
-                <EmptyState.Title className="text-operate">
-                  {t('inbox.list.noneMatchingTitle')}
-                </EmptyState.Title>
-                <EmptyState.Description>{t('inbox.list.noneMatching')}</EmptyState.Description>
-              </EmptyState.Header>
-            </EmptyState>
-          ) : (
-            <EmptyState className="px-4 py-14">
-              <EmptyState.Header>
-                <EmptyState.Media variant="icon" className="bg-success-surface text-success">
-                  <CheckCheck />
-                </EmptyState.Media>
-                <EmptyState.Title className="text-operate">
-                  {t('inbox.list.emptyTitle')}
-                </EmptyState.Title>
-                <EmptyState.Description>{t('inbox.list.empty')}</EmptyState.Description>
-              </EmptyState.Header>
-            </EmptyState>
-          )
+          <EmptyState className="px-4 py-14">
+            <EmptyState.Header>
+              <EmptyState.Media
+                variant="icon"
+                className={noneMatching ? undefined : 'bg-success-surface text-success'}
+              >
+                {noneMatching ? <SearchX /> : <CheckCheck />}
+              </EmptyState.Media>
+              <EmptyState.Title className="text-operate">
+                {t(noneMatching ? 'inbox.list.noneMatchingTitle' : 'inbox.list.emptyTitle')}
+              </EmptyState.Title>
+              <EmptyState.Description>
+                {t(noneMatching ? 'inbox.list.noneMatching' : 'inbox.list.empty')}
+              </EmptyState.Description>
+            </EmptyState.Header>
+          </EmptyState>
         ) : (
           <InboxRows>
             {rows.map(({ item, done: isDone }) => {
