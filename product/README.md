@@ -1749,6 +1749,12 @@ earlier note:
   open sessions and bots are tabs in a one-line bar, the state moves to the
   tab's dot and tooltip, and the launcher is large rows with Agent, Session
   and Bot folded under Side chats.
+- `versions/mvp/33-session-tabs.md` §1 left New session without the tab
+  strip. The same day, once it shipped, the owner asked for the tabs to stay
+  there too: New session's bar is the strip with a lit New session tab that
+  is not kept. The bar is 45px with its controls on the medium rung, on the
+  page's own ground rather than the grey band §3's contrast pass first gave
+  it.
 - `versions/mvp/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
   a job over four tiles (next-step pills once it had instructions), over the
   stacked composer. On 2026-11-16 the owner found it loud in the side pane

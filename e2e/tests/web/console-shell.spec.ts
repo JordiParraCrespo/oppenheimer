@@ -22,7 +22,10 @@ test('the console is a rail, a sidebar and a pane, with no chrome bar over them'
     'href',
     '/',
   );
-  await expect(page.getByRole('link', { name: 'New session', exact: true })).toBeVisible();
+  // The sidebar's own: on New session the tab strip lights a New session tab too.
+  await expect(
+    page.locator('[data-slot="sidebar"]').getByRole('link', { name: 'New session', exact: true }),
+  ).toBeVisible();
   // The list is grouped by project, under a head named for the sessions; the
   // rail to the left of it is where the console's lists are switched.
   await expect(

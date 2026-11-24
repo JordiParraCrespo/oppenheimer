@@ -68,7 +68,7 @@ export function SessionScreen({
             title={bar.open ?? <Skeleton className="h-4 w-40" />}
             // The session bar's ground and edge, so nothing changes colour when it answers.
             tone={bar.open ? 'chrome' : 'page'}
-            className="border-b border-border-subtle bg-term-bg"
+            className="border-b border-border-subtle bg-term-bg [--chat-tab-ground:var(--term-bg)]"
           />
         ) : null}
         <SessionSkeleton />
