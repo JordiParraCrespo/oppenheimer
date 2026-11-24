@@ -36,6 +36,8 @@ function renderMenu(currentProjectId: string | null = null) {
       onPinChange={() => {}}
       unread={false}
       onUnreadChange={() => {}}
+      muted={false}
+      onMutedChange={() => {}}
       hidden={false}
       onHiddenChange={() => {}}
       onSelect={() => {}}

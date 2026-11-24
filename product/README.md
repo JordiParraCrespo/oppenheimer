@@ -2044,3 +2044,9 @@ earlier note:
   list's empty state as one muted "Nothing needs you." row. On 2026-11-24
   the owner asked for more: the list shows "Inbox zero" over a check in a
   green disc, and "No matches" when filters match nothing ("Inbox zero").
+- `versions/mvp/29-inbox.md` ("A notification in this browser",
+  2026-11-24) told only a session that comes to wait on you and an agent's
+  notice. The same day the owner asked for more: a turn that ends (the
+  row's blue dot) is told, a session left amber or blue for thirty minutes
+  is told once more, and Mute notifications in a row's menu silences one
+  session on this browser ("A finished turn, a long wait, and a mute").

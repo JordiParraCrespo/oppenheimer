@@ -31,6 +31,8 @@ export function SessionRowMenu({
   onPinChange,
   unread,
   onUnreadChange,
+  muted,
+  onMutedChange,
   hidden,
   onHiddenChange,
   onSelect,
@@ -48,6 +50,9 @@ export function SessionRowMenu({
   /** Whether the reader marked the session to come back to. */
   unread: boolean;
   onUnreadChange: (unread: boolean) => void;
+  /** Whether the reader turned off this session's system notifications on this device. */
+  muted: boolean;
+  onMutedChange: (muted: boolean) => void;
   hidden: boolean;
   onHiddenChange: (hidden: boolean) => void;
   onSelect: () => void;
@@ -84,6 +89,9 @@ export function SessionRowMenu({
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onUnreadChange(!unread)}>
               {unread ? t('sessions.sidebar.markRead') : t('sessions.sidebar.markUnread')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onMutedChange(!muted)}>
+              {muted ? t('sessions.sidebar.unmute') : t('sessions.sidebar.mute')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onSelect}>{t('sessions.sidebar.select')}</DropdownMenuItem>
             <DropdownMenuItem onClick={onRename}>{t('sessions.sidebar.rename')}</DropdownMenuItem>

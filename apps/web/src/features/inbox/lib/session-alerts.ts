@@ -1,3 +1,4 @@
+import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import type { InboxCopy } from './inbox-copy';
 
 /** What the Inbox's notify switch shows: on, off, refused by the browser, or not offered at all. */
@@ -20,4 +21,61 @@ export function shouldAlert(
 /** A notification's two lines, from the Inbox row's words: its subject, then what it asks. */
 export function alertText(copy: InboxCopy): { title: string; body: string } {
   return { title: copy.short, body: copy.title !== copy.short ? copy.title : copy.body };
+}
+
+/** How long a session waits on the reader, amber or blue, before it is told again. */
+export const STALE_AFTER_MS = 30 * 60_000;
+
+/** What the alerts remember of one session between two looks at the list. */
+export interface SessionWatch {
+  state: SessionEntity['state'];
+  /** When it entered `state`: the host's word for it, or when this tab first saw it there. */
+  since: number;
+  /** Whether this stay in `state` was already told as stale. */
+  staleTold: boolean;
+}
+
+/** A session needs the reader: amber (it waits on them) or blue (its turn ended). */
+function needsReader(session: SessionEntity): boolean {
+  if (session.isClosing || session.isProvisioning) return false;
+  return session.state === 'waiting-on-you' || session.state === 'ready-for-review';
+}
+
+/**
+ * One look at the session list: the sessions whose turn just ended (the row's
+ * dot went blue), the sessions that have needed the reader for
+ * {@link STALE_AFTER_MS} without being opened, each told once per stay, and
+ * what to remember for the next look. A first look (`watches` null) tells
+ * nothing and only remembers, so opening the console does not announce what
+ * was already blue or long waiting.
+ */
+export function watchSessions(
+  watches: ReadonlyMap<string, SessionWatch> | null,
+  sessions: readonly SessionEntity[],
+  now: number,
+): { done: SessionEntity[]; stale: SessionEntity[]; watches: Map<string, SessionWatch> } {
+  const done: SessionEntity[] = [];
+  const stale: SessionEntity[] = [];
+  const next = new Map<string, SessionWatch>();
+  for (const session of sessions) {
+    const previous = watches?.get(session.id);
+    const observed = session.observedSince?.getTime();
+    const same = previous?.state === session.state;
+    const since = same ? (observed ?? previous.since) : (observed ?? now);
+    const overdue = needsReader(session) && now - since >= STALE_AFTER_MS;
+    let staleTold = same ? previous.staleTold : false;
+    if (watches === null) {
+      staleTold = overdue;
+    } else {
+      if (!same && session.state === 'ready-for-review' && needsReader(session)) {
+        done.push(session);
+      }
+      if (overdue && !staleTold) {
+        stale.push(session);
+        staleTold = true;
+      }
+    }
+    next.set(session.id, { state: session.state, since, staleTold });
+  }
+  return { done, stale, watches: next };
 }

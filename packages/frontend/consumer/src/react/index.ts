@@ -188,6 +188,7 @@ export {
   useInboxCount,
   useInboxPullsShown,
   useInboxReportImages,
+  useMutedSessionAlerts,
   usePutInboxMark,
   usePutInboxMarks,
   useRefreshInbox,
