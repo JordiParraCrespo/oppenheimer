@@ -90,19 +90,27 @@ export class BotMessageRepository
       .execute();
   }
 
-  async saveContent(message: BotMessageEntity): Promise<void> {
+  async saveReading(message: BotMessageEntity): Promise<void> {
     // The mapper's columns, so they are what an insert writes: cleaned for Postgres.
-    const { content, pendingMedia } = this.mapper.toPersistence(message);
-    await this.repository
-      .createQueryBuilder()
-      .update(BotMessageOrmEntity)
-      .set({ content, pendingMedia: () => ':pendingMedia::jsonb' })
-      .setParameter('pendingMedia', pendingMedia ? JSON.stringify(pendingMedia) : null)
-      .where('id = :id AND "organizationId" = :organizationId', {
-        id: message.id,
-        organizationId: message.organizationId,
-      })
-      .execute();
+    const { content, pendingMedia, attachments } = this.mapper.toPersistence(message);
+    await this.dataSource.transaction(async (manager) => {
+      await manager
+        .createQueryBuilder()
+        .update(BotMessageOrmEntity)
+        .set({
+          content,
+          pendingMedia: () => ':pendingMedia::jsonb',
+          attachments: () => ':attachments::jsonb',
+        })
+        .setParameter('pendingMedia', pendingMedia ? JSON.stringify(pendingMedia) : null)
+        .setParameter('attachments', JSON.stringify(attachments))
+        .where('id = :id AND "organizationId" = :organizationId', {
+          id: message.id,
+          organizationId: message.organizationId,
+        })
+        .execute();
+      await claimShownWithin(manager, message);
+    });
   }
 
   async saveSteps(message: BotMessageEntity): Promise<void> {

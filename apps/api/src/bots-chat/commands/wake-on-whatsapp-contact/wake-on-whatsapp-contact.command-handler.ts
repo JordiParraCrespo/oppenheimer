@@ -40,6 +40,7 @@ export class WakeOnWhatsappContactCommandHandler
           senderName: command.senderName,
           sender: phoneOf(command.senderId) ?? command.senderId,
           text: command.text,
+          image: command.image,
         }),
     });
   }

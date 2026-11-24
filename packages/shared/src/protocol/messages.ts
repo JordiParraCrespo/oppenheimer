@@ -214,6 +214,13 @@ export const RUNNER_CAPABILITIES = [
    */
   'whatsapp.voice.send',
   /**
+   * Hands over an image its WhatsApp device received: it answers
+   * `whatsapp.media.get` with `kind: 'image'` with `whatsapp.media`, a JPEG
+   * scaled down to fit one frame when WhatsApp's is larger, so the owner's
+   * bots see it.
+   */
+  'whatsapp.image',
+  /**
    * Holds a Telegram bot for the owner, long-polling the Bot API on its token:
    * answers `telegram.link`, `telegram.unlink` and `telegram.send`, and sends
    * `telegram.state` and `telegram.messages`.
