@@ -1919,3 +1919,10 @@ earlier note:
   on every turn (ask before sending or buying, never type a password) stayed
   in the system prompt (`next-steps/mail.md`, Decided;
   `research/lessons-from-codex-and-openclaw-on-context.md`).
+- Every bot tool went to Claude on every turn (`alwaysLoad`, "a bot's tools
+  are few"); with every area on that is about 39,000 tokens of definitions,
+  five times the system prompt. On 2026-11-23 a capability's tools became
+  deferrable: on Anthropic's own API Claude Code's tool search defers them
+  once they pass a tenth of the context window and the model finds what it
+  needs, while the bot's own tools (memory, skills, questions, notices)
+  always load. GLM and the OpenAI engines send every tool as before.

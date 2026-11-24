@@ -15,6 +15,13 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type Anthropic from '@anthropic-ai/sdk';
+import { BotGoalToolsFactory } from '../../apps/api/src/bots-chat/application/bot-goal-tools.factory';
+import { BotGuideToolsFactory } from '../../apps/api/src/bots-chat/application/bot-guide-tools.factory';
+import { BotLoopToolsFactory } from '../../apps/api/src/bots-chat/application/bot-loop-tools.factory';
+import { BotNoticeToolsFactory } from '../../apps/api/src/bots-chat/application/bot-notice-tools.factory';
+import { BotQuestionToolsFactory } from '../../apps/api/src/bots-chat/application/bot-question-tools.factory';
+import { BotSelfToolsFactory } from '../../apps/api/src/bots-chat/application/bot-self-tools.factory';
+import { BotSkillToolsFactory } from '../../apps/api/src/bots-chat/application/bot-skill-tools.factory';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -49,6 +56,8 @@ export interface Turn {
   blocks: { text: string; after: number }[];
   /** Why the turn ended other than by answering: the cap, or a failure. */
   stopped?: string;
+  /** How many times the model searched for a deferred tool (Claude Code's `ToolSearch`). */
+  searches?: number;
 }
 
 export interface TurnRequest {
@@ -151,6 +160,36 @@ function messagesApi(apiKey: string, model: string): Transport['turn'] {
   };
 }
 
+/**
+ * Claude Code's tool search for the eval's turns: `auto` as the engine sets
+ * it on Anthropic (`claudeToolSearch`), `true` to defer every tool that may
+ * wait whatever their size (the hardest case), `false` to load them all, as
+ * before 2026-11-23. Set by `BOT_EVAL_TOOL_SEARCH`.
+ */
+function toolSearchMode(): 'auto' | 'true' | 'false' {
+  // biome-ignore lint/suspicious/noUndeclaredEnvVars: a root script, not a Turborepo task — nothing caches its output.
+  const mode = process.env.BOT_EVAL_TOOL_SEARCH ?? 'auto';
+  if (mode !== 'auto' && mode !== 'true' && mode !== 'false') {
+    throw new Error(`BOT_EVAL_TOOL_SEARCH is auto, true or false, not "${mode}".`);
+  }
+  return mode;
+}
+
+/** The bot's own tools (its areas grouped `self`), which the engine never defers. */
+function ownToolNames(): ReadonlySet<string> {
+  const none = undefined as never;
+  const areas = [
+    new BotSelfToolsFactory(none, none, none),
+    new BotSkillToolsFactory(none, none),
+    new BotGuideToolsFactory(none),
+    new BotGoalToolsFactory(none, none),
+    new BotLoopToolsFactory(none, none),
+    new BotQuestionToolsFactory(none, none),
+    new BotNoticeToolsFactory(none, none),
+  ];
+  return new Set(areas.flatMap((area) => area.definitions().map((tool) => tool.name)));
+}
+
 function claudeCode(model: string): Transport['turn'] {
   const { query } = fromAgents(
     '@anthropic-ai/claude-agent-sdk',
@@ -171,12 +210,17 @@ function claudeCode(model: string): Transport['turn'] {
       { name: 'oppenheimer', version: '1.0.0' },
       { capabilities: { tools: {} } },
     );
+    // As the engine marks them (`BotToolboxFactory`): the bot's own tools are
+    // always loaded, a capability's may wait behind Claude Code's tool search.
+    const own = ownToolNames();
+    const search = toolSearchMode();
+    const deferring = search !== 'false' && request.tools.some((tool) => !own.has(tool.name));
     mcp.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: request.tools.map((tool) => ({
         name: tool.name,
         description: tool.description,
         inputSchema: { type: 'object' as const, ...tool.inputSchema },
-        _meta: { 'anthropic/alwaysLoad': true },
+        ...(deferring && !own.has(tool.name) ? {} : { _meta: { 'anthropic/alwaysLoad': true } }),
       })),
     }));
     mcp.server.setRequestHandler(CallToolRequestSchema, async (received) => {
@@ -190,6 +234,7 @@ function claudeCode(model: string): Transport['turn'] {
     });
     const cwd = mkdtempSync(join(tmpdir(), 'bot-eval-'));
     let stopped: string | undefined;
+    let searches = 0;
     try {
       for await (const message of query({
         prompt: request.message,
@@ -197,8 +242,12 @@ function claudeCode(model: string): Transport['turn'] {
           model,
           systemPrompt: request.system,
           cwd,
-          tools: [],
-          allowedTools: request.tools.map((tool) => `mcp__oppenheimer__${tool.name}`),
+          tools: deferring ? ['ToolSearch'] : [],
+          allowedTools: [
+            ...request.tools.map((tool) => `mcp__oppenheimer__${tool.name}`),
+            ...(deferring ? ['ToolSearch'] : []),
+          ],
+          env: { ...process.env, ENABLE_TOOL_SEARCH: deferring ? search : 'false' },
           permissionMode: 'dontAsk',
           mcpServers: { oppenheimer: { type: 'sdk', name: 'oppenheimer', instance: mcp } },
           strictMcpConfig: true,
@@ -210,6 +259,7 @@ function claudeCode(model: string): Transport['turn'] {
         if (message.type === 'assistant') {
           for (const block of message.message.content) {
             if (block.type === 'text') said.push({ text: block.text, after: calls.length });
+            if (block.type === 'tool_use' && block.name === 'ToolSearch') searches++;
           }
         } else if (message.type === 'result' && message.subtype !== 'success') {
           stopped = message.subtype;
@@ -220,7 +270,13 @@ function claudeCode(model: string): Transport['turn'] {
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }
-    return { calls, answer: answerOf(said), blocks: said, ...(stopped ? { stopped } : {}) };
+    return {
+      calls,
+      answer: answerOf(said),
+      blocks: said,
+      searches,
+      ...(stopped ? { stopped } : {}),
+    };
   };
 }
 

@@ -193,6 +193,7 @@ async function runOnce(via: Transport, c: Case, accounts: readonly Account[]) {
     misses,
     skillsRead,
     readFirst,
+    searches: turn.searches ?? 0,
     calls: turn.calls.map((call) => call.tool),
     answer: turn.answer,
   };
@@ -226,7 +227,7 @@ async function main() {
   const readFirst = results.filter((r) => r.c.toolset !== 'mail' && r.readFirst).length;
   const usedCapability = results.filter((r) => r.c.toolset !== 'mail').length;
   console.log(
-    `\n${via.model} (${via.engine}): ${right}/${results.length} runs right; read the capability's skill before using it in ${readFirst}/${usedCapability}.`,
+    `\n${via.model} (${via.engine}): ${right}/${results.length} runs right; read the capability's skill before using it in ${readFirst}/${usedCapability}; searched for a deferred tool ${results.reduce((n, r) => n + r.searches, 0)} times.`,
   );
   console.log(`Report: ${writeReport(HERE, { model: via.model, engine: via.engine, results })}`);
   if (right !== results.length) process.exitCode = 1;

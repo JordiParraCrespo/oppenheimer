@@ -18,6 +18,9 @@ export const GLM_BASE_URL = 'https://api.z.ai/api/anthropic';
  */
 export const BUILT_IN_TOOLS = ['WebSearch', 'TodoWrite'];
 
+/** Claude Code's search over the tools it deferred; it reads only their definitions. */
+export const TOOL_SEARCH_TOOL = 'ToolSearch';
+
 /**
  * Removed outright, so that nothing (a subagent, a settings file, a future
  * default) can bring one back. `tools` above is what is offered; this is the
@@ -201,6 +204,28 @@ export function claudeMessageParts(
   return [...opening, ...messageParts(request)];
 }
 
+/**
+ * Whether Claude Code may defer our tools behind its tool search
+ * (2026-11-23): only on Anthropic's own API, where `defer_loading` and the
+ * search are served (z.ai's endpoint is not known to serve them), and only
+ * when some tool may wait. Then `ToolSearch` is offered beside the built-ins,
+ * since without it Claude Code loads every tool up front, and the search is
+ * `auto`: the tools that may wait are deferred once their definitions pass
+ * Claude Code's share of the context window (a tenth, in 2.1.300), so a bot
+ * with few tools keeps them all loaded. A deferred tool is found and
+ * appended in the conversation, so the prompt's cached prefix stays as it was.
+ */
+export function claudeToolSearch(
+  request: Pick<BotTurnRequest, 'provider' | 'baseUrl' | 'engineTools' | 'tools'>,
+): boolean {
+  return (
+    request.provider === 'anthropic' &&
+    !request.baseUrl &&
+    request.engineTools !== false &&
+    request.tools.some((tool) => tool.deferrable)
+  );
+}
+
 export function claudeOptions(
   request: BotTurnRequest,
   dirs: ScratchDirs,
@@ -208,12 +233,14 @@ export function claudeOptions(
   onStderr: (data: string) => void,
 ): Options {
   const ourTools = request.tools.map((tool) => qualifiedToolName(tool.name));
-  const builtIns = request.engineTools === false ? [] : BUILT_IN_TOOLS;
+  const search = claudeToolSearch(request);
+  const builtIns =
+    request.engineTools === false ? [] : [...BUILT_IN_TOOLS, ...(search ? [TOOL_SEARCH_TOOL] : [])];
   return {
     model: request.model,
     systemPrompt: request.systemPrompt,
     cwd: dirs.cwd,
-    env: claudeEnv(request, dirs),
+    env: { ...claudeEnv(request, dirs), ENABLE_TOOL_SEARCH: search ? 'auto' : 'false' },
     tools: builtIns,
     allowedTools: [...builtIns, ...ourTools],
     disallowedTools: DISALLOWED_TOOLS,
