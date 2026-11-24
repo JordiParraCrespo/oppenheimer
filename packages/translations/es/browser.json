@@ -177,6 +177,15 @@
       "groups": "Buscar grupos",
       "noMatch": "Nada coincide con «{{query}}»."
     },
+    "error": "Algo ha ido mal",
+    "comingToMobile": {
+      "title": "Próximamente en el móvil",
+      "sessions": "Sigue tus sesiones y responde a un agente que espera, desde aquí.",
+      "employees": "Habla con tus empleados desde el móvil.",
+      "pullRequests": "Revisa las pull requests que te necesitan.",
+      "automations": "Consulta tus automatizaciones y cómo han ido sus ejecuciones.",
+      "plan": "Tus tareas, hitos y calendario, desde aquí."
+    },
     "projectFilter": {
       "label": "Proyecto",
       "all": "Todos los proyectos",
@@ -662,7 +671,10 @@
       "noSocialProviders": "El inicio de sesión social no está configurado en este despliegue. Define GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET o GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET en la API para activarlo.",
       "continueWithGithub": "Continuar con GitHub",
       "continueWithGoogle": "Continuar con Google",
-      "socialFailed": "No se pudo iniciar el acceso social. Inténtalo de nuevo o inicia sesión con tu correo y contraseña."
+      "socialFailed": "No se pudo iniciar el acceso social. Inténtalo de nuevo o inicia sesión con tu correo y contraseña.",
+      "continueWithEmail": "Continuar con email",
+      "emailTitle": "Iniciar sesión",
+      "emailDescription": "Usa tu dirección del trabajo."
     },
     "register": {
       "title": "Crea tu cuenta",
@@ -673,7 +685,8 @@
       "hasAccount": "¿Ya tienes una cuenta?",
       "signIn": "Iniciar sesión",
       "failed": "Error en el registro",
-      "passwordHint": "Doce caracteres como mínimo."
+      "passwordHint": "Doce caracteres como mínimo.",
+      "phoneDescription": "Tu cuenta y tu espacio de trabajo, en dos pasos."
     },
     "forgotPassword": {
       "title": "Restablece tu contraseña",
@@ -688,7 +701,8 @@
       "emailLabel": "Correo de trabajo",
       "resend": "Reenviar enlace",
       "differentAddress": "Usar otra dirección",
-      "resendFailed": "No se ha podido reenviar el correo. Inténtalo de nuevo en un momento."
+      "resendFailed": "No se ha podido reenviar el correo. Inténtalo de nuevo en un momento.",
+      "notReceived": "¿No ha llegado nada? Revisa el correo no deseado o <retry>vuelve a intentarlo</retry>."
     },
     "resetPassword": {
       "title": "Crea una nueva contraseña",
@@ -4824,6 +4838,8 @@
     "plan": "Plan",
     "pullRequests": "Pull requests",
     "employees": "Empleados",
+    "account": "Cuenta",
+    "pullRequestsShort": "PRs",
     "inbox": "Bandeja"
   },
   "language": {
@@ -4907,7 +4923,9 @@
         "noGithub": "Sin conectar",
         "noHost": "Aún sin host",
         "doneLabel": "Listo",
-        "failed": "No se ha podido cargar. Recarga la página para intentarlo de nuevo."
+        "failed": "No se ha podido cargar. Recarga la página para intentarlo de nuevo.",
+        "onComputer": "Conecta GitHub y añade tu primer host desde la consola en tu ordenador. Tus sesiones aparecen aquí en cuanto se ejecutan.",
+        "open": "Abrir Oppenheimer"
       }
     }
   },

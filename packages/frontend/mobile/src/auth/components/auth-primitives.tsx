@@ -1,0 +1,119 @@
+import { Icon } from '@oppenheimer/design-system-mobile/icon';
+import { ArrowLeft, CircleAlert } from '@oppenheimer/design-system-mobile/icons';
+import { Separator } from '@oppenheimer/design-system-mobile/separator';
+import { Text } from '@oppenheimer/design-system-mobile/text';
+import { cn } from '@oppenheimer/design-system-mobile/utils';
+import { type Href, Link } from 'expo-router';
+import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Pressable, View } from 'react-native';
+
+/**
+ * The shared vocabulary of the auth screens, the mobile half of
+ * `@oppenheimer/frontend-web`'s `auth-primitives`. Same type ramp, same rhythm, same
+ * names, so the two platforms' screens read as one design. On the phone the title
+ * is the export's 34px large title and the subtitle its 15px subhead, with
+ * 13px labels and pill CTAs.
+ */
+
+/**
+ * The control height these screens pin.
+ *
+ * Web uses 40px; a tapped control does not. 48 is the height the platform's
+ * own sign-in sheets use and comfortably clears the 44pt minimum target, so
+ * the mobile screens keep their own number rather than inheriting web's.
+ */
+export const authControlClass = 'h-12 w-full';
+
+/** Inputs are the same 48px, on the brand's 8px control radius. */
+export const authInputClass = cn(authControlClass, 'rounded-md px-[13px] text-base');
+
+export function AuthTitle({ children }: { children: ReactNode }) {
+  return <Text variant="largeTitle">{children}</Text>;
+}
+
+export function AuthSubtitle({ children }: { children: ReactNode }) {
+  return <Text variant="subhead">{children}</Text>;
+}
+
+/** The 52px disc that heads a terminal state (mail sent, password updated). */
+export function AuthIconCircle({ children }: { children: ReactNode }) {
+  return (
+    <View className="mb-5 size-[52px] items-center justify-center rounded-full border border-border-subtle bg-surface-sunken">
+      {children}
+    </View>
+  );
+}
+
+/** The quiet inset note under a "check your email" heading. */
+export function AuthNote({ children }: { children: ReactNode }) {
+  return (
+    <View className="mb-6 rounded-md border border-border-subtle bg-surface-sunken px-3.5 py-3">
+      <Text className="text-sm text-ink-600">{children}</Text>
+    </View>
+  );
+}
+
+/** Hairline · label · hairline, as used between the CTA and social sign-in. */
+export function AuthDivider({ label }: { label: string }) {
+  return (
+    <View className="my-[22px] flex-row items-center gap-3.5">
+      {/* `w-auto` is what lets the rule stretch: the design system's
+          `Separator` is `w-full` for a block context, which in this flex row
+          would be two hairlines each asking for the whole width. */}
+      <Separator className="w-auto flex-1 bg-border-subtle" />
+      <Text className="text-xs text-ink-400">{label}</Text>
+      <Separator className="w-auto flex-1 bg-border-subtle" />
+    </View>
+  );
+}
+
+export function AuthBackLink({ children, href }: { children?: ReactNode; href: Href }) {
+  const { t } = useTranslation();
+
+  return (
+    <Link href={href} asChild>
+      <Pressable className="mt-7 flex-row items-center gap-1.5 self-start">
+        <Icon as={ArrowLeft} size={14} className="text-ink-400" />
+        <Text className="text-sm text-ink-600">
+          {children ?? t('auth.forgotPassword.backToSignIn')}
+        </Text>
+      </Pressable>
+    </Link>
+  );
+}
+
+/** The "Already have an account? Sign in" line at the foot of a screen. */
+export function AuthFooterNote({ children }: { children: ReactNode }) {
+  return <View className="flex-row flex-wrap items-center gap-1">{children}</View>;
+}
+
+/**
+ * The blue inline link these screens use — the footer's "Sign up", the note's
+ * "try another email", the form's "Forgot your password?". Blue is the one
+ * colour the brand lets carry meaning here.
+ */
+export function AuthLink({ className, ...props }: React.ComponentProps<typeof Text>) {
+  return <Text className={cn('text-sm font-medium text-accent-blue', className)} {...props} />;
+}
+
+/**
+ * A failed submission, said once, on the line above the button that sent it:
+ * a red icon and the server's words, no box. A field's own complaint sits
+ * under that field; this is only for what the server answered. The form
+ * clears it as soon as the person edits a field or tries again, so the two
+ * never stand on screen together. Never a native `Alert.alert`, which buries
+ * the failure behind a dismissal.
+ */
+export function AuthFormError({ children }: { children: ReactNode }) {
+  return (
+    <View role="alert" className="flex-row items-start gap-2">
+      <Icon as={CircleAlert} size={15} className="mt-0.5 text-destructive" />
+      <View className="min-w-0 flex-1">
+        <Text variant="caption" tone="destructive">
+          {children}
+        </Text>
+      </View>
+    </View>
+  );
+}

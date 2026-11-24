@@ -56,6 +56,32 @@
         }
       ]
     },
+    "mobile": {
+      "title": "Consumer mobile app",
+      "summary": "apps/mobile — Expo app for end users (NativeWind, expo-router), with its kit and design system",
+      "identifiers": [
+        "apps/mobile",
+        "@oppenheimer/mobile",
+        "packages/frontend/mobile",
+        "@oppenheimer/frontend-mobile",
+        "packages/frontend/design-system/mobile",
+        "@oppenheimer/design-system-mobile"
+      ],
+      "paths": [
+        "apps/mobile",
+        "packages/frontend/mobile",
+        "packages/frontend/design-system/mobile",
+        "apps/api/src/auth/infrastructure/mobile-app-auth.util.ts",
+        "apps/api/src/auth/__tests__/mobile-app-auth.util.spec.ts"
+      ],
+      "json": [
+        {
+          "file": "knip.json",
+          "path": "workspaces",
+          "deleteKeys": ["apps/mobile"]
+        }
+      ]
+    },
     "extension": {
       "title": "Chrome extension",
       "summary": "apps/extension — Manifest V3 extension that tracks your Claude Code cloud sessions and says which need you",
@@ -151,11 +177,11 @@
     },
     "packages/frontend/core": {
       "identifiers": ["packages/frontend/core", "@oppenheimer/frontend-core"],
-      "neededBy": ["web"]
+      "neededBy": ["web", "mobile"]
     },
     "packages/frontend/consumer": {
       "identifiers": ["packages/frontend/consumer", "@oppenheimer/frontend-consumer"],
-      "neededBy": ["web"]
+      "neededBy": ["web", "mobile"]
     },
     "packages/frontend/web": {
       "identifiers": ["packages/frontend/web", "@oppenheimer/frontend-web"],
@@ -167,7 +193,7 @@
     },
     "packages/frontend/api-client": {
       "identifiers": ["packages/frontend/api-client", "@oppenheimer/api-client"],
-      "neededBy": ["web"],
+      "neededBy": ["web", "mobile"],
       "scripts": ["generate:api-client"]
     },
     "scripts/check-bundle-size.mjs": {
@@ -177,7 +203,7 @@
     },
     "scripts/check-frontend-structure.mjs": {
       "identifiers": ["check-frontend-structure", "check:structure"],
-      "neededBy": ["web"],
+      "neededBy": ["web", "mobile"],
       "scripts": ["check:structure"]
     },
     "scripts/query-state-slots.mjs": {
@@ -225,11 +251,11 @@
     },
     "packages/tsconfig/depcruise/frontend-app.cjs": {
       "identifiers": ["depcruise/frontend-app"],
-      "neededBy": ["web"]
+      "neededBy": ["web", "mobile"]
     },
     "packages/tsconfig/depcruise/frontend-kit.cjs": {
       "identifiers": ["depcruise/frontend-kit"],
-      "neededBy": ["web"]
+      "neededBy": ["web", "mobile"]
     }
   },
   "tooling": {

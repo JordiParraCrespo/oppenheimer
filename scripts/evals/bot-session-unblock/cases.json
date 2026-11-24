@@ -120,7 +120,7 @@
       "bot": "milo",
       "project": "XRP Mobile",
       "name": "Lint fixes",
-      "task": "Fix the lint errors in apps/mobile. Touch nothing outside apps/mobile.",
+      "task": "Fix the lint errors in src/mobile. Touch nothing outside src/mobile.",
       "decision": {
         "kind": "permission",
         "id": "perm-rm-shared",

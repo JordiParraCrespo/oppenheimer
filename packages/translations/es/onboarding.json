@@ -58,7 +58,9 @@
       "noGithub": "Sin conectar",
       "noHost": "Aún sin host",
       "doneLabel": "Listo",
-      "failed": "No se ha podido cargar. Recarga la página para intentarlo de nuevo."
+      "failed": "No se ha podido cargar. Recarga la página para intentarlo de nuevo.",
+      "onComputer": "Conecta GitHub y añade tu primer host desde la consola en tu ordenador. Tus sesiones aparecen aquí en cuanto se ejecutan.",
+      "open": "Abrir Oppenheimer"
     }
   }
 }

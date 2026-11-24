@@ -1,6 +1,6 @@
 /**
  * The slug the API would derive anyway, shown so the reader is not surprised
- * by it. Kept in step with `createOrganizationSchema`'s pattern: lowercase,
+ * by it. Both apps' workspace steps preview it under the name they type. Kept in step with `createOrganizationSchema`'s pattern: lowercase,
  * digits and hyphens, at most 48 characters (its two-character floor is left
  * to the address check).
  */

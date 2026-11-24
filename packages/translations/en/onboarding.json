@@ -58,7 +58,9 @@
       "noGithub": "Not connected",
       "noHost": "No host yet",
       "doneLabel": "Done",
-      "failed": "Could not load this. Reload the page to try again."
+      "failed": "Could not load this. Reload the page to try again.",
+      "onComputer": "Connect GitHub and add your first host from the console on your computer. Your sessions show up here once they run.",
+      "open": "Open Oppenheimer"
     }
   }
 }

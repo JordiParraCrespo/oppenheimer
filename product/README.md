@@ -1698,6 +1698,23 @@ earlier note:
   "Nothing needs you", left-aligned. On 2026-11-14 the owner asked for it
   to be warmer: it reads "You're all caught up", centred under a small
   drawing of an empty tray; the line under it is unchanged.
+- The codebase was to keep every app the starter ships, but on 2026-09-23
+  the apps the MVP did not use were pruned, the mobile app among them. On
+  2026-11-14 the owner started 0.5 as a native Expo app: `apps/mobile` came
+  back with its kit and design system, as a shell first (sign-in and the
+  five tabs, Account working), push as its own slice, and no sign-up on the
+  phone (`next-steps/0.5-mobile.md`).
+- The 0.5 shell first drew the export's frosted tab bar and cards solid,
+  since React Native has no blur of its own. On 2026-11-15 the owner asked
+  for native Liquid Glass everywhere it exists: the tab bar, selects and
+  back buttons are the platform's own controls, and floating surfaces are
+  `UIGlassEffect`, so iOS 26 draws Apple's Liquid Glass
+  (`next-steps/0.5-mobile.md`).
+- 0.5's shell left sign-up to the web, where the workspace is named. On
+  2026-11-15 the owner asked for the whole auth flow on the phone: Create
+  account, the workspace step, Ready, forgot and reset password, all in the
+  native frame; GitHub and the first host stay the computer's
+  (`next-steps/0.5-mobile.md`).
 - `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-09) had
   the owner link opened from the console with its code never shown. On
   2026-11-15 the owner, with no Telegram app, opened it on Telegram Web,
