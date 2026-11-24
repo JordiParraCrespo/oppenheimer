@@ -108,11 +108,12 @@ func (s *Service) StopIdle(ctx context.Context, after time.Duration) []domain.Se
 		if ctx.Err() != nil {
 			break
 		}
-		// A fresh look at the agent first: the state the candidates were
-		// picked on is the poll loop's, up to an interval old, and an agent
-		// handed work since (by a person on the host, by its parent) must
-		// not be stopped on it. A look that fails stops nothing.
-		if _, err := s.Refresh(ctx, id); err != nil {
+		// A fresh look first, at the session and at every session that
+		// would stop with it: the state the candidates were picked on is
+		// the poll loop's, up to an interval old, and an agent handed work
+		// since (by a person on the host, by its parent) must not be stopped
+		// on it. A look that fails stops nothing.
+		if !s.lookAgain(ctx, id) {
 			continue
 		}
 		// Read again for each: a person may have attached while the last
@@ -127,6 +128,39 @@ func (s *Service) StopIdle(ctx context.Context, after time.Duration) []domain.Se
 		}
 	}
 	return stopped
+}
+
+// lookAgain refreshes a session and every session that would stop with it,
+// and says whether every look worked.
+func (s *Service) lookAgain(ctx context.Context, id string) bool {
+	for _, each := range append([]string{id}, s.line(id)...) {
+		if _, err := s.Refresh(ctx, each); err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+// line is the live sessions that would stop with id: its children that do
+// not outlive it, theirs, and on down (Children.endChildren).
+func (s *Service) line(id string) []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	seen := map[string]bool{id: true}
+	var line []string
+	var walk func(parent string)
+	walk = func(parent string) {
+		for _, child := range s.sessions {
+			if child.Parent != parent || !child.State.Live() || child.OutliveParent || seen[child.ID] {
+				continue
+			}
+			seen[child.ID] = true
+			line = append(line, child.ID)
+			walk(child.ID)
+		}
+	}
+	walk(id)
+	return line
 }
 
 // looking is who is looking at each session right now, from every source

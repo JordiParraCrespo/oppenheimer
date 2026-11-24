@@ -249,3 +249,17 @@ func TestTheIdleStopLeavesASessionWithASecondAgent(t *testing.T) {
 		t.Fatalf("stopped a session whose second agent may be working: %v", stopped)
 	}
 }
+
+// The fresh look before a stop covers the whole line: a child that took new
+// work since the last poll keeps its idle parent, which would take it along.
+func TestTheIdleStopLooksAgainAtTheChildrenItWouldStop(t *testing.T) {
+	start := time.Date(2026, 11, 24, 9, 0, 0, 0, time.UTC)
+	child := idleSession("child", domain.StateDone)
+	child.Parent = "parent"
+	h := newIdleHost(t, start, idleSession("parent", domain.StateIdle), child)
+	h.reports.say("child", "state=working")
+	*h.clock = start.Add(10 * idleAfter)
+	if stopped := h.svc.StopIdle(context.Background(), idleAfter); len(stopped) != 0 {
+		t.Fatalf("stopped a parent whose child took new work since the last poll: %v", stopped)
+	}
+}
