@@ -30,6 +30,7 @@ import { BotGoalReviewResolver } from './application/bot-goal-review.resolver';
 import { BotGoalToolsFactory } from './application/bot-goal-tools.factory';
 import { BotGuideToolsFactory } from './application/bot-guide-tools.factory';
 import { BotHostCommandToolsFactory } from './application/bot-host-command-tools.factory';
+import { BotHostSettingsToolsFactory } from './application/bot-host-settings-tools.factory';
 import { BotHostTargetResolver } from './application/bot-host-target.resolver';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
 import { BotIssueToolsFactory } from './application/bot-issue-tools.factory';
@@ -498,6 +499,7 @@ const queryHandlers: Provider[] = [
     BotToolboxFactory,
     BotHostToolsFactory,
     BotHostCommandToolsFactory,
+    BotHostSettingsToolsFactory,
     BotHostTargetResolver,
     BotTerminalToolsFactory,
     BotComputerToolsFactory,

@@ -1433,6 +1433,105 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "host.settings.set"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "browser": {
+          "type": "string",
+          "enum": [
+            "on",
+            "off"
+          ]
+        },
+        "computer": {
+          "type": "string",
+          "enum": [
+            "on",
+            "off"
+          ]
+        },
+        "execMode": {
+          "type": "string",
+          "enum": [
+            "off",
+            "allowlist",
+            "full"
+          ]
+        },
+        "execAllow": {
+          "minItems": 1,
+          "maxItems": 32,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "pattern": "^\\S+$"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "commandId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "host.settings"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "browser": {
+          "type": "string",
+          "enum": [
+            "on",
+            "off"
+          ]
+        },
+        "computer": {
+          "type": "string",
+          "enum": [
+            "on",
+            "off"
+          ]
+        },
+        "execMode": {
+          "type": "string",
+          "enum": [
+            "off",
+            "allowlist",
+            "full"
+          ]
+        },
+        "execAllow": {
+          "maxItems": 1024,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1024
+          }
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "browser",
+        "computer",
+        "execMode",
+        "execAllow"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "terminal.drive"
         },
         "commandId": {
@@ -3700,7 +3799,8 @@
       "computer.use",
       "browser.use",
       "session.windows.list",
-      "session.window.agent"
+      "session.window.agent",
+      "host.settings"
     ],
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,

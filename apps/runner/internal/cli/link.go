@@ -339,7 +339,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodexThreads, link.CapabilitySessionCloudReply,
 		link.CapabilitySessionWatch, link.CapabilitySessionTeleport,
 		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec, link.CapabilityTerminalDrive,
-		link.CapabilityComputerUse, link.CapabilityBrowserUse,
+		link.CapabilityComputerUse, link.CapabilityBrowserUse, link.CapabilityHostSettings,
 		link.CapabilitySessionWindowsList, link.CapabilitySessionWindowAgent,
 	}
 	if h.direct != nil {
@@ -737,6 +737,11 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			// One lane for the host: there is one mouse, so actions happen in
 			// the order they were sent.
 			h.lanes.run(laneComputer, func() { h.computerAct(h.life, m) })
+		}
+	case link.TypeHostSettingsSet:
+		var m link.HostSettingsSet
+		if msg.Decode(&m) == nil {
+			h.lanes.run(laneSettings, func() { h.setSettings(m) })
 		}
 	case link.TypeBrowserAct:
 		var m link.BrowserAct

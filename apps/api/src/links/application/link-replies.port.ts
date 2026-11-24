@@ -6,6 +6,7 @@ import type {
   FsFoundMessage,
   FsListingMessage,
   HostExecResultMessage,
+  HostSettingsMessage,
   PortListingMessage,
   SessionWindowsMessage,
   SharedPreviewMessage,
@@ -21,7 +22,7 @@ import type {
  * frame itself, or its refusal: `fs.listing`, `fs.found`, `port.listing`,
  * `session.windows`,
  * `cloud.replied`, `whatsapp.sent`, `whatsapp.media`, `telegram.sent`, `shared.preview`,
- * `transcript.page`, `host.exec.result` or `terminal.screen`.
+ * `transcript.page`, `host.exec.result`, `host.settings` or `terminal.screen`.
  */
 export type LinkReply =
   | FsListingMessage
@@ -35,6 +36,7 @@ export type LinkReply =
   | SharedPreviewMessage
   | TranscriptPageMessage
   | HostExecResultMessage
+  | HostSettingsMessage
   | ComputerScreenMessage
   | BrowserPageMessage
   | TerminalScreenMessage

@@ -415,6 +415,18 @@ runner does with it and point back.
   cannot be read. One lane per browser, a retried command id answered with
   the page it left. Sent only to a runner whose `hello` names `browser.use`,
   and waited on for the action's own wait and 75 seconds more.
+- `host.settings.set` and `host.settings` — a bot changing what the host lets
+  bots do when the person asked it to (2026-11-24, `25-bots.md` §4.2, "The
+  host's switches"): `{ commandId, browser?, computer?, execMode?,
+  execAllow? }`, `browser` and `computer` `on` or `off`, `execMode` `off`,
+  `allowlist` or `full`, `execAllow` programs added to the allowlist. Only a
+  field given changes. The runner writes the files `runner browser`,
+  `runner computer` and `runner exec` write and answers `{ browser,
+  computer, execMode, execAllow }`, what the host allows after it; or
+  `command.failed` with `EXEC_008` (an entry that is not a program name or an
+  absolute path, which changes nothing) or the `*_005` of a file it cannot
+  write. One lane for the host. Sent only to a runner whose `hello` names
+  `host.settings`, and waited on for 15 seconds.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather

@@ -343,6 +343,21 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     cwd: '/home/jordi/oppenheimer/bots/juno-3f2a',
     durationMs: 842,
   },
+  'host.settings.set': {
+    type: 'host.settings.set',
+    commandId,
+    browser: 'on',
+    execMode: 'allowlist',
+    execAllow: ['python3', '/home/jordi/scripts/*'],
+  },
+  'host.settings': {
+    type: 'host.settings',
+    commandId,
+    browser: 'on',
+    computer: 'off',
+    execMode: 'allowlist',
+    execAllow: ['python3', '/home/jordi/scripts/*'],
+  },
   'terminal.drive': {
     type: 'terminal.drive',
     commandId,

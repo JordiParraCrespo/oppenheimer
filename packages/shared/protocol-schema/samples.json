@@ -578,6 +578,27 @@
     "cwd": "/home/jordi/oppenheimer/bots/juno-3f2a",
     "durationMs": 842
   },
+  "host.settings.set": {
+    "type": "host.settings.set",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "browser": "on",
+    "execMode": "allowlist",
+    "execAllow": [
+      "python3",
+      "/home/jordi/scripts/*"
+    ]
+  },
+  "host.settings": {
+    "type": "host.settings",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "browser": "on",
+    "computer": "off",
+    "execMode": "allowlist",
+    "execAllow": [
+      "python3",
+      "/home/jordi/scripts/*"
+    ]
+  },
   "terminal.drive": {
     "type": "terminal.drive",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",

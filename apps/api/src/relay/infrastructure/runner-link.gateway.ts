@@ -435,6 +435,7 @@ export class RunnerLinkGateway {
       case 'shared.preview':
       case 'transcript.page':
       case 'host.exec.result':
+      case 'host.settings':
       case 'terminal.screen':
       case 'computer.screen':
       case 'browser.page':
