@@ -32,9 +32,10 @@ export function SessionScreen({
   /**
    * Present: the screen draws the session's bar. `back` leads it with the
    * task this session is on; the route composes it, since the task is the
-   * tasks feature's.
+   * tasks feature's. `open` is the open tabs over Sessions, the bar's title
+   * in every state, the route's too since a bot's tab is the bots feature's.
    */
-  bar?: { back?: ReactNode };
+  bar?: { back?: ReactNode; open?: ReactNode };
   /**
    * A bot's chat in the side pane beside the session, from the route: the
    * chat is the bots feature's. Without it the pane offers no bots.
@@ -64,8 +65,9 @@ export function SessionScreen({
       <QueryState.Pending>
         {bar ? (
           <PageBar
-            title={<Skeleton className="h-4 w-40" />}
+            title={bar.open ?? <Skeleton className="h-4 w-40" />}
             // The session bar's ground and edge, so nothing changes colour when it answers.
+            tone={bar.open ? 'chrome' : 'page'}
             className="border-b border-border-subtle bg-term-bg"
           />
         ) : null}
@@ -74,7 +76,7 @@ export function SessionScreen({
       <QueryState.Error>
         {(error, retry) => (
           <>
-            {bar ? <PageBar title={null} /> : null}
+            {bar ? <PageBar title={bar.open ?? null} tone={bar.open ? 'chrome' : 'page'} /> : null}
             {isSessionNotFound(error) ? (
               <RouteNotFound>
                 <Button variant="secondary" render={<Link to="/sessions/new" />}>

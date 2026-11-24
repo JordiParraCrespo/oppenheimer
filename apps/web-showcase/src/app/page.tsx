@@ -73,6 +73,7 @@ import { NumberStepperDemo, PillGroupDemo, SwitchDemo } from '../components/cont
 import { PullRequestAnalyticsDemo } from '../components/pr-analytics-demos';
 import { PullRequestDescriptionDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
 import { DragPrimitivesDemo } from '../components/drag-demos';
+import { LauncherDemo } from '../components/launcher-demos';
 import { PlanDialogsDemo, SessionPaneHeaderDemo } from '../components/plan-dialog-demos';
 import { TaskBoardDemo, TaskPriorityIcons, TaskSelectionDemo, TaskStatusDots } from '../components/task-board-demos';
 import {
@@ -1273,6 +1274,20 @@ export default function Page() {
 />`}
       >
         <SessionPaneHeaderDemo />
+      </Spec>
+
+      <Spec
+        id="launcher"
+        title="Launcher"
+        meta="launcher.tsx"
+        desc="What an empty pane offers to open: a short column of 42px rows centred in it, each a glyph, a name and, quiet on the right, what is there before it opens. A row whose open is under way is busy: its name says so and shimmers, and it cannot be pressed twice. LauncherHeading names a group the pane offers only sometimes. The session's side pane opens on it."
+        code={`<Launcher>
+  <LauncherItem icon={<SquareTerminalIcon />} onClick={openTerminal}>Terminal</LauncherItem>
+  <LauncherHeading>Only when this console has them</LauncherHeading>
+  <LauncherItem icon={<MonitorIcon />} detail="mac-studio">Desktop</LauncherItem>
+</Launcher>`}
+      >
+        <LauncherDemo />
       </Spec>
 
       <GroupHead>Routines</GroupHead>

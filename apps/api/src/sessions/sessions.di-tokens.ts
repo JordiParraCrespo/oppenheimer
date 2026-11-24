@@ -25,6 +25,8 @@ export const CLOUD_SESSION_REPLY = Symbol('CLOUD_SESSION_REPLY');
 export const HOST_EXEC = Symbol('HOST_EXEC');
 export const HOST_COMPUTER = Symbol('HOST_COMPUTER');
 export const HOST_BROWSER = Symbol('HOST_BROWSER');
+/** A bot changing what a host lets bots do (`host.settings.set`); bound by `links/`. */
+export const HOST_SETTINGS = Symbol('HOST_SETTINGS');
 /** A bot typing into a blank terminal and reading it back (`terminal.drive`); bound by `links/`. */
 export const SESSION_TERMINAL = Symbol('SESSION_TERMINAL');
 export const RECORD_SESSION_EVENTS = Symbol('RECORD_SESSION_EVENTS');

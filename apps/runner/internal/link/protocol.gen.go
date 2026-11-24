@@ -53,6 +53,10 @@ const CreditWindow = 262144
 // runner reads no bigger one and never sends one.
 const MaxFrameBytes = 524288
 
+// HelloCapabilitiesMax is the most capabilities one `hello` may name: the
+// control plane refuses a hello naming more, and the host never links.
+const HelloCapabilitiesMax = 256
+
 // MaxEventPayloadBytes caps an event's JSON payload string, because an event
 // never carries pane text.
 const MaxEventPayloadBytes = 8192
@@ -120,6 +124,7 @@ const (
 	CapabilityBrowserUse               = "browser.use"
 	CapabilitySessionWindowsList       = "session.windows.list"
 	CapabilitySessionWindowAgent       = "session.window.agent"
+	CapabilityHostSettings             = "host.settings"
 )
 
 // The `type` of every message on the link.
@@ -160,6 +165,8 @@ const (
 	TypeFsFound                 = "fs.found"
 	TypeHostExec                = "host.exec"
 	TypeHostExecResult          = "host.exec.result"
+	TypeHostSettingsSet         = "host.settings.set"
+	TypeHostSettings            = "host.settings"
 	TypeTerminalDrive           = "terminal.drive"
 	TypeTerminalScreen          = "terminal.screen"
 	TypeComputerAct             = "computer.act"
@@ -252,6 +259,8 @@ var MessageTypes = []string{
 	TypeFsFound,
 	TypeHostExec,
 	TypeHostExecResult,
+	TypeHostSettingsSet,
+	TypeHostSettings,
 	TypeTerminalDrive,
 	TypeTerminalScreen,
 	TypeComputerAct,
@@ -382,6 +391,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(HostExec), true
 	case TypeHostExecResult:
 		return new(HostExecResult), true
+	case TypeHostSettingsSet:
+		return new(HostSettingsSet), true
+	case TypeHostSettings:
+		return new(HostSettings), true
 	case TypeTerminalDrive:
 		return new(TerminalDrive), true
 	case TypeTerminalScreen:
@@ -893,6 +906,26 @@ type HostExecResult struct {
 	StderrTruncated bool   `json:"stderrTruncated,omitempty"`
 	Cwd             string `json:"cwd"`
 	DurationMs      int64  `json:"durationMs"`
+}
+
+// HostSettingsSet is the `host.settings.set` message.
+type HostSettingsSet struct {
+	Type      string   `json:"type"`
+	CommandID string   `json:"commandId"`
+	Browser   string   `json:"browser,omitempty"`
+	Computer  string   `json:"computer,omitempty"`
+	ExecMode  string   `json:"execMode,omitempty"`
+	ExecAllow []string `json:"execAllow,omitempty"`
+}
+
+// HostSettings is the `host.settings` message.
+type HostSettings struct {
+	Type      string   `json:"type"`
+	CommandID string   `json:"commandId"`
+	Browser   string   `json:"browser"`
+	Computer  string   `json:"computer"`
+	ExecMode  string   `json:"execMode"`
+	ExecAllow []string `json:"execAllow"`
 }
 
 // TerminalDrive is the `terminal.drive` message.

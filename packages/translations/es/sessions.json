@@ -578,7 +578,7 @@
     "composer": {
       "placeholder": "Escribe a {{agent}}",
       "placeholderAnyAgent": "Escribe al agente",
-      "suggestion": "{{suggestion}}  ·  Tab para usarlo",
+      "suggestion": "Tab para usarlo  ·  {{suggestion}}",
       "send": "Enviar",
       "stop": "Detener",
       "attach": "Adjuntar archivos",
@@ -770,16 +770,10 @@
     "closeTab": "Cerrar {{name}}",
     "launcher": {
       "title": "Abrir junto a esta sesión",
-      "description": "Mantén esta sesión a la vista mientras trabajas en otra cosa.",
       "terminal": "Terminal",
-      "terminalDetail": "Una shell en el worktree de esta sesión",
-      "session": "Sesión",
-      "sessionDetail": "Otra sesión, en cualquier host",
-      "bot": "Bot",
-      "botDetail": "Elige uno de tus bots y chatea",
-      "browserDetail": "El servidor de desarrollo de la sesión",
-      "simulatorDetail": "El dispositivo que maneja el agente de la sesión",
-      "desktopDetail": "La pantalla del propio host",
+      "session": "Otra sesión",
+      "sessionDetail": "Cualquier host",
+      "bot": "Un bot",
       "back": "Atrás",
       "sessions": "Elige una sesión",
       "searchSessions": "Buscar sesiones",
@@ -788,11 +782,12 @@
       "searchBots": "Buscar bots",
       "noBots": "Aún no hay bots. Crea uno en Empleados.",
       "noMatch": "Nada coincide con «{{query}}».",
-      "agent": "Agente",
-      "agentDetail": "Otro agente en este worktree",
+      "agent": "Otro agente",
+      "agentDetail": "Mismo worktree",
       "agents": "Elige un agente",
       "agentShares": "Trabaja en el worktree de esta sesión, sobre los mismos archivos e índice de git que el agente que ya está allí.",
-      "noAgents": "Ningún agente puede iniciarse junto a esta sesión. Activa uno en Ajustes → Agentes."
+      "noAgents": "Ningún agente puede iniciarse junto a esta sesión. Activa uno en Ajustes → Agentes.",
+      "sideChats": "Chats laterales"
     },
     "terminal": {
       "name": "Terminal {{index}}",
@@ -928,5 +923,10 @@
       "agentBody": "Pega esto en Claude Code, u otro agente de código, en una copia del repositorio. Añade el hook y su configuración, y luego te dice qué configurar en claude.ai. Tu clave no va en el prompt: la pegas tú en claude.ai.",
       "agentLabel": "Prompt para tu agente"
     }
+  },
+  "tabs": {
+    "label": "Sesiones abiertas",
+    "new": "Nueva sesión",
+    "close": "Cerrar {{name}}"
   }
 }
