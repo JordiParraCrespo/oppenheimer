@@ -235,6 +235,33 @@ export const whatsappSendSchema = z.object({
 
 export type WhatsappSendMessage = z.infer<typeof whatsappSendSchema>;
 
+/**
+ * The most UTF-16 code units a WhatsApp reaction holds: one emoji, the
+ * longest family or flag sequence with room; empty takes one back.
+ */
+export const WHATSAPP_REACTION_MAX = 32;
+
+/**
+ * React to one message in a chat, as the paired number: the emoji WhatsApp
+ * shows under it, replacing the number's own reaction there; an empty
+ * `emoji` takes it back. It spends the host's send budget as a text does.
+ * Answered by `whatsapp.sent` with the same `commandId` (the reaction's own
+ * id), or `command.failed`: `WA_002` no device is connected, `WA_003`
+ * WhatsApp refused it, `WA_004` the host's own send budget is spent. Sent
+ * only to a runner that names `whatsapp.react`.
+ */
+export const whatsappReactSchema = z.object({
+  type: z.literal('whatsapp.react'),
+  commandId: commandIdSchema,
+  chatId: jid(),
+  /** The message reacted to: its WhatsApp id and who wrote it. */
+  messageId: z.string().min(1).max(128),
+  senderId: jid(),
+  emoji: z.string().max(WHATSAPP_REACTION_MAX),
+});
+
+export type WhatsappReactMessage = z.infer<typeof whatsappReactSchema>;
+
 /** WhatsApp took the message: its id and when it was sent. */
 export const whatsappSentSchema = z.object({
   type: z.literal('whatsapp.sent'),

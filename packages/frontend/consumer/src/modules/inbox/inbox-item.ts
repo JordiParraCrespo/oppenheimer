@@ -1,4 +1,5 @@
 import { inboxReportItemKey } from '@oppenheimer/shared/schemas/inbox';
+import { noticeOccurrenceKey, sessionOccurrenceKey } from '@oppenheimer/shared/sessions';
 import type { AutomationRunEntity } from '../automations/automation.entity';
 import type {
   WorkspaceBotApprovalEntity,
@@ -102,11 +103,7 @@ export interface InboxView {
 export function sessionItemKey(
   session: Pick<SessionEntity, 'id' | 'lifecycle' | 'observedSince' | 'stateSeq' | 'decision'>,
 ): string {
-  if (session.decision) return `session:${session.id}:${session.decision.id}`;
-  if (session.lifecycle === 'open' && session.observedSince) {
-    return `session:${session.id}:${session.observedSince.toISOString()}`;
-  }
-  return `session:${session.id}:s${session.stateSeq}`;
+  return sessionOccurrenceKey(session);
 }
 
 /**
@@ -126,7 +123,7 @@ export function inboxSubject(key: string): string {
 
 /** A notice by its session and the host's id for it: the next notice asks again. */
 function noticeItemKey(session: { id: string }, notice: SessionNotice): string {
-  return `notice:${session.id}:${notice.id}`;
+  return noticeOccurrenceKey(session.id, notice.id);
 }
 
 /** A bot's notice by the bot and the notice's own id: the next notice asks again. */

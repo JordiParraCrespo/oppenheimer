@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"sort"
 	"strings"
@@ -20,9 +21,10 @@ import (
 )
 
 var (
-	_ app.Terminals = (*Terminals)(nil)
-	_ app.Worktrees = (*Worktrees)(nil)
-	_ app.Places    = (*Places)(nil)
+	_ app.Terminals       = (*Terminals)(nil)
+	_ app.TerminalClients = (*Terminals)(nil)
+	_ app.Worktrees       = (*Worktrees)(nil)
+	_ app.Places          = (*Places)(nil)
 )
 
 // Terminals is an in-memory tmux server.
@@ -52,6 +54,16 @@ type Terminals struct {
 	// FailLaunch makes the next launch fail, standing in for an agent whose
 	// window tmux could not respawn.
 	FailLaunch bool
+	// HostClients is the clients attached to each tmux session from the host
+	// itself, which Clients answers.
+	HostClients map[string]int
+}
+
+// Clients implements app.TerminalClients.
+func (t *Terminals) Clients(context.Context) (map[string]int, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return maps.Clone(t.HostClients), nil
 }
 
 // Files is app.Files in memory.

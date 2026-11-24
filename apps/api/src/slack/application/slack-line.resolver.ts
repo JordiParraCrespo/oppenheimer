@@ -13,7 +13,8 @@ export const SLACK_NAMES_DEADLINE_MS = 1_500;
 /**
  * What the app sends as itself: a fixed line (the owner linked, a turn
  * stopping), never a model's words, a bot's answer cut into Slack's
- * messages, the reaction that says it is working, and the names it reads
+ * messages, the reaction that says it is working, the reactions a bot
+ * chooses, and the names it reads
  * mentions by. All as the bot's app, on its sealed token, counted against
  * the app's bucket.
  */
@@ -109,6 +110,16 @@ export class SlackLineResolver {
           error: error instanceof Error ? error.message : String(error),
         }),
       );
+  }
+
+  /** A bot's own reaction `name` on the owner's message, or off it; throws as `post` does. */
+  react(
+    account: SlackAccountEntity,
+    message: { channel: string; ts: string },
+    name: string,
+    on: boolean,
+  ): Promise<void> {
+    return this.slack.react(this.access(account), { ...message, name }, on);
   }
 
   /** A file the owner shared, fetched as the bot's app; throws as the download does. */

@@ -1,5 +1,6 @@
 export type {
   AttachDesktopConnection,
+  DesktopPointer,
   DesktopRefusal,
   DesktopState,
   DesktopStatus,

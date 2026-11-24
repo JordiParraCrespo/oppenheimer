@@ -37,6 +37,8 @@ export const botsKeys = {
   // one routine refreshes both by name.
   allRoutines: () => [...botsKeys.all, 'routine', 'list'] as const,
   conversation: (id: string) => [...botsKeys.detail(id), 'conversation'] as const,
+  // The pages older than the conversation's window the reader scrolled up into: only loading one writes it.
+  olderMessages: (id: string) => [...botsKeys.detail(id), 'older-messages'] as const,
   // Sends the API has not answered, laid over the conversation: never read from the API.
   sendings: (id: string) => [...botsKeys.detail(id), 'sendings'] as const,
   image: (id: string, attachmentId: string) =>
