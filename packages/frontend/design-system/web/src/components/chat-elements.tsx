@@ -67,7 +67,7 @@ function ChatSuggestion({ className, ...props }: Omit<React.ComponentProps<'butt
       type="button"
       data-slot="chat-suggestion"
       className={cn(
-        'inline-flex h-8.5 items-center gap-1.5 rounded-pill border border-border px-3.5 text-[13.5px] text-fg outline-none transition-colors duration-instant ease-standard hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:text-fg-muted',
+        'inline-flex h-(--control-h-md) items-center gap-1.5 rounded-pill border border-border px-3.5 text-[13.5px] text-fg outline-none transition-colors duration-instant ease-standard hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:text-fg-muted',
         className,
       )}
       {...props}

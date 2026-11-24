@@ -74,6 +74,13 @@ covered, the debt left, and the open calls.
   around it.
 - **Change a control's look only as much as the rung needs.** Padding and
   type stay unless the new height makes them wrong.
+- **A height that changes how something looks is the user's call, asked
+  before it is built.** Swapping a number already on the ramp for its token
+  moves nothing and needs no ask. Moving a control between rungs does: show
+  the options (before and after, side by side, from a dev server confirmed to
+  serve each version), then build the one picked. The composer went through
+  two rungs the user turned down before they kept it as it was; a picture
+  first would have cost one question.
 
 ## Measuring
 
