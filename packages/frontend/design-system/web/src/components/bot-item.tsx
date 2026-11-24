@@ -89,7 +89,7 @@ function BotItem({
       render={render}
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
-        'group/bot flex h-8 w-full items-center gap-1.5 rounded-nav px-[7px] text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface data-active:hover:bg-active-surface',
+        'group/bot flex h-8 w-full items-center gap-1.5 rounded-nav px-1.75 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface data-active:hover:bg-active-surface',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
@@ -159,7 +159,7 @@ function BotItemSkeleton({ index = 0, className, ...props }: React.ComponentProp
     <div
       aria-hidden
       data-slot="bot-item-skeleton"
-      className={cn('flex h-8 items-center gap-1.5 px-[7px]', className)}
+      className={cn('flex h-8 items-center gap-1.5 px-1.75', className)}
       {...props}
     >
       <Skeleton shape="sm" className="size-5 shrink-0 rounded-xs" />
