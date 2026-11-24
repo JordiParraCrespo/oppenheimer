@@ -5,6 +5,13 @@ import {
   useRestartSession,
 } from '@oppenheimer/frontend-consumer/react';
 import { useEffect, useRef, useState } from 'react';
+import {
+  asksOnOpen,
+  type RestartFacts,
+  type RestartRequest,
+  type RestartStatus,
+  restartStatus,
+} from '../lib/restart-status';
 
 type RestartOnOpenSession = Pick<
   SessionEntity,
@@ -19,35 +26,25 @@ type RestartOnOpenSession = Pick<
   | 'stoppedAt'
 >;
 
-/** Where a stopped session's way back stands, for the pane that draws it. */
+/** A stopped session's way back, for the pane that draws it. */
 export type SessionComeback = {
-  /** Restart now: the button, and what opening the session did on its own. */
+  status: RestartStatus;
+  /** Restart now: the button, and what opening the session does on its own. */
   restart: () => void;
-  /** Asked for, and the host has not brought the terminal back yet. */
-  restarting: boolean;
-  /** The restart failed, or the host never brought the terminal back. */
-  failure: unknown;
-  /** The host took no answer within the watch: the failure has no error of its own. */
-  timedOut: boolean;
 };
 
 /**
  * A stopped session comes back when it is opened. The pane that draws a
- * stopped session calls this, so only opening a session does it: hovering its
- * row, prefetching its route or listing it mounts no pane, and so wakes
- * nothing. Only a session that can come back qualifies: stopped (not deleted,
- * starting or failed), on a host of ours that is online right now. A shared
- * viewer's pane is another component and never calls this.
- *
- * Restart records a request; the row stays stopped until the host says the
- * terminal is back, so `restarting` holds until then, and a host that does
- * not answer within the restart watch is a failure, which leaves the stopped
- * pane with Restart and says why.
+ * stopped session calls this with `auto` when it is what the reader
+ * navigated to, so only opening a session does it: hovering its row,
+ * prefetching its route or listing it mounts no pane, and so wakes nothing.
+ * What it asks and what the pane says are `restartStatus`'s; this gathers the
+ * facts (the session, its host, the request, the watch) and asks.
  */
 export function useRestartOnOpen(session: RestartOnOpenSession, auto: boolean): SessionComeback {
   const { mutate, isPending, isSuccess, error } = useRestartSession();
   const { id } = session;
-  const stopped =
+  const qualifies =
     !session.isLive &&
     !session.isResolved &&
     !session.isProvisioning &&
@@ -55,58 +52,55 @@ export function useRestartOnOpen(session: RestartOnOpenSession, auto: boolean): 
     !session.cloud &&
     !session.isCloud &&
     session.hostId !== null;
-  // What was opened: a session stopped when its pane mounted. One that
-  // stops while the pane is on screen (its agent exited, a stop from the
-  // host) stays stopped, as it was left.
-  const [stoppedWhenOpened] = useState(stopped);
+  const [qualifiedWhenOpened] = useState(qualifies);
   const { data: online, isError: hostsUnread } = useHostPresence({
-    enabled: auto && stoppedWhenOpened && stopped,
+    enabled: auto && qualifiedWhenOpened && qualifies,
     watching: false,
     select: (hosts) => hosts.find((host) => host.id === session.hostId)?.online ?? false,
   });
-  const opened = useRef(false);
-  const [timedOut, setTimedOut] = useState(false);
-  // The stop the last restart answered, by the host's own stamp: a later one
-  // (Stop pressed once the terminal was back) is a stop to show, not a restart.
   const [answered, setAnswered] = useState<number | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
   const stoppedAt = session.stoppedAt?.getTime() ?? null;
-  const sameStop = stoppedAt !== null && stoppedAt === answered;
+  const request: RestartRequest = isPending
+    ? { state: 'pending' }
+    : error
+      ? { state: 'failed', error }
+      : isSuccess
+        ? { state: 'sent', answered }
+        : { state: 'none' };
+  const facts: RestartFacts = {
+    auto,
+    qualifies,
+    qualifiedWhenOpened,
+    hostOnline: hostsUnread ? false : online,
+    stoppedAt,
+    request,
+    timedOut,
+  };
+  const status = restartStatus(facts);
   const ask = () => {
     setTimedOut(false);
     setAnswered(stoppedAt);
     mutate(id);
   };
-  const waiting = isSuccess && !session.isLive && sameStop && !timedOut;
-  // About to ask: an open of a session that qualifies reads as restarting
-  // from its first frame, not as a Restart button that presses itself.
-  const due =
-    auto &&
-    stoppedWhenOpened &&
-    stopped &&
-    online !== false &&
-    !hostsUnread &&
-    !isSuccess &&
-    !error;
 
   // The host is the outside system: an open asks it once to bring the
   // terminal back, the moment it is known to be online.
+  const asked = useRef(false);
+  const due = asksOnOpen(facts);
   useEffect(() => {
-    if (!auto || !stoppedWhenOpened || !stopped || online !== true || opened.current) return;
-    opened.current = true;
+    if (!due || asked.current) return;
+    asked.current = true;
     ask();
   });
 
   // A timer on the host's answer: one that never comes is a failure.
+  const waiting = request.state === 'sent' && status.kind === 'restarting';
   useEffect(() => {
     if (!waiting) return;
     const timer = setTimeout(() => setTimedOut(true), RESTART_WATCH_MS);
     return () => clearTimeout(timer);
   }, [waiting]);
 
-  return {
-    restart: ask,
-    restarting: isPending || waiting || due,
-    failure: error,
-    timedOut,
-  };
+  return { status, restart: ask };
 }

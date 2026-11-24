@@ -90,7 +90,9 @@ export function SessionScreen({
       <QueryState.Data>
         <SessionPane
           sessionId={sessionId}
-          restartOnOpen
+          // Opening a session restarts it if it stopped; a run's own stopped
+          // pane (`closed`) keeps its Open in terminal instead.
+          restartOnOpen={!closed}
           closed={closed}
           bar={bar}
           side={bar ? { session: (id) => <SideSession sessionId={id} />, bot: sideBot } : undefined}

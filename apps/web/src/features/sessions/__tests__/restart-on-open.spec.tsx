@@ -45,8 +45,20 @@ type Session = Record<string, unknown>;
 
 let session: Session;
 let hostOnline: boolean | undefined;
-let restartResult: { isPending: boolean; isSuccess: boolean; error: unknown };
-const mutate = vi.fn();
+type RestartState = { isPending: boolean; isSuccess: boolean; error: unknown };
+/** What the API does with the next restart: holds it, takes it, or refuses it. */
+let restartAnswer: 'held' | 'taken' | Error;
+let restartState: RestartState;
+const restartListeners = new Set<() => void>();
+const mutate = vi.fn(() => {
+  restartState =
+    restartAnswer === 'held'
+      ? { isPending: true, isSuccess: false, error: null }
+      : restartAnswer === 'taken'
+        ? { isPending: false, isSuccess: true, error: null }
+        : { isPending: false, isSuccess: false, error: restartAnswer };
+  for (const listener of restartListeners) listener();
+});
 const sessionListeners = new Set<() => void>();
 
 /** The session as the API now answers it, to every pane that reads it. */
@@ -73,7 +85,16 @@ vi.mock('@oppenheimer/frontend-consumer/react', async () => {
     }),
     useSessionOpening: () => false,
     useAcknowledgeSessionReport: () => ({ mutate: () => {} }),
-    useRestartSession: () => ({ mutate, ...restartResult }),
+    useRestartSession: () => ({
+      mutate,
+      ...useSyncExternalStore(
+        (listener) => {
+          restartListeners.add(listener);
+          return () => restartListeners.delete(listener);
+        },
+        () => restartState,
+      ),
+    }),
     useHostPresence: ({ enabled }: { enabled: boolean }) => ({
       data: enabled ? hostOnline : undefined,
       isError: false,
@@ -142,7 +163,8 @@ function mountConsole(path: string, restartOnOpen = true) {
 beforeEach(() => {
   session = stoppedSession();
   hostOnline = true;
-  restartResult = { isPending: false, isSuccess: false, error: null };
+  restartAnswer = 'held';
+  restartState = { isPending: false, isSuccess: false, error: null };
   mutate.mockClear();
 });
 
@@ -189,7 +211,7 @@ describe('a stopped session opened by its owner', () => {
   });
 
   it('falls back to the stopped pane, with Restart and the reason, when the restart fails', async () => {
-    restartResult = { isPending: false, isSuccess: false, error: new Error('host refused') };
+    restartAnswer = new Error('host refused');
     mountConsole('/sessions/s-1');
     expect(await screen.findByText('host refused')).toBeTruthy();
     expect(screen.getByText('sessions.closed.restart')).toBeTruthy();
@@ -197,7 +219,7 @@ describe('a stopped session opened by its owner', () => {
 
   it('falls back to the stopped pane when the host never brings the terminal back', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
-    restartResult = { isPending: false, isSuccess: true, error: null };
+    restartAnswer = 'taken';
     mountConsole('/sessions/s-1');
     expect(await screen.findByText('sessions.closed.restarting')).toBeTruthy();
     await act(async () => {
@@ -219,7 +241,7 @@ describe('a session that stops while its pane is open', () => {
   });
 
   it('reads stopped, not Restarting, when stopped again after it came back', async () => {
-    restartResult = { isPending: false, isSuccess: true, error: null };
+    restartAnswer = 'taken';
     mountConsole('/sessions/s-1');
     await screen.findByText('sessions.closed.restarting');
     sessionBecomes(stoppedSession({ isLive: true, stoppedAt: null, state: 'idle' }));

@@ -59,9 +59,10 @@ export function SessionPane({
 }: {
   sessionId: string;
   /**
-   * The pane is what the reader navigated to, so a session stopped when it
-   * opens is restarted. Absent in the side pane, which a stored layout
-   * reopens beside another session without anyone asking for it.
+   * Restart a session that is stopped when the pane opens. The caller
+   * decides: the session's own page does, the side pane (which a stored
+   * layout reopens beside another session) and a run's own stopped pane do
+   * not.
    */
   restartOnOpen?: boolean;
   /**
@@ -145,9 +146,8 @@ export function SessionPane({
   const { offered: chatOffered } = useChatReading(reading);
   // The way back from a stopped session. Held here because this screen is the
   // one that branches on the lifecycle; the pane below it takes props only.
-  // Opening a stopped session is asking for it back, so it restarts on its
-  // own; a run's own stopped pane (`closed`) keeps its Open in terminal.
-  const comeback = useRestartOnOpen(session, restartOnOpen && !closed);
+  const comeback = useRestartOnOpen(session, restartOnOpen);
+  const restarting = comeback.status.kind === 'restarting';
   // A start watched here stays on its pane until the agent is running, not
   // just until the host made the terminal it will run in.
   const opening = useSessionOpening(session);
@@ -250,7 +250,7 @@ export function SessionPane({
             name: session.name,
             branch,
             restart: comeback.restart,
-            restarting: comeback.restarting,
+            restarting,
           })}
         </>
       );
@@ -258,11 +258,11 @@ export function SessionPane({
     return (
       <>
         {alert}
-        {comeback.timedOut ? (
+        {comeback.status.kind === 'timed-out' ? (
           <ErrorAlert message={t('sessions.closed.restartFailed')} />
-        ) : (
-          <ErrorAlert error={comeback.failure} fallback={t('sessions.closed.restartFailed')} />
-        )}
+        ) : comeback.status.kind === 'failed' ? (
+          <ErrorAlert error={comeback.status.error} fallback={t('sessions.closed.restartFailed')} />
+        ) : null}
         <SessionClosed
           name={session.name}
           copy={
@@ -274,9 +274,7 @@ export function SessionPane({
           }
           branch={branch}
           newSession={<Link to="/sessions/new" />}
-          {...(session.isResolved
-            ? {}
-            : { onRestart: comeback.restart, restarting: comeback.restarting })}
+          {...(session.isResolved ? {} : { onRestart: comeback.restart, restarting })}
         />
       </>
     );
