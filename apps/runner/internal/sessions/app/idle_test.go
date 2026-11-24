@@ -20,6 +20,7 @@ const idleAfter = 2 * time.Hour
 type idleHost struct {
 	svc       *app.Service
 	terminals *fake.Terminals
+	reports   *heldReports
 	clock     *time.Time
 }
 
@@ -28,10 +29,14 @@ func newIdleHost(t *testing.T, since time.Time, sessions ...domain.Session) idle
 	clock := since
 	terminals := fake.NewTerminals()
 	places := fake.NewPlaces()
+	// Each agent says what it is doing, as Claude Code does over OSC 7501:
+	// the word a fresh look reads before a stop.
+	reports := &heldReports{reports: map[string]domain.ProgramReport{}}
 	for i, s := range sessions {
 		sessions[i].Updated = since
 		places.Folders[s.Folder] = true
 		if s.State.Live() {
+			reports.say(s.ID, "state="+string(s.State))
 			if err := terminals.Create(context.Background(), s.TmuxName(), s.Folder, "claude", nil); err != nil {
 				t.Fatal(err)
 			}
@@ -40,12 +45,13 @@ func newIdleHost(t *testing.T, since time.Time, sessions ...domain.Session) idle
 	svc, err := app.New(app.Options{
 		Terminals: terminals, Worktrees: fake.NewWorktrees(), Classifier: manifest.New(manifest.Options{}),
 		Places: places, Layout: domain.Layout{Root: "/home/jordi/oppenheimer"},
-		Store: &savedMap{sessions: sessions}, Clients: terminals, Now: func() time.Time { return clock },
+		Store: &savedMap{sessions: sessions}, Clients: terminals, ProgramStatus: reports,
+		Now: func() time.Time { return clock },
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return idleHost{svc: svc, terminals: terminals, clock: &clock}
+	return idleHost{svc: svc, terminals: terminals, reports: reports, clock: &clock}
 }
 
 func idleSession(id string, state domain.State) domain.Session {
@@ -215,5 +221,31 @@ func TestTheIdleStopLeavesALineWithAWorkingGrandchild(t *testing.T) {
 	*h.clock = start.Add(10 * idleAfter)
 	if stopped := h.svc.StopIdle(context.Background(), idleAfter); len(stopped) != 0 {
 		t.Fatalf("stopped a line whose grandchild works: %v", stopped)
+	}
+}
+
+// The state the poll loop last saw can be up to an interval old: an agent
+// that took new work since is looked at again before it is stopped.
+func TestTheIdleStopLooksAgainBeforeItStops(t *testing.T) {
+	start := time.Date(2026, 11, 24, 9, 0, 0, 0, time.UTC)
+	h := newIdleHost(t, start, idleSession("busy", domain.StateIdle))
+	// What the agent says now, after the last poll: working on a new turn.
+	h.reports.say("busy", "state=working")
+	*h.clock = start.Add(10 * idleAfter)
+	if stopped := h.svc.StopIdle(context.Background(), idleAfter); len(stopped) != 0 {
+		t.Fatalf("stopped an agent that took new work since the last poll: %v", stopped)
+	}
+}
+
+// Only window 0's agent is read for the session's state, and a stop ends
+// every window: a session with a second agent in a tab is left running.
+func TestTheIdleStopLeavesASessionWithASecondAgent(t *testing.T) {
+	start := time.Date(2026, 11, 24, 9, 0, 0, 0, time.UTC)
+	second := idleSession("second", domain.StateIdle)
+	second.Windows = append(second.Windows, domain.Window{Index: 1, Name: "codex", Agent: true})
+	h := newIdleHost(t, start, second)
+	*h.clock = start.Add(10 * idleAfter)
+	if stopped := h.svc.StopIdle(context.Background(), idleAfter); len(stopped) != 0 {
+		t.Fatalf("stopped a session whose second agent may be working: %v", stopped)
 	}
 }

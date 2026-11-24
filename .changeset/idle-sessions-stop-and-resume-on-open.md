@@ -11,7 +11,9 @@ opening it.
   agent has been `done` or `idle` for 2 hours, with no terminal attached and
   nothing typed into it. It stops and never closes, on the same path as Stop:
   the agent's processes go, and the checkout, branch and conversation stay.
-  It never stops a working or blocked agent, an attached session (a console
+  It looks at the agent afresh before each stop. It never stops a working or
+  blocked agent, a session with a second agent in another window, an
+  attached session (a console
   attach, or a tmux client on the host), a kept session, a child whose parent
   is live, or a parent with a child that is not idle too. Each stop is
   logged ("stopped an idle session"). `RUNNER_IDLE_STOP` sets the window (a Go

@@ -16,6 +16,7 @@ import (
 // costs nothing to undo, which is why it is the only thing done here.
 //
 // Left alone: an agent that is working or waiting on the person, a session
+// with a second agent in another window (whose state is not read), a session
 // someone is attached to (from the console or on the host) or typed into
 // within the window, a kept session (`--keep`), a child whose parent is still
 // live, and a parent with a child that is not idle too, since stopping a
@@ -111,6 +112,13 @@ func (s *Service) StopIdle(ctx context.Context, after time.Duration) []domain.Se
 	for _, id := range s.idleCandidates(ctx, after) {
 		if ctx.Err() != nil {
 			break
+		}
+		// A fresh look at the agent first: the state the candidates were
+		// picked on is the poll loop's, up to an interval old, and an agent
+		// handed work since (by a person on the host, by its parent) must
+		// not be stopped on it. A look that fails stops nothing.
+		if _, err := s.Refresh(ctx, id); err != nil {
+			continue
 		}
 		// Read again for each: a person may have attached while the last
 		// stop waited on its agent.
@@ -213,6 +221,13 @@ func (s *Service) idleSelfLocked(session domain.Session, now time.Time, after ti
 	}
 	if session.Keep || s.busy[session.ID] > held {
 		return false
+	}
+	// Only window 0's agent is read for the session's state, and a stop ends
+	// every window: a second agent in another tab may be working.
+	for _, w := range session.Windows {
+		if w.Index != 0 && w.Agent {
+			return false
+		}
 	}
 	if _, creating := s.creating[session.ID]; creating {
 		return false

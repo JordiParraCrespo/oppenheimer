@@ -478,8 +478,11 @@ past the window (2 h by default; `RUNNER_IDLE_STOP` sets another duration,
 or `off`). Idle means the agent is `done` or `idle`, and nobody has been
 attached to it or typed into it for that long. The window runs from the
 later of the state's last change and the last look, so a session someone
-just read or typed into is not stopped. It never stops a session that is
-`working` or `blocked`, has a terminal attached now (from the console, or
+just read or typed into is not stopped. Before each stop it looks at the
+agent afresh (the poll loop's state can be 10 s old). It never stops a
+session that is `working` or `blocked`, runs a second agent in another
+window (only window 0's is read, and a stop ends every window), has a
+terminal attached now (from the console, or
 a tmux client on the host, counted with `list-clients`), is kept, or is a
 child whose parent is live. A parent stops only when every session that
 would stop with it (its children, theirs, and on down) is idle too, so an
