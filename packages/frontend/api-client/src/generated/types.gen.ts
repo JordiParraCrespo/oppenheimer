@@ -2906,7 +2906,7 @@ export type RoutineWebhookReceivedResponseDto = {
      * `queued`: the bot will run. `skipped`: an hourly cap turned it away, recorded on the run. `duplicate`: an earlier POST with this `Idempotency-Key` made the run.
      */
     status: 'queued' | 'skipped' | 'duplicate';
-    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | 'idle' | null;
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'own_session_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | 'idle' | null;
 };
 
 export type TaskSessionLinkResponseDto = {
@@ -4900,6 +4900,12 @@ export type BotToolStepResponseDto = {
      * The draft a mail call saved in Gmail (`saved`, `draftId`, `link`, `mail`: the message as planned); null for any other call.
      */
     mailDraft: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * The visual a `show_visual` call drew (`title`, `subtitle`, `blocks`: the typed blocks of `@oppenheimer/shared/schemas/visual`), checked; null for any other call.
+     */
+    visual: {
         [key: string]: unknown;
     } | null;
     /**

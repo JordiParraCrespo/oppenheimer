@@ -27,7 +27,9 @@ import {
   type BotSubagentRun,
   botMailDraftSchema,
   PULL_REQUEST_WAKE_EVENTS,
+  parseVisual,
   TASK_STATUSES,
+  type Visual,
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import type { BotSteerTaken } from './database/bot-turn.repository.port';
@@ -84,6 +86,7 @@ export class BotMessageMapper
       subagents: step.subagents,
       allowedBy: step.allowedBy,
       mailDraft: step.mailDraft,
+      visual: step.visual,
       rateLimit: rateLimitRecordOf(step),
     }));
     record.position = entity.position;
@@ -134,6 +137,7 @@ export class BotMessageMapper
       subagents: step.subagents,
       allowedBy: step.allowedBy,
       mailDraft: step.mailDraft,
+      visual: step.visual,
       rateLimit: rateLimitRecordOf(step),
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
@@ -190,6 +194,7 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     subagents: toSubagentRuns(raw.subagents),
     allowedBy: typeof raw.allowedBy === 'string' ? raw.allowedBy : null,
     mailDraft: toMailDraft(raw.mailDraft),
+    visual: toVisual(raw.visual),
     rateLimit: rateLimitOfRecord(raw.rateLimit),
   };
 }
@@ -199,6 +204,25 @@ function rateLimitRecordOf(step: BotToolStep): { system: string; resetAt: string
   return step.rateLimit
     ? { system: step.rateLimit.system, resetAt: step.rateLimit.resetAt.toISOString() }
     : null;
+}
+
+/**
+ * The visual a `show_visual` step holds, narrowed once: from the step's
+ * stored column, or from the JSON its call's data carried, checked against
+ * the one schema. Anything else reads as none.
+ */
+export function toVisual(raw: unknown): Visual | null {
+  let value = raw;
+  if (typeof raw === 'string') {
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (value === null || value === undefined) return null;
+  const parsed = parseVisual(value);
+  return parsed.ok ? parsed.visual : null;
 }
 
 /**

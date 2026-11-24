@@ -5,6 +5,7 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
+import type { Visual } from '@oppenheimer/shared';
 import {
   BOT_MESSAGE_IMAGES_MAX,
   BOT_MESSAGE_ROLES,
@@ -38,6 +39,8 @@ export interface BotToolStep {
   allowedBy: string | null;
   /** The draft a mail call saved, for the chat's card; null for any other call. */
   mailDraft: BotMailDraft | null;
+  /** The visual a `show_visual` call drew, checked, for the chat's card; null for any other call. */
+  visual: Visual | null;
   /**
    * The system that was limiting our requests when the call ended, and until
    * when (`bot-rate-limit.policy.ts`); null when no limit stopped it. A

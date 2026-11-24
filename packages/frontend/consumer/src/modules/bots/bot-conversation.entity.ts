@@ -13,6 +13,7 @@ import type {
   BotTurnStatus,
 } from '@oppenheimer/shared/schemas/bot';
 import type { BotMailDraft, MailPlan } from '@oppenheimer/shared/schemas/mail';
+import type { Visual } from '@oppenheimer/shared/schemas/visual';
 
 /** One tool call in an activity line: what the bot asked for and what came back. */
 export interface BotToolStep {
@@ -31,6 +32,8 @@ export interface BotToolStep {
   allowedBy: string | null;
   /** The draft a mail call saved in Gmail, for the chat's card; `null` for any other call. */
   mailDraft: BotMailDraft | null;
+  /** The visual a `show_visual` call drew, for the chat's card; `null` for any other call. */
+  visual: Visual | null;
   /** The system that was limiting our requests when the call ended, and until when; `null` when none. */
   rateLimit: BotToolRateLimit | null;
 }

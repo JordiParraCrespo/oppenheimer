@@ -1,0 +1,84 @@
+import { Injectable } from '@nestjs/common';
+import { parseVisual, VISUAL_BLOCKS_MAX, VISUAL_SERIES_MAX } from '@oppenheimer/shared';
+import { z } from 'zod/v4';
+import { promptText } from '../domain/bot-prompt-text.policy';
+import { VISUALS_PER_TURN } from '../domain/bot-visual.policy';
+import {
+  type BotToolArea,
+  type BotToolDefinition,
+  BotToolRefusal,
+  defineBotTool,
+} from './bot-tool.factory';
+
+/**
+ * The blocks are taken loose and checked against the one visual schema in
+ * `@oppenheimer/shared`, which is classic Zod and so cannot be the engine's
+ * input: the description teaches each block's fields, and a spec that fails
+ * is answered with the path of each fault so the model can fix it.
+ */
+const showVisualInput = z.object({
+  title: z.string().max(120).describe(promptText('tools/visual.show-visual-title')),
+  subtitle: z
+    .string()
+    .max(240)
+    .optional()
+    .describe(promptText('tools/visual.show-visual-subtitle')),
+  blocks: z
+    .array(z.record(z.string(), z.unknown()))
+    .min(1)
+    .max(VISUAL_BLOCKS_MAX)
+    .describe(promptText('tools/visual.show-visual-blocks')),
+});
+
+/**
+ * `show_visual`: a bot draws a visual in its chat, a title and typed blocks
+ * the console draws with its own charts, so no code of the model's runs. It
+ * reaches nothing outside Oppenheimer and never asks first. On a channel
+ * that draws no visuals (Telegram, WhatsApp) the person reads the reply's
+ * words, which the description asks to carry the meaning.
+ */
+@Injectable()
+export class BotVisualToolsFactory implements BotToolArea {
+  /** Where Settings → Permissions lists these tools. */
+  readonly group = 'self' as const;
+
+  definitions(): readonly BotToolDefinition[] {
+    return [
+      defineBotTool({
+        name: 'show_visual',
+        scope: 'bots:write',
+        description: promptText('tools/visual.show-visual', {
+          blocksMax: String(VISUAL_BLOCKS_MAX),
+          seriesMax: String(VISUAL_SERIES_MAX),
+          visualsPerTurn: String(VISUALS_PER_TURN),
+        }),
+        input: showVisualInput,
+        run: async (input, context) => {
+          const parsed = parseVisual(input);
+          if (!parsed.ok) {
+            throw new BotToolRefusal(
+              promptText('tools/visual.invalid', {
+                errors: parsed.errors.map((error) => `- ${error}`).join('\n'),
+              }),
+            );
+          }
+          if (!context.budget.take('show_visual', VISUALS_PER_TURN)) {
+            throw new BotToolRefusal(
+              promptText('tools/visual.visuals-spent', {
+                visualsPerTurn: String(VISUALS_PER_TURN),
+              }),
+            );
+          }
+          const { visual } = parsed;
+          return {
+            content: promptText('tools/visual.shown', {
+              title: visual.title,
+              blocks: visual.blocks.map((block) => block.type).join(', '),
+            }),
+            visual,
+          };
+        },
+      }),
+    ];
+  }
+}

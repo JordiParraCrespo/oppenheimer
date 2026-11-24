@@ -58,6 +58,7 @@ import {
   mailPlanSchema,
 } from '@oppenheimer/shared/schemas/mail';
 import type { ModelProvider } from '@oppenheimer/shared/schemas/model-provider';
+import { parseVisual, type Visual } from '@oppenheimer/shared/schemas/visual';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import { triggerOf } from '../automations/automations.repository';
@@ -239,6 +240,7 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
   const steps: BotToolStep[] = dto.steps.map((step) => ({
     ...step,
     mailDraft: draftOf(step.mailDraft),
+    visual: visualOf(step.visual),
     rateLimit: step.rateLimit
       ? { system: step.rateLimit.system, resetAt: new Date(step.rateLimit.resetAt) }
       : null,
@@ -505,6 +507,13 @@ function toPermissions(dto: BotPermissionsResponseDto): BotPermissionsEntity {
 function draftOf(raw: unknown): BotMailDraft | null {
   const parsed = botMailDraftSchema.safeParse(raw);
   return parsed.success ? parsed.data : null;
+}
+
+/** A step's visual, checked again: one the API stored under an older schema reads as none. */
+function visualOf(raw: unknown): Visual | null {
+  if (raw === null || raw === undefined) return null;
+  const parsed = parseVisual(raw);
+  return parsed.ok ? parsed.visual : null;
 }
 
 /** The tools whose card stores the message it sends, as `input.plan`. */

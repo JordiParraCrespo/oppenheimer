@@ -8,7 +8,7 @@ import {
 } from '@oppenheimer/shared';
 import { BotErrors } from '../../bots/domain/bots.errors';
 import { MAIL_DRAFT_DATA_KEY } from '../bot-mail-tool.mapper';
-import { toMailDraft, toShownImages, toSubagentRuns } from '../bot-message.mapper';
+import { toMailDraft, toShownImages, toSubagentRuns, toVisual } from '../bot-message.mapper';
 import { ALLOWED_BY_DATA_KEY, BOT_ALLOWED_BY_MAX } from '../domain/bot-approval.policy';
 import {
   BOT_TOOL_OUTPUT_MAX,
@@ -33,6 +33,7 @@ import {
   type BotTurnEntity,
   type BotTurnPlanLimits,
 } from '../domain/bot-turn.entity';
+import { VISUAL_DATA_KEY } from '../domain/bot-visual.policy';
 import type { BotStreamNudge } from '../infrastructure/bot-stream.port';
 import type { TurnInterruption } from './turn-cancel-watch.factory';
 
@@ -230,6 +231,7 @@ export class TurnTranscript {
       subagents: null,
       allowedBy: null,
       mailDraft: null,
+      visual: null,
       rateLimit: null,
     };
     if (this.activity) {
@@ -268,6 +270,7 @@ export class TurnTranscript {
     step.subagents = isError ? null : toSubagentRuns(data?.[SUBAGENT_DATA_KEY]);
     step.allowedBy = data?.[ALLOWED_BY_DATA_KEY]?.slice(0, BOT_ALLOWED_BY_MAX) ?? null;
     step.mailDraft = isError ? null : toMailDraft(data?.[MAIL_DRAFT_DATA_KEY]);
+    step.visual = isError ? null : toVisual(data?.[VISUAL_DATA_KEY]);
     if (limit) this.outcome.limited = laterLimit(this.outcome.limited, limit);
     for (const run of step.subagents ?? []) {
       this.outcome.inputTokens += run.inputTokens;
@@ -418,6 +421,7 @@ export function failUnstoredCall(line: BotMessageEntity, callId: string, cause: 
   step.sessionId = null;
   step.subagents = null;
   step.mailDraft = null;
+  step.visual = null;
   step.rateLimit = null;
   return true;
 }

@@ -55,6 +55,7 @@ import {
   ownersOwnTurn,
   raisedCard,
 } from './bot-tool.factory';
+import { BotVisualToolsFactory } from './bot-visual-tools.factory';
 import { BotWatchToolsFactory } from './bot-watch-tools.factory';
 import { BotWebToolsFactory } from './bot-web-tools.factory';
 import { BotWhatsappGrantToolsFactory } from './bot-whatsapp-grant-tools.factory';
@@ -97,6 +98,7 @@ export class BotToolboxFactory {
     telegram: BotTelegramToolsFactory,
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
+    visuals: BotVisualToolsFactory,
     subagents: BotSubagentToolsFactory,
     goals: BotGoalToolsFactory,
     loops: BotLoopToolsFactory,
@@ -137,6 +139,7 @@ export class BotToolboxFactory {
       telegram,
       peers,
       web,
+      visuals,
       subagents,
     ];
   }

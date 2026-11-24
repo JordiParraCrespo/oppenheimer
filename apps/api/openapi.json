@@ -36653,6 +36653,7 @@
               "paused",
               "deleted",
               "own_event",
+              "own_session_event",
               "automation_rate_limited",
               "workspace_rate_limited",
               "overlapping",
@@ -41892,6 +41893,12 @@
             "nullable": true,
             "description": "The draft a mail call saved in Gmail (`saved`, `draftId`, `link`, `mail`: the message as planned); null for any other call."
           },
+          "visual": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "The visual a `show_visual` call drew (`title`, `subtitle`, `blocks`: the typed blocks of `@oppenheimer/shared/schemas/visual`), checked; null for any other call."
+          },
           "rateLimit": {
             "nullable": true,
             "description": "The system that was limiting our requests when the call ended, and until when: the chat draws the step as a wait, not a failure. Null when no limit stopped it.",
@@ -41913,6 +41920,7 @@
           "subagents",
           "allowedBy",
           "mailDraft",
+          "visual",
           "rateLimit"
         ]
       },

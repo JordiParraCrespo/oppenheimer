@@ -137,6 +137,15 @@ export class BotToolStepResponseDto {
   mailDraft!: Record<string, unknown> | null;
 
   @ApiProperty({
+    type: 'object',
+    additionalProperties: true,
+    nullable: true,
+    description:
+      'The visual a `show_visual` call drew (`title`, `subtitle`, `blocks`: the typed blocks of `@oppenheimer/shared/schemas/visual`), checked; null for any other call.',
+  })
+  visual!: Record<string, unknown> | null;
+
+  @ApiProperty({
     type: BotToolStepRateLimitResponseDto,
     nullable: true,
     description:

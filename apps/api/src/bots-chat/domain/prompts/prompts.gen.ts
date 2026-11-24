@@ -871,6 +871,13 @@ export type PromptId =
   | "tools/toolbox.run-approved-content-run-longer-tool"
   | "tools/toolbox.run-approved-content-run-turned-off"
   | "tools/toolbox.approved-not-covered-by-credential"
+  | "tools/visual.show-visual"
+  | "tools/visual.show-visual-title"
+  | "tools/visual.show-visual-subtitle"
+  | "tools/visual.show-visual-blocks"
+  | "tools/visual.shown"
+  | "tools/visual.invalid"
+  | "tools/visual.visuals-spent"
   | "tools/watch.handed-off"
   | "tools/watch.not-followed"
   | "tools/watch.follow"
@@ -1494,6 +1501,10 @@ export interface PromptSlots {
   "tools/toolbox.run-approved-content-run-longer-tool": { tool: string };
   "tools/toolbox.run-approved-content-run-turned-off": { tool: string };
   "tools/toolbox.approved-not-covered-by-credential": { scope: string };
+  "tools/visual.show-visual": { blocksMax: string; seriesMax: string; visualsPerTurn: string };
+  "tools/visual.shown": { title: string; blocks: string };
+  "tools/visual.invalid": { errors: string };
+  "tools/visual.visuals-spent": { visualsPerTurn: string };
   "tools/watch.follow": { reason: string };
   "tools/watch.store-session-closed-there": { sessionId: string };
   "tools/watch.store-already-follow-sessions": { subscriptionsPerBot: string };
@@ -2500,6 +2511,13 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "tools/toolbox.run-approved-content-run-longer-tool": "Not run: {{tool}} is no longer a tool.",
   "tools/toolbox.run-approved-content-run-turned-off": "Not run: {{tool}} is turned off for this bot.",
   "tools/toolbox.approved-not-covered-by-credential": "Not run: your credential does not cover {{scope}}.",
+  "tools/visual.show-visual": "Shows the person a visual in the chat, drawn by the app with its own charts and type, in light and dark: figures, a chart, a table, a checklist and the like. Use it only when a visual reads faster than words: numbers to compare, a trend, a breakdown, progress, the state of several things at once. Prefer a plain Markdown table in your reply when the person asks for a table, and words when there are only one or two numbers. Never make up data: show only what you read or computed.\n\nGive a `title`, an optional `subtitle` (the period or the source) and up to {{blocksMax}} `blocks`, each an object with a `type`:\n\n- `markdown`: `text`.\n- `metrics`: `items` (1–8) of `{label, value, delta?, good?: \"up\"|\"down\", hint?}`; `value` is a number or short text, `delta` the change in the same units, `good` which way is good (default up).\n- `bar`, `line`, `area`: `title?`, `labels` (the x axis, one per point; up to 60 for bar, 200 otherwise) and `series` (1–{{seriesMax}}) of `{label, values}`, one value per label. Bar compares categories or a few periods; line a trend; area a volume over time.\n- `ring`: `title?`, `total?` (the word over the total), `segments` (1–{{seriesMax}}) of `{label, value}`: shares of a whole.\n- `ranking`: `title?`, `items` (1–20) of `{label, value, detail?}`, drawn largest first.\n- `table`: `title?`, `columns` (1–10) of `{label, align?}`, `rows` (up to 200) of cells, each a number, text or null; one cell per column.\n- `checklist`: `title?`, `items` (1–30) of `{text, done, note?}`.\n- `progress`: `title?`, `items` (1–12) of `{label, value, target?}`; target defaults to 100.\n- `record`: `title?`, `status?` `{label, tone?}`, `fields` (1–16) of `{label, value}`: one thing's details.\n- `callout`: `tone?` (neutral, info, success, warning, danger), `title?`, `text`.\n- `links`: `title?`, `items` (1–12) of `{label, url, description?}`, http or https only.\n\nNumeric blocks take `format`: `{prefix?, suffix?, decimals?, compact?}` (\"$\", \"%\", \" ms\"; compact writes 1.2k). Up to {{visualsPerTurn}} visuals a turn. The visual shows where you called it, before the rest of your reply: do not repeat its numbers in words, say what they mean.",
+  "tools/visual.show-visual-title": "What the visual shows, in a few words: \"Deploys this week\".",
+  "tools/visual.show-visual-subtitle": "The period, the source or the scope, in a few words.",
+  "tools/visual.show-visual-blocks": "The blocks, in the order to show them; see the tool's description for each type's fields.",
+  "tools/visual.shown": "Shown to the person: \"{{title}}\", {{blocks}}. Do not repeat its numbers; say what they mean, if anything.",
+  "tools/visual.invalid": "Not shown: the visual is not valid. Fix these and call again:\n{{errors}}",
+  "tools/visual.visuals-spent": "Not shown: this turn has already drawn {{visualsPerTurn}} visuals, the most one turn may. Answer in words.",
   "tools/watch.handed-off": "You are subscribed to it and will be woken when the task needs input or ends, if it has not got going in a few minutes, and every few minutes while it runs so you can look at how it is going: end your turn now, and report when you are.",
   "tools/watch.not-followed": "You are not watching it; read how it goes with get_session or read_session.",
   "tools/watch.follow": "It could not be watched ({{reason}}); read it later with get_session.",
