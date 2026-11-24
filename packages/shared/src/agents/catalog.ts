@@ -18,7 +18,8 @@
  * that the same way, and `clearOf`, which every sender that types into an
  * agent asks. Pi and Oh My Pi are defined in `pi-family.ts`,
  * Antigravity in `antigravity.ts`, ZCode in `zcode.ts`, fx in `fx.ts`, Hermes
- * in `hermes.ts` and Muse in `muse.ts`, which this record composes. How the
+ * in `hermes.ts`, Muse in `muse.ts` and Qwen Code in `qwen.ts`, which this
+ * record composes. How the
  * runner installs and updates each CLI is
  * `host-setup.ts`, kept apart so the console, which never installs anything,
  * does not load those scripts with the catalog.
@@ -38,6 +39,7 @@ import { HERMES_AGENT } from './hermes.js';
 import { MUSE_AGENT } from './muse.js';
 import { OPENCODE_MODELS } from './opencode-models.js';
 import { OMP_AGENT, PI_AGENT } from './pi-family.js';
+import { QWEN_AGENT } from './qwen.js';
 import { TYPED_INPUT } from './typed-input.js';
 import { ZCODE_AGENT } from './zcode.js';
 
@@ -61,6 +63,7 @@ export const CODING_AGENT_IDS = [
   'fx',
   'hermes',
   'muse',
+  'qwen',
   'shell',
 ] as const;
 
@@ -199,7 +202,9 @@ export interface CodingAgentLaunchLevel {
  * Every argv is the **argument vector** to append to `command`, so the runner
  * concatenates rather than parses, and a value that would need quoting cannot
  * become a second word by accident. `<model>` and `<prompt>` are the
- * placeholders, each substituted whole.
+ * placeholders, each replaced where it stands in its word: a word of its own
+ * for most, inside one for a CLI whose flag must carry its value
+ * (`--prompt-interactive=<prompt>`).
  *
  * Effort's spelling is here, once per agent; which levels a model offers is
  * its own row's.
@@ -268,9 +273,12 @@ export interface CodingAgentLaunch {
   /** Absent: no model of this agent takes an effort. */
   readonly effort?: CodingAgentEffortSpelling;
   /**
-   * How the person's first task reaches the agent, with `<prompt>` substituted
-   * whole — always the **last** argv appended: Claude Code, Codex and Grok take
-   * it as a trailing positional, OpenCode as the value of its trailing `--prompt`.
+   * How the person's first task reaches the agent, with `<prompt>` replaced
+   * where it stands — always in the **last** argv word: Claude Code, Codex and
+   * Grok take it as a trailing positional, OpenCode as the value of its
+   * trailing `--prompt`, and Qwen Code inside its last word
+   * (`--prompt-interactive=<prompt>`), since a value of its own that starts
+   * with `-` is read as a flag.
    *
    * A launch option, never a message typed at the running TUI: these CLIs do
    * not take a first task that way, and "the TUI is up" has no moment to race
@@ -849,6 +857,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
   fx: FX_AGENT,
   hermes: HERMES_AGENT,
   muse: MUSE_AGENT,
+  qwen: QWEN_AGENT,
   shell: Object.freeze({
     id: 'shell',
     // The design's own name for it.

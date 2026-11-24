@@ -749,7 +749,8 @@
             "zcode",
             "fx",
             "hermes",
-            "muse"
+            "muse",
+            "qwen"
           ]
         },
         "model": {
@@ -3536,6 +3537,7 @@
         "fx",
         "hermes",
         "muse",
+        "qwen",
         "shell"
       ],
       "id": "codingAgentId"

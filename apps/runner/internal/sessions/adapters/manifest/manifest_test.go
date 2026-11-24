@@ -290,7 +290,7 @@ func TestBundledManifestsLoad(t *testing.T) {
 			}
 		}
 	}
-	for _, agent := range []domain.Agent{domain.AgentClaude, domain.AgentCodex, domain.AgentOpenCode, domain.AgentGrok, domain.AgentPi, domain.AgentOmp, domain.AgentAntigravity, domain.AgentZCode, domain.AgentFx, domain.AgentHermes, domain.AgentMuse, domain.AgentShell} {
+	for _, agent := range []domain.Agent{domain.AgentClaude, domain.AgentCodex, domain.AgentOpenCode, domain.AgentGrok, domain.AgentPi, domain.AgentOmp, domain.AgentAntigravity, domain.AgentZCode, domain.AgentFx, domain.AgentHermes, domain.AgentMuse, domain.AgentQwen, domain.AgentShell} {
 		if !agents[agent] {
 			t.Errorf("no bundled manifest for %q, which the runner can start", agent)
 		}
@@ -473,6 +473,45 @@ func TestZCodeAtItsPromptIsIdleAndMidTurnIsNot(t *testing.T) {
 	}
 	for _, tc := range cases {
 		if state, _ := c.Classify(app.Screen{Body: tc.body}, domain.AgentZCode); state != tc.want {
+			t.Errorf("%s: state = %q, want %q", tc.name, state, tc.want)
+		}
+	}
+}
+
+// The screens are Qwen Code 0.28.4's in tmux, trimmed to their last rows.
+// Regressions: the placeholder, which stays up mid-turn, reading a working
+// Qwen as idle; a prompt holding text reading as unknown; a reply quoting
+// the timer's words reading as working.
+func TestQwenStatesReadOffItsScreen(t *testing.T) {
+	c := classifier(t, "")
+	rule := strings.Repeat("─", 40)
+	box := func(prompt, footer string) string {
+		return rule + "\n" + prompt + "\n" + rule + "\n  ➜ work · git:(master) · fake-model\n  " + footer + "\n\n\n"
+	}
+	cases := []struct {
+		name string
+		body string
+		want domain.State
+	}{
+		{"after a turn", "  ◆︎ Done: the tool said hello.\n" + box(">   Type your message or @path/to/file", "⏸ Ask permissions (shift + tab to cycle)"), domain.StateIdle},
+		{"a message put back by Esc", box("> a slow plain one ​", "⏸ Ask permissions (shift + tab to cycle)"), domain.StateIdle},
+		{"full access", box("*   Type your message or @path/to/file", "YOLO mode (shift + tab to cycle)"), domain.StateIdle},
+		{"one Esc", box(">   Type your message or @path/to/file", "Press Esc again to rewind conversation."), domain.StateIdle},
+		{"mid-turn", "  > a slow plain one\n\n  .. Communing with the machine spirit... (2s · esc to cancel)\n" +
+			box(">   Type your message or @path/to/file", "Enter to steer · Ctrl+Q to queue · ⏸ Ask permissions (shift + tab to cycle)"), domain.StateWorking},
+		{"a reply quoting the timer", "  ◆︎ It shows (2s · esc to cancel) while it works.\n" +
+			box(">   Type your message or @path/to/file", "Auto mode (shift + tab to cycle)"), domain.StateIdle},
+		{"approval", "  ◆︎ Writing it.\n  ? WriteFile Writing to hello.txt ←\n\n   1 hi\n\n   Apply this change?\n\n" +
+			"   › 1. Yes, allow once\n     2. Yes, allow always\n     3. No, suggest changes (esc)\n\n\n  ⠏ Waiting for user confirmation...\n", domain.StateBlocked},
+		{"rewind", "  ╭" + rule + "╮\n  │ Rewind Conversation (12 turns)  │\n  │ ↑ #6 plain gap 0.05  │\n" +
+			"  │ ↑↓ to navigate · Enter to select · Esc to cancel │\n  ╰" + rule + "╯\n", domain.StateBlocked},
+		{"no provider", "  │ Connect a Provider                     │\n  │                                        │\n" +
+			"  │ › Qwen Account with Subscription New   │\n  │   Custom Provider                      │\n", domain.StateBlocked},
+		{"signing in", "  │ Qwen Subscription │\n  │ If the browser didn't open, visit: │\n" +
+			"  │ https://chat.qwen.ai/authorize?user_code=HDWX-CPPN&client=cli │\n  │ .  Waiting for sign-in… │\n  │ c to copy link · Esc to cancel │\n", domain.StateBlocked},
+	}
+	for _, tc := range cases {
+		if state, _ := c.Classify(app.Screen{Body: tc.body}, domain.AgentQwen); state != tc.want {
 			t.Errorf("%s: state = %q, want %q", tc.name, state, tc.want)
 		}
 	}

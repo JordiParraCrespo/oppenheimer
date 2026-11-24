@@ -256,7 +256,7 @@ func (l Launch) Args(agent Agent) []string {
 	}
 	args = append(args, open.argv...)
 	if open.prompt && l.Prompt != "" && m.prompt != nil {
-		args = append(args, substitute(m.prompt, "<prompt>", l.Prompt)...)
+		args = append(args, substituteWithin(m.prompt, "<prompt>", l.Prompt)...)
 	}
 	return args
 }
@@ -400,6 +400,19 @@ func namesConversation(vector []string) bool {
 		}
 	}
 	return false
+}
+
+// substituteWithin is substitute for a placeholder that may stand inside a
+// word, as the value a flag carries after its `=` (Qwen Code's
+// `--prompt-interactive=<prompt>`, since a value of its own that starts with
+// `-` is read as a flag). The value is spliced in once and never read again,
+// so a value holding the placeholder's own text stays as it was.
+func substituteWithin(vector []string, placeholder, value string) []string {
+	out := make([]string, len(vector))
+	for i, word := range vector {
+		out[i] = strings.ReplaceAll(word, placeholder, value)
+	}
+	return out
 }
 
 func substitute(vector []string, placeholder, value string) []string {

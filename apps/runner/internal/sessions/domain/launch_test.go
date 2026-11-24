@@ -169,6 +169,42 @@ func TestGrokStartsInteractiveWithTheTaskAsItsPositional(t *testing.T) {
 	}
 }
 
+func TestQwenStartsInteractiveWithItsTaskInsideItsFlag(t *testing.T) {
+	// A positional is Qwen's one-shot run, so the task is the value of
+	// `--prompt-interactive`, last. Ask is sent, not left to Qwen's own
+	// `auto`; an effort adds nothing, since Qwen takes none on its command
+	// line.
+	id := "8b4c5d6e-0000-4000-8000-000000000001"
+	got := Launch{Model: "qwen3.8-max", Permission: "ask", Effort: "high", EffortIsLevel: true, Conversation: id, Prompt: "fix it"}.Args(AgentQwen)
+	want := []string{"--model", "qwen3.8-max", "--approval-mode", "default", "--session-id", id, "--prompt-interactive=fix it"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("argv = %q, want %q", got, want)
+	}
+	// A restart reopens this folder's newest conversation, with no id (one
+	// with nothing said yet would make `--resume <id>` exit) and no task.
+	got = Launch{Model: "qwen3.8-max", Permission: "full", Conversation: id, Resume: true, Prompt: "fix it"}.Args(AgentQwen)
+	if want := []string{"--model", "qwen3.8-max", "--approval-mode", "yolo", "--continue"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("restart argv = %q, want %q", got, want)
+	}
+}
+
+func TestATaskThatStartsWithADashStaysQwensTask(t *testing.T) {
+	// `qwen --prompt-interactive "-v"` printed Qwen's version and exited: a
+	// value of its own that starts with `-` is a flag to its parser. In the
+	// flag's word, it is the task, whatever it holds.
+	got := Launch{Prompt: "-v run it, then <prompt>"}.Args(AgentQwen)
+	if want := []string{"--prompt-interactive=-v run it, then <prompt>"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("argv = %q, want %q", got, want)
+	}
+	if line := (Launch{Prompt: "-v it's"}).CommandLine(AgentQwen); line != `qwen '--prompt-interactive=-v it'\''s'` {
+		t.Fatalf("command line = %s", line)
+	}
+	// An agent whose task is a word of its own still gets it as one.
+	if got := (Launch{Prompt: "-v"}).Args(AgentGrok); !reflect.DeepEqual(got, []string{"-v"}) {
+		t.Fatalf("grok argv = %q", got)
+	}
+}
+
 func TestLaunchDropsWhatTheCatalogHasNoEntryFor(t *testing.T) {
 	got := Launch{Permission: "sometimes", Effort: "ultra", EffortIsLevel: true, Prompt: "go"}.Args(AgentClaude)
 	if want := []string{"go"}; !reflect.DeepEqual(got, want) {

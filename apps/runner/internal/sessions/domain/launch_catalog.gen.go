@@ -261,6 +261,19 @@ var launchCatalog = map[string]launchMap{
 			"muse-ember-1.0": {"minimal", "low", "medium", "high", "xhigh", "max", "ultra"},
 		},
 	},
+	"qwen": {
+		command:      "qwen",
+		model:        []string{"--model", "<model>"},
+		defaultModel: "qwen3.8-max",
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--approval-mode", "default"}},
+			"auto": {argv: []string{"--approval-mode", "auto"}},
+			"full": {argv: []string{"--approval-mode", "yolo"}},
+		},
+		prompt:             []string{"--prompt-interactive=<prompt>"},
+		conversationCreate: []string{"--session-id", "<conversation>"},
+		conversationResume: []string{"--continue"},
+	},
 	"shell": {
 		command:    "",
 		taskIsNote: true,
@@ -298,4 +311,5 @@ var inputCatalog = map[string]agentInput{
 	"fx":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"hermes":      {submit: "\r", stop: "\u001b", pasteGapMs: 200, quit: []string{"/stop", "/quit"}},
 	"muse":        {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"qwen":        {submit: "\r", stop: "\u001b", pasteGapMs: 200, clear: "\u000b\u0015\u000b\u0015\u000b\u0015\u000b\u0015\u000b\u0015\u000b\u0015\u000b\u0015\u000b\u0015\u000b\u0015\u000b\u0015\u000b\u0015\u000b\u0015\u000b\u0015\u000b\u0015\u000b\u0015\u000b\u0015", clearSettleMs: 50},
 }
