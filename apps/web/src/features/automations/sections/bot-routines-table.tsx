@@ -9,18 +9,13 @@ import { ErrorAlert, triggerListText, useLocale } from '@oppenheimer/frontend-we
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { BotRoutineTableRow } from '../components/bot-routine-table-row';
-import { ChoiceToken } from '../components/choice-token';
 import { FilterClear } from '../components/filter-clear';
 import { FilterRow } from '../components/filter-row';
 import { SearchChoiceToken } from '../components/search-choice-token';
+import { TriggerFacet } from '../components/trigger-facet';
 import { useRoutinesFilters } from '../hooks/use-routines-filters';
 import { botRoutineColumns } from '../lib/automation-view';
-import {
-  filterRoutines,
-  ROUTINE_STATUS_TABS,
-  ROUTINE_TRIGGER_SOURCES,
-  type RoutineTriggerSource,
-} from '../lib/routines-search';
+import { filterList, STATUS_TABS, usedTriggerSources } from '../lib/list-filters';
 
 const ALL = '__all__';
 
@@ -47,14 +42,11 @@ export function BotRoutinesTable() {
     select: (bots) => new Map(bots.map((bot) => [bot.id, bot.name])),
   });
   const { state } = filters;
-  const { rows, counts } = filterRoutines(routines, state);
+  const { rows, counts } = filterList(routines, state, (routine) => routine.botId);
 
   // Only the bots and triggers some routine has: a pick never lands on nothing.
   const botIds = [...new Set(routines.map((routine) => routine.botId))];
-  const sources = ROUTINE_TRIGGER_SOURCES.filter((source) =>
-    routines.some((routine) => routine.triggers.some((trigger) => trigger.source === source)),
-  );
-  const botLabel = state.bot ? botNames.get(state.bot) : undefined;
+  const botLabel = state.owner ? botNames.get(state.owner) : undefined;
 
   return (
     <div className="flex flex-col gap-3">
@@ -71,16 +63,16 @@ export function BotRoutinesTable() {
         ) : (
           <>
             <FilterRow
-              tabs={ROUTINE_STATUS_TABS}
+              tabs={STATUS_TABS}
               value={state.status}
-              label={(tab) => t(`automations.routines.filter.${tab}`)}
+              label={(tab) => t(`automations.filter.${tab}`)}
               count={(tab) => counts[tab]}
               onValueChange={filters.setStatus}
             >
               <SearchChoiceToken
                 label={botLabel ?? t('automations.routines.filter.allBots')}
-                value={state.bot ?? ALL}
-                dirty={state.bot !== null}
+                value={state.owner ?? ALL}
+                dirty={state.owner !== null}
                 searchPlaceholder={t('automations.routines.filter.searchBots')}
                 emptyText={(query) => t('common.search.noMatch', { query })}
                 options={[
@@ -89,20 +81,10 @@ export function BotRoutinesTable() {
                 ]}
                 onValueChange={(value) => filters.setBot(value === ALL ? null : value)}
               />
-              <ChoiceToken
-                label={t(`automations.routines.filter.trigger.${state.trigger ?? 'any'}`)}
-                value={state.trigger ?? ALL}
-                dirty={state.trigger !== null}
-                options={[
-                  { value: ALL, label: t('automations.routines.filter.trigger.any') },
-                  ...sources.map((source) => ({
-                    value: source,
-                    label: t(`automations.routines.filter.trigger.${source}`),
-                  })),
-                ]}
-                onValueChange={(value) =>
-                  filters.setTrigger(value === ALL ? null : (value as RoutineTriggerSource))
-                }
+              <TriggerFacet
+                value={state.trigger}
+                sources={usedTriggerSources(routines)}
+                onValueChange={filters.setTrigger}
               />
               {filters.dirty ? (
                 <FilterClear onClick={filters.clear}>{t('automations.runs.clear')}</FilterClear>

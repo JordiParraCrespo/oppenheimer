@@ -1,4 +1,9 @@
-import { EmptyState, RoutineTable, RoutineTableHead } from '@oppenheimer/design-system-web';
+import {
+  EmptyState,
+  RoutineTable,
+  RoutineTableHead,
+  RunsListEmpty,
+} from '@oppenheimer/design-system-web';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useProjects, useSuspenseAutomations } from '@oppenheimer/frontend-consumer/react';
 import { ConfirmDialog, ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
@@ -7,10 +12,18 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { AutomationTableRow } from '../components/automation-table-row';
+import { FilterClear } from '../components/filter-clear';
+import { FilterRow } from '../components/filter-row';
+import { SearchChoiceToken } from '../components/search-choice-token';
+import { TriggerFacet } from '../components/trigger-facet';
 import { useAutomationActions } from '../hooks/use-automation-actions';
-import { automationSubline } from '../lib/automation-view';
+import { useAutomationsFilters } from '../hooks/use-automations-filters';
+import { automationColumns, automationSubline } from '../lib/automation-view';
+import { filterList, STATUS_TABS, usedTriggerSources } from '../lib/list-filters';
 import { runLocation } from '../lib/run-location';
 import { automationTriggerText } from '../lib/trigger-text';
+
+const ALL = '__all__';
 
 /**
  * The overview's Automations view: one row per automation in the workspace,
@@ -21,6 +34,11 @@ import { automationTriggerText } from '../lib/trigger-text';
  * Delete asks first, like the automation's own page. The table owns which
  * row's confirm is open, because a row's menu unmounts when it closes.
  *
+ * Above the rows, the filter row the Runs and Bot routines tabs share:
+ * status pills with counts, then the Project and Trigger facets and Clear,
+ * all in the URL. The endpoint answers every automation at once, so the
+ * facets narrow the whole list, not a page.
+ *
  * Read under Suspense: the screen's `QueryState` draws the placeholder and a
  * first failure. A refetch that fails keeps the rows and says so above them.
  */
@@ -30,7 +48,8 @@ export function AutomationsTable() {
   const navigate = useNavigate();
   const dialogs = useConsoleDialog();
   const { data: rows, error } = useSuspenseAutomations();
-  const { data: projectNames } = useProjects({
+  const filters = useAutomationsFilters();
+  const { data: projectNames = new Map<string, string>() } = useProjects({
     select: (projects) => new Map(projects.map((project) => [project.id, project.name])),
   });
   const [deleting, setDeleting] = useState<AutomationEntity | null>(null);
@@ -40,6 +59,11 @@ export function AutomationsTable() {
       navigate({ to: '/automations/$automationId', params: { automationId: id } }),
     onDeleted: () => setDeleting(null),
   });
+  const { state } = filters;
+  const { rows: shown, counts } = filterList(rows, state, (automation) => automation.projectId);
+  // Only the projects some automation is in: a pick never lands on nothing.
+  const projectIds = [...new Set(rows.map((automation) => automation.projectId))];
+  const projectLabel = state.owner ? projectNames.get(state.owner) : undefined;
   // The list holds many automations, so its one alert says which one failed.
   const failedName = rows.find((row) => row.id === actions.failedId)?.name;
 
@@ -64,19 +88,43 @@ export function AutomationsTable() {
         </RoutineTable>
       ) : (
         <RoutineTable>
-          <RoutineTableHead
-            columns={[
-              t('automations.table.automation'),
-              t('automations.table.trigger'),
-              t('automations.table.next'),
-              t('automations.table.status'),
-            ]}
-          />
-          {rows.map((automation) => (
+          <FilterRow
+            tabs={STATUS_TABS}
+            value={state.status}
+            label={(tab) => t(`automations.filter.${tab}`)}
+            count={(tab) => counts[tab]}
+            onValueChange={filters.setStatus}
+          >
+            <SearchChoiceToken
+              label={projectLabel ?? t('automations.runs.allProjects')}
+              value={state.owner ?? ALL}
+              dirty={state.owner !== null}
+              searchPlaceholder={t('common.search.projects')}
+              emptyText={(query) => t('common.search.noMatch', { query })}
+              options={[
+                { value: ALL, label: t('automations.runs.allProjects') },
+                ...projectIds.map((id) => ({ value: id, label: projectNames.get(id) ?? id })),
+              ]}
+              onValueChange={(value) => filters.setProject(value === ALL ? null : value)}
+            />
+            <TriggerFacet
+              value={state.trigger}
+              sources={usedTriggerSources(rows)}
+              onValueChange={filters.setTrigger}
+            />
+            {filters.dirty ? (
+              <FilterClear onClick={filters.clear}>{t('automations.runs.clear')}</FilterClear>
+            ) : null}
+          </FilterRow>
+          <RoutineTableHead columns={automationColumns(t)} />
+          {shown.length === 0 ? (
+            <RunsListEmpty>{t('automations.page.filterNoMatch')}</RunsListEmpty>
+          ) : null}
+          {shown.map((automation) => (
             <AutomationTableRow
               key={automation.id}
               automation={automation}
-              subline={automationSubline(automation, projectNames?.get(automation.projectId), t)}
+              subline={automationSubline(automation, projectNames.get(automation.projectId), t)}
               trigger={automationTriggerText(automation, locale, t)}
               onOpen={() =>
                 navigate({

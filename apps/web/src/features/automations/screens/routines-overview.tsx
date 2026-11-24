@@ -1,7 +1,8 @@
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { RoutinesSkeleton } from '../components/routines-skeleton';
+import { TableSkeleton } from '../components/table-skeleton';
 import { useRoutinesFilters } from '../hooks/use-routines-filters';
+import { botRoutineColumns } from '../lib/automation-view';
 import { BotRoutinesTable } from '../sections/bot-routines-table';
 import { OverviewTop } from '../sections/overview-top';
 
@@ -14,7 +15,7 @@ export function RoutinesOverviewScreen() {
       <OverviewTop />
       <QueryState>
         <QueryState.Pending>
-          <RoutinesSkeleton status={state.status} />
+          <TableSkeleton status={state.status} columns={botRoutineColumns(t)} />
         </QueryState.Pending>
         <QueryState.Error fallback={t('automations.routines.loadFailed')} />
         <QueryState.Data>

@@ -2738,7 +2738,8 @@
       "runsEmpty": "Todavía no hay ejecuciones. Cada una aparece aquí con la sesión que inició.",
       "loadFailed": "No se han podido cargar las automatizaciones.",
       "actionFailed": "No se ha podido completar.",
-      "actionFailedFor": "«{{name}}» no se ha actualizado"
+      "actionFailedFor": "«{{name}}» no se ha actualizado",
+      "filterNoMatch": "Ninguna automatización coincide con estos filtros."
     },
     "status": {
       "active": "Activa",
@@ -3096,19 +3097,21 @@
       "empty": "Las rutinas de un bot se crean en su chat, con /schedule.",
       "emptyTitle": "Aún no hay rutinas de bots",
       "filter": {
-        "all": "Todas",
-        "active": "Activas",
-        "paused": "En pausa",
         "allBots": "Todos los bots",
         "searchBots": "Buscar bots",
-        "noMatch": "Ninguna rutina de bot coincide con estos filtros.",
-        "trigger": {
-          "any": "Cualquier disparador",
-          "schedule": "Horario",
-          "gmail": "Gmail",
-          "github": "GitHub",
-          "webhook": "Webhook"
-        }
+        "noMatch": "Ninguna rutina de bot coincide con estos filtros."
+      }
+    },
+    "filter": {
+      "all": "Todas",
+      "active": "Activas",
+      "paused": "En pausa",
+      "trigger": {
+        "any": "Cualquier disparador",
+        "schedule": "Horario",
+        "gmail": "Gmail",
+        "github": "GitHub",
+        "webhook": "Webhook"
       }
     }
   },
