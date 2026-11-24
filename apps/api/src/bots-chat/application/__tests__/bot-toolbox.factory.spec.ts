@@ -81,6 +81,31 @@ const names = (granted: readonly Scope[] | null) =>
   toolbox.tools(context, granted, EVERYTHING).map((bound) => bound.name);
 
 describe('BotToolboxFactory', () => {
+  // What breaks this: a bot whose own tools, or the tools a built-in skill's
+  // steps call, wait behind the tool search, so it skips the step (an eval saw
+  // `watch-inbox` offer a watch that already ran, its `update_routine` check
+  // deferred); or a capability's tools always sent, every turn (2026-11-23).
+  it('lets a capability’s tools wait, never the bot’s own or those a built-in skill calls', () => {
+    const own: BotToolArea = {
+      group: 'self',
+      definitions: () => [tool('remember', 'bots:write')],
+    } as BotToolArea;
+    const capability: BotToolArea = {
+      group: 'automations',
+      definitions: () => [
+        tool('update_routine', 'automations:write'),
+        tool('create_issue', 'tasks:write'),
+      ],
+    } as BotToolArea;
+    const bound = toolboxOf(own, capability).tools(
+      context,
+      null,
+      holding('bots:write', 'automations:write', 'tasks:write'),
+    );
+    const waits = Object.fromEntries(bound.map((t) => [t.name, t.deferrable]));
+    expect(waits).toEqual({ remember: false, update_routine: false, create_issue: true });
+  });
+
   it('offers a browser session every tool', () => {
     expect(names(null)).toEqual(['list_sessions', 'start_session', 'create_task']);
   });

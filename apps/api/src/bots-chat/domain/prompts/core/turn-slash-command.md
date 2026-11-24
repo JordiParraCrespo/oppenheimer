@@ -48,6 +48,6 @@ When the condition holds, run the check it names, say what it answered, and call
 If the goal cannot go on without the person, call end_goal with outcome blocked and say what you need.
 
 <!-- fragment: loop-set -->
-<!-- The first line of the turn the person's `/loop` opens: the loop is set, and this is its first run. The rules every run carries follow it (`wake/loop.md`). -->
+<!-- The first line of the turn the person's `/loop` opens: the loop is set, and this is its first run. The rules every run carries follow it (`routines/wake-loop.md`). -->
 
 The person set a loop with /loop: you run this {{cadence}} for up to 3 days, and this is the first run: {{prompt}}

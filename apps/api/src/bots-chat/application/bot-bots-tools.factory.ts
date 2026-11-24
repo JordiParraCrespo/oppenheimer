@@ -90,7 +90,7 @@ export class BotPeerToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'message_bot',
       scope: 'bots:write',
-      description: promptText('tools/bots.message-bot', {
+      description: promptText('bots/tools.message-bot', {
         peerMessagesPerTurn: String(BOT_PEER_MESSAGES_PER_TURN),
       }),
       input: peerMessageInput,
@@ -103,7 +103,7 @@ export class BotPeerToolsFactory implements BotToolArea {
       name: 'ask_bot',
       scope: 'bots:write',
       notOn: NOT_ON_A_GITHUB_ASK,
-      description: promptText('tools/bots.ask-bot', {
+      description: promptText('bots/tools.ask-bot', {
         peerMessagesPerTurn: String(BOT_PEER_MESSAGES_PER_TURN),
       }),
       input: peerMessageInput,
@@ -119,7 +119,7 @@ export class BotPeerToolsFactory implements BotToolArea {
   ): Promise<string> {
     if (!context.budget.take('bot_messages', BOT_PEER_MESSAGES_PER_TURN)) {
       throw new BotToolRefusal(
-        promptText('tools/bots.send-have-already-sent', {
+        promptText('bots/tools.send-have-already-sent', {
           peerMessagesPerTurn: String(BOT_PEER_MESSAGES_PER_TURN),
         }),
       );
@@ -140,11 +140,11 @@ export class BotPeerToolsFactory implements BotToolArea {
     );
     if (!result.sent) throw new BotToolRefusal(result.refusal);
     return expectsReply
-      ? promptText('tools/bots.send-asked-answer-will', {
+      ? promptText('bots/tools.send-asked-answer-will', {
           botName: result.botName,
           botId: input.bot_id,
         })
-      : promptText('tools/bots.send-sent-will-read', {
+      : promptText('bots/tools.send-sent-will-read', {
           botName: result.botName,
           botId: input.bot_id,
         });
@@ -155,7 +155,7 @@ export class BotPeerToolsFactory implements BotToolArea {
       name: 'create_bot',
       scope: 'bots:write',
       asks: true,
-      description: promptText('tools/bots.create-bot'),
+      description: promptText('bots/tools.create-bot'),
       input: z.strictObject({
         name: z.string().trim().min(1).max(BOT_NAME_MAX).describe("The new bot's name."),
         description: z
@@ -163,43 +163,43 @@ export class BotPeerToolsFactory implements BotToolArea {
           .trim()
           .max(BOT_DESCRIPTION_MAX)
           .optional()
-          .describe(promptText('tools/bots.bot-description')),
+          .describe(promptText('bots/tools.bot-description')),
         soul: z
           .string()
           .max(BOT_DOCUMENT_MAX)
           .optional()
-          .describe(promptText('tools/bots.create-bot-soul')),
+          .describe(promptText('bots/tools.create-bot-soul')),
         instructions: z
           .string()
           .max(BOT_DOCUMENT_MAX)
           .optional()
-          .describe(promptText('tools/bots.create-bot-instructions')),
+          .describe(promptText('bots/tools.create-bot-instructions')),
         provider: z
           .enum(BOT_PROVIDERS)
           .optional()
-          .describe(promptText('tools/bots.create-bot-provider')),
+          .describe(promptText('bots/tools.create-bot-provider')),
         model: z
           .string()
           .min(1)
           .max(128)
           .nullable()
           .optional()
-          .describe(promptText('tools/bots.create-bot-model')),
+          .describe(promptText('bots/tools.create-bot-model')),
         effort: z
           .enum(SESSION_EFFORTS)
           .nullable()
           .optional()
-          .describe(promptText('tools/bots.create-bot-effort')),
+          .describe(promptText('bots/tools.create-bot-effort')),
         permission: z
           .enum(BOT_PERMISSIONS)
           .optional()
-          .describe(promptText('tools/bots.create-bot-permission')),
+          .describe(promptText('bots/tools.create-bot-permission')),
         group: z
           .string()
           .min(1)
           .max(80)
           .optional()
-          .describe(promptText('tools/bots.create-bot-group')),
+          .describe(promptText('bots/tools.create-bot-group')),
       }),
       normalize: async (input, context) =>
         explicitCreateBotInput(input, await this.plan(input, context)),
@@ -256,13 +256,13 @@ export class BotPeerToolsFactory implements BotToolArea {
       name: 'update_bot',
       scope: 'bots:write',
       asks: true,
-      description: promptText('tools/bots.update-bot', { updateMax: String(BOT_UPDATE_MAX) }),
+      description: promptText('bots/tools.update-bot', { updateMax: String(BOT_UPDATE_MAX) }),
       input: z.strictObject({
         bot_ids: z
           .array(z.uuid())
           .min(1)
           .max(BOT_UPDATE_MAX)
-          .describe(promptText('tools/bots.update-bot-bot-ids')),
+          .describe(promptText('bots/tools.update-bot-bot-ids')),
         name: z
           .string()
           .trim()
@@ -275,42 +275,42 @@ export class BotPeerToolsFactory implements BotToolArea {
           .trim()
           .max(BOT_DESCRIPTION_MAX)
           .optional()
-          .describe(promptText('tools/bots.bot-description')),
+          .describe(promptText('bots/tools.bot-description')),
         avatar_color: z
           .enum(BOT_AVATAR_COLORS)
           .optional()
-          .describe(promptText('tools/bots.update-bot-avatar-color')),
+          .describe(promptText('bots/tools.update-bot-avatar-color')),
         provider: z
           .enum(BOT_PROVIDERS)
           .optional()
-          .describe(promptText('tools/bots.update-bot-provider')),
+          .describe(promptText('bots/tools.update-bot-provider')),
         model: z
           .string()
           .min(1)
           .max(128)
           .nullable()
           .optional()
-          .describe(promptText('tools/bots.update-bot-model')),
+          .describe(promptText('bots/tools.update-bot-model')),
         effort: z
           .enum(SESSION_EFFORTS)
           .nullable()
           .optional()
-          .describe(promptText('tools/bots.create-bot-effort')),
+          .describe(promptText('bots/tools.create-bot-effort')),
         permission: z
           .enum(BOT_PERMISSIONS)
           .optional()
-          .describe(promptText('tools/bots.update-bot-permission')),
+          .describe(promptText('bots/tools.update-bot-permission')),
         group: z
           .string()
           .min(1)
           .max(80)
           .nullable()
           .optional()
-          .describe(promptText('tools/bots.update-bot-group')),
+          .describe(promptText('bots/tools.update-bot-group')),
         learn_automatically: z
           .boolean()
           .optional()
-          .describe(promptText('tools/bots.update-bot-learn-automatically')),
+          .describe(promptText('bots/tools.update-bot-learn-automatically')),
       }),
       // The card stores the group by id, so a rename while it waits cannot
       // send the bots to another group of the old name.
@@ -377,13 +377,13 @@ export class BotPeerToolsFactory implements BotToolArea {
     ]);
     const caller = all.find((bot) => bot.id === context.botId);
     if (!caller)
-      throw new BotToolRefusal(promptText('tools/bots.update-plan-longer-one-workspaces'));
+      throw new BotToolRefusal(promptText('bots/tools.update-plan-longer-one-workspaces'));
     const byId = new Map(all.map((bot) => [bot.id, bot]));
     const ids = [...new Set(input.bot_ids)];
     const unknown = ids.filter((id) => !byId.has(id));
     if (unknown.length) {
       throw new BotToolRefusal(
-        promptText('tools/bots.update-plan-workspace-has-bot', { unknown: unknown.join(', ') }),
+        promptText('bots/tools.update-plan-workspace-has-bot', { unknown: unknown.join(', ') }),
       );
     }
     const bots = ids.map((id) => byId.get(id) as BotEntity);
@@ -405,7 +405,7 @@ export class BotPeerToolsFactory implements BotToolArea {
       name: 'list_bots',
       readOnly: true,
       scope: 'bots:read',
-      description: promptText('tools/bots.list-bots'),
+      description: promptText('bots/tools.list-bots'),
       input: z.strictObject({}),
       run: async (_input, context) => {
         const [bots, groups] = await Promise.all([
@@ -428,7 +428,7 @@ export class BotPeerToolsFactory implements BotToolArea {
       name: 'get_bot',
       readOnly: true,
       scope: 'bots:read',
-      description: promptText('tools/bots.get-bot'),
+      description: promptText('bots/tools.get-bot'),
       input: z.strictObject({ bot_id: z.uuid().describe('A bot id from list_bots.') }),
       run: async (input, context) => {
         const [bot, groups] = await Promise.all([
@@ -437,7 +437,7 @@ export class BotPeerToolsFactory implements BotToolArea {
           ),
           this.groups(context),
         ]);
-        return promptText('tools/bots.get-bot-bot-runs-provider', {
+        return promptText('bots/tools.get-bot-bot-runs-provider', {
           id: bot.id,
           name: bot.name,
           id2: bot.id === context.botId ? ' (you)' : '',
@@ -461,13 +461,13 @@ export class BotPeerToolsFactory implements BotToolArea {
 const BOT_UPDATE_MAX = 25;
 
 const peerMessageInput = z.strictObject({
-  bot_id: z.uuid().describe(promptText('tools/bots.peer-message-bot-id')),
+  bot_id: z.uuid().describe(promptText('bots/tools.peer-message-bot-id')),
   message: z
     .string()
     .trim()
     .min(1)
     .max(BOT_MESSAGE_MAX)
-    .describe(promptText('tools/bots.peer-message-message')),
+    .describe(promptText('bots/tools.peer-message-message')),
 });
 
 function summarizeBot(

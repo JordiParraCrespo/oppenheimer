@@ -12,12 +12,14 @@ export const BOT_NOTICES_PER_TURN = 2;
 
 /** What the model reads once its line is in the person's Inbox. */
 export function noticeSent(): string {
-  return promptText('tools/notice.notice-sent');
+  return promptText('core/tools-notice.notice-sent');
 }
 
 /** What the model reads when the turn already sent its share. */
 export function noticesSpent(): string {
-  return promptText('tools/notice.notices-spent', { noticesPerTurn: String(BOT_NOTICES_PER_TURN) });
+  return promptText('core/tools-notice.notices-spent', {
+    noticesPerTurn: String(BOT_NOTICES_PER_TURN),
+  });
 }
 
 /**
@@ -25,4 +27,4 @@ export function noticesSpent(): string {
  * "reaches out with results or decisions that need you"). One statement,
  * read by \`notify\` and by a routine's run, so the two cannot drift.
  */
-export const WORTH_SAYING = promptText('wake/worth-saying');
+export const WORTH_SAYING = promptText('core/wake-worth-saying');

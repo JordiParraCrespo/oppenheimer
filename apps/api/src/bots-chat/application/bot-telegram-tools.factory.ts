@@ -39,9 +39,9 @@ export const TELEGRAM_CHATS_LIMIT_MAX = 50;
 /** Messages one read shows at most. */
 export const TELEGRAM_READ_LIMIT_MAX = 100;
 
-const account = z.string().trim().min(1).max(100).describe(promptText('tools/telegram.account'));
+const account = z.string().trim().min(1).max(100).describe(promptText('telegram/tools.account'));
 
-const chat = z.string().trim().min(1).max(200).describe(promptText('tools/telegram.chat'));
+const chat = z.string().trim().min(1).max(200).describe(promptText('telegram/tools.chat'));
 
 /** What a send carries once its card is raised: the Telegram bot and the chat, resolved. */
 const plannedSend = z.object({
@@ -79,7 +79,7 @@ export class BotTelegramToolsFactory implements BotToolArea {
       name: 'list_telegram_accounts',
       readOnly: true,
       scope: 'telegram:read',
-      description: promptText('tools/telegram.list-telegram-accounts'),
+      description: promptText('telegram/tools.list-telegram-accounts'),
       input: z.object({}),
       run: async (_input, context) => {
         const views = await this.accounts(context.owner);
@@ -97,7 +97,7 @@ export class BotTelegramToolsFactory implements BotToolArea {
       name: 'list_telegram_chats',
       readOnly: true,
       scope: 'telegram:read',
-      description: promptText('tools/telegram.list-telegram-chats', {
+      description: promptText('telegram/tools.list-telegram-chats', {
         telegramChatsLimitMax: String(TELEGRAM_CHATS_LIMIT_MAX),
       }),
       input: z.object({
@@ -129,7 +129,7 @@ export class BotTelegramToolsFactory implements BotToolArea {
       name: 'read_telegram_chat',
       readOnly: true,
       scope: 'telegram:read',
-      description: promptText('tools/telegram.read-telegram-chat', {
+      description: promptText('telegram/tools.read-telegram-chat', {
         telegramReadLimitMax: String(TELEGRAM_READ_LIMIT_MAX),
       }),
       input: z.object({
@@ -139,7 +139,7 @@ export class BotTelegramToolsFactory implements BotToolArea {
         before: z.iso
           .datetime({ offset: true })
           .optional()
-          .describe(promptText('tools/telegram.read-telegram-chat-before')),
+          .describe(promptText('telegram/tools.read-telegram-chat-before')),
       }),
       run: async (input, context) => {
         const chosen = await this.one(context.owner, input.account);
@@ -156,7 +156,7 @@ export class BotTelegramToolsFactory implements BotToolArea {
           describeTelegramMessage(message, context.timeZone),
         );
         return [
-          promptText('tools/telegram.read-telegram-chat-chat-chat-id', {
+          promptText('telegram/tools.read-telegram-chat-chat-chat-id', {
             describeTelegramTarget: describeTelegramTarget(read.chat),
             chatId: read.chat.chatId,
             accountLabel: read.accountLabel,
@@ -174,7 +174,7 @@ export class BotTelegramToolsFactory implements BotToolArea {
       name: 'search_telegram',
       readOnly: true,
       scope: 'telegram:read',
-      description: promptText('tools/telegram.search-telegram'),
+      description: promptText('telegram/tools.search-telegram'),
       input: z.object({
         account: account.optional(),
         query: z.string().trim().min(2).max(200),
@@ -210,7 +210,7 @@ export class BotTelegramToolsFactory implements BotToolArea {
       asks: true,
       sharesOutside: true,
       scope: 'telegram:write',
-      description: promptText('tools/telegram.send-telegram-message', {
+      description: promptText('telegram/tools.send-telegram-message', {
         telegramTextMaxChars: String(TELEGRAM_TEXT_MAX_CHARS),
       }),
       input: z.object({
@@ -221,10 +221,10 @@ export class BotTelegramToolsFactory implements BotToolArea {
           .string()
           .regex(/^\d{1,20}$/)
           .optional()
-          .describe(promptText('tools/telegram.send-telegram-message-reply-to')),
+          .describe(promptText('telegram/tools.send-telegram-message-reply-to')),
         planned: plannedSend
           .optional()
-          .describe(promptText('tools/telegram.send-telegram-message-planned')),
+          .describe(promptText('telegram/tools.send-telegram-message-planned')),
       }),
       normalize: async (input, context) => ({
         ...input,
@@ -264,7 +264,7 @@ export class BotTelegramToolsFactory implements BotToolArea {
             botId: context.botId,
           }),
         );
-        return promptText('tools/telegram.send-telegram-message-done', {
+        return promptText('telegram/tools.send-telegram-message-done', {
           describeTelegramTarget: describeTelegramTarget(planned),
           accountLabel: planned.accountLabel,
           id,
@@ -311,7 +311,7 @@ export class BotTelegramToolsFactory implements BotToolArea {
     if (!wanted) {
       if (views.length === 1 && views[0]) return views[0];
       throw new BotToolRefusal(
-        promptText('tools/telegram.one-several-telegram-bots', { listed: listed() }),
+        promptText('telegram/tools.one-several-telegram-bots', { listed: listed() }),
       );
     }
     const needle = wanted.trim().toLowerCase();
@@ -321,7 +321,7 @@ export class BotTelegramToolsFactory implements BotToolArea {
       views.find((view) => view.account.username?.toLowerCase() === needle.replace(/^@/, ''));
     if (!found)
       throw new BotToolRefusal(
-        promptText('tools/telegram.one-connected-telegram-bot', { wanted, listed: listed() }),
+        promptText('telegram/tools.one-connected-telegram-bot', { wanted, listed: listed() }),
       );
     return found;
   }
@@ -330,6 +330,6 @@ export class BotTelegramToolsFactory implements BotToolArea {
 /** The send the card stored, which a call carrying out its approval runs. */
 function plannedOf(stored: unknown): PlannedSend {
   const parsed = plannedSend.safeParse(stored);
-  if (!parsed.success) throw new BotToolRefusal(promptText('tools/telegram.planned-of'));
+  if (!parsed.success) throw new BotToolRefusal(promptText('telegram/tools.planned-of'));
   return parsed.data;
 }

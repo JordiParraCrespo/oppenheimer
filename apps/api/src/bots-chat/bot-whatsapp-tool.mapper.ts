@@ -19,9 +19,9 @@ import { cut, fenceUntrusted, formatToolTime } from './domain/bot-tool-text.poli
  * `<whatsapp>`, marked as data.
  */
 
-export const NO_WHATSAPP = promptText('tools/whatsapp.no-whatsapp');
+export const NO_WHATSAPP = promptText('whatsapp/tools.no-whatsapp');
 
-export const WHATSAPP_UNTRUSTED_NOTE = promptText('tools/whatsapp.whatsapp-untrusted-note');
+export const WHATSAPP_UNTRUSTED_NOTE = promptText('whatsapp/tools.whatsapp-untrusted-note');
 
 const SNIPPET_MAX = 160;
 
@@ -43,10 +43,10 @@ export function describeWhatsappAccount(
 ): string {
   const number = phoneOf(account.phone) ?? 'not paired yet';
   const state = !hostOnline
-    ? promptText('tools/whatsapp.account-host-offline')
+    ? promptText('whatsapp/tools.account-host-offline')
     : account.isConnected
       ? 'connected'
-      : promptText('tools/whatsapp.account-needs-pairing', {
+      : promptText('whatsapp/tools.account-needs-pairing', {
           replace: account.status.replace('_', ' '),
         });
   return `"${account.label}" ${number} (account id ${account.id}, ${state})`;
@@ -90,7 +90,7 @@ export function describeWhatsappChat(chat: WhatsappChat, timeZone: string): stri
     text: cut(chat.last.text, SNIPPET_MAX),
     transcript: transcript === null ? null : cut(transcript, SNIPPET_MAX),
   };
-  return promptText('tools/whatsapp.describe-whatsapp-chat', {
+  return promptText('whatsapp/tools.describe-whatsapp-chat', {
     chatKind: chat.chatKind === 'group' ? 'group' : 'chat',
     name,
     chatId: chat.chatId,
@@ -124,7 +124,7 @@ export function describeWhatsappGrant(
   const who = describeWhatsappTarget(whatsappTargetOfGrant(grant));
   const answers = grant.botId
     ? `${botNames.get(grant.botId) ?? 'a bot of theirs'} answers`
-    : promptText('tools/whatsapp.grant-default-bot-answers');
+    : promptText('whatsapp/tools.grant-default-bot-answers');
   const allowedBy = grant.grantedByBotId
     ? `allowed by ${botNames.get(grant.grantedByBotId) ?? 'a bot'}`
     : 'allowed in Settings';

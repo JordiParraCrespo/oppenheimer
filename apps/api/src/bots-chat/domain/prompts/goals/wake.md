@@ -1,4 +1,4 @@
-<!-- A goal (`/goal`): what a continuation tells the bot (the goal, which continuation it is, the reviewer's reason when it found a claim not met yet, its budget, how to end it, and, when its last turn stopped without fault, that its work is kept), then the lines about its pause, its resumption and its end, outside any turn: the person sees them and the bot reads them in its history. The turn the person's /goal opens is `turn/slash-command.md`. -->
+<!-- A goal (`/goal`): what a continuation tells the bot (the goal, which continuation it is, the reviewer's reason when it found a claim not met yet, its budget, how to end it, and, when its last turn stopped without fault, that its work is kept), then the lines about its pause, its resumption and its end, outside any turn: the person sees them and the bot reads them in its history. The turn the person's /goal opens is `core/turn-slash-command.md`. -->
 
 <!-- fragment: continue -->
 

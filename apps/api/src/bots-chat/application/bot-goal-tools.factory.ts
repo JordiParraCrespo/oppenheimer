@@ -42,7 +42,7 @@ export class BotGoalToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'set_goal',
       scope: 'bots:write',
-      description: promptText('tools/goal.set-goal', {
+      description: promptText('goals/tools.set-goal', {
         goalIdleTurns: String(BOT_GOAL_IDLE_TURNS),
       }),
       input: z.object({
@@ -50,13 +50,13 @@ export class BotGoalToolsFactory implements BotToolArea {
           .string()
           .min(1)
           .max(BOT_GOAL_OBJECTIVE_MAX)
-          .describe(promptText('tools/goal.set-goal-objective')),
+          .describe(promptText('goals/tools.set-goal-objective')),
         token_budget: z
           .number()
           .int()
           .min(BOT_GOAL_TOKEN_BUDGET_MIN)
           .optional()
-          .describe(promptText('tools/goal.set-goal-token-budget')),
+          .describe(promptText('goals/tools.set-goal-token-budget')),
       }),
       // A continuation is not offered it, so a goal never renews itself.
       notOn: ['goal'],
@@ -80,10 +80,10 @@ export class BotGoalToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'end_goal',
       scope: 'bots:write',
-      description: promptText('tools/goal.end-goal'),
+      description: promptText('goals/tools.end-goal'),
       input: z.object({
         outcome: z.enum(['met', 'blocked']),
-        reason: z.string().min(1).max(1_000).describe(promptText('tools/goal.end-goal-reason')),
+        reason: z.string().min(1).max(1_000).describe(promptText('goals/tools.end-goal-reason')),
       }),
       run: async (input, context) => {
         const goal = await this.goals.findForBot(context.organizationId, context.botId);
@@ -92,29 +92,29 @@ export class BotGoalToolsFactory implements BotToolArea {
         if (input.outcome === 'blocked') {
           goal.pause('blocked', input.reason, new Date());
           if (!(await this.goals.pause(goal, goalPauseLine(goal, 'paused')))) {
-            return promptText('tools/goal.end-goal-goal-changed-meanwhile');
+            return promptText('goals/tools.end-goal-goal-changed-meanwhile');
           }
           await this.goalsOf.cancelWaiting(goal, null);
-          return promptText('tools/goal.end-goal-goal-paused-blocked', {
+          return promptText('goals/tools.end-goal-goal-paused-blocked', {
             objective: goal.objective,
           });
         }
         if (!ownTurn) {
           // No line: the call is the record, in this turn's activity.
           await this.goalsOf.end(goal, null, null);
-          return promptText('tools/goal.end-goal-goal-ended-after', {
+          return promptText('goals/tools.end-goal-goal-ended-after', {
             continuations: String(goal.continuations),
             objective: goal.objective,
           });
         }
         if (goal.paused) {
-          return promptText('tools/goal.end-goal-goal-paused-person');
+          return promptText('goals/tools.end-goal-goal-paused-person');
         }
         goal.claimMet(input.reason);
         if (!(await this.goals.claim(goal))) {
-          return promptText('tools/goal.end-goal-goal-changed-meanwhile');
+          return promptText('goals/tools.end-goal-goal-changed-meanwhile');
         }
-        return promptText('tools/goal.end-goal-noted-when-turn');
+        return promptText('goals/tools.end-goal-noted-when-turn');
       },
     });
   }
