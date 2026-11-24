@@ -110,4 +110,16 @@ describe('a session left waiting', () => {
     look = watchSessions(look.watches, failed, T0 + MINUTE + STALE_AFTER_MS);
     expect(look.stale.map((s) => s.id)).toEqual(['a']);
   });
+
+  it('includes a launch stuck in starting, which waits on the reader', () => {
+    const stuck = [sessionEntity({ id: 'a', lifecycle: 'starting', state: 'waiting-on-you' })];
+    let look = watchSessions(
+      null,
+      [sessionEntity({ id: 'a', lifecycle: 'starting', state: 'idle' })],
+      T0,
+    );
+    look = watchSessions(look.watches, stuck, T0 + MINUTE);
+    look = watchSessions(look.watches, stuck, T0 + MINUTE + STALE_AFTER_MS);
+    expect(look.stale.map((s) => s.id)).toEqual(['a']);
+  });
 });

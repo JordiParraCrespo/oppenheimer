@@ -37,9 +37,13 @@ export interface SessionWatch {
   staleTold: boolean;
 }
 
-/** A session needs the reader: amber (it waits on them) or blue (its turn ended). */
+/**
+ * A session needs the reader: amber (it waits on them) or blue (its turn
+ * ended). A launch stuck in `starting` is amber too, and the Inbox lists it,
+ * so provisioning does not keep it out.
+ */
 function needsReader(session: SessionEntity): boolean {
-  if (session.isClosing || session.isProvisioning) return false;
+  if (session.isClosing) return false;
   return session.state === 'waiting-on-you' || session.state === 'ready-for-review';
 }
 
