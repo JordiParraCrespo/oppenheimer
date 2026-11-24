@@ -3984,6 +3984,8 @@
       "any": "Cualquiera",
       "showDone": "Mostrar hechos",
       "showPulls": "Mostrar pull requests",
+      "alerts": "Avisarme en este navegador",
+      "alertsBlocked": "Este navegador bloquea las notificaciones",
       "clear": "Quitar filtros",
       "remove": "Quitar filtro",
       "typeChip": "Tipo: {{value}}",

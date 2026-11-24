@@ -1911,3 +1911,9 @@ earlier note:
   you at once, and the runner sends that report 3 s after the first
   ("A question reaches you in seconds"). Codex's and OpenCode's detection
   rules were rewritten from their real screens the same day.
+- `next-steps/agent-tools.md` §2 left a browser notification for later. On
+  2026-11-24 the console raised one, opt-in per browser from the Inbox's
+  filter menu, for each session that comes to wait on the reader and each
+  agent notice, in a tab they are not looking at (`29-inbox.md`, "A
+  notification in this browser").
+
