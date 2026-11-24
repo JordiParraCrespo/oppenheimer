@@ -322,6 +322,7 @@
     "searchRepositories": "Buscar repositorios",
     "repoCount_one": "{{count}} repositorio",
     "repoCount_other": "{{count}} repositorios",
+    "repoCount_many": "{{count}} repositorios",
     "runsIn": "Se ejecuta en",
     "placeHost": "En un host",
     "placeHostDesc": "Un worktree en el host, el agente en su terminal",

@@ -104,6 +104,7 @@
       "fromMail": "Tomado del mensaje al que responde",
       "files_one": "{{count}} archivo",
       "files_other": "{{count}} archivos",
+      "files_many": "{{count}} archivos",
       "signature": "Debajo va la firma de Gmail de {{email}} y luego el mensaje citado.",
       "draft": "El borrador de {{email}}, enviado tal y como está ahora en Gmail.",
       "nobody": "Nadie",

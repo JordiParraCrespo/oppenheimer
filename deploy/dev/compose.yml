@@ -199,6 +199,7 @@ services:
     networks: [edge]
     volumes:
       - /srv/oppenheimer/public:/usr/share/nginx/html:ro
+      - ./releases.conf:/etc/nginx/conf.d/default.conf:ro
     healthcheck:
       test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1/install.sh"]
       interval: 30s
@@ -294,6 +295,11 @@ services:
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
       GF_NEWS_NEWS_FEED_ENABLED: "false"
       GF_PLUGINS_PREINSTALL_DISABLED: "true"
+      # The monitoring network has no route out, so every call to grafana.com
+      # failed and logged an error: the plugin signing keys (and, with them,
+      # the Angular detection patterns) and plugin update checks.
+      GF_PLUGINS_PUBLIC_KEY_RETRIEVAL_DISABLED: "true"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
     volumes:
       - ./monitoring/server/grafana:/etc/grafana/provisioning/datasources:ro
       - grafanadata:/var/lib/grafana

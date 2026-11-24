@@ -70,6 +70,8 @@ import { InvitationOrmEntity } from '../organizations/database/invitation.orm-en
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
 import { PersonalWorkspaceRepository } from '../organizations/database/personal-workspace.repository';
+import { TeamOrmEntity } from '../organizations/database/team.orm-entity';
+import { TeamMemberOrmEntity } from '../organizations/database/team-member.orm-entity';
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
 import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { ProjectRepositoryOrmEntity } from '../projects/database/project-repository.orm-entity';
@@ -139,6 +141,8 @@ const dataSource = new DataSource({
     GithubInstallationOrmEntity,
     OrganizationOrmEntity,
     MemberOrmEntity,
+    TeamOrmEntity,
+    TeamMemberOrmEntity,
     InvitationOrmEntity,
     ProjectOrmEntity,
     ProjectRepositoryOrmEntity,

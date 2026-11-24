@@ -475,3 +475,23 @@ func TestTakesSecond(t *testing.T) {
 		}
 	}
 }
+
+// A command that starts an agent with a task offers only the agents it would
+// start: Muse's help once listed it while DropsTask refused it. The blank
+// terminal stays, since its task is a note for the person.
+func TestAgentsOfferedWithATaskAreTheOnesItReaches(t *testing.T) {
+	withTask := AgentNames(true)
+	for _, dropped := range []Agent{AgentZCode, AgentMuse} {
+		if slices.Contains(withTask, string(dropped)) {
+			t.Errorf("AgentNames(true) offers %s, which takes no first task", dropped)
+		}
+	}
+	for _, kept := range []Agent{AgentClaude, AgentHermes, AgentShell} {
+		if !slices.Contains(withTask, string(kept)) {
+			t.Errorf("AgentNames(true) leaves out %s, which takes a task", kept)
+		}
+	}
+	if all := AgentNames(false); len(all) != len(agentCatalogIDs) {
+		t.Errorf("AgentNames(false) has %d agents, the runner knows %d", len(all), len(agentCatalogIDs))
+	}
+}
