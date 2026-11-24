@@ -38,7 +38,13 @@ func programStatusDir(paths Paths) string {
 // linkRunner points `<bin>/path/runner` at this binary, best effort: a
 // session without it still runs, its agent just cannot call `runner` by name.
 func linkRunner(paths Paths) {
-	executable := runnerExecutable()
+	pointRunnerAt(paths, runnerExecutable())
+}
+
+// pointRunnerAt points `<bin>/path/runner` at executable. A runner started
+// through the link itself leaves it alone: macOS names a binary by the path
+// it was started by, and pointing the link there would point it at itself.
+func pointRunnerAt(paths Paths, executable string) {
 	if executable == "" {
 		return
 	}
@@ -49,6 +55,11 @@ func linkRunner(paths Paths) {
 	link := filepath.Join(dir, "runner")
 	if target, err := os.Readlink(link); err == nil && target == executable {
 		return
+	}
+	if self, err := os.Lstat(executable); err == nil {
+		if existing, err := os.Lstat(link); err == nil && os.SameFile(self, existing) {
+			return
+		}
 	}
 	tmp := link + ".new"
 	_ = os.Remove(tmp)
