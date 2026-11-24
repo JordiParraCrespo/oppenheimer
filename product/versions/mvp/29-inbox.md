@@ -443,6 +443,11 @@ for it to look like a mail inbox. What changed from §5 and Decided 1:
 - **You're all caught up** (2026-11-14) replaces "Nothing needs you" as the
   clear pane's heading, centred under a small line drawing of an empty
   tray; the line under it and the list's own "Nothing needs you." stay.
+- **Inbox zero** (2026-11-24) heads the list's own empty state: a check in
+  a green disc, the title, and "Nothing needs you." under it, in place of
+  the one muted row. Filters or words that match nothing show "No matches"
+  over a search-x disc. The owner asked for it; it is the icon tier in a
+  column the design system would otherwise give an inline row.
 
 ## Reports: a problem with its pictures, answered here (2026-11-09)
 

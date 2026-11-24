@@ -2033,6 +2033,10 @@ earlier note:
   as its owner restarts it, and the button is the fallback for a restart
   that fails. The runner also stops, never closes, a session left `done`
   or `idle` and unwatched for two hours (`RUNNER_IDLE_STOP`).
+- `versions/mvp/29-inbox.md` ("You're all caught up", 2026-11-14) kept the
+  list's empty state as one muted "Nothing needs you." row. On 2026-11-24
+  the owner asked for more: the list shows "Inbox zero" over a check in a
+  green disc, and "No matches" when filters match nothing ("Inbox zero").
 - `versions/mvp/25-bots.md` §4.2 kept a host's switches for bots
   (`runner exec`, `runner computer`, `runner browser`) on the host alone,
   never written by the control plane. On 2026-11-24 the owner, told by a

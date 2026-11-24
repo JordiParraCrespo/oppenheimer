@@ -2641,7 +2641,14 @@
         "addCount_other": "Añadir {{count}} chats",
         "addCount_many": "Añadir {{count}} chats",
         "telegramTitle": "Telegram · {{name}}",
-        "telegramMeta": "Te responde allí. Los grupos y otras personas en Telegram llegan después."
+        "telegramMeta": "Te responde allí. Los grupos y otras personas en Telegram llegan después.",
+        "tabs": {
+          "label": "Canal",
+          "whatsapp": "WhatsApp",
+          "telegram": "Telegram",
+          "slack": "Slack"
+        },
+        "noTelegram": "Ningún bot de Telegram responde como este bot todavía. Elígelo para uno en Ajustes → Telegram."
       },
       "slack": {
         "title": "Slack",
@@ -3955,7 +3962,9 @@
   "inbox": {
     "title": "Bandeja",
     "list": {
+      "emptyTitle": "Bandeja vacía",
       "empty": "Nada te necesita.",
+      "noneMatchingTitle": "Sin coincidencias",
       "noneMatching": "Nada que coincida con estos filtros o palabras te necesita.",
       "low": "Baja",
       "snoozed": "Pospuestos",

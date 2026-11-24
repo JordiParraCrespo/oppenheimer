@@ -26,6 +26,22 @@ func TestAnAgentStartsTheRunnersToolsWhateverItsPATH(t *testing.T) {
 	}
 }
 
+// macOS names a running binary by the path it was started by, so `runner
+// status` typed in a session, found through `bin/path/runner`, pointed that
+// link at itself: every later `runner` and MCP server start through it failed
+// with "too many levels of symbolic links".
+func TestARunnerStartedThroughItsLinkLeavesTheLinkWorking(t *testing.T) {
+	paths := Paths{Home: t.TempDir()}
+	linkRunner(paths)
+	link := filepath.Join(paths.Commands(), "runner")
+
+	pointRunnerAt(paths, link)
+
+	if _, err := filepath.EvalSymlinks(link); err != nil {
+		t.Fatalf("the link no longer reaches the runner: %v", err)
+	}
+}
+
 // tmux gives a session's programs the PATH of the runner that started them,
 // so `runner --skill` and `runner sessions …` work by name only when the
 // runner's own PATH reaches the command.
