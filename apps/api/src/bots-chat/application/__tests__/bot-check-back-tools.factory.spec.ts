@@ -82,6 +82,19 @@ describe('BotCheckBackToolsFactory', () => {
     expect(tool.asks).toBeFalsy();
   });
 
+  // What breaks this: the turn's one look claimed before the write, kept
+  // when the write fails, so the retry answers "already set" and no look is
+  // ever stored.
+  it('lets the turn set its look again when storing it failed', async () => {
+    const { checkBacks, call } = setup();
+    checkBacks.schedule.mockRejectedValueOnce(new Error('outbox down'));
+    const failed = await call({ about: ABOUT });
+    expect(failed.isError).toBe(true);
+    const retried = await call({ about: ABOUT });
+    expect(retried.isError).toBe(false);
+    expect(checkBacks.schedule).toHaveBeenCalledTimes(2);
+  });
+
   // What breaks this: a look is a turn of its own origin, so a GitHub ask's
   // look would be offered the comments its ask was denied, and a goal's look
   // set_goal, renewing the goal through it.

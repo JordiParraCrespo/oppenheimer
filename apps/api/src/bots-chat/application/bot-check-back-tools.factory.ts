@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { BOT_CHECK_BACK_ABOUT_MAX } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
+import { BotTurnMapper } from '../bot-turn.mapper';
 import { BOT_CHECK_BACKS, BOT_MESSAGE_REPOSITORY } from '../bots-chat.di-tokens';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
 import {
@@ -106,21 +107,13 @@ export class BotCheckBackToolsFactory implements BotToolArea {
         if (earlier !== null) {
           return promptText('tools/check-back.check-back-already-set', { at: earlier });
         }
-        await this.checkBacks.schedule(
-          {
-            chainId: look.chainId,
-            step: look.step,
-            chainStartedAt: look.chainStartedAt,
-            about: look.about,
-            at: look.at,
-            botId: context.botId,
-            organizationId: context.organizationId,
-            originTurnId: context.turnId,
-            credentialScopes: context.credentialScopes,
-            timeZone: context.timeZone,
-          },
-          null,
-        );
+        try {
+          await this.checkBacks.schedule(BotTurnMapper.toScheduledCheckBack(look, context), null);
+        } catch (error) {
+          // Nothing was stored, so the turn's one look is still to set.
+          context.budget.release('check_back');
+          throw error;
+        }
         return promptText('tools/check-back.check-back-set', { at, look: String(look.step + 1) });
       },
     });

@@ -25,6 +25,11 @@ export class BotTurnBudget {
     return null;
   }
 
+  /** Gives back a `once` claim whose work failed, so a retry in the turn can make it. */
+  release(kind: string): void {
+    this.firsts.delete(kind);
+  }
+
   /** Takes one `kind` call if fewer than `max` were taken this turn; says whether it did. */
   take(kind: string, max: number): boolean {
     const used = this.spent.get(kind) ?? 0;

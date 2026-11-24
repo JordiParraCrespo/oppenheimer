@@ -12,7 +12,9 @@ import {
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { BotEntity } from '../bots/domain/bot.entity';
+import type { BotToolContext } from './application/bot-tool.factory';
 import { BotTurnOrmEntity, type BotTurnPlanLimitsRecord } from './database/bot-turn.orm-entity';
+import type { CheckBackLook } from './domain/bot-check-back.policy';
 import {
   BOT_CONTACT_CHATS,
   BotTurnEntity,
@@ -181,6 +183,28 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
       effort: bot.effort,
       timeZone: look.timeZone,
       credentialScopes: look.credentialScopes,
+    };
+  }
+
+  /** A look to stage, from the look the policy planned and the turn that set it. */
+  static toScheduledCheckBack(
+    look: CheckBackLook,
+    turn: Pick<
+      BotToolContext,
+      'botId' | 'organizationId' | 'turnId' | 'credentialScopes' | 'timeZone'
+    >,
+  ): CheckBack {
+    return {
+      chainId: look.chainId,
+      step: look.step,
+      chainStartedAt: look.chainStartedAt,
+      about: look.about,
+      at: look.at,
+      botId: turn.botId,
+      organizationId: turn.organizationId,
+      originTurnId: turn.turnId,
+      credentialScopes: turn.credentialScopes,
+      timeZone: turn.timeZone,
     };
   }
 
