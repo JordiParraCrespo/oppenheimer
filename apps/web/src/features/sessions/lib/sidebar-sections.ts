@@ -32,13 +32,3 @@ export function movedSection(
   next.splice(to, 0, order[from] as SidebarSection);
   return next;
 }
-
-/** `order` with `id` one place up (-1) or down (1); past either end it stays. */
-export function steppedSection(
-  order: readonly SidebarSection[],
-  id: SidebarSection,
-  step: -1 | 1,
-): SidebarSection[] {
-  const target = order[order.indexOf(id) + step];
-  return target ? movedSection(order, id, target) : [...order];
-}

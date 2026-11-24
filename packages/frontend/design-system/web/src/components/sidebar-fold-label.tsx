@@ -1,5 +1,6 @@
 import { ChevronDownIcon } from 'lucide-react';
-import type * as React from 'react';
+import * as React from 'react';
+import { SidebarSectionHandle } from '../internal/sidebar-section-handle';
 import { cn } from '../lib/utils';
 
 /**
@@ -7,7 +8,8 @@ import { cn } from '../lib/utils';
  * the name, uppercase like the head it sits in, then a chevron that shows on
  * hover and focus and stays, turned right, while the list is folded. The head
  * stays the layout; the caller passes this as its `label` and leaves the list
- * out while `open` is false.
+ * out while `open` is false. Inside a `SortableSidebarSection` it is the
+ * section's keyboard control: Space picks the section up, Enter folds it.
  */
 function SidebarFoldLabel({
   open,
@@ -19,9 +21,11 @@ function SidebarFoldLabel({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const sortable = React.useContext(SidebarSectionHandle);
   return (
     <button
       type="button"
+      {...sortable?.control}
       data-slot="sidebar-fold-label"
       aria-expanded={open}
       onClick={() => onOpenChange(!open)}

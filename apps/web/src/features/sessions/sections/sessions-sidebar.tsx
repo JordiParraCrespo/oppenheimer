@@ -1,12 +1,16 @@
-import { DragProvider, SidebarListHead, SortableGroup } from '@oppenheimer/design-system-web';
+import {
+  DragProvider,
+  SidebarListHead,
+  SortableGroup,
+  SortableSidebarSection,
+} from '@oppenheimer/design-system-web';
 import { OfflineOnce, QueryState, useDragLabels } from '@oppenheimer/frontend-web';
-import { type ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionsSidebarSkeleton } from '../components/sessions-sidebar-skeleton';
-import { SidebarSectionItem } from '../components/sidebar-section-item';
 import { useFoldedSessions } from '../hooks/use-folded-sessions';
 import { useSidebarSections } from '../hooks/use-sidebar-sections';
-import { type SidebarSection, steppedSection } from '../lib/sidebar-sections';
+import type { SidebarSection } from '../lib/sidebar-sections';
 import { NewSessionButton } from './new-session-button';
 import { SessionsSidebarBody } from './sessions-sidebar-body';
 
@@ -20,31 +24,37 @@ const SECTIONS_GROUP = 'sidebar-sections';
  * Offline, both fail the same way, so `OfflineOnce` says so once above them.
  *
  * The reader drags Bots and Sessions by their headings into the order they
- * want (`useSidebarSections`, kept on this device), on a drag surface of
- * their own: the sessions list keeps its own for its rows and projects.
- * Each heading folds its section too, so either can be moved out of the way.
+ * want (`useSidebarSections`, kept on this device), each a
+ * `SortableSidebarSection` on a drag surface of their own: the sessions list
+ * keeps its own for its rows and projects. Each heading folds its section
+ * too, and an open Sessions takes the height left, where its list scrolls.
  */
 export function SessionsSidebar({ bots }: { bots?: ReactNode }) {
   const { t } = useTranslation();
   const list = useFoldedSessions();
   const sections = useSidebarSections();
   const dragLabels = useDragLabels();
-  const labels = {
-    bots: t('bots.section.heading'),
-    sessions: t('sessions.sidebar.sessions'),
-  };
-  // What a screen reader hears after a step from the grip's arrow keys.
-  const [moved, setMoved] = useState('');
-  const step = (id: SidebarSection, by: -1 | 1) => {
-    const next = steppedSection(sections.order, id, by);
-    sections.step(id, by);
-    setMoved(
-      t('sessions.sidebar.sectionMoved', {
-        name: labels[id],
-        position: next.indexOf(id) + 1,
-        total: next.length,
-      }),
-    );
+  const drawn: Record<SidebarSection, { label: string; grow: boolean; content: ReactNode }> = {
+    bots: { label: t('bots.section.heading'), grow: false, content: bots },
+    sessions: {
+      label: t('sessions.sidebar.sessions'),
+      grow: list.open,
+      content: (
+        <QueryState>
+          <QueryState.Pending>
+            <SessionsSidebarSkeleton open={list.open} />
+          </QueryState.Pending>
+          <QueryState.Error
+            fallback={t('sessions.sidebar.loadFailed')}
+            className="mx-3 mt-2"
+            offlineOnce
+          />
+          <QueryState.Data>
+            <SessionsSidebarBody />
+          </QueryState.Data>
+        </QueryState>
+      ),
+    },
   };
 
   return (
@@ -52,9 +62,6 @@ export function SessionsSidebar({ bots }: { bots?: ReactNode }) {
       <div className="px-3 pb-2.5">
         <NewSessionButton />
       </div>
-      <span aria-live="polite" className="sr-only">
-        {moved}
-      </span>
       <OfflineOnce className="mx-3 mb-2">
         <DragProvider
           labels={dragLabels}
@@ -74,44 +81,16 @@ export function SessionsSidebar({ bots }: { bots?: ReactNode }) {
             className="flex min-h-0 flex-1 flex-col"
           >
             {sections.order.map((id) =>
-              id === 'bots' ? (
-                bots ? (
-                  <SidebarSectionItem
-                    key={id}
-                    id={id}
-                    label={labels.bots}
-                    moveLabel={t('sessions.sidebar.moveSection', { name: labels.bots })}
-                    moveHint={t('sessions.sidebar.moveSectionHint')}
-                    onStep={(by) => step(id, by)}
-                  >
-                    {bots}
-                  </SidebarSectionItem>
-                ) : null
-              ) : (
-                <SidebarSectionItem
+              drawn[id].content ? (
+                <SortableSidebarSection
                   key={id}
                   id={id}
-                  label={labels.sessions}
-                  moveLabel={t('sessions.sidebar.moveSection', { name: labels.sessions })}
-                  moveHint={t('sessions.sidebar.moveSectionHint')}
-                  onStep={(by) => step(id, by)}
-                  grow={list.open}
+                  label={drawn[id].label}
+                  className={drawn[id].grow ? 'min-h-0 flex-1' : 'shrink-0'}
                 >
-                  <QueryState>
-                    <QueryState.Pending>
-                      <SessionsSidebarSkeleton open={list.open} />
-                    </QueryState.Pending>
-                    <QueryState.Error
-                      fallback={t('sessions.sidebar.loadFailed')}
-                      className="mx-3 mt-2"
-                      offlineOnce
-                    />
-                    <QueryState.Data>
-                      <SessionsSidebarBody />
-                    </QueryState.Data>
-                  </QueryState>
-                </SidebarSectionItem>
-              ),
+                  {drawn[id].content}
+                </SortableSidebarSection>
+              ) : null,
             )}
           </SortableGroup>
         </DragProvider>
