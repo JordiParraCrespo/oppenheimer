@@ -43,8 +43,10 @@ describe('coding agent catalog', () => {
     // a lone one twice opens Rewind.
     const keys = CODING_AGENTS.qwen.input?.clear?.keys ?? '';
     expect(keys).not.toBe('');
-    expect(keys).not.toMatch(/[\u000b\u0010\u000ekj]/);
-    expect(keys.replace(/\u001bd/g, '')).not.toContain('\u001b');
+    for (const moves of ['\u000b', '\u0010', '\u000e', 'k', 'j']) {
+      expect(keys, JSON.stringify(moves)).not.toContain(moves);
+    }
+    expect(keys.split('\u001bd').join('')).not.toContain('\u001b');
   });
 
   it('starts Qwen Code interactive with its task in one word, and reopens it by id once saved', () => {
