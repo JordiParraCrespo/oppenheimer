@@ -20,6 +20,7 @@ import { useInboxListing } from '@/features/inbox/hooks/use-inbox-listing';
 import { useInboxMarks } from '@/features/inbox/hooks/use-inbox-marks';
 import { useMarkRead } from '@/features/inbox/hooks/use-inbox-read';
 import { useFollowNext } from '@/features/inbox/hooks/use-inbox-visit';
+import { inboxCardKey } from '@/features/inbox/lib/inbox-card-key';
 import { inboxCopy, inboxFrom } from '@/features/inbox/lib/inbox-copy';
 import { canPutAway } from '@/features/inbox/lib/inbox-put-away';
 import { InboxItemMessage } from '@/features/inbox/sections/inbox-item-message';
@@ -162,12 +163,11 @@ export function InboxCurrent() {
       </InboxToolbar>
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
         {errors}
-        {/* Keyed by the item: the next card starts with no drag, tilt or stamp
-            left on it, whether or not the last one left with an animation. A
-            session by the session, so a refused answer's error stays over the
-            decision it now waits on (`InboxItemMessage`). */}
+        {/* Keyed by the item (`inboxCardKey`): the next card starts with no
+            drag, tilt or stamp left on it, whether or not the last one left
+            with an animation. */}
         <InboxDeck
-          key={item.kind === 'session' ? `session:${item.session.id}` : item.key}
+          key={inboxCardKey(item)}
           ref={deck}
           behind={open.length - 1}
           leaving={leaving}

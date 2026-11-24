@@ -4,12 +4,15 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotChatSlotContext } from '../hooks/use-bot-chat-slot';
 import { InboxBotNoticeCard } from '../sections/inbox-bot-notice-card';
+import { InboxItemMessage } from '../sections/inbox-item-message';
 
 /**
  * A bot's notice is answered on its card: Reply here opens that bot's chat
  * under the notice, and pressing it again folds the chat away. What breaks
  * this: a chat opened for another bot than the one that wrote (matched by
- * anything but the notice's bot id), a chat mounted before it is asked for
+ * anything but the notice's bot id), a chat closed under the person's
+ * typing when the bot sends a newer notice (its latest, under a new id), a
+ * chat mounted before it is asked for
  * (which would mark the bot read, and fetch, on every card shown), or a
  * Reply offered where no chat was composed in.
  */
@@ -66,5 +69,29 @@ describe('a bot notice answered in place', () => {
     renderCard(null);
     expect(screen.queryByRole('button', { name: 'inbox.botNotice.reply' })).toBeNull();
     expect(screen.getByText('inbox.botNotice.openChat')).toBeTruthy();
+  });
+
+  it('stays open when the bot it answers sends a newer notice, and closes for another bot', () => {
+    const chat = (botId: string) => <p>chat with {botId}</p>;
+    const shown = (notice: { id: string; botId: string }) => (
+      <BotChatSlotContext value={chat}>
+        <InboxItemMessage
+          item={{ ...item, key: `botNotice:${notice.botId}:${notice.id}`, notice } as never}
+          copy={copy}
+          from="Bot"
+          age="now"
+        />
+      </BotChatSlotContext>
+    );
+    const { rerender } = render(shown({ id: 'n1', botId: 'b1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'inbox.botNotice.reply' }));
+    expect(screen.getByText('chat with b1')).toBeTruthy();
+
+    rerender(shown({ id: 'n2', botId: 'b1' }));
+    expect(screen.getByText('chat with b1')).toBeTruthy();
+
+    rerender(shown({ id: 'n3', botId: 'b2' }));
+    expect(screen.queryByText('chat with b2')).toBeNull();
+    expect(screen.getByRole('button', { name: 'inbox.botNotice.reply' })).toBeTruthy();
   });
 });
