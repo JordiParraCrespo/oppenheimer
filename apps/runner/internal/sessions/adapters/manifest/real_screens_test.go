@@ -41,6 +41,26 @@ func TestRealScreensReadAsTheStateTheyShow(t *testing.T) {
 	}
 }
 
+// Codex writes the person's prompt into its title, so words in a prompt must
+// never read as a wait: only its own `[ ! ] Action Required` prefix does.
+func TestCodexTitleWaitsOnlyOnItsOwnPrefix(t *testing.T) {
+	c := classifier(t, "")
+	working := read(t, "codex-working.txt")
+	for _, tc := range []struct {
+		title string
+		want  domain.State
+	}{
+		{"[ ! ] Action Required | go | work", domain.StateBlocked},
+		{"[ . ] Action Required | go | work", domain.StateBlocked},
+		{"_ fix the Action Required banner | work", domain.StateWorking},
+		{"fix the action required banner | work", domain.StateWorking},
+	} {
+		if got, _ := c.Classify(app.Screen{Body: working, Title: tc.title}, domain.AgentCodex); got != tc.want {
+			t.Errorf("title %q = %q, want %q", tc.title, got, tc.want)
+		}
+	}
+}
+
 // A terminal that drops the title still shows the prompt on screen.
 func TestCodexWaitingReadsAsBlockedWithoutItsTitle(t *testing.T) {
 	c := classifier(t, "")

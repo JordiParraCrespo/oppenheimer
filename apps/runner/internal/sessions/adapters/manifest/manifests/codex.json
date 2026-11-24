@@ -1,7 +1,7 @@
 {
   "schema": "oppenheimer.manifest/v1",
   "agent": "codex",
-  "version": "2026.11.23.1",
+  "version": "2026.11.23.2",
   "minEngine": 1,
   "notes": "Watched against Codex 0.171 in tmux on 2026-11-23: an escalated command's approval, a Plan-mode question (request_user_input), a turn running and the prompt after it; the screens are `testdata/screens/codex-*`. The title is the strongest signal: Codex writes `Action Required` into it whenever it waits on the person, and its own spinner frame in front of the session name otherwise.",
   "rules": [
@@ -10,8 +10,8 @@
       "state": "blocked",
       "priority": 1150,
       "region": "title",
-      "any": ["(?i)\\baction required\\b"],
-      "note": "Codex titles the terminal `[ ! ] Action Required | <prompt> | <folder>` both while an approval is open and while a question is; the question screen also says `esc to interrupt`, so without the title it reads as work."
+      "any": ["(?i)^\\s*\\[\\s*\\S\\s*\\]\\s*action required\\b"],
+      "note": "Codex titles the terminal `[ ! ] Action Required | <prompt> | <folder>` both while an approval is open and while a question is; the question screen also says `esc to interrupt`, so without the title it reads as work. Anchored to that bracketed glyph (it blinks between `!` and `.`) because the rest of the title is the person's own prompt, and a prompt that says `action required` must not read as a wait."
     },
     {
       "id": "approval",
