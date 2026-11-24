@@ -30,7 +30,7 @@ const SLACK_REACTION_NAMES: Readonly<Record<string, string>> = {
   '👋': 'wave',
   '🤝': 'handshake',
   '🫡': 'saluting_face',
-  '🤦': 'facepalm',
+  '🤦': 'face_palm',
   '🤷': 'shrug',
   '😀': 'grinning',
   '😃': 'smiley',
@@ -114,7 +114,24 @@ const SLACK_REACTION_NAMES: Readonly<Record<string, string>> = {
   '🔴': 'red_circle',
 };
 
-/** Slack's `skin-tone-2` to `skin-tone-6`, by the modifier that follows the hand or face. */
+/** The names above Slack draws in skin tones: hands and people, never faces or objects. */
+const TONED_NAMES: ReadonlySet<string> = new Set([
+  '+1',
+  '-1',
+  'pray',
+  'clap',
+  'raised_hands',
+  'ok_hand',
+  'v',
+  'crossed_fingers',
+  'muscle',
+  'wave',
+  'handshake',
+  'face_palm',
+  'shrug',
+]);
+
+/** Slack's `skin-tone-2` to `skin-tone-6`, by the modifier that follows the hand or person. */
 const SKIN_TONES: Readonly<Record<string, number>> = {
   '🏻': 2,
   '🏼': 3,
@@ -126,7 +143,8 @@ const SKIN_TONES: Readonly<Record<string, number>> = {
 /**
  * The name Slack reacts with for one emoji (`👍` is `+1`, `👍🏽` is
  * `+1::skin-tone-4`), with or without its emoji presentation selector; null
- * for one this table has no name for.
+ * for one this table has no name for, and for a skin tone on a name Slack
+ * draws in none (`😂🏽`), which Slack would refuse.
  */
 export function slackReactionName(emoji: string): string | null {
   const plain = emoji.replaceAll('️', '');
@@ -135,5 +153,5 @@ export function slackReactionName(emoji: string): string | null {
   const chars = [...plain];
   const tone = chars.length === 2 ? SKIN_TONES[chars[1] ?? ''] : undefined;
   const base = tone ? SLACK_REACTION_NAMES[chars[0] ?? ''] : undefined;
-  return base && tone ? `${base}::skin-tone-${tone}` : null;
+  return base && tone && TONED_NAMES.has(base) ? `${base}::skin-tone-${tone}` : null;
 }

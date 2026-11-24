@@ -588,9 +588,23 @@ describe('a bot’s reaction on Slack', () => {
     await expect(handler.execute(react(account.id, '❤️', '👍'))).resolves.toBe('reacted');
     const message = { channel: 'C1', ts: '1700000500.000001' };
     expect(vi.mocked(slack.react).mock.calls.map((call) => [call[1], call[2]])).toEqual([
-      [{ ...message, name: '+1' }, false],
       [{ ...message, name: 'heart' }, true],
+      [{ ...message, name: '+1' }, false],
     ]);
+  });
+
+  // What breaks this: the old reaction taken off before a new one Slack
+  // refuses, so Slack shows none while the console still shows the old.
+  it('keeps the old reaction when Slack refuses the new one', async () => {
+    const { account, handler, slack } = reacting(
+      fakeSlack({
+        react: vi.fn(async (_access, _message, on) => {
+          if (on) throw new Error('ratelimited');
+        }),
+      }),
+    );
+    await expect(handler.execute(react(account.id, '❤️', '👍'))).resolves.toBe('not_sent');
+    expect(vi.mocked(slack.react).mock.calls.every((call) => call[2] === true)).toBe(true);
   });
 
   // What breaks this: a reaction Slack has no name for sent anyway and
@@ -628,6 +642,9 @@ describe('a bot’s reaction on Slack', () => {
     expect(slackReactionName('❤')).toBe('heart');
     expect(slackReactionName('✔️')).toBe('heavy_check_mark');
     expect(slackReactionName('🦩')).toBeNull();
+    expect(slackReactionName('🤦🏽')).toBe('face_palm::skin-tone-4');
+    // Slack draws no face in tones: `joy::skin-tone-4` would be refused.
+    expect(slackReactionName('😂🏽')).toBeNull();
   });
 });
 
