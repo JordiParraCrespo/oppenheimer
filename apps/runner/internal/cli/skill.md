@@ -90,7 +90,8 @@ JSON
 
 The console draws it in your session's chat with its own charts, in light
 and dark: figures, a chart, a table, a checklist. Blocks: `markdown`
-{text}; `metrics` {items: [{label, value, delta?, good?, hint?}]}; `bar`,
+{text}; `metrics` {items: [{label, value, delta?, good?, hint?}]}, value a
+number or short text, delta a number in the value's units; `bar`,
 `line`, `area` {title?, labels, series: [{label, values}]}, one value per
 label and none under zero, up to five series; `ring` {title?, total?, segments: [{label,
 value}]}; `ranking` {title?, items: [{label, value, detail?}]}; `table`
@@ -102,13 +103,16 @@ description?}]}; `html` {title?, html, height?}, a fragment with inline
 `<style>` and `<script>` for what no other block draws (a simulation, a
 custom diagram), run in a sandbox with the network closed: no fetch and
 nothing loaded from a URL, the console's colours in CSS variables (`--fg`,
-`--card`, `--border`, `--chart-1` to `--chart-5`). Numeric blocks take
-`format` {prefix?, suffix?, decimals?, compact?}. Up to 24 blocks. A spec it cannot draw is refused
+`--card`, `--border`, `--chart-1` to `--chart-5`). A numeric block takes
+`format` {prefix?, suffix?, decimals?, compact?} on the block itself, never
+on an item. Up to 24 blocks. A spec it cannot draw is refused
 with each fault by its path: fix those and run it again.
 
-Use it only when a visual reads faster than words: numbers to compare, a
-trend, a breakdown, progress. Write a plain Markdown table when the person
-asks for a table. Never make up data. Do not repeat the visual's numbers
+Use it, without being asked, whenever your answer has numbers to compare,
+a trend, a breakdown or progress: there it reads faster than words or a
+table of figures, and the person rarely asks for a chart by name. Use words
+for one or two numbers, and a plain Markdown table when the person asks for
+a table. Never make up data. Do not repeat the visual's numbers
 in your answer; say what they mean.
 
 ## Tell the person
