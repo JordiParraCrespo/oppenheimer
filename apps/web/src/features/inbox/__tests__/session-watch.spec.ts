@@ -93,4 +93,21 @@ describe('a session left waiting', () => {
     );
     expect(look.stale).toEqual([]);
   });
+
+  it('does not count from an old observation a failure carries over', () => {
+    // A session that fails keeps the agent's observedSince from long before.
+    const since = new Date(T0 - 40 * MINUTE);
+    let look = watchSessions(
+      null,
+      [sessionEntity({ id: 'a', state: 'working', observedSince: since })],
+      T0,
+    );
+    const failed = [sessionEntity({ id: 'a', state: 'waiting-on-you', observedSince: since })];
+    look = watchSessions(look.watches, failed, T0 + MINUTE);
+    expect(look.stale).toEqual([]);
+    look = watchSessions(look.watches, failed, T0 + MINUTE + STALE_AFTER_MS - 1);
+    expect(look.stale).toEqual([]);
+    look = watchSessions(look.watches, failed, T0 + MINUTE + STALE_AFTER_MS);
+    expect(look.stale.map((s) => s.id)).toEqual(['a']);
+  });
 });

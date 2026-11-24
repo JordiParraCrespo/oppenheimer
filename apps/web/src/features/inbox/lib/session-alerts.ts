@@ -31,6 +31,8 @@ export interface SessionWatch {
   state: SessionEntity['state'];
   /** When it entered `state`: the host's word for it, or when this tab first saw it there. */
   since: number;
+  /** The host's `observedSince` at that look, so a stale one carried over is told from a fresh one. */
+  observed: number | undefined;
   /** Whether this stay in `state` was already told as stale. */
   staleTold: boolean;
 }
@@ -61,7 +63,15 @@ export function watchSessions(
     const previous = watches?.get(session.id);
     const observed = session.observedSince?.getTime();
     const same = previous?.state === session.state;
-    const since = same ? (observed ?? previous.since) : (observed ?? now);
+    // The host's time is trusted only when it moved since the last look: a
+    // session that fails keeps the agent's old `observedSince` while its
+    // group turns amber, and counting from it would call a wait a minute old
+    // thirty. Otherwise the clock starts when this tab saw the move, which
+    // fails late rather than early.
+    const fresh =
+      observed !== undefined &&
+      (watches === null || (previous !== undefined && observed !== previous.observed));
+    const since = fresh ? observed : same ? previous.since : now;
     const overdue = needsReader(session) && now - since >= STALE_AFTER_MS;
     let staleTold = same ? previous.staleTold : false;
     if (watches === null) {
@@ -75,7 +85,7 @@ export function watchSessions(
         staleTold = true;
       }
     }
-    next.set(session.id, { state: session.state, since, staleTold });
+    next.set(session.id, { state: session.state, since, observed, staleTold });
   }
   return { done, stale, watches: next };
 }
