@@ -2,12 +2,13 @@
 
 A Manifest V3 Chrome extension that tracks your **Claude Code cloud
 sessions** — the ones on claude.ai/code, the ones `claude --cloud` starts,
-the ones scheduled tasks start — and tells you which need you.
+the ones scheduled tasks start — and tells you which need you. Connected to
+Oppenheimer, it does the same for the sessions on your own hosts.
 
 | Surface | What it does |
 | --- | --- |
-| **Badge** | How many sessions need you: waiting on a permission or an answer, or failed |
-| **Notification** | When a session comes to need you, fails or finishes; a click opens it |
+| **Badge** | How many sessions need you: waiting on a permission or an answer, or failed; with Oppenheimer connected, the ones on your hosts too |
+| **Notification** | When a session comes to need you, fails or finishes; a click opens it. With Oppenheimer connected, also when a session on your hosts comes to wait on you or its agent sends a notice; a click opens it in the console |
 | **Popup** | Needs you, Running, and Done behind a switch. A row opens the session; its terminal button copies `claude --teleport <id>`. Its Oppenheimer section connects the console |
 
 The popup is the console's Inbox (`product/versions/mvp/design/version1/Brain.dc.html`)
@@ -40,12 +41,24 @@ is what this extension sees. To send it:
    limited to your workspace (a token not pinned to a workspace has none to
    act in, and the API answers `AUTH_002`).
 2. In the popup's **Oppenheimer** section, enter the API's URL and the
-   token, then **Connect**. Chrome asks for access to that one host.
+   token, then **Connect**. Chrome asks for access to that one host. The
+   console's URL is optional: it is where a notification about a session on
+   your hosts opens, and left empty it is worked out from the API's
+   (`localhost:3001` → `localhost:3000`, `api.<domain>` → `app.<domain>`).
 
 From then on, after every check, the worker posts every session it tracks
 to `POST /api/v1/sessions/cloud-status` with the token. The API records the
 ones your workspace launched and ignores the rest; nothing of claude.ai's
 (no cookie, no token) is ever sent.
+
+After the report it reads `GET /api/v1/sessions?resolved=false` with the same
+token (`sessions:write` includes `sessions:read`) and tells you, once each,
+what the console's Inbox would list from it: a session waiting on you (its
+agent asks a question or a permission, or it failed) and a notice its agent
+sent, keyed as the Inbox keys them (`src/sessions/runner.ts`). The first read
+after connecting only remembers what is already waiting. A cloud run that
+Oppenheimer launched is left to the claude.ai tracking above, so it is told
+once. Nothing new leaves the machine: this is a read of your own API.
 
 ## How it reads your sessions
 

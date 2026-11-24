@@ -11,6 +11,8 @@ import { ConnectSlackCommand } from '../commands/connect-slack/connect-slack.com
 import { ConnectSlackCommandHandler } from '../commands/connect-slack/connect-slack.command-handler';
 import { MarkSlackWorkingCommand } from '../commands/mark-slack-working/mark-slack-working.command';
 import { MarkSlackWorkingCommandHandler } from '../commands/mark-slack-working/mark-slack-working.command-handler';
+import { ReactOnSlackCommand } from '../commands/react-on-slack/react-on-slack.command';
+import { ReactOnSlackCommandHandler } from '../commands/react-on-slack/react-on-slack.command-handler';
 import { ReceiveSlackEventCommand } from '../commands/receive-slack-event/receive-slack-event.command';
 import { ReceiveSlackEventCommandHandler } from '../commands/receive-slack-event/receive-slack-event.command-handler';
 import { ReplyOnSlackCommand } from '../commands/reply-on-slack/reply-on-slack.command';
@@ -19,6 +21,7 @@ import type { SlackAccountRepositoryPort } from '../database/slack-account.repos
 import { SlackOwnerWroteDomainEvent } from '../domain/events/slack-owner-wrote.domain-event';
 import { SlackErrors } from '../domain/slack.errors';
 import { SlackAccountEntity } from '../domain/slack-account.entity';
+import { slackReactionName } from '../domain/slack-reaction.policy';
 import type { SlackSealerPort } from '../infrastructure/slack-sealer.port';
 import type { SlackWebApiPort } from '../infrastructure/slack-web-api.port';
 import { FindSlackImagesQuery } from '../queries/find-slack-images/find-slack-images.query';
@@ -552,6 +555,115 @@ describe('a bot’s turn starting on a Slack message', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('a bot’s reaction on Slack', () => {
+  const react = (accountId: string, emoji: string | null, previous: string | null = null) =>
+    new ReactOnSlackCommand({
+      organizationId: ORG,
+      accountId,
+      chatId: 'C1:1700000000.000100',
+      ts: '1700000500.000001',
+      botId: BOT,
+      emoji,
+      previous,
+    });
+
+  function reacting(slack = fakeSlack()) {
+    const account = app();
+    const accounts = fakeAccounts([account]);
+    const handler = new ReactOnSlackCommandHandler(
+      accounts.repository,
+      new SlackBotAppResolver(accounts.repository),
+      new SlackLineResolver(sealer, slack),
+    );
+    return { account, accounts, handler, slack };
+  }
+
+  // What breaks this: Slack is sent the character (it takes only names), or
+  // the bot's last reaction stays beside the new one.
+  it('replaces the bot’s reaction by Slack’s names for them, on the owner’s message', async () => {
+    const { account, handler, slack } = reacting();
+    await expect(handler.execute(react(account.id, '❤️', '👍'))).resolves.toBe('reacted');
+    const message = { channel: 'C1', ts: '1700000500.000001' };
+    expect(vi.mocked(slack.react).mock.calls.map((call) => [call[1], call[2]])).toEqual([
+      [{ ...message, name: 'heart' }, true],
+      [{ ...message, name: '+1' }, false],
+    ]);
+  });
+
+  // What breaks this: the old reaction taken off before a new one Slack
+  // refuses, so Slack shows none while the console still shows the old.
+  it('keeps the old reaction when Slack refuses the new one', async () => {
+    const { account, handler, slack } = reacting(
+      fakeSlack({
+        react: vi.fn(async (_access, _message, on) => {
+          if (on) throw new Error('ratelimited');
+        }),
+      }),
+    );
+    await expect(handler.execute(react(account.id, '❤️', '👍'))).resolves.toBe('not_sent');
+    expect(vi.mocked(slack.react).mock.calls.every((call) => call[2] === true)).toBe(true);
+  });
+
+  // What breaks this: the new reaction kept beside an old one Slack would
+  // not take off, which no later call can clear (the console forgets it).
+  it('takes the new reaction back off when the old one will not come off', async () => {
+    const { account, handler, slack } = reacting(
+      fakeSlack({
+        react: vi.fn(async (_access, message, on) => {
+          if (!on && message.name === '+1') throw new Error('timeout');
+        }),
+      }),
+    );
+    await expect(handler.execute(react(account.id, '❤️', '👍'))).resolves.toBe('not_sent');
+    const message = { channel: 'C1', ts: '1700000500.000001' };
+    expect(vi.mocked(slack.react).mock.calls.map((call) => [call[1], call[2]])).toEqual([
+      [{ ...message, name: 'heart' }, true],
+      [{ ...message, name: '+1' }, false],
+      [{ ...message, name: 'heart' }, false],
+    ]);
+  });
+
+  // What breaks this: a reaction Slack has no name for sent anyway and
+  // refused, with the bot told it reacted.
+  it('refuses an emoji it has no Slack name for, before anything is sent', async () => {
+    const { account, handler, slack } = reacting();
+    await expect(handler.execute(react(account.id, '🦩'))).resolves.toBe('no_name');
+    expect(slack.react).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: the bot's 👀 taken off by the end of the turn, which
+  // removes the app's working sign of the same name.
+  it('keeps 👀 for the working sign', async () => {
+    const { account, handler, slack } = reacting();
+    await expect(handler.execute(react(account.id, '👀'))).resolves.toBe('working_sign');
+    expect(slack.react).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a refused call drawn as a reaction the owner sees.
+  it('answers not_sent when Slack refuses, and marks the app revoked on a refused token', async () => {
+    const { account, accounts, handler } = reacting(
+      fakeSlack({
+        react: vi.fn(async () => {
+          throw new AppError(SlackErrors.TOKEN_REFUSED, { detail: 'token_revoked' });
+        }),
+      }),
+    );
+    await expect(handler.execute(react(account.id, '👍'))).resolves.toBe('not_sent');
+    expect(account.status).toBe('revoked');
+    expect(accounts.repository.saveStatus).toHaveBeenCalledWith(account);
+  });
+
+  it('names skin tones as Slack does, with or without the presentation selector', () => {
+    expect(slackReactionName('👍🏽')).toBe('+1::skin-tone-4');
+    expect(slackReactionName('❤')).toBe('heart');
+    expect(slackReactionName('✔️')).toBe('heavy_check_mark');
+    expect(slackReactionName('🦩')).toBeNull();
+    expect(slackReactionName('🤦🏽')).toBe('face_palm::skin-tone-4');
+    // Slack draws no face in tones: `joy::skin-tone-4` would be refused.
+    expect(slackReactionName('😂🏽')).toBeNull();
   });
 });
 

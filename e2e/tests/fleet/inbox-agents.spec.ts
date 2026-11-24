@@ -58,7 +58,7 @@ for (const { agent, screen } of waits) {
 
     await signInAs(page, user);
     const inbox = await page.context().newPage();
-    await inbox.goto('/plan/inbox');
+    await inbox.goto('/inbox');
     await expect(inbox.locator('[data-slot="inbox-list-head"]')).toBeVisible({ timeout: 30_000 });
     const row = inbox.locator('[data-slot="inbox-row"]', { hasText: 'is waiting on you' });
     await expect(row).toHaveCount(0);

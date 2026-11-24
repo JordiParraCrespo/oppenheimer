@@ -6,6 +6,8 @@ export class FindBotConversationQuery extends QueryBase {
     readonly scope: AccessScope,
     readonly botId: string,
     readonly limit: number,
+    /** The message the page ends just before; `null` for the newest. */
+    readonly before: string | null = null,
   ) {
     super();
   }

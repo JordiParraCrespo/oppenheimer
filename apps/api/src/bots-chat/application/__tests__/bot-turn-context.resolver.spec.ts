@@ -1,3 +1,4 @@
+import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
 import { parseBotSlashCommand } from '@oppenheimer/shared';
@@ -18,7 +19,7 @@ import type { BotApprovalEntity } from '../../domain/bot-approval.entity';
 import { BotConversationSummaryEntity } from '../../domain/bot-conversation-summary.entity';
 import { BotMessageEntity } from '../../domain/bot-message.entity';
 import { telegramTurn } from '../../domain/bot-telegram-turn.policy';
-import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
+import { type BotPermissions, NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import {
   BOT_TURN_MAX_STEPS,
   type BotTurnContext,
@@ -39,6 +40,7 @@ import { BotTurnChannelPolicy } from '../bot-turn-channel.policy';
 import { BotTurnContextResolver } from '../bot-turn-context.resolver';
 import { BotTurnHoldPolicy } from '../bot-turn-hold.policy';
 import type { BotTurnOpeningResolver } from '../bot-turn-opening.resolver';
+import { BotVoiceReplyResolver } from '../bot-voice-reply.resolver';
 
 /**
  * How a turn's moment is read and where it goes: the owner's hosts in their
@@ -86,7 +88,9 @@ function setup(
     /** The bot's last turn that reached the provider or failed. */
     lastOnProvider?: BotTurnEntity;
     /** The channel chat a channel's turn answers in; none by default. */
-    channelChat?: { chatId: string };
+    channelChat?: { chatId: string; kind?: 'whatsapp'; whatsappAccountId?: string };
+    /** What the owner set for the bot's tools; nothing by default. */
+    permissions?: BotPermissions;
   } = {},
 ) {
   const opening = conversation.opening ?? 'Hi';
@@ -163,7 +167,9 @@ function setup(
       }),
     } as unknown as BotTurnOpeningResolver,
     { create: () => ({ run: async () => [] }) } as unknown as BotSubagentRunnerFactory,
-    { forBot: async () => NO_PERMISSIONS } as unknown as BotPermissionsResolver,
+    {
+      forBot: async () => conversation.permissions ?? NO_PERMISSIONS,
+    } as unknown as BotPermissionsResolver,
     {
       create: () => ({ review: async () => ({ effect: 'none' }) }),
     } as unknown as BotRuleReviewerFactory,
@@ -172,6 +178,15 @@ function setup(
         Some({ running: conversation.approval !== 'ran' } as BotApprovalEntity),
     } as unknown as BotApprovalRepositoryPort),
     new BotTurnHoldPolicy(turns),
+    new BotVoiceReplyResolver(
+      {
+        findChannelChat: async () => conversation.channelChat ?? null,
+      } as unknown as BotConversationRepositoryPort,
+      {} as BotPermissionsResolver,
+      access,
+      { execute: async () => true } as unknown as QueryBus,
+      {} as CommandBus,
+    ),
   );
   const turnFrom = (timeZone: string | null) =>
     BotTurnEntity.queue({
@@ -289,6 +304,58 @@ describe('BotTurnContextResolver', () => {
     expect(shaped.request.systemPrompt).not.toContain('Does triage.');
     expect(shaped.request.message).toContain('a WhatsApp group your owner allowed');
     expect(shaped.request.message).not.toContain('Steps for triage.');
+  });
+
+  // What breaks this: a group whose bot is meant to answer by voice never
+  // being told it may (the reported bug), or every group being told so
+  // without the owner's yes for voice notes in that very chat.
+  it('tells a contact’s turn it may answer by voice only in a chat the voice tool may reach without asking', async () => {
+    const accountId = '0b3e2a1c-6666-4c5d-8e6f-70819203b4c5';
+    const groupId = '120363000000000001@g.us';
+    const grant = (chatId: string): BotPermissions => ({
+      decisions: new Map(),
+      grants: [
+        {
+          tool: 'send_whatsapp_voice_note',
+          subject: { kind: 'whatsapp_chat', key: `${accountId}:${chatId}`, label: 'Test group' },
+        },
+      ],
+      rules: [],
+    });
+    const greeting = (permissions: BotPermissions) => {
+      const { resolver } = setup(async () => [], {
+        channelChat: { kind: 'whatsapp', whatsappAccountId: accountId, chatId: groupId },
+        permissions,
+      });
+      const { turn } = whatsappContactTurn(
+        {
+          organizationId: 'org-1',
+          botId: 'bot-1',
+          requestedByUserId: 'owner-1',
+          provider: 'glm',
+          model: 'model-1',
+          effort: null,
+        },
+        {
+          conversationId: '0b3e2a1c-5555-4c5d-8e6f-70819203b4c5',
+          whatsappAccountId: accountId,
+          messageRowId: '0b3e2a1c-7777-4c5d-8e6f-70819203b4c5',
+          chatKind: 'group',
+          chatName: 'Test group',
+          senderName: 'Test sender',
+          sender: '+34600000001',
+          text: 'Hi!',
+        },
+      );
+      return resolver.resolve(turn, new Date('2026-10-15T09:00:00Z'));
+    };
+    const allowed = await greeting(grant(groupId));
+    expect(allowed?.request.message).toContain('start your reply with [voice]');
+    expect(allowed?.request.tools).toEqual([]);
+    const elsewhere = await greeting(grant('120363000000000002@g.us'));
+    expect(elsewhere?.request.message).not.toContain('[voice]');
+    const none = await greeting(NO_PERMISSIONS);
+    expect(none?.request.message).not.toContain('[voice]');
   });
 
   // What breaks this: a Telegram turn queued before its Telegram bot was

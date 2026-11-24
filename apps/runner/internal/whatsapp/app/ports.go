@@ -41,6 +41,10 @@ type Device interface {
 	// to a chat as a push-to-talk voice note running seconds; the id and time
 	// are WhatsApp's. The audio is held in memory only.
 	SendVoice(ctx context.Context, chatID string, audio []byte, seconds int) (id string, at time.Time, err error)
+	// React puts emoji under the message messageID that senderID wrote in a
+	// chat, replacing the number's reaction there; an empty emoji takes it
+	// back. The id and time are the reaction's own, WhatsApp's.
+	React(ctx context.Context, chatID, messageID, senderID, emoji string) (id string, at time.Time, err error)
 	// Download fetches and decrypts the media a domain.Kept of kind names,
 	// refusing one WhatsApp says is past max bytes before fetching it, and
 	// says WhatsApp's MIME type for it.

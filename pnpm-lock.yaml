@@ -328,6 +328,9 @@ importers:
       '@oppenheimer/design-system-web':
         specifier: workspace:*
         version: link:../../packages/frontend/design-system/web
+      '@oppenheimer/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@oppenheimer/translations':
         specifier: workspace:*
         version: link:../../packages/translations

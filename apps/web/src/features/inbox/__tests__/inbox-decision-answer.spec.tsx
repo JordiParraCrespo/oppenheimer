@@ -9,9 +9,10 @@ import { InboxQuestionAnswer } from '../components/inbox-question-answer';
 import { type InboxAnswer, toAnswers } from '../lib/inbox-answer';
 
 /**
- * A session's decision answered on its Inbox card. What breaks this: Send
- * answers enabled before every question has an answer; a single choice sent
- * with both a pick and words (the API refuses it, `SESSIONS_033`); a
+ * A session's decision answered on its Inbox card. What breaks this: a
+ * questionnaire that sends before its review, or skips a question; a single
+ * choice sent with both a pick and words (the API refuses it,
+ * `SESSIONS_033`); a review row that does not lead back to its question; a
  * permission answered by anything but the index of the option pressed, in
  * the dialog's own order.
  */
@@ -58,31 +59,36 @@ function renderQuestion() {
       pending={false}
       onSend={onSend}
       alert={null}
-      leading={null}
+      open={null}
     />,
   );
-  const send = screen.getByRole('button', { name: 'inbox.session.send' }) as HTMLButtonElement;
-  return { onSend, send };
+  return { onSend };
 }
 
 const option = (label: string) => screen.getByRole('button', { name: label });
+const send = () => screen.queryByRole('button', { name: 'inbox.session.send' });
+const next = () => screen.getByRole('button', { name: 'inbox.question.next' });
 
 describe('InboxQuestionAnswer', () => {
-  it('sends only once every question has an answer, picks and words as given', () => {
-    const { onSend, send } = renderQuestion();
-    expect(send.disabled).toBe(true);
+  it('asks one question at a time and sends from the review, picks and words as given', () => {
+    const { onSend } = renderQuestion();
+    expect(screen.getByText('Which screens?')).toBeTruthy();
+    expect(screen.queryByText('Which platforms?')).toBeNull();
+    expect(send()).toBeNull();
 
+    // One pick of a single choice is its answer: straight on to the next question.
     fireEvent.click(screen.getByRole('button', { name: /^All/ }));
-    expect(send.disabled).toBe(true);
+    expect(screen.getByText('Which platforms?')).toBeTruthy();
 
     fireEvent.click(option('iOS'));
     fireEvent.click(option('Web'));
     fireEvent.change(screen.getByLabelText('inbox.session.otherLabel#2'), {
       target: { value: '  Linux ' },
     });
-    expect(send.disabled).toBe(false);
+    expect(send()).toBeNull();
+    fireEvent.click(next());
 
-    fireEvent.click(send);
+    fireEvent.click(send() as HTMLElement);
     const [answers] = onSend.mock.calls[0] ?? [];
     expect(toAnswers(answers ?? [])).toEqual([
       { picks: [1], other: null },
@@ -90,24 +96,35 @@ describe('InboxQuestionAnswer', () => {
     ]);
   });
 
-  it('lets words replace the pick of a single choice, and a pick replace the words', () => {
-    const { onSend, send } = renderQuestion();
+  it('lets words replace the pick of a single choice, and a review row lead back to it', () => {
+    const { onSend } = renderQuestion();
     fireEvent.click(option('Wallet'));
+    fireEvent.click(screen.getByRole('button', { name: 'inbox.question.back' }));
     const own = screen.getByLabelText('inbox.session.otherLabel#1');
     fireEvent.change(own, { target: { value: 'Only settings' } });
     expect(option('Wallet').getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(next());
 
     fireEvent.change(screen.getByLabelText('inbox.session.otherLabel#2'), {
       target: { value: 'Linux' },
     });
-    fireEvent.click(send);
+    fireEvent.click(next());
+    fireEvent.click(send() as HTMLElement);
     expect(toAnswers(onSend.mock.calls[0]?.[0] ?? [])[0]).toEqual({
       picks: [],
       other: 'Only settings',
     });
 
-    fireEvent.click(option('Wallet'));
-    expect((own as HTMLInputElement).value).toBe('');
+    // Back on a review row: the answer is kept, and Next question goes on
+    // without changing it.
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'inbox.question.edit' })[0] as HTMLElement,
+    );
+    expect(screen.getByText('Which screens?')).toBeTruthy();
+    fireEvent.click(next());
+    expect(screen.getByText('Which platforms?')).toBeTruthy();
+    fireEvent.click(next());
+    expect(send()).not.toBeNull();
   });
 });
 

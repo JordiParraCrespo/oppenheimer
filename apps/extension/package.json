@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@oppenheimer/design-system-web": "workspace:*",
+    "@oppenheimer/shared": "workspace:*",
     "@oppenheimer/translations": "workspace:*",
     "i18next": "^26.4.2",
     "react": "19.2.3",

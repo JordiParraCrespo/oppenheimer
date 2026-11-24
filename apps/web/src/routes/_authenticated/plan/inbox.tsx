@@ -1,15 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { inboxSearchSchema } from '@/features/inbox/lib/inbox-search';
-import { InboxScreen } from '@/features/inbox/screens/inbox';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 /**
- * Plan's Inbox: what needs you, as a mail client. The screen is the whole
- * pane, its list column and reading pane side by side, and draws its own
- * heads, the sidebar toggle leading the list's. The search names the item
- * in the reading pane, the list's words (`?q=`) and its facets.
+ * `/plan/inbox`, where the Inbox lived while it was Plan's first section
+ * (2026-10-29 to 2026-11-24): an old link or bookmark goes on to `/inbox`,
+ * its search kept for that route's schema to read.
  */
 export const Route = createFileRoute('/_authenticated/plan/inbox')({
-  validateSearch: inboxSearchSchema,
-  staticData: { pane: 'full', bar: 'own' },
-  component: InboxScreen,
+  beforeLoad: () => {
+    throw redirect({ to: '/inbox', search: true, replace: true });
+  },
 });

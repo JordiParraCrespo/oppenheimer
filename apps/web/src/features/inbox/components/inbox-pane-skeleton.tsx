@@ -16,9 +16,7 @@ export function InboxPaneSkeleton() {
   return (
     <div aria-busy className="flex min-h-0 flex-1 flex-col">
       <LoadingStatus />
-      <InboxToolbar aria-hidden>
-        <Skeleton className="size-5" />
-      </InboxToolbar>
+      <InboxToolbar aria-hidden />
       <InboxMessage
         aria-hidden
         icon={null}
@@ -29,8 +27,9 @@ export function InboxPaneSkeleton() {
         <InboxMessageBody>
           <Skeleton className="my-1 h-4 w-full" />
         </InboxMessageBody>
-        <InboxMessageActions leading={<Skeleton className="h-8.5 w-16 rounded-pill" />}>
-          <Skeleton className="h-8.5 w-20 rounded-pill" />
+        <InboxMessageActions>
+          <Skeleton shape="md" />
+          <Skeleton shape="md" />
         </InboxMessageActions>
       </InboxMessage>
     </div>

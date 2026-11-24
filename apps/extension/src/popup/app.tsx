@@ -108,7 +108,11 @@ export function App() {
           />
         )}
 
-        <OppenheimerSection connection={state.oppenheimer} report={state.report} />
+        <OppenheimerSection
+          connection={state.oppenheimer}
+          report={state.report}
+          runnerProblem={state.runnerProblem}
+        />
 
         <a
           href={`${CLAUDE_ORIGIN}/code`}

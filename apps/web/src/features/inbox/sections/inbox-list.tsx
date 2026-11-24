@@ -16,7 +16,6 @@ import {
   ErrorAlert,
   formatAge,
   SidebarSearchField,
-  SidebarToggle,
   useLocale,
   useMultiSelection,
 } from '@oppenheimer/frontend-web';
@@ -128,7 +127,6 @@ export function InboxList() {
         />
       ) : (
         <InboxListHead
-          leading={<SidebarToggle />}
           title={t('inbox.title')}
           count={unread.length ? t('inbox.list.unread', { count: unread.length }) : undefined}
         >
