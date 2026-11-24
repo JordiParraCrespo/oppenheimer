@@ -1,6 +1,7 @@
 import { Button } from '@oppenheimer/design-system-mobile/button';
 import { EmptyState } from '@oppenheimer/design-system-mobile/empty-state';
 import { Text } from '@oppenheimer/design-system-mobile/text';
+import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useAutomations } from '@oppenheimer/frontend-consumer/react';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
@@ -13,13 +14,16 @@ import { RunNow } from '../sections/run-now';
 /**
  * One automation, opened from the list: its name in the navigation bar with
  * its ··· menu, its page, and Run now at the foot. It is read off the list
- * the tab holds, which polls while a run is live.
+ * the tab holds, which polls while a run is live. A delete from its ···
+ * holds the automation as it was confirmed, so the list's refetch without it
+ * does not flash "not found" while the page goes back.
  */
 export function AutomationScreen({ id }: { id: string }) {
   const { t } = useTranslation();
   const list = useAutomations({ select: (rows) => rows.find((row) => row.id === id) ?? null });
   const [footHeight, setFootHeight] = useState(0);
-  const automation = list.data ?? null;
+  const [leaving, setLeaving] = useState<AutomationEntity | null>(null);
+  const automation = list.data ?? leaving;
 
   if (!automation) {
     return (
@@ -56,7 +60,12 @@ export function AutomationScreen({ id }: { id: string }) {
       <Stack.Screen
         options={{
           title: automation.name,
-          headerRight: () => <AutomationActions automation={automation} />,
+          headerRight: () => (
+            <AutomationActions
+              automation={automation}
+              onDeleting={(deleting) => setLeaving(deleting ? automation : null)}
+            />
+          ),
         }}
       />
       <View className="flex-1">
