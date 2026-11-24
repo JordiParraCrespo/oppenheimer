@@ -1983,6 +1983,17 @@ earlier note:
   session, a bot's approval) has no Done, a questionnaire goes one question
   at a time, and Mark as done takes up a task an agent made, as Dismiss did
   ("The card's actions, reshaped").
+- `next-steps/answering-on-telegram-and-whatsapp.md` gave a contact's
+  turn, and any turn in a group, no tools, so it could only ever answer in
+  text, and a bot told to answer a group by voice never could. On
+  2026-11-24 such a turn may answer as one voice note where
+  `send_whatsapp_voice_note` would run in that chat without asking (a
+  standing yes for the chat, or the tool allowed outright with no ask
+  rule) and the
+  workspace can speak: it is told so, marks its reply, and the reply goes
+  as the note and never also as text, falling back to text when it cannot
+  be spoken or sent (`next-steps/whatsapp.md`, 2026-11-24). It still gets
+  no tools.
 - The Chrome extension (`apps/extension`) told only about Claude Code cloud
   sessions, and sent Oppenheimer their states without reading anything
   back. On 2026-11-24, connected to Oppenheimer, it also reads the
@@ -1994,6 +2005,13 @@ earlier note:
   2026-11-24 the owner, filtering to their Mac Studio, wanted a second
   machine beside it: the Host facet takes several hosts, as Repository
   does, a chip each, and lists a session on any of them.
+- A bot's `react` tool worked in its console chat only, refusing on a
+  channel's conversation ("answer in words"). On 2026-11-24 the owner asked
+  for the bot to decide its reactions on the channels too, keeping Slack's
+  automatic 👀: it reacts on Slack as its app and on WhatsApp as the number,
+  without asking, in a chat it answers (`next-steps/slack-for-bots.md` §4,
+  `next-steps/answering-on-telegram-and-whatsapp.md` §4). Telegram still
+  takes none.
 - `versions/mvp/05-screens.md` drew a stopped session as a pane with a
   Restart button, and `02-runner.md` §5 kept every session running until
   someone stopped it. On 2026-11-24, after reading how Orca hibernates

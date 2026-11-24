@@ -2,7 +2,7 @@ package cli
 
 // The host's WhatsApp linked device on the link:
 // `whatsapp.link`, `whatsapp.unlink`, `whatsapp.send`, `whatsapp.send.voice`,
-// `whatsapp.ack` and `whatsapp.media.get` from the control plane, `whatsapp.state`,
+// `whatsapp.react`, `whatsapp.ack` and `whatsapp.media.get` from the control plane, `whatsapp.state`,
 // `whatsapp.messages` and `whatsapp.media` to it. The
 // device lives on the daemon's context, not a link's: a link that drops
 // leaves it connected, and what arrives meanwhile waits in its outbox.
@@ -95,6 +95,11 @@ func (h *linkHandler) whatsAppMessage(msg link.Message) {
 		if msg.Decode(&m) == nil {
 			h.lanes.run(laneWhatsAppSend, func() { h.whatsAppSendVoice(m) })
 		}
+	case link.TypeWhatsappReact:
+		var m link.WhatsappReact
+		if msg.Decode(&m) == nil {
+			h.lanes.run(laneWhatsAppSend, func() { h.whatsAppReact(m) })
+		}
 	case link.TypeWhatsappAck:
 		var m link.WhatsappAck
 		if msg.Decode(&m) == nil && h.whatsapp != nil {
@@ -179,6 +184,21 @@ func (h *linkHandler) whatsAppSendVoice(m link.WhatsappSendVoice) {
 	ctx, cancel := context.WithTimeout(h.life, whatsAppVoiceSendTimeout)
 	defer cancel()
 	id, at, err := h.whatsapp.SendVoice(ctx, m.ChatID, audio, m.Seconds)
+	if err != nil {
+		h.fail(m.CommandID, err)
+		return
+	}
+	_ = h.client.Send(link.WhatsappSent{Type: link.TypeWhatsappSent, CommandID: m.CommandID, ID: id, SentAt: at})
+}
+
+func (h *linkHandler) whatsAppReact(m link.WhatsappReact) {
+	if h.whatsapp == nil {
+		h.fail(m.CommandID, wadomain.ErrNotConnected.WithDetail("this host offers no WhatsApp device"))
+		return
+	}
+	ctx, cancel := context.WithTimeout(h.life, whatsAppSendTimeout)
+	defer cancel()
+	id, at, err := h.whatsapp.React(ctx, m.ChatID, m.MessageID, m.SenderID, m.Emoji)
 	if err != nil {
 		h.fail(m.CommandID, err)
 		return
