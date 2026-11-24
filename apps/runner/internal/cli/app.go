@@ -154,8 +154,9 @@ func New(version string) (*App, error) {
 
 	// Before anything probes or starts tmux: the directories the catalog's
 	// installers write to, so a CLI the runner installed is on the PATH of
-	// the probe, the service and every session.
-	if err := os.Setenv("PATH", WithInstallBins(os.Getenv("PATH"), paths.UserHome)); err != nil {
+	// the probe, the service and every session; and `runner` itself, for a
+	// session's agent to call by name.
+	if err := os.Setenv("PATH", runnerPATH(WithInstallBins(os.Getenv("PATH"), paths.UserHome), paths)); err != nil {
 		return nil, err
 	}
 	hostSvc := hostapp.New(hostapp.Options{
@@ -260,13 +261,10 @@ func New(version string) (*App, error) {
 		// which the chat shows; the runner's own takes them on the way.
 		StatusLine: statusLineCommand,
 		// Each agent is handed the runner's MCP server (`runner mcp`), the
-		// same commands as `runner sessions …` as tools. By name: the
-		// session's PATH leads with the runner's commands. The session and
+		// same commands as `runner sessions …` as tools. The session and
 		// the socket are its arguments, not its environment, which Codex
 		// does not pass to an MCP server.
-		Tools: func(session string) []string {
-			return []string{"runner", "mcp", "--session", session, "--socket", paths.Socket()}
-		},
+		Tools: func(session string) []string { return sessionTools(paths, session) },
 		// Codex's developer_instructions, which the briefing sets, keep the
 		// person's own first.
 		OwnInstructions: trust,
@@ -340,8 +338,6 @@ func sessionEnv(paths Paths, session sessionsdomain.Session) map[string]string {
 		"OPPENHEIMER_SESSION": session.ID,
 		"OPPENHEIMER_SOCKET":  paths.Socket(),
 	}
-	// `runner` by name, for the agent's own commands (`runner --skill`).
-	env["PATH"] = WithDir(os.Getenv("PATH"), paths.Commands())
 	// A child's own commands (`runner sessions report`) find its parent.
 	if session.Parent != "" {
 		env["OPPENHEIMER_PARENT"] = session.Parent

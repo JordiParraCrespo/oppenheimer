@@ -1990,6 +1990,10 @@ earlier note:
   notification and its badge, each session on the person's hosts that comes
   to wait on them and each agent notice (`29-inbox.md`, "The Chrome
   extension tells about your hosts too").
+- `versions/mvp/05-screens.md`'s sidebar filter menu took one host. On
+  2026-11-24 the owner, filtering to their Mac Studio, wanted a second
+  machine beside it: the Host facet takes several hosts, as Repository
+  does, a chip each, and lists a session on any of them.
 - `versions/mvp/05-screens.md` drew a stopped session as a pane with a
   Restart button, and `02-runner.md` §5 kept every session running until
   someone stopped it. On 2026-11-24, after reading how Orca hibernates
