@@ -10,15 +10,24 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Alert, View } from 'react-native';
+import { ActivityIndicator, Alert, View } from 'react-native';
 
 /**
  * The automation's ··· in the navigation bar, the system's own menu, as the
  * export draws it: Run now, Pause or Resume, Duplicate (which opens the
  * copy), and Delete, which asks first in the system's alert with the
- * console's words. A refusal says so in an alert.
+ * console's words. A refusal says so in an alert. While one of them is out
+ * the ··· turns into a spinner. `onDeleting` hears a confirmed delete start
+ * (`true`) and fail (`false`), so the page can hold the automation on screen
+ * while it goes back, instead of drawing it as not found.
  */
-export function AutomationActions({ automation }: { automation: AutomationEntity }) {
+export function AutomationActions({
+  automation,
+  onDeleting,
+}: {
+  automation: AutomationEntity;
+  onDeleting: (deleting: boolean) => void;
+}) {
   const { t } = useTranslation();
   const router = useRouter();
   const failed = (message: string) => () => Alert.alert(message);
@@ -30,8 +39,12 @@ export function AutomationActions({ automation }: { automation: AutomationEntity
   });
   const remove = useDeleteAutomation({
     onSuccess: () => router.back(),
-    onError: failed(t('automations.deleteDialog.failed')),
+    onError: () => {
+      onDeleting(false);
+      Alert.alert(t('automations.deleteDialog.failed'));
+    },
   });
+  const busy = run.isPending || pause.isPending || duplicate.isPending || remove.isPending;
 
   return (
     <MenuView
@@ -74,7 +87,10 @@ export function AutomationActions({ automation }: { automation: AutomationEntity
                 {
                   text: t('automations.deleteDialog.confirm'),
                   style: 'destructive',
-                  onPress: () => remove.mutate(automation.id),
+                  onPress: () => {
+                    onDeleting(true);
+                    remove.mutate(automation.id);
+                  },
                 },
               ],
             );
@@ -84,9 +100,14 @@ export function AutomationActions({ automation }: { automation: AutomationEntity
       <View
         accessibilityRole="button"
         accessibilityLabel={t('automations.detail.more')}
+        accessibilityState={{ busy }}
         className="size-9 items-center justify-center"
       >
-        <Icon as={Ellipsis} size={22} className="text-foreground" />
+        {busy ? (
+          <ActivityIndicator size="small" />
+        ) : (
+          <Icon as={Ellipsis} size={22} className="text-foreground" />
+        )}
       </View>
     </MenuView>
   );

@@ -20,9 +20,8 @@ export function AutomationSwitch({ automation }: { automation: AutomationEntity 
       value={on}
       disabled={pause.isPending}
       onValueChange={(next) => pause.mutate({ id: automation.id, paused: !next })}
-      accessibilityLabel={
-        automation.isPaused ? t('automations.detail.resume') : t('automations.detail.pause')
-      }
+      accessibilityLabel={on ? t('automations.detail.pause') : t('automations.detail.resume')}
+      accessibilityState={{ busy: pause.isPending, checked: on }}
     />
   );
 }
