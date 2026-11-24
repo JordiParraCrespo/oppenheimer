@@ -199,8 +199,8 @@ function BotFace({
   const fill = `var(--avatar-${color})`;
   // Started part-way through by its seed, so a row of faces does not blink as one.
   const offset = hash(seed);
-  const blink = { animationDelay: `-${offset % 5200}ms` };
-  const sway = { animationDelay: `-${(offset >>> 13) % 7000}ms` };
+  const blink = { animationDelay: `calc(var(--bot-blink-beat) * -${(offset % 1000) / 1000})` };
+  const sway = { animationDelay: `calc(var(--bot-hat-beat) * -${((offset >>> 13) % 1000) / 1000})` };
   return (
     <svg
       data-slot="bot-face"

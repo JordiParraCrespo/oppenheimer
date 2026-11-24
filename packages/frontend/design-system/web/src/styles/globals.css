@@ -472,6 +472,9 @@
     --dur-fast: 140ms; /* menus, tooltips */
     --dur-base: 220ms; /* dialogs, sidebar collapse, theme change */
     --dur-slow: 400ms; /* progress and chart fills */
+    /* A bot face's idle beats; `BotFace` starts each face part-way through them. */
+    --bot-blink-beat: 5.2s;
+    --bot-hat-beat: 7s;
     /* A dragged item picked up: tilted and a touch larger, as a card off a table. */
     --drag-lift: rotate(1.6deg) scale(1.025);
     --transition-control:
@@ -865,8 +868,8 @@
   --animate-caret: op-caret 1s steps(2) infinite;
   /* A bot's drawn face, idling: it blinks now and then, and its hat sways
      on a longer beat. Behind `motion-safe:` like the chat's. */
-  --animate-bot-blink: op-bot-blink 5.2s ease-in-out infinite;
-  --animate-bot-hat: op-bot-hat 7s ease-in-out infinite;
+  --animate-bot-blink: op-bot-blink var(--bot-blink-beat) ease-in-out infinite;
+  --animate-bot-hat: op-bot-hat var(--bot-hat-beat) ease-in-out infinite;
   --ease-out: var(--ease-out);
   --ease-in: var(--ease-in);
   /* `duration-*` reads Tailwind's `--transition-duration-*` namespace. */
