@@ -24,7 +24,7 @@ Each case in `cases.json` is one message from the owner on a channel. For
 each run, the runner:
 
 1. builds the bot's real system prompt and turn context, with the channel's
-   line and `turn/context.as-it-goes`;
+   line and `core/turn-context.as-it-goes`;
 2. serves the production host and session tools over the in-memory
    workspace (`../bot-workspace.ts`);
 3. runs one real turn;
@@ -83,7 +83,7 @@ pnpm eval:bot-channel-ack --control                   # without the as-it-goes l
 The model is `BOT_CHANNEL_ACK_EVAL_MODEL` (default `claude-sonnet-5-5`). It
 runs on the Messages API when `ANTHROPIC_API_KEY` is set, and otherwise on
 the machine's Claude Code login. `--control` drops the
-`turn/context.as-it-goes` line and keeps everything else, so the difference
+`core/turn-context.as-it-goes` line and keeps everything else, so the difference
 between the two runs is that line's effect.
 
 ## Results

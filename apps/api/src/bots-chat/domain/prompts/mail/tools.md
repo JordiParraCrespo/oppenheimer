@@ -26,7 +26,7 @@ Lists the person's own Gmail accounts connected to Oppenheimer: each one's name,
 
 <!-- fragment: search-mail -->
 
-Searches the person's Gmail in Gmail's own search language, newest first: from:, to:, subject:, has:attachment, filename:pdf, is:unread, label:, in:inbox, newer_than:7d, after:2026/10/01, "exact words", OR, -word. Leave account out to search every connected account. Returns each message's id, thread id, date, sender, recipients, subject, labels, a snippet and its attachments (with the part id read_mail_attachment takes); read_mail_thread reads one in full. At most {{mailSearchLimitMax}} per account per call; page_token (with account) gets the next page. Spam and Trash are left out unless include_spam_trash. Searching marks nothing read.
+Searches the person's Gmail in Gmail's own search language, newest first: from:, to:, subject:, has:attachment, filename:pdf, is:unread, label:, in:inbox, newer_than:7d, after:2026/10/01, "exact words", OR, -word. Leave account out to search every connected account. Returns each message's id, thread id, date, sender, recipients, subject, labels, a snippet and its attachments (with the part id read_mail_attachment takes); read_mail_thread reads one in full. At most {{mailSearchLimitMax}} per account per call; page_token (with account) gets the next page. Spam and Trash are left out unless include_spam_trash. Searching marks nothing read. When your skills list `watch-inbox`, read it before you answer the person about their mail.
 
 <!-- fragment: search-mail-query -->
 

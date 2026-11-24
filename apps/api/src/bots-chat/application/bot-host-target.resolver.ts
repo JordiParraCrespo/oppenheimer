@@ -17,7 +17,7 @@ export class BotHostTargetResolver {
   idOf(input: { host_id?: string }, context: BotToolCallContext): string {
     const hostId = input.host_id ?? context.homeHostId;
     if (!hostId) {
-      throw new BotToolRefusal(promptText('tools/host.id-of'));
+      throw new BotToolRefusal(promptText('sessions/tools-host.id-of'));
     }
     return hostId;
   }
@@ -34,7 +34,7 @@ export class BotHostTargetResolver {
       .then(() => true)
       .catch(() => false);
     if (!found) {
-      throw new BotToolRefusal(promptText('tools/host.usable', { hostId }));
+      throw new BotToolRefusal(promptText('sessions/tools-host.usable', { hostId }));
     }
     return hostId;
   }

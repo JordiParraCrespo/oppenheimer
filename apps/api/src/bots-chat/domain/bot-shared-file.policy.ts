@@ -27,7 +27,7 @@ export function sharedFileSize(bytes: number): string {
 /** One file, as a line inside the fence. */
 export function sharedFileLine(file: SessionSharedFile): string {
   const showable = isShowableSharedFile(file)
-    ? promptText('tools/sessions.shared-file-can-be-shown')
+    ? promptText('sessions/tools.shared-file-can-be-shown')
     : '';
   const caption = file.caption ? `: ${cut(file.caption, CAPTION_MAX)}` : '';
   return `- id ${file.id} "${cut(file.name, 255)}" [${file.mediaType}; ${sharedFileSize(file.size)}${showable}]${caption}`;
@@ -40,10 +40,10 @@ export function sharedFileLine(file: SessionSharedFile): string {
 export function describeSharedFiles(files: readonly SessionSharedFile[]): string[] {
   if (!files.length) return [];
   return [
-    promptText('tools/sessions.shared-files-header', {
+    promptText('sessions/tools.shared-files-header', {
       filesCount: String(files.length),
       fenceUntrusted: fenceUntrusted('session_files', files.map(sharedFileLine).join('\n')),
     }),
-    `  ${promptText('tools/sessions.shared-files-how-to-show')}`,
+    `  ${promptText('sessions/tools.shared-files-how-to-show')}`,
   ];
 }

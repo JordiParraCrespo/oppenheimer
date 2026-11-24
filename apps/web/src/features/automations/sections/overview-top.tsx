@@ -25,7 +25,7 @@ export function OverviewTop() {
           </PillTab>
         ))}
       </PillTabs>
-      <Button variant="secondary" size="sm" onClick={() => dialogs.open({ kind: 'automation' })}>
+      <Button variant="secondary" onClick={() => dialogs.open({ kind: 'automation' })}>
         {t('automations.page.new')}
       </Button>
     </EditorPageTop>

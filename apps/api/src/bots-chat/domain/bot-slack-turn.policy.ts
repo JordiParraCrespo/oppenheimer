@@ -27,7 +27,7 @@ export type SlackUnreadReason = 'model_reads_no_images' | 'not_read';
  */
 export function slackOpeningText(text: string, unread: number, why: SlackUnreadReason): string {
   if (unread <= 0) return text;
-  const note = promptText('turn/images.slack-unread', {
+  const note = promptText('core/turn-images.slack-unread', {
     what: unread === 1 ? 'a file' : `${unread} files`,
     why:
       why === 'model_reads_no_images'

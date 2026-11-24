@@ -1916,6 +1916,30 @@ earlier note:
   verify a release before calling it done and went silent, a bot checks
   back on anything it delegated or waits on with `check_back` (§7.3): a look
   at a time it names, or on a backoff, for a day.
+- The bots' prompt files were sorted by where their words are sent
+  (`system/`, `turn/`, `wake/`, `jobs/`, `tools/`, 2026-11-18). On
+  2026-11-23 they were sorted by capability instead, one folder each
+  (`core/`, `mail/`, `sessions/`, `github/`…), the kind becoming the file's
+  first word (`mail/tools-write.md`), so everything a bot is told about one
+  area is in one place and a new area is a new folder
+  (`apps/api/AGENTS.md`, "What a model is told is prose").
+- A bot's how-to for a capability was a section of every turn's system
+  prompt that offered the capability's tools. On 2026-11-23 the parts only
+  some turns need became built-in skills, listed by one line and read with
+  `use_skill` when the work comes up, as Codex and OpenClaw keep theirs:
+  `watch-inbox` (mail), `use-a-computer` and `use-a-browser`. What must hold
+  on every turn (ask before sending or buying, never type a password) stayed
+  in the system prompt (`next-steps/mail.md`, Decided;
+  `research/lessons-from-codex-and-openclaw-on-context.md`).
+- Every bot tool went to Claude on every turn (`alwaysLoad`, "a bot's tools
+  are few"); with every area on that is about 39,000 tokens of definitions,
+  five times the system prompt. On 2026-11-23 a capability's tools became
+  deferrable: on Anthropic's own API Claude Code's tool search defers them
+  once their definitions pass about 5,000 tokens together
+  (`DEFER_TOOLS_ABOVE_CHARS`; Claude Code's own `auto`, a tenth of the
+  window, never deferred with a large window) and the model finds what it
+  needs, while the bot's own tools (memory, skills, questions, notices)
+  and the tools a built-in skill calls always load. GLM and the OpenAI engines send every tool as before.
 - `next-steps/slack-for-bots.md` §4 cut a bot's Slack answer at 3,900
   characters, into several messages. On 2026-11-24, copying Orca's Slack
   fixes, an answer goes in one message up to 39,000 (Slack folds it behind

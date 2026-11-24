@@ -30,7 +30,7 @@ const SPEAKERS: Partial<Record<BotMessageRole, string>> = {
 };
 
 /** The suggester's system prompt: one short next message, or NONE, and the conversation is data. */
-export const BOT_SUGGESTER_PROMPT = promptText('jobs/suggestion.system');
+export const BOT_SUGGESTER_PROMPT = promptText('core/job-suggestion.system');
 
 /**
  * The message a suggestion is for: the bot's last words, when they are the
@@ -64,7 +64,7 @@ export function composeSuggestionRequest(messages: readonly SuggestionMessage[])
     if (used > BOT_SUGGESTION_TRANSCRIPT_TOKENS) break;
     blocks.push(`<${speaker}>\n${escapeTags(kept)}\n</${speaker}>`);
   }
-  return promptText('jobs/suggestion.request', { messages: blocks.reverse().join('\n') });
+  return promptText('core/job-suggestion.request', { messages: blocks.reverse().join('\n') });
 }
 
 /**

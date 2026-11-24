@@ -193,6 +193,23 @@
       "identifiers": ["ui-catalog.test.mjs"],
       "neededBy": ["web"]
     },
+    "scripts/control-heights.mjs": {
+      "identifiers": ["control-heights.mjs", "check:control-heights"],
+      "neededBy": ["web"],
+      "scripts": ["check:control-heights"]
+    },
+    "scripts/control-heights.test.mjs": {
+      "identifiers": ["control-heights.test.mjs"],
+      "neededBy": ["web"]
+    },
+    "scripts/control-height-debt.mjs": {
+      "identifiers": ["control-height-debt"],
+      "neededBy": ["web"]
+    },
+    ".agents/skills/control-height-campaign": {
+      "identifiers": [".agents/skills/control-height-campaign", "/control-height-campaign"],
+      "neededBy": ["web"]
+    },
     "scripts/check-react-compiler.mjs": {
       "identifiers": ["check-react-compiler", "check:compiler"],
       "neededBy": ["web"],
