@@ -448,7 +448,7 @@ function ComposerPill({
 
 /**
  * ComposerChoices — the row under a `ComposerPill`: what the run will use, as
- * quiet 30px choices that read left to right as where it runs and what it may
+ * quiet 28px choices that read left to right as where it runs and what it may
  * touch (`children`: the place, the repositories and branch, the permission
  * level), then, pushed to the right, who drives it (`engine`: the agent and
  * model, the effort). It is always one line: when it runs out of room the
@@ -479,7 +479,7 @@ function ComposerChoices({
 }
 
 /**
- * ComposerToolButton — the 30px text trigger in the composer's foot row: an
+ * ComposerToolButton — the 28px text trigger in the composer's foot row: an
  * optional 14px leading mark, the label, a 12px chevron when it opens a menu.
  * Transparent at rest, the hover wash on hover and while its menu is open.
  * `tone="muted"` for a setting (permission level, effort) so the model, which
@@ -508,7 +508,7 @@ function ComposerToolButton({
       data-popup-open={open ? '' : undefined}
       aria-expanded={open}
       className={cn(
-        'flex h-[30px] shrink-0 items-center gap-[7px] rounded-sm px-2.5 text-sm tracking-[-0.006em] whitespace-nowrap outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring aria-expanded:bg-hover-surface data-popup-open:bg-hover-surface disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0',
+        'flex h-(--control-h-sm) shrink-0 items-center gap-[7px] rounded-sm px-2.5 text-sm tracking-[-0.006em] whitespace-nowrap outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring aria-expanded:bg-hover-surface data-popup-open:bg-hover-surface disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0',
         tone === 'default' && 'text-fg',
         tone === 'muted' && 'text-fg-muted',
         tone === 'warning' && 'text-warning',
