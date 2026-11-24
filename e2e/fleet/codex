@@ -2,5 +2,17 @@
 # Stands in for the Codex CLI: prints the argv the runner built, then hands the
 # pane to an interactive shell, as the `claude` shim beside it does.
 
-printf 'CODEX-SHIM argv=%s\n' "$*"
+# The runner briefs Codex in long `-c developer_instructions=…` and
+# `-c mcp_servers.…` overrides. They are shortened on screen so this marker
+# stays in the pane a test attaches to; ~/codex-argv.log keeps every word whole.
+printf '%s\n' "$*" >> "$HOME/codex-argv.log"
+shown=''
+for word in "$@"; do
+  case "$word" in
+    developer_instructions=*) word='developer_instructions=…' ;;
+    mcp_servers.*) word='mcp_servers.…' ;;
+  esac
+  shown="$shown${shown:+ }$word"
+done
+printf 'CODEX-SHIM argv=%s\n' "$shown"
 exec sh -i

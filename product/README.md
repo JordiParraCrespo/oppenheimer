@@ -1948,3 +1948,10 @@ earlier note:
   starts the API asks for it (`whatsapp.media.get`, `kind: "image"`), the
   runner scaling one past a link frame to a JPEG that fits; the bot's chat
   keeps the copy as an image of the message and the bot sees it.
+- `29-inbox.md` counted a session as waiting on you once its agent had been
+  blocked 30 s, measured from the runner's second report 15 s in, so a
+  question reached the Inbox about a minute after it was asked. On
+  2026-11-23 the 30 s went: a block a second report confirms is waiting on
+  you at once, and the runner sends that report 3 s after the first
+  ("A question reaches you in seconds"). Codex's and OpenCode's detection
+  rules were rewritten from their real screens the same day.

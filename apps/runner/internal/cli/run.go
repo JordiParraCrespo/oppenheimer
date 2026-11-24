@@ -289,18 +289,22 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 // busy host is not free. Each tick is one `list-panes` for the whole host plus
 // one `capture-pane` per live session, and writes the session map only when a
 // state changed.
+//
+// An agent seen to block is looked at again when its confirmation is due
+// rather than a whole interval on: that second look is what tells the person.
 func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
+	timer := time.NewTimer(sessionLoopInterval)
+	defer timer.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
+		case <-timer.C:
 		}
 		if _, err := a.Sessions.RefreshAll(ctx); err != nil {
 			logger.Warn("could not refresh every session", slog.Any("error", err))
 		}
+		timer.Reset(nextSessionLook(a.Sessions.NextConfirmation()))
 		// A kept session the host's reboot stopped is brought back.
 		for _, session := range a.Sessions.RecoverKept(ctx) {
 			logger.Info("kept session restarted after a reboot", slog.String("session", session.ID))
@@ -318,6 +322,20 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 		// typed into its agent, read off the agent's own transcript.
 		a.Sessions.ReportFirstPrompts()
 	}
+}
+
+// sessionLoopInterval is how often every live session is looked at.
+const sessionLoopInterval = 10 * time.Second
+
+// nextSessionLook is when the loop looks again: when the earliest block still
+// to be confirmed is due, if that is sooner than the usual interval. Never
+// sooner than a second, so a session whose screen cannot be read does not
+// spin the loop.
+func nextSessionLook(due time.Duration, pending bool) time.Duration {
+	if !pending {
+		return sessionLoopInterval
+	}
+	return min(max(due, time.Second), sessionLoopInterval)
 }
 
 // strayWrapperInterval is how often the runner looks for agents whose
