@@ -16,7 +16,8 @@ import { ReactOnSlackCommand, type SlackReactOutcome } from './react-on-slack.co
  * still this bot's, by Slack's name for the emoji (`slackReactionName`): an
  * emoji with none is `no_name`, before anything is sent. The bot's reaction
  * before it comes off once the new one is on, so the message carries one of
- * the bot's at a time. 👀 is the app's working sign (`SLACK_WORKING_REACTION`), which the
+ * the bot's at a time; when that removal fails, the new one is taken back
+ * off and it is `not_sent`, so Slack and the console both keep the old one. 👀 is the app's working sign (`SLACK_WORKING_REACTION`), which the
  * turn's end takes off, so a bot's own would vanish with it: `working_sign`.
  * A call Slack refuses (the app made before `reactions:write`, the
  * message deleted) is `not_sent`, logged; a token it refuses marks the app
@@ -51,11 +52,12 @@ export class ReactOnSlackCommandHandler
     // The new one goes on first: an add that fails leaves the old one, which
     // the console still shows, so the two agree.
     if (name && !(await this.sent(account, message, name, true))) return 'not_sent';
-    if (before && before !== name) {
-      const removed = await this.sent(account, message, before, false);
-      if (!name && !removed) return 'not_sent';
-    }
-    return 'reacted';
+    if (!before || before === name) return 'reacted';
+    if (await this.sent(account, message, before, false)) return 'reacted';
+    // The old one stayed: take the new one back off, so Slack keeps what
+    // the console keeps, and the old one is still `previous` to clear later.
+    if (name) await this.sent(account, message, name, false);
+    return 'not_sent';
   }
 
   private async sent(

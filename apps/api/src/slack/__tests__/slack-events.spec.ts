@@ -607,6 +607,25 @@ describe('a bot’s reaction on Slack', () => {
     expect(vi.mocked(slack.react).mock.calls.every((call) => call[2] === true)).toBe(true);
   });
 
+  // What breaks this: the new reaction kept beside an old one Slack would
+  // not take off, which no later call can clear (the console forgets it).
+  it('takes the new reaction back off when the old one will not come off', async () => {
+    const { account, handler, slack } = reacting(
+      fakeSlack({
+        react: vi.fn(async (_access, message, on) => {
+          if (!on && message.name === '+1') throw new Error('timeout');
+        }),
+      }),
+    );
+    await expect(handler.execute(react(account.id, '❤️', '👍'))).resolves.toBe('not_sent');
+    const message = { channel: 'C1', ts: '1700000500.000001' };
+    expect(vi.mocked(slack.react).mock.calls.map((call) => [call[1], call[2]])).toEqual([
+      [{ ...message, name: 'heart' }, true],
+      [{ ...message, name: '+1' }, false],
+      [{ ...message, name: 'heart' }, false],
+    ]);
+  });
+
   // What breaks this: a reaction Slack has no name for sent anyway and
   // refused, with the bot told it reacted.
   it('refuses an emoji it has no Slack name for, before anything is sent', async () => {
