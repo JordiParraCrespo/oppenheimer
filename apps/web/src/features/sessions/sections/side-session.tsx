@@ -8,7 +8,7 @@ import { SideSessionStatus } from './side-session-status';
 /**
  * Another session, on any host, in the side pane beside this one: the same
  * pane its own page draws, without its bar. Its status line keeps the link's
- * state and the view switch (`SideSessionStatus`); the latency and Share are
+ * state and the view switch (`SideSessionStatus`); Share is
  * its own page's. It has no side pane of its own: that is offered only with
  * a bar.
  */

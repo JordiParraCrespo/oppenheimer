@@ -68,8 +68,6 @@ export function useTerminal(
     chat?: SessionChat;
     /** How the agent's prompt is emptied before the chat types into it (`clearOf`). */
     chatClear?: CodingAgentClear;
-    /** Where the echo readout is published (`SessionTerminalOptions.latencyKey`). */
-    latencyKey?: string;
   } = {},
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -106,7 +104,6 @@ export function useTerminal(
   const snapshotKey = options.snapshotKey;
   const chat = options.chat;
   const chatClear = options.chatClear;
-  const latencyKey = options.latencyKey;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: generation is the re-run key
   useEffect(() => {
@@ -131,7 +128,6 @@ export function useTerminal(
         : undefined,
       onFiles: (files) => onFilesRef.current?.(files),
       typeahead: () => typeaheadRef.current,
-      latencyKey,
       // A reconnect replays the scrollback, so a session that has already run
       // answers this on its first frame and the waiting state never shows.
       onFirstOutput: () => setHasOutput(true),
@@ -183,7 +179,7 @@ export function useTerminal(
       stream.dispose();
       if (streamRef.current === stream) streamRef.current = null;
     };
-  }, [createStream, agentWindow, readOnly, snapshotKey, generation, chat, chatClear, latencyKey]);
+  }, [createStream, agentWindow, readOnly, snapshotKey, generation, chat, chatClear]);
 
   const hostId = options.hostId;
   // No host, no list to watch: a shared pane's holder may not be signed in,

@@ -1,6 +1,5 @@
 import type { Terminal } from '@xterm/xterm';
 import { EchoLatency } from './echo-latency';
-import { bindLatencyReadout } from './latency-readout';
 import type { TerminalRendererKind } from './terminal-renderer';
 import { readTerminalTheme } from './terminal-theme';
 import { bindTypeahead } from './typeahead';
@@ -19,17 +18,13 @@ export interface TerminalEchoOptions {
   typeahead: () => boolean;
   /** Which renderer draws the grid, for predictions to be drawn the way it draws. */
   renderer: () => TerminalRendererKind;
-  /** Which path the stream's bytes take, for the readout (`SessionStream.onPath`). */
-  onPath?: (listener: (path: string) => void) => () => void;
-  /** Where the latency readout is published (`bindLatencyReadout`); none without it. */
-  latencyKey?: string;
 }
 
 /**
  * The path a reader's bytes take to the host and the echo back: every byte the
  * pane sends goes through `send`, which times the round trip (`EchoLatency`)
  * and lets predictive echo (`typeahead.ts`) guess before the bytes leave;
- * `received` is told when output arrives. The latency readout lives here too.
+ * `received` is told when output arrives.
  * The rest of the terminal never needs to know any of it is there.
  */
 export function bindTerminalEcho(
@@ -54,13 +49,6 @@ export function bindTerminalEcho(
         // A guess the host has not confirmed in a few round trips was wrong.
         timeoutMs: () => Math.max(1000, 4 * (latency.quantile(0.95) ?? 0)),
       });
-  let path: string | null = null;
-  const offPath = options.onPath?.((next) => {
-    path = next;
-  });
-  const unbindReadout = options.latencyKey
-    ? bindLatencyReadout(options.latencyKey, latency, () => path)
-    : () => {};
 
   return {
     send(data) {
@@ -77,8 +65,6 @@ export function bindTerminalEcho(
       typeahead?.repaint();
     },
     dispose() {
-      offPath?.();
-      unbindReadout();
       typeahead?.dispose();
     },
   };

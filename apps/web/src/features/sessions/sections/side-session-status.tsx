@@ -4,9 +4,8 @@ import type { PaneReading } from '../lib/chat-blocks';
 
 /**
  * What a session's status line carries in the side pane: the Terminal / Chat
- * switch once the session has a chat, and nothing else. The echo readout and
- * Share are the session's own page's, one click away through its tab's link;
- * at the pane's width they crowded the switch to a cut-off word.
+ * switch once the session has a chat, and nothing else. Share is the session's own page's, one click
+ * away through its tab's link; at the pane's width it crowded the switch.
  */
 export function SideSessionStatus({ reading }: { reading: PaneReading }) {
   const { offered } = useChatReading(reading);
