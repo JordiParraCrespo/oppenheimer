@@ -39,8 +39,10 @@ the plus steps aside while it shows, and the image's button sits on the
 bar's right. The same day, after trying a shorter grey band, the owner set
 the bar at 45px (`--tab-bar-h`) with every control in it on the medium
 rung, tabs included, and on the same ground as the page under it, the way
-a calm app header reads: the terminal's colour on a session, the image
-itself on New session, a hairline at its foot on a plain page. The shown
+a calm app header reads: the terminal's colour on a session, the pane's
+on New session, with a hairline at its foot. On New session the reader's
+background image lies only under the content below the bar; the bar
+keeps its dark ground over it. The shown
 tab stands out by its card and hairline (§2), not by the band around it.
 
 ## 2. What a tab shows

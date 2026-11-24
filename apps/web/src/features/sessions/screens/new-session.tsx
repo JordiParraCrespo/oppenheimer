@@ -22,8 +22,8 @@ import { NewSessionForm } from '../sections/new-session-form';
  * screen only (`lib/new-session-background.ts`).
  *
  * The screen draws its bar: the open tabs (`tabs`, from the route), kept as
- * they were, and that button on its right. Over an image the bar is
- * frosted, so the image runs under it.
+ * they were, and that button on its right. The bar keeps the pane's
+ * ground; an image lies only under the content below it.
  */
 export function NewSessionScreen({ tabs }: { tabs: ReactNode }) {
   const { t } = useTranslation();
