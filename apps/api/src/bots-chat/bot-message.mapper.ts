@@ -6,6 +6,7 @@ import {
   BOT_APPROVAL_EVENT_STAGES,
   BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
+  BOT_FORM_OUTCOMES,
   BOT_GITHUB_ASK_VIAS,
   BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
@@ -25,9 +26,12 @@ import {
   type BotMessageRole,
   type BotSubagentProgress,
   type BotSubagentRun,
+  type BotSubmittedFormValue,
   botMailDraftSchema,
   PULL_REQUEST_WAKE_EVENTS,
+  parseVisual,
   TASK_STATUSES,
+  type Visual,
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import type { BotSteerTaken } from './database/bot-turn.repository.port';
@@ -47,6 +51,7 @@ import {
   BotCheckBackEventResponseDto,
   BotCompactionEventResponseDto,
   BotDreamEventResponseDto,
+  BotFormEventResponseDto,
   BotGithubAskEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
@@ -85,6 +90,7 @@ export class BotMessageMapper
       subagents: step.subagents,
       allowedBy: step.allowedBy,
       mailDraft: step.mailDraft,
+      visual: step.visual,
       rateLimit: rateLimitRecordOf(step),
     }));
     record.position = entity.position;
@@ -135,6 +141,7 @@ export class BotMessageMapper
       subagents: step.subagents,
       allowedBy: step.allowedBy,
       mailDraft: step.mailDraft,
+      visual: step.visual,
       rateLimit: rateLimitRecordOf(step),
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
@@ -191,6 +198,7 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     subagents: toSubagentRuns(raw.subagents),
     allowedBy: typeof raw.allowedBy === 'string' ? raw.allowedBy : null,
     mailDraft: toMailDraft(raw.mailDraft),
+    visual: toVisual(raw.visual),
     rateLimit: rateLimitOfRecord(raw.rateLimit),
   };
 }
@@ -200,6 +208,25 @@ function rateLimitRecordOf(step: BotToolStep): { system: string; resetAt: string
   return step.rateLimit
     ? { system: step.rateLimit.system, resetAt: step.rateLimit.resetAt.toISOString() }
     : null;
+}
+
+/**
+ * The visual a `show_visual` step holds, narrowed once: from the step's
+ * stored column, or from the JSON its call's data carried, checked against
+ * the one schema. Anything else reads as none.
+ */
+export function toVisual(raw: unknown): Visual | null {
+  let value = raw;
+  if (typeof raw === 'string') {
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (value === null || value === undefined) return null;
+  const parsed = parseVisual(value);
+  return parsed.ok ? parsed.visual : null;
 }
 
 /**
@@ -321,6 +348,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotApprovalEventResponseDto(), event);
     case 'question':
       return Object.assign(new BotQuestionEventResponseDto(), event);
+    case 'form':
+      return Object.assign(new BotFormEventResponseDto(), event);
     case 'routine':
       return Object.assign(new BotRoutineEventResponseDto(), event);
     case 'bot_message':
@@ -357,6 +386,15 @@ function toAnsweredQuestions(raw: readonly unknown[]): BotAnsweredQuestion[] {
   });
 }
 
+/** A submitted form's labels and values in words, narrowed once; anything else is dropped. */
+function toSubmittedValues(raw: readonly unknown[]): BotSubmittedFormValue[] {
+  return raw.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const { label, value } = item as Record<string, unknown>;
+    return typeof label === 'string' && typeof value === 'string' ? [{ label, value }] : [];
+  });
+}
+
 /** A stored event, narrowed once; anything the mapper did not write reads as none. */
 function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
   if (!raw) return null;
@@ -382,6 +420,16 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       outcome,
       summary: String(raw.summary ?? ''),
       answers: Array.isArray(raw.answers) ? toAnsweredQuestions(raw.answers) : [],
+    };
+  }
+  if (raw.kind === 'form') {
+    const outcome = BOT_FORM_OUTCOMES.find((known) => known === raw.outcome);
+    if (!outcome) return null;
+    return {
+      kind: 'form',
+      outcome,
+      title: String(raw.title ?? ''),
+      values: Array.isArray(raw.values) ? toSubmittedValues(raw.values) : [],
     };
   }
   if (raw.kind === 'routine') {

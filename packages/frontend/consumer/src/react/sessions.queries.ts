@@ -235,6 +235,15 @@ export function useSuspenseSession(id: string) {
 }
 
 /**
+ * One session where its read draws no loading or failure of its own: the
+ * tab of the session on screen, which the page's own read keeps fresh. It
+ * shares that read's cache, so it costs nothing once the page has it.
+ */
+export function useSession(id: string) {
+  return useQuery<SessionEntity, Error>(useSessionDetailQuery(id));
+}
+
+/**
  * The share dialog's three reads under a Suspense `QueryState`: the session
  * (its name and host), its share, and the hosts its host is named from,
  * fetched side by side. `error` is the first refetch that failed over data

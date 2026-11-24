@@ -1,7 +1,7 @@
 // Package policyfile keeps the host's own switches for bots, each a small
 // JSON file under the runner home: what `runner computer` and `runner
-// browser` write and every action reads. Nothing on the link writes these files:
-// what bots may do on a host is decided on the host.
+// browser` write and every action reads. The link writes them only through
+// `host.settings.set`, when the person asked a bot to change them.
 package policyfile
 
 import (

@@ -16,13 +16,13 @@ describe('describeTerminal', () => {
     expect(text.match(/<\/terminal_screen>/g)).toHaveLength(1);
   });
 
-  it('says a host that is not full is the owner’s to change, and how', () => {
+  it('says a host that is not full needs full, and that the bot can set it', () => {
     const text = describeTerminal(
       { kind: 'failed', code: 'EXEC_006', detail: 'mode is allowlist' },
       's-1',
     );
     expect(text).toContain('Nothing was typed');
-    expect(text).toContain('runner exec mode full');
+    expect(text).toContain('set_host_settings');
   });
 });
 

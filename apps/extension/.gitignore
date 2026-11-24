@@ -1,3 +1,6 @@
 # Playwright's output.
 test-results/
 playwright-report/
+
+# The packages scripts/package.mjs writes for the Web Store.
+release/

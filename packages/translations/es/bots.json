@@ -227,6 +227,22 @@
       "dismissed": "Descartaste: {{summary}}",
       "failed": "No se pudieron enviar tus respuestas."
     },
+    "form": {
+      "label": "Formulario",
+      "submit": "Enviar",
+      "sending": "Enviando…",
+      "sent": "Enviado",
+      "dismiss": "Ahora no",
+      "required": "Obligatorio",
+      "optional": "Opcional",
+      "choose": "Elige una opción",
+      "submitted": "Enviaste: {{title}}",
+      "dismissed": "Descartaste: {{title}}",
+      "blank": "En blanco",
+      "failed": "No se pudo enviar el formulario.",
+      "fixFields": "Revisa los campos marcados.",
+      "loadFailed": "No se ha podido leer el formulario que espera este bot."
+    },
     "approval": {
       "needsInput": "Necesita tu respuesta",
       "title": "{{name}} quiere hacer esto",
@@ -874,7 +890,14 @@
       "addCount_other": "Añadir {{count}} chats",
       "addCount_many": "Añadir {{count}} chats",
       "telegramTitle": "Telegram · {{name}}",
-      "telegramMeta": "Te responde allí. Los grupos y otras personas en Telegram llegan después."
+      "telegramMeta": "Te responde allí. Los grupos y otras personas en Telegram llegan después.",
+      "tabs": {
+        "label": "Canal",
+        "whatsapp": "WhatsApp",
+        "telegram": "Telegram",
+        "slack": "Slack"
+      },
+      "noTelegram": "Ningún bot de Telegram responde como este bot todavía. Elígelo para uno en Ajustes → Telegram."
     },
     "slack": {
       "title": "Slack",

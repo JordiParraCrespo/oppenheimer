@@ -269,4 +269,22 @@ export const BotErrors = {
     message: 'This message takes no reaction',
     httpStatus: 422,
   },
+  /** A form of another bot, or in another workspace. */
+  FORM_NOT_FOUND: {
+    code: 'BOTS_046',
+    message: 'Form not found',
+    httpStatus: 404,
+  },
+  /** Values that do not fit the form: a required field blank, a number out of bounds, an option it lacks. */
+  FORM_VALUES_INVALID: {
+    code: 'BOTS_047',
+    message: 'The values do not fit the form',
+    httpStatus: 422,
+  },
+  /** A form already submitted, dismissed, or retired by a new message. */
+  FORM_DECIDED: {
+    code: 'BOTS_048',
+    message: 'The form was already sent',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

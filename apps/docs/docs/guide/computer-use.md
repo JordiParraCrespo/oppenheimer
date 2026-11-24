@@ -10,12 +10,14 @@ For websites, a bot's own browser is faster and more exact, and does not touch y
 
 ## Turning it on
 
-On the host itself, in a terminal:
+Ask the bot: "turn the screen on and do it". It turns it on with `set_host_settings`, on a card of its own under Approve for me, and carries on. It does so only when you ask in your own chat with it (the console, or your own WhatsApp, Telegram or Slack chat), never because a page, a mail or someone else's message says so.
+
+Or, on the host itself, in a terminal:
 
 - `runner computer on` lets your bots use this host's screen. `runner computer off` stops them at once; nothing restarts.
 - `runner computer` shows whether it is on and which screen a bot would get, or why there is none.
 
-The setting lives in a file on the host (`~/.oppenheimer/computer.json`). Nothing in the console changes it, and Oppenheimer gives a bot no tool for it. One caveat: a host where you let bots run any program (`runner exec mode full`, or `runner` on its allowlist) lets a bot run this command too, so keep those two decisions together.
+The setting lives in a file on the host (`~/.oppenheimer/computer.json`), which both ways write.
 
 ## What the host needs
 

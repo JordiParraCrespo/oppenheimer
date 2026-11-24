@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { botGatewaysSearchSchema } from '@/features/bots/lib/bot-gateways-search';
 import { BotGatewaysScreen } from '@/features/bots/screens/bot-gateways';
 
 export const Route = createFileRoute('/_authenticated/bots_/$botId/settings/gateways')({
+  validateSearch: botGatewaysSearchSchema,
   component: BotGatewaysRoute,
 });
 

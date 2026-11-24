@@ -37,15 +37,17 @@ the same lifecycle from the host itself.
 A bot can run one program on the host over the link (`host.exec`,
 `product/versions/mvp/25-bots.md` §4.2, "Commands on a host"), but only what
 `runner exec` allows here: off by default, an allowlist of programs, or
-everything. The policy lives in `~/.oppenheimer/exec.json`, is read on every
-call, and is never written by the control plane. On a host set to `full` a
+everything. The policy lives in `~/.oppenheimer/exec.json` and is read on every
+call. It is written here, or by a bot over the link when the person asked it
+to (`host.settings.set`, which writes the browser and computer switches below
+too). On a host set to `full` a
 bot can also drive a blank-terminal session (`terminal.drive`): type into
 it and read its screen back.
 
 A bot can use the host's screen, mouse and keyboard over the link too
 (`computer.act`, `25-bots.md` §4.2, "Using a computer"), only after `runner
 computer on` here: a second switch, in `~/.oppenheimer/computer.json`, off by
-default and never written by the control plane. On a Mac it drives the main
+default. On a Mac it drives the main
 screen through `screencapture` and `osascript` (the runner needs Screen
 Recording and Accessibility); on Linux an X display through `xdotool` and
 ImageMagick's `import`, starting a virtual one (Xvfb, locked with an `xauth`
@@ -150,6 +152,7 @@ mark and colours wherever a person meets it.
 | `runner sessions ls\|create\|attach\|window\|restart\|close` | the worktree-plus-tmux lifecycle, from the host itself; a session made here lives under the work folder's `local/local/` |
 | `runner sessions run\|send\|wait\|report\|children\|keep` | from inside a session, through the running daemon's socket: start a child session with a task (`--repo`, `--outlive-parent`, `--quiet`, `--keep`), type a message into an agent, wait for children to settle, report to the parent, list children, keep a session across reboots. `SESS_012` is an agent not up after 30 s, `HOST_012` no daemon on the socket |
 | `runner sessions send-file <path> [--caption "line"]` | from inside a session: shows the person a file in the session's chat, an image as a JPEG preview and a text file of 32 KB or less as its text; the file stays on the host (`product/next-steps/agent-tools.md` §1). With a link it also logs `file.shared` (name, type, size, caption; never the path), and answers a bot's `shared.preview.get` with the image's preview (§7). It answers `transcript.read` too, a page of a session's conversation read off the agent's transcript, as the chat view's entries (§8; `SESS_018` for an agent with no transcript file, OpenCode's and ZCode's). `SESS_013` is a path that is not a readable regular file |
+| `runner sessions show <spec.json \| ->` | from inside a session: shows the person a visual in the session's chat, a title and typed blocks (figures, charts, a table, a checklist, progress and more) the console draws with its own charts; the spec is `@oppenheimer/shared/schemas/visual`. The runner checks its shape and refuses one it cannot draw with each fault by its path (`SESS_023`); the entry is kept beside the session's shared files, so the chat follows it the same way. The MCP server offers it as `show_visual` |
 | `runner sessions notify "line"` | from inside a session: tells the person a line, at most 500 bytes, which the console's Inbox lists until it is marked done (`product/next-steps/agent-tools.md` §2). `SESS_014` is a runner with no link to the control plane |
 | `runner sessions watch-pr <n> [--repo owner/name] [--off]` | from inside a session: be woken when the pull request's checks finish, it is reviewed or commented on, or it merges; a line is typed in once the agent is at its prompt (`product/next-steps/agent-tools.md` §3). `SESS_015` is a runner with no link to the control plane |
 | `runner sessions wake-in <30m\|2h\|1d> "note"` | from inside a session: be woken then with the note, a minute to seven days away, once the agent is at its prompt; the control plane holds the wake (`product/next-steps/agent-tools.md` §4). `SESS_015` is a runner with no link to the control plane |

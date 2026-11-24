@@ -1,5 +1,9 @@
 export type { ChatAnswer } from '@oppenheimer/shared/sessions';
-export { type ChatActivity, readAgentActivity } from './chat/agent-activity';
+export {
+  type ChatActivity,
+  type ChatCommandTail,
+  readAgentActivity,
+} from './chat/agent-activity';
 export type {
   CloudChatFeed,
   CloudChatReply,
@@ -11,6 +15,13 @@ export {
   type ChatFeedbackDraft,
   readFeedbackDraft,
 } from './chat/feedback-draft';
+export {
+  type ChatPendingPermission,
+  type ChatPermissionPrompt,
+  pendingPermission,
+  readPermissionPrompt,
+  riskyCommand,
+} from './chat/permission-prompt';
 export {
   offeredSuggestion,
   readPromptSuggestion,
