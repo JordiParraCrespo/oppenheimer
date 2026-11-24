@@ -53,6 +53,10 @@ const CreditWindow = 262144
 // runner reads no bigger one and never sends one.
 const MaxFrameBytes = 524288
 
+// HelloCapabilitiesMax is the most capabilities one `hello` may name: the
+// control plane refuses a hello naming more, and the host never links.
+const HelloCapabilitiesMax = 256
+
 // MaxEventPayloadBytes caps an event's JSON payload string, because an event
 // never carries pane text.
 const MaxEventPayloadBytes = 8192

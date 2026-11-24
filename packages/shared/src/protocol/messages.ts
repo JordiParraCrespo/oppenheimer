@@ -92,6 +92,15 @@ import {
 
 /* ------------------------------------------------------------------ runner → control plane, and the ack */
 
+/**
+ * The most capabilities one `hello` may name. Far above what any runner names
+ * today, on purpose: a runner that names more than the control plane allows
+ * has its whole hello refused and never links, and 0.1.24 went offline on
+ * every host with all its features on when `whatsapp.react` made 33 against a
+ * cap of 32. Raise it well ahead of `RUNNER_CAPABILITIES`; never lower it.
+ */
+export const HELLO_CAPABILITIES_MAX = 256;
+
 /** What a runner can name in `hello.capabilities`. */
 export const RUNNER_CAPABILITIES = [
   'session.image',
@@ -332,7 +341,7 @@ export const helloSchema = z.object({
    * comes. Absent is none.
    */
   /** Open-ended on purpose; read through `knownCapabilities`. */
-  capabilities: z.array(z.string().min(1).max(64)).max(32).default([]),
+  capabilities: z.array(z.string().min(1).max(64)).max(HELLO_CAPABILITIES_MAX).default([]),
 });
 
 export type HelloMessage = z.infer<typeof helloSchema>;
