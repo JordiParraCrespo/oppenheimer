@@ -15,7 +15,13 @@
 import type { CodingAgentClear } from '@oppenheimer/shared/agents';
 import type { ChatCommand } from '@oppenheimer/shared/protocol';
 import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
-import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
+import {
+  type ChatAnswer,
+  PERMISSION_KEY_GAP_MS,
+  permissionChoiceKeys,
+  QUESTION_KEY_GAP_MS,
+  questionKeys,
+} from '@oppenheimer/shared/sessions';
 import { type ChatToolKind, classifyTool, fieldOf, todosOf } from '../../chat/chat-tools';
 import { type ChatActivity, sameActivity } from './agent-activity';
 import {
@@ -23,6 +29,7 @@ import {
   type ChatFeedbackDraft,
   sameFeedbackDraft,
 } from './feedback-draft';
+import { type ChatPermissionPrompt, samePermissionPrompt } from './permission-prompt';
 import {
   type ChatSharedFile,
   type ChatSharedVisual,
@@ -274,6 +281,14 @@ export interface ChatState {
    */
   feedback: ChatFeedbackDraft | null;
   /**
+   * The permission dialog the agent draws before a tool runs, as the
+   * terminal under the chat shows it (`setPermission`,
+   * `readPermissionPrompt`), for the chat to answer (`answerPermission`).
+   * None while it draws none, for an agent whose dialog the console does not
+   * read, or while no terminal is drawn to read it from.
+   */
+  permission: ChatPermissionPrompt | null;
+  /**
    * Whether what the chat is connected to can stop the agent's turn: a
    * terminal can (Escape), a Claude Code cloud session's hooks cannot
    * (`connect`). While it cannot, the composer offers no Stop, and a message
@@ -318,6 +333,7 @@ const EMPTY: ChatState = {
   activity: null,
   suggestion: null,
   feedback: null,
+  permission: null,
   interruptible: true,
   commands: null,
 };
@@ -338,6 +354,12 @@ const SUBMIT_AFTER_TEXT_MS = 60;
  * short enough that a key the card ignored does not leave it dead.
  */
 const FEEDBACK_KEY_HOLD_MS = 1500;
+/**
+ * How long a note waits after the refusal it goes with, where the dialog
+ * takes none of its own: the agent closes the dialog and opens its prompt
+ * before it can take the words.
+ */
+const NOTE_AFTER_REFUSAL_MS = 400;
 /**
  * How long a queued message that went waits for its turn to show before
  * the next may go: a message that opens no turn (a slash command the CLI
@@ -1025,6 +1047,46 @@ export class SessionChat {
     }
     this.feedbackPressedAt = now;
     type(action.key);
+    return true;
+  }
+
+  /**
+   * The permission dialog the terminal under the chat shows now
+   * (`readPermissionPrompt`); none once it is gone. A reading that says what
+   * the last one said publishes nothing.
+   */
+  setPermission(permission: ChatPermissionPrompt | null): void {
+    if (samePermissionPrompt(this.state.permission, permission)) return;
+    this.publish({ ...this.state, permission });
+  }
+
+  /**
+   * Answers the permission dialog on screen with one of its options, by its
+   * index, typed as the person would (`permissionChoiceKeys`), with words of
+   * their own where they gave some: in the dialog where it takes them, or
+   * else as the next message once the refusal has closed it. False when
+   * nothing is connected to type them, or the dialog has moved on since it
+   * was shown: an answer is never typed into a dialog nobody saw.
+   */
+  answerPermission(
+    prompt: ChatPermissionPrompt,
+    choice: number,
+    note: string | null = null,
+  ): boolean {
+    const type = this.type;
+    if (!type || this.state.permission?.id !== prompt.id) return false;
+    const keys = permissionChoiceKeys(this.state.permission, choice, note);
+    if (keys.length === 0) return false;
+    keys.forEach((key, index) => {
+      setTimeout(() => type(key), index * PERMISSION_KEY_GAP_MS);
+    });
+    const words = note?.trim();
+    if (words && !this.state.permission.amendKey) {
+      setTimeout(
+        () => this.send(words),
+        keys.length * PERMISSION_KEY_GAP_MS + NOTE_AFTER_REFUSAL_MS,
+      );
+    }
     return true;
   }
 
