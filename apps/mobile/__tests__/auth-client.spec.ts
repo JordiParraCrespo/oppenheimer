@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Signing out on the phone: a sign-out the server did not confirm leaves the
@@ -39,12 +39,19 @@ function signedIn() {
   secure.set(SESSION_KEY, JSON.stringify({ session: { id: 's1' }, user: { id: 'u1' } }));
 }
 
-async function client() {
-  return (await import('../lib/auth-client')).mobileAuthClient;
-}
+type Client = typeof import('../lib/auth-client')['mobileAuthClient'];
 
 describe('mobileAuthClient.signOut', () => {
   const fetchMock = vi.fn<typeof fetch>();
+  let auth: Client;
+
+  // Loading the real Better Auth client takes seconds on a loaded machine, so
+  // it happens once, here, with room for that, and after `fetch` is the fake
+  // one the client keeps hold of.
+  beforeAll(async () => {
+    vi.stubGlobal('fetch', fetchMock);
+    auth = (await import('../lib/auth-client')).mobileAuthClient;
+  }, 60_000);
 
   beforeEach(() => {
     secure.clear();
@@ -64,7 +71,6 @@ describe('mobileAuthClient.signOut', () => {
         headers: { 'content-type': 'application/json' },
       }),
     );
-    const auth = await client();
 
     await expect(auth.signOut()).rejects.toMatchObject({ status: 503 });
 
@@ -77,7 +83,6 @@ describe('mobileAuthClient.signOut', () => {
   it('rejects when the request never arrives, and keeps the session', async () => {
     signedIn();
     fetchMock.mockRejectedValue(new TypeError('Network request failed'));
-    const auth = await client();
 
     await expect(auth.signOut()).rejects.toThrow();
 
@@ -92,7 +97,6 @@ describe('mobileAuthClient.signOut', () => {
         headers: { 'content-type': 'application/json' },
       }),
     );
-    const auth = await client();
 
     await auth.signOut();
 
