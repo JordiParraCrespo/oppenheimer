@@ -122,8 +122,13 @@ function scoreRun(turn: Turn, c: Case): Score {
   const types = shown.flatMap((call) =>
     ((call.input as { blocks?: { type?: string }[] }).blocks ?? []).map((b) => String(b.type)),
   );
-  const asked = turn.calls.filter((call) => call.tool === 'ask_form' && !call.isError).length > 0;
-  const questioned = turn.calls.some((call) => call.tool === 'ask_user' && !call.isError);
+  // A card that was not put up answers as plain text ("Not asked: …"), not as an error.
+  const put = (tool: string) =>
+    turn.calls.some(
+      (call) => call.tool === tool && !call.isError && !call.content.startsWith('Not asked'),
+    );
+  const asked = put('ask_form');
+  const questioned = put('ask_user');
   const echoed = echoedNumbers(
     shown.map((call) => call.input),
     turn.answer,
