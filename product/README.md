@@ -1994,3 +1994,11 @@ earlier note:
   as the note and never also as text, falling back to text when it cannot
   be spoken or sent (`next-steps/whatsapp.md`, 2026-11-24). It still gets
   no tools.
+- The Chrome extension (`apps/extension`) told only about Claude Code cloud
+  sessions, and sent Oppenheimer their states without reading anything
+  back. On 2026-11-24, connected to Oppenheimer, it also reads the
+  workspace's open sessions with the same token and tells, with a Chrome
+  notification and its badge, each session on the person's hosts that comes
+  to wait on them and each agent notice (`29-inbox.md`, "The Chrome
+  extension tells about your hosts too").
+
