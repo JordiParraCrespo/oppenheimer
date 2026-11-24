@@ -9,7 +9,7 @@ import {
   useIsMobile,
   useNow,
 } from '@oppenheimer/design-system-web';
-import { RotateCwIcon } from '@oppenheimer/design-system-web/icons';
+import { ListChecks, RotateCwIcon } from '@oppenheimer/design-system-web/icons';
 import { useInboxPullsShown, useRefreshInbox } from '@oppenheimer/frontend-consumer/react';
 import {
   dateFormatter,
@@ -19,11 +19,13 @@ import {
   useLocale,
   useMultiSelection,
 } from '@oppenheimer/frontend-web';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InboxFilterChips } from '@/features/inbox/components/inbox-filter-chips';
 import { InboxFilterMenu } from '@/features/inbox/components/inbox-filter-menu';
 import { InboxSelectionBar } from '@/features/inbox/components/inbox-selection-bar';
 import { useAlertSwitch } from '@/features/inbox/hooks/use-alert-permission';
+import { useInboxSelectKeys } from '@/features/inbox/hooks/use-inbox-keys';
 import { useInboxListing } from '@/features/inbox/hooks/use-inbox-listing';
 import { useInboxMarks } from '@/features/inbox/hooks/use-inbox-marks';
 import { useInboxRead } from '@/features/inbox/hooks/use-inbox-read';
@@ -37,8 +39,8 @@ import { InboxRow } from '@/features/inbox/sections/inbox-row';
  * The Inbox's list column: its head with the unread count, Refresh and the
  * filter, the search, a mail row per item with its age (one minute tick for
  * the list), the done ones of this visit under Show done, and Snoozed with
- * when each comes back. Rows checked for a bulk action swap the head for the
- * selection's bar. It reads the Inbox itself because it draws it; the
+ * when each comes back. Rows checked for a bulk action, or Select in the
+ * head, swap the head for the selection's bar; X checks the item on the deck. It reads the Inbox itself because it draws it; the
  * reading pane reads the same cache.
  */
 export function InboxList() {
@@ -54,13 +56,26 @@ export function InboxList() {
   const [alerts, setAlerts] = useAlertSwitch();
   const selection = useMultiSelection(open.map((item) => item.key));
   const picked = open.filter((item) => selection.has(item.key));
+  // Select (the head's button) shows every row's checkbox before anything is
+  // checked; checking a row does as much on its own.
+  const [selectMode, setSelectMode] = useState(false);
+  const selecting = selectMode || selection.any;
+  const leaveSelecting = () => {
+    selection.clear();
+    setSelectMode(false);
+  };
   const onPicked = (action: InboxMarkActionName) => {
     marks.apply(action, picked);
-    selection.clear();
+    leaveSelecting();
   };
   // On a phone nothing is in the reading pane until an item is opened.
   const phone = useIsMobile();
   const current = phone && search.item === null ? null : listing.current;
+  useInboxSelectKeys({
+    // X checks the item on the deck, or unchecks it, as a mail client does.
+    onToggle: current ? () => selection.toggle(current.key, !selection.has(current.key)) : null,
+    onLeave: selecting ? leaveSelecting : null,
+  });
   const unread = inbox.open.filter((item) => !read.has(item.key) && item.key !== current?.key);
   const projectName = (id: string) => inbox.projects.find((project) => project.id === id)?.name;
   const counts = facetCounts(inbox.open, search.filter);
@@ -116,20 +131,31 @@ export function InboxList() {
 
   return (
     <>
-      {selection.any ? (
+      {selecting ? (
         <InboxSelectionBar
           count={picked.length}
           all={selection.all}
-          low={picked.every((item) => item.low)}
+          low={picked.length > 0 && picked.every((item) => item.low)}
           onToggleAll={selection.toggleAll}
           onAction={onPicked}
-          onClear={selection.clear}
+          onClear={leaveSelecting}
         />
       ) : (
         <InboxListHead
           title={t('inbox.title')}
           count={unread.length ? t('inbox.list.unread', { count: unread.length }) : undefined}
         >
+          {open.length ? (
+            <IconButton
+              size="sm"
+              variant="quiet"
+              aria-label={t('inbox.selection.start')}
+              title={t('inbox.selection.start')}
+              onClick={() => setSelectMode(true)}
+            >
+              <ListChecks />
+            </IconButton>
+          ) : null}
           <IconButton
             size="sm"
             variant="quiet"
@@ -204,7 +230,7 @@ export function InboxList() {
                   done={isDone}
                   marks={marks}
                   selected={!isDone && selection.has(item.key)}
-                  selecting={selection.any}
+                  selecting={selecting}
                   onSelect={(on, range) => selection.toggle(item.key, on, range)}
                 />
               );

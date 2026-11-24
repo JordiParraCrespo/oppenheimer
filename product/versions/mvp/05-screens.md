@@ -35,8 +35,8 @@
   session is open and secondary on New session itself, where send is; a filter menu (project,
   repository, agent, host, sort) with the active filters as chips under
   the header (since 2026-11-10 the Repository facet takes several
-  repositories, a chip each, and lists a session with any of them; since
-  2026-11-11 the filters and sort stick on this device, like Plan's, and a
+  repositories, a chip each, and lists a session with any of them, and
+  since 2026-11-24 the Host facet does too; since 2026-11-11 the filters and sort stick on this device, like Plan's, and a
   remembered pick the menu no longer offers reads as all); the account menu at the bottom with appearance, language
   and Settings. Since the 2026-09-26 export the
   list is **grouped by project**: a rail left of the sidebar switches the
@@ -77,7 +77,21 @@
   no longer holds — closed there with `runner sessions close`, its
   worktree deleted by hand, or its record lost — closes on Delete or on
   Restart instead of being refused for ever; after a Restart its pane
-  shows it deleted. The order is the reader's: a project drags by its header among the
+  shows it deleted. **A stopped session comes back when it is opened**
+  (2026-11-24, `research/session-resume/README.md`). When its owner
+  navigates to it and its host is online, the pane restarts it at once
+  and shows Restarting until the terminal is back, rather than waiting on
+  the Restart button. If the restart fails, or the host does not bring the
+  terminal back within a minute, the stopped pane comes back with Restart
+  and the reason. It is the session as it was opened that counts: one
+  that stops while its pane is on screen (its agent exited, a stop from
+  the host) stays stopped. Only opening does this, and only on the
+  session's own page (not in another session's side pane): a row in the sidebar or a list,
+  a pointer resting on a link (which preloads the route's code), or a
+  guest's view of a share wakes nothing, so passing over sessions never
+  brings them all back. A deleted session, one whose host is offline, and
+  an automation run's stopped pane (which keeps Open in terminal) are
+  left as they were. The order is the reader's: a project drags by its header among the
   others and a session drags within its project or into another one,
   folded or empty, which moves it as Move to project… does. The order is
   kept on the device, like the rail's; a project or session made since

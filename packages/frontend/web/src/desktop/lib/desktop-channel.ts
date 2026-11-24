@@ -19,6 +19,17 @@ export interface DesktopViewState {
 }
 
 /**
+ * Where the host's pointer is, in the host's own screen units on a screen
+ * `width` by `height` of them. The viewer scales it onto the framebuffer.
+ */
+export interface DesktopPointer {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
  * One dial to a desktop, as the product package opens it: a channel of a
  * WebSocket's shape that noVNC attaches to, plus what only the console asks
  * of it. The viewer never names a host; the product package's factory did.
@@ -26,6 +37,8 @@ export interface DesktopViewState {
 export interface DesktopChannel {
   readonly readyState: string;
   onState(listener: (state: DesktopViewState) => void): () => void;
+  /** Where the host's pointer is, while the reader watches; the host may never say. */
+  onPointer(listener: (pointer: DesktopPointer) => void): () => void;
   setControl(control: boolean): void;
   close(): void;
 }

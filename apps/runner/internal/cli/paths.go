@@ -10,8 +10,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
+	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 )
 
 // Directory names under the runner home.
@@ -68,6 +70,11 @@ const (
 	// EnvTelegram set to "off" stops the host offering to hold a Telegram
 	// bot. Anything else, or unset, is on.
 	EnvTelegram = "RUNNER_TELEGRAM"
+	// EnvIdleStop is how long a session whose agent is done or at its
+	// prompt, and that nobody watches or types into, runs before it is
+	// stopped (a Go duration: `90m`, `4h`). `off` never stops one; unset,
+	// or a value that does not read, is sessionsapp.DefaultIdleStopAfter.
+	EnvIdleStop = "RUNNER_IDLE_STOP"
 	// EnvDevices is the simulators and emulators this host offers its
 	// sessions, comma-separated serials (`emulator-5554`, or
 	// `emulator-5554=Pixel 4` to name one). Unset offers the ones running
@@ -121,6 +128,24 @@ const (
 // AgentUpdatesEnabled reports whether `run` keeps the agent CLIs current.
 func AgentUpdatesEnabled() bool {
 	return !strings.EqualFold(strings.TrimSpace(os.Getenv(EnvAgentUpdates)), "off")
+}
+
+// IdleStop is how long an idle session runs before `run` stops it
+// (EnvIdleStop): zero is never, and anything that does not read as a
+// positive duration is the default, with the reason.
+func IdleStop() (after time.Duration, problem string) {
+	value := strings.TrimSpace(os.Getenv(EnvIdleStop))
+	switch {
+	case value == "":
+		return sessionsapp.DefaultIdleStopAfter, ""
+	case strings.EqualFold(value, "off"):
+		return 0, ""
+	}
+	after, err := time.ParseDuration(value)
+	if err != nil || after <= 0 {
+		return sessionsapp.DefaultIdleStopAfter, fmt.Sprintf("%s=%q is not a positive duration or off", EnvIdleStop, value)
+	}
+	return after, ""
 }
 
 // WhatsAppEnabled reports whether the host offers a WhatsApp linked device.

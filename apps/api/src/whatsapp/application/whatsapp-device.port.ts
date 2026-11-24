@@ -62,6 +62,17 @@ export interface WhatsappDevicePort {
     audio: Buffer,
     seconds: number,
   ): Promise<WhatsappSendOutcome>;
+  /**
+   * React to `message` in a chat as the paired number, replacing its
+   * reaction there; an empty `emoji` takes it back. `not_supported` is a
+   * runner from before it (`whatsapp.react`).
+   */
+  react(
+    hostId: string,
+    chatId: string,
+    message: WhatsappQuote,
+    emoji: string,
+  ): Promise<WhatsappSendOutcome>;
   /** Fetch a voice note the number received, by its chat and WhatsApp id. */
   voiceNote(hostId: string, chatId: string, messageId: string): Promise<WhatsappVoiceNoteOutcome>;
   /**

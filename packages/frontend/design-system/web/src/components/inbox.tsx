@@ -483,7 +483,7 @@ function InboxDeck({
   return (
     <div
       data-slot="inbox-deck"
-      className={cn('relative mx-auto w-full max-w-[800px] px-6 pt-6 pb-5 max-sm:px-3 max-sm:pt-3', className)}
+      className={cn('relative mx-auto w-full max-w-[720px] px-6 pt-5 pb-4 max-sm:px-3 max-sm:pt-3', className)}
       {...props}
     >
       <div className="relative">
@@ -601,21 +601,21 @@ function InboxDock({
     <div
       role="toolbar"
       data-slot="inbox-dock"
-      className={cn('flex justify-center px-6 pt-5 pb-10', className)}
+      className={cn('flex justify-center px-6 pt-3 pb-8', className)}
       {...props}
     >
       <div className="flex items-start gap-4">
         {actions.map(({ action, glyph, main }) => (
-          <div key={action.label} className="flex w-14 flex-col items-center gap-1.5">
+          <div key={action.label} className="flex w-14 flex-col items-center gap-1">
             <ButtonPrimitive
               aria-label={action.label}
               disabled={action.disabled}
               onClick={action.onClick}
               className={cn(
-                'flex items-center justify-center rounded-pill outline-none transition-[background-color,transform] duration-instant ease-standard active:scale-[0.95] focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-5',
+                'flex items-center justify-center rounded-pill outline-none transition-[background-color,transform] duration-instant ease-standard active:scale-[0.95] focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-4',
                 main
-                  ? 'size-13 bg-fg text-canvas hover:bg-fg/90'
-                  : 'mt-1.5 size-(--control-h-lg) border border-border bg-card text-fg hover:bg-hover-surface',
+                  ? 'size-(--control-h-lg) bg-fg text-canvas hover:bg-fg/90'
+                  : 'mt-1 size-(--control-h-md) border border-border bg-card text-fg hover:bg-hover-surface',
               )}
             >
               {glyph}
@@ -731,24 +731,24 @@ function InboxMessage({
     <article
       data-slot="inbox-message"
       className={cn(
-        'mx-auto box-border flex w-full max-w-[760px] flex-col gap-5 px-8 pt-7 pb-12 motion-safe:animate-appear max-sm:px-4',
+        'mx-auto box-border flex w-full max-w-[760px] flex-col gap-3.5 px-6 pt-5 pb-8 motion-safe:animate-appear max-sm:px-4',
         className,
       )}
       {...props}
     >
-      <h2 className="text-[21px] leading-[1.3] font-semibold tracking-[-0.016em] text-pretty">
+      <h2 className="text-[17px] leading-[1.35] font-semibold tracking-[-0.011em] text-pretty">
         {title}
       </h2>
-      <div className="flex items-center gap-3 border-b border-border-subtle pb-5">
+      <div className="flex items-center gap-2.5 border-b border-border-subtle pb-3.5">
         <span
           aria-hidden
-          className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-control text-fg [&_svg]:size-4"
+          className="flex size-7 shrink-0 items-center justify-center rounded-pill bg-control text-fg [&_svg]:size-3.5"
         >
           {icon}
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="truncate text-[14px] font-medium">{sender}</span>
-          {meta ? <span className="truncate text-[12.5px] text-fg-muted">{meta}</span> : null}
+          <span className="truncate text-[13px] font-medium">{sender}</span>
+          {meta ? <span className="truncate text-[12px] text-fg-muted">{meta}</span> : null}
         </div>
         {age ? <span className="figures shrink-0 text-[12px] text-fg-subtle">{age}</span> : null}
       </div>
@@ -761,7 +761,7 @@ function InboxMessageBody({ className, ...props }: React.ComponentProps<'p'>) {
   return (
     <p
       data-slot="inbox-message-body"
-      className={cn('text-[15px] leading-[1.6] text-fg text-pretty', className)}
+      className={cn('text-[14px] leading-[1.55] text-fg text-pretty', className)}
       {...props}
     />
   );
@@ -787,7 +787,7 @@ function InboxMessageFacts({ className, ...props }: React.ComponentProps<'div'>)
  * is the dock's, under the card.
  */
 const ANSWER_ROWS =
-  'grid gap-2 sm:[&:has(>:nth-child(2):last-child)]:grid-cols-2 [&>*]:h-(--control-h-lg) [&>*]:w-full [&>*]:min-w-0 [&>*]:justify-start [&>*]:rounded-md [&>*]:px-4 [&>*]:text-[14px]';
+  'grid gap-1.5 sm:[&:has(>:nth-child(2):last-child)]:grid-cols-2 [&>*]:h-(--control-h-md) [&>*]:w-full [&>*]:min-w-0 [&>*]:justify-start [&>*]:rounded-sm [&>*]:px-3 [&>*]:text-[13px]';
 
 function InboxMessageActions({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -839,7 +839,7 @@ function InboxQuestion({
   question: React.ReactNode;
 }) {
   return (
-    <li data-slot="inbox-question" className={cn('flex flex-col gap-2', className)} {...props}>
+    <li data-slot="inbox-question" className={cn('flex flex-col gap-1.5', className)} {...props}>
       <span className="text-[14px] leading-[1.45] text-pretty">
         <span className="figures mr-2 font-mono text-[12px] text-fg-subtle">{n}</span>
         {header ? (
@@ -887,7 +887,7 @@ function InboxQuestionOptions({
         const one = picked.find((v) => !value.includes(v));
         if (one !== undefined) onValueChange([one]);
       }}
-      className={cn('flex flex-col gap-2', className)}
+      className={cn('flex flex-col gap-1.5', className)}
       {...props}
     />
   );
@@ -915,14 +915,14 @@ function InboxQuestionOption({
       data-slot="inbox-question-option"
       value={String(index)}
       className={cn(
-        'grid min-h-(--control-h-lg) w-full grid-cols-[auto_minmax(0,1fr)] content-center items-center gap-x-2.5 gap-y-0.5 rounded-md border border-border-subtle bg-control px-4 py-2 text-left text-[14px] text-fg outline-none transition-[background-color,border-color,transform] duration-instant ease-standard select-none hover:bg-hover-surface active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-disabled:opacity-40 data-pressed:border-primary data-pressed:bg-selected-surface',
+        'grid min-h-(--control-h-md) w-full grid-cols-[auto_minmax(0,1fr)] content-center items-center gap-x-2.5 gap-y-0 rounded-sm border border-border-subtle bg-control px-3 py-1.5 text-left text-[13px] text-fg outline-none transition-[background-color,border-color,transform] duration-instant ease-standard select-none hover:bg-hover-surface active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-disabled:opacity-40 data-pressed:border-primary data-pressed:bg-selected-surface',
         className,
       )}
       {...props}
     >
       <span className="col-start-2 leading-[1.35] font-medium">{label}</span>
       {description ? (
-        <span className="col-start-2 text-[12.5px] leading-[1.35] text-fg-subtle">{description}</span>
+        <span className="col-start-2 text-[12px] leading-[1.35] text-fg-subtle">{description}</span>
       ) : null}
     </TogglePrimitive>
   );

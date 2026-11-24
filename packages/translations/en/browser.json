@@ -1854,6 +1854,8 @@
       "copyMessage": "Copy message",
       "copyReply": "Copy reply",
       "toLatest": "Jump to latest",
+      "loadingOlder": "Loading earlier messages…",
+      "olderFailed": "Earlier messages could not be loaded. Scroll up again to try once more.",
       "switchedModel": "Switched to <model>{{model}}</model>",
       "tokens_one": "{{tokens}} token",
       "tokens_other": "{{tokens}} tokens",
@@ -3911,7 +3913,8 @@
       "low": "Deprioritize",
       "restore": "Restore priority",
       "snooze": "Snooze",
-      "delete": "Delete"
+      "delete": "Delete",
+      "start": "Select"
     },
     "filter": {
       "label": "Filter the Inbox",

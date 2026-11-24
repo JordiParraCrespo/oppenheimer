@@ -18,7 +18,7 @@ packageExtensionsChecksum: 5c9c646e3007211b0350ac0afa5f8f18
 
 patchedDependencies:
   '@novnc/novnc@1.7.0':
-    hash: 65yvh7dxum3rzfbz5h2ikwpzty
+    hash: 4hrdump766e5iuaj6q4gmrrtde
     path: patches/@novnc__novnc@1.7.0.patch
   '@xterm/addon-webgl@0.19.0':
     hash: sw67htlzvl3hgmib3dx2gxxzzq
@@ -334,6 +334,9 @@ importers:
       '@oppenheimer/design-system-web':
         specifier: workspace:*
         version: link:../../packages/frontend/design-system/web
+      '@oppenheimer/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@oppenheimer/translations':
         specifier: workspace:*
         version: link:../../packages/translations
@@ -1710,7 +1713,7 @@ importers:
         version: 5.9.1(@sinclair/typebox@0.27.12)(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(class-transformer@0.5.1)(joi@17.13.4)(react-hook-form@7.88.0(react@19.2.3))(zod@3.25.76)
       '@novnc/novnc':
         specifier: 1.7.0
-        version: 1.7.0(patch_hash=65yvh7dxum3rzfbz5h2ikwpzty)
+        version: 1.7.0(patch_hash=4hrdump766e5iuaj6q4gmrrtde)
       '@oppenheimer/design-system-web':
         specifier: workspace:*
         version: link:../design-system/web
@@ -21317,7 +21320,7 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
 
-  '@novnc/novnc@1.7.0(patch_hash=65yvh7dxum3rzfbz5h2ikwpzty)': {}
+  '@novnc/novnc@1.7.0(patch_hash=4hrdump766e5iuaj6q4gmrrtde)': {}
 
   '@openai/agents-core@0.21.0(@aws-sdk/credential-provider-node@3.972.72)(@smithy/signature-v4@5.6.10)(undici@8.9.0)(ws@8.22.0)(zod@4.6.5)':
     dependencies:

@@ -7,6 +7,7 @@ toolchain go1.26.10
 require (
 	github.com/coder/websocket v1.8.15
 	github.com/creack/pty v1.1.24
+	github.com/ebitengine/purego v0.11.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/jordiparracrespo/oppenheimer/packages/go/auth v0.0.0
