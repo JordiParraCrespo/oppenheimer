@@ -621,7 +621,7 @@ export class BotSessionToolsFactory implements BotToolArea {
    */
   private async promptable(context: BotToolCallContext, sessionId: string) {
     const session = await this.session(context, sessionId);
-    if (restartRefusal(session) === null) {
+    if (stoppedOnHost(session)) {
       throw new BotToolRefusal(
         promptText('sessions/tools.send-to-session-stopped', { id: sessionId }),
       );
@@ -656,6 +656,11 @@ export class BotSessionToolsFactory implements BotToolArea {
       new FindProjectQuery({ scope: context.owner, projectId }),
     );
   }
+}
+
+/** A session stopped on its host: it takes no prompt until it is restarted. */
+function stoppedOnHost(session: WorkSessionEntity): boolean {
+  return !session.isResolved && session.place !== 'cloud' && session.stoppedAt !== null;
 }
 
 /**
