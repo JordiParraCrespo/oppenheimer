@@ -71,6 +71,9 @@ jobs:
           CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
           CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
           ZIP: apps/extension/release/oppenheimer-extension-${{ steps.release.outputs.version }}.zip
+        # `shell: bash` adds pipefail; without it the step takes tee's exit
+        # code, and a refused upload would still be tagged as released.
+        shell: bash
         run: node apps/extension/scripts/publish.mjs "$ZIP" | tee -a "$GITHUB_STEP_SUMMARY"
 
       # The tag is what marks the version released, so it is pushed only
