@@ -12,6 +12,13 @@ export {
   readFeedbackDraft,
 } from './chat/feedback-draft';
 export {
+  type ChatPendingPermission,
+  type ChatPermissionPrompt,
+  pendingPermission,
+  readPermissionPrompt,
+  riskyCommand,
+} from './chat/permission-prompt';
+export {
   offeredSuggestion,
   readPromptSuggestion,
   type ScreenRow,

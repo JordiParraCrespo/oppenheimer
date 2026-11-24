@@ -445,6 +445,7 @@ describe('SessionChat', () => {
       activity: null,
       suggestion: null,
       feedback: null,
+      permission: null,
       interruptible: true,
       commands: null,
     });
