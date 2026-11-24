@@ -265,7 +265,6 @@ function Composer({
                   size="sm"
                   shape="square"
                   onClick={onAttach}
-                  className="size-[30px]"
                 >
                   <PaperclipIcon className="size-[15px]" />
                 </IconButton>
@@ -284,7 +283,6 @@ function Composer({
             sendBlockedReason={sendBlockedReason}
             labels={label}
             onClick={submit}
-            className="size-8"
           >
             <ComposerSendGlyph busy={busy} />
           </ComposerSendButton>
@@ -403,7 +401,7 @@ function ComposerPill({
                   title={label.attach}
                   size="sm"
                   onClick={onAttach}
-                  className="size-8 text-fg-muted"
+                  className="text-fg-muted"
                 >
                   <PlusIcon className="size-4.25" />
                 </IconButton>
@@ -434,7 +432,7 @@ function ComposerPill({
               sendBlockedReason={sendBlockedReason}
               labels={label}
               onClick={submit}
-              className="ml-1 size-8"
+              className="ml-1"
             >
               <ComposerSendGlyph busy={busy} />
             </ComposerSendButton>

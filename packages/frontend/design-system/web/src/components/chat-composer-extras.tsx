@@ -14,7 +14,7 @@ import { IconButton } from './icon-button';
  *   midline, the elapsed time in mono, cancel and the blue arrow up that
  *   stops it. Before the microphone answers it says so; after,
  *   "Transcribing…", in the same row.
- * - `DictationButton`: the mic, a 30px square, on the danger surface while
+ * - `DictationButton`: the mic, a 28px square (the ramp's `sm`), on the danger surface while
  *   it records. Every field that takes dictation shows this one.
  * - `DictationFrame`: a plain multi-line field that takes dictation: the
  *   field with the mic in its bottom-right corner (the field keeps room for
@@ -126,7 +126,6 @@ function DictationButton({
       shape="square"
       onClick={onClick}
       className={cn(
-        'size-[30px]',
         recording && 'bg-danger-surface text-danger hover:bg-danger-surface hover:text-danger',
         className,
       )}
@@ -204,7 +203,7 @@ function ComposerContextMeter({
       title={name}
       disabled={!onCompact && !props.onClick}
       className={cn(
-        'figures inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-2 font-mono text-[11.5px] text-fg-subtle outline-none transition-colors duration-fast enabled:hover:bg-hover-surface enabled:hover:text-fg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default',
+        'figures inline-flex h-(--control-h-sm) shrink-0 items-center gap-1.5 rounded-pill px-2 font-mono text-[11.5px] text-fg-subtle outline-none transition-colors duration-fast enabled:hover:bg-hover-surface enabled:hover:text-fg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default',
         className,
       )}
       {...props}

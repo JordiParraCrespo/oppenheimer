@@ -63,7 +63,7 @@ export function ComposerEmojiButton({
             disabled={disabled}
             aria-label={t('common.chat.emoji.open')}
             title={t('common.chat.emoji.open')}
-            className="size-8 text-fg-muted hover:text-fg"
+            className="text-fg-muted hover:text-fg"
           />
         }
       >

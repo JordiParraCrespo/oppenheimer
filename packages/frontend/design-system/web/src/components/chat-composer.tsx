@@ -39,10 +39,10 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
 function sendButtonClass(layout: 'stacked' | 'inline', busy: boolean): string {
   if (layout === 'inline') {
     return busy
-      ? 'ml-1 size-8 bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active'
-      : 'ml-1 size-8 bg-fg text-background hover:bg-fg/85 active:bg-fg/85 disabled:bg-chat-wash disabled:text-fg-subtle disabled:opacity-100';
+      ? 'ml-1 bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active'
+      : 'ml-1 bg-fg text-background hover:bg-fg/85 active:bg-fg/85 disabled:bg-chat-wash disabled:text-fg-subtle disabled:opacity-100';
   }
-  return busy ? 'ml-1 size-8.5 bg-fg text-background hover:bg-fg hover:text-background' : 'ml-1 size-8.5';
+  return busy ? 'ml-1 bg-fg text-background hover:bg-fg hover:text-background' : 'ml-1';
 }
 
 /**
@@ -50,7 +50,7 @@ function sendButtonClass(layout: 'stacked' | 'inline', busy: boolean): string {
  * border until it takes focus (the plain border then, no ring), its text at
  * 15px growing from two lines to eight, then a foot row: `tools` (the
  * approval level) on the left, `engine` (model, effort) on the right, and
- * the 34px send. While `busy` the send is the stop, a small square on the
+ * the 28px send (the ramp's `sm`, level with the foot's tools). While `busy` the send is the stop, a small square on the
  * ink. Enter sends, Shift+Enter makes a new line; `onAltSubmit` gives
  * Alt+Enter a second way to send (a bot's "queue it for after" while
  * Enter steers the turn under way), named for the caller to say, and
@@ -225,7 +225,7 @@ function ChatComposer({
       shape={inline ? 'pill' : 'square'}
       onClick={onAttach}
       disabled={disabled}
-      className={inline ? 'size-8 text-fg-muted hover:text-fg' : 'size-7.5'}
+      className={inline ? 'text-fg-muted hover:text-fg' : undefined}
     >
       {inline ? <PlusIcon className="size-4" /> : <PaperclipIcon className="size-3.75" />}
     </IconButton>

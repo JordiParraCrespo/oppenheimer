@@ -13,6 +13,7 @@ routes counts more controls.
 | Baseline (2026-11-24) | — | 18 | — | 24×8 · 27×10 · 28×107 · 30×33 · 32×36 · 34×23 · 36×14 · 40×2 |
 | 1 | The design-system primitives onto the ramp; the check; Permissions and Automations rows | 10 | 80 | 24×8 · 27×10 · 28×134 · 30×5 · 32×20 · 34×40 · 36×14 · 42×1 |
 | 2 | The console's rows; the spec adds a plan with tasks, `/about` and the routine editor | 5 | 74 | 24×2 · 27×10 · 28×148 · 30×6 · 32×20 · 34×56 · 36×14 · 42×2 |
+| 3 | The composer and the chrome; `NOT_A_CONTROL` beside the debt | 1 | 52 | 24×2 · 27×10 · 28×166 · 32×8 · 34×56 · 36×14 · 42×2 |
 
 Pass 1 put on the ramp: `SegmentedControl`'s track (sm 28, md 34, lg 42,
 from about 27 / 32 / 40), `PillTabs` md (34, from 32), `PillGroup` and
@@ -36,14 +37,25 @@ trigger card's glyph and its duplicate and remove buttons at 28 (from 30).
 The project page needed nothing: main's PillTabs move put it at 34 beside
 its 34px date range.
 
+Pass 3 put the composers on the 28 rung with their foot's tool buttons:
+`Composer`'s and `ComposerPill`'s attach, emoji, mic and send (from 30 and
+32), `ChatComposer`'s attach and send (from 30, 32 and 34), the context meter
+(the token). The chrome: the top bar's icon buttons lose a redundant
+`size-8.5` and its search stands at 34 (from 36); `SidebarSearch` and
+`SidebarInput` at 28 (from 30 and 32); `NumberStepper`'s track at 28 with its
+buttons filling it (from 32). The one row the measurement still lists is the
+TODO row below. 8 of the 22 the debt lost were not controls, and moved to
+`NOT_A_CONTROL` in `scripts/control-height-debt.mjs`, each with its reason.
+
 ## Next
 
-- **Pass 3, the composer and chrome.** The composer's foot and
-  `ComposerPill` (attach 32, emoji and send 32, dictation 30; the
-  measurement's four remaining rows), the dictation field in the routine
-  editor (30), the chat composer's send (32 / 34), the top bar's search
-  (36px beside 34px icon buttons), the sidebar's input and search (32 / 30),
-  `NumberStepper` (32 outer). Then the debt the scanner still lists.
+- **Pass 4, the remaining debt** (52, `node scripts/control-heights.mjs
+  --list`), file by file, each either onto the ramp or into `NOT_A_CONTROL`
+  with its reason. The measurement's census names the visible ones: a bot's
+  Profile pickers (colour swatches 32, faces 36: grids of choices, likely not
+  controls), the composer band's actions (`ComposerStackAction`, 24), TODO's
+  add field (36), a Calendar button (40), and the chat's pieces (`chat-*`:
+  suggestions, status, transcript jumps).
 
 ## Open calls
 
@@ -64,3 +76,8 @@ a row of controls, and stay:
   row's height (44px); the row's own actions beside them are 28.
 - **A disclosure's head** (27px, `disclosure-trigger`): a label row that
   folds, read as text, never beside a control.
+- **The sidebar's menu buttons, row action and search clear** (`sidebar.tsx`,
+  in `NOT_A_CONTROL`): rows of the navigation list and glyphs inside a row or
+  a field.
+- **The emoji picker's cells and category tabs** (`emoji-picker.tsx`, in
+  `NOT_A_CONTROL`): a grid of glyphs and the strip above it.

@@ -31,7 +31,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { CONTROL_HEIGHT_DEBT } from './control-height-debt.mjs';
+import { CONTROL_HEIGHT_DEBT, NOT_A_CONTROL } from './control-height-debt.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -177,10 +177,17 @@ export function scan(root = ROOT) {
   return byFile;
 }
 
-export function check(byFile, debt = CONTROL_HEIGHT_DEBT) {
+/**
+ * Holds each file to what it may still have: its debt plus what
+ * `NOT_A_CONTROL` says is a list row or a glyph rather than a control. One
+ * more fails; one fewer fails until a count comes down, so neither list grows
+ * stale.
+ */
+export function check(byFile, debt = CONTROL_HEIGHT_DEBT, exempt = NOT_A_CONTROL) {
   const errors = [];
+  const allowedFor = (file) => (debt.get(file) ?? 0) + (exempt.get(file)?.count ?? 0);
   for (const [file, found] of byFile) {
-    const allowed = debt.get(file) ?? 0;
+    const allowed = allowedFor(file);
     if (found.length > allowed) {
       errors.push(
         `${file}: ${found.length} hand-written control heights, ${allowed} allowed\n${found
@@ -189,8 +196,9 @@ export function check(byFile, debt = CONTROL_HEIGHT_DEBT) {
       );
     }
   }
-  for (const [file, allowed] of debt) {
+  for (const file of new Set([...debt.keys(), ...exempt.keys()])) {
     const count = byFile.get(file)?.length ?? 0;
+    const allowed = allowedFor(file);
     if (count < allowed) {
       errors.push(
         `${file}: ${count} hand-written control heights, down from ${allowed}: lower its count in scripts/control-height-debt.mjs`,
@@ -209,7 +217,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   } else if (arg === '--debt') {
     // The console's own files (the last root) sit in the starter's `web` block, as in the map.
     for (const [file, found] of [...byFile].sort()) {
-      const line = `  ['${file}', ${found.length}],`;
+      const owed = found.length - (NOT_A_CONTROL.get(file)?.count ?? 0);
+      if (owed <= 0) continue;
+      const line = `  ['${file}', ${owed}],`;
       console.log(
         file.startsWith(ROOTS.at(-1))
           ? `  // oppenheimer:begin web\n${line}\n  // oppenheimer:end web`
@@ -224,7 +234,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       );
       process.exit(1);
     }
-    const total = [...byFile.values()].reduce((sum, found) => sum + found.length, 0);
-    console.log(`control heights: ${total} left in the debt, none new`);
+    const owed = [...CONTROL_HEIGHT_DEBT.values()].reduce((sum, count) => sum + count, 0);
+    console.log(`control heights: ${owed} left in the debt, none new`);
   }
 }
