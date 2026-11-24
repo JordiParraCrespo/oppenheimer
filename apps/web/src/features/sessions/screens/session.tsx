@@ -96,6 +96,7 @@ export function SessionScreen({
           terminal={(session, reading, statusItems) => (
             <SessionTerminal
               sessionId={session.id}
+              agent={session.agent}
               // A cloud session never reaches the terminal: the pane draws its own page.
               hostId={session.hostId ?? ''}
               statusItems={statusItems}

@@ -60,7 +60,7 @@ export class BotPullRequestWatchResolver {
     );
     if (pull.state !== 'open') {
       throw new BotToolRefusal(
-        promptText('tools/pull-request-watch.watch', {
+        promptText('github/tools-pull-request-watch.watch', {
           number: String(number),
           fullName: found.repository.fullName,
           state: pull.state,
@@ -123,7 +123,7 @@ export class BotPullRequestWatchResolver {
     );
     if (!already && existing.length >= BOT_SUBSCRIPTIONS_PER_BOT) {
       throw new BotToolRefusal(
-        promptText('tools/pull-request-watch.assert-room', {
+        promptText('github/tools-pull-request-watch.assert-room', {
           subscriptionsPerBot: String(BOT_SUBSCRIPTIONS_PER_BOT),
         }),
       );
@@ -145,7 +145,7 @@ export class BotPullRequestWatchResolver {
     >(new FindInstallationsQuery({ scope: owner }));
     const usable = installations.filter((installation) => installation.isUsable);
     if (usable.length === 0) {
-      throw new BotToolRefusal(promptText('tools/pull-request-watch.github-not-connected'));
+      throw new BotToolRefusal(promptText('github/tools-pull-request-watch.github-not-connected'));
     }
     let unlisted = 0;
     for (const installation of usable) {
@@ -163,10 +163,10 @@ export class BotPullRequestWatchResolver {
       if (repository) return { installationId: installation.id, repository };
     }
     const why = unlisted
-      ? ` ${promptText('tools/pull-request-watch.installations-unlisted', { unlisted: String(unlisted), suffix: unlisted === 1 ? '' : 's' })}`
+      ? ` ${promptText('github/tools-pull-request-watch.installations-unlisted', { unlisted: String(unlisted), suffix: unlisted === 1 ? '' : 's' })}`
       : '';
     throw new BotToolRefusal(
-      promptText('tools/pull-request-watch.repository-not-readable', {
+      promptText('github/tools-pull-request-watch.repository-not-readable', {
         handle: String(handle),
         why,
       }),

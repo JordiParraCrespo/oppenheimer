@@ -1,5 +1,5 @@
 import { type ChannelTurnProps, channelTurn } from './bot-channel-turn.policy';
-import type { BotMessageEntity } from './bot-message.entity';
+import type { BotMessageEntity, BotPendingMedia } from './bot-message.entity';
 import { fenceUntrusted } from './bot-tool-text.policy';
 import type { BotTurnEntity } from './bot-turn.entity';
 
@@ -15,6 +15,8 @@ export interface BotWhatsappMessage {
   text: string;
   /** An uncaptioned voice note: `text` is ignored, and the turn reads the note when it starts. */
   voiceNote: boolean;
+  /** An image: `text` is its caption (or `[image]`), and the turn fetches the image when it starts. */
+  image?: boolean;
 }
 
 /**
@@ -25,6 +27,20 @@ export interface BotWhatsappMessage {
  * at once, in the order they were sent.
  */
 export const WHATSAPP_VOICE_NOTE_OPENING = '[voice note]';
+
+/**
+ * What the owner's uncaptioned image says on WhatsApp's side
+ * (`whatsappInboundAction`): once the turn has the image itself, the
+ * message carries it and needs no words.
+ */
+export const WHATSAPP_IMAGE_OPENING = '[image]';
+
+/** What a WhatsApp message still has to read when its turn starts, if anything. */
+function pendingMediaOf(message: { voiceNote?: boolean; image?: boolean }): BotPendingMedia | null {
+  if (message.voiceNote) return { kind: 'whatsapp_voice_note' };
+  if (message.image) return { kind: 'whatsapp_image' };
+  return null;
+}
 
 /**
  * The key that makes the owner's WhatsApp message one turn however often it
@@ -63,7 +79,7 @@ export function whatsappTurn(
     sourceKey: whatsappSourceKey(message),
     conversationId: message.conversationId,
     text: message.voiceNote ? WHATSAPP_VOICE_NOTE_OPENING : message.text,
-    pendingMedia: message.voiceNote ? { kind: 'whatsapp_voice_note' } : null,
+    pendingMedia: pendingMediaOf(message),
   });
 }
 
@@ -98,6 +114,8 @@ export interface BotWhatsappContactMessage {
   /** Who wrote it, as their phone number (`+34600111222`), or their JID when it is no number. */
   sender: string;
   text: string;
+  /** An image: `text` is its caption (or `[image]`), and the turn fetches the image when it starts. */
+  image?: boolean;
 }
 
 /**
@@ -128,5 +146,6 @@ export function whatsappContactTurn(
     conversationId: message.conversationId,
     text: whatsappContactOpening(message),
     contact: message.chatKind,
+    pendingMedia: pendingMediaOf(message),
   });
 }

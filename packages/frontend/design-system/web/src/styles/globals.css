@@ -225,6 +225,10 @@
        the frame's own near-black, `#0b0b0c`, in both themes, because it is
        the hardware's colour and not the UI's. */
     --device-bezel: #0b0b0c;
+    /* Words on that screen while it has no picture: light on the bezel's
+       black in both themes, for the same reason. */
+    --device-screen-fg: rgba(255, 255, 255, 0.88);
+    --device-screen-fg-muted: rgba(255, 255, 255, 0.58);
     --term-selection: rgba(0, 113, 227, 0.16);
     /* ANSI magenta and cyan have no UI counterpart — nothing in the product is
        coloured with them — but a real PTY emits all sixteen slots, so the two
@@ -902,6 +906,8 @@
   --color-term-border: var(--term-border);
   --color-term-accent: var(--term-accent);
   --color-device-bezel: var(--device-bezel);
+  --color-device-screen-fg: var(--device-screen-fg);
+  --color-device-screen-fg-muted: var(--device-screen-fg-muted);
   --color-chat-ground: var(--chat-ground);
   --color-chat-wash: var(--chat-wash);
   --color-chat-spinner: var(--chat-spinner);
@@ -1441,4 +1447,32 @@
   --trees-file-icon-color-yml: var(--file-icon-yml);
   --trees-file-icon-color-zig: var(--file-icon-zig);
   --trees-file-icon-color-zip: var(--file-icon-zip);
+}
+
+/* The Inbox's deck (`InboxDeck`): the message sits on a card, so it keeps a
+   card's bottom inset rather than a page's; and where there is a keyboard,
+   each answer on the card in hand wears its number, the digit that presses
+   it, which the deck writes on it (`data-answer-key`). */
+[data-slot='inbox-deck-card'] [data-slot='inbox-message'] {
+  padding-bottom: 1.75rem;
+}
+@media (hover: hover) and (pointer: fine) {
+  [data-slot='inbox-deck-card'] [data-answer-key]::before {
+    content: attr(data-answer-key);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, currentColor 14%, transparent);
+    font-size: 10.5px;
+    font-weight: 500;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  [data-slot='inbox-question-option']::before {
+    grid-row: 1 / span 2;
+  }
 }

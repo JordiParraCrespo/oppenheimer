@@ -79,7 +79,7 @@ export function ReviewPopover({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger render={<SubmitReviewButton count={pending.length || undefined} />}>
+      <PopoverTrigger render={<SubmitReviewButton size="sm" count={pending.length || undefined} />}>
         {t('pullRequests.review.submit')}
       </PopoverTrigger>
       <PopoverContent align="end" className="w-95">

@@ -16,12 +16,12 @@ import { FindBotSkillQuery } from '../../bots/queries/find-bot-skill/find-bot-sk
 import { FindBotSkillsQuery } from '../../bots/queries/find-bot-skills/find-bot-skills.query';
 import { promptText } from '../domain/bot-prompt-text.policy';
 import {
-  type BotBuiltInSkill,
   describeSkillUse,
   isBuiltInSkill,
   skillBlock,
   withBuiltInSkills,
 } from '../domain/bot-skill.policy';
+import type { BotBuiltInSkill } from '../domain/bot-skill.types';
 import {
   isOppenheimersSkillName,
   oppenheimersSkillRefusal,
@@ -44,7 +44,7 @@ const skillName = z
   .trim()
   .max(BOT_SKILL_NAME_MAX)
   .regex(BOT_SKILL_NAME_PATTERN)
-  .describe(promptText('tools/skills.skill-name-skills-name-skills'));
+  .describe(promptText('skills/tools.skill-name-skills-name-skills'));
 
 /**
  * Its skills (from OpenClaw's skills and Grok Bot's saved skills): the bot
@@ -72,12 +72,12 @@ export class BotSkillToolsFactory implements BotToolArea {
       name: 'use_skill',
       readOnly: true,
       scope: 'bots:read',
-      description: promptText('tools/skills.use-skill'),
+      description: promptText('skills/tools.use-skill'),
       input: z.strictObject({ name: skillName }),
       run: async (input, context) => {
         const skill = await this.skillToUse(context, input.name);
         if (!skill.modelInvocable) {
-          return promptText('tools/skills.use-skill-read-skill-only', { name: skill.name });
+          return promptText('skills/tools.use-skill-read-skill-only', { name: skill.name });
         }
         const read = `${describeSkillUse(skill)}\n\n${skillBlock(skill)}`;
         // Oppenheimer's own skills are product text: nothing for the bot to fix.
@@ -90,7 +90,7 @@ export class BotSkillToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'save_skill',
       scope: 'bots:write',
-      description: promptText('tools/skills.save-skill', {
+      description: promptText('skills/tools.save-skill', {
         skillNameMax: String(BOT_SKILL_NAME_MAX),
         skillDescriptionMax: String(BOT_SKILL_DESCRIPTION_MAX),
         skillBodyMax: String(BOT_SKILL_BODY_MAX),
@@ -103,25 +103,25 @@ export class BotSkillToolsFactory implements BotToolArea {
           .trim()
           .min(1)
           .max(BOT_SKILL_DESCRIPTION_MAX)
-          .describe(promptText('tools/skills.skill-name-one-sentence-what')),
+          .describe(promptText('skills/tools.skill-name-one-sentence-what')),
         body: z
           .string()
           .trim()
           .min(1)
           .max(BOT_SKILL_BODY_MAX)
-          .describe(promptText('tools/skills.save-skill-body')),
+          .describe(promptText('skills/tools.save-skill-body')),
         user_invocable: z
           .boolean()
           .optional()
-          .describe(promptText('tools/skills.save-skill-user-invocable')),
+          .describe(promptText('skills/tools.save-skill-user-invocable')),
         model_invocable: z
           .boolean()
           .optional()
-          .describe(promptText('tools/skills.save-skill-model-invocable')),
+          .describe(promptText('skills/tools.save-skill-model-invocable')),
         asked_by_person: z
           .boolean()
           .optional()
-          .describe(promptText('tools/skills.save-skill-asked-by-person')),
+          .describe(promptText('skills/tools.save-skill-asked-by-person')),
       }),
       run: async (input, context) => {
         const change = {
@@ -167,9 +167,9 @@ export class BotSkillToolsFactory implements BotToolArea {
         const saved = await this.skill(context, input.name);
         const runs = [
           saved.userInvocable ? `the person runs it as /${saved.name}` : null,
-          saved.modelInvocable ? promptText('tools/skills.save-skill-use-when-request') : null,
+          saved.modelInvocable ? promptText('skills/tools.save-skill-use-when-request') : null,
         ].filter(Boolean);
-        return promptText('tools/skills.save-skill-skill-person-can', {
+        return promptText('skills/tools.save-skill-skill-person-can', {
           existing: existing ? 'Updated' : 'Saved',
           name: saved.name,
           runs: runs.join('; '),
@@ -182,7 +182,7 @@ export class BotSkillToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'patch_skill',
       scope: 'bots:write',
-      description: promptText('tools/skills.patch-skill', {
+      description: promptText('skills/tools.patch-skill', {
         skillBodyMax: String(BOT_SKILL_BODY_MAX),
       }),
       input: z.strictObject({
@@ -191,15 +191,15 @@ export class BotSkillToolsFactory implements BotToolArea {
           .string()
           .min(1)
           .max(BOT_SKILL_BODY_MAX)
-          .describe(promptText('tools/skills.patch-skill-old-text')),
+          .describe(promptText('skills/tools.patch-skill-old-text')),
         new_text: z
           .string()
           .max(BOT_SKILL_BODY_MAX)
-          .describe(promptText('tools/skills.patch-skill-new-text')),
+          .describe(promptText('skills/tools.patch-skill-new-text')),
         asked_by_person: z
           .boolean()
           .optional()
-          .describe(promptText('tools/skills.patch-skill-asked-by-person')),
+          .describe(promptText('skills/tools.patch-skill-asked-by-person')),
       }),
       run: async (input, context) => {
         const own = (await this.skills(context)).find((skill) => skill.name === input.name);
@@ -222,7 +222,7 @@ export class BotSkillToolsFactory implements BotToolArea {
             author: 'bot',
           }),
         );
-        return promptText('tools/skills.patch-skill-fixed-skill-say', { name: skill.name });
+        return promptText('skills/tools.patch-skill-fixed-skill-say', { name: skill.name });
       },
     });
   }
@@ -231,7 +231,7 @@ export class BotSkillToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'delete_skill',
       scope: 'bots:write',
-      description: promptText('tools/skills.delete-skill'),
+      description: promptText('skills/tools.delete-skill'),
       input: z.strictObject({ name: skillName }),
       run: async (input, context) => {
         const skill = await this.skill(context, input.name);
@@ -243,7 +243,7 @@ export class BotSkillToolsFactory implements BotToolArea {
           }),
         );
         const left = await this.skills(context);
-        return promptText('tools/skills.delete-skill-deleted-skill-have', {
+        return promptText('skills/tools.delete-skill-deleted-skill-have', {
           name: skill.name,
           leftCount: String(left.length),
         });

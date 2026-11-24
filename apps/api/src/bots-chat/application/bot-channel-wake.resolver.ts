@@ -21,11 +21,17 @@ export interface BotChannelWake {
   command: 'message' | 'new' | 'stop';
   /** The owner who wrote it, or whose number a contact wrote to: only a bot they made answers. */
   userId: string;
-  /** The turn the message queues, and its opening, in the conversation that holds it. */
+  /**
+   * The turn the message queues, and its opening, in the conversation that
+   * holds it; made only once the bot is known to answer, so what it fetches
+   * (a Slack message's images) is fetched for a bot that will read it.
+   */
   turn: (
     props: ChannelTurnProps,
     conversationId: string,
-  ) => { turn: BotTurnEntity; opening: BotMessageEntity };
+  ) =>
+    | { turn: BotTurnEntity; opening: BotMessageEntity }
+    | Promise<{ turn: BotTurnEntity; opening: BotMessageEntity }>;
   correlationId: string | null;
   /**
    * The most turns the chat's conversation is sent in an hour; past it the
@@ -77,7 +83,7 @@ export class BotChannelWakeResolver {
       model: bot.model ?? botDefaultModel(bot.provider).id,
       effort: bot.effort,
     };
-    const { turn, opening } = wake.turn(props, conversationId);
+    const { turn, opening } = await wake.turn(props, conversationId);
     // Not on the bot's stream, which is its console chat's.
     await this.turns.enqueueOnce(turn, opening, wake.correlationId, null, wake.turnsPerHour);
   }

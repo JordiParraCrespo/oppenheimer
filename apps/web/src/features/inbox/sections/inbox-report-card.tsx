@@ -6,10 +6,8 @@ import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
 import { ReportAnswerForm } from '@/features/inbox/forms/report-answer-form';
-import { useInboxMarks } from '@/features/inbox/hooks/use-inbox-marks';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
 import { inboxVisit } from '@/features/inbox/lib/inbox-visit';
-import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 import { InboxReportImages } from '@/features/inbox/sections/inbox-report-images';
 
 /**
@@ -33,7 +31,6 @@ export function InboxReportCard({
 }) {
   const { t } = useTranslation();
   const answer = useAnswerInboxReport();
-  const marks = useInboxMarks();
   const { report } = item;
 
   return (
@@ -67,34 +64,18 @@ export function InboxReportCard({
               fallback={t('inbox.report.answerFailed')}
               onDismiss={answer.reset}
             />
-          ) : marks.error ? (
-            <ErrorAlert
-              error={marks.error}
-              fallback={t('inbox.card.answerFailed')}
-              onDismiss={marks.dismiss}
-            />
           ) : null
         }
-        leading={
-          <>
-            <InboxLaterButton itemKey={item.key} />
-            {report.href ? (
-              <Button
-                variant="ghost"
-                render={<a href={report.href} target="_blank" rel="noreferrer" />}
-              >
-                <SquareArrowOutUpRight />
-                {t('inbox.report.openLink')}
-              </Button>
-            ) : null}
+        link={
+          report.href ? (
             <Button
               variant="secondary"
-              disabled={answer.isPending}
-              onClick={() => marks.apply('done', item)}
+              render={<a href={report.href} target="_blank" rel="noreferrer" />}
             >
-              {t('inbox.report.done')}
+              <SquareArrowOutUpRight />
+              {t('inbox.report.openLink')}
             </Button>
-          </>
+          ) : null
         }
       />
     </InboxMessage>

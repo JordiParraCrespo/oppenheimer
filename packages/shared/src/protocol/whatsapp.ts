@@ -98,7 +98,7 @@ export type WhatsappStateMessage = z.infer<typeof whatsappStateSchema>;
 
 /**
  * What a message carries besides its text. Only the kind is sent: media stays
- * on the phone, except a voice note the control plane asks for
+ * on the phone, except a voice note or an image the control plane asks for
  * (`whatsapp.media.get`).
  */
 export const WHATSAPP_MEDIA_KINDS = [
@@ -253,40 +253,60 @@ export type WhatsappSentMessage = z.infer<typeof whatsappSentSchema>;
  */
 export const WHATSAPP_VOICE_NOTE_MAX_BYTES = 352 * 1024;
 
+/** What `whatsapp.media.get` asks for: a voice note to hear, or an image to see. */
+export const WHATSAPP_MEDIA_GET_KINDS = ['voice', 'image'] as const;
+export type WhatsappMediaGetKind = (typeof WHATSAPP_MEDIA_GET_KINDS)[number];
+
 /**
- * Hand over a voice note the number received, to be transcribed. The runner
- * keeps what it needs to fetch one (the message's media key and path, never
- * the audio) for `WHATSAPP_VOICE_NOTE_KEPT_HOURS`, and downloads it from
- * WhatsApp only when asked. Answered by `whatsapp.media` with the same
- * `commandId`, or `command.failed`: `WA_002` no device is connected, `WA_005`
- * no voice note the host still knows by that id, `WA_006` it is larger than
- * `WHATSAPP_VOICE_NOTE_MAX_BYTES`, `WA_007` WhatsApp would not hand it over.
- * Sent only to a runner that names `whatsapp.voice`.
+ * The largest image `whatsapp.media` carries, in bytes before base64: the
+ * same one frame a voice note fits in. A larger image WhatsApp holds is
+ * scaled down and re-encoded as a JPEG on the host until it fits, so a photo
+ * is never refused for its size.
+ */
+export const WHATSAPP_IMAGE_MAX_BYTES = 352 * 1024;
+
+/**
+ * Hand over a voice note (to be transcribed) or an image (to be seen) the
+ * number received. The runner keeps what it needs to fetch one (the
+ * message's media key and path, never the bytes) for
+ * `WHATSAPP_VOICE_NOTE_KEPT_HOURS`, and downloads it from WhatsApp only when
+ * asked. Answered by `whatsapp.media` with the same `commandId`, or
+ * `command.failed`: `WA_002` no device is connected, `WA_005` no such media
+ * the host still knows by that id, `WA_006` it is larger than the host hands
+ * over (a voice note past `WHATSAPP_VOICE_NOTE_MAX_BYTES`, an image it could
+ * not scale to `WHATSAPP_IMAGE_MAX_BYTES`), `WA_007` WhatsApp would not hand
+ * it over. A voice note is asked only of a runner that names `whatsapp.voice`,
+ * an image only of one that names `whatsapp.image`.
  */
 export const whatsappMediaGetSchema = z.object({
   type: z.literal('whatsapp.media.get'),
   commandId: commandIdSchema,
   chatId: jid(),
-  /** WhatsApp's id of the voice note's message. */
+  /** WhatsApp's id of the media's message. */
   messageId: z.string().min(1).max(128),
+  /** What is asked for; absent is a voice note, as before images were. */
+  kind: z.enum(WHATSAPP_MEDIA_GET_KINDS).optional(),
 });
 
 export type WhatsappMediaGetMessage = z.infer<typeof whatsappMediaGetSchema>;
 
-/** How long a runner can still fetch a voice note it received. */
+/** How long a runner can still fetch a voice note or an image it received. */
 export const WHATSAPP_VOICE_NOTE_KEPT_HOURS = 48;
 
-/** A voice note, as WhatsApp stored it: decrypted, in its own container. */
+/**
+ * A voice note, as WhatsApp stored it: decrypted, in its own container; or an
+ * image, as WhatsApp stored it, or the host's smaller JPEG of it.
+ */
 export const whatsappMediaSchema = z.object({
   type: z.literal('whatsapp.media'),
   commandId: commandIdSchema,
-  /** WhatsApp's MIME type for it: `audio/ogg; codecs=opus` for a voice note. */
+  /** Its MIME type: `audio/ogg; codecs=opus` for a voice note, `image/jpeg` for most images. */
   mimetype: z.string().min(1).max(128),
   /** The bytes, base64. */
   data: z
     .string()
     .min(1)
-    .max(Math.ceil(WHATSAPP_VOICE_NOTE_MAX_BYTES / 3) * 4),
+    .max(Math.ceil(Math.max(WHATSAPP_VOICE_NOTE_MAX_BYTES, WHATSAPP_IMAGE_MAX_BYTES) / 3) * 4),
 });
 
 export type WhatsappMediaMessage = z.infer<typeof whatsappMediaSchema>;

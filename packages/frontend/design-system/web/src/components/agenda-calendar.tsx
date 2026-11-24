@@ -1,6 +1,6 @@
 'use client';
 
-import { CircleCheckIcon, ZapIcon } from 'lucide-react';
+import { CircleCheckIcon, AlarmClockIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { TONE_WASH, toneClass } from '../internal/calendar-tone';
@@ -18,7 +18,7 @@ import { CalendarEntry, type CalendarEntryData } from './month-calendar';
  * One that starts before 07:00 or from 22:00 sits in All day with its time,
  * so nothing on the day goes undrawn. Each block wears its colour
  * (`internal/calendar-tone`): a wash of it with a bar down the left edge, a
- * task's check and a run's bolt in it too; a free event is a lighter wash
+ * task's check and a run's alarm clock in it too; a free event is a lighter wash
  * behind a dashed edge, its title muted; a done task fades. Today's
  * column carries a line at `now`.
  *
@@ -200,7 +200,7 @@ function AgendaBlock({
         {entry.kind === 'task' ? (
           <CircleCheckIcon aria-hidden className={cn('size-3 shrink-0', entry.done ? 'text-success' : 'text-(--tone)')} />
         ) : null}
-        {entry.kind === 'automation' ? <ZapIcon aria-hidden className="size-[11px] shrink-0 text-(--tone)" /> : null}
+        {entry.kind === 'automation' ? <AlarmClockIcon aria-hidden className="size-[11px] shrink-0 text-(--tone)" /> : null}
         <span className={cn('min-w-0 truncate text-xs', look.titleClassName)}>{entry.title}</span>
       </span>
       {look.time ? (

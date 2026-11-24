@@ -26,7 +26,8 @@
     "runsEmpty": "Todavía no hay ejecuciones. Cada una aparece aquí con la sesión que inició.",
     "loadFailed": "No se han podido cargar las automatizaciones.",
     "actionFailed": "No se ha podido completar.",
-    "actionFailedFor": "«{{name}}» no se ha actualizado"
+    "actionFailedFor": "«{{name}}» no se ha actualizado",
+    "filterNoMatch": "Ninguna automatización coincide con estos filtros."
   },
   "status": {
     "active": "Activa",
@@ -46,6 +47,7 @@
     "paused": "Omitida: la automatización estaba en pausa",
     "deleted": "Omitida: la automatización se eliminó",
     "own_event": "Omitida: el evento era nuestro",
+    "own_session_event": "Omitida: la causó una sesión que inició este bot",
     "automation_rate_limited": "Omitida: límite por hora de esta automatización",
     "workspace_rate_limited": "Omitida: límite por hora del espacio de trabajo",
     "overlapping": "Omitida: otra ejecución seguía en curso",
@@ -87,6 +89,10 @@
     "monthly": {
       "label": "Mensual",
       "desc": "Un día del mes"
+    },
+    "cron": {
+      "label": "Personalizada",
+      "desc": "Con un horario que un bot escribe por ti"
     }
   },
   "event": {
@@ -153,10 +159,42 @@
     "event": "Al ocurrir: {{event}}",
     "mail": "Correo nuevo que coincide con «{{query}}»",
     "anyMail": "Cualquier correo nuevo",
+    "webhook": "Algo enviado a su URL",
     "more": "{{summary}} +{{count}}",
     "manual": "Solo manual",
     "monFri": "lun–vie",
     "weekend": "sáb, dom"
+  },
+  "cron": {
+    "sentence": "{{time}}, {{day}}",
+    "sentenceMonths": "{{time}}, {{day}}, en {{months}}",
+    "zoned": "{{sentence}} ({{zone}})",
+    "custom": "Horario personalizado",
+    "at": "A las {{times}}",
+    "everyMinutes": "Cada {{step}} minutos",
+    "everyMinutesWindow": "Cada {{step}} minutos de {{from}} a {{to}}",
+    "everyHour": "Cada hora a los :{{minute}}",
+    "everyHourAt": "Cada hora a los {{minutes}}",
+    "everyHourWindow": "Cada hora a los :{{minute}} de {{from}} a {{to}}",
+    "everyHours": "Cada {{step}} horas a los :{{minute}}",
+    "everyHoursWindow": "Cada {{step}} horas a los :{{minute}} de {{from}} a {{to}}",
+    "minutesPast": "A los {{minutes}} de las {{hours}}",
+    "everyDay": "todos los días",
+    "monthDays": "el día {{days}} del mes",
+    "lastDay": "el último día del mes",
+    "lastWeekday": "el último día laborable del mes",
+    "nthWeekday": "el {{nth}} {{day}} del mes",
+    "lastWeekdayOf": "el último {{day}} del mes",
+    "either": "{{monthDays}} o {{weekDays}}",
+    "both": "{{monthDays}}, si cae en {{weekDays}}",
+    "bothDays": "{{monthDays}}, si cae en {{weekDays}}",
+    "ordinal": {
+      "1": "primer",
+      "2": "segundo",
+      "3": "tercer",
+      "4": "cuarto",
+      "5": "quinto"
+    }
   },
   "next": {
     "onEvent": "En el próximo evento",
@@ -285,6 +323,7 @@
     "searchRepositories": "Buscar repositorios",
     "repoCount_one": "{{count}} repositorio",
     "repoCount_other": "{{count}} repositorios",
+    "repoCount_many": "{{count}} repositorios",
     "runsIn": "Se ejecuta en",
     "placeHost": "En un host",
     "placeHostDesc": "Un worktree en el host, el agente en su terminal",
@@ -344,6 +383,23 @@
     "runsOn": "La ejecuta {{bot}}",
     "loadFailed": "No se pudieron cargar las rutinas de los bots.",
     "empty": "Las rutinas de un bot se crean en su chat, con /schedule.",
-    "emptyTitle": "Aún no hay rutinas de bots"
+    "emptyTitle": "Aún no hay rutinas de bots",
+    "filter": {
+      "allBots": "Todos los bots",
+      "searchBots": "Buscar bots",
+      "noMatch": "Ninguna rutina de bot coincide con estos filtros."
+    }
+  },
+  "filter": {
+    "all": "Todas",
+    "active": "Activas",
+    "paused": "En pausa",
+    "trigger": {
+      "any": "Cualquier disparador",
+      "schedule": "Horario",
+      "gmail": "Gmail",
+      "github": "GitHub",
+      "webhook": "Webhook"
+    }
   }
 }

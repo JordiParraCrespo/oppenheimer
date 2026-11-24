@@ -40,7 +40,7 @@ export const BOT_GOAL_REVIEW_TOKEN_BUDGET = 12_000;
 /** The longest reason kept: it is a line in the chat and the next continuation's guidance. */
 export const BOT_GOAL_REASON_MAX = 400;
 
-export const BOT_GOAL_REVIEWER_PROMPT = promptText('jobs/goal-review.system');
+export const BOT_GOAL_REVIEWER_PROMPT = promptText('goals/job-review.system');
 
 /**
  * What the reviewer reads of the conversation: the messages before the
@@ -80,7 +80,7 @@ export function composeGoalReview(objective: string, transcript: readonly Histor
     '</goal>',
     '',
     '<transcript>',
-    kept.length ? kept.join('\n\n') : promptText('jobs/goal-review.no-words-yet'),
+    kept.length ? kept.join('\n\n') : promptText('goals/job-review.no-words-yet'),
     '</transcript>',
   ].join('\n');
 }

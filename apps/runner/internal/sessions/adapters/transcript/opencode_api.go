@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -62,6 +63,33 @@ func (a openCodeAPI) get(ctx context.Context, path string, query url.Values, out
 		return fmt.Errorf("%w %d for %s", errOpenCodeAnswer, resp.StatusCode, path)
 	}
 	return json.NewDecoder(io.LimitReader(resp.Body, openCodeReadMax)).Decode(out)
+}
+
+// sessions is OpenCode's root conversations for directory.
+func (a openCodeAPI) sessions(ctx context.Context, directory string) ([]openCodeSession, error) {
+	query := url.Values{"roots": {"true"}}
+	if directory != "" {
+		query.Set("directory", directory)
+	}
+	var sessions []openCodeSession
+	if err := a.get(ctx, "/session", query, &sessions); err != nil {
+		return nil, err
+	}
+	return sessions, nil
+}
+
+// messages is a conversation's messages through OpenCode's API, which pages
+// from the newest when asked for a limit.
+func (a openCodeAPI) messages(ctx context.Context, session string, limit int) ([]openCodeMessage, error) {
+	var query url.Values
+	if limit > 0 {
+		query = url.Values{"limit": {strconv.Itoa(limit)}}
+	}
+	var messages []openCodeMessage
+	if err := a.get(ctx, "/session/"+url.PathEscape(session)+"/message", query, &messages); err != nil {
+		return nil, err
+	}
+	return messages, nil
 }
 
 // events reads OpenCode's event stream until it ends, calling changed for

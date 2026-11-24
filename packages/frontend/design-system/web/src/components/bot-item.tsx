@@ -24,7 +24,7 @@ function BotList({ className, ...props }: React.ComponentProps<'div'>) {
  * sets the name at 600 with a 7px blue dot at the end; one waiting on the
  * person (`needsInput`: an approval, a question) does the same with an amber
  * dot: both set `data-attention`, which carries the weight. 32px, the nav
- * radius, rows 1px apart in a `BotList`.
+ * radius, rows 1px apart in a `BotList`; the open chat's row is a gray wash.
  *
  * `action` is the row's ellipsis, shown on hover the way `SessionItem`'s is,
  * hiding the dots while it shows.
@@ -84,7 +84,7 @@ function BotItem({
       render={render}
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
-        'group/bot flex h-8 w-full items-center gap-2.5 rounded-nav px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-selected-surface data-active:hover:bg-selected-surface',
+        'group/bot flex h-8 w-full items-center gap-2.5 rounded-nav px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface data-active:hover:bg-active-surface',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
@@ -102,7 +102,7 @@ function BotItem({
             className="absolute -right-0.75 -bottom-0.75 flex size-2.25 rounded-pill bg-sidebar p-0.5"
           >
             <span className="absolute inset-0 rounded-pill group-hover/bot:bg-hover-surface group-hover/row:bg-hover-surface group-data-menu-open/row:bg-hover-surface group-data-active/bot:hidden" />
-            <span className="absolute inset-0 rounded-pill group-data-active/bot:bg-selected-surface" />
+            <span className="absolute inset-0 rounded-pill group-data-active/bot:bg-active-surface" />
             <span className="relative size-full rounded-pill bg-success" />
           </span>
         ) : null}

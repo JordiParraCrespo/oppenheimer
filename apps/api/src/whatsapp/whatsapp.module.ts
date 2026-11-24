@@ -26,6 +26,7 @@ import { RevokeWhatsappChatCommandHandler } from './commands/revoke-whatsapp-cha
 import { RevokeWhatsappChatHttpController } from './commands/revoke-whatsapp-chat/revoke-whatsapp-chat.http.controller';
 import { RouteWhatsappChatsCommandHandler } from './commands/route-whatsapp-chats/route-whatsapp-chats.command-handler';
 import { RouteWhatsappChatsHttpController } from './commands/route-whatsapp-chats/route-whatsapp-chats.http.controller';
+import { SeeWhatsappImageCommandHandler } from './commands/see-whatsapp-image/see-whatsapp-image.command-handler';
 import { SendWhatsappMessageCommandHandler } from './commands/send-whatsapp-message/send-whatsapp-message.command-handler';
 import { TranscribeWhatsappVoiceNoteCommandHandler } from './commands/transcribe-whatsapp-voice-note/transcribe-whatsapp-voice-note.command-handler';
 import { UpdateWhatsappAccountCommandHandler } from './commands/update-whatsapp-account/update-whatsapp-account.command-handler';
@@ -82,7 +83,8 @@ const httpControllers = [
  * The relay dispatches the host's reports (`RecordWhatsappState`,
  * `RecordWhatsappChats`, `ReceiveWhatsappMessages`); a bot's tools dispatch the send, the end of a
  * WhatsApp turn its reply (`ReplyOnWhatsapp`, from `bots-chat`), and a wake on
- * the owner's voice note its hearing (`TranscribeWhatsappVoiceNote`).
+ * the owner's voice note its hearing (`TranscribeWhatsappVoiceNote`), and one
+ * on an image its fetching (`SeeWhatsappImage`).
  */
 const commandHandlers: Provider[] = [
   LinkWhatsappCommandHandler,
@@ -96,6 +98,7 @@ const commandHandlers: Provider[] = [
   ReceiveWhatsappMessagesCommandHandler,
   SendWhatsappMessageCommandHandler,
   TranscribeWhatsappVoiceNoteCommandHandler,
+  SeeWhatsappImageCommandHandler,
   AllowWhatsappChatCommandHandler,
   UpdateWhatsappChatGrantCommandHandler,
   RouteWhatsappChatsCommandHandler,

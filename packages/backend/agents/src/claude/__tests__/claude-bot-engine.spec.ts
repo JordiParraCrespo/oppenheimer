@@ -362,6 +362,53 @@ describe('ClaudeBotEngine', () => {
     });
   });
 
+  // A screenshot a tool answers with must reach the model as an image, and
+  // stay out of the events the caller stores: there it is a marker, never bytes.
+  it('hands the model the images a tool answers with, and reports them as a marker', async () => {
+    const look: BotEngineTool = {
+      name: 'use_computer',
+      description: 'Uses a screen',
+      inputSchema: { type: 'object', properties: {} },
+      run: async () => ({
+        content: 'The screen.',
+        images: [{ mimeType: 'image/jpeg', data: 'c2NyZWVu' }],
+      }),
+    };
+    let modelRead: unknown;
+    scripted(async function* (options) {
+      const server = (options.mcpServers as Record<string, { instance: McpServer }>).oppenheimer
+        .instance;
+      const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+      await server.connect(serverSide);
+      const client = new Client({ name: 'test', version: '1.0.0' });
+      await client.connect(clientSide);
+      const answered = await client.callTool({
+        name: 'use_computer',
+        arguments: {},
+        _meta: { 'claudecode/toolUseId': 'toolu_1' },
+      });
+      modelRead = answered.content;
+      await client.close();
+      yield assistant([
+        { type: 'tool_use', id: 'toolu_1', name: 'mcp__oppenheimer__use_computer', input: {} },
+      ]);
+      yield toolResults([
+        { type: 'tool_result', tool_use_id: 'toolu_1', content: answered.content },
+      ]);
+      yield success();
+    });
+
+    const events = await collect(new ClaudeBotEngine().run(request({ tools: [look] })));
+
+    expect(modelRead).toEqual([
+      { type: 'text', text: 'The screen.' },
+      { type: 'image', data: 'c2NyZWVu', mimeType: 'image/jpeg' },
+    ]);
+    expect(events.filter((event) => event.type === 'tool.finished')).toEqual([
+      expect.objectContaining({ callId: 'toolu_1', output: 'The screen.\n[image]' }),
+    ]);
+  });
+
   it('hands the model what the person sent meanwhile with the call it rode, and reports it after that call', async () => {
     const time: BotEngineTool = {
       name: 'get_time',

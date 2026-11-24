@@ -138,12 +138,12 @@ const TRIGGER_CLASSES =
   'group/chip-select inline-flex h-(--control-h-md) shrink-0 items-center gap-[7px] rounded-md border border-border-subtle bg-control px-3 text-[13.5px] whitespace-nowrap text-fg outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-standard hover:border-border hover:bg-control-hover data-popup-open:border-primary data-popup-open:ring-3 data-popup-open:ring-ring focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0';
 
 /**
- * The chip in the composer's scope band: 30px, borderless, muted, no chevron,
+ * The chip in the composer's scope band: 28px (the ramp's `sm`), borderless, muted, no chevron,
  * the hover wash on hover and while open. Four of them read as one sentence
  * on the grey band, which is why none of them is drawn as a control.
  */
 const TAB_TRIGGER_CLASSES =
-  'group/chip-select inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-sm px-2.5 text-[13px] whitespace-nowrap text-fg-muted outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface hover:text-fg data-popup-open:bg-hover-surface data-popup-open:text-fg focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0';
+  'group/chip-select inline-flex h-(--control-h-sm) shrink-0 items-center gap-1.5 rounded-sm px-2.5 text-[13px] whitespace-nowrap text-fg-muted outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface hover:text-fg data-popup-open:bg-hover-surface data-popup-open:text-fg focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0';
 
 /** `chip` on its own; `tab` is the borderless form inside the composer's scope band. */
 type ChipSelectTriggerVariant = 'chip' | 'tab';

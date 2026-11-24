@@ -53,6 +53,8 @@ import type { AgentObservedState, SessionNameSource } from '../domain/session-st
   'CHK_work_session_close_refusal',
   `"closeRefusalDetail" IS NULL OR "closeRefusalCode" IS NOT NULL`,
 )
+@Check('CHK_work_session_bot', `"botId" IS NULL OR origin = 'bot'`)
+@Index('IDX_work_session_bot', ['organizationId', 'botId'], { where: '"botId" IS NOT NULL' })
 @Index('IDX_work_session_project_state', ['projectId', 'state'])
 @Index('IDX_work_session_host_state', ['hostId', 'state'])
 @Index('IDX_work_session_created_by', ['createdByUserId'])
@@ -286,6 +288,14 @@ export class WorkSessionOrmEntity {
    */
   @Column({ type: 'varchar', length: 16, default: 'person' })
   origin!: 'person' | 'automation' | 'review' | 'bot';
+
+  /**
+   * The bot that started it (`1795193805274-AddWorkSessionBot`), only on a
+   * `bot` session (`CHK_work_session_bot`); null on the ones from before.
+   * Cleared when the bot is deleted: the session stays its owner's.
+   */
+  @Column({ type: 'uuid', nullable: true })
+  botId!: string | null;
 
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;

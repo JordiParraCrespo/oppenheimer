@@ -29,6 +29,7 @@ export class BotWhatsappWakeDomainEventHandler {
       | 'command'
       | 'text'
       | 'voiceNote'
+      | 'image'
       | 'metadata'
     >,
   ): Promise<void> {
@@ -46,6 +47,8 @@ export class BotWhatsappWakeDomainEventHandler {
         text: event.text,
         // Absent on an event staged before voice notes were heard.
         voiceNote: event.voiceNote ?? false,
+        // Absent on an event staged before images were seen.
+        image: event.image ?? false,
         metadata: { correlationId: event.metadata?.correlationId ?? undefined },
       }),
     );

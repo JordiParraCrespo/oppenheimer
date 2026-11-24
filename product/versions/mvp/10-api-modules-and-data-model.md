@@ -402,7 +402,8 @@ The group is organised by **what needs you**, which is what a sidebar is
 for:
 
 - **`waiting-on-you`** has four sources, not one: the session failed; the
-  agent has been `blocked` for ≥ 30 s; a launch has sat in a non-ready
+  agent has been `blocked` for ≥ 30 s (since 2026-11-23: blocked, and a
+  second report confirmed it, `29-inbox.md`); a launch has sat in a non-ready
   state for ≥ 60 s; or the pane is gone with no report.
 - **`landing`** is the phase after the agent stops — branch pushed, PR
   open and approved, not yet merged. Nothing else in this design names

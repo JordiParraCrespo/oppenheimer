@@ -22,6 +22,8 @@ type Options struct {
 	// offer is what it finds whenever a session asks for a device it does not
 	// hold yet, so a simulator booted after the runner started is offered.
 	Finder Finder
+	// Fitter is optional: nil sends every frame as the device made it.
+	Fitter Fitter
 }
 
 // findTimeout bounds one look at the host's devices.
@@ -35,6 +37,7 @@ type Service struct {
 	controls Controls
 	waker    Waker
 	finder   Finder
+	fitter   Fitter
 	// looks are the sessions whose device is being looked for outside the
 	// lock; Release marks them, so a session that closes mid-look is not
 	// handed a device it would hold for good.
@@ -55,6 +58,7 @@ func New(opts Options) *Service {
 		controls: opts.Controls,
 		waker:    opts.Waker,
 		finder:   opts.Finder,
+		fitter:   opts.Fitter,
 		looks:    map[string]*look{},
 	}
 }
@@ -199,6 +203,16 @@ func (s *Service) open(ctx context.Context, device domain.Device) (domain.Device
 		return domain.Device{}, nil, domain.ErrUnreachable.WithDetail("%s", err.Error())
 	}
 	return device, screen, nil
+}
+
+// Fit is a frame of a session's screen as it goes to the reader. The pump
+// calls it only on the frame it is about to send, so the frames a slow
+// reader never gets are never decoded.
+func (s *Service) Fit(frame []byte) ([]byte, error) {
+	if s.fitter == nil {
+		return frame, nil
+	}
+	return s.fitter.Fit(frame)
 }
 
 // Input applies the reader's input to the session's own device. A session

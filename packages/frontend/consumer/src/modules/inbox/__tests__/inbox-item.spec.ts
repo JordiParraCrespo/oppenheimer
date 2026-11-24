@@ -10,7 +10,14 @@ import { ProjectEntity } from '../../projects/project.entity';
 import { PullRequestEntity } from '../../pull-requests/pull-request.entity';
 import { SessionEntity, type SessionGroup, type SessionState } from '../../sessions/session.entity';
 import { TaskEntity } from '../../tasks/task.entity';
-import { composeInbox, type InboxSources, inboxSubject, sessionItemKey } from '../inbox-item';
+import {
+  composeInbox,
+  type InboxSources,
+  inboxSubject,
+  newSessionItems,
+  sessionItemKey,
+  sessionItems,
+} from '../inbox-item';
 import { InboxMarkEntity } from '../inbox-mark.entity';
 import { InboxReportEntity } from '../inbox-report.entity';
 
@@ -587,5 +594,39 @@ describe('composeInbox: a task an agent made', () => {
     expect(done.open).toEqual([]);
     expect(done.done.map((item) => item.key)).toEqual(['task:t-1']);
     expect(composeInbox(sources_, [], NOW).open.map((item) => item.key)).toEqual(['task:t-1']);
+  });
+});
+
+/**
+ * What a browser notification tells: each new wait or notice once, nothing
+ * that was already waiting when the console opened, and a session that
+ * blocks again after it moved on as new.
+ */
+describe('the new session items since the last look', () => {
+  it('tells nothing on the first look, and remembers what was there', () => {
+    const { fresh, seen } = newSessionItems(null, sessionItems([session('a')]));
+    expect(fresh).toEqual([]);
+    expect(seen.has(sessionItemKey(session('a')))).toBe(true);
+  });
+
+  it('tells a session that comes to wait, once', () => {
+    const first = newSessionItems(null, sessionItems([session('a', { state: 'working' })]));
+    const second = newSessionItems(first.seen, sessionItems([session('a')]));
+    expect(second.fresh.map((item) => item.key)).toEqual([sessionItemKey(session('a'))]);
+    const third = newSessionItems(second.seen, sessionItems([session('a')]));
+    expect(third.fresh).toEqual([]);
+  });
+
+  it('tells a new wait on the same session as new', () => {
+    const before = newSessionItems(null, sessionItems([session('a', { observedSince: at(30) })]));
+    const after = newSessionItems(
+      before.seen,
+      sessionItems([session('a', { observedSince: at(1) })]),
+    );
+    expect(after.fresh).toHaveLength(1);
+  });
+
+  it('leaves out a session that is not waiting', () => {
+    expect(sessionItems([session('a', { state: 'working' })])).toEqual([]);
   });
 });

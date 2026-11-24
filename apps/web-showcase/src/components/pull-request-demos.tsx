@@ -25,7 +25,7 @@ import { PullRequestHeader } from '@oppenheimer/design-system-web/pull-request-h
 import { MergeButton, PullRequestRow, PullRequestTable, PullRequestTableHead } from '@oppenheimer/design-system-web/pull-request-table';
 import { ReviewDecision, SubmitReviewButton } from '@oppenheimer/design-system-web/review-decision';
 import { RunsListFoot } from '@oppenheimer/design-system-web/runs-list';
-import { SegmentedControl, SegmentedControlItem } from '@oppenheimer/design-system-web/segmented-control';
+import { PillTab, PillTabs } from '@oppenheimer/design-system-web/pill-tabs';
 import type { StatusState } from '@oppenheimer/design-system-web/status-dot';
 import type { Step } from '@oppenheimer/design-system-web/stepper';
 import * as React from 'react';
@@ -141,17 +141,17 @@ export function PullRequestQueueDemo() {
         </PageHeaderMeta>
       </PageHeader>
       <div className="flex flex-col gap-2.5">
-        <SegmentedControl size="lg" value={scope} onValueChange={setScope} aria-label="Whose pull requests">
-          <SegmentedControlItem value="mine" count={13}>
+        <PillTabs value={scope} onValueChange={setScope} aria-label="Whose pull requests">
+          <PillTab value="mine" count={13}>
             Mine
-          </SegmentedControlItem>
-          <SegmentedControlItem value="requested" count={3}>
+          </PillTab>
+          <PillTab value="requested" count={3}>
             Review requests
-          </SegmentedControlItem>
-          <SegmentedControlItem value="watching" count={2}>
+          </PillTab>
+          <PillTab value="watching" count={2}>
             Watching
-          </SegmentedControlItem>
-        </SegmentedControl>
+          </PillTab>
+        </PillTabs>
         <p className="m-0 text-sm text-fg-muted">
           Opened by you or your sessions.
         </p>
@@ -340,13 +340,13 @@ function DescriptionFrame({ description }: { description: Description }) {
         <IconButton size="sm" aria-label="Back to the queue">
           <ChevronLeftIcon />
         </IconButton>
-        <SegmentedControl size="md" value={view} onValueChange={setView} aria-label="View">
-          <SegmentedControlItem value="description">Description</SegmentedControlItem>
-          <SegmentedControlItem value="changes">
+        <PillTabs size="sm" value={view} onValueChange={setView} aria-label="View">
+          <PillTab value="description">Description</PillTab>
+          <PillTab value="changes">
             Changes
             <DiffStat additions={pull.additions} deletions={pull.deletions} />
-          </SegmentedControlItem>
-        </SegmentedControl>
+          </PillTab>
+        </PillTabs>
         <span className="flex-1" />
         <IconButton aria-label="Open on GitHub">
           <SquareArrowOutUpRightIcon />

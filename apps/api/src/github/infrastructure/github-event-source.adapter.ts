@@ -6,6 +6,7 @@ import type {
   InboundDelivery,
 } from '../../inbound-events/domain/external-event.types';
 import type { GithubInstallationRepositoryPort } from '../database/github-installation.repository.port';
+import { GITHUB_MENTION_HANDLE } from '../domain/github-pull-event.policy';
 import { GITHUB_INSTALLATION_REPOSITORY } from '../github.di-tokens';
 import { GITHUB_WEBHOOK_EVENTS, normalizeGithubDelivery } from './github-event-normalizer.util';
 
@@ -49,7 +50,7 @@ export class GithubEventSource implements ExternalEventSourcePort {
       appSlug: slug,
       // The frames' handle. A deployment's App can be named anything; its bot
       // is `<slug>[bot]`, and a mention names the product, not the bot.
-      mentionHandle: 'oppenheimer',
+      mentionHandle: GITHUB_MENTION_HANDLE,
     });
   }
 }

@@ -39,7 +39,7 @@ export const SKILL_NUDGE_TAG = 'oppenheimer_reminder';
  * any fenced text. One line, the same bytes every time, so the transcript
  * can take it back off.
  */
-export const SKILL_NUDGE = `\n\n${promptText('tools/skills.nudge', { skillNudgeTag: SKILL_NUDGE_TAG, skillNudgeAfterSteps: String(BOT_SKILL_NUDGE_AFTER_STEPS) })}`;
+export const SKILL_NUDGE = `\n\n${promptText('skills/tools.nudge', { skillNudgeTag: SKILL_NUDGE_TAG, skillNudgeAfterSteps: String(BOT_SKILL_NUDGE_AFTER_STEPS) })}`;
 
 /**
  * A tool's result as the model reads it on a turn that can be reminded:
@@ -112,10 +112,10 @@ export function skillAuthorNote(source: BotAuthor): string {
 }
 
 /** The note on a skill the bot wrote last: a step found wrong is fixed, not worked around. */
-export const SKILL_FIX_NOTE = promptText('tools/skills.fix-your-own');
+export const SKILL_FIX_NOTE = promptText('skills/tools.fix-your-own');
 
 /** The note on a skill the person wrote last: their words, changed only when they ask. */
-export const THEIR_SKILL_NOTE = promptText('tools/skills.theirs-do-not-change');
+export const THEIR_SKILL_NOTE = promptText('skills/tools.theirs-do-not-change');
 
 /** A body with one passage replaced, or why it was not. */
 export type SkillPatch =
@@ -145,13 +145,13 @@ export function skillPatchRefusal(
 ): string {
   switch (reason) {
     case 'absent':
-      return promptText('tools/skills.patch-text-absent', { name });
+      return promptText('skills/tools.patch-text-absent', { name });
     case 'ambiguous':
-      return promptText('tools/skills.patch-text-ambiguous', { name });
+      return promptText('skills/tools.patch-text-ambiguous', { name });
     case 'empty':
-      return promptText('tools/skills.patch-would-be-empty', { name });
+      return promptText('skills/tools.patch-would-be-empty', { name });
     case 'too_long':
-      return promptText('tools/skills.patch-too-long', {
+      return promptText('skills/tools.patch-too-long', {
         name,
         skillBodyMax: String(BOT_SKILL_BODY_MAX),
       });
@@ -175,8 +175,8 @@ export function isOppenheimersSkillName(name: string, hasOwnRow: boolean): boole
  */
 export function oppenheimersSkillRefusal(name: string, action: 'saved' | 'changed'): string {
   return action === 'saved'
-    ? promptText('tools/skills.name-is-oppenheimers', { name })
-    : promptText('tools/skills.skill-is-oppenheimers', { name });
+    ? promptText('skills/tools.name-is-oppenheimers', { name })
+    : promptText('skills/tools.skill-is-oppenheimers', { name });
 }
 
 /**
@@ -191,5 +191,5 @@ export function skillChangeAllowed(input: { source: BotAuthor; askedByPerson: bo
 
 /** Why a change to the person's skill was not made, and what to do instead. */
 export function theirSkillRefusal(name: string, action: 'saved' | 'changed'): string {
-  return promptText('tools/skills.skill-is-theirs', { action, name });
+  return promptText('skills/tools.skill-is-theirs', { action, name });
 }

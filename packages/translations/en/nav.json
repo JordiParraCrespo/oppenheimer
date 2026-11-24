@@ -26,5 +26,6 @@
   "pullRequests": "Pull requests",
   "employees": "Employees",
   "account": "Account",
-  "pullRequestsShort": "PRs"
+  "pullRequestsShort": "PRs",
+  "inbox": "Inbox"
 }

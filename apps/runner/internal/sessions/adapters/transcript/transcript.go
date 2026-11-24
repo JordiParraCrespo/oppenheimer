@@ -58,6 +58,10 @@ type Reader struct {
 
 	// openCode is which OpenCode works in which conversation, for the chat.
 	openCode *openCodeOwners
+	// zcodeDB is ZCode's conversation database; "" follows none.
+	zcodeDB string
+	// hermes is Hermes' database, for the chat (`hermes.go`).
+	hermes hermesSource
 }
 
 var _ app.Transcripts = (*Reader)(nil)
@@ -81,6 +85,15 @@ type Options struct {
 	// GrokSessions is Grok's `sessions/` folder, `~/.grok/sessions` or
 	// `$GROK_HOME/sessions`, for the chat view.
 	GrokSessions string
+	// QwenProjects is Qwen Code's `projects/` folder, `~/.qwen/projects` or
+	// `$QWEN_HOME/projects`, for the chat view.
+	QwenProjects string
+	// ZCodeDatabase is ZCode's conversation database,
+	// `~/.zcode/cli/db/db.sqlite`, for the chat view.
+	ZCodeDatabase string
+	// HermesState is Hermes' database, `~/.hermes/state.db` or
+	// `$HERMES_HOME/state.db`, for the chat view.
+	HermesState string
 	// Logger reports a transcript that could not be read, which the session
 	// service treats as none yet; nil is the process's default logger.
 	Logger *slog.Logger
@@ -105,7 +118,13 @@ func New(opts Options) *Reader {
 	if opts.GrokSessions != "" {
 		chats[domain.AgentGrok] = grokSource{sessions: opts.GrokSessions}
 	}
-	return &Reader{agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir, filesDir: opts.FilesDir, openCode: newOpenCodeOwners()}
+	if opts.QwenProjects != "" {
+		chats[domain.AgentQwen] = qwenSource{projects: opts.QwenProjects}
+	}
+	return &Reader{
+		agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir, filesDir: opts.FilesDir,
+		openCode: newOpenCodeOwners(), zcodeDB: opts.ZCodeDatabase, hermes: hermesSource{db: opts.HermesState},
+	}
 }
 
 // ServedConversation implements app.Transcripts: OpenCode's, through its
@@ -117,15 +136,32 @@ func (r *Reader) ServedConversation(ctx context.Context, session domain.Session)
 	return r.openCode.served(ctx, *session.Launch.Server)
 }
 
-// CurrentConversation implements app.Transcripts: Claude Code's, by the
-// same rule its chat follows (claudeReader.conversation), so the session
-// keeps and resumes the conversation the chat shows.
+// CurrentConversation implements app.Transcripts: Claude Code's and Qwen
+// Code's, by the same rule each one's chat follows (claudeReader.conversation,
+// qwenSource.conversation), so the session keeps and resumes the
+// conversation the chat shows.
 func (r *Reader) CurrentConversation(session domain.Session) string {
+	if qwen, ok := r.chats[domain.AgentQwen].(qwenSource); ok && session.Agent == domain.AgentQwen {
+		if current := qwen.conversation(session); current != "" {
+			return current
+		}
+		return session.Launch.Conversation
+	}
 	claude, ok := r.agents[domain.AgentClaude].(claudeReader)
 	if session.Agent != domain.AgentClaude || !ok {
 		return ""
 	}
 	return claude.conversation(session)
+}
+
+// SavedConversation implements app.Transcripts: Qwen Code's, whose
+// `--resume <id>` exits until the conversation's file exists.
+func (r *Reader) SavedConversation(session domain.Session) domain.Saving {
+	qwen, ok := r.chats[domain.AgentQwen].(qwenSource)
+	if !ok || session.Agent != domain.AgentQwen {
+		return domain.SavingUnknown
+	}
+	return qwen.saved(session.Launch.Conversation)
 }
 
 // Teleported implements app.Transcripts. Only Claude Code teleports.

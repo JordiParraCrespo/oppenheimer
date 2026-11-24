@@ -173,12 +173,16 @@ function pullRequestParts(pr: Json) {
     Boolean(headRepo.fork) || (str(headRepo.full_name) ?? '') !== (str(baseRepo.full_name) ?? '');
   return {
     attributes: {
+      isPullRequest: true,
       baseBranch: str(base.ref),
       branch: str(head.ref),
       number,
       headSha: str(head.sha),
       draft: Boolean(pr.draft),
       fork,
+      // `fork` is also true inside a repository that is itself a fork; the
+      // head's id says whether the branch lives in another repository.
+      headRepoId: num(headRepo.id),
     },
     context: {
       ref: number === null ? undefined : `#${number}`,
@@ -278,7 +282,10 @@ function commentEvents(
     url: str(comment.html_url) ?? undefined,
     author: str(obj(comment.user).login) ?? undefined,
   };
-  const attributes = { number, commentId: num(comment.id) };
+  // A line comment's parent is a pull request; a conversation comment's is an
+  // issue, which is a pull request's when GitHub links one.
+  const isPullRequest = payload.pull_request !== undefined || parent.pull_request !== undefined;
+  const attributes = { number, commentId: num(comment.id), isPullRequest };
   const at = dateOf(comment.created_at);
   const events = [make('comment', attributes, context, at)];
   if (mentions(comment.body, options.mentionHandle)) {

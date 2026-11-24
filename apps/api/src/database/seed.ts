@@ -18,6 +18,7 @@ import { AutomationRunOrmEntity } from '../automations/database/automation-run.o
 import { AutomationSettingsOrmEntity } from '../automations/database/automation-settings.orm-entity';
 import { AutomationTriggerOrmEntity } from '../automations/database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../automations/database/automation-trigger-subject.orm-entity';
+import { AutomationWebhookOrmEntity } from '../automations/database/automation-webhook.orm-entity';
 import { BotOrmEntity } from '../bots/database/bot.orm-entity';
 import { BotDocumentOrmEntity } from '../bots/database/bot-document.orm-entity';
 import { BotDocumentRevisionOrmEntity } from '../bots/database/bot-document-revision.orm-entity';
@@ -69,6 +70,8 @@ import { InvitationOrmEntity } from '../organizations/database/invitation.orm-en
 import { MemberOrmEntity } from '../organizations/database/member.orm-entity';
 import { OrganizationOrmEntity } from '../organizations/database/organization.orm-entity';
 import { PersonalWorkspaceRepository } from '../organizations/database/personal-workspace.repository';
+import { TeamOrmEntity } from '../organizations/database/team.orm-entity';
+import { TeamMemberOrmEntity } from '../organizations/database/team-member.orm-entity';
 import { UserSettingsOrmEntity } from '../profile/database/user-settings.orm-entity';
 import { ProjectOrmEntity } from '../projects/database/project.orm-entity';
 import { ProjectRepositoryOrmEntity } from '../projects/database/project-repository.orm-entity';
@@ -93,6 +96,7 @@ import { SessionTerminalWatchOrmEntity } from '../sessions/database/session-term
 import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
 import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
+import { SlackAccountOrmEntity } from '../slack/database/slack-account.orm-entity';
 import { MilestoneOrmEntity } from '../tasks/database/milestone.orm-entity';
 import { PlanEventOrmEntity } from '../tasks/database/plan-event.orm-entity';
 import { TaskOrmEntity } from '../tasks/database/task.orm-entity';
@@ -137,6 +141,8 @@ const dataSource = new DataSource({
     GithubInstallationOrmEntity,
     OrganizationOrmEntity,
     MemberOrmEntity,
+    TeamOrmEntity,
+    TeamMemberOrmEntity,
     InvitationOrmEntity,
     ProjectOrmEntity,
     ProjectRepositoryOrmEntity,
@@ -156,6 +162,7 @@ const dataSource = new DataSource({
     AutomationTriggerSubjectOrmEntity,
     AutomationRunOrmEntity,
     AutomationSettingsOrmEntity,
+    AutomationWebhookOrmEntity,
     VoiceSettingsOrmEntity,
     TaskOrmEntity,
     MilestoneOrmEntity,
@@ -170,6 +177,7 @@ const dataSource = new DataSource({
     WhatsappChatGrantOrmEntity,
     WhatsappKnownChatOrmEntity,
     TelegramAccountOrmEntity,
+    SlackAccountOrmEntity,
     TelegramMessageOrmEntity,
     SessionCloudRunOrmEntity,
     CloudAgentCredentialOrmEntity,

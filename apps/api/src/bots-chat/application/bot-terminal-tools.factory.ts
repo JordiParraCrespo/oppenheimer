@@ -33,7 +33,7 @@ import {
   defineBotTool,
 } from './bot-tool.factory';
 
-const sessionId = z.uuid().describe(promptText('tools/terminal.session-id'));
+const sessionId = z.uuid().describe(promptText('sessions/tools-terminal.session-id'));
 
 const waitFields = {
   wait_for: z
@@ -41,7 +41,7 @@ const waitFields = {
     .min(1)
     .max(TERMINAL_WATCH_PATTERN_MAX)
     .optional()
-    .describe(promptText('tools/terminal.wait-fields-wait-for')),
+    .describe(promptText('sessions/tools-terminal.wait-fields-wait-for')),
   wait_seconds: z
     .number()
     .int()
@@ -49,7 +49,7 @@ const waitFields = {
     .max(TERMINAL_WAIT_MAX_SECONDS)
     .optional()
     .describe(
-      promptText('tools/terminal.wait-fields-wait-seconds', {
+      promptText('sessions/tools-terminal.wait-fields-wait-seconds', {
         defaultTerminalWaitSeconds: String(DEFAULT_TERMINAL_WAIT_SECONDS),
         terminalWaitMaxSeconds: String(TERMINAL_WAIT_MAX_SECONDS),
       }),
@@ -60,7 +60,7 @@ const waitFields = {
     .min(0)
     .max(TERMINAL_HISTORY_MAX_LINES)
     .optional()
-    .describe(promptText('tools/terminal.wait-fields-history')),
+    .describe(promptText('sessions/tools-terminal.wait-fields-history')),
 };
 
 /**
@@ -90,20 +90,23 @@ export class BotTerminalToolsFactory implements BotToolArea {
       name: 'open_terminal',
       scope: 'sessions:write',
       asks: true,
-      description: promptText('tools/terminal.open-terminal'),
+      description: promptText('sessions/tools-terminal.open-terminal'),
       input: z.object({
         folder: z
           .string()
           .regex(/^\/[^\0]*$/)
           .max(1_024)
-          .describe(promptText('tools/terminal.open-terminal-folder')),
-        host_id: z.uuid().optional().describe(promptText('tools/terminal.open-terminal-host-id')),
+          .describe(promptText('sessions/tools-terminal.open-terminal-folder')),
+        host_id: z
+          .uuid()
+          .optional()
+          .describe(promptText('sessions/tools-terminal.open-terminal-host-id')),
         name: z
           .string()
           .min(1)
           .max(80)
           .optional()
-          .describe(promptText('tools/terminal.open-terminal-name')),
+          .describe(promptText('sessions/tools-terminal.open-terminal-name')),
       }),
       normalize: async (input, context) => ({
         ...input,
@@ -132,13 +135,14 @@ export class BotTerminalToolsFactory implements BotToolArea {
             input: parsed.data,
             idempotencyKey: idempotencyKeyOf(context.turnId, parsed.data, context.approvalId),
             origin: 'bot',
+            botId: context.botId,
           }),
         );
         const offline = result.hints.includes('host_offline')
-          ? ` ${promptText('tools/terminal.open-terminal-host-offline-opens')}`
+          ? ` ${promptText('sessions/tools-terminal.open-terminal-host-offline-opens')}`
           : '';
         return {
-          content: promptText('tools/terminal.open-terminal-content', {
+          content: promptText('sessions/tools-terminal.open-terminal-content', {
             sessionId: result.sessionId,
             hostId,
             folder: input.folder,
@@ -160,7 +164,7 @@ export class BotTerminalToolsFactory implements BotToolArea {
         key: input.session_id,
         label: `terminal ${input.session_id}`,
       }),
-      description: promptText('tools/terminal.type-in-terminal'),
+      description: promptText('sessions/tools-terminal.type-in-terminal'),
       input: z.object({
         session_id: sessionId,
         text: z.string().max(TERMINAL_TEXT_MAX).optional().describe('Text to type, literally.'),
@@ -168,13 +172,15 @@ export class BotTerminalToolsFactory implements BotToolArea {
           .array(z.enum(TERMINAL_KEYS))
           .max(32)
           .optional()
-          .describe(promptText('tools/terminal.type-in-terminal-keys')),
+          .describe(promptText('sessions/tools-terminal.type-in-terminal-keys')),
         ...waitFields,
       }),
       summarize: (input) => terminalTypeSummary(input.session_id, input.text, input.keys),
       run: async (input, context) => {
         if (!input.text && !input.keys?.length) {
-          throw new BotToolRefusal(promptText('tools/terminal.type-in-terminal-nothing-type-give'));
+          throw new BotToolRefusal(
+            promptText('sessions/tools-terminal.type-in-terminal-nothing-type-give'),
+          );
         }
         return describeTerminal(await this.drive(context, input), input.session_id);
       },
@@ -186,7 +192,7 @@ export class BotTerminalToolsFactory implements BotToolArea {
       name: 'read_terminal',
       scope: 'sessions:read',
       readOnly: true,
-      description: promptText('tools/terminal.read-terminal'),
+      description: promptText('sessions/tools-terminal.read-terminal'),
       input: z.object({ session_id: sessionId, ...waitFields }),
       run: async (input, context) =>
         describeTerminal(await this.drive(context, input), input.session_id),
