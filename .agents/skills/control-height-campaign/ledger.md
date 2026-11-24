@@ -56,6 +56,9 @@ TODO row below. 8 of the 22 the debt lost were not controls, and moved to
   controls), the composer band's actions (`ComposerStackAction`, 24), TODO's
   add field (36), a Calendar button (40), and the chat's pieces (`chat-*`:
   suggestions, status, transcript jumps).
+- **The inline composers grow 2px while dictating** (`ComposerPill` and
+  the inline `ChatComposer`: 46 to 48px, measured on main before pass 3): the
+  recorder bar is 2px taller than the line it replaces.
 
 ## Open calls
 

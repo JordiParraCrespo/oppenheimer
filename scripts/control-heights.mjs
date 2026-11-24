@@ -200,8 +200,12 @@ export function check(byFile, debt = CONTROL_HEIGHT_DEBT, exempt = NOT_A_CONTROL
     const count = byFile.get(file)?.length ?? 0;
     const allowed = allowedFor(file);
     if (count < allowed) {
+      // Name the map that holds the count, so the reader lowers the right one.
+      const maps = [debt.has(file) && 'CONTROL_HEIGHT_DEBT', exempt.has(file) && 'NOT_A_CONTROL']
+        .filter(Boolean)
+        .join(' or ');
       errors.push(
-        `${file}: ${count} hand-written control heights, down from ${allowed}: lower its count in scripts/control-height-debt.mjs`,
+        `${file}: ${count} hand-written control heights, down from ${allowed}: lower its count in ${maps} (scripts/control-height-debt.mjs)`,
       );
     }
   }
