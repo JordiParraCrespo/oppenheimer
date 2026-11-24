@@ -1,4 +1,5 @@
 import {
+  type EventSourceFactory,
   type EventSourceLike,
   ServerEventStream,
   type ServerEventStreamStatus,
@@ -15,8 +16,8 @@ export type WorkspaceStreamStatus = ServerEventStreamStatus;
 
 export interface WorkspaceEventStreamOptions {
   apiBaseUrl: string;
-  /** Injected in tests; `EventSource` with credentials otherwise. */
-  sourceFactory?: (url: string) => EventSourceLike;
+  /** A platform's own client, or a test's fake; `EventSource` with credentials otherwise. */
+  sourceFactory?: EventSourceFactory;
 }
 
 /**

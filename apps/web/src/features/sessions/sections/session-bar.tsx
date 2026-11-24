@@ -1,10 +1,10 @@
 import { StatusDot } from '@oppenheimer/design-system-web';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { type SessionEntity, stateWordFor } from '@oppenheimer/frontend-consumer';
 import { PageBar } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AgentReportNote } from '../components/agent-report-note';
-import { agentNoteFor, dotFor, stateWordFor } from '../lib/session-run-state';
+import { agentNoteFor, dotFor } from '../lib/session-run-state';
 import { SessionShareButton } from './session-share-button';
 
 /**

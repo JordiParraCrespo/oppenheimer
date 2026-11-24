@@ -8,6 +8,8 @@
 export const TOKENS = {
   /** The API's origin, or empty for same-origin: what a socket URL is built on. */
   ApiBaseUrl: Symbol.for('ApiBaseUrl'),
+  /** How this platform dials a Server-Sent Events stream; unbound, the browser's `EventSource`. */
+  EventSourceFactory: Symbol.for('EventSourceFactory'),
   StorageService: Symbol.for('StorageService'),
   AnalyticsClient: Symbol.for('AnalyticsClient'),
   AnalyticsService: Symbol.for('AnalyticsService'),

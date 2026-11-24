@@ -221,5 +221,6 @@ export {
 } from './components/ui/tooltip';
 export { useDebouncedValue } from './hooks/use-debounced-value';
 export { useHardwareBack } from './hooks/use-hardware-back';
+export { useNow } from './hooks/use-now';
 
 export { cn } from './lib/utils';
