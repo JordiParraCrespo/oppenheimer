@@ -54,6 +54,12 @@ const QUEUE_REGISTRATIONS: readonly QueueRegistration[] = [
     defaultJobOptions: DURABLE_JOB_OPTIONS,
     stagedOnOutbox: true,
   },
+  // A look queues its turn keyed by its chain and step, so a retry wakes the bot once.
+  {
+    name: QUEUE_NAMES.BOT_CHECK_BACKS,
+    defaultJobOptions: DURABLE_JOB_OPTIONS,
+    stagedOnOutbox: true,
+  },
   // A wake is claimed by its id in the session's log, so a retry types it once.
   {
     name: QUEUE_NAMES.SESSION_WAKES,

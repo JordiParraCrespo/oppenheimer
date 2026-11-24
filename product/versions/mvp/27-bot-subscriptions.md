@@ -219,8 +219,11 @@ done: they look over the work every so often. So does a bot now:
   task waiting on a person, or whose stall was told, is looked at again later
   without a wake. A task over, superseded or a session closed ends the checks.
 - **What the bot does.** Reads what the agent did (`read_session_transcript`,
-  else `get_session`) against the task. On track: `nothing_to_report`, so the
-  chat shows only "Checked on session *name*". Off: it tells the person in a
+  else `get_session`) against the task. Moved on since its last line about it:
+  one line under "Checked on session *name*" saying where it stands, what the
+  agent is on and what is left, with no `notify`; nothing moved and nothing
+  off: `nothing_to_report` (2026-11-23; it was `nothing_to_report` whenever
+  on track, so the chat showed only the "Checked" line). Off: it tells the person in a
   sentence or two, with `notify`, and may nudge the agent with
   `send_to_session` when its instructions settle what it needs, asking first
   as always. It never stops or restarts the session on its own.
@@ -244,7 +247,8 @@ done: they look over the work every so often. So does a bot now:
   bot will check back, report or carry on once something finishes unless
   something will wake it for it: the sessions it started, prompted or
   unblocked are followed already, any other it `watch_session`s before its
-  turn ends. Nothing else brings a bot back but the hourly heartbeat.
+  turn ends. Nothing else brings a bot back but the hourly heartbeat;
+  since 2026-11-23, `check_back` does for anything else (§7.3).
 - **The read wakes decide from** (2026-11-11). A session read by id or in
   a list carried no latest turn (it was loaded only when a fold took the row
   lock), so every wake and every look read "no task": no session a bot
@@ -448,6 +452,54 @@ blocked, and so on. The table above had no row for Plan; this is it.
   still wake each other; a rate limit per subscription is the answer on
   file if that is seen.
 
+### 7.3 As built: checking back on anything (2026-11-23)
+
+The subscriptions above wake a bot for the things Oppenheimer can see
+change. A bot also waits on things nothing raises an event for: a deploy, a
+release's downloads, a person's answer, a cloud run, a host update. Oppie
+started a release session, said it would verify before calling it done, and
+went silent until the owner asked "Have you finished?". The fix is Claude
+Code's ScheduleWakeup for a bot: `check_back`.
+
+- **The tool.** `check_back { about, minutes? }`, under Self in Settings,
+  Permissions (`bots:write`), never asking: it only wakes the bot. `about`
+  is what it waits on and what to look at, in its words (1 to 300
+  characters); `minutes` (1 to 240) is for a task that suggests a time.
+- **The backoff** (`bot-check-back.policy.ts`, pure). Without `minutes`,
+  look *n* of a chain (from 0) is due `min(5·2ⁿ, 120)` minutes after its
+  call: 5, 10, 20, 40, 80, then every 120. A look due more than 24 hours
+  after the chain's first was set is refused, and the bot is told to tell
+  the person it stopped checking and why.
+- **Chains.** A look's turn opens with a `check_back` event (chain, step,
+  when the chain started, `about`). A call in that turn goes on with the
+  chain at the next step, `about` updated if the bot gives a new one; a call
+  in any other turn starts a chain named by its turn's id. A bot that finds
+  the thing done does not call again, and the chain ends.
+- **Bounds.** One look a turn (`BotTurnBudget.once`): a second call sets
+  nothing and answers with the time of the first. The look is a delayed
+  `bot-check-backs` job on the outbox (`availableAt`), and its turn is
+  queued with `enqueueOnce` keyed `check_back:<chain>:<step>`, so a turn
+  retried or a job delivered twice queues one turn. There is no table, so no
+  cap on the chains a bot has pending: each needs a call in each look to
+  go on and none outlives a day, about fifteen short turns at most.
+- **The wake.** `WakeOnCheckBackCommand` re-resolves the bot and its owner
+  (`BotOwnerScopeResolver`) and does nothing when either is gone. The turn is
+  of origin `check_back`, in the background lane like a subscription's, as
+  the owner, with the scopes and zone of the turn that called the tool. A
+  provider refusing the account holds it as it holds a wake, and a heartbeat
+  does not count it as news. The prompt (`wake/check-back.md`) has the bot
+  look with its tools, speak only when something moved since its last line
+  about it (one line) or needs help (what, and what would help, acting
+  within its permissions), else `nothing_to_report`; call `check_back` again
+  while it is pending, and report and stop once it is done. What it reads
+  while it looks is data, never instructions.
+- **The chat.** The look's line reads "Checked back on: *about*", as a
+  session's reads "Checked on session".
+- **Promises.** The system prompt's rule (§4.2, "Promises") widens: when a
+  bot delegates or waits on anything and says it will check, report or carry
+  on later, it calls `check_back` before its turn ends; the sessions it
+  starts, prompts or unblocks are followed and looked at already.
+
 ## 8. Visibility
 
 - `list_watches` shows the bot its active subscriptions: session, purpose,
@@ -495,6 +547,21 @@ blocked, and so on. The table above had no row for Plan; this is it.
   while the task runs. It changes the 2026-10-29 "there is still no
   progress update" and §2's "`in_progress` never wakes" for a task the bot
   handed off; the person still hears only when something is off.
+- 2026-11-23: **a look at a running task says where it stands**, in one
+  line, when it moved since the last line, rather than `nothing_to_report`
+  (§4.2). Oppie started a release
+  session, said it would check before calling it done, and each look was
+  only "Checked on session"; the owner had to ask "Have you finished?" while
+  the release still ran. It changes 2026-11-10's "the person still hears only
+  when something is off": a person who hands work off hears how it is going
+  whenever it moved, up to six in the task's first hour, and `notify` stays for
+  what is off.
+- 2026-11-23: **a bot checks back on anything it delegated or waits on**
+  with `check_back` (§7.3): a look at a time it names, or on a backoff from
+  5 minutes to every 2 hours, for 24 hours from the first. It changes
+  §4.2's "Promises" ("nothing else brings a bot back but the hourly
+  heartbeat"): a bot that says it will come back to anything now sets the
+  look that brings it back.
 - 2026-11-03: **a bot follows a pull request** (§7.1). The wake is the
   GitHub event's metadata, not a re-read as the owner: it changes §1's
   "the event is thin, the read is fresh" for this kind, because the pull
