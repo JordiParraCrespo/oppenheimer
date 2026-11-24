@@ -47,6 +47,12 @@ export interface TurnContextInput {
    * owner's (`CONTACT_LINES`): no hosts, no channel line of the owner's, no memory.
    */
   contact?: BotContactChat | null;
+  /**
+   * A contact's turn that may answer as a voice note (`voiceReplyAllowed`,
+   * and the workspace can speak): the most characters it may say. Null or
+   * absent everywhere else, where replies are text.
+   */
+  voiceReplyMaxChars?: number | null;
   memory?: {
     log: readonly { content: string; createdAt: Date; scope: BotMemoryScope }[];
     toRecall: number;
@@ -101,6 +107,12 @@ const CONTACT_LINES: readonly ContextLine[] = [
         ? 'core/turn-context.contact-group'
         : 'core/turn-context.contact-direct',
     ),
+  ({ input }) =>
+    input.voiceReplyMaxChars
+      ? promptText('core/turn-context.contact-voice-reply', {
+          speechTextMaxChars: String(input.voiceReplyMaxChars),
+        })
+      : null,
 ];
 
 const CONTEXT_LINES: readonly ContextLine[] = [

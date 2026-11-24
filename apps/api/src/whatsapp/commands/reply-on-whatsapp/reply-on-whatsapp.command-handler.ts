@@ -9,8 +9,9 @@ import { ReplyOnWhatsappCommand } from './reply-on-whatsapp.command';
 /**
  * Sends a bot's answer in the chat it was asked in, quoting the message it
  * answers, while the bot still answers that chat on a connected number
- * (`WhatsappAnsweringBotResolver`). Otherwise nothing goes. Answers how many
- * messages went.
+ * (`WhatsappAnsweringBotResolver`). Otherwise nothing goes. With `voice` the
+ * answer goes as one voice note (`WhatsappReplyResolver.sendVoice`). Answers
+ * how many messages went.
  */
 @CommandHandler(ReplyOnWhatsappCommand)
 export class ReplyOnWhatsappCommandHandler
@@ -33,15 +34,14 @@ export class ReplyOnWhatsappCommandHandler
           command.replyToRowId,
         )
       : null;
-    return this.replies.send(
-      account,
-      {
-        chatId: command.chatId,
-        quote: quoted ? { id: quoted.externalId, senderId: quoted.senderId } : null,
-        ...(chat && { chat }),
-      },
-      command.text,
-      command.botId,
-    );
+    const target = {
+      chatId: command.chatId,
+      quote: quoted ? { id: quoted.externalId, senderId: quoted.senderId } : null,
+      ...(chat && { chat }),
+    };
+    if (command.voice) {
+      return this.replies.sendVoice(account, target, command.text, command.voice, command.botId);
+    }
+    return this.replies.send(account, target, command.text, command.botId);
   }
 }

@@ -43,7 +43,7 @@ export type SessionFacet = (typeof FACETS)[number];
  * The facets a reader can pick several values of. The others keep one: the
  * menu draws them as a single pick and `pickFacet` replaces rather than adds.
  */
-const MULTI_FACETS: ReadonlySet<SessionFacet> = new Set(['repository']);
+const MULTI_FACETS: ReadonlySet<SessionFacet> = new Set(['repository', 'host']);
 
 export function isMultiFacet(facet: SessionFacet): boolean {
   return MULTI_FACETS.has(facet);

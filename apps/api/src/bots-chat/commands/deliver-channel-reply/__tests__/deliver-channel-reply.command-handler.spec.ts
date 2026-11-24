@@ -1,14 +1,19 @@
 import { randomUUID } from 'node:crypto';
 import type { ConfigService } from '@nestjs/config';
-import type { CommandBus } from '@nestjs/cqrs';
+import type { CommandBus, QueryBus } from '@nestjs/cqrs';
+import type { BotPermission } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import { MarkSlackWorkingCommand } from '../../../../slack/commands/mark-slack-working/mark-slack-working.command';
 import { ReactOnSlackCommand } from '../../../../slack/commands/react-on-slack/react-on-slack.command';
 import { ReplyOnSlackCommand } from '../../../../slack/commands/reply-on-slack/reply-on-slack.command';
 import { ReplyOnTelegramCommand } from '../../../../telegram/commands/reply-on-telegram/reply-on-telegram.command';
+import type { SpokenAudio } from '../../../../voice/commands/synthesize-speech/synthesize-speech.command';
 import { ReactOnWhatsappCommand } from '../../../../whatsapp/commands/react-on-whatsapp/react-on-whatsapp.command';
 import { ReplyOnWhatsappCommand } from '../../../../whatsapp/commands/reply-on-whatsapp/reply-on-whatsapp.command';
 import { BotChannelReplyResolver } from '../../../application/bot-channel-reply.resolver';
+import type { BotModelAccessResolver } from '../../../application/bot-model-access.resolver';
+import type { BotPermissionsResolver } from '../../../application/bot-permissions.resolver';
+import { BotVoiceReplyResolver } from '../../../application/bot-voice-reply.resolver';
 import type { BotApprovalRepositoryPort } from '../../../database/bot-approval.repository.port';
 import type {
   BotChannelChat,
@@ -19,6 +24,7 @@ import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repositor
 import type { ChannelTurnLine } from '../../../domain/bot-channel-turn.policy';
 import { slackTurn } from '../../../domain/bot-slack-turn.policy';
 import { telegramTurn } from '../../../domain/bot-telegram-turn.policy';
+import { type BotPermissions, NO_PERMISSIONS } from '../../../domain/bot-tool-permission.policy';
 import { BotTurnEntity } from '../../../domain/bot-turn.entity';
 import { whatsappSourceKey } from '../../../domain/bot-whatsapp-turn.policy';
 import { DeliverChannelReplyCommand } from '../deliver-channel-reply.command';
@@ -41,6 +47,7 @@ const telegramAccountId = randomUUID();
 const whatsappAccountId = randomUUID();
 const messageRowId = randomUUID();
 const conversationId = randomUUID();
+const SPOKEN = { mimetype: 'audio/ogg; codecs=opus' as const, seconds: 3 };
 const engine = { provider: 'glm' as const, model: 'glm-5.3', effort: null };
 
 function telegram(): BotTurnEntity {
@@ -88,11 +95,23 @@ const LINES: ChannelTurnLine[] = [
   { role: 'assistant', content: 'Green since 10:12.' },
 ];
 
+/** What a contact turn's voice reply reads: the owner's settings, the workspace's speech, the host. */
+interface VoiceSetup {
+  permissions?: BotPermissions;
+  preset?: BotPermission;
+  speaks?: boolean;
+  /** What speaking the words does; three seconds of audio by default. */
+  speak?: () => Promise<SpokenAudio>;
+  /** What the WhatsApp module answers for a voice note: how many went. */
+  voiceSent?: number;
+}
+
 function setup(
   turn: BotTurnEntity | null,
   chat: BotChannelChat | null = null,
   lines: ChannelTurnLine[] = LINES,
   pendingApprovalOf: string | null = null,
+  voice: VoiceSetup = {},
 ) {
   const turns = {
     findForRun: vi.fn(async (id: string) => (turn && id === turn.id ? Some(turn) : None)),
@@ -111,7 +130,27 @@ function setup(
     ),
   };
   const config = { get: vi.fn(() => 'https://console.example/') };
-  const bus = { execute: vi.fn(async () => 1) };
+  const bus = {
+    execute: vi.fn(async (command: { voice?: unknown }) =>
+      command.voice ? (voice.voiceSent ?? 1) : 1,
+    ),
+  };
+  const speech = {
+    execute: vi.fn(
+      voice.speak ?? (async (): Promise<SpokenAudio> => ({ ...SPOKEN, data: Buffer.from('ogg') })),
+    ),
+  };
+  const voiceReplies = new BotVoiceReplyResolver(
+    conversations as unknown as BotConversationRepositoryPort,
+    {
+      forBot: async () => voice.permissions ?? NO_PERMISSIONS,
+    } as unknown as BotPermissionsResolver,
+    {
+      findBot: async () => ({ permission: voice.preset ?? 'auto' }),
+    } as unknown as BotModelAccessResolver,
+    { execute: async () => voice.speaks ?? true } as unknown as QueryBus,
+    speech as unknown as CommandBus,
+  );
   const handler = new DeliverChannelReplyCommandHandler(
     turns as unknown as BotTurnRepositoryPort,
     messages as unknown as BotMessageRepositoryPort,
@@ -121,10 +160,11 @@ function setup(
       bus as unknown as CommandBus,
     ),
     config as unknown as ConfigService,
+    voiceReplies,
   );
   const deliver = () =>
     handler.execute(new DeliverChannelReplyCommand({ turnId: turn?.id ?? randomUUID() }));
-  return { bus, deliver, messages };
+  return { bus, deliver, messages, speech };
 }
 
 const telegramChat: BotChannelChat = {
@@ -360,6 +400,196 @@ describe('DeliverChannelReplyCommandHandler', () => {
     });
     await resolverFor(telegramChat).started(telegram());
     expect(bus.execute).toHaveBeenCalledTimes(1);
+  });
+  describe('a contact’s reply in a group that may hear a voice note', () => {
+    const groupChat: BotChannelChat = {
+      kind: 'whatsapp',
+      organizationId,
+      botId,
+      whatsappAccountId,
+      chatId: '120363000000000001@g.us',
+    };
+    const groupTurn = () =>
+      ended(
+        BotTurnEntity.queue({
+          organizationId,
+          botId,
+          requestedByUserId: userId,
+          ...engine,
+          conversationId,
+          origin: 'whatsapp',
+          lane: 'owner',
+          sourceKey: whatsappSourceKey({ whatsappAccountId, messageRowId }),
+          contact: 'group',
+        }),
+      );
+    const said = (content: string): ChannelTurnLine[] => [{ role: 'assistant', content }];
+    /** The owner's standing yes for voice notes, on one number's chat. */
+    const voiceGrant = (accountId: string, chatId: string): BotPermissions => ({
+      decisions: new Map(),
+      grants: [
+        {
+          tool: 'send_whatsapp_voice_note',
+          subject: { kind: 'whatsapp_chat', key: `${accountId}:${chatId}`, label: 'Test group' },
+        },
+      ],
+      rules: [],
+    });
+    const allowed = { permissions: voiceGrant(whatsappAccountId, groupChat.chatId) };
+    const sent = (bus: { execute: { mock: { calls: unknown[][] } } }) =>
+      bus.execute.mock.calls.map(([command]) => command as ReplyOnWhatsappCommand);
+
+    // Breaks if the voice preference spreads to every reply: a greeting the
+    // bot answered in words stays words, even where voice is allowed.
+    it('sends an ordinary greeting answered in words as text, and speaks nothing', async () => {
+      const { bus, deliver, speech } = setup(
+        groupTurn(),
+        groupChat,
+        said('Hi all! 👋'),
+        null,
+        allowed,
+      );
+      await deliver();
+      expect(speech.execute).not.toHaveBeenCalled();
+      expect(sent(bus)).toHaveLength(1);
+      expect(sent(bus)[0]).toBeInstanceOf(ReplyOnWhatsappCommand);
+      expect(sent(bus)[0]).toMatchObject({ text: 'Hi all! 👋', voice: undefined });
+    });
+
+    // The reported bug: a group whose bot is meant to answer by voice got
+    // text, because a contact's turn had no way to be heard.
+    it('speaks a greeting the bot marked to be heard, once, and sends no text beside it', async () => {
+      const { bus, deliver, speech } = setup(
+        groupTurn(),
+        groupChat,
+        said('[voice] Hi everyone, good to hear from you.'),
+        null,
+        allowed,
+      );
+      await deliver();
+      expect(speech.execute).toHaveBeenCalledTimes(1);
+      expect(speech.execute.mock.calls[0]?.[0]).toMatchObject({
+        organizationId,
+        text: 'Hi everyone, good to hear from you.',
+      });
+      expect(sent(bus)).toHaveLength(1);
+      expect(sent(bus)[0]).toMatchObject({
+        accountId: whatsappAccountId,
+        chatId: groupChat.chatId,
+        replyToRowId: messageRowId,
+        text: 'Hi everyone, good to hear from you.',
+        voice: { seconds: 3 },
+      });
+    });
+
+    // Breaks if a contact's turn can speak for the owner where the voice
+    // tool would have asked: no grant, a grant on another chat or number,
+    // the tool switched off, or a workspace that cannot speak.
+    it.each([
+      ['no voice grant at all', { permissions: NO_PERMISSIONS }],
+      ['a grant on another chat', { permissions: voiceGrant(whatsappAccountId, '1203639@g.us') }],
+      [
+        'a grant on another number',
+        { permissions: voiceGrant(randomUUID(), '120363000000000001@g.us') },
+      ],
+      [
+        'the voice tool switched off',
+        {
+          permissions: {
+            ...voiceGrant(whatsappAccountId, '120363000000000001@g.us'),
+            decisions: new Map([['send_whatsapp_voice_note', 'off' as const]]),
+          },
+          preset: 'full' as const,
+        },
+      ],
+      ['a workspace with no speech', { ...allowed, speaks: false }],
+      [
+        'Full access and an ask rule the voice tool would be read against',
+        {
+          preset: 'full' as const,
+          permissions: {
+            ...NO_PERMISSIONS,
+            rules: [{ id: 'r-1', effect: 'ask' as const, text: 'Ask me before any voice note' }],
+          },
+        },
+      ],
+    ])('sends a marked reply as text, mark off, with %s', async (_case, voice: VoiceSetup) => {
+      const { bus, deliver, speech } = setup(
+        groupTurn(),
+        groupChat,
+        said('[voice] Hi everyone.'),
+        null,
+        voice,
+      );
+      await deliver();
+      expect(speech.execute).not.toHaveBeenCalled();
+      expect(sent(bus)).toHaveLength(1);
+      expect(sent(bus)[0]).toMatchObject({ text: 'Hi everyone.', voice: undefined });
+    });
+
+    // Breaks if Full access, under which the voice tool runs in any chat
+    // without asking, is not honoured the same way for a reply.
+    it('speaks a marked reply under Full access with no grant for the chat', async () => {
+      const { bus, deliver } = setup(groupTurn(), groupChat, said('[voice] Hello.'), null, {
+        preset: 'full',
+      });
+      await deliver();
+      expect(sent(bus)).toEqual([expect.objectContaining({ voice: expect.anything() })]);
+    });
+
+    // Breaks if what is better read (a link, a list) is spoken, or a reply
+    // too long for one note is cut: those go as the words.
+    it.each([
+      ['a link', '[voice] The notes are at https://example.test/notes'],
+      ['a list', '[voice] Bring:\n- water\n- a hat'],
+      ['too many words for one note', `[voice] ${'la '.repeat(400)}`],
+    ])('sends %s as text even when marked', async (_case, reply) => {
+      const { bus, deliver, speech } = setup(groupTurn(), groupChat, said(reply), null, allowed);
+      await deliver();
+      expect(speech.execute).not.toHaveBeenCalled();
+      expect(sent(bus)).toHaveLength(1);
+      expect(sent(bus)[0]?.text.startsWith('[voice]')).toBe(false);
+      expect(sent(bus)[0]?.voice).toBeUndefined();
+    });
+
+    // Breaks if a failure to speak or to send the note leaves the group
+    // with no answer, or if a note that went is followed by the same words.
+    it('falls back to the words once when speaking or sending the note fails', async () => {
+      const unspoken = setup(groupTurn(), groupChat, said('[voice] Hello.'), null, {
+        ...allowed,
+        speak: async () => {
+          throw new Error('speech provider down');
+        },
+      });
+      await unspoken.deliver();
+      expect(sent(unspoken.bus)).toEqual([
+        expect.objectContaining({ text: 'Hello.', voice: undefined }),
+      ]);
+
+      const unsent = setup(groupTurn(), groupChat, said('[voice] Hello.'), null, {
+        ...allowed,
+        voiceSent: 0,
+      });
+      await unsent.deliver();
+      expect(sent(unsent.bus)).toHaveLength(2);
+      expect(sent(unsent.bus)[0]?.voice).toBeDefined();
+      expect(sent(unsent.bus)[1]).toMatchObject({ text: 'Hello.', voice: undefined });
+    });
+
+    // Breaks if the owner's own chat changes: the mark means nothing there,
+    // where the bot has the voice tool itself.
+    it('leaves the owner’s own turns alone', async () => {
+      const { bus, deliver, speech } = setup(
+        ended(whatsapp()),
+        whatsappChat,
+        said('[voice] Hello.'),
+        null,
+        { preset: 'full' },
+      );
+      await deliver();
+      expect(speech.execute).not.toHaveBeenCalled();
+      expect(sent(bus)[0]).toMatchObject({ text: '[voice] Hello.', voice: undefined });
+    });
   });
 });
 
