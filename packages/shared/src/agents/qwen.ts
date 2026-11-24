@@ -19,17 +19,29 @@ export const QWEN_AGENT: CodingAgentDefinition = Object.freeze({
     // all watched: an Up arrow into an empty prompt recalls the last prompt
     // with the cursor at its start, Esc mid-turn cancels the turn and puts
     // its message back, with the cursor at its end, and a rewind puts the
-    // turn it went back to there for editing. Ctrl+K kills to the
-    // end of the line and Ctrl+U to its start, each joining a line to the
-    // next or the one before at its edge, so pairs of them empty a prompt of
-    // any shape and do nothing to an empty one; 16 pairs emptied a recalled
-    // three-line prompt in one write. Not Ctrl+C, which counts towards
-    // quitting on an empty prompt, and not Esc Esc, which opens "Rewind
-    // Conversation" on one. Qwen applies each key to its buffer as it reads
-    // it, not on its next render: a message in the same write as the clear
-    // was stored whole, three times out of three, so the settle is a margin,
-    // not a measured need.
-    clear: Object.freeze({ keys: '\u000b\u0015'.repeat(16), settleMs: 50 }),
+    // turn it went back to there for editing. Each round is Ctrl+E (the end
+    // of the visual line), Meta+D (the word after it, the line break at a
+    // line's end) and Ctrl+U (the line up to the cursor, or the break before
+    // it at its start), so lines below the cursor are folded in and the rest
+    // killed from the end; 32 rounds emptied each of those, a three-line
+    // paste and a recalled 2,000-character prompt wrapped over eighteen rows,
+    // and do nothing to an empty prompt. A message in the same write as the
+    // clear was stored whole every time: Qwen applies each key to its buffer
+    // as it reads it, not on its next render, so the settle is a margin.
+    //
+    // The keys must also be inert in the dialogs a prompt can sit under. In
+    // Rewind, the list's Up is `up`, `k` or Ctrl+P and its restore options
+    // match `up` or `k` whatever the modifiers (`RewindSelector`), so Ctrl+K,
+    // the obvious kill to the end, walked the options up to "Restore code and
+    // conversation" (watched); Ctrl+E, Meta+D and Ctrl+U left both steps as
+    // they were (watched). Not Ctrl+N either, which moves a list's selection
+    // down and, past the prompt's end, hands focus to a background agent's
+    // panel; not Ctrl+D or Ctrl+C, which count towards quitting on an empty
+    // prompt; not Ctrl+F, which moves into a running shell; and not Esc Esc,
+    // which opens Rewind. Meta+D is `ESC d`, which Qwen's readline
+    // (`escapeCodeTimeout: 0`) reads as one key when both bytes arrive in one
+    // read, as a single write delivers them.
+    clear: Object.freeze({ keys: '\u0005\u001bd\u0015'.repeat(32), settleMs: 50 }),
   }),
   // No `loginTargets` yet. The subscription's sign-in shows
   // `https://chat.qwen.ai/authorize?user_code=…` (watched; `webOrigin` of

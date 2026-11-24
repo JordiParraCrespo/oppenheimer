@@ -36,6 +36,17 @@ describe('coding agent catalog', () => {
     expect(CODING_AGENTS.qwen.configDirEnv).toBe('QWEN_HOME');
   });
 
+  it('empties Qwen Code’s prompt with keys its Rewind dialog does not read', () => {
+    // Qwen's restore options move up on `k` whatever the modifiers, so a
+    // Ctrl+K in the clear walked them up to "Restore code and conversation";
+    // `up`, `k`, `j`, Ctrl+P and Ctrl+N move its lists. An ESC only as Meta+D:
+    // a lone one twice opens Rewind.
+    const keys = CODING_AGENTS.qwen.input?.clear?.keys ?? '';
+    expect(keys).not.toBe('');
+    expect(keys).not.toMatch(/[\u000b\u0010\u000ekj]/);
+    expect(keys.replace(/\u001bd/g, '')).not.toContain('\u001b');
+  });
+
   it('starts Qwen Code interactive with its task in one word, and restarts it on what this folder holds', () => {
     // A positional is Qwen's one-shot run, and `--prompt-interactive` with
     // its value as a word of its own reads a task starting with `-` as a flag

@@ -113,8 +113,13 @@ to `SKILL.md`.
 - **Look for every way text gets there, and clear from both ends.** Qwen
   recalls history on Up with the cursor at the start (so Ctrl+U alone did
   nothing), puts a turn stopped with Esc back with the cursor at the end, and
-  puts a rewound turn back for editing; pairs of Ctrl+K and Ctrl+U emptied
-  all three (`494d61e0c`).
+  puts a rewound turn back for editing; Ctrl+E, Meta+D and Ctrl+U, repeated,
+  empty all three.
+- **The clear must be inert in every dialog the prompt can sit under.** Qwen's
+  first clear, Ctrl+K and Ctrl+U, emptied the prompt, but its Rewind
+  dialog's restore options move up on `k` whatever the modifiers, so each
+  Ctrl+K walked the selection to "Restore code and conversation". Read the
+  key handlers of the TUI's dialogs, and send the clear into each one live.
 - **Measure the settle; do not copy it.** Qwen applies each key to its buffer
   as it reads it, and a message in the same write as the clear was stored
   whole, so its `settleMs` is a margin; ZCode's 100 ms was a need
