@@ -53,7 +53,8 @@ function needsReader(session: SessionEntity): boolean {
  * {@link STALE_AFTER_MS} without being opened, each told once per stay, and
  * what to remember for the next look. A first look (`watches` null) tells
  * nothing and only remembers, so opening the console does not announce what
- * was already blue or long waiting.
+ * was already blue or long waiting; a session still waiting thirty minutes
+ * after that first look is reminded then.
  */
 export function watchSessions(
   watches: ReadonlyMap<string, SessionWatch> | null,
@@ -67,20 +68,17 @@ export function watchSessions(
     const previous = watches?.get(session.id);
     const observed = session.observedSince?.getTime();
     const same = previous?.state === session.state;
-    // The host's time is trusted only when it moved since the last look: a
+    // The host's time is trusted only when it moved between two looks: a
     // session that fails keeps the agent's old `observedSince` while its
     // group turns amber, and counting from it would call a wait a minute old
-    // thirty. Otherwise the clock starts when this tab saw the move, which
-    // fails late rather than early.
+    // thirty (or, on the first look, one never to be told). Otherwise the
+    // clock starts when this tab saw the move, which fails late, not early.
     const fresh =
-      observed !== undefined &&
-      (watches === null || (previous !== undefined && observed !== previous.observed));
+      observed !== undefined && previous !== undefined && observed !== previous.observed;
     const since = fresh ? observed : same ? previous.since : now;
     const overdue = needsReader(session) && now - since >= STALE_AFTER_MS;
     let staleTold = same ? previous.staleTold : false;
-    if (watches === null) {
-      staleTold = overdue;
-    } else {
+    if (watches !== null) {
       if (!same && session.state === 'ready-for-review' && needsReader(session)) {
         done.push(session);
       }

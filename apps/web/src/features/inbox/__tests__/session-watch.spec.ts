@@ -72,12 +72,32 @@ describe('a session left waiting', () => {
     expect(look.stale.map((s) => s.id)).toEqual(['a']);
   });
 
-  it('is not told for a session already long waiting when the console opened', () => {
+  it('is not told on load for a session already long waiting, but thirty minutes after', () => {
     const waiting = [
       sessionEntity({ id: 'a', state: 'waiting-on-you', observedSince: new Date(T0 - 3_600_000) }),
     ];
-    const first = watchSessions(null, waiting, T0);
-    expect(watchSessions(first.watches, waiting, T0 + MINUTE).stale).toEqual([]);
+    let look = watchSessions(null, waiting, T0);
+    expect(look.stale).toEqual([]);
+    look = watchSessions(look.watches, waiting, T0 + MINUTE);
+    expect(look.stale).toEqual([]);
+    look = watchSessions(look.watches, waiting, T0 + STALE_AFTER_MS);
+    expect(look.stale.map((s) => s.id)).toEqual(['a']);
+  });
+
+  it('reminds a session that failed just before the console opened, with an old observation', () => {
+    // The failure keeps the agent's observedSince from long before it.
+    const failed = [
+      sessionEntity({
+        id: 'a',
+        state: 'waiting-on-you',
+        observedSince: new Date(T0 - 40 * MINUTE),
+      }),
+    ];
+    let look = watchSessions(null, failed, T0);
+    look = watchSessions(look.watches, failed, T0 + STALE_AFTER_MS - 1);
+    expect(look.stale).toEqual([]);
+    look = watchSessions(look.watches, failed, T0 + STALE_AFTER_MS);
+    expect(look.stale.map((s) => s.id)).toEqual(['a']);
   });
 
   it('is never told for an idle or working session', () => {
