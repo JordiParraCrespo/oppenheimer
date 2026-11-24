@@ -236,6 +236,7 @@ func (a *App) linkLoop(ctx context.Context, logger *slog.Logger, identity pairdo
 			}
 			handler.unpaired(ctx, wipe)
 		},
+		OnHelloRefused: a.gate.noteRefused,
 	})
 	if err != nil {
 		logger.Error("the link cannot be built", slog.Any("error", err))
@@ -403,6 +404,9 @@ func (h *linkHandler) Connected(_ context.Context, epoch uint64) {
 	h.mu.Lock()
 	h.epoch, h.linkUp = epoch, true
 	h.mu.Unlock()
+	if h.app != nil {
+		h.app.gate.noteLinked()
+	}
 	// Whatever was not acked before the drop is sent again; the keys make the
 	// resend free on the other side.
 	h.reporter.Resend()

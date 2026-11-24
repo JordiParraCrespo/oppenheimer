@@ -21,7 +21,12 @@ type Options struct {
 	// root reads them, so this context never touches pairing's files.
 	Channel string
 	Pinned  string
-	Now     func() time.Time
+	// PinnedNow, when set, is asked for the pin at every check instead of
+	// Pinned: `runner update --pin` writes the identity from another
+	// process, and a daemon that read it once at boot updated past a pin set
+	// while it ran.
+	PinnedNow func() string
+	Now       func() time.Time
 }
 
 // Service is the update use cases.
@@ -34,6 +39,7 @@ type Service struct {
 	version    string
 	channel    string
 	pinned     string
+	pinnedNow  func() string
 	now        func() time.Time
 	// applying lets one Apply or Rollback run at a time in this process: the
 	// periodic loop and the console's Update now would otherwise stage the
@@ -56,7 +62,7 @@ func New(opts Options) *Service {
 	return &Service{
 		releases: opts.Releases, binaries: opts.Binaries, restarter: opts.Restarter,
 		state: opts.State, activities: activities,
-		version: opts.Version, channel: opts.Channel, pinned: opts.Pinned, now: now,
+		version: opts.Version, channel: opts.Channel, pinned: opts.Pinned, pinnedNow: opts.PinnedNow, now: now,
 		applying: make(chan struct{}, 1),
 	}
 }
@@ -70,7 +76,7 @@ func (s *Service) Check(ctx context.Context) (domain.Plan, error) {
 		return domain.Plan{}, err
 	}
 	state, _ := s.state.Load()
-	plan := domain.Decide(s.version, release, s.pinned, s.activities.Snapshot(), state.WaitingSince, s.now())
+	plan := domain.Decide(s.version, release, s.pin(), s.activities.Snapshot(), state.WaitingSince, s.now())
 	if plan.Action == domain.ActionNone && release.Version == s.version && s.binaries.NeedsReinstall() {
 		plan = domain.DecideReinstall(s.version, release, state, s.activities.Snapshot(), s.now())
 	}
@@ -85,6 +91,14 @@ func (s *Service) Check(ctx context.Context) (domain.Plan, error) {
 		_ = s.state.Save(state)
 	}
 	return plan, nil
+}
+
+// pin is the version this host is pinned to now, or "".
+func (s *Service) pin() string {
+	if s.pinnedNow != nil {
+		return s.pinnedNow()
+	}
+	return s.pinned
 }
 
 // ApplyOptions tune a manual run.
@@ -235,6 +249,23 @@ func (s *Service) Rollback(ctx context.Context) error {
 		return domain.ErrBlocked.WithDetail("there is no previous version on this host to roll back to")
 	}
 	return s.rollBack(ctx, state, "asked for")
+}
+
+// RollBackUnlinked returns to the previous version when the update that
+// started this binary is still pending and the control plane keeps refusing
+// its hello: a process that stays up but never links is not a healthy one.
+// Anything else — no update pending, or pending for another version — is
+// left alone and reports false.
+func (s *Service) RollBackUnlinked(ctx context.Context) (bool, error) {
+	if err := s.lock(ctx); err != nil {
+		return false, err
+	}
+	defer s.unlock()
+	state, err := s.state.Load()
+	if err != nil || state.Phase != domain.PhasePending || state.To != s.version || state.From == "" {
+		return false, nil //nolint:nilerr // nothing pending of ours is not a failure
+	}
+	return true, s.rollBack(ctx, state, "the control plane refused the new version's hello")
 }
 
 // lock takes the apply slot, or gives up when ctx ends first.

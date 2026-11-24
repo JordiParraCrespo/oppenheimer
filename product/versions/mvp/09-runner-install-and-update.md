@@ -356,7 +356,7 @@ putting the user's credentials on it.
   | State | Means | Leaves it when |
   |---|---|---|
   | `staging` | downloading and verifying; nothing on disk is live | verification fails (→ gone, staging emptied) or the binary is promoted (→ `pending`) |
-  | `pending(n)` | `current` points at the new version; `n` boots have started and none has reached the gate | the new process stays up for the health gate (→ `healthy`), or `n` reaches 2 (→ `rolled_back`) |
+  | `pending(n)` | `current` points at the new version; `n` boots have started and none has reached the gate | the new process stays up for the health gate **and** has linked to the control plane at least once (→ `healthy`); the control plane refuses its hello 5 times in a row with no link (→ `rolled_back`); or `n` reaches 2 (→ `rolled_back`). A control plane it cannot reach at all keeps it `pending` (2026-11-24) |
   | `healthy` | the update is done | never; the record is closed and the old binaries are pruned to the running one and its predecessor |
   | `rolled_back` | `current` points at the previous version again | never; the outcome is reported and the release is not retried until a newer one appears |
 

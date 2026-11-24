@@ -127,6 +127,8 @@ type App struct {
 	// updates from running at once: two downloads on one link, and a
 	// self-update restart landing in the middle of an agent's install.
 	downloads sync.Mutex
+	// gate is what the link tells the update loop's health gate.
+	gate updateGate
 }
 
 // New wires the host agent. It reads the identity when there is one, which is
@@ -324,6 +326,13 @@ func New(version string) (*App, error) {
 			Version:   version,
 			Channel:   string(identity.Channel),
 			Pinned:    identity.PinnedVersion,
+			PinnedNow: func() string {
+				current, err := pairingSvc.Identity()
+				if err != nil {
+					return identity.PinnedVersion
+				}
+				return current.PinnedVersion
+			},
 		})
 	}
 	return app, nil

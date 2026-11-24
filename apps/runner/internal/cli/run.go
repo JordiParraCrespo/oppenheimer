@@ -408,15 +408,8 @@ func (a *App) idleStopLoop(ctx context.Context, logger *slog.Logger, after time.
 // boot and every CheckInterval. A check that fails is logged and retried at
 // the next tick — an unreachable release server is not an incident.
 func (a *App) updateLoop(ctx context.Context, logger *slog.Logger) {
-	gate := time.NewTimer(upddomain.HealthGate)
-	defer gate.Stop()
-	select {
-	case <-ctx.Done():
+	if !a.passHealthGate(ctx, logger) {
 		return
-	case <-gate.C:
-		if err := a.Updates.MarkHealthy(); err != nil {
-			logger.Error("could not close the pending update", slog.Any("error", err))
-		}
 	}
 
 	ticker := time.NewTicker(upddomain.CheckInterval)
@@ -427,6 +420,68 @@ func (a *App) updateLoop(ctx context.Context, logger *slog.Logger) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+		}
+	}
+}
+
+// passHealthGate closes an update that started this binary: up for
+// HealthGate and linked to the control plane at least once. Uptime alone
+// passed 0.1.24, whose every hello was refused. Pending and refused
+// helloRefusalsToRollBack times in a row with no link, it rolls back. A
+// control plane it cannot reach at all leaves it pending — a network that is
+// down says nothing about the binary — and the next boot counts an attempt as
+// before. It reports false when ctx ended first.
+func (a *App) passHealthGate(ctx context.Context, logger *slog.Logger) bool {
+	gate := time.NewTimer(upddomain.HealthGate)
+	defer gate.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-gate.C:
+	}
+	if a.pendingForThisVersion() {
+		if !a.awaitLinkOrRollBack(ctx, logger) {
+			return false
+		}
+	}
+	if err := a.Updates.MarkHealthy(); err != nil {
+		logger.Error("could not close the pending update", slog.Any("error", err))
+	}
+	return true
+}
+
+// pendingForThisVersion reports an update to this binary not yet closed.
+func (a *App) pendingForThisVersion() bool {
+	state, err := a.Updates.State()
+	return err == nil && state.Phase == upddomain.PhasePending && state.To == a.Version
+}
+
+// awaitLinkOrRollBack waits for the first link, rolling back on a run of
+// refused hellos. It reports false when ctx ended or a rollback restarted us.
+func (a *App) awaitLinkOrRollBack(ctx context.Context, logger *slog.Logger) bool {
+	for {
+		select {
+		case <-a.gate.linkedC():
+			return true
+		default:
+		}
+		if a.gate.refusedEnough() {
+			logger.Error("the control plane keeps refusing this version's hello; rolling back",
+				slog.String("version", a.Version))
+			rolled, err := a.Updates.RollBackUnlinked(ctx)
+			if err != nil {
+				logger.Error("could not roll back the update", slog.Any("error", err))
+			}
+			if rolled {
+				return false
+			}
+		}
+		select {
+		case <-ctx.Done():
+			return false
+		case <-a.gate.linkedC():
+			return true
+		case <-a.gate.refusedC():
 		}
 	}
 }

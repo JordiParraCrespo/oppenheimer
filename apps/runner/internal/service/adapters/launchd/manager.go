@@ -104,8 +104,13 @@ func (m *Manager) Uninstall(ctx context.Context) error {
 
 // Restart kickstarts the job, which re-executes the `current` symlink and so
 // picks up a version that was linked a moment ago.
+//
+// The daemon restarting itself is the old process launchd stops with -k: its
+// shutdown cancels ctx, and a launchctl tied to ctx was killed mid-call and
+// reported a restart that went through as UPD_006. The call keeps ctx's
+// values and none of its cancellation; commandTimeout still bounds it.
 func (m *Manager) Restart(ctx context.Context) error {
-	if out, err := m.commands.Run(ctx, "launchctl", "kickstart", "-k", m.serviceTarget()); err != nil {
+	if out, err := m.commands.Run(context.WithoutCancel(ctx), "launchctl", "kickstart", "-k", m.serviceTarget()); err != nil {
 		return controlFailed("launchctl kickstart -k", out, err)
 	}
 	return nil
