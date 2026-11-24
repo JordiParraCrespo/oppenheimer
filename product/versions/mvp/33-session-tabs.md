@@ -59,7 +59,9 @@ also found the bar's other controls too big ("this right icons should be
 smaller", the Terminal / Chat switch "adapted to the height of the
 header"): only the tabs stand on the medium rung, and the toggles, the +,
 Share and the menus go back to the small one with its small glyph, the
-Terminal / Chat pill as tall as they are.
+Terminal / Chat pill as tall as they are. On that grey the shown tab's card
+had lost its lift (it was the same colour), so it takes the step above it
+(`--card-active`), the contrast the owner asked to recover.
 
 ## 2. What a tab shows
 

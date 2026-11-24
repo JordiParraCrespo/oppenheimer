@@ -31,13 +31,14 @@ export function SidebarToggle() {
  * A bar of tabs (`tone="chrome"`): 45px (`--tab-bar-h`), on the terminal's
  * ground (`--term-bg`, grey in dark, never the canvas's black) wherever it is
  * drawn, a session, a bot's chat or New session, with a hairline at its foot,
- * so it keeps its colour when a session is created. A tab stands on the medium rung
+ * so it keeps its colour when a session is created. The shown tab's card is
+ * a step up from that ground (`--card-active`), so it stands out on it. A tab stands on the medium rung
  * (the small one is pointed there on each tab, so its caller says nothing);
  * every other control in the bar, the toggles, +, Share and the menus, stays
  * on the small rung with its small glyph, quieter than the tabs.
  */
 const TAB_BAR =
-  'h-(--tab-bar-h) border-b border-border-subtle bg-term-bg [--chat-tab-ground:var(--term-bg)] [&_[data-slot=chat-tab]]:[--control-h-sm:var(--control-h-md)]';
+  'h-(--tab-bar-h) border-b border-border-subtle bg-term-bg [--chat-tab-ground:var(--term-bg)] [--chat-tab-lit:var(--card-active)] [&_[data-slot=chat-tab]]:[--control-h-sm:var(--control-h-md)]';
 
 /**
  * The page bar with something in its slots, for a route that declares
