@@ -67,8 +67,9 @@ function useAnsweredKeys(): ReadonlySet<string> {
 
 /**
  * An on/off switch kept on this device, off until the reader turns it on. One
- * value for the page, so every reader agrees the moment it flips; a browser
- * that refuses storage keeps it in memory for the visit.
+ * value for the page, so every reader agrees the moment it flips, and every
+ * other open tab of this browser follows through the `storage` event; a
+ * browser that refuses storage keeps it in memory for the visit.
  */
 function deviceSwitch(key: string): () => [on: boolean, setOn: (on: boolean) => void] {
   let value: boolean | undefined;
@@ -93,9 +94,19 @@ function deviceSwitch(key: string): () => [on: boolean, setOn: (on: boolean) => 
     }
     for (const listener of listeners) listener();
   };
+  // Another tab wrote it: take its value, so turning it off anywhere stops it everywhere.
+  const fromAnotherTab = (event: StorageEvent) => {
+    if (event.key !== key) return;
+    value = event.newValue === 'true';
+    for (const listener of listeners) listener();
+  };
   const subscribe = (listener: () => void) => {
+    if (listeners.size === 0) globalThis.addEventListener?.('storage', fromAnotherTab);
     listeners.add(listener);
-    return () => listeners.delete(listener);
+    return () => {
+      listeners.delete(listener);
+      if (listeners.size === 0) globalThis.removeEventListener?.('storage', fromAnotherTab);
+    };
   };
   return () => [useSyncExternalStore(subscribe, read, () => false), set];
 }

@@ -28,7 +28,14 @@ export function useSessionAlerts(): void {
       return;
     for (const item of fresh) {
       const { title, body } = alertText(inboxCopy(item, t));
-      const notification = new Notification(title, { body, tag: item.key });
+      let notification: Notification;
+      try {
+        notification = new Notification(title, { body, tag: item.key });
+      } catch {
+        // Android's Chrome has the constructor but refuses it (a page there
+        // can only notify through a service worker); the Inbox still has it.
+        return;
+      }
       notification.onclick = () => {
         window.focus();
         notification.close();

@@ -57,7 +57,14 @@ test('a session that comes to wait raises a notification in a console tab in the
     Object.defineProperty(window, 'Notification', { value: Recorded, configurable: true });
   });
 
+  // Headless Chromium reports every tab visible and focused, whichever is in
+  // front, so the tab behind says so itself: what a real browser reports for
+  // a tab the reader is not looking at.
   const watcher = await context.newPage();
+  await watcher.addInitScript(() => {
+    Object.defineProperty(document, 'visibilityState', { get: () => 'hidden' });
+    document.hasFocus = () => false;
+  });
   await signInAs(watcher, user);
   await watcher.goto('/plan/inbox');
   await watcher.getByRole('button', { name: 'Filter the Inbox' }).click();
@@ -67,6 +74,7 @@ test('a session that comes to wait raises a notification in a console tab in the
   ).toBeChecked();
   await watcher.keyboard.press('Escape');
 
+  // The reader works in a second tab, in front; the first one is behind it.
   const typist = await context.newPage();
   await typist.goto(`/sessions/${sessionId}`);
   await expect(typist.locator('.xterm-rows')).toContainText('$', { timeout: 120_000 });
@@ -84,6 +92,16 @@ test('a session that comes to wait raises a notification in a console tab in the
       timeout: 30_000,
     })
     .toEqual([expect.stringContaining('is waiting on you')]);
+  // The tab in front heard the same change through the same stream (the
+  // console refetches at most every 2 s), and told nothing.
+  await expect
+    .poll(
+      async () =>
+        ((await (await api.get(`/api/v1/sessions/${sessionId}`)).json()) as { state: string })
+          .state,
+    )
+    .toBe('waiting-on-you');
+  await typist.waitForTimeout(3_000);
   expect(await typist.evaluate(() => window.__alerts.length)).toBe(0);
 
   await watcher.evaluate(() => window.__alerts[0]?.click());
