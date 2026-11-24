@@ -51,7 +51,7 @@ export function BotFormCard({ botId, name }: { botId: string; name: string }) {
         fallback={t('bots.chat.form.loadFailed')}
         action={
           <Button size="sm" variant="outline" disabled={isFetching} onClick={() => void refetch()}>
-            {t('bots.retry')}
+            {t('common.retry')}
           </Button>
         }
       />

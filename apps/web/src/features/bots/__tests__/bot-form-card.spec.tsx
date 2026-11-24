@@ -45,7 +45,7 @@ describe('BotFormCard', () => {
     state.error = new Error('offline');
     render(<BotFormCard botId="bot-1" name="Release Bro" />);
     expect(screen.getByRole('alert').textContent).toContain('bots.chat.form.loadFailed');
-    fireEvent.click(screen.getByRole('button', { name: 'bots.retry' }));
+    fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
     expect(state.refetch).toHaveBeenCalledOnce();
   });
 
