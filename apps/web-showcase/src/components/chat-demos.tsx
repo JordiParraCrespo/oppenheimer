@@ -107,6 +107,7 @@ import {
   CheckCircleIcon,
   CheckIcon,
   ChevronDownIcon,
+  AlarmClockIcon,
   ClockIcon,
   CopyIcon,
   CpuIcon,
@@ -606,7 +607,7 @@ function ChatCardsBody() {
           }
         />
         <ContextCard
-          icon={<ClockIcon />}
+          icon={<AlarmClockIcon />}
           title="Automation created"
           meta={
             <>

@@ -183,6 +183,7 @@ import { Textarea } from '@oppenheimer/design-system-web/textarea';
 import {
   ArrowUpRightIcon,
   ChevronDownIcon,
+  AlarmClockIcon,
   ClockIcon,
   CpuIcon,
   EllipsisIcon,
@@ -892,7 +893,7 @@ const PROJECTS = ['XRP Mobile', 'Atlas', 'Client sites'];
 const RAIL_ITEMS: Record<string, { label: string; icon: React.ReactNode }> = {
   sessions: { label: 'Sessions', icon: <TerminalIcon /> },
   pulls: { label: 'Pull requests', icon: <GitPullRequestIcon /> },
-  automations: { label: 'Automations', icon: <ClockIcon /> },
+  automations: { label: 'Automations', icon: <AlarmClockIcon /> },
   plan: { label: 'Plan', icon: <CircleCheckIcon /> },
 };
 

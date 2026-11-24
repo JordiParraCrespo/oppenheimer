@@ -8,7 +8,7 @@ import {
   SidebarSearch,
   Skeleton,
 } from '@oppenheimer/design-system-web';
-import { Clock } from '@oppenheimer/design-system-web/icons';
+import { AlarmClock } from '@oppenheimer/design-system-web/icons';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
@@ -48,7 +48,11 @@ export function AutomationsSidebarSkeleton() {
       />
       <div className="min-h-0 flex-1 overflow-hidden pb-5">
         <div className="px-3 pt-2">
-          <RoutineItem name={t('automations.sidebar.all')} icon={<Clock />} className="mb-1.5" />
+          <RoutineItem
+            name={t('automations.sidebar.all')}
+            icon={<AlarmClock />}
+            className="mb-1.5"
+          />
         </div>
         {GROUPS.map((rows, group) => (
           <SidebarProjectGroup key={rows[0]}>

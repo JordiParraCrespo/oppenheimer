@@ -4,7 +4,7 @@ import {
   CalendarLayerItem,
   SidebarListHead,
 } from '@oppenheimer/design-system-web';
-import { CalendarDays, CircleCheck, Clock, User } from '@oppenheimer/design-system-web/icons';
+import { AlarmClock, CalendarDays, CircleCheck, User } from '@oppenheimer/design-system-web/icons';
 import { getRouteApi } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +23,7 @@ const ICON: Record<CalendarLayer, ReactNode> = {
   events: <User />,
   google: <CalendarDays />,
   tasks: <CircleCheck />,
-  automations: <Clock />,
+  automations: <AlarmClock />,
 };
 
 /**

@@ -1,4 +1,10 @@
-import { Bot, Clock, GitPullRequest, Layers, Terminal } from '@oppenheimer/design-system-web/icons';
+import {
+  AlarmClock,
+  Bot,
+  GitPullRequest,
+  Layers,
+  Terminal,
+} from '@oppenheimer/design-system-web/icons';
 import type { ConsoleList } from '@/lib/console';
 import { RAIL_ROUTES, type RailItemId } from './rail-landing';
 
@@ -11,7 +17,7 @@ const LOOK = {
   bots: { lists: ['bots'], labelKey: 'nav.employees', Icon: Bot },
   sessions: { lists: ['sessions'], labelKey: 'nav.sessions', Icon: Terminal },
   pulls: { lists: ['pulls'], labelKey: 'nav.pullRequests', Icon: GitPullRequest },
-  automations: { lists: ['automations'], labelKey: 'nav.automations', Icon: Clock },
+  automations: { lists: ['automations'], labelKey: 'nav.automations', Icon: AlarmClock },
   plan: { lists: ['tasks', 'calendar'], labelKey: 'nav.plan', Icon: Layers },
 } as const satisfies Record<
   RailItemId,

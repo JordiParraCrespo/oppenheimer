@@ -1,6 +1,6 @@
 import {
+  AlarmClock,
   Bot,
-  Clock,
   Database,
   FileText,
   MessageCircle,
@@ -49,7 +49,7 @@ export const BOT_SETTINGS_TABS = [
     slug: 'routines',
     to: '/bots/$botId/settings/routines',
     labelKey: 'bots.settings.tabs.routines',
-    Icon: Clock,
+    Icon: AlarmClock,
   },
   {
     slug: 'gateways',
