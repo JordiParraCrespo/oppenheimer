@@ -71,10 +71,7 @@ export const FEATURE_FLAGS = {
    *
    * Default `true`, like every flag: it is the terminal's intended
    * behaviour, and a wrong guess costs one frame of overlay. Switching it off
-   * returns panes to the host's echo at their next
-   * mount. The latency readout (`localStorage['oppenheimer.terminal.latency']`)
-   * is a measuring tool for whoever tunes this, not a second switch: it shows
-   * the round trip and changes nothing.
+   * returns panes to the host's echo at their next mount.
    */
   terminal_typeahead: {
     description: "Draw typed characters in the session terminal before the host's echo arrives.",
