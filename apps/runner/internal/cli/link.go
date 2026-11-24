@@ -114,6 +114,9 @@ type linkHandler struct {
 	// desktopRecheck is how often an open desktop reads the host owner's
 	// choice again; zero is the default, `desktopRecheck` (link_desktop.go).
 	desktopRecheck time.Duration
+	// desktopPointerEvery is how often a watched desktop reads the host's
+	// pointer; zero is the default, `desktopPointerEvery` (link_desktop.go).
+	desktopPointerEvery time.Duration
 	// whatsapp is the host's WhatsApp linked device (link_whatsapp.go); nil
 	// is a host that offers none, and its hello does not name the capability.
 	whatsapp *waapp.Service

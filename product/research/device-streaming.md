@@ -131,6 +131,23 @@ Linux it can also start a TigerVNC and XFCE desktop of its own.
   first desktop shown) over a channel of a WebSocket's shape, scaled to the
   room it has. Full screen is the browser's own, or the view pinned over the
   window where there is none (Safari on iOS).
+- **The host's pointer is the runner's to report** (2026-11-24). Probed on
+  a Mac Studio (macOS 26.5.1) against Screen Sharing on `127.0.0.1:5900`
+  while its owner moved the mouse: without the Cursor pseudo-encoding no
+  update followed the pointer, so Apple does not paint it into the
+  framebuffer; with it Apple sends the shape once (28 by 40, hot spot 5,5)
+  and never a position; PointerPos and the VMware cursor were never
+  answered. noVNC shows that shape only as the reader's own local cursor,
+  so a reader who watched saw no pointer. While a desktop is watched, the
+  runner reads the pointer with CoreGraphics (through purego, since the
+  runner builds without cgo) about thirty times a second and sends
+  `desktop.pointer` when it moves (`versions/mvp/01-protocol.md`); the
+  console draws the server's cursor shape there, scaled with the screen,
+  or a plain arrow until a shape arrives. Not while the reader is in
+  control: their own pointer is the host's then, and two would show. Only
+  on a Mac with one display for now: with several, Screen Sharing may send
+  one framebuffer spanning them, and nobody has looked at how it lays them
+  out, so the runner sends nothing rather than a pointer in the wrong place.
 
 Checked on the local stack on 2026-11-09 against TigerVNC with a VNC
 password: keys typed while watching never reached an xterm on the host,

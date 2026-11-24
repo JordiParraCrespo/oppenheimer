@@ -1,3 +1,17 @@
+diff --git a/core/rfb.js b/core/rfb.js
+index 80011e4a10203806f14df1ffc3b8425861a965a7..98ecbbf841430f7d7d88ee284a32274c4584e2e2 100644
+--- a/core/rfb.js
++++ b/core/rfb.js
+@@ -3028,6 +3028,9 @@ export default class RFB extends EventTargetMixin {
+             hotx: hotx, hoty: hoty, w: w, h: h,
+         };
+         this._refreshCursor();
++        // Patched (Oppenheimer): the server's cursor shape, for a viewer that
++        // draws the host's pointer itself while the reader only watches.
++        this.dispatchEvent(new CustomEvent("cursorimage", { detail: this._cursorImage }));
+     }
+ 
+     _shouldShowDotCursor() {
 diff --git a/core/util/browser.js b/core/util/browser.js
 index 63596d211bc3f2ac0c1853d58488dcbb18bd8949..1e70d0133e76ddefb598f661b29483e0b4c36727 100644
 --- a/core/util/browser.js
