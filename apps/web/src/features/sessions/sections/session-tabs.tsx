@@ -75,7 +75,6 @@ export function SessionTabs({
       label={t('sessions.tabs.label')}
       onNew={() => void navigate({ to: '/sessions/new' })}
       newLabel={t('sessions.tabs.new')}
-      className="-ml-1"
     >
       {drawn.map(({ key, tab }) =>
         tab.kind === 'session' ? (

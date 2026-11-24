@@ -130,8 +130,8 @@ const TAB_ATTENTION = {
  * shown one is lit, on the card inside a hairline, so on a strip that
  * stands on the recessed ground it reads as part of the page under it; the rest are flat on the
  * strip's ground with a hairline between two of them, and the close of a tab
- * not shown appears on hover. A long name fades out rather than ending in an
- * ellipsis. What it needs from the reader is a dot on its mark (amber
+ * not shown appears on hover. A long name fades out over its last 16px
+ * rather than ending in an ellipsis; a name that fits ends before the fade. What it needs from the reader is a dot on its mark (amber
  * `needs-you`, blue `done` and `unread`, as a sidebar row draws them), work
  * in flight its name's shimmer. With `render` (a router `Link`) it is a link
  * to a page, in a strip that is `navigation`.
@@ -203,7 +203,7 @@ function ChatTab({
         ) : null}
         <span
           className={cn(
-            'min-w-0 flex-1 overflow-hidden text-left whitespace-nowrap [mask-image:linear-gradient(90deg,#000_80%,transparent)]',
+            'min-w-0 flex-1 overflow-hidden pr-4 text-left whitespace-nowrap [mask-image:linear-gradient(90deg,#000_calc(100%-1rem),transparent)]',
             working && 'motion-safe:animate-shimmer',
           )}
         >
