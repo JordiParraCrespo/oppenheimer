@@ -3,6 +3,8 @@ package git_test
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 
@@ -54,5 +56,37 @@ func TestTwoProcessesCreateSessionsOnOneStoreAtOnce(t *testing.T) {
 				t.Errorf("%s is not a worktree", worktree)
 			}
 		}
+	}
+}
+
+// A spare this process made and holds as ready may since have been taken by
+// another runner process, and a new one started at the same path that is
+// still being checked out. The next create checks what is on disk before
+// moving it into the session's folder. Regresses if it trusts its own
+// memory: the session gets a worktree with its files missing.
+func TestASpareHalfMadeByAnotherProcessIsNotTaken(t *testing.T) {
+	remote := origin(t)
+	c, layout := spareClient(t)
+	ctx := context.Background()
+	if err := c.Ensure(ctx, repo, remote, "main"); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Add(ctx, repo, checkout(layout, "one"), "oppenheimer/one", "main", true); err != nil {
+		t.Fatalf("first add: %v", err)
+	}
+	c.Wait()
+	// What another process's spare looks like part way through its
+	// checkout: registered, on the base, its files not all written yet.
+	if err := os.Remove(filepath.Join(spareOf(layout), "README.md")); err != nil {
+		t.Fatal(err)
+	}
+
+	two := checkout(layout, "two")
+	if err := c.Add(ctx, repo, two, "oppenheimer/two", "main", true); err != nil {
+		t.Fatalf("second add: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(two, "README.md")); err != nil {
+		t.Fatalf("the session's worktree is missing its files: %v", err)
 	}
 }

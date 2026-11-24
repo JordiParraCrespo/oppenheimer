@@ -7,7 +7,8 @@
 // overwrites: under a lock across processes, it reads the file and writes
 // over it only the sessions this process changed since it last loaded or
 // saved them. Another process's sessions, and its changes to sessions this
-// one only holds a stale copy of, are kept.
+// one only holds a stale copy of, are kept; so is a close another process
+// made, over this one's change to the same session.
 package state
 
 import (
@@ -112,6 +113,9 @@ func (s *Store) Save(sessions []domain.Session) error {
 		if there && bytes.Equal(s.seen[session.ID], encoded) {
 			continue
 		}
+		if there && closedElsewhere(merged[i], s.seen[session.ID], session) {
+			continue
+		}
 		changed[session.ID] = encoded
 		if there {
 			merged[i] = session
@@ -151,6 +155,16 @@ func (s *Store) write(sessions []domain.Session) error {
 		return err
 	}
 	return os.Rename(tmp.Name(), s.path)
+}
+
+// closedElsewhere reports a session another process closed since this one
+// last saw it, which this one, holding it live, would write back open: the
+// daemon marking stopped a session `runner sessions close` ended. A close is
+// final, so the file's copy stands. A session this process closed and
+// started again itself is not one.
+func closedElsewhere(onDisk domain.Session, seen []byte, mine domain.Session) bool {
+	return onDisk.State == domain.StateClosed && mine.State != domain.StateClosed &&
+		!bytes.Equal(encode(onDisk), seen)
 }
 
 func encode(session domain.Session) []byte {

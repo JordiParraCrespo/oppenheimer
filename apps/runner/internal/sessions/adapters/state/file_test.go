@@ -118,3 +118,46 @@ func TestAProcessSeesItsOwnChanges(t *testing.T) {
 		t.Fatalf("a = %s, want working", got["a"].State)
 	}
 }
+
+// A session the host's CLI closed stays closed when the daemon, which still
+// holds it live and sees its terminal gone, saves it as stopped. Regresses
+// if a save writes its own change over one another process made to the same
+// session since this one loaded it.
+func TestADaemonsStaleChangeDoesNotReopenASessionTheCLIClosed(t *testing.T) {
+	dir := t.TempDir()
+	if err := state.New(dir).Save([]domain.Session{{ID: "x", State: domain.StateWorking}}); err != nil {
+		t.Fatal(err)
+	}
+	cli, daemon := state.New(dir), state.New(dir)
+	closing, _ := cli.Load()
+	live, _ := daemon.Load()
+
+	closing[0].State = domain.StateClosed
+	if err := cli.Save(closing); err != nil {
+		t.Fatal(err)
+	}
+	live[0].State = domain.StateStopped
+	if err := daemon.Save(live); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := byID(t, state.New(dir)); got["x"].State != domain.StateClosed {
+		t.Fatalf("x = %s, want closed", got["x"].State)
+	}
+}
+
+// A session this process closed and then started again under the same id
+// is written as it holds it: only another process's close is kept.
+func TestAProcessMayReopenASessionItClosedItself(t *testing.T) {
+	dir := t.TempDir()
+	s := state.New(dir)
+	if err := s.Save([]domain.Session{{ID: "x", State: domain.StateClosed}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Save([]domain.Session{{ID: "x", State: domain.StateWorking}}); err != nil {
+		t.Fatal(err)
+	}
+	if got := byID(t, s); got["x"].State != domain.StateWorking {
+		t.Fatalf("x = %s, want working", got["x"].State)
+	}
+}
