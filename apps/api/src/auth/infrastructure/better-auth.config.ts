@@ -1,8 +1,5 @@
 import '@oppenheimer/env/load';
 import { randomUUID } from 'node:crypto';
-// oppenheimer:begin mobile
-import { expo } from '@better-auth/expo';
-// oppenheimer:end mobile
 import { Logger } from '@nestjs/common';
 import { organizationSharedOptions, userAdditionalFields } from '@oppenheimer/auth';
 import { DEFAULT_OAUTH_SCOPES, PASSWORD_MIN_LENGTH, SCOPES } from '@oppenheimer/shared';
@@ -20,6 +17,9 @@ import { authRateLimit } from './auth-rate-limit.util';
 import { betterAuthSecondaryStorage, sessionStore } from './better-auth-secondary-storage.adapter';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
 import { buildInvitationUrl } from './invitation-url.util';
+// oppenheimer:begin mobile
+import { mobileAppAuth } from './mobile-app-auth.util';
+// oppenheimer:end mobile
 import { sessionDeleteHooks } from './session-delete-hook.util';
 
 /**
@@ -49,9 +49,9 @@ const OAUTH_SCOPES_SUPPORTED = ['openid', 'profile', 'email', 'offline_access', 
 
 const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
 // oppenheimer:begin mobile
-// The mobile app's deep-link scheme, the same variable its app.config.ts reads,
-// so sign-in and password-reset links land back in the app.
-const mobileScheme = process.env.MOBILE_SCHEME ?? 'oppenheimer';
+// The phone app's deep-link scheme, trusted only when this deployment names it
+// (`mobileAppAuth` says why there is no default).
+const mobileApp = mobileAppAuth({ MOBILE_SCHEME: process.env.MOBILE_SCHEME });
 // oppenheimer:end mobile
 
 // Parsed by the same schema as TypeORM's `database` config. Better Auth owns
@@ -134,7 +134,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     frontendUrl,
     // oppenheimer:begin mobile
-    `${mobileScheme}://`,
+    ...mobileApp.trustedOrigins,
     // oppenheimer:end mobile
   ],
   // Brute-force protection on the auth surface, on everywhere but under test.
@@ -412,7 +412,7 @@ export const auth = betterAuth({
   },
   plugins: [
     // oppenheimer:begin mobile
-    expo(),
+    ...mobileApp.plugins,
     // oppenheimer:end mobile
     admin({
       // Users whose `role` is one of these can call the admin plugin endpoints
