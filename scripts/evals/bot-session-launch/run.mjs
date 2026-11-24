@@ -20,8 +20,9 @@
 //        BOT_EVAL_BOT (the bot's id; required),
 //        BOT_EVAL_PROJECT (a project the bot can see, by name; required)
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { recordEvalOnSuccess } from '../../../.agents/hooks/verification.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 /** How long one case may take: a turn that reads projects and hosts first takes a while. */
@@ -182,6 +183,7 @@ async function main() {
   }
   const passed = results.filter((result) => result.pass).length;
   console.log(`\n${passed}/${results.length} passed`);
+  recordEvalOnSuccess(join(HERE, '../..'), basename(HERE));
   mkdirSync(join(HERE, 'reports'), { recursive: true });
   const file = join(HERE, 'reports', `${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
   writeFileSync(file, `${JSON.stringify({ api, botId, project, results }, null, 2)}\n`);

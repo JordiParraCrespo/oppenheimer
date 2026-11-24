@@ -23,8 +23,9 @@
 //   env: VOICE_EVAL_API (default http://localhost:3000/api),
 //        VOICE_EVAL_TOKEN (an API token with sessions:write; required)
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { recordEvalOnSuccess } from '../../../.agents/hooks/verification.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PASS_WER = 0.1;
@@ -162,6 +163,7 @@ async function main() {
 
   const summary = summarise(results);
   console.log(summary);
+  recordEvalOnSuccess(join(HERE, '../..'), basename(HERE));
   const dir = join(HERE, 'reports');
   mkdirSync(dir, { recursive: true });
   const file = join(dir, `${new Date().toISOString().replace(/[:.]/g, '-')}.json`);

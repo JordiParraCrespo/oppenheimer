@@ -6,6 +6,8 @@
  *   node scripts/stack/stack.mjs status
  *   node scripts/stack/stack.mjs down [--api | --keep-console]
  *   node scripts/stack/stack.mjs api-port-free
+ *   node scripts/stack/stack.mjs verified "<what you ran and saw>"
+ *   node scripts/stack/stack.mjs skip "<why it cannot be seen running>"
  *
  * `up` is Postgres and Redis, the GitHub, namer and Cursor stubs (`e2e/support`), the
  * migrated API and, with `--web`, the console, in that order. Hosts are the
@@ -28,13 +30,17 @@
  * it leaves the screenshots' stack in place. `up --no-api` stops short of the
  * API: the services, so they can start while the API is still being built.
  * `api-port-free` fails when something the stack did not start answers on the
- * API's port.
+ * API's port. `verified` records that the branch, as it is now, was checked on
+ * this stack (it needs the API answering), and `skip` why it need not be: the
+ * verification guard (`.agents/hooks/verify-guard.mjs`) reads either before a
+ * cloud session publishes the branch.
  */
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { connect } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { record } from '../../.agents/hooks/verification.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const STATE = resolve(process.env.STACK_DIR ?? join(ROOT, '.stack'));
@@ -439,9 +445,26 @@ switch (command) {
     }
     log(`nothing answers on ${API_URL}`);
     break;
+  case 'verified':
+  case 'skip': {
+    const note = rest.join(' ').trim();
+    if (!note)
+      fail(
+        `${command} needs ${command === 'skip' ? 'the reason' : 'what you ran and saw'}, in quotes`,
+      );
+    if (command === 'verified' && !(await httpOk(API_HEALTH)))
+      fail(`nothing answers on ${API_HEALTH}: bring the stack up and check the change on it first`);
+    const change = record(ROOT, 'stack', { kind: command, note });
+    if (!change) log('the branch changes nothing that runs; there is nothing to record');
+    else
+      log(
+        `recorded (${change.files.length} files, fingerprint ${change.fingerprint}) in ${join(ROOT, '.stack/verified.md')}`,
+      );
+    break;
+  }
   default:
     console.error(
-      'usage: stack.mjs up [--web] [--no-build] [--no-api] | status | down [--api | --keep-console] | api-port-free',
+      'usage: stack.mjs up [--web] [--no-build] [--no-api] | status | down [--api | --keep-console] | api-port-free | verified "<what>" | skip "<why>"',
     );
     process.exit(2);
 }

@@ -12,9 +12,10 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type Anthropic from '@anthropic-ai/sdk';
+import { recordEvalOnSuccess } from '../../.agents/hooks/verification.mjs';
 import { BotCheckBackToolsFactory } from '../../apps/api/src/bots-chat/application/bot-check-back-tools.factory';
 import { BotGoalToolsFactory } from '../../apps/api/src/bots-chat/application/bot-goal-tools.factory';
 import { BotGuideToolsFactory } from '../../apps/api/src/bots-chat/application/bot-guide-tools.factory';
@@ -310,8 +311,14 @@ export async function pool<T, R>(
   return results;
 }
 
-/** Writes `data` to `<dir>/reports/<now>.json` and says where. */
+/**
+ * Writes `data` to `<dir>/reports/<now>.json` and says where. An eval that
+ * then exits 0 also records itself in `.evals/passed.json` as having checked
+ * the branch as it is now, which answers the verification guard's eval check
+ * (`.agents/hooks/verification.mjs`).
+ */
 export function writeReport(dir: string, data: unknown): string {
+  recordEvalOnSuccess(join(HERE, '../..'), basename(dir));
   mkdirSync(join(dir, 'reports'), { recursive: true });
   const report = join(dir, 'reports', `${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
   writeFileSync(report, `${JSON.stringify(data, null, 2)}\n`);
