@@ -1,7 +1,7 @@
 import type { SDKMessage, SDKResultMessage } from '@anthropic-ai/claude-agent-sdk';
 import type { BotEngineEvent, BotEngineFailure, BotTurnContext } from '../bot-engine';
 import { failed, failureOf, type ToolCallData } from '../turn';
-import { botToolName, unqualifyToolNames } from './claude-tool-server';
+import { botToolName } from './claude-tool-server';
 
 type ContentBlock = { type: string; [key: string]: unknown };
 
@@ -301,8 +301,7 @@ export class ClaudeEventTranslator {
         ...this.made.finished({
           callId: block.tool_use_id,
           name,
-          // As the tool answered it, before the engine named our tools Claude Code's way.
-          output: unqualifyToolNames(resultText(block.content)),
+          output: resultText(block.content),
           isError: block.is_error === true,
         }),
       );

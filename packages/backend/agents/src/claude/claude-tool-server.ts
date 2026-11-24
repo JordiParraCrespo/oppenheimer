@@ -16,26 +16,23 @@ export function qualifiedToolName(name: string): string {
 }
 
 /**
- * `text` with each of our tool names as Claude Code serves it. Our prompts,
- * descriptions and answers name tools bare (`send_to_session`), and a model
- * that calls one by that name is answered "No such tool" without the tool
- * running; given the served name, it calls that. A name already qualified
- * (the prefix ends in `_`), or inside a longer word, is left as it is.
+ * What a bot is told about calling its tools on this engine, after its own
+ * system prompt. Everything a model reads names our tools bare
+ * (`send_to_session`): the prompt, the turn's message and wakes, the tools'
+ * descriptions and answers. Claude Code serves them only as
+ * `mcp__oppenheimer__<name>`, and a call by the bare name is answered "No
+ * such tool" without the tool running (2026-11-24: about half of a bot eval's
+ * runs). Said once rather than rewritten into those texts, which carry the
+ * person's words and the world's (`react`, `remember`, a path), and fixed for
+ * every turn, so the prompt cache holds.
  */
-export function qualifyToolNames(text: string, names: readonly string[]): string {
-  if (names.length === 0 || !text) return text;
-  const alternatives = [...names]
-    .sort((a, b) => b.length - a.length)
-    .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-    .join('|');
-  const bare = new RegExp(`(?<![A-Za-z0-9_])(${alternatives})(?![A-Za-z0-9_])`, 'g');
-  return text.replace(bare, (name) => qualifiedToolName(name));
-}
-
-/** `text` with our tools named as we name them again: what `qualifyToolNames` added, taken off. */
-export function unqualifyToolNames(text: string): string {
-  return text.split(TOOL_PREFIX).join('');
-}
+export const TOOL_NAMES_NOTE = [
+  'How to call your tools here: each one is served as',
+  `${TOOL_PREFIX}<name>. Wherever a tool is named by its plain name (in these instructions,`,
+  "a message, a tool's description or a tool's answer), call it with that prefix: send_to_session",
+  `is ${qualifiedToolName('send_to_session')}. A call by the plain name runs nothing.`,
+  'To the person, name tools plainly, without the prefix.',
+].join(' ');
 
 /** Our name for a tool Claude Code reports: the MCP prefix stripped, built-ins as they are. */
 export function botToolName(name: string): string {
@@ -60,12 +57,11 @@ export function createToolServer(
     { capabilities: { tools: {} } },
   );
   const byName = new Map(tools.map((tool) => [tool.name, tool]));
-  const names = tools.map((tool) => tool.name);
 
   mcp.server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: tools.map((tool) => ({
       name: tool.name,
-      description: qualifyToolNames(tool.description, names),
+      description: tool.description,
       inputSchema: { type: 'object' as const, ...tool.inputSchema },
       // A tool that may not wait is loaded up front; the rest Claude Code may
       // defer behind its tool search (`claudeToolSearch`).
@@ -90,7 +86,7 @@ export function createToolServer(
     });
     made.record(callId, result.data);
     const text = await deliverSteers(
-      qualifyToolNames(result.content, names),
+      result.content,
       { steering: turn.steering, signal: turn.signal, callId },
       made,
     );

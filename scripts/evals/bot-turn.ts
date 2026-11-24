@@ -27,8 +27,10 @@ import { BotSelfToolsFactory } from '../../apps/api/src/bots-chat/application/bo
 import { BotSkillToolsFactory } from '../../apps/api/src/bots-chat/application/bot-skill-tools.factory';
 import { alwaysLoaded } from '../../apps/api/src/bots-chat/application/bot-toolbox.factory';
 import { BotVisualToolsFactory } from '../../apps/api/src/bots-chat/application/bot-visual-tools.factory';
-import { DEFER_TOOLS_ABOVE_CHARS } from '../../packages/backend/agents/src/claude/claude-options';
-import { qualifyToolNames } from '../../packages/backend/agents/src/claude/claude-tool-server';
+import {
+  claudeSystemPrompt,
+  DEFER_TOOLS_ABOVE_CHARS,
+} from '../../packages/backend/agents/src/claude/claude-options';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -230,7 +232,6 @@ function claudeCode(model: string): Transport['turn'] {
     // As the engine marks them (`BotToolboxFactory`): the bot's own tools are
     // always loaded, a capability's may wait behind Claude Code's tool search.
     const own = ownToolNames();
-    const names = request.tools.map((tool) => tool.name);
     const search = toolSearchMode();
     const waiting = request.tools.filter((tool) => !own.has(tool.name));
     const size = waiting.reduce(
@@ -244,8 +245,7 @@ function claudeCode(model: string): Transport['turn'] {
     mcp.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: request.tools.map((tool) => ({
         name: tool.name,
-        // As the engine serves them (`claude-tool-server.ts`): our tools named Claude Code's way.
-        description: qualifyToolNames(tool.description, names),
+        description: tool.description,
         inputSchema: { type: 'object' as const, ...tool.inputSchema },
         ...(deferring && !own.has(tool.name) ? {} : { _meta: { 'anthropic/alwaysLoad': true } }),
       })),
@@ -257,10 +257,7 @@ function claudeCode(model: string): Transport['turn'] {
         received.params.arguments ?? {},
       );
       calls.push(made);
-      return {
-        content: [{ type: 'text' as const, text: qualifyToolNames(made.content, names) }],
-        isError: made.isError,
-      };
+      return { content: [{ type: 'text' as const, text: made.content }], isError: made.isError };
     });
     const cwd = mkdtempSync(join(tmpdir(), 'bot-eval-'));
     let stopped: string | undefined;
@@ -271,7 +268,8 @@ function claudeCode(model: string): Transport['turn'] {
         prompt: request.message,
         options: {
           model,
-          systemPrompt: qualifyToolNames(request.system, names),
+          // As the engine sends it (`claudeSystemPrompt`): how to call the tools on Claude Code.
+          systemPrompt: claudeSystemPrompt({ systemPrompt: request.system, tools: request.tools }),
           cwd,
           tools: deferring ? ['ToolSearch'] : [],
           allowedTools: [

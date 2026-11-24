@@ -2,4 +2,4 @@
 "@oppenheimer/backend-agents": patch
 ---
 
-Claude-engine bots no longer lose tool calls to "No such tool". Claude Code serves our tools as `mcp__oppenheimer__<name>`, but the prompt, descriptions and answers named them bare, so a model that called the name it read never ran the tool. The engine now names each tool the way Claude Code serves it wherever the model reads it, and strips the prefix again from tool output the chat shows.
+Claude-engine bots no longer lose tool calls to "No such tool". Claude Code serves a bot's tools as `mcp__oppenheimer__<name>`, but everything the model reads names them bare, so a call by the name it read ran nothing. The engine now ends the system prompt with a fixed note on how to call tools there. The texts themselves (the person's words, mail, web pages, transcripts) are left as they are.
