@@ -225,7 +225,10 @@ async function main(): Promise<void> {
   const host = file.hosts[0] as HostSpec;
   const project = file.projects[0] as ProjectSpec;
   const now = new Date(file.now);
-  const chainStartedAt = new Date(now.getTime() - 15 * 60_000);
+  // The production check_back plans on the real clock, so the chain starts on
+  // it too: anchored to the fixture's date, every re-arm would be past the
+  // chain's 24 hours once the fixture is a day old.
+  const chainStartedAt = new Date(Date.now() - 15 * 60_000);
   const about = `release session ${SESSION_ID}: verify runner 0.1.21 is live on dev stable with all four downloads`;
 
   const spaceOf = (c: Case) => {
