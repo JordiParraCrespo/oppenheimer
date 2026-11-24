@@ -181,6 +181,22 @@
       "label": "Proyecto",
       "all": "Todos los proyectos",
       "none": "Sin proyecto"
+    },
+    "markdown": {
+      "diagram": {
+        "diagram": "Diagrama",
+        "source": "Código",
+        "views": "Ver el diagrama o su código",
+        "title": "Diagrama",
+        "copy": "Copiar el código",
+        "expand": "Abrir en grande",
+        "drawing": "Dibujando el diagrama…",
+        "unreadable": "No se pudo dibujar este diagrama, así que aquí está su código.",
+        "zoomIn": "Acercar",
+        "zoomOut": "Alejar",
+        "fit": "Ajustar a la ventana",
+        "zoomHint": "Desplaza para acercar, arrastra para moverte, doble clic para acercar o volver."
+      }
     }
   },
   "validation": {

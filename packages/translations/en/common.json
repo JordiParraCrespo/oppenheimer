@@ -177,5 +177,21 @@
     "label": "Project",
     "all": "All projects",
     "none": "No project"
+  },
+  "markdown": {
+    "diagram": {
+      "diagram": "Diagram",
+      "source": "Source",
+      "views": "Show the diagram or its source",
+      "title": "Diagram",
+      "copy": "Copy source",
+      "expand": "Open large",
+      "drawing": "Drawing the diagram…",
+      "unreadable": "This diagram couldn’t be drawn, so here is its source.",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fit": "Fit to the window",
+      "zoomHint": "Scroll to zoom, drag to move around, double-click to zoom in or back out."
+    }
   }
 }

@@ -3,13 +3,17 @@ import { Fragment, type ReactNode } from 'react';
 import {
   columnCaps,
   decodeEntities,
+  fenceClosed,
+  fenceKind,
   imageSource,
   type MarkdownToken,
   parseMarkdown,
   safeHref,
 } from '../lib/markdown';
 import { MarkdownCode } from './markdown-code';
+import { MarkdownDiagram } from './markdown-diagram';
 import { MarkdownImage } from './markdown-image';
+import { MarkdownMath } from './markdown-math';
 
 type Heading = 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
@@ -60,6 +64,48 @@ function tailOf(tokens: readonly MarkdownToken[]): MarkdownToken | null {
 function image(src: string, alt: string, ctx: Context, key: string): ReactNode {
   const href = safeHref(src, ctx.base);
   return href ? <MarkdownImage key={key} href={href} alt={alt} /> : alt || null;
+}
+
+/** A fenced block as code: the caller's (`code`), or plain with a copy button. */
+function codeBlock(
+  code: string,
+  language: string | undefined,
+  ctx: Context,
+  key: string,
+): ReactNode {
+  return ctx.code ? (
+    <Fragment key={key}>{ctx.code({ code, language })}</Fragment>
+  ) : (
+    <MarkdownCode key={key} code={code} language={language} />
+  );
+}
+
+/**
+ * A fence: a closed `mermaid` fence a diagram and a closed `math` fence a
+ * formula, ahead of the caller's `code`, each with its code block to fall
+ * back on. A fence still open (a reply being written) stays code until its
+ * closing line arrives, so a diagram is drawn once, from its whole source.
+ */
+function fence(token: Tokens.Code, ctx: Context, key: string): ReactNode {
+  const language = token.lang || undefined;
+  const block = codeBlock(token.text, language, ctx, `${key}-code`);
+  if (!fenceClosed(token)) return <Fragment key={key}>{block}</Fragment>;
+  switch (fenceKind(token)) {
+    case 'diagram':
+      return (
+        <MarkdownDiagram key={key} source={token.text}>
+          {block}
+        </MarkdownDiagram>
+      );
+    case 'math':
+      return (
+        <MarkdownMath key={key} tex={token.text} display>
+          {block}
+        </MarkdownMath>
+      );
+    default:
+      return <Fragment key={key}>{block}</Fragment>;
+  }
 }
 
 function listItem(item: Tokens.ListItem, ctx: Context, key: string): ReactNode {
@@ -121,6 +167,8 @@ function lineNode(token: MarkdownToken, ctx: Context, key: string): ReactNode | 
     case 'image':
       return decodeEntities(token.text);
     case 'code':
+      return <code key={key}>{token.text}</code>;
+    case 'math':
       return <code key={key}>{token.text}</code>;
     case 'table':
     case 'hr':
@@ -191,12 +239,16 @@ function node(token: MarkdownToken, ctx: Context, key: string): ReactNode {
     case 'image':
       return image(token.href, decodeEntities(token.text), ctx, key);
     case 'code':
-      return ctx.code ? (
-        <Fragment key={key}>
-          {ctx.code({ code: token.text, language: token.lang || undefined })}
-        </Fragment>
-      ) : (
-        <MarkdownCode key={key} code={token.text} language={token.lang} />
+      return fence(token, ctx, key);
+    case 'math':
+      return (
+        <MarkdownMath key={key} tex={token.text} display={token.display}>
+          {token.display ? (
+            codeBlock(token.text, 'math', ctx, `${key}-code`)
+          ) : (
+            <code>{token.text}</code>
+          )}
+        </MarkdownMath>
       );
     case 'blockquote':
       return <blockquote key={key}>{children()}</blockquote>;
@@ -244,7 +296,9 @@ function render(tokens: MarkdownToken[], ctx: Context, prefix: string): ReactNod
 /**
  * Markdown someone else wrote (a pull request's description, a bot's reply)
  * as elements, never as raw HTML: GitHub's flavour, tables, task lists and
- * folds included, fenced code coloured with a copy button, links opening in
+ * folds included, fenced code coloured with a copy button, a `mermaid`
+ * fence drawn as a diagram and TeX (`$…$`, `$$…$$`, a `math` fence) typeset,
+ * both loaded on first use, links opening in
  * a new tab, and only web and mail addresses kept. `base` is the page a
  * relative link or a `#fragment` resolves against; without it such a link is
  * its text. It draws the elements alone: the caller sets them in the type
@@ -262,7 +316,10 @@ export function Markdown({
   base?: string;
   /** A write head (`StreamingCaret`) after the last words, for text still being written. */
   caret?: ReactNode;
-  /** Draws a fenced block (a chat's `ChatCode`); left out, the block is plain with a copy button. */
+  /**
+   * Draws a fenced block (a chat's `ChatCode`); left out, the block is plain with a copy button.
+   * A diagram or a formula is drawn before it is asked, and falls back on it.
+   */
   code?: (block: MarkdownCodeBlock) => ReactNode;
 }) {
   const tokens = parseMarkdown(source);
@@ -278,7 +335,7 @@ export function Markdown({
 /**
  * The start of something written in markdown (a bot's last message) on one
  * line, the way a chat list previews it: `Markdown`'s bold, italics, struck
- * text and code spans, a link as its words, a block as its words and what
+ * text and code spans, a formula as its TeX in a code span, a link as its words, a block as its words and what
  * has no words dropped, never the syntax. It draws inline elements alone:
  * the caller sets the line's type and truncation. A mark the source leaves
  * open (a preview cut inside a bold) stays as written.
