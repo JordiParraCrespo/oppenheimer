@@ -128,7 +128,7 @@ function ChatTabStrip({
       data-slot="chat-tab-strip"
       role={navigation ? undefined : 'tablist'}
       aria-label={label}
-      className={cn('flex min-w-0 items-center gap-0.5 overflow-x-auto py-1 [scrollbar-width:none]', className)}
+      className={cn('flex min-w-0 items-center gap-0.5 overflow-x-auto [scrollbar-width:none]', className)}
     >
       {children}
       {onNew ? (

@@ -433,6 +433,10 @@
     --control-h-sm: 28px;
     --control-h-md: 34px;
     --control-h-lg: 42px;
+    /* A bar that holds one row of small controls (a strip of tabs): their
+       height and a control gap around them, so the bar is no taller than
+       what it holds. */
+    --bar-h-compact: calc(var(--control-h-sm) + var(--control-gap));
     --control-pad-sm: 12px;
     --control-pad-md: 16px;
     --control-pad-lg: 22px;

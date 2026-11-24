@@ -53,7 +53,8 @@ export function PageBar({
   tabs?: ReactNode;
   actions?: ReactNode;
   /**
-   * `chrome`: the bar is a strip of open tabs (`ChatTabStrip`) and stands on
+   * `chrome`: the bar is a strip of open tabs (`ChatTabStrip`), as tall as
+   * one row of small controls (`--bar-h-compact`), and stands on
    * the recessed ground, so the shown tab, lit on the card, reads as part of
    * the page under it. Over an image the pane lays under itself (New
    * session's backdrop) that ground is frosted, so the image shows through.
@@ -79,7 +80,7 @@ export function PageBar({
         className={cn(
           className,
           tone === 'chrome' &&
-            'border-b border-border-subtle bg-canvas-recessed [--chat-tab-ground:var(--canvas-recessed)] group-has-data-pane-backdrop/pane:border-transparent group-has-data-pane-backdrop/pane:bg-canvas-recessed/60 group-has-data-pane-backdrop/pane:backdrop-blur-md',
+            'h-(--bar-h-compact) border-b border-border-subtle bg-canvas-recessed [--chat-tab-ground:var(--canvas-recessed)] group-has-data-pane-backdrop/pane:border-transparent group-has-data-pane-backdrop/pane:bg-canvas-recessed/60 group-has-data-pane-backdrop/pane:backdrop-blur-md',
         )}
       />
     </PaneBar>
