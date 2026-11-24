@@ -178,6 +178,29 @@
       "label": "Project",
       "all": "All projects",
       "none": "No project"
+    },
+    "visual": {
+      "chart": "Chart",
+      "table": "Table",
+      "viewAs": "Show as",
+      "copyData": "Copy data",
+      "copiedData": "Data copied",
+      "expand": "Expand",
+      "showAll": "Show all {{rows}} rows",
+      "showFewer": "Show fewer",
+      "sortBy": "Sort by {{column}}",
+      "checklistDone": "{{done}} of {{total}} done",
+      "progressOf": "of {{target}}",
+      "total": "Total",
+      "empty": "—",
+      "label": "Label",
+      "invalid": "This visual could not be drawn",
+      "chartLabel": "{{title}}, a {{kind}} chart",
+      "kinds": {
+        "bar": "bar",
+        "line": "line",
+        "area": "area"
+      }
     }
   },
   "validation": {

@@ -181,6 +181,29 @@
       "label": "Proyecto",
       "all": "Todos los proyectos",
       "none": "Sin proyecto"
+    },
+    "visual": {
+      "chart": "Gráfico",
+      "table": "Tabla",
+      "viewAs": "Ver como",
+      "copyData": "Copiar datos",
+      "copiedData": "Datos copiados",
+      "expand": "Ampliar",
+      "showAll": "Ver las {{rows}} filas",
+      "showFewer": "Ver menos",
+      "sortBy": "Ordenar por {{column}}",
+      "checklistDone": "{{done}} de {{total}} hechas",
+      "progressOf": "de {{target}}",
+      "total": "Total",
+      "empty": "—",
+      "label": "Etiqueta",
+      "invalid": "No se ha podido dibujar este visual",
+      "chartLabel": "{{title}}, un gráfico de {{kind}}",
+      "kinds": {
+        "bar": "barras",
+        "line": "líneas",
+        "area": "áreas"
+      }
     }
   },
   "validation": {
