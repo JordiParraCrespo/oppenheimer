@@ -1,6 +1,6 @@
 import { type RefObject, useEffect, useState, useSyncExternalStore } from 'react';
 import type { DrawnDiagram } from '../lib/diagram';
-import { diagramTheme, themeKey } from '../lib/diagram-theme';
+import { type DiagramTheme, diagramTheme, themeKey } from '../lib/diagram-theme';
 
 /**
  * What a diagram shows while it is drawn: `pending` until Mermaid answers,
@@ -21,6 +21,11 @@ function remember<K, V>(map: Map<K, V>, key: K, value: V): void {
   map.delete(key);
   map.set(key, value);
   if (map.size > CACHE_LIMIT) map.delete(map.keys().next().value as K);
+}
+
+/** Mermaid, fetched with the first diagram, draws `source`. */
+function drawLazily(source: string, theme: DiagramTheme): Promise<DrawnDiagram | null> {
+  return import('../lib/diagram').then(({ drawDiagram }) => drawDiagram(source, theme));
 }
 
 // The page's theme: the class and attributes the theme owner writes on the
@@ -70,7 +75,7 @@ export function useDiagram(source: string, frame: RefObject<HTMLElement | null>)
     const key = `${themeKey(theme)}\n${source}`;
     let drawing = drawnUnder.get(key);
     if (!drawing) {
-      drawing = import('../lib/diagram').then(({ drawDiagram }) => drawDiagram(source, theme));
+      drawing = drawLazily(source, theme);
       remember(drawnUnder, key, drawing);
     }
     drawing.then(
