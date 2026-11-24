@@ -505,6 +505,10 @@ switch (command) {
       fail(
         `${command} needs ${command === 'skip' ? 'the reason' : 'what you ran and saw'}, in quotes`,
       );
+    if (!changeFor(ROOT, 'stack', { fetch: false })) {
+      log('the branch changes nothing that runs; there is nothing to record');
+      break;
+    }
     if (command === 'verified') {
       if (!(await httpOk(API_HEALTH)))
         fail(
