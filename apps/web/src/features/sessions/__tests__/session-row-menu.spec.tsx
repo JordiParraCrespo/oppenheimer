@@ -126,4 +126,41 @@ describe('SessionRowMenu', () => {
 
     expect(onMove).toHaveBeenCalledWith('p2');
   });
+
+  it("keeps the reader's marks under Notifications & read, and each one there acts", () => {
+    const onUnreadChange = vi.fn();
+    const onMutedChange = vi.fn();
+    render(
+      <SessionRowMenu
+        open
+        onOpenChange={() => {}}
+        pinned={false}
+        onPinChange={() => {}}
+        unread={false}
+        onUnreadChange={onUnreadChange}
+        muted
+        onMutedChange={onMutedChange}
+        hidden={false}
+        onHiddenChange={() => {}}
+        onSelect={() => {}}
+        onRename={() => {}}
+        onMove={() => {}}
+        onDelete={() => {}}
+        projects={[]}
+        currentProjectId={null}
+      />,
+    );
+    // Not on the first level: that is the point of the pane.
+    expect(screen.queryByText('sessions.sidebar.markUnread')).toBeNull();
+    expect(screen.queryByText('sessions.sidebar.unmute')).toBeNull();
+
+    fireEvent.click(screen.getByText('sessions.sidebar.notifyTitle'));
+    fireEvent.click(screen.getByText('sessions.sidebar.unmute'));
+    expect(onMutedChange).toHaveBeenCalledWith(false);
+
+    // A pick closes the menu, so it opens on the first level again.
+    fireEvent.click(screen.getByText('sessions.sidebar.notifyTitle'));
+    fireEvent.click(screen.getByText('sessions.sidebar.markUnread'));
+    expect(onUnreadChange).toHaveBeenCalledWith(true);
+  });
 });

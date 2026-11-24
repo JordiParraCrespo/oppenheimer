@@ -2056,3 +2056,7 @@ earlier note:
   row's blue dot) is told, a session left amber or blue for thirty minutes
   is told once more, and Mute notifications in a row's menu silences one
   session on this browser ("A finished turn, a long wait, and a mute").
+- `versions/mvp/29-inbox.md` ("A finished turn, a long wait, and a mute")
+  put Mute notifications beside Mark as unread on a session row's menu.
+  The same day the owner asked for a sublevel: both moved into a
+  Notifications & read pane.

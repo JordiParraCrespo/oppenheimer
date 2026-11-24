@@ -16,8 +16,10 @@ import { moveProjectOptions } from '../lib/session-groups';
 
 /**
  * A session row's ellipsis menu. Move slides the menu to a pane rather than a
- * submenu, like the account menu's Appearance; the section computes which
- * project the session is in, since it holds both lists; that one stays listed,
+ * submenu, like the account menu's Appearance, and so does Notifications &
+ * read, which holds the reader's own marks on this device (unread, muted).
+ * The section computes which project the session is in, since it holds both
+ * lists; that one stays listed,
  * ticked and not choosable, so the pane says where the session is. No key
  * hints: the export draws R, M and D, but nothing listens for them yet, and a
  * painted key that does nothing is a claim. Select starts picking rows to act
@@ -66,7 +68,7 @@ export function SessionRowMenu({
   currentProjectId: string | null;
 }) {
   const { t } = useTranslation();
-  const [pane, setPane] = useState<'root' | 'move'>('root');
+  const [pane, setPane] = useState<'root' | 'move' | 'notify'>('root');
 
   return (
     <DropdownMenu
@@ -87,26 +89,36 @@ export function SessionRowMenu({
             <DropdownMenuItem onClick={() => onPinChange(!pinned)}>
               {pinned ? t('sessions.sidebar.unpin') : t('sessions.sidebar.pin')}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onUnreadChange(!unread)}>
-              {unread ? t('sessions.sidebar.markRead') : t('sessions.sidebar.markUnread')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onMutedChange(!muted)}>
-              {muted ? t('sessions.sidebar.unmute') : t('sessions.sidebar.mute')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onSelect}>{t('sessions.sidebar.select')}</DropdownMenuItem>
             <DropdownMenuItem onClick={onRename}>{t('sessions.sidebar.rename')}</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onHiddenChange(!hidden)}>
-              {hidden ? t('sessions.sidebar.show') : t('sessions.sidebar.hide')}
-            </DropdownMenuItem>
             <DropdownMenuPaneItem onClick={() => setPane('move')}>
               {t('sessions.sidebar.move')}
             </DropdownMenuPaneItem>
             {onShare ? (
               <DropdownMenuItem onClick={onShare}>{t('sessions.sidebar.share')}</DropdownMenuItem>
             ) : null}
+            <DropdownMenuPaneItem onClick={() => setPane('notify')}>
+              {t('sessions.sidebar.notifyTitle')}
+            </DropdownMenuPaneItem>
+            <DropdownMenuItem onClick={onSelect}>{t('sessions.sidebar.select')}</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onHiddenChange(!hidden)}>
+              {hidden ? t('sessions.sidebar.show') : t('sessions.sidebar.hide')}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={onDelete}>
               {t('sessions.sidebar.delete')}
+            </DropdownMenuItem>
+          </>
+        ) : pane === 'notify' ? (
+          <>
+            <DropdownMenuBack onClick={() => setPane('root')}>
+              {t('sessions.sidebar.notifyTitle')}
+            </DropdownMenuBack>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onUnreadChange(!unread)}>
+              {unread ? t('sessions.sidebar.markRead') : t('sessions.sidebar.markUnread')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onMutedChange(!muted)}>
+              {muted ? t('sessions.sidebar.unmute') : t('sessions.sidebar.mute')}
             </DropdownMenuItem>
           </>
         ) : (
