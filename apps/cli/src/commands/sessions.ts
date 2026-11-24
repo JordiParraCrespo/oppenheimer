@@ -256,11 +256,19 @@ function restartCommand(): Command {
     .action(async function (this: Command, id: string) {
       const context = contextFor(this);
       const session = await context.client.post<Session>(`/sessions/${id}/restart`);
-      render(context.json, session, () =>
-        // A restart is not sent again when its host comes back, so offline is a failure to say.
-        session.hints.includes('host_offline')
-          ? `${style.yellow('!')} ${session.name}'s host is offline: the restart did not reach it. Run this again once the host is back.`
-          : `${style.green('✓')} Asked ${session.name} to restart; \`opp sessions get ${id}\` shows when it is back.`,
+      // A restart is not sent again when its host comes back, so an offline host
+      // is a failure (exit 1), the session still printed for --json.
+      if (session.hints.includes('host_offline')) {
+        if (context.json) render(true, session, () => '');
+        throw new CliError(
+          `${session.name}'s host is offline: the restart did not reach it. Run this again once the host is back.`,
+        );
+      }
+      render(
+        context.json,
+        session,
+        () =>
+          `${style.green('✓')} Asked ${session.name} to restart; \`opp sessions get ${id}\` shows when it is back.`,
       );
     });
 }
