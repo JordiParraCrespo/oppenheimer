@@ -79,12 +79,17 @@ export function useDesktop(connect: () => Promise<DesktopChannel>) {
       });
       const offPointer = channel.onPointer((at) => pointer.setPointer(at));
       // noVNC rescales the screen with its element; the pointer follows it.
-      const resized = new ResizeObserver(() => requestAnimationFrame(() => pointer.place()));
+      let frame = 0;
+      const resized = new ResizeObserver(() => {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => pointer.place());
+      });
       resized.observe(target);
       const off = () => {
         offState();
         offPointer();
         resized.disconnect();
+        cancelAnimationFrame(frame);
         pointer.dispose();
       };
       // A dial that already ended (refused, no ticket, the host away) is

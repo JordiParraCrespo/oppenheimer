@@ -67,9 +67,10 @@ export type DesktopControlMessage = z.infer<typeof desktopControlSchema>;
  * RFB: at most about thirty a second, only when it moved. `x` and `y` are in
  * the host's own screen units (points on macOS), on a screen `width` by
  * `height` of them, so the console maps them onto whatever framebuffer the
- * server sends; a pointer off that screen (on a second display) is outside
- * it. Not sent while the reader is in control: their own pointer is the
- * host's then. A host that cannot read its pointer sends none.
+ * server sends. Not sent while the reader is in control: their own pointer
+ * is the host's then. A host that cannot read its pointer sends none, and so
+ * does a Mac with more than one display, whose framebuffer may span them in
+ * a layout the runner cannot see.
  */
 export const desktopPointerSchema = z.object({
   type: z.literal('desktop.pointer'),

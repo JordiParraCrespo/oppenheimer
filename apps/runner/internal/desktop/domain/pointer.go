@@ -2,8 +2,7 @@ package domain
 
 // Pointer is where the host's pointer is, in the screen's own units (points
 // on macOS), on a screen Width by Height of them. The console maps it onto the
-// framebuffer the server sends, whatever its resolution; a pointer on another
-// display falls outside the screen.
+// framebuffer the server sends, whatever its resolution.
 type Pointer struct {
 	X, Y          float64
 	Width, Height float64

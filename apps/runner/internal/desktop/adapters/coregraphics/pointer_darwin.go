@@ -25,17 +25,19 @@ const (
 )
 
 // cgPoint is CoreGraphics' CGPoint: two CGFloats, which are doubles on every
-// Mac the runner ships for.
-type cgPoint struct{ X, Y float64 }
+// Mac the runner ships for. cgRect is its CGRect.
+type (
+	cgPoint struct{ X, Y float64 }
+	cgRect  struct{ Origin, Size cgPoint }
+)
 
 // Reader reads the pointer through CoreGraphics.
 type Reader struct {
 	eventCreate      func(source uintptr) uintptr
 	eventGetLocation func(event uintptr) cgPoint
 	release          func(ref uintptr)
-	mainDisplayID    func() uint32
-	displayWide      func(display uint32) uintptr
-	displayHigh      func(display uint32) uintptr
+	activeDisplays   func(maxDisplays uint32, displays *uint32, count *uint32) int32
+	displayBounds    func(display uint32) cgRect
 }
 
 // New loads CoreGraphics; an error is a Mac without it, which shares its
@@ -57,9 +59,8 @@ func New() (*Reader, error) {
 	}{
 		{cg, &r.eventCreate, "CGEventCreate"},
 		{cg, &r.eventGetLocation, "CGEventGetLocation"},
-		{cg, &r.mainDisplayID, "CGMainDisplayID"},
-		{cg, &r.displayWide, "CGDisplayPixelsWide"},
-		{cg, &r.displayHigh, "CGDisplayPixelsHigh"},
+		{cg, &r.activeDisplays, "CGGetActiveDisplayList"},
+		{cg, &r.displayBounds, "CGDisplayBounds"},
 		{cf, &r.release, "CFRelease"},
 	} {
 		sym, err := purego.Dlsym(fn.lib, fn.name)
@@ -71,22 +72,33 @@ func New() (*Reader, error) {
 	return r, nil
 }
 
-// Pointer is where the pointer is, in points from the main display's top
-// left corner (CGEventGetLocation's global coordinates), on the main display's
-// size in points: CGDisplayPixelsWide counts the display mode's points, so a
-// Retina screen of 1920 by 1080 points is 1920 wide here whatever its
-// framebuffer. false is a session with no window server to ask.
+// Pointer is where the pointer is, in points from the display's top left
+// corner, on the display's size in points: CGEventGetLocation and
+// CGDisplayBounds share one global space of points, so a Retina screen of
+// 1920 by 1080 points is 1920 wide here whatever its framebuffer.
+//
+// Only on a Mac with one display. With several, Screen Sharing may send one
+// framebuffer that spans them all, laid out and scaled in ways this cannot
+// see, and a pointer drawn in the wrong place is worse than none; so it
+// answers false, as it does for a session with no window server to ask.
 func (r *Reader) Pointer() (domain.Pointer, bool) {
+	var displays [2]uint32
+	var count uint32
+	if r.activeDisplays(uint32(len(displays)), &displays[0], &count) != 0 || count != 1 {
+		return domain.Pointer{}, false
+	}
+	bounds := r.displayBounds(displays[0])
+	if bounds.Size.X <= 0 || bounds.Size.Y <= 0 {
+		return domain.Pointer{}, false
+	}
 	event := r.eventCreate(0)
 	if event == 0 {
 		return domain.Pointer{}, false
 	}
 	at := r.eventGetLocation(event)
 	r.release(event)
-	display := r.mainDisplayID()
-	wide, high := r.displayWide(display), r.displayHigh(display)
-	if wide == 0 || high == 0 {
-		return domain.Pointer{}, false
-	}
-	return domain.Pointer{X: at.X, Y: at.Y, Width: float64(wide), Height: float64(high)}, true
+	return domain.Pointer{
+		X: at.X - bounds.Origin.X, Y: at.Y - bounds.Origin.Y,
+		Width: bounds.Size.X, Height: bounds.Size.Y,
+	}, true
 }

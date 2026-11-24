@@ -144,7 +144,10 @@ Linux it can also start a TigerVNC and XFCE desktop of its own.
   `desktop.pointer` when it moves (`versions/mvp/01-protocol.md`); the
   console draws the server's cursor shape there, scaled with the screen,
   or a plain arrow until a shape arrives. Not while the reader is in
-  control: their own pointer is the host's then, and two would show.
+  control: their own pointer is the host's then, and two would show. Only
+  on a Mac with one display for now: with several, Screen Sharing may send
+  one framebuffer spanning them, and nobody has looked at how it lays them
+  out, so the runner sends nothing rather than a pointer in the wrong place.
 
 Checked on the local stack on 2026-11-09 against TigerVNC with a VNC
 password: keys typed while watching never reached an xterm on the host,

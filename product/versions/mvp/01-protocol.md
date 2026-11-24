@@ -448,7 +448,9 @@ runner does with it and point back.
   means parsing every encoding the server sends, and noVNC 1.7 has no
   PointerPos handler anyway. The relay forwards it to the browser as a
   `pointer` frame; the runner reads it on a Mac with CoreGraphics and sends
-  none on Linux, whose servers can draw their own pointer.
+  none on Linux, whose servers can draw their own pointer, nor on a Mac with
+  more than one display, whose framebuffer may span them in a layout the
+  runner cannot see (a pointer in the wrong place is worse than none).
 - Every command is idempotent by session id and command id, because a
   reconnect may redeliver. For `session.create` that means the session id
   is the key: a redelivered create either finds the session the first
