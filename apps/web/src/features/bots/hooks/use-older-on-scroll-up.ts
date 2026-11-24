@@ -70,8 +70,10 @@ export function useOlderOnScrollUp(botId: string, hasOlder: boolean, firstId: st
   const reading = useRef<ReadingLine | null>(null);
 
   // Watches the top of the transcript come into view, DOM state outside React;
-  // again for each page, whose first observation says whether the top still shows.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: firstId is the re-run key, a page landed
+  // again for each page, and once each load ends, whose first observation says
+  // whether the top still shows (the line kept for the load is let go first,
+  // in the layout effect below, so a page that drew short reads the next).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: firstId and isPending are the re-run keys, a page landed or a load ended
   useEffect(() => {
     const sentinel = top.current;
     if (!hasOlder || !sentinel || typeof IntersectionObserver === 'undefined') return;
@@ -88,7 +90,7 @@ export function useOlderOnScrollUp(botId: string, hasOlder: boolean, firstId: st
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasOlder, firstId, loadOlder, pane]);
+  }, [hasOlder, firstId, isPending, loadOlder, pane]);
 
   // Follows the reader's own scrolling while a page is out, a DOM listener.
   useEffect(() => {
