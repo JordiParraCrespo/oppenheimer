@@ -1983,6 +1983,13 @@ earlier note:
   session, a bot's approval) has no Done, a questionnaire goes one question
   at a time, and Mark as done takes up a task an agent made, as Dismiss did
   ("The card's actions, reshaped").
+- The Chrome extension (`apps/extension`) told only about Claude Code cloud
+  sessions, and sent Oppenheimer their states without reading anything
+  back. On 2026-11-24, connected to Oppenheimer, it also reads the
+  workspace's open sessions with the same token and tells, with a Chrome
+  notification and its badge, each session on the person's hosts that comes
+  to wait on them and each agent notice (`29-inbox.md`, "The Chrome
+  extension tells about your hosts too").
 - `research/device-streaming.md` ("A host's desktop") left the pointer to
   the screen-sharing server, and a watched Mac showed none: Apple's Screen
   Sharing sends the cursor's shape but never where it is. On 2026-11-24 the

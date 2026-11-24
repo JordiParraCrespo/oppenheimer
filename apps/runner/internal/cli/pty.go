@@ -57,6 +57,21 @@ func linkRunner(paths Paths) {
 	}
 }
 
+// runnerPATH is path with the directory of `runner` appended, for the
+// runner's own process: tmux gives a pane the PATH of the client that made
+// it, the runner, and drops one set on the session with `-e`.
+func runnerPATH(path string, paths Paths) string {
+	return WithDir(path, paths.Commands())
+}
+
+// sessionTools is the command that starts the runner's MCP server for a
+// session's agent. The runner by its path, not its name: an agent looks the
+// command up on its own PATH, which may not reach `runner`, or may find
+// another program by that name first.
+func sessionTools(paths Paths, session string) []string {
+	return []string{filepath.Join(paths.Commands(), "runner"), "mcp", "--session", session, "--socket", paths.Socket()}
+}
+
 // runnerExecutable is this binary, for the commands a session runs back
 // into it; empty when it cannot name itself.
 func runnerExecutable() string {

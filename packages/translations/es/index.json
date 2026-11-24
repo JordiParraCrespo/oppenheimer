@@ -5090,7 +5090,10 @@
       "none": "Sesiones de Claude Code",
       "needsYou_one": "{{count}} sesión de Claude Code te necesita",
       "needsYou_other": "{{count}} sesiones de Claude Code te necesitan",
-      "needsYou_many": "{{count}} sesiones de Claude Code te necesitan"
+      "needsYou_many": "{{count}} sesiones de Claude Code te necesitan",
+      "runner_one": "{{count}} sesión en tus equipos te necesita",
+      "runner_other": "{{count}} sesiones en tus equipos te necesitan",
+      "runner_many": "{{count}} sesiones en tus equipos te necesitan"
     },
     "groups": {
       "needsYou": "Te necesitan",
@@ -5140,15 +5143,23 @@
     "oppenheimer": {
       "label": "Oppenheimer",
       "apiUrl": "URL de la API de Oppenheimer",
+      "consoleUrl": "URL de la consola (opcional)",
       "token": "Token de API",
       "connect": "Conectar",
       "disconnect": "Desconectar",
       "reportingTo": "Informando a {{host}}",
       "launched": "Informando a {{host}} · {{count}} iniciadas allí",
       "notReporting": "Sin informar: {{detail}}",
+      "runnerUnread": "No se pueden leer las sesiones de tus equipos: {{detail}}",
       "notAUrl": "Eso no es una URL.",
       "permission": "Chrome necesita tu permiso para contactar con {{origin}}.",
       "refused": "Oppenheimer lo rechazó: {{detail}}"
+    },
+    "runner": {
+      "waiting": "{{name}} te está esperando",
+      "failed": "{{name}} ha fallado",
+      "notice": "{{name}} tiene novedades para ti",
+      "open": "Ábrela en Oppenheimer"
     }
   }
 }

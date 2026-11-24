@@ -1,3 +1,4 @@
+import { apiError } from './api-error';
 import { cloudSessionIdPattern } from './cloud-id';
 import type { TrackedSession } from './session';
 import type { OppenheimerConnection } from './store';
@@ -31,10 +32,7 @@ export async function sendReport(
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${connection.token}` },
     body: JSON.stringify(reportBody(sessions)),
   });
-  if (!response.ok) {
-    const problem = (await response.json().catch(() => null)) as { title?: string } | null;
-    throw new Error(`${response.status} ${problem?.title ?? response.statusText}`.trim());
-  }
+  if (!response.ok) throw await apiError(response);
   const { matched } = (await response.json()) as { matched: number };
   return matched;
 }
