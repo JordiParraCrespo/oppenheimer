@@ -280,6 +280,9 @@ func New(version string) (*App, error) {
 		// The same wrappers, found in the process table: what makes sure an
 		// agent that ignores its hangup does not outlive its session.
 		Wrappers: programStatus,
+		// A person attached on the host keeps a session from stopping as
+		// idle, as the console's attaches do.
+		Clients: terminals,
 	})
 	if err != nil {
 		return nil, err

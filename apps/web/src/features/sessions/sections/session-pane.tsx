@@ -51,12 +51,19 @@ const SessionSidePane = lazy(() =>
  */
 export function SessionPane({
   sessionId,
+  restartOnOpen = false,
   closed,
   bar,
   terminal,
   side,
 }: {
   sessionId: string;
+  /**
+   * The pane is what the reader navigated to, so a session stopped when it
+   * opens is restarted. Absent in the side pane, which a stored layout
+   * reopens beside another session without anyone asking for it.
+   */
+  restartOnOpen?: boolean;
   /**
    * The live terminal, once the session has one: the screen composes it, with
    * whatever its status bar carries. `reading` is the session's chat and how
@@ -140,7 +147,7 @@ export function SessionPane({
   // one that branches on the lifecycle; the pane below it takes props only.
   // Opening a stopped session is asking for it back, so it restarts on its
   // own; a run's own stopped pane (`closed`) keeps its Open in terminal.
-  const comeback = useRestartOnOpen(session, !closed);
+  const comeback = useRestartOnOpen(session, restartOnOpen && !closed);
   // A start watched here stays on its pane until the agent is running, not
   // just until the host made the terminal it will run in.
   const opening = useSessionOpening(session);

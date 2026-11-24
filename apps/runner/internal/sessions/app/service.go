@@ -67,6 +67,10 @@ type Options struct {
 	// so an agent that ignores its hangup does not outlive its session; nil
 	// leaves it to tmux's hangup alone.
 	Wrappers Wrappers
+	// Clients counts who is attached to each tmux session, the host's own
+	// clients included, which keeps a session someone watches from stopping
+	// as idle; nil counts only the attaches this service made.
+	Clients TerminalClients
 	// Rebooted says the host started after the session map was last
 	// saved: every session it holds as live was lost to that reboot, and a
 	// kept one is brought back (RecoverKept).
@@ -139,6 +143,7 @@ type Service struct {
 	own         OwnInstructions
 	freePort    func() (int, error)
 	wrappers    Wrappers
+	clients     TerminalClients
 	now         func() time.Time
 }
 
@@ -164,7 +169,7 @@ func New(opts Options) (*Service, error) {
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
-		transcripts: opts.Transcripts, statusLines: opts.StatusLine, tools: opts.Tools, own: opts.OwnInstructions, freePort: opts.FreePort, wrappers: opts.Wrappers, now: now,
+		transcripts: opts.Transcripts, statusLines: opts.StatusLine, tools: opts.Tools, own: opts.OwnInstructions, freePort: opts.FreePort, wrappers: opts.Wrappers, clients: opts.Clients, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()

@@ -273,6 +273,37 @@ func (s *Server) views(ctx context.Context, name string) ([]string, error) {
 	return views, nil
 }
 
+var _ app.TerminalClients = (*Server)(nil)
+
+// Clients implements app.TerminalClients with one `list-clients`.
+func (s *Server) Clients(ctx context.Context) (map[string]int, error) {
+	out, err := s.run(ctx, "list-clients", "-F", "#{session_name}")
+	if err != nil {
+		if noServer(out) {
+			return nil, nil
+		}
+		return nil, domain.ErrTmuxCommand.WithDetail("tmux list-clients: %s", firstLine(out, err)).WithCause(err)
+	}
+	return parseClients(out), nil
+}
+
+// parseClients counts list-clients output by session, a view's under the
+// session it watches.
+func parseClients(out string) map[string]int {
+	clients := map[string]int{}
+	for line := range strings.SplitSeq(out, "\n") {
+		name := strings.TrimSpace(line)
+		if name == "" {
+			continue
+		}
+		if base, _, isView := strings.Cut(name, viewMark); isView {
+			name = base
+		}
+		clients[name]++
+	}
+	return clients
+}
+
 // Has reports whether one session exists.
 func (s *Server) Has(ctx context.Context, name string) (bool, error) {
 	out, err := s.run(ctx, "has-session", "-t", name)

@@ -45,30 +45,46 @@ type Session = Record<string, unknown>;
 
 let session: Session;
 let hostOnline: boolean | undefined;
-let restartResult: {
-  isPending: boolean;
-  isSuccess: boolean;
-  error: unknown;
-  submittedAt: number;
-};
+let restartResult: { isPending: boolean; isSuccess: boolean; error: unknown };
 const mutate = vi.fn();
+const sessionListeners = new Set<() => void>();
 
-vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  RESTART_WATCH_MS: 60_000,
-  useSuspenseSession: () => ({ data: session, error: null }),
-  useSessionOpening: () => false,
-  useAcknowledgeSessionReport: () => ({ mutate: () => {} }),
-  useRestartSession: () => ({ mutate, ...restartResult }),
-  useHostPresence: ({ enabled }: { enabled: boolean }) => ({
-    data: enabled ? hostOnline : undefined,
-    isError: false,
-  }),
-  useSuspenseSharedSession: () => ({
-    data: { name: 'Fix the list', state: 'stopped', expiresAt: null, access: 'read' },
-    error: null,
-    refetch: () => {},
-  }),
-}));
+/** The session as the API now answers it, to every pane that reads it. */
+function sessionBecomes(next: Session) {
+  session = next;
+  act(() => {
+    for (const listener of sessionListeners) listener();
+  });
+}
+
+vi.mock('@oppenheimer/frontend-consumer/react', async () => {
+  const { useSyncExternalStore } = await import('react');
+  return {
+    RESTART_WATCH_MS: 60_000,
+    useSuspenseSession: () => ({
+      data: useSyncExternalStore(
+        (listener) => {
+          sessionListeners.add(listener);
+          return () => sessionListeners.delete(listener);
+        },
+        () => session,
+      ),
+      error: null,
+    }),
+    useSessionOpening: () => false,
+    useAcknowledgeSessionReport: () => ({ mutate: () => {} }),
+    useRestartSession: () => ({ mutate, ...restartResult }),
+    useHostPresence: ({ enabled }: { enabled: boolean }) => ({
+      data: enabled ? hostOnline : undefined,
+      isError: false,
+    }),
+    useSuspenseSharedSession: () => ({
+      data: { name: 'Fix the list', state: 'stopped', expiresAt: null, access: 'read' },
+      error: null,
+      refetch: () => {},
+    }),
+  };
+});
 
 function stoppedSession(overrides: Session = {}): Session {
   return {
@@ -94,7 +110,7 @@ function stoppedSession(overrides: Session = {}): Session {
 }
 
 /** The console in small: a list of sessions linking to each, and the session's page. */
-function mountConsole(path: string) {
+function mountConsole(path: string, restartOnOpen = true) {
   const root = createRootRoute({ component: () => <Outlet /> });
   const list = createRoute({
     getParentRoute: () => root,
@@ -108,7 +124,9 @@ function mountConsole(path: string) {
   const pane = createRoute({
     getParentRoute: () => root,
     path: '/sessions/$sessionId',
-    component: () => <SessionPane sessionId="s-1" terminal={() => <p>terminal</p>} />,
+    component: () => (
+      <SessionPane sessionId="s-1" restartOnOpen={restartOnOpen} terminal={() => <p>terminal</p>} />
+    ),
   });
   const fresh = createRoute({ getParentRoute: () => root, path: '/sessions/new' });
   const router = createRouter({
@@ -124,7 +142,7 @@ function mountConsole(path: string) {
 beforeEach(() => {
   session = stoppedSession();
   hostOnline = true;
-  restartResult = { isPending: false, isSuccess: false, error: null, submittedAt: 0 };
+  restartResult = { isPending: false, isSuccess: false, error: null };
   mutate.mockClear();
 });
 
@@ -171,12 +189,7 @@ describe('a stopped session opened by its owner', () => {
   });
 
   it('falls back to the stopped pane, with Restart and the reason, when the restart fails', async () => {
-    restartResult = {
-      isPending: false,
-      isSuccess: false,
-      error: new Error('host refused'),
-      submittedAt: Date.now(),
-    };
+    restartResult = { isPending: false, isSuccess: false, error: new Error('host refused') };
     mountConsole('/sessions/s-1');
     expect(await screen.findByText('host refused')).toBeTruthy();
     expect(screen.getByText('sessions.closed.restart')).toBeTruthy();
@@ -184,30 +197,45 @@ describe('a stopped session opened by its owner', () => {
 
   it('falls back to the stopped pane when the host never brings the terminal back', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
-    restartResult = { isPending: false, isSuccess: true, error: null, submittedAt: Date.now() };
+    restartResult = { isPending: false, isSuccess: true, error: null };
     mountConsole('/sessions/s-1');
     expect(await screen.findByText('sessions.closed.restarting')).toBeTruthy();
     await act(async () => {
-      vi.advanceTimersByTime(60_000);
+      await vi.advanceTimersByTimeAsync(60_000);
     });
     expect(screen.getByText('sessions.closed.restartFailed')).toBeTruthy();
     expect(screen.getByText('sessions.closed.restart')).toBeTruthy();
   });
 });
 
-describe('a session stopped again after it came back', () => {
-  it('reads stopped, not Restarting', async () => {
-    // The restart this pane asked for answered an hour-old stop; this one is newer.
-    restartResult = {
-      isPending: false,
-      isSuccess: true,
-      error: null,
-      submittedAt: Date.now() - 60_000,
-    };
-    session = stoppedSession({ stoppedAt: new Date() });
+describe('a session that stops while its pane is open', () => {
+  it('stays stopped when it was running as it opened', async () => {
+    session = stoppedSession({ isLive: true, stoppedAt: null, state: 'idle' });
     mountConsole('/sessions/s-1');
+    expect(await screen.findByText('terminal')).toBeTruthy();
+    sessionBecomes(stoppedSession());
+    expect(await screen.findByText('sessions.closed.restart')).toBeTruthy();
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('reads stopped, not Restarting, when stopped again after it came back', async () => {
+    restartResult = { isPending: false, isSuccess: true, error: null };
+    mountConsole('/sessions/s-1');
+    await screen.findByText('sessions.closed.restarting');
+    sessionBecomes(stoppedSession({ isLive: true, stoppedAt: null, state: 'idle' }));
+    await screen.findByText('terminal');
+    sessionBecomes(stoppedSession({ stoppedAt: new Date('2026-11-24T12:00:00Z') }));
     expect(await screen.findByText('sessions.closed.restart')).toBeTruthy();
     expect(screen.queryByText('sessions.closed.restarting')).toBeNull();
+    expect(mutate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('a stopped session in the side pane', () => {
+  it('is not restarted by a layout that reopens it beside another', async () => {
+    mountConsole('/sessions/s-1', false);
+    expect(await screen.findByText('sessions.closed.restart')).toBeTruthy();
+    expect(mutate).not.toHaveBeenCalled();
   });
 });
 

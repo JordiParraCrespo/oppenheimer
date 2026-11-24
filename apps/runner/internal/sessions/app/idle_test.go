@@ -40,7 +40,7 @@ func newIdleHost(t *testing.T, since time.Time, sessions ...domain.Session) idle
 	svc, err := app.New(app.Options{
 		Terminals: terminals, Worktrees: fake.NewWorktrees(), Classifier: manifest.New(manifest.Options{}),
 		Places: places, Layout: domain.Layout{Root: "/home/jordi/oppenheimer"},
-		Store: &savedMap{sessions: sessions}, Now: func() time.Time { return clock },
+		Store: &savedMap{sessions: sessions}, Clients: terminals, Now: func() time.Time { return clock },
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -139,9 +139,21 @@ func TestTypingIntoASessionRestartsItsIdleWindow(t *testing.T) {
 	}
 }
 
-// A child answers a parent still running, and a parent waits on a child
-// still running: neither stops while the other is live.
-func TestTheIdleStopLeavesAFamilyWithALiveMember(t *testing.T) {
+// Someone attached on the host itself (`runner sessions attach`, a bare
+// `tmux attach`), whom the service never saw attach, keeps the session.
+func TestTheIdleStopLeavesASessionAttachedOnTheHost(t *testing.T) {
+	start := time.Date(2026, 11, 24, 9, 0, 0, 0, time.UTC)
+	h := newIdleHost(t, start, idleSession("onhost", domain.StateIdle))
+	h.terminals.HostClients = map[string]int{domain.Prefix + "onhost": 1}
+	*h.clock = start.Add(10 * idleAfter)
+	if stopped := h.svc.StopIdle(context.Background(), idleAfter); len(stopped) != 0 {
+		t.Fatalf("stopped a session someone on the host is attached to: %v", stopped)
+	}
+}
+
+// A child answers a parent still running, and stopping a parent stops its
+// children: a child of a live parent, and a parent of a working child, stay.
+func TestTheIdleStopLeavesAFamilyWithAWorkingMember(t *testing.T) {
 	ctx := context.Background()
 	start := time.Date(2026, 11, 24, 9, 0, 0, 0, time.UTC)
 	child := idleSession("child", domain.StateDone)
@@ -169,5 +181,24 @@ func TestNoWindowStopsNothing(t *testing.T) {
 	*h.clock = start.Add(1000 * time.Hour)
 	if stopped := h.svc.StopIdle(context.Background(), 0); len(stopped) != 0 {
 		t.Fatalf("stopped with the idle stop off: %v", stopped)
+	}
+}
+
+// A family idle through and through is not held running by itself: the
+// parent stops, and its children go with it.
+func TestAnIdleFamilyStops(t *testing.T) {
+	ctx := context.Background()
+	start := time.Date(2026, 11, 24, 9, 0, 0, 0, time.UTC)
+	child := idleSession("child", domain.StateDone)
+	child.Parent = "parent"
+	h := newIdleHost(t, start, idleSession("parent", domain.StateIdle), child)
+	*h.clock = start.Add(10 * idleAfter)
+	stopped := h.svc.StopIdle(ctx, idleAfter)
+	if len(stopped) != 1 || stopped[0].ID != "parent" {
+		t.Fatalf("stopped %v, want the parent", stopped)
+	}
+	// With the parent stopped, the child is a session on its own.
+	if again := h.svc.StopIdle(ctx, idleAfter); len(again) != 1 || again[0].ID != "child" {
+		t.Fatalf("then stopped %v, want the child", again)
 	}
 }

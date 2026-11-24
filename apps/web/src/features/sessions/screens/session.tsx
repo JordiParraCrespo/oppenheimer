@@ -90,6 +90,7 @@ export function SessionScreen({
       <QueryState.Data>
         <SessionPane
           sessionId={sessionId}
+          restartOnOpen
           closed={closed}
           bar={bar}
           side={bar ? { session: (id) => <SideSession sessionId={id} />, bot: sideBot } : undefined}

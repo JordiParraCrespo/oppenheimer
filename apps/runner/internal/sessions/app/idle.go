@@ -16,9 +16,10 @@ import (
 // costs nothing to undo, which is why it is the only thing done here.
 //
 // Left alone: an agent that is working or waiting on the person, a session
-// someone is attached to or typed into within the window, a kept session
-// (`--keep`), a child whose parent is still live, and a parent with a child
-// still live.
+// someone is attached to (from the console or on the host) or typed into
+// within the window, a kept session (`--keep`), a child whose parent is still
+// live, and a parent with a child that is not idle too, since stopping a
+// parent stops its children.
 
 // DefaultIdleStopAfter is how long a session sits finished and unwatched
 // before it is stopped. Two hours: past a meeting or a lunch, so the person
@@ -100,17 +101,24 @@ func (a *watchedAttachment) Close() error {
 // StopIdle stops every session idle for longer than after and answers the
 // ones it stopped. A session found idle is looked at again under the stop's
 // own hold, so an agent that started working, or a person who attached, in
-// between keeps it running.
+// between keeps it running. Who is attached on the host is read once a pass;
+// a pass that cannot read it stops nothing.
 func (s *Service) StopIdle(ctx context.Context, after time.Duration) []domain.Session {
 	if after <= 0 {
 		return nil
 	}
 	var stopped []domain.Session
-	for _, id := range s.idleCandidates(after) {
+	for _, id := range s.idleCandidates(ctx, after) {
 		if ctx.Err() != nil {
 			break
 		}
-		session, ok, err := s.stopIfIdle(ctx, id, after)
+		// Read again for each: a person may have attached while the last
+		// stop waited on its agent.
+		clients, err := s.hostClients(ctx)
+		if err != nil {
+			break
+		}
+		session, ok, err := s.stopIfIdle(ctx, id, after, clients)
 		if err == nil && ok {
 			stopped = append(stopped, session)
 		}
@@ -118,26 +126,37 @@ func (s *Service) StopIdle(ctx context.Context, after time.Duration) []domain.Se
 	return stopped
 }
 
-func (s *Service) idleCandidates(after time.Duration) []string {
+func (s *Service) hostClients(ctx context.Context) (map[string]int, error) {
+	if s.clients == nil {
+		return nil, nil
+	}
+	return s.clients.Clients(ctx)
+}
+
+func (s *Service) idleCandidates(ctx context.Context, after time.Duration) []string {
+	clients, err := s.hostClients(ctx)
+	if err != nil {
+		return nil
+	}
 	now := s.now()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var ids []string
 	for id, session := range s.sessions {
-		if s.idleLocked(session, now, after, 0) {
+		if s.idleLocked(session, now, after, 0, clients) {
 			ids = append(ids, id)
 		}
 	}
 	return ids
 }
 
-func (s *Service) stopIfIdle(ctx context.Context, id string, after time.Duration) (domain.Session, bool, error) {
+func (s *Service) stopIfIdle(ctx context.Context, id string, after time.Duration, clients map[string]int) (domain.Session, bool, error) {
 	defer s.hold(id)()
 	s.mu.Lock()
 	session, known := s.sessions[id]
 	// The hold is this stop's own; any other command still working on the
 	// session keeps it.
-	idle := known && s.idleLocked(session, s.now(), after, 1)
+	idle := known && s.idleLocked(session, s.now(), after, 1, clients)
 	s.mu.Unlock()
 	if !idle {
 		return domain.Session{}, false, nil
@@ -148,11 +167,36 @@ func (s *Service) stopIfIdle(ctx context.Context, id string, after time.Duration
 	return s.decide(session, domain.StateStopped, ""), true, nil
 }
 
-// idleLocked is whether a session is due to stop: finished or at its prompt
-// for longer than after, since its last change and since anyone last looked
-// at it or typed into it, with none of the reasons to leave it running. s.mu
-// is held, and held is how many holds on the session are the caller's own.
-func (s *Service) idleLocked(session domain.Session, now time.Time, after time.Duration, held int) bool {
+// idleLocked is whether a session is due to stop: itself idle (idleSelfLocked)
+// and not held running by its family. s.mu is held, and held is how many
+// holds on the session are the caller's own.
+func (s *Service) idleLocked(session domain.Session, now time.Time, after time.Duration, held int, clients map[string]int) bool {
+	if !s.idleSelfLocked(session, now, after, held, clients) {
+		return false
+	}
+	// A child answers a parent that may still read it.
+	if session.Parent != "" {
+		if parent, ok := s.sessions[session.Parent]; ok && parent.State.Live() {
+			return false
+		}
+	}
+	// Stopping a parent stops the children that do not outlive it, so each of
+	// those must be idle too: a working child is not cut off, and a family
+	// idle through and through stops, parent first and the rest with it.
+	for _, child := range s.sessions {
+		if child.Parent == session.ID && child.State.Live() && !child.OutliveParent &&
+			!s.idleSelfLocked(child, now, after, 0, clients) {
+			return false
+		}
+	}
+	return true
+}
+
+// idleSelfLocked is whether a session is, on its own, finished or at its
+// prompt for longer than after, since its last change and since anyone last
+// looked at it or typed into it, with none of its own reasons to keep
+// running. s.mu is held.
+func (s *Service) idleSelfLocked(session domain.Session, now time.Time, after time.Duration, held int, clients map[string]int) bool {
 	if session.State != domain.StateDone && session.State != domain.StateIdle {
 		return false
 	}
@@ -160,6 +204,9 @@ func (s *Service) idleLocked(session domain.Session, now time.Time, after time.D
 		return false
 	}
 	if _, creating := s.creating[session.ID]; creating {
+		return false
+	}
+	if clients[session.TmuxName()] > 0 {
 		return false
 	}
 	attached, touched := s.presence.watched(session.ID)
@@ -170,25 +217,5 @@ func (s *Service) idleLocked(session domain.Session, now time.Time, after time.D
 	if touched.After(since) {
 		since = touched
 	}
-	if now.Sub(since) < after {
-		return false
-	}
-	return !s.familyLiveLocked(session)
-}
-
-// familyLiveLocked is whether the session's parent, or any child of it, is
-// still live: a child answers a parent that may still read it, and a parent
-// waits on its children. s.mu is held.
-func (s *Service) familyLiveLocked(session domain.Session) bool {
-	if session.Parent != "" {
-		if parent, ok := s.sessions[session.Parent]; ok && parent.State.Live() {
-			return true
-		}
-	}
-	for _, other := range s.sessions {
-		if other.Parent == session.ID && other.State.Live() {
-			return true
-		}
-	}
-	return false
+	return now.Sub(since) >= after
 }

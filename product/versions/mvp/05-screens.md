@@ -83,7 +83,10 @@
   and shows Restarting until the terminal is back, rather than waiting on
   the Restart button. If the restart fails, or the host does not bring the
   terminal back within a minute, the stopped pane comes back with Restart
-  and the reason. Only opening does this: a row in the sidebar or a list,
+  and the reason. It is the session as it was opened that counts: one
+  that stops while its pane is on screen (its agent exited, a stop from
+  the host) stays stopped. Only opening does this, and only on the
+  session's own page (not in another session's side pane): a row in the sidebar or a list,
   a pointer resting on a link (which preloads the route's code), or a
   guest's view of a share wakes nothing, so passing over sessions never
   brings them all back. A deleted session, one whose host is offline, and
