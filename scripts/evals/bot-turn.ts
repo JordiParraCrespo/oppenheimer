@@ -60,6 +60,8 @@ export interface Turn {
   /** Why the turn ended other than by answering: the cap, or a failure. */
   stopped?: string;
   /** How many times the model searched for a deferred tool (Claude Code's `ToolSearch`). */
+  /** Tools the model called by the bare name, which Claude Code never ran ("No such tool"). */
+  unprefixed?: string[];
   searches?: number;
 }
 
@@ -247,6 +249,7 @@ function claudeCode(model: string): Transport['turn'] {
     const cwd = mkdtempSync(join(tmpdir(), 'bot-eval-'));
     let stopped: string | undefined;
     let searches = 0;
+    const unprefixed: string[] = [];
     try {
       for await (const message of query({
         prompt: request.message,
@@ -272,6 +275,15 @@ function claudeCode(model: string): Transport['turn'] {
           for (const block of message.message.content) {
             if (block.type === 'text') said.push({ text: block.text, after: calls.length });
             if (block.type === 'tool_use' && block.name === 'ToolSearch') searches++;
+            // A call by the bare name never reaches the tool server: Claude Code
+            // answers it "No such tool". Kept apart, so a run can tell it from silence.
+            if (
+              block.type === 'tool_use' &&
+              block.name !== 'ToolSearch' &&
+              !block.name.startsWith('mcp__')
+            ) {
+              unprefixed.push(block.name);
+            }
           }
         } else if (message.type === 'result' && message.subtype !== 'success') {
           stopped = message.subtype;
@@ -287,6 +299,7 @@ function claudeCode(model: string): Transport['turn'] {
       answer: answerOf(said),
       blocks: said,
       searches,
+      ...(unprefixed.length > 0 ? { unprefixed } : {}),
       ...(stopped ? { stopped } : {}),
     };
   };
