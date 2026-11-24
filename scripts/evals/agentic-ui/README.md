@@ -64,6 +64,7 @@ Both ways in are scored.
 - `F` / `Q`: asked on a form or on a question card.
 - `f` / `q`: asked on the other kind.
 - `.`: rightly did neither.
+- `!`: the run failed or hit its turn cap. It is never right, so a broken login cannot pass the cases where doing nothing is right.
 
 Besides right or wrong, every run reports two things:
 

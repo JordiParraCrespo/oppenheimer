@@ -297,9 +297,11 @@ function scoreRun(run: Run, c: Case) {
     ok.map((s) => s.spec),
     run.answer,
   );
-  const right = c.expect === 'visual' ? ok.length > 0 : run.shown.length === 0;
-  const mark =
-    c.expect === 'visual'
+  // A run that failed or hit its cap did not do the task: it is never right.
+  const right = !run.stopped && (c.expect === 'visual' ? ok.length > 0 : run.shown.length === 0);
+  const mark = run.stopped
+    ? '!'
+    : c.expect === 'visual'
       ? ok.length > 0
         ? ok[0]?.via === 'mcp'
           ? 'M'

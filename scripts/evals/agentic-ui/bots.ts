@@ -135,6 +135,9 @@ function scoreRun(turn: Turn, c: Case): Score {
   );
   const note = `${shown.length ? `visual [${types.join(', ')}]` : visuals.length ? `${visuals.length} refused visual(s)` : 'no visual'}${asked ? '; ask_form' : ''}${questioned ? '; ask_user' : ''}${firstTry === false ? `; first refused: ${visuals[0]?.content.replace(/\s+/g, ' ').slice(0, 160)}` : ''}; said: ${turn.answer.replace(/\s+/g, ' ').slice(0, 160) || '(nothing)'}`;
   const base = { firstTry, echoed, note };
+  // A run that failed or hit its cap did not answer: it is never right, whatever it left undone.
+  if (turn.stopped)
+    return { ...base, right: false, mark: '!', note: `${note} [stopped: ${turn.stopped}]` };
   switch (c.expect) {
     case 'visual': {
       if (shown.length === 0) return { ...base, right: false, mark: visuals.length ? 'e' : '-' };
