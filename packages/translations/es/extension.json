@@ -71,6 +71,7 @@
     "reportingTo": "Informando a {{host}}",
     "launched": "Informando a {{host}} · {{count}} iniciadas allí",
     "notReporting": "Sin informar: {{detail}}",
+    "runnerUnread": "No se pueden leer las sesiones de tus equipos: {{detail}}",
     "notAUrl": "Eso no es una URL.",
     "permission": "Chrome necesita tu permiso para contactar con {{origin}}.",
     "refused": "Oppenheimer lo rechazó: {{detail}}"

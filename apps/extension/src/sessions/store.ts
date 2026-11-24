@@ -22,6 +22,8 @@ export interface StoredState {
   runnerSeen?: string[];
   /** How many runner sessions wait on the person, for the badge. */
   runnerWaiting?: number;
+  /** Why the last read of the runner sessions failed; absent while it works. */
+  runnerProblem?: { at: string; detail: string };
 }
 
 /**
@@ -65,6 +67,7 @@ const KEYS = [
   'report',
   'runnerSeen',
   'runnerWaiting',
+  'runnerProblem',
 ] as const;
 
 export async function readState(): Promise<StoredState> {
@@ -81,5 +84,11 @@ export async function forgetEndpoint() {
 }
 
 export async function disconnectOppenheimer() {
-  await chrome.storage.local.remove(['oppenheimer', 'report', 'runnerSeen', 'runnerWaiting']);
+  await chrome.storage.local.remove([
+    'oppenheimer',
+    'report',
+    'runnerSeen',
+    'runnerWaiting',
+    'runnerProblem',
+  ]);
 }

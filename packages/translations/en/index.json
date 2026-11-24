@@ -5045,6 +5045,7 @@
       "reportingTo": "Reporting to {{host}}",
       "launched": "Reporting to {{host}} · {{count}} launched there",
       "notReporting": "Not reporting: {{detail}}",
+      "runnerUnread": "Can't read the sessions on your hosts: {{detail}}",
       "notAUrl": "That is not a URL.",
       "permission": "Chrome needs your permission to reach {{origin}}.",
       "refused": "Oppenheimer refused: {{detail}}"

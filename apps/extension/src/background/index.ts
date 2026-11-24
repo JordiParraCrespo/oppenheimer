@@ -83,7 +83,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, reply) => {
     return true;
   }
   if ((message as { type?: string })?.type === 'disconnect') {
-    void serial(disconnectOppenheimer).then(() => reply(true));
+    void serial(disconnect).then(() => reply(true));
     return true;
   }
   return false;
@@ -117,8 +117,10 @@ async function check() {
 
 /**
  * Reads the runner sessions from the connected API, tells each new wait
- * once, and counts them on the badge. A failed read keeps what was known: the
- * report's line in the popup already says when the API does not answer.
+ * once, and counts them on the badge. A failed read never passes for an
+ * answer: their share leaves the badge, which counts only what it knows, and
+ * the popup says why it cannot read them; what was already told stays
+ * remembered, so the next good read tells only what is new.
  */
 async function watchRunner() {
   const { oppenheimer, runnerSeen, sessions } = await readState();
@@ -126,14 +128,27 @@ async function watchRunner() {
   let waits: RunnerWait[];
   try {
     waits = runnerWaits(await fetchRunnerSessions(oppenheimer));
-  } catch {
+  } catch (error) {
+    await writeState({
+      runnerWaiting: 0,
+      runnerProblem: { at: now(), detail: String((error as Error).message ?? error) },
+    });
+    await drawBadge(needsYouCount(sessions), 0);
     return;
   }
   const { fresh, seen } = newWaits(runnerSeen ?? null, waits);
   const runnerWaiting = waitingCount(waits);
   await writeState({ runnerSeen: seen, runnerWaiting });
+  await chrome.storage.local.remove('runnerProblem');
   for (const wait of fresh) notifyRunner(wait);
   await drawBadge(needsYouCount(sessions), runnerWaiting);
+}
+
+/** Forgets the connection, and takes the runner sessions off the badge at once. */
+async function disconnect() {
+  await disconnectOppenheimer();
+  const { sessions } = await readState();
+  await drawBadge(needsYouCount(sessions), 0);
 }
 
 async function openRunnerSession(sessionId: string) {

@@ -290,3 +290,73 @@ test('tells you when a session on your own hosts comes to wait on you', async ({
   ).toHaveLength(1);
   expect(state.badge).toBe('1');
 });
+
+test('a failed read of your hosts says so and leaves the badge, and disconnecting clears it', async ({
+  context,
+  claude,
+  worker,
+  extensionId,
+}) => {
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'GET, POST',
+  };
+  let down = false;
+  const waiting = {
+    id: 'run-1',
+    name: 'Codex on my laptop',
+    state: 'waiting-on-you',
+    lifecycle: 'open',
+    observedSince: '2026-11-24T09:00:00.000Z',
+    stateSeq: 4,
+    cloudSessionId: null,
+    decision: null,
+    notice: null,
+  };
+  await context.route('http://localhost:3001/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    if (request.method() === 'GET') {
+      if (down)
+        return route.fulfill({ status: 401, headers: cors, json: { title: 'Unauthorized' } });
+      return route.fulfill({
+        headers: cors,
+        json: { data: [waiting], meta: { nextCursor: null } },
+      });
+    }
+    return route.fulfill({ headers: cors, json: { matched: 0 } });
+  });
+  await worker.evaluate(() =>
+    chrome.storage.local.set({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_test' },
+    }),
+  );
+  claude.sessions = [running('session_01PortExt000', 'Port the extension')];
+
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  await expect.poll(async () => (await stored(worker)).badge).toBe('1');
+
+  // The token is revoked: the wait is no longer counted as if known, and the popup says why.
+  down = true;
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  await expect(
+    popup.getByText("Can't read the sessions on your hosts: 401 Unauthorized"),
+  ).toBeVisible();
+  expect((await stored(worker)).badge).toBe('');
+
+  // Back up: counted again, the line gone, and the wait not told a second time.
+  down = false;
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  await expect.poll(async () => (await stored(worker)).badge).toBe('1');
+  await expect(popup.getByText("Can't read the sessions on your hosts")).toHaveCount(0);
+
+  // Disconnecting takes them off the badge at once, with claude.ai unreachable too.
+  await context.route('https://claude.ai/v1/**', (route) =>
+    route.fulfill({ status: 401, json: {} }),
+  );
+  await popup.getByRole('button', { name: 'Disconnect' }).click();
+  await expect.poll(async () => (await stored(worker)).badge).toBe('');
+});

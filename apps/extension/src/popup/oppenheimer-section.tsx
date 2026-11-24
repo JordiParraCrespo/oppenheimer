@@ -16,9 +16,12 @@ import { useConnection } from './hooks/use-connection';
 export function OppenheimerSection({
   connection,
   report,
+  runnerProblem,
 }: {
   connection: OppenheimerConnection | undefined;
   report: ReportStatus | undefined;
+  /** Why the sessions on the person's hosts could not be read, while they cannot. */
+  runnerProblem: { detail: string } | undefined;
 }) {
   const { t } = useTranslation();
   const { connect, disconnect, pending, problem } = useConnection();
@@ -50,7 +53,13 @@ export function OppenheimerSection({
             {t('oppenheimer.disconnect')}
           </Button>
         </div>
-      ) : (
+      ) : null}
+      {connection && runnerProblem ? (
+        <Callout tone="warning" className="mx-2.5">
+          {t('oppenheimer.runnerUnread', { detail: runnerProblem.detail })}
+        </Callout>
+      ) : null}
+      {connection ? null : (
         <form className="flex flex-col gap-2 px-2.5" onSubmit={onSubmit}>
           <Input
             size="sm"
