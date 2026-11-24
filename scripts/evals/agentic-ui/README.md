@@ -92,7 +92,7 @@ A lane passes when every case is right on a majority of its runs. Each run's cal
 | Lane | Before | After |
 | --- | --- | --- |
 | Bots | 21/30 runs; trend, comparison and progress 0/3 each | 28/30; every case passes |
-| Sessions | 9/15; comparison and trend 0/3 each, the manual never read | 14/15; every case passes |
+| Sessions | 9/15; comparison and trend 0/3 each, the manual never read | 14/15 (a later 2-run batch: 9/10); `bundle-compare` is right about two runs in three, so it can miss a majority in a small batch |
 
 **Never shown unasked.** Before the fixes, neither kind of agent showed a visual unless the person named a chart. The tools were offered, and the bots' visuals all parsed when used, but every description said "use it only when". The bots' core prompt also said to write "Markdown when … a table helps", so both kinds of agent wrote a table of figures.
 

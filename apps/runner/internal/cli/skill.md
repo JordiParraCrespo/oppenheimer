@@ -105,7 +105,8 @@ custom diagram), run in a sandbox with the network closed: no fetch and
 nothing loaded from a URL, the console's colours in CSS variables (`--fg`,
 `--card`, `--border`, `--chart-1` to `--chart-5`). A numeric block takes
 `format` {prefix?, suffix?, decimals?, compact?} on the block itself, never
-on an item. Up to 24 blocks. A spec it cannot draw is refused
+on an item; a table takes it per column (`columns[].format`). Up to 24
+blocks. A spec it cannot draw is refused
 with each fault by its path: fix those and run it again.
 
 Use it, without being asked, whenever your answer has numbers to compare,

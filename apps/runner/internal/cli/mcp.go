@@ -333,7 +333,8 @@ var mcpTools = []mcpTool{
 			"html {title?, html}, a fragment with inline style and script for what no other block draws, run sandboxed " +
 			"with the network closed. " +
 			"A numeric block takes format {prefix?, suffix?, decimals?, compact?} on the block itself, beside its " +
-			"items or series, never on an item. Up to 24 blocks; `runner --skill` has an example.",
+			"items or series, never on an item; a table takes it per column. Up to 24 blocks; `runner --skill` has " +
+			"an example.",
 		properties: map[string]any{
 			"title":    mcpString("What it shows, in a few words."),
 			"subtitle": mcpString("The period, the source or the scope."),
