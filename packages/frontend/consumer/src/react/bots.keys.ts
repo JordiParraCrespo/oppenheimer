@@ -45,6 +45,7 @@ export const botsKeys = {
   pendingApproval: (id: string) => [...botsKeys.approvals(id), 'pending'] as const,
   // The card of questions the bot waits on (`ask_user`).
   pendingQuestion: (id: string) => [...botsKeys.detail(id), 'question'] as const,
+  pendingForm: (id: string) => [...botsKeys.detail(id), 'form'] as const,
   // The workspace's approvals across its bots (the Inbox): apart from any one
   // bot's, and announced by `botApproval.changed`.
   workspaceApprovals: () => [...botsKeys.all, 'approvals'] as const,

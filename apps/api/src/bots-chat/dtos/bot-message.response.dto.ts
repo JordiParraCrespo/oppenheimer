@@ -3,6 +3,7 @@ import {
   BOT_APPROVAL_EVENT_STAGES,
   BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
+  BOT_FORM_OUTCOMES,
   BOT_GITHUB_ASK_VIAS,
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
@@ -17,6 +18,7 @@ import {
   type BotApprovalEventStage,
   type BotDreamActivity,
   type BotEventOutcome,
+  type BotFormOutcome,
   type BotGithubAskVia,
   type BotGoalActivity,
   type BotLoopActivity,
@@ -219,6 +221,33 @@ export class BotQuestionEventResponseDto {
     description: 'Each question and its answer, in words; empty when dismissed.',
   })
   answers!: BotAnsweredQuestionResponseDto[];
+}
+
+/** One field of a submitted form, as the chat shows it. */
+export class BotSubmittedFormValueResponseDto {
+  @ApiProperty()
+  label!: string;
+
+  @ApiProperty({ description: 'What was sent, in words; empty for a field left blank.' })
+  value!: string;
+}
+
+/** A form decided (`ask_form`): how, its title, and what was sent. */
+export class BotFormEventResponseDto {
+  @ApiProperty({ enum: ['form'] })
+  kind!: 'form';
+
+  @ApiProperty({ enum: BOT_FORM_OUTCOMES })
+  outcome!: BotFormOutcome;
+
+  @ApiProperty({ description: "The form's title." })
+  title!: string;
+
+  @ApiProperty({
+    type: [BotSubmittedFormValueResponseDto],
+    description: 'Each field and the value sent, in words; empty when dismissed.',
+  })
+  values!: BotSubmittedFormValueResponseDto[];
 }
 
 /** What happened to one of the bot's routines. */
@@ -560,6 +589,7 @@ export class BotDreamEventResponseDto {
 export type BotMessageEventResponseDto =
   | BotApprovalEventResponseDto
   | BotQuestionEventResponseDto
+  | BotFormEventResponseDto
   | BotRoutineEventResponseDto
   | BotPeerMessageEventResponseDto
   | BotPeerReplyEventResponseDto
@@ -576,6 +606,7 @@ export type BotMessageEventResponseDto =
 @ApiExtraModels(
   BotApprovalEventResponseDto,
   BotQuestionEventResponseDto,
+  BotFormEventResponseDto,
   BotRoutineEventResponseDto,
   BotPeerMessageEventResponseDto,
   BotPeerReplyEventResponseDto,
@@ -614,6 +645,7 @@ export class BotMessageResponseDto {
     oneOf: [
       { $ref: getSchemaPath(BotApprovalEventResponseDto) },
       { $ref: getSchemaPath(BotQuestionEventResponseDto) },
+      { $ref: getSchemaPath(BotFormEventResponseDto) },
       { $ref: getSchemaPath(BotRoutineEventResponseDto) },
       { $ref: getSchemaPath(BotPeerMessageEventResponseDto) },
       { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },

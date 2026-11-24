@@ -543,6 +543,27 @@ questions on a card, each with two to four likely answers and a tag
 - **Not built:** Grok Bot's other resume points, a sign-in to a connector
   and handing a computer over; they need a connector or a host to resume
   from.
+- **A form, for several values at once** (2026-11-24,
+  `research/generative-ui-in-chat.md` §6 row 4). `ask_form` puts a form on
+  a card of its own: a title, a line on what it is for, one to eight typed
+  fields (`text`, `textarea`, `number` with a min and a max, `select` with
+  its options, `email`, `date`), each with an id, a label, a placeholder,
+  whether it is required and a default, and the button's word. It waits and
+  resumes the way `ask_user` does: the turn ends, the form is a `bot_form`
+  row, one card of any kind is up at a time (approval, questions or form),
+  a new message retires it, and submitting
+  (`POST /bots/:id/forms/:formId/submit`) or dismissing (`…/dismiss`)
+  queues the turn that reads it, of origin `question`, each value under its
+  field's id between markers. Values are read against the fields twice: in
+  the console as the person leaves each field, and by the API, which
+  refuses what does not fit (`BOTS_047`, naming which); a form already
+  decided is `BOTS_048`, one not found `BOTS_046`. `GET /bots/:id/form`
+  reads the waiting form. The tool's description sends one choice among a
+  few likely answers to `ask_user`, and several values, most of all typed
+  ones, to a form. Once sent, the card says so for a moment and the chat
+  keeps the record: each field's label over the value sent. Like questions,
+  a form is answered in the console only: a turn on a channel can raise one,
+  and the channel is not shown it yet.
 
 ### 3.3 Asked on GitHub
 
@@ -691,6 +712,7 @@ it one:
 | `set_goal` / `end_goal` | Set a goal it keeps working toward across turns, with an optional token budget; say it is met (for the reviewer to check) or blocked (2026-10-29, reworked 2026-11-09; below) | auto |
 | `notify` | One line, at most 500 characters, in the person's Inbox, in place of its last notice; for a bot whose chat nobody watches. Never asks; at most 2 a turn (`../../next-steps/agent-tools.md` §5, built 2026-11-03) | auto |
 | `ask_user` | Up to 4 questions on a card of their own, each with 2 to 4 likely answers; the turn ends and the answers open the next. Only on a turn someone is waiting on (§3.2, built 2026-10-29) | auto |
+| `ask_form` | A form of 1 to 8 typed fields on a card of its own; the turn ends and the values open the next. Only on a turn someone is waiting on (§3.2, built 2026-11-24) | auto |
 
 **Goals** (2026-10-29, from Grok Bot's goals,
 `research/lessons-from-grok-bot.md` §9 row 10; reviewed and set with `/goal`
@@ -2158,6 +2180,10 @@ The decisions it produced:
   card of its own (`bot_question`), answered or dismissed and never
   approved, beside the approval card; one card of either kind is up at a
   time. From Grok Bot's form cards (§9 row 12).
+- 2026-11-24: **a bot asks for several values on a form** (`ask_form`,
+  §3.2): a card of its own (`bot_form`), submitted or dismissed and never
+  approved, waiting and resuming as questions do; one card of any kind is
+  up at a time. From `research/generative-ui-in-chat.md` §6 row 4.
 - 2026-10-29: **a fact has a tier and a scope**: in mind or looked up,
   the bot's or about the person and read by all their bots, still one row
   owned by the bot that learned it (§4.1). It moves user memory out of §7.

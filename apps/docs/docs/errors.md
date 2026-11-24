@@ -835,6 +835,9 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_043` <a id="bots_043" />       | The bot answers on a WhatsApp number | 409  |
 | `BOTS_044` <a id="bots_044" />       | Message not found | 404  |
 | `BOTS_045` <a id="bots_045" />       | This message takes no reaction | 422  |
+| `BOTS_046` <a id="bots_046" />       | Form not found | 404  |
+| `BOTS_047` <a id="bots_047" />       | The values do not fit the form | 422  |
+| `BOTS_048` <a id="bots_048" />       | The form was already sent | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -944,6 +947,15 @@ none (Settings → WhatsApp), then delete it.
 (`PUT /bots/:id/messages/:messageId/reaction`). `BOTS_044` is a message that is
 not this bot's or not in the caller's workspace. `BOTS_045` is a reaction to an
 activity line or an event: only your messages and the bot's words take one.
+
+`BOTS_046` to `BOTS_048` are a form a bot asked you to fill (`ask_form`), a
+card of its own beside questions and approvals. `BOTS_046` is a form that is
+not this bot's or not in the caller's workspace. `BOTS_047` is values that do
+not fit it: a required field left blank, a number outside its bounds, words
+where a number goes, an option a select does not list, an address or a day
+that does not read as one, or a field the form does not have; its `detail`
+names which. `BOTS_048` is a form already submitted or dismissed, or retired
+because a message reached the bot first.
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
