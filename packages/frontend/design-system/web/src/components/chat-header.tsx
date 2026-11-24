@@ -101,8 +101,30 @@ function ChatTabStrip({
   children: React.ReactNode;
 }) {
   const Strip = navigation ? 'nav' : 'div';
+  const ref = React.useRef<HTMLElement>(null);
+  // The shown tab is scrolled into the strip whenever the strip's tabs
+  // change: a strip drawn afresh (a new page) starts at its left edge, and
+  // tabs that arrive after it (a list that answers late) can push the shown
+  // one past its right. Only the strip scrolls, never the page around it.
+  React.useEffect(() => {
+    const strip = ref.current;
+    if (!strip) return;
+    const reveal = () => {
+      const tab = strip.querySelector<HTMLElement>('[data-slot="chat-tab"][data-active]');
+      if (!tab) return;
+      const tabBox = tab.getBoundingClientRect();
+      const stripBox = strip.getBoundingClientRect();
+      if (tabBox.right > stripBox.right) strip.scrollLeft += tabBox.right - stripBox.right;
+      else if (tabBox.left < stripBox.left) strip.scrollLeft -= stripBox.left - tabBox.left;
+    };
+    reveal();
+    const watch = new MutationObserver(reveal);
+    watch.observe(strip, { childList: true, subtree: true, attributeFilter: ['data-active'] });
+    return () => watch.disconnect();
+  }, []);
   return (
     <Strip
+      ref={ref as React.Ref<HTMLDivElement>}
       data-slot="chat-tab-strip"
       role={navigation ? undefined : 'tablist'}
       aria-label={label}
@@ -162,22 +184,8 @@ function ChatTab({
   /** What the tab is: a link (`<Link to=… />`) instead of a button. */
   render?: React.ReactElement;
 }) {
-  const ref = React.useRef<HTMLSpanElement>(null);
-  // The shown tab scrolls itself into a strip that overflows: a strip drawn
-  // afresh (a new page) starts at its left edge, past which it may stand.
-  // Only the strip scrolls, never the page around it.
-  React.useEffect(() => {
-    const tab = ref.current;
-    const strip = tab?.closest<HTMLElement>('[data-slot="chat-tab-strip"]');
-    if (!active || !tab || !strip) return;
-    const tabBox = tab.getBoundingClientRect();
-    const stripBox = strip.getBoundingClientRect();
-    if (tabBox.right > stripBox.right) strip.scrollLeft += tabBox.right - stripBox.right;
-    else if (tabBox.left < stripBox.left) strip.scrollLeft -= stripBox.left - tabBox.left;
-  }, [active]);
   return (
     <span
-      ref={ref}
       data-slot="chat-tab"
       data-active={active || undefined}
       title={title}
