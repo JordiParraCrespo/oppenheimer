@@ -3058,7 +3058,22 @@
       "runsOn": "La ejecuta {{bot}}",
       "loadFailed": "No se pudieron cargar las rutinas de los bots.",
       "empty": "Las rutinas de un bot se crean en su chat, con /schedule.",
-      "emptyTitle": "Aún no hay rutinas de bots"
+      "emptyTitle": "Aún no hay rutinas de bots",
+      "filter": {
+        "all": "Todas",
+        "active": "Activas",
+        "paused": "En pausa",
+        "allBots": "Todos los bots",
+        "searchBots": "Buscar bots",
+        "noMatch": "Ninguna rutina de bot coincide con estos filtros.",
+        "trigger": {
+          "any": "Cualquier disparador",
+          "schedule": "Horario",
+          "gmail": "Gmail",
+          "github": "GitHub",
+          "webhook": "Webhook"
+        }
+      }
     }
   },
   "pullRequests": {

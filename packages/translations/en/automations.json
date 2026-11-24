@@ -379,6 +379,21 @@
     "runsOn": "Runs on {{bot}}",
     "loadFailed": "Bot routines could not be loaded.",
     "empty": "A bot's routines are made in its chat, with /schedule.",
-    "emptyTitle": "No bot routines yet"
+    "emptyTitle": "No bot routines yet",
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "paused": "Paused",
+      "allBots": "All bots",
+      "searchBots": "Search bots",
+      "noMatch": "No bot routines match these filters.",
+      "trigger": {
+        "any": "Any trigger",
+        "schedule": "Schedule",
+        "gmail": "Gmail",
+        "github": "GitHub",
+        "webhook": "Webhook"
+      }
+    }
   }
 }
