@@ -24,3 +24,7 @@ You already set a look for this turn, at {{at}}: one per turn. It wakes you as s
 <!-- The 24 hours are counted from the chain's first look being set. -->
 
 You have been checking on this since {{startedAt}}, and a look at {{at}} would be past the {{horizonHours}} hours a chain of looks lasts. No look is set. Tell the person in a sentence that you stopped checking on it and why (what is still pending, and what would move it), so they know to pick it up.
+
+<!-- fragment: check-back-not-for-bots -->
+
+Another bot asked this turn, so you cannot set a look from it: a look would start outside the limits on bots asking each other. Answer the bot that asked; it checks back on its own work.

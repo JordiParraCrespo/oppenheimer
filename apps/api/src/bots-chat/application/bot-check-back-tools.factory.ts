@@ -59,6 +59,10 @@ export class BotCheckBackToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'check_back',
       scope: 'bots:write',
+      // A look turn is its own origin and lane, so a turn denied tools by why it
+      // exists would hand its look what it was denied: a GitHub ask's look could
+      // comment again in the owner's name, and a goal's could renew the goal.
+      notOn: ['github', 'goal'],
       description: promptText('tools/check-back.check-back', {
         backoff: checkBackBackoffText(),
         maxGapMinutes: String(BOT_CHECK_BACK_MAX_GAP_MINUTES),
@@ -80,6 +84,11 @@ export class BotCheckBackToolsFactory implements BotToolArea {
           .describe(promptText('tools/check-back.check-back-minutes')),
       }),
       run: async (input, context) => {
+        // A look starts a turn with no bot chain, so one set on a turn another
+        // bot asked would slip the chain's depth, budget and cycle limits.
+        if (context.lane === 'bots') {
+          throw new BotToolRefusal(promptText('tools/check-back.check-back-not-for-bots'));
+        }
         const now = new Date();
         const plan = planCheckBack(input, await this.chainOf(context), context.turnId, now);
         if (plan.kind === 'past_horizon') {

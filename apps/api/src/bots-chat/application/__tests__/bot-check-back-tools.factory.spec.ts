@@ -37,7 +37,13 @@ function lookOpening(step: number, chainStartedAt: Date): BotMessageEntity {
   });
 }
 
-function setup(options: { origin?: BotTurnOrigin; opening?: BotMessageEntity | null } = {}) {
+function setup(
+  options: {
+    origin?: BotTurnOrigin;
+    opening?: BotMessageEntity | null;
+    lane?: BotToolContext['lane'];
+  } = {},
+) {
   const messages = {
     findOpening: vi.fn<BotMessageRepositoryPort['findOpening']>(
       async () => options.opening ?? null,
@@ -62,6 +68,7 @@ function setup(options: { origin?: BotTurnOrigin; opening?: BotMessageEntity | n
     budget: new BotTurnBudget(),
     credentialScopes: ['bots:write'],
     origin: options.origin ?? 'message',
+    lane: options.lane ?? 'owner',
   };
   const [tool] = factory.definitions();
   const bound = tool.bind(context);
@@ -73,6 +80,23 @@ describe('BotCheckBackToolsFactory', () => {
   it('never asks: it only wakes the bot', () => {
     const { tool } = setup();
     expect(tool.asks).toBeFalsy();
+  });
+
+  // What breaks this: a look is a turn of its own origin, so a GitHub ask's
+  // look would be offered the comments its ask was denied, and a goal's look
+  // set_goal, renewing the goal through it.
+  it('is not offered on a GitHub ask or a goal continuation', () => {
+    const { tool } = setup();
+    expect(tool.notOn).toEqual(expect.arrayContaining(['github', 'goal']));
+  });
+
+  // What breaks this: a look starts with no bot chain, so one set on a turn
+  // another bot asked lets the bots ask each other past the chain's limits.
+  it('refuses on a turn another bot asked and sets no look', async () => {
+    const { checkBacks, call } = setup({ lane: 'bots' });
+    const result = await call({ about: ABOUT });
+    expect(result.isError).toBe(true);
+    expect(checkBacks.schedule).not.toHaveBeenCalled();
   });
 
   // What breaks this: the bot says "I'll verify before calling it done" and

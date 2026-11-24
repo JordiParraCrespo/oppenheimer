@@ -193,6 +193,7 @@ export type PromptId =
   | "tools/check-back.check-back-set"
   | "tools/check-back.check-back-already-set"
   | "tools/check-back.check-back-past-horizon"
+  | "tools/check-back.check-back-not-for-bots"
   | "tools/computer.use-computer"
   | "tools/computer.use-computer-action"
   | "tools/computer.use-computer-coordinate"
@@ -1832,6 +1833,7 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "tools/check-back.check-back-set": "You will be woken to look at it at {{at}} (look {{look}}). End your turn now; do not wait for it.",
   "tools/check-back.check-back-already-set": "You already set a look for this turn, at {{at}}: one per turn. It wakes you as set; end your turn.",
   "tools/check-back.check-back-past-horizon": "You have been checking on this since {{startedAt}}, and a look at {{at}} would be past the {{horizonHours}} hours a chain of looks lasts. No look is set. Tell the person in a sentence that you stopped checking on it and why (what is still pending, and what would move it), so they know to pick it up.",
+  "tools/check-back.check-back-not-for-bots": "Another bot asked this turn, so you cannot set a look from it: a look would start outside the limits on bots asking each other. Answer the bot that asked; it checks back on its own work.",
   "tools/computer.use-computer": "Does one thing on the screen of one of the person's hosts (look, click, type, press keys, scroll, drag) and returns a picture of the screen after it, for work that only has a graphical interface: an app, a simulator, a website that needs a real browser. Start with action \"screenshot\"; every other action also answers with the new screen, so look at it before the next step. x and y are pixels of the latest image, from its top left. \"type\" types text where the keyboard focus is (click the field first); \"key\" presses keys with modifiers, such as \"cmd+s\", \"ctrl+c\" or \"enter\" (cmd is Command on a Mac, Super elsewhere). The host decides: its screen is off for bots until the person there runs `runner computer on`; a refusal says why, and you pass that on rather than trying around it. On a Mac it is the person's own screen and pointer, so they see what you do. The host defaults to your home host.",
   "tools/computer.use-computer-action": "screenshot (only look), wait (wait `seconds`, then look), move, click, double_click, right_click, middle_click (at x, y), drag (from x, y to to_x, to_y), scroll (at x, y by scroll_y and scroll_x), type (`text`), key (`keys`).",
   "tools/computer.use-computer-coordinate": "{{what}}, in pixels of the latest screen image, from its top left.",
