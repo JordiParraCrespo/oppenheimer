@@ -20,6 +20,7 @@ import { type BotPermissions, toolDecision } from '../domain/bot-tool-permission
 import { BotAutomationToolsFactory } from './bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './bot-bots-tools.factory';
 import { BotBrowserToolsFactory } from './bot-browser-tools.factory';
+import { BotCheckBackToolsFactory } from './bot-check-back-tools.factory';
 import { BotComputerToolsFactory } from './bot-computer-tools.factory';
 import { BotGithubToolsFactory } from './bot-github-tools.factory';
 import { BotGoalToolsFactory } from './bot-goal-tools.factory';
@@ -103,6 +104,7 @@ export class BotToolboxFactory {
     questions: BotQuestionToolsFactory,
     notices: BotNoticeToolsFactory,
     planWatches: BotPlanWatchToolsFactory,
+    checkBacks: BotCheckBackToolsFactory,
   ) {
     this.areas = [
       self,
@@ -110,6 +112,7 @@ export class BotToolboxFactory {
       guide,
       goals,
       loops,
+      checkBacks,
       questions,
       notices,
       hosts,

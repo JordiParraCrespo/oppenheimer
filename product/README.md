@@ -1912,3 +1912,15 @@ earlier note:
   redirects), with a dot and a count, its sidebar is folders by kind and by
   project, Plan opens on its board, and the reading pane is a deck of cards
   answered by number keys or a swipe ("Its own page, and a deck").
+- `27-bot-subscriptions.md` §4.2 had a bot's look at a task it handed off
+  stay quiet (`nothing_to_report`) while the task was on track, so the chat
+  showed only "Checked on session". On 2026-11-23, after the owner had to
+  ask a bot whether the release it delegated had finished while it still
+  ran, each look that finds the task moved says in one line where it stands; `notify` stays for
+  what is off.
+- `27-bot-subscriptions.md` §4.2 said nothing but a subscription or the
+  hourly heartbeat brings a bot back, so a bot was told never to promise to
+  come back to anything else. On 2026-11-23, after a bot said it would
+  verify a release before calling it done and went silent, a bot checks
+  back on anything it delegated or waits on with `check_back` (§7.3): a look
+  at a time it names, or on a backoff, for a day.
