@@ -48,7 +48,7 @@ export const MAIL_SEARCH_LIMIT_MAX = 25;
 /** Attachments one turn may open. */
 export const MAIL_ATTACHMENTS_PER_TURN = 10;
 
-const account = z.string().trim().min(1).max(320).describe(promptText('tools/mail.account'));
+const account = z.string().trim().min(1).max(320).describe(promptText('mail/tools.account'));
 
 /**
  * Mail, the reads: the owner's own Gmail accounts, searched in Gmail's query
@@ -84,7 +84,7 @@ export class BotMailToolsFactory implements BotToolArea {
       name: 'list_gmail_accounts',
       readOnly: true,
       scope: 'mail:read',
-      description: promptText('tools/mail.list-gmail-accounts'),
+      description: promptText('mail/tools.list-gmail-accounts'),
       input: z.object({}),
       run: async (_input, context) => {
         const connections = await this.accounts.all(context.owner);
@@ -98,7 +98,7 @@ export class BotMailToolsFactory implements BotToolArea {
       name: 'search_mail',
       readOnly: true,
       scope: 'mail:read',
-      description: promptText('tools/mail.search-mail', {
+      description: promptText('mail/tools.search-mail', {
         mailSearchLimitMax: String(MAIL_SEARCH_LIMIT_MAX),
       }),
       input: z.object({
@@ -107,19 +107,19 @@ export class BotMailToolsFactory implements BotToolArea {
           .trim()
           .max(500)
           .default('')
-          .describe(promptText('tools/mail.search-mail-query')),
+          .describe(promptText('mail/tools.search-mail-query')),
         account: account.optional(),
         limit: z.number().int().min(1).max(MAIL_SEARCH_LIMIT_MAX).default(10),
         page_token: z
           .string()
           .max(500)
           .optional()
-          .describe(promptText('tools/mail.search-mail-page-token')),
+          .describe(promptText('mail/tools.search-mail-page-token')),
         include_spam_trash: z.boolean().default(false),
       }),
       run: async (input, context) => {
         if (input.page_token && !input.account) {
-          throw new BotToolRefusal(promptText('tools/mail.search-mail-page-token-goes'));
+          throw new BotToolRefusal(promptText('mail/tools.search-mail-page-token-goes'));
         }
         const chosen = await this.accounts.choose(context.owner, input.account);
         const sections: string[] = [];
@@ -163,7 +163,7 @@ export class BotMailToolsFactory implements BotToolArea {
       name: 'read_mail_thread',
       readOnly: true,
       scope: 'mail:read',
-      description: promptText('tools/mail.read-mail-thread'),
+      description: promptText('mail/tools.read-mail-thread'),
       input: z.object({
         account,
         thread_id: z
@@ -171,7 +171,7 @@ export class BotMailToolsFactory implements BotToolArea {
           .trim()
           .min(1)
           .max(100)
-          .describe(promptText('tools/mail.read-mail-thread-thread-id')),
+          .describe(promptText('mail/tools.read-mail-thread-thread-id')),
       }),
       run: async (input, context) => {
         const connection = await this.accounts.one(context.owner, input.account);
@@ -198,7 +198,7 @@ export class BotMailToolsFactory implements BotToolArea {
       name: 'list_mail_labels',
       readOnly: true,
       scope: 'mail:read',
-      description: promptText('tools/mail.list-mail-labels'),
+      description: promptText('mail/tools.list-mail-labels'),
       input: z.object({ account }),
       run: async (input, context) => {
         const connection = await this.accounts.one(context.owner, input.account);
@@ -222,7 +222,7 @@ export class BotMailToolsFactory implements BotToolArea {
       name: 'list_mail_drafts',
       readOnly: true,
       scope: 'mail:read',
-      description: promptText('tools/mail.list-mail-drafts', {
+      description: promptText('mail/tools.list-mail-drafts', {
         mailSearchLimitMax: String(MAIL_SEARCH_LIMIT_MAX),
       }),
       input: z.object({
@@ -256,7 +256,7 @@ export class BotMailToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'read_mail_attachment',
       scope: 'mail:read',
-      description: promptText('tools/mail.read-mail-attachment', {
+      description: promptText('mail/tools.read-mail-attachment', {
         mailAttachmentsPerTurn: String(MAIL_ATTACHMENTS_PER_TURN),
       }),
       input: z.object({
@@ -266,12 +266,12 @@ export class BotMailToolsFactory implements BotToolArea {
           .trim()
           .min(1)
           .max(100)
-          .describe(promptText('tools/mail.read-mail-attachment-message-id')),
+          .describe(promptText('mail/tools.read-mail-attachment-message-id')),
         part_id: z.string().trim().min(1).max(50).describe("The attachment's part id."),
       }),
       run: async (input, context) => {
         if (!context.budget.take('read_mail_attachment', MAIL_ATTACHMENTS_PER_TURN)) {
-          return promptText('tools/mail.read-mail-attachment-refused-turn-has', {
+          return promptText('mail/tools.read-mail-attachment-refused-turn-has', {
             mailAttachmentsPerTurn: String(MAIL_ATTACHMENTS_PER_TURN),
           });
         }
@@ -292,7 +292,7 @@ export class BotMailToolsFactory implements BotToolArea {
           `${named}, read as ${file.reading.format}. ${MAIL_UNTRUSTED_NOTE}`,
           fenceMail(file.reading.text),
           file.reading.truncated
-            ? promptText('tools/mail.read-mail-attachment-file-longer-only')
+            ? promptText('mail/tools.read-mail-attachment-file-longer-only')
             : '',
         ]
           .filter(Boolean)
@@ -305,7 +305,7 @@ export class BotMailToolsFactory implements BotToolArea {
   private async showImage(file: MailAttachmentRead, context: BotToolCallContext) {
     if (file.reading.kind !== 'image') throw new Error('Not an image');
     if (file.bytes.length > BOT_IMAGE_MAX_BYTES) {
-      return promptText('tools/mail.show-image', {
+      return promptText('mail/tools.show-image', {
         filename: file.filename,
         formatSize: formatSize(file.bytes.length),
         formatSize2: formatSize(BOT_IMAGE_MAX_BYTES),
@@ -331,7 +331,7 @@ export class BotMailToolsFactory implements BotToolArea {
       throw error;
     }
     return {
-      content: promptText('tools/mail.show-image-content', { filename: file.filename }),
+      content: promptText('mail/tools.show-image-content', { filename: file.filename }),
       images: [attachment.toMessageAttachment()],
     };
   }

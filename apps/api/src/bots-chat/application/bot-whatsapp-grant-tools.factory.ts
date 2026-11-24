@@ -65,14 +65,14 @@ export class BotWhatsappGrantToolsFactory implements BotToolArea {
       name: 'list_whatsapp_allowed_chats',
       readOnly: true,
       scope: 'whatsapp:read',
-      description: promptText('tools/whatsapp-grants.list-whatsapp-allowed-chats'),
+      description: promptText('whatsapp/tools-grants.list-whatsapp-allowed-chats'),
       input: z.object({ account: account.optional() }),
       run: async (input, context) => {
         const chosen = await this.accounts.one(context.owner, input.account);
         const grants = await this.grants(context.owner, chosen.account.id);
         const header = describeWhatsappAccount(chosen.account, chosen.hostOnline);
         if (grants.length === 0)
-          return promptText('tools/whatsapp-grants.list-whatsapp-allowed-chats-none', { header });
+          return promptText('whatsapp/tools-grants.list-whatsapp-allowed-chats-none', { header });
         const names = await this.botNames(context.owner);
         return [
           `${header}, ${grants.length} allowed chat(s). ${WHATSAPP_UNTRUSTED_NOTE}`,
@@ -87,7 +87,7 @@ export class BotWhatsappGrantToolsFactory implements BotToolArea {
       name: 'allow_whatsapp_chat',
       scope: 'whatsapp:write',
       ownerOnlyOn: OWNER_CHAT_ORIGINS,
-      description: promptText('tools/whatsapp-grants.allow-whatsapp-chat'),
+      description: promptText('whatsapp/tools-grants.allow-whatsapp-chat'),
       input: z.object({
         account: account.optional(),
         chat,
@@ -98,7 +98,7 @@ export class BotWhatsappGrantToolsFactory implements BotToolArea {
           .max(100)
           .optional()
           .describe(
-            promptText('tools/whatsapp-grants.allow-whatsapp-chat-bot', {
+            promptText('whatsapp/tools-grants.allow-whatsapp-chat-bot', {
               defaultBot: DEFAULT_BOT,
             }),
           ),
@@ -120,7 +120,7 @@ export class BotWhatsappGrantToolsFactory implements BotToolArea {
         );
         if (!grant)
           throw new BotToolRefusal(
-            promptText('tools/whatsapp-grants.allow-whatsapp-chat-not-read-back'),
+            promptText('whatsapp/tools-grants.allow-whatsapp-chat-not-read-back'),
           );
         const names = await this.botNames(context.owner);
         return `Allowed on "${chosen.account.label}": ${describeWhatsappGrant(grant, names)}.`;
@@ -133,7 +133,7 @@ export class BotWhatsappGrantToolsFactory implements BotToolArea {
       name: 'revoke_whatsapp_chat',
       scope: 'whatsapp:write',
       ownerOnlyOn: OWNER_CHAT_ORIGINS,
-      description: promptText('tools/whatsapp-grants.revoke-whatsapp-chat'),
+      description: promptText('whatsapp/tools-grants.revoke-whatsapp-chat'),
       input: z.object({ account: account.optional(), chat }),
       run: async (input, context) => {
         const chosen = await this.accounts.one(context.owner, input.account);
@@ -146,7 +146,7 @@ export class BotWhatsappGrantToolsFactory implements BotToolArea {
             grantId: grant.id,
           }),
         );
-        return promptText('tools/whatsapp-grants.revoke-whatsapp-chat-answer', {
+        return promptText('whatsapp/tools-grants.revoke-whatsapp-chat-answer', {
           label: chosen.account.label,
           chat: describeWhatsappTarget(whatsappTargetOfGrant(grant)),
         });
@@ -190,8 +190,8 @@ export class BotWhatsappGrantToolsFactory implements BotToolArea {
     const listed = bots.map((bot) => `"${bot.name}"`).join(', ') || 'none';
     throw new BotToolRefusal(
       named.length > 1
-        ? promptText('tools/whatsapp-grants.bot-name-ambiguous', { wanted })
-        : promptText('tools/whatsapp-grants.bot-not-found', { wanted, listed }),
+        ? promptText('whatsapp/tools-grants.bot-name-ambiguous', { wanted })
+        : promptText('whatsapp/tools-grants.bot-not-found', { wanted, listed }),
     );
   }
 }
@@ -207,6 +207,6 @@ function pickGrant(
   const named = grants.filter((grant) => grant.chatName?.trim().toLowerCase() === needle);
   if (named.length === 1 && named[0]) return named[0];
   if (named.length > 1)
-    throw new BotToolRefusal(promptText('tools/whatsapp-grants.chat-name-ambiguous', { wanted }));
-  throw new BotToolRefusal(promptText('tools/whatsapp-grants.chat-not-allowed', { wanted }));
+    throw new BotToolRefusal(promptText('whatsapp/tools-grants.chat-name-ambiguous', { wanted }));
+  throw new BotToolRefusal(promptText('whatsapp/tools-grants.chat-not-allowed', { wanted }));
 }

@@ -36,7 +36,7 @@ const coordinate = (what: string) =>
     .min(0)
     .max(COMPUTER_SCREEN_MAX_EDGE)
     .optional()
-    .describe(promptText('tools/computer.use-computer-coordinate', { what }));
+    .describe(promptText('computer/tools.use-computer-coordinate', { what }));
 
 const scroll = (what: string) =>
   z.number().int().min(-COMPUTER_SCROLL_MAX).max(COMPUTER_SCROLL_MAX).optional().describe(what);
@@ -68,27 +68,27 @@ export class BotComputerToolsFactory implements BotToolArea {
       name: 'use_computer',
       scope: 'sessions:write',
       asks: true,
-      description: promptText('tools/computer.use-computer'),
+      description: promptText('computer/tools.use-computer'),
       input: z.object({
-        action: z.enum(COMPUTER_ACTIONS).describe(promptText('tools/computer.use-computer-action')),
+        action: z.enum(COMPUTER_ACTIONS).describe(promptText('computer/tools.use-computer-action')),
         x: coordinate('Where to act, across'),
         y: coordinate('Where to act, down'),
         to_x: coordinate('Where a drag ends, across'),
         to_y: coordinate('Where a drag ends, down'),
-        scroll_y: scroll(promptText('tools/computer.use-computer-scroll-y')),
-        scroll_x: scroll(promptText('tools/computer.use-computer-scroll-x')),
+        scroll_y: scroll(promptText('computer/tools.use-computer-scroll-y')),
+        scroll_x: scroll(promptText('computer/tools.use-computer-scroll-x')),
         text: z
           .string()
           .min(1)
           .max(COMPUTER_TEXT_MAX)
           .optional()
-          .describe(promptText('tools/computer.use-computer-text')),
+          .describe(promptText('computer/tools.use-computer-text')),
         keys: z
           .array(z.string().regex(COMPUTER_KEY_PATTERN))
           .min(1)
           .max(COMPUTER_KEYS_MAX)
           .optional()
-          .describe(promptText('tools/computer.use-computer-keys')),
+          .describe(promptText('computer/tools.use-computer-keys')),
         seconds: z
           .number()
           .int()
@@ -96,11 +96,11 @@ export class BotComputerToolsFactory implements BotToolArea {
           .max(COMPUTER_WAIT_MAX_SECONDS)
           .optional()
           .describe(
-            promptText('tools/computer.use-computer-seconds', {
+            promptText('computer/tools.use-computer-seconds', {
               maxSeconds: String(COMPUTER_WAIT_MAX_SECONDS),
             }),
           ),
-        host_id: z.uuid().optional().describe(promptText('tools/computer.use-computer-host-id')),
+        host_id: z.uuid().optional().describe(promptText('computer/tools.use-computer-host-id')),
       }),
       normalize: async (input, context) => {
         this.refuseUnusable(input, context);
@@ -145,7 +145,7 @@ export class BotComputerToolsFactory implements BotToolArea {
     input: Parameters<typeof computerCallProblem>[0],
     context: BotToolCallContext,
   ): void {
-    if (!context.seesImages) throw new BotToolRefusal(promptText('tools/computer.needs-eyes'));
+    if (!context.seesImages) throw new BotToolRefusal(promptText('computer/tools.needs-eyes'));
     const problem = computerCallProblem(input);
     if (problem) throw new BotToolRefusal(problem);
   }

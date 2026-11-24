@@ -61,11 +61,11 @@ export function routineCallAsks(action: RoutineAction, ranSchedule = false): boo
  * minutes is a `/loop`, and one with no time is asked about, never guessed.
  */
 export function scheduleSetPrompt(request: string): string {
-  return promptText('turn/slash-command.schedule', { request });
+  return promptText('core/turn-slash-command.schedule', { request });
 }
 
 /** How a routine's run stays silent about a blocker the person already knows. */
-export const ROUTINE_QUIET = promptText('wake/routine.quiet');
+export const ROUTINE_QUIET = promptText('routines/wake.quiet');
 
 /** Every turn of one routine's runs begins with this. */
 export function routinePrefix(automationId: string): string {
@@ -79,7 +79,7 @@ export function routinePrefix(automationId: string): string {
  * to read as the bot dropping by, never as a job's output.
  */
 export function routineOpening(firing: RoutineFiring): string {
-  return promptText('wake/routine.opening', {
+  return promptText('routines/wake.opening', {
     name: firing.name,
     worthSaying: WORTH_SAYING,
     repeatedBlocker: repeatedBlockerAsk(ROUTINE_QUIET),
@@ -210,21 +210,21 @@ export function routineActivityText(activity: RoutineActivity): string {
   const { name } = activity;
   switch (activity.activity) {
     case 'saved':
-      return promptText('wake/routine.saved', { name });
+      return promptText('routines/wake.saved', { name });
     case 'changed':
-      return promptText('wake/routine.changed', { name });
+      return promptText('routines/wake.changed', { name });
     case 'paused':
       return activity.reason === 'bot_provider_missing'
-        ? promptText('wake/routine.paused-no-provider', { name })
-        : promptText('wake/routine.paused', { name });
+        ? promptText('routines/wake.paused-no-provider', { name })
+        : promptText('routines/wake.paused', { name });
     case 'resumed':
-      return promptText('wake/routine.resumed', { name });
+      return promptText('routines/wake.resumed', { name });
     case 'deleted':
-      return promptText('wake/routine.deleted', { name });
+      return promptText('routines/wake.deleted', { name });
     case 'failed':
-      return promptText('wake/routine.run-did-not-start', {
+      return promptText('routines/wake.run-did-not-start', {
         name,
-        reason: activity.reason ?? promptText('wake/routine.reason-unknown'),
+        reason: activity.reason ?? promptText('routines/wake.reason-unknown'),
       });
   }
 }
@@ -270,7 +270,7 @@ export const QUIET_TOOL = 'nothing_to_report';
  * so a heartbeat that found nothing is one collapsed line in the chat.
  */
 export function quietTurnAnswer(): string {
-  return promptText('tools/notice.quiet-turn-answer');
+  return promptText('core/tools-notice.quiet-turn-answer');
 }
 
 /**

@@ -74,12 +74,12 @@ export class BotPlanToolsFactory implements BotToolArea {
       name: 'list_projects',
       readOnly: true,
       scope: 'projects:read',
-      description: promptText('tools/plan.list-projects'),
+      description: promptText('plan/tools.list-projects'),
       input: z.object({
         include_archived: z
           .boolean()
           .default(false)
-          .describe(promptText('tools/plan.list-projects-include-archived')),
+          .describe(promptText('plan/tools.list-projects-include-archived')),
       }),
       run: async (input, context) => {
         const projects = await this.queryBus.execute<FindProjectsQuery, ProjectEntity[]>(
@@ -91,7 +91,7 @@ export class BotPlanToolsFactory implements BotToolArea {
         return formatToolList(
           'Projects',
           projects.map((project) => describeProject(project, context)),
-          promptText('tools/plan.list-projects-there-projects-task'),
+          promptText('plan/tools.list-projects-there-projects-task'),
         );
       },
     });
@@ -102,9 +102,9 @@ export class BotPlanToolsFactory implements BotToolArea {
       name: 'get_project',
       readOnly: true,
       scope: 'projects:read',
-      description: promptText('tools/plan.get-project'),
+      description: promptText('plan/tools.get-project'),
       input: z.object({
-        project_id: z.uuid().describe(promptText('tools/plan.get-project-project-id')),
+        project_id: z.uuid().describe(promptText('plan/tools.get-project-project-id')),
       }),
       run: async (input, context) => {
         const project = await this.queryBus.execute<FindProjectQuery, ProjectEntity>(
@@ -120,17 +120,17 @@ export class BotPlanToolsFactory implements BotToolArea {
       name: 'list_tasks',
       readOnly: true,
       scope: 'tasks:read',
-      description: promptText('tools/plan.list-tasks', { tasksLimitMax: String(TASKS_LIMIT_MAX) }),
+      description: promptText('plan/tools.list-tasks', { tasksLimitMax: String(TASKS_LIMIT_MAX) }),
       input: z
         .object({
-          project_id: z.uuid().optional().describe(promptText('tools/plan.list-tasks-project-id')),
+          project_id: z.uuid().optional().describe(promptText('plan/tools.list-tasks-project-id')),
           milestone_id: z
             .uuid()
             .optional()
-            .describe(promptText('tools/plan.list-tasks-milestone-id')),
+            .describe(promptText('plan/tools.list-tasks-milestone-id')),
           status: statusInput.optional(),
-          due_from: calendarDate.optional().describe(promptText('tools/plan.list-tasks-due-from')),
-          due_to: calendarDate.optional().describe(promptText('tools/plan.list-tasks-due-to')),
+          due_from: calendarDate.optional().describe(promptText('plan/tools.list-tasks-due-from')),
+          due_to: calendarDate.optional().describe(promptText('plan/tools.list-tasks-due-to')),
           limit: z.number().int().min(1).max(TASKS_LIMIT_MAX).default(25),
         })
         .refine((value) => !value.due_from || !value.due_to || value.due_from <= value.due_to, {
@@ -156,7 +156,7 @@ export class BotPlanToolsFactory implements BotToolArea {
         return formatToolList('Tasks', shown.map(describeTask), 'No tasks match.', {
           shown: shown.length,
           total: matching.length,
-          hint: promptText('tools/plan.list-tasks-hint'),
+          hint: promptText('plan/tools.list-tasks-hint'),
         });
       },
     });
@@ -167,7 +167,7 @@ export class BotPlanToolsFactory implements BotToolArea {
       name: 'get_task',
       readOnly: true,
       scope: 'tasks:read',
-      description: promptText('tools/plan.get-task'),
+      description: promptText('plan/tools.get-task'),
       input: z.object({ task_id: z.uuid().describe('A task id from list_tasks.') }),
       run: async (input, context) => {
         const task = await this.readTask(input.task_id, context);
@@ -181,9 +181,9 @@ export class BotPlanToolsFactory implements BotToolArea {
       name: 'plan_summary',
       readOnly: true,
       scope: 'tasks:read',
-      description: promptText('tools/plan.plan-summary'),
+      description: promptText('plan/tools.plan-summary'),
       input: z.object({
-        project_id: z.uuid().optional().describe(promptText('tools/plan.plan-summary-project-id')),
+        project_id: z.uuid().optional().describe(promptText('plan/tools.plan-summary-project-id')),
       }),
       run: async (input, context) => {
         const [summaries, projects] = await Promise.all([
@@ -200,12 +200,12 @@ export class BotPlanToolsFactory implements BotToolArea {
         ]);
         if (summaries.length === 0) {
           return input.project_id
-            ? promptText('tools/plan.plan-summary-project-has-tasks')
-            : promptText('tools/plan.plan-summary-plan-empty-project');
+            ? promptText('plan/tools.plan-summary-project-has-tasks')
+            : promptText('plan/tools.plan-summary-plan-empty-project');
         }
         const names = new Map(projects.map((project) => [project.id, project.name]));
         const totals = totalPlan(summaries);
-        const head = promptText('tools/plan.plan-summary-plan-tasks-done', {
+        const head = promptText('plan/tools.plan-summary-plan-tasks-done', {
           done: String(totals.done),
           total: String(totals.total),
           doing: String(totals.doing),
@@ -225,7 +225,7 @@ export class BotPlanToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'create_task',
       scope: 'tasks:write',
-      description: promptText('tools/plan.create-task', {
+      description: promptText('plan/tools.create-task', {
         taskTitleMax: String(TASK_TITLE_MAX),
         taskNotesMax: String(TASK_NOTES_MAX),
       }),
@@ -234,13 +234,13 @@ export class BotPlanToolsFactory implements BotToolArea {
           title: z.string().trim().min(1).max(TASK_TITLE_MAX).describe('What the work is.'),
           notes: z.string().max(TASK_NOTES_MAX).optional().describe('Details, in Markdown.'),
           status: statusInput.default('todo'),
-          project_id: z.uuid().optional().describe(promptText('tools/plan.create-task-project-id')),
+          project_id: z.uuid().optional().describe(promptText('plan/tools.create-task-project-id')),
           milestone_id: z
             .uuid()
             .optional()
-            .describe(promptText('tools/plan.create-task-milestone-id')),
+            .describe(promptText('plan/tools.create-task-milestone-id')),
           due_date: calendarDate.optional().describe('A calendar day, YYYY-MM-DD.'),
-          due_time: timeOfDay.optional().describe(promptText('tools/plan.create-task-due-time')),
+          due_time: timeOfDay.optional().describe(promptText('plan/tools.create-task-due-time')),
           priority: priorityInput.optional(),
         })
         .refine(dueTimeHasDate, { path: ['due_time'], message: 'due_time needs a due_date' }),
@@ -274,7 +274,7 @@ export class BotPlanToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'update_task',
       scope: 'tasks:write',
-      description: promptText('tools/plan.update-task', {
+      description: promptText('plan/tools.update-task', {
         taskBlockedReasonMax: String(TASK_BLOCKED_REASON_MAX),
       }),
       input: z
@@ -283,16 +283,16 @@ export class BotPlanToolsFactory implements BotToolArea {
           expected_version: expectedVersionInput,
           title: z.string().trim().min(1).max(TASK_TITLE_MAX).optional(),
           notes: z.string().max(TASK_NOTES_MAX).optional().describe('Replaces the notes whole.'),
-          project_id: z.uuid().optional().describe(promptText('tools/plan.update-task-project-id')),
+          project_id: z.uuid().optional().describe(promptText('plan/tools.update-task-project-id')),
           milestone_id: z
             .uuid()
             .nullable()
             .optional()
-            .describe(promptText('tools/plan.update-task-milestone-id')),
+            .describe(promptText('plan/tools.update-task-milestone-id')),
           due_date: calendarDate
             .nullable()
             .optional()
-            .describe(promptText('tools/plan.update-task-due-date')),
+            .describe(promptText('plan/tools.update-task-due-date')),
           due_time: timeOfDay.nullable().optional().describe('HH:MM, or null to clear.'),
           priority: priorityInput.nullable().optional(),
           blocked_reason: z
@@ -302,7 +302,7 @@ export class BotPlanToolsFactory implements BotToolArea {
             .max(TASK_BLOCKED_REASON_MAX)
             .nullable()
             .optional()
-            .describe(promptText('tools/plan.update-task-blocked-reason')),
+            .describe(promptText('plan/tools.update-task-blocked-reason')),
         })
         .refine(
           (value) =>
@@ -316,7 +316,7 @@ export class BotPlanToolsFactory implements BotToolArea {
               'priority',
               'blocked_reason',
             ].some((field) => value[field as keyof typeof value] !== undefined),
-          { message: promptText('tools/plan.update-task-message') },
+          { message: promptText('plan/tools.update-task-message') },
         ),
       run: async (input, context) => {
         const taskId = await this.commandBus.execute<UpdateTaskCommand, string>(
@@ -339,7 +339,7 @@ export class BotPlanToolsFactory implements BotToolArea {
           }),
         );
         const task = await this.readTask(taskId, context);
-        return promptText('tools/plan.update-task-updated-task-now', {
+        return promptText('plan/tools.update-task-updated-task-now', {
           id: task.id,
           title: task.title,
           version: String(task.version),
@@ -353,7 +353,7 @@ export class BotPlanToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'move_task',
       scope: 'tasks:write',
-      description: promptText('tools/plan.move-task'),
+      description: promptText('plan/tools.move-task'),
       input: z.object({
         task_id: z.uuid().describe('A task id from list_tasks.'),
         status: statusInput,
@@ -361,7 +361,7 @@ export class BotPlanToolsFactory implements BotToolArea {
           .uuid()
           .nullable()
           .default(null)
-          .describe(promptText('tools/plan.move-task-after-task-id')),
+          .describe(promptText('plan/tools.move-task-after-task-id')),
         expected_version: expectedVersionInput,
       }),
       run: async (input, context) => {
@@ -379,7 +379,7 @@ export class BotPlanToolsFactory implements BotToolArea {
         );
         const task = await this.readTask(taskId, context);
         const place = input.after_task_id ? `after task ${input.after_task_id}` : 'first';
-        return promptText('tools/plan.move-task-moved-task-now', {
+        return promptText('plan/tools.move-task-moved-task-now', {
           id: task.id,
           title: task.title,
           status: COLUMN_NAMES[task.status],

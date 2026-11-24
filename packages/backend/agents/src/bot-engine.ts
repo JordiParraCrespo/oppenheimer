@@ -63,6 +63,14 @@ export interface BotEngineTool {
   description: string;
   /** JSON Schema of an object: the tool's input. */
   inputSchema: Record<string, unknown>;
+  /**
+   * Whether the engine may leave the definition out of the request until the
+   * model looks for it (tool search), so a bot with many tools does not send
+   * them all on every turn. A tool that is not may never wait: the bot's own
+   * (memory, skills, questions). An engine without tool search sends it as
+   * usual.
+   */
+  deferrable?: boolean;
   /** A throw is reported to the model as an error result; it never ends the turn. */
   run(input: unknown, context: BotEngineToolCall): Promise<BotEngineToolResult>;
 }

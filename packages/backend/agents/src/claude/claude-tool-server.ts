@@ -44,8 +44,9 @@ export function createToolServer(
       name: tool.name,
       description: tool.description,
       inputSchema: { type: 'object' as const, ...tool.inputSchema },
-      // Never deferred behind Claude Code's tool search: a bot's tools are few.
-      _meta: { 'anthropic/alwaysLoad': true },
+      // A tool that may not wait is loaded up front; the rest Claude Code may
+      // defer behind its tool search (`claudeToolSearch`).
+      ...(tool.deferrable ? {} : { _meta: { 'anthropic/alwaysLoad': true } }),
     })),
   }));
 

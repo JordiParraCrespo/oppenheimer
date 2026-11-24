@@ -31,7 +31,7 @@ export class BotMailChatFilesResolver {
     return ids.map((id) => {
       const image = found.find((candidate) => candidate.id === id);
       if (!image) {
-        throw new BotToolRefusal(promptText('tools/mail.planned', { id }));
+        throw new BotToolRefusal(promptText('mail/tools.planned', { id }));
       }
       return chatImageAttachment(image);
     });
@@ -51,7 +51,7 @@ export class BotMailChatFilesResolver {
       const image = found.find((candidate) => candidate.id === file.attachmentId);
       const bytes = image ? await this.files.read(image.storageKey).catch(() => null) : null;
       if (!bytes) {
-        throw new BotToolRefusal(promptText('tools/mail.bytes', { filename: file.filename }));
+        throw new BotToolRefusal(promptText('mail/tools.bytes', { filename: file.filename }));
       }
       files.set(mailAttachmentKey(file), bytes);
     }

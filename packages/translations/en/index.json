@@ -2671,7 +2671,8 @@
       "runsEmpty": "No runs yet. Each run appears here with the session it started.",
       "loadFailed": "Automations could not be loaded.",
       "actionFailed": "That did not go through.",
-      "actionFailedFor": "“{{name}}” was not updated"
+      "actionFailedFor": "“{{name}}” was not updated",
+      "filterNoMatch": "No automations match these filters."
     },
     "status": {
       "active": "Active",
@@ -3026,19 +3027,21 @@
       "empty": "A bot's routines are made in its chat, with /schedule.",
       "emptyTitle": "No bot routines yet",
       "filter": {
-        "all": "All",
-        "active": "Active",
-        "paused": "Paused",
         "allBots": "All bots",
         "searchBots": "Search bots",
-        "noMatch": "No bot routines match these filters.",
-        "trigger": {
-          "any": "Any trigger",
-          "schedule": "Schedule",
-          "gmail": "Gmail",
-          "github": "GitHub",
-          "webhook": "Webhook"
-        }
+        "noMatch": "No bot routines match these filters."
+      }
+    },
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "paused": "Paused",
+      "trigger": {
+        "any": "Any trigger",
+        "schedule": "Schedule",
+        "gmail": "Gmail",
+        "github": "GitHub",
+        "webhook": "Webhook"
       }
     }
   },

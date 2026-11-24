@@ -2858,6 +2858,13 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 128
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "voice",
+            "image"
+          ]
         }
       },
       "required": [
@@ -3682,6 +3689,7 @@
       "whatsapp",
       "whatsapp.voice",
       "whatsapp.voice.send",
+      "whatsapp.image",
       "telegram",
       "shared.preview",
       "transcript.read",

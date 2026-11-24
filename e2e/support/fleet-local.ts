@@ -139,7 +139,7 @@ function accountComment(user: string): string | undefined {
 }
 
 /** The agent shims every host carries (`e2e/fleet/`): each prints its argv. */
-const SHIMS = ['claude', 'grok', 'codex', 'hermes'];
+const SHIMS = ['claude', 'grok', 'codex', 'hermes', 'opencode'];
 
 export function buildLocalFleet(repoRoot: string): void {
   teardownLocalFleet();

@@ -111,7 +111,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
       name: 'list_whatsapp_accounts',
       readOnly: true,
       scope: 'whatsapp:read',
-      description: promptText('tools/whatsapp.list-whatsapp-accounts'),
+      description: promptText('whatsapp/tools.list-whatsapp-accounts'),
       input: z.object({}),
       run: async (_input, context) => {
         const views = await this.accounts.all(context.owner);
@@ -129,7 +129,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
       name: 'list_whatsapp_chats',
       readOnly: true,
       scope: 'whatsapp:read',
-      description: promptText('tools/whatsapp.list-whatsapp-chats', {
+      description: promptText('whatsapp/tools.list-whatsapp-chats', {
         whatsappChatsLimitMax: String(WHATSAPP_CHATS_LIMIT_MAX),
       }),
       input: z.object({
@@ -161,7 +161,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
       name: 'read_whatsapp_chat',
       readOnly: true,
       scope: 'whatsapp:read',
-      description: promptText('tools/whatsapp.read-whatsapp-chat', {
+      description: promptText('whatsapp/tools.read-whatsapp-chat', {
         whatsappReadLimitMax: String(WHATSAPP_READ_LIMIT_MAX),
       }),
       input: z.object({
@@ -171,7 +171,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
         before: z.iso
           .datetime({ offset: true })
           .optional()
-          .describe(promptText('tools/whatsapp.read-whatsapp-chat-before')),
+          .describe(promptText('whatsapp/tools.read-whatsapp-chat-before')),
       }),
       run: async (input, context) => {
         const chosen = await this.accounts.one(context.owner, input.account);
@@ -188,7 +188,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
           describeWhatsappMessage(message, context.timeZone),
         );
         return [
-          promptText('tools/whatsapp.read-whatsapp-chat-chat-chat-id', {
+          promptText('whatsapp/tools.read-whatsapp-chat-chat-chat-id', {
             describeWhatsappTarget: describeWhatsappTarget(read.chat),
             chatId: read.chat.chatId,
             accountLabel: read.accountLabel,
@@ -206,7 +206,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
       name: 'search_whatsapp',
       readOnly: true,
       scope: 'whatsapp:read',
-      description: promptText('tools/whatsapp.search-whatsapp'),
+      description: promptText('whatsapp/tools.search-whatsapp'),
       input: z.object({
         account: account.optional(),
         query: z.string().trim().min(2).max(200),
@@ -239,7 +239,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
   private send(): BotToolDefinition {
     return this.askingSend({
       name: 'send_whatsapp_message',
-      description: promptText('tools/whatsapp.send-whatsapp-message', {
+      description: promptText('whatsapp/tools.send-whatsapp-message', {
         whatsappTextMaxChars: String(WHATSAPP_TEXT_MAX_CHARS),
       }),
       text: z.string().trim().min(1).max(WHATSAPP_TEXT_MAX_CHARS),
@@ -247,7 +247,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
         `Send on WhatsApp from "${planned.accountLabel}" to ${describeWhatsappTarget(planned)}: ${text}`,
       deliver: async (planned, text, context) => {
         const id = await this.sendAs(planned, text, context);
-        return promptText('tools/whatsapp.send-whatsapp-message-done', {
+        return promptText('whatsapp/tools.send-whatsapp-message-done', {
           describeWhatsappTarget: describeWhatsappTarget(planned),
           accountLabel: planned.accountLabel,
           id,
@@ -259,7 +259,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
   private sendVoice(): BotToolDefinition {
     return this.askingSend({
       name: 'send_whatsapp_voice_note',
-      description: promptText('tools/whatsapp.send-whatsapp-voice-note', {
+      description: promptText('whatsapp/tools.send-whatsapp-voice-note', {
         speechTextMaxChars: String(SPEECH_TEXT_MAX_CHARS),
       }),
       text: z
@@ -267,7 +267,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
         .trim()
         .min(1)
         .max(SPEECH_TEXT_MAX_CHARS)
-        .describe(promptText('tools/whatsapp.send-whatsapp-voice-note-text')),
+        .describe(promptText('whatsapp/tools.send-whatsapp-voice-note-text')),
       // A yes the workspace cannot speak would be a wait for nothing.
       ready: (organizationId) => this.requireSpeech(organizationId),
       // The card quotes every word the note will say, and where it goes.
@@ -283,7 +283,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
           audio: spoken.data,
           seconds: spoken.seconds,
         });
-        return promptText('tools/whatsapp.send-whatsapp-voice-note-done', {
+        return promptText('whatsapp/tools.send-whatsapp-voice-note-done', {
           describeWhatsappTarget: describeWhatsappTarget(planned),
           accountLabel: planned.accountLabel,
           seconds: String(spoken.seconds),
@@ -312,7 +312,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
         text: spec.text,
         planned: plannedSend
           .optional()
-          .describe(promptText('tools/whatsapp.send-whatsapp-message-planned')),
+          .describe(promptText('whatsapp/tools.send-whatsapp-message-planned')),
       }),
       normalize: async (input, context) => {
         await spec.ready?.(context.organizationId);
@@ -365,7 +365,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
     const speaks = await this.queryBus.execute<FindSpeechSynthesisQuery, boolean>(
       new FindSpeechSynthesisQuery(organizationId),
     );
-    if (!speaks) throw new BotToolRefusal(promptText('tools/whatsapp.speech-not-set-up'));
+    if (!speaks) throw new BotToolRefusal(promptText('whatsapp/tools.speech-not-set-up'));
   }
 
   /** The number and the chat a send means, resolved once so a yes sends where the card said. */
@@ -408,6 +408,6 @@ function targetOf(chat: WhatsappChatTarget): Omit<PlannedSend, 'accountId' | 'ac
 /** The send the card stored, which a call carrying out its approval runs. */
 function plannedOf(stored: unknown): PlannedSend {
   const parsed = plannedSend.safeParse(stored);
-  if (!parsed.success) throw new BotToolRefusal(promptText('tools/whatsapp.planned-of'));
+  if (!parsed.success) throw new BotToolRefusal(promptText('whatsapp/tools.planned-of'));
   return parsed.data;
 }

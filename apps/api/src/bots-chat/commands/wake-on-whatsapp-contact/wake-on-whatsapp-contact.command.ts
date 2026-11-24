@@ -23,6 +23,8 @@ export class WakeOnWhatsappContactCommand extends CommandBase {
   /** Its `whatsapp_message.seq`: where it falls in the chat. */
   readonly seq: string;
   readonly text: string;
+  /** An image: the turn fetches it when it starts, and the bot sees it. */
+  readonly image: boolean;
 
   constructor(props: CommandProps<WakeOnWhatsappContactCommand>) {
     super(props);
@@ -38,5 +40,6 @@ export class WakeOnWhatsappContactCommand extends CommandBase {
     this.messageRowId = props.messageRowId;
     this.seq = props.seq;
     this.text = props.text;
+    this.image = props.image;
   }
 }

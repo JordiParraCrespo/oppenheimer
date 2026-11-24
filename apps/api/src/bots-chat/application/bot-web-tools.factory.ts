@@ -28,8 +28,8 @@ const PAGE_TEXT_MAX = 20_000;
 
 /** One image `show_image` is asked to show. */
 const shownImageInput = z.object({
-  url: z.url().max(2_000).describe(promptText('tools/web.shown-image-url')),
-  caption: z.string().max(200).optional().describe(promptText('tools/web.shown-image-caption')),
+  url: z.url().max(2_000).describe(promptText('web/tools.shown-image-url')),
+  caption: z.string().max(200).optional().describe(promptText('web/tools.shown-image-caption')),
 });
 
 /**
@@ -56,15 +56,15 @@ export class BotWebToolsFactory implements BotToolArea {
         name: 'web_fetch',
         readOnly: true,
         scope: 'bots:write',
-        description: promptText('tools/web.web-fetch', {
+        description: promptText('web/tools.web-fetch', {
           webFetchesPerTurn: String(WEB_FETCHES_PER_TURN),
         }),
         input: z.object({
-          url: z.url().max(2_000).describe(promptText('tools/web.web-fetch-url')),
+          url: z.url().max(2_000).describe(promptText('web/tools.web-fetch-url')),
         }),
         run: async (input, context, signal) => {
           if (!context.budget.take('web_fetch', WEB_FETCHES_PER_TURN)) {
-            return promptText('tools/web.web-fetch-refused-turn-has', {
+            return promptText('web/tools.web-fetch-refused-turn-has', {
               webFetchesPerTurn: String(WEB_FETCHES_PER_TURN),
             });
           }
@@ -77,9 +77,9 @@ export class BotWebToolsFactory implements BotToolArea {
           const text = startOf(page.text, PAGE_TEXT_MAX);
           return [
             `Fetched ${page.url} (status ${page.status}, ${page.contentType})${page.title ? `: "${page.title}"` : ''}.`,
-            promptText('tools/web.web-fetch-page-below-data'),
+            promptText('web/tools.web-fetch-page-below-data'),
             fenceUntrusted('web_page', text),
-            cut ? promptText('tools/web.web-fetch-page-longer-only') : '',
+            cut ? promptText('web/tools.web-fetch-page-longer-only') : '',
           ]
             .filter(Boolean)
             .join('\n');
@@ -88,7 +88,7 @@ export class BotWebToolsFactory implements BotToolArea {
       defineBotTool({
         name: 'show_image',
         scope: 'bots:write',
-        description: promptText('tools/web.show-image', {
+        description: promptText('web/tools.show-image', {
           imageMaxBytes: String(BOT_IMAGE_MAX_BYTES / 1024 / 1024),
           messageImagesMax: String(BOT_MESSAGE_IMAGES_MAX),
           shownImagesPerTurn: String(SHOWN_IMAGES_PER_TURN),
@@ -102,7 +102,7 @@ export class BotWebToolsFactory implements BotToolArea {
           for (const image of input.images) {
             if (!context.budget.take('show_image', SHOWN_IMAGES_PER_TURN)) {
               lines.push(
-                promptText('tools/web.show-image-refused-turn-has', {
+                promptText('web/tools.show-image-refused-turn-has', {
                   url: image.url,
                   shownImagesPerTurn: String(SHOWN_IMAGES_PER_TURN),
                 }),
@@ -118,7 +118,7 @@ export class BotWebToolsFactory implements BotToolArea {
           }
           const said =
             shown.length > 0
-              ? promptText('tools/web.show-image-shown-person-under', {
+              ? promptText('web/tools.show-image-shown-person-under', {
                   shownCount: String(shown.length),
                   imagesCount: String(input.images.length),
                 })
@@ -146,7 +146,7 @@ export class BotWebToolsFactory implements BotToolArea {
     const { bytes } = result.image;
     const mimeType = sniffSessionFile(bytes);
     if (!mimeType || !isBotImageMimeType(mimeType)) {
-      return promptText('tools/web.show');
+      return promptText('web/tools.show');
     }
     const extension = SESSION_FILE_TYPES.find((type) => type.mediaType === mimeType)?.extension;
     const attachment = BotAttachmentEntity.upload(

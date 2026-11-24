@@ -45,7 +45,7 @@ export interface SessionSearchAnswer {
 export function describeSessionSearch(answer: SessionSearchAnswer): string {
   const { query, matches } = answer;
   if (matches.length === 0) {
-    return promptText('tools/sessions.search-none', { query });
+    return promptText('sessions/tools.search-none', { query });
   }
   const words = searchWords(query);
   const lines = matches.flatMap((match) => [
@@ -56,12 +56,12 @@ export function describeSessionSearch(answer: SessionSearchAnswer): string {
     ),
   ]);
   return [
-    promptText('tools/sessions.search-header', {
+    promptText('sessions/tools.search-header', {
       query,
       matchesCount: String(matches.length),
     }),
     fenceUntrusted('session_search', lines.join('\n')),
-    promptText('tools/sessions.describe-session-search-read-one-read'),
+    promptText('sessions/tools.describe-session-search-read-one-read'),
   ].join('\n');
 }
 
