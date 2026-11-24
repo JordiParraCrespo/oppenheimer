@@ -1,15 +1,20 @@
 import {
   Button,
+  EmptyState,
   IconButton,
   InboxListHead,
   InboxList as InboxRows,
   InboxSnoozedRow,
-  SidebarEmptyRow,
   SidebarListHead,
   useIsMobile,
   useNow,
 } from '@oppenheimer/design-system-web';
-import { ListChecks, RotateCwIcon } from '@oppenheimer/design-system-web/icons';
+import {
+  CheckCheck,
+  ListChecks,
+  RotateCwIcon,
+  SearchX,
+} from '@oppenheimer/design-system-web/icons';
 import { useInboxPullsShown, useRefreshInbox } from '@oppenheimer/frontend-consumer/react';
 import {
   dateFormatter,
@@ -207,11 +212,31 @@ export function InboxList() {
         ) : null}
 
         {rows.length === 0 ? (
-          <SidebarEmptyRow className="mt-5 ml-3.5">
-            {(search.dirty || search.query) && inbox.open.length > 0
-              ? t('inbox.list.noneMatching')
-              : t('inbox.list.empty')}
-          </SidebarEmptyRow>
+          (search.dirty || search.query) && inbox.open.length > 0 ? (
+            <EmptyState className="px-4 py-14">
+              <EmptyState.Header>
+                <EmptyState.Media variant="icon">
+                  <SearchX />
+                </EmptyState.Media>
+                <EmptyState.Title className="text-operate">
+                  {t('inbox.list.noneMatchingTitle')}
+                </EmptyState.Title>
+                <EmptyState.Description>{t('inbox.list.noneMatching')}</EmptyState.Description>
+              </EmptyState.Header>
+            </EmptyState>
+          ) : (
+            <EmptyState className="px-4 py-14">
+              <EmptyState.Header>
+                <EmptyState.Media variant="icon" className="bg-success-surface text-success">
+                  <CheckCheck />
+                </EmptyState.Media>
+                <EmptyState.Title className="text-operate">
+                  {t('inbox.list.emptyTitle')}
+                </EmptyState.Title>
+                <EmptyState.Description>{t('inbox.list.empty')}</EmptyState.Description>
+              </EmptyState.Header>
+            </EmptyState>
+          )
         ) : (
           <InboxRows>
             {rows.map(({ item, done: isDone }) => {
