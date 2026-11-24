@@ -3539,7 +3539,7 @@ export const clearBotConversation = <ThrowOnError extends boolean = false>(optio
 /**
  * A bot's chat
  *
- * Its newest `limit` messages, oldest first, with the turns they belong to and any turn still queued or running, and how many messages it holds in all. The whole chat is `GET /bots/:id/conversation/export`.
+ * Its newest `limit` messages, oldest first, with the turns they belong to and any turn still queued or running, and how many messages it holds in all. With `before` (a message id, the oldest the reader holds), the `limit` messages just older than that one; `hasOlder` says whether more remain. The whole chat is `GET /bots/:id/conversation/export`.
  */
 export const findBotConversation = <ThrowOnError extends boolean = false>(options: Options<FindBotConversationData, ThrowOnError>): RequestResult<FindBotConversationResponses, FindBotConversationErrors, ThrowOnError> => (options.client ?? client).get<FindBotConversationResponses, FindBotConversationErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

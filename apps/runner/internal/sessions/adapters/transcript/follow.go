@@ -104,7 +104,8 @@ func (r *Reader) Follow(ctx context.Context, session domain.Session, entryMax, b
 
 // chatSource is where an agent keeps a session's conversation as a file the
 // chat follows, and how the file's lines read as the chat's entries. Claude
-// Code's (`claude.go`), Codex's (`codex.go`) and Grok's (`grok.go`).
+// Code's (`claude.go`), Codex's (`codex.go`), Grok's (`grok.go`) and Qwen
+// Code's (`qwen.go`).
 type chatSource interface {
 	// finder is how the session's file is found, asked at each check: its
 	// path, or "" while there is none yet. False when this session can have

@@ -1,12 +1,28 @@
 ---
 title: Inbox
-description: The Inbox in Plan, what lands there (waiting or failed sessions, bot approvals, review requests, mergeable pull requests, failed automation runs, notices from sessions and bots, reports with pictures from any agent, tasks an agent made), what you can do with each item, filters, unread, snooze and done, and how agents and bots post to it.
+description: The Inbox, the console's first rail item, what lands there (waiting or failed sessions, bot approvals, review requests, mergeable pull requests, failed automation runs, notices from sessions and bots, reports with pictures from any agent, tasks an agent made), what you can do with each item, filters, unread, snooze and done, and how agents and bots post to it.
 sidebar_position: 8
 ---
 
-The **Inbox** is one list of what needs you. It is the first item of **Plan** (Plan → Inbox), and the console opens on it unless you dragged another rail item to the top. Plan's sidebar shows its count.
+The **Inbox** is one list of what needs you. It is the first item of the rail, with a dot and a count while anything needs you, and the console opens on it unless you dragged another rail item to the top. It has no sidebar: the list and the deck take the whole window.
 
-It looks like a mail client: a list column (search, unread rows with the sender, a subject and a line of body) beside a reading pane with a toolbar and the item as a message. On a phone the list fills the screen until you open an item.
+It looks like a mail client: a list column (search, unread rows with the sender, a subject and a line of body) beside a deck: the item in hand as a card on the stack of what is left, with only its answers, and under it **Previous**, **Done** and **Next**. Over the deck, "3 of 12" and a line that fills as you clear the visit. On a phone the list fills the screen until you open an item.
+
+## Going through it fast
+
+The deck is made to clear the Inbox one card after another:
+
+| Keys | What they do |
+| --- | --- |
+| **1**–**9** | Press the card's answer with that number (Yes, Approve, Merge, Send answers, an option of a question…). Each answer shows its number. |
+| **E** | **Done**: puts the card away. The card goes off to the right. |
+| **J** / **→** and **K** / **←** | **Next** and **Previous**: move through the stack without acting on anything. |
+
+On a phone or tablet, swipe a card **right** for Done or **left** for Next. Once a card is answered or put away, the next one takes its place, and the clear deck says how many you cleared.
+
+**Done is not offered while something waits on your answer**: a session whose agent asked a permission or a question, and a bot stopped on an approval. Hiding those would leave the agent stuck, so they leave the deck only when you answer them (or answer in the session itself: **Open session** is always the last answer).
+
+A **questionnaire** (an agent's multiple-choice questions) goes one question at a time: pick an answer and the next question comes up; for a question that takes several answers, or one you answer in your own words, press **Next question**. After the last, every answer is listed, each one a way back to change it, and **Send answers** sends them all. Nothing reaches the agent before that.
 
 ## What lands there
 
@@ -14,19 +30,19 @@ Items are not stored, with one exception: an item is there while its source says
 
 | Item | From | When | What you can do |
 | --- | --- | --- | --- |
-| A session waiting on you | Sessions | its agent is waiting on a permission or an answer (it shows within seconds), it failed to start, or it has been starting for over a minute | **Open session**. An agent's permission prompt or multiple-choice question can be answered right in the Inbox (**Send answers**); your answer is typed into its terminal |
+| A session waiting on you | Sessions | its agent is waiting on a permission or an answer (it shows within seconds), it failed to start, or it has been starting for over a minute | An agent's permission prompt or multiple-choice questions are answered right in the Inbox; your answer is typed into its terminal. **Open session** |
 | A bot approval | Bots | a bot stopped on a tool set to ask | **Approve**, **Deny**, or **Open chat** |
 | A review request (when shown) | Pull requests | someone asked for your review | **Open**, **View on GitHub** |
 | A pull request ready to merge (when shown) | Pull requests | your pull request has nothing holding it | **Merge**, **Open**, **View on GitHub** |
 | A failed automation run | Automations | a run failed in the last 24 hours | **Run again**, **Open run** |
-| A session's notice | an agent in a session | the agent ran `runner sessions notify "…"` | **Done** |
-| A bot's notice | a bot | the bot used its `notify` tool | **Open chat**, **Done** |
+| A session's notice | an agent in a session | the agent ran `runner sessions notify "…"` | **Open session**; **Done** once read |
+| A bot's notice | a bot | the bot used its `notify` tool | **Open chat**; **Done** once read |
 | A report | any agent with a token | it posted a problem, with up to four pictures | Write an answer and **Send answer**; the agent reads it. **Done** hides it without answering |
-| A task an agent made | a bot, or an agent with a token (MCP, CLI) | it added a task to your board, and you have not taken it up | **Put on today**, **Start session**, **Dismiss** (keeps it on the board as it is), **Open task** |
+| A task an agent made | a bot, or an agent with a token (MCP, CLI) | it added a task to your board, and you have not taken it up | **Put on today**, **Start session**; **Done** keeps it on the board as it is |
 
 Pull requests are off by default: agents open theirs under your GitHub account, so every one would wait here as yours to merge. Turn on **Show pull requests** in the filter menu to list review requests and ready merges; the choice is kept in this browser. The **Pull requests** page lists them either way.
 
-A task an agent made leaves the Inbox once you take it up: you give it a TODO day (here or in its dialog), start or link a session on it, or dismiss it. **Delete** on one dismisses it too; **Mark as done** only hides it for you, as for any item: it stays under Show done for your visit and the task still waits to be taken up. Only you take a task up: a session or a TODO day an agent gives it leaves it waiting. A task you make in the console never lands here. Tasks made through the CLI or an API token count as an agent's, even when you typed the command.
+A task an agent made leaves the Inbox once you take it up: you give it a TODO day (here or in its dialog), start or link a session on it, or mark it **Done** (or **Delete** it), which keeps it on the board as it is. Only you take a task up: a session or a TODO day an agent gives it leaves it waiting. A task you make in the console never lands here. Tasks made through the CLI or an API token count as an agent's, even when you typed the command.
 
 A session or bot keeps one notice at a time: a newer one replaces the last. Questions a bot asks you with a question card are answered in its chat, not in the Inbox.
 
@@ -34,22 +50,22 @@ The list is newest first across every kind; deprioritized items sort last and re
 
 ## Acting on items
 
-The reading pane's toolbar and each row's menu:
+**Done** on the deck, and each row's menu in the list:
 
 | Action | Effect |
 | --- | --- |
-| **Mark as done** | Hides this occurrence. It shows under **Show done** for the rest of your visit. |
+| **Mark as done** | Hides this occurrence. It shows under **Show done** for the rest of your visit. On a task an agent made, it also keeps the task on the board as it is. |
 | **Deprioritize** / **Restore priority** | Sorts it last, labelled Low, or puts it back. |
 | **Snooze 1 hour** / **Snooze until tomorrow** | Hides it until then, in **Snoozed** with **Bring back**. |
 | **Delete** | Hides this occurrence for good. |
 
 A mark applies to one occurrence: if the same session blocks again later, or new commits land on a pull request, the item comes back.
 
-**Unread** is kept per item in this browser: an item is read once shown in the reading pane. It does not sync between devices.
+**Unread** is kept per item in this browser: an item is read once shown on the deck. It does not sync between devices.
 
-**Filters**: Type (All, Pull requests while they are shown, Bots, Sessions, Automations, Reports, Tasks), Project, Show done, Show pull requests, and a search over sender, subject, body and source.
+**Filters**, in the list's filter menu: Type (All, Pull requests while they are shown, Bots, Sessions, Automations, Reports, Tasks), Project, Show done and Show pull requests; and a search over sender, subject, body and source.
 
-When nothing needs you, the pane says so and counts the sessions still running.
+When nothing needs you, the deck says so and counts the sessions still running.
 
 ## Posting to the Inbox
 
@@ -86,4 +102,6 @@ In the Inbox a report shows its pictures (select one to see it whole), its link,
 
 ## Notifications elsewhere
 
-There are no push notifications or emails for Inbox items. Oppenheimer emails you only for account and security events, such as a newly paired host or a host connecting from a new country or network. The Oppenheimer Chrome extension tracks your Claude Code cloud sessions and tells you which need you.
+**In this browser.** Turn on **Notify me in this browser** in the Inbox's filter menu, and allow notifications when the browser asks. From then on, while the console is open in a tab you are not looking at, a session that comes to wait on you (a permission or a question its agent asks, or a session that failed) and a notice an agent sends each raise one system notification; clicking it brings the console forward on that session. The tab you are looking at raises none, since the Inbox already shows it. What was already waiting when you opened the console is not announced. The switch is kept per browser; if the browser blocks notifications for Oppenheimer, the menu says so, and you allow them again in the browser's site settings.
+
+There are no push notifications to a phone or emails for Inbox items. Oppenheimer emails you only for account and security events, such as a newly paired host or a host connecting from a new country or network. The Oppenheimer Chrome extension tracks your Claude Code cloud sessions and tells you which need you.

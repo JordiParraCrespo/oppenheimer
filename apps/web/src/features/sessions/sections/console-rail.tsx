@@ -5,8 +5,15 @@ import {
   RailMark,
   SortableGroup,
   SortableRailItem,
+  useNow,
 } from '@oppenheimer/design-system-web';
-import { useAnyBotNeedsInput, useSessions, useTasks } from '@oppenheimer/frontend-consumer/react';
+import {
+  useAnyBotNeedsInput,
+  useInboxCount,
+  useSessions,
+  useTasks,
+} from '@oppenheimer/frontend-consumer/react';
+import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useDragLabels } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
@@ -21,7 +28,8 @@ import { railEntry } from '../lib/rail-order';
  * one is `useConsoleList`'s answer, the same the shell picks the sidebar by.
  * A section rather than kit because the counts are product reads: the
  * sessions the sidebar already subscribes to, Plan's open tasks, the board's
- * own read. The Inbox is Plan's first section, counted in Plan's sidebar.
+ * own read, and the Inbox's, what needs you, with the dot while anything
+ * does. The Inbox is left out while its flag is off.
  *
  * The reader drags the items into their own order, as the design's rail
  * does; a press still opens the list, and the order is kept on this device
@@ -38,11 +46,16 @@ export function ConsoleRail() {
   const list = useConsoleList();
   const dragLabels = useDragLabels();
   const { order, handlers } = useRailOrder();
+  const inboxOn = useFeatureFlag('inbox');
+  // A minute tick: a snooze that ends brings its item back into the count.
+  const needsYou = useInboxCount(useNow(60_000));
   const counts: Partial<Record<RailItemId, ReactNode>> = {
+    inbox: needsYou,
     sessions: sessionCount,
     plan: openTasks,
   };
   const attentions: Partial<Record<RailItemId, boolean>> = {
+    inbox: Boolean(needsYou),
     bots: botsNeedYou,
   };
 
@@ -67,7 +80,7 @@ export function ConsoleRail() {
           <div className="flex flex-1 justify-around gap-1.5 md:flex-none md:flex-col md:justify-start">
             {order.map((id) => {
               const entry = railEntry(id);
-              if (!entry) return null;
+              if (!entry || (id === 'inbox' && !inboxOn)) return null;
               const lists: readonly ConsoleList[] = entry.lists;
               return (
                 <SortableRailItem

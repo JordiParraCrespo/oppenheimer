@@ -49,7 +49,7 @@ test('a session waiting on an answer shows in the Inbox and opens from it', asyn
   // reloaded: the row has to arrive on its own, as it would for a person
   // looking at the Inbox while an agent works.
   const inbox = await page.context().newPage();
-  await inbox.goto('/plan/inbox');
+  await inbox.goto('/inbox');
   const row = inbox.locator('[data-slot="inbox-row"]', { hasText: 'is waiting on you' });
   await expect(inbox.locator('[data-slot="inbox-list-head"]')).toBeVisible({ timeout: 30_000 });
   await expect(row).toHaveCount(0);

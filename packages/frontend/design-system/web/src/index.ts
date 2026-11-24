@@ -216,7 +216,7 @@ export {
   ChipSelectTrigger,
 } from './components/chip-select';
 export type { CodeBlockTab } from './components/code-block';
-export { CodeBlock } from './components/code-block';
+export { CodeBlock, codeBlockTabVariants } from './components/code-block';
 export {
   Command,
   CommandDialog,
@@ -357,7 +357,11 @@ export { IconButton, iconButtonVariants } from './components/icon-button';
 export type { CarouselSlide } from './components/image-carousel';
 export { ImageCarousel } from './components/image-carousel';
 export {
+  InboxAnswerSummary,
   InboxClear,
+  InboxDeck,
+  type InboxDeckExit,
+  InboxDock,
   InboxItem,
   InboxItemSkeleton,
   InboxList,
@@ -370,10 +374,13 @@ export {
   InboxQuestion,
   InboxQuestionOption,
   InboxQuestionOptions,
+  InboxQuestionSteps,
   InboxQuestions,
   InboxSelectionHead,
   InboxSnoozedRow,
+  type InboxSwipe,
   InboxToolbar,
+  inboxDeckAnswer,
 } from './components/inbox';
 export {
   AddRow,

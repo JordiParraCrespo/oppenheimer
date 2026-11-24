@@ -25,18 +25,16 @@ describe('what an Inbox action stores', () => {
     });
   });
 
-  it('takes up a task an agent made on Delete only, so one marked done can come back', () => {
+  // Done is the dock's put-away, and on a task it is what Dismiss was: a task
+  // marked done that was not taken up would come back on the next read.
+  it('takes up a task an agent made on Done and Delete, and on nothing else', () => {
     const task = { key: 'task:t-1', kind: 'task', task: { id: 't-1' } } as InboxItem;
     const run = { key: 'run:r-1', kind: 'run' } as InboxItem;
-    expect(INBOX_MARK_ACTIONS.remove.takesUp?.(task)).toBe('t-1');
-    expect(INBOX_MARK_ACTIONS.remove.takesUp?.(run)).toBeNull();
-    for (const name of [
-      'done',
-      'toggleLow',
-      'snoozeHour',
-      'snoozeTomorrow',
-      'bringBack',
-    ] as const) {
+    for (const name of ['done', 'remove'] as const) {
+      expect(INBOX_MARK_ACTIONS[name].takesUp?.(task)).toBe('t-1');
+      expect(INBOX_MARK_ACTIONS[name].takesUp?.(run)).toBeNull();
+    }
+    for (const name of ['toggleLow', 'snoozeHour', 'snoozeTomorrow', 'bringBack'] as const) {
       expect(INBOX_MARK_ACTIONS[name].takesUp).toBeUndefined();
     }
   });

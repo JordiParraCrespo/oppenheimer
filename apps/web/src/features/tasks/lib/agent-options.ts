@@ -3,8 +3,9 @@ import { CODING_AGENT_IDS, CODING_AGENTS, type CodingAgentId } from '@oppenheime
 
 /**
  * Whether a session on `agent` receives the task it starts with: on its
- * command line, or as the blank terminal's note. Muse and ZCode take none,
- * so the task's work would never reach them.
+ * command line (Qwen Code's inside its `--prompt-interactive=`), or as the
+ * blank terminal's note. Muse and ZCode take none, so the task's work would
+ * never reach them.
  */
 export function takesTask(agent: CodingAgentId): boolean {
   const { launch } = CODING_AGENTS[agent];

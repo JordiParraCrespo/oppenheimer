@@ -34,7 +34,7 @@ No. Sessions live in tmux, apart from the runner. The runner waits for a quiet m
 
 ## Which agents can a session run?
 
-Claude Code, Codex, OpenCode, Grok, Pi, Oh My Pi, Antigravity, ZCode, fx, Hermes and Muse (Meta's Muse Code), or a blank terminal. Each uses the host's own installation and sign-in; you sign in once per host in the terminal. Claude Code, Codex and Cursor can also run in their vendors' clouds.
+Claude Code, Codex, OpenCode, Grok, Pi, Oh My Pi, Antigravity, ZCode, fx, Hermes, Muse (Meta's Muse Code) and Qwen Code, or a blank terminal. Each uses the host's own installation and sign-in; you sign in once per host in the terminal. Claude Code, Codex and Cursor can also run in their vendors' clouds.
 
 ## Which models can bots use?
 
@@ -62,7 +62,7 @@ Use `opp` or the MCP server with a scoped API token. See [CLI and MCP](./cli-and
 
 ## Where do I find things that need me?
 
-**Plan → Inbox**, where the console opens by default. See [Inbox](./inbox.md).
+The **Inbox**, the rail's first item, where the console opens by default. See [Inbox](./inbox.md).
 
 ## What is not available yet?
 
