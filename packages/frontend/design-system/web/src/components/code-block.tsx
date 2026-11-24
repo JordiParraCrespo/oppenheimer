@@ -1,5 +1,6 @@
 'use client';
 
+import { cva } from 'class-variance-authority';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import * as React from 'react';
 
@@ -8,6 +9,25 @@ import { cn } from '../lib/utils';
 import { Button } from './button';
 
 type CodeBlockTab = { value: string; label: React.ReactNode };
+
+/**
+ * One tab on the panel's band, selected or not. Exported so a placeholder
+ * that stands in for the band before its code exists (Add host's, while the
+ * token is minted) draws the same pill, at the same 28px, as the tab that
+ * loads.
+ */
+const codeBlockTabVariants = cva(
+  'inline-flex h-(--control-h-sm) items-center rounded-pill px-2.5 text-xs leading-tight transition-colors duration-fast ease-standard outline-none focus-visible:outline-2 focus-visible:outline-primary',
+  {
+    variants: {
+      selected: {
+        true: 'bg-card text-fg',
+        false: 'text-fg-muted hover:text-fg',
+      },
+    },
+    defaultVariants: { selected: false },
+  },
+);
 
 /**
  * CodeBlock — a command or snippet a person copies: 12.5px SF Mono, wrapped,
@@ -100,10 +120,7 @@ function CodeBlock({
                     aria-selected={selected}
                     data-slot="code-block-tab"
                     onClick={() => onTabChange?.(option.value)}
-                    className={cn(
-                      'inline-flex h-(--control-h-sm) items-center rounded-pill px-2.5 text-xs leading-tight transition-colors duration-fast ease-standard outline-none focus-visible:outline-2 focus-visible:outline-primary',
-                      selected ? 'bg-card text-fg' : 'text-fg-muted hover:text-fg',
-                    )}
+                    className={codeBlockTabVariants({ selected })}
                   >
                     {option.label}
                   </button>
@@ -183,5 +200,5 @@ function CodeBlock({
   );
 }
 
-export { CodeBlock };
+export { CodeBlock, codeBlockTabVariants };
 export type { CodeBlockTab };

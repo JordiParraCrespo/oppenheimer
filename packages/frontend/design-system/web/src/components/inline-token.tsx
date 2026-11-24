@@ -45,8 +45,8 @@ function InlineToken({
       data-popup-open={open ? '' : undefined}
       aria-expanded={open}
       className={cn(
-        'inline-flex max-w-full items-center gap-1.5 rounded-pill whitespace-nowrap text-fg outline-none transition-[background-color,box-shadow,transform] duration-fast ease-standard hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-popup-open:bg-selected-surface data-popup-open:ring-3 data-popup-open:ring-ring data-dirty:bg-selected-surface data-dirty:text-link',
-        size === 'md' ? 'h-(--control-h-sm) bg-card px-[11px] text-operate tracking-[-0.006em]' : 'h-(--control-h-sm) bg-hover-surface px-2.5 text-[13px]',
+        'inline-flex h-(--control-h-sm) max-w-full items-center gap-1.5 rounded-pill whitespace-nowrap text-fg outline-none transition-[background-color,box-shadow,transform] duration-fast ease-standard hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-popup-open:bg-selected-surface data-popup-open:ring-3 data-popup-open:ring-ring data-dirty:bg-selected-surface data-dirty:text-link',
+        size === 'md' ? 'bg-card px-[11px] text-operate tracking-[-0.006em]' : 'bg-hover-surface px-2.5 text-[13px]',
         mono && (size === 'md' ? 'figures text-[13px]' : 'figures text-[12.5px]'),
         className,
       )}
