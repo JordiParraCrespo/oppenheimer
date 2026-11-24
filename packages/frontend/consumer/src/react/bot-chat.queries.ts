@@ -189,10 +189,11 @@ export function useLoadOlderBotMessages(id: string) {
       const page = await readBefore(before);
       // Joined to the window it was asked from, then carried to the window as
       // it is now: a read that landed meanwhile let go of messages this page
-      // does not hold.
+      // does not hold, and pages that were drawn across a gap still being
+      // read are joined here too, since that read's answer no longer applies.
       let added = addOlderPage(window, older, page);
       const now = queryClient.getQueryData<BotConversationEntity>(botsKeys.conversation(id));
-      if (added && now && now !== window && now.hasOlder) {
+      if (added && now?.hasOlder) {
         const slid = slideOlder(added, window, now);
         added = slid === 'gap' ? await fillOlderGap(now, added, readBefore) : slid;
       }

@@ -68,6 +68,8 @@ export function useOlderOnScrollUp(botId: string, hasOlder: boolean, firstId: st
   const { loadOlder, isPending, error } = useLoadOlderBotMessages(botId);
   const top = useRef<HTMLDivElement>(null);
   const reading = useRef<ReadingLine | null>(null);
+  // The last read failed: the next waits until the top leaves the view and comes back.
+  const refused = useRef(false);
 
   // Watches the top of the transcript come into view, DOM state outside React;
   // again for each page, and once each load ends, whose first observation says
@@ -81,8 +83,11 @@ export function useOlderOnScrollUp(botId: string, hasOlder: boolean, firstId: st
     const observer = new IntersectionObserver(
       (entries) => {
         // A page already out keeps its line: asking again would start a load
-        // that returns at once, and end the one the line is kept for.
-        if (!entries.some((entry) => entry.isIntersecting) || reading.current) return;
+        // that returns at once, and end the one the line is kept for. After
+        // a failed read, only the reader coming back to the top asks again.
+        const inView = entries.some((entry) => entry.isIntersecting);
+        if (!inView) refused.current = false;
+        if (!inView || refused.current || reading.current) return;
         if (box) reading.current = lineInView(box, sentinel.nextElementSibling);
         loadOlder();
       },
@@ -109,10 +114,11 @@ export function useOlderOnScrollUp(botId: string, hasOlder: boolean, firstId: st
   useLayoutEffect(() => {
     const box = pane?.scroller.current;
     const held = reading.current;
-    if (!box || !held) return;
-    if (held.line.isConnected) keepLine(box, held);
-    if (!isPending) reading.current = null;
-  }, [firstId, isPending, pane]);
+    if (box && held?.line.isConnected) keepLine(box, held);
+    if (isPending) return;
+    reading.current = null;
+    refused.current = error !== null;
+  }, [firstId, isPending, error, pane]);
 
   return { top, loading: isPending, error };
 }

@@ -169,6 +169,21 @@ describe('a bot chat scrolled up past its window', () => {
     await waitFor(() => expect(chat.drawn()).toEqual(messages(2, 13)));
   });
 
+  it('joins the older pages when a page is loaded while the messages between are still out', async () => {
+    const chat = setup(8);
+    await waitFor(() => expect(chat.drawn()).toEqual(messages(5, 8)));
+    await chat.scrollUp();
+
+    const release = chat.holdOlder();
+    chat.write(5);
+    await chat.readAgain();
+    await waitFor(() => expect(chat.drawn()).toEqual([...messages(2, 5), ...messages(10, 13)]));
+    act(() => chat.result.current.older.loadOlder());
+    await act(async () => release());
+    await waitFor(() => expect(chat.result.current.older.isPending).toBe(false));
+    await waitFor(() => expect(chat.drawn()).toEqual(messages(0, 13)));
+  });
+
   it('lets the older pages go when the read between fails, and draws the newest messages', async () => {
     const chat = setup(8);
     await waitFor(() => expect(chat.drawn()).toEqual(messages(5, 8)));

@@ -25,7 +25,9 @@ export function useStickToBottom(): ReturnType<typeof useStickToBottomCore> {
   return useStickToBottomCore({
     repin: (content) => {
       const newest = newestSent(content);
-      const changed = newest !== sent.current;
+      // A send names a message; the name going away (your last message slid
+      // out of the window into older history) is no send.
+      const changed = newest !== undefined && newest !== sent.current;
       sent.current = newest;
       return changed;
     },
