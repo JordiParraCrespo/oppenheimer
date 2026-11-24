@@ -660,7 +660,7 @@ export class BotSessionToolsFactory implements BotToolArea {
 
 /**
  * Why `restart_session` leaves a session as it is, or null when it restarts:
- * only one stopped on its host has a window to bring back. A running one would
+ * only one stopped on its host, with no close owed, has a window to bring back. A running one would
  * lose its agent mid-task, so it is refused rather than restarted.
  */
 function restartRefusal(session: WorkSessionEntity): string | null {
@@ -669,6 +669,11 @@ function restartRefusal(session: WorkSessionEntity): string | null {
   }
   if (session.place === 'cloud') {
     return promptText('sessions/tools.restart-session-cloud', { id: session.id });
+  }
+  // A restart drops a close still owed to the host (the person's change of
+  // mind when they restart it), so a bot never overrides the person's close.
+  if (session.closeRequest) {
+    return promptText('sessions/tools.restart-session-closing', { id: session.id });
   }
   if (!session.stoppedAt) {
     return promptText('sessions/tools.restart-session-not-stopped', { id: session.id });

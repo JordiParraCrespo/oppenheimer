@@ -329,6 +329,10 @@ Session {{id}} is not stopped, so there is nothing to restart: send_to_session r
 
 Session {{id}} is closed: nothing is left to restart. Start a new session instead.
 
+<!-- fragment: restart-session-closing -->
+
+Session {{id}} is being closed: its close waits on its host, and a restart would cancel it. Leave it; tell the person if you still need it.
+
 <!-- fragment: restart-session-cloud -->
 
 Session {{id}} runs in its vendor's cloud, not on a host: there is nothing here to restart.

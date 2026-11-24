@@ -994,6 +994,7 @@ export type PromptId =
   | "sessions/tools.restart-session-session-id"
   | "sessions/tools.restart-session-not-stopped"
   | "sessions/tools.restart-session-closed"
+  | "sessions/tools.restart-session-closing"
   | "sessions/tools.restart-session-cloud"
   | "sessions/tools.close-session"
   | "sessions/tools.close-session-session-id"
@@ -1585,6 +1586,7 @@ export interface PromptSlots {
   "sessions/tools.answer-session-answered-session-agent": { sessionId: string; watched: string; readAfterHint: string };
   "sessions/tools.restart-session-not-stopped": { id: string };
   "sessions/tools.restart-session-closed": { id: string };
+  "sessions/tools.restart-session-closing": { id: string };
   "sessions/tools.restart-session-cloud": { id: string };
   "sessions/tools.invalid-body-refusal": { value: string; check: string };
   "sessions/tools.project-lacks-repository": { name: string; names: string };
@@ -2665,6 +2667,7 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "sessions/tools.restart-session-session-id": "The stopped session to restart (from list_sessions).",
   "sessions/tools.restart-session-not-stopped": "Session {{id}} is not stopped, so there is nothing to restart: send_to_session reaches it as it is.",
   "sessions/tools.restart-session-closed": "Session {{id}} is closed: nothing is left to restart. Start a new session instead.",
+  "sessions/tools.restart-session-closing": "Session {{id}} is being closed: its close waits on its host, and a restart would cancel it. Leave it; tell the person if you still need it.",
   "sessions/tools.restart-session-cloud": "Session {{id}} runs in its vendor's cloud, not on a host: there is nothing here to restart.",
   "sessions/tools.close-session": "Closes a session you started (a bot's session), most often one that failed or that you no longer need, so it leaves the person's sidebar: its agent ends, each branch is pushed and the worktree is removed. A session the person, an automation or a review started is refused: tell the person instead. Work never pushed is kept, and the close refused by the host, unless accept_unpushed_work is true; only set it when the person said the work can go. A failed session that never started has nothing to lose. It closes once its host hears it: get_session shows when it has.",
   "sessions/tools.close-session-session-id": "The session to close (from list_sessions).",

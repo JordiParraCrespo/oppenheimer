@@ -750,6 +750,21 @@ describe('BotSessionToolsFactory', () => {
     expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
+  // What breaks this: a restart drops a close still owed to the host, so a bot
+  // restarting a session the person closed while its host was away undid the close.
+  it('refuses to restart a stopped session whose close is still owed, before any card', async () => {
+    const { commandBus, approvals, call, session } = setup('auto');
+    session.recordEvents([
+      { seq: 5, kind: SESSION_EVENT_KINDS.STOPPED, payload: {}, occurredAt: new Date() },
+      { seq: 6, kind: SESSION_EVENT_KINDS.CLOSE_REQUESTED, payload: {}, occurredAt: new Date() },
+    ]);
+    const result = await call('restart_session', { session_id: session.id });
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain('a restart would cancel it');
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
   // What breaks this: a restart of a running session ends its agent mid-task.
   it('refuses to restart a session that is not stopped, before any card', async () => {
     const { commandBus, approvals, call, session } = setup('auto');
