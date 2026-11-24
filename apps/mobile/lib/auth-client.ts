@@ -17,11 +17,21 @@ export const webUrl = process.env.EXPO_PUBLIC_WEB_URL ?? 'http://localhost:3000'
 // OAuth and password-reset deep links resolve back into the app.
 const scheme = process.env.EXPO_PUBLIC_MOBILE_SCHEME ?? 'oppenheimer';
 
+const storagePrefix = 'oppenheimer';
+
 const expo = expoClient({
   scheme,
-  storagePrefix: 'oppenheimer',
+  storagePrefix,
   storage: SecureStore,
 });
+
+// The two SecureStore keys the Expo plugin keeps the session under, and what
+// it writes to them on a sign-out (@better-auth/expo 1.6.25, `clearSessionCache`).
+// A cookie too long for one key is split across `<key>.0..N` under a marker in
+// the base key; the sign-out rewrites only the base key, so the base key's old
+// value is the whole of what has to come back.
+const STORED_SESSION_KEYS = [`${storagePrefix}_cookie`, `${storagePrefix}_session_data`];
+const CLEARED = '{}';
 
 /** What the Expo plugin adds to the client, read off its own declaration. */
 type ExpoActions = ReturnType<typeof expo.getActions>;
@@ -82,7 +92,28 @@ export const mobileAuthClient: IAuthClient = {
   },
 
   async signOut() {
-    await authClient.signOut();
+    // Unwrapped like every other call, as on the web: a sign-out the server
+    // refused (or never heard) rejects, and the account sheet says so with the
+    // person still signed in. The Expo plugin empties its stored cookie before
+    // the request is sent, so a failure would otherwise leave the server's
+    // session alive with nothing on the phone able to end it, a retry included.
+    // What it held is put back, unless something has been stored since. A
+    // network failure throws rather than answering `{ error }`.
+    const held = STORED_SESSION_KEYS.map((key) => [key, SecureStore.getItem(key)] as const);
+    const putBack = () => {
+      for (const [key, value] of held) {
+        if (value !== null && SecureStore.getItem(key) === CLEARED) SecureStore.setItem(key, value);
+      }
+    };
+    let result: Awaited<ReturnType<typeof authClient.signOut>>;
+    try {
+      result = await authClient.signOut();
+    } catch (error) {
+      putBack();
+      throw error;
+    }
+    if (result.error) putBack();
+    unwrap(result);
   },
 
   async forgotPassword(email) {
