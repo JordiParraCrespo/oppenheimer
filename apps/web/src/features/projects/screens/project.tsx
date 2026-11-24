@@ -3,8 +3,8 @@ import {
   EditorPageBack,
   PageHeader,
   PageHeaderRow,
-  SegmentedControl,
-  SegmentedControlItem,
+  PillTab,
+  PillTabs,
 } from '@oppenheimer/design-system-web';
 import { Settings2 } from '@oppenheimer/design-system-web/icons';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
@@ -66,16 +66,14 @@ export function ProjectScreen({ projectId }: { projectId: string }) {
         </PageHeader>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <SegmentedControl
+        <PillTabs
           value={view}
           onValueChange={(next) => setView(next === 'stats' ? 'stats' : 'overview')}
           aria-label={t('projects.detail.views')}
         >
-          <SegmentedControlItem value="overview">
-            {t('projects.detail.overview')}
-          </SegmentedControlItem>
-          <SegmentedControlItem value="stats">{t('projects.detail.stats')}</SegmentedControlItem>
-        </SegmentedControl>
+          <PillTab value="overview">{t('projects.detail.overview')}</PillTab>
+          <PillTab value="stats">{t('projects.detail.stats')}</PillTab>
+        </PillTabs>
         {view === 'stats' ? (
           <span className="ml-auto">
             <ProjectStatsRange />
