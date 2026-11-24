@@ -323,9 +323,9 @@ type Transcripts interface {
 	CurrentConversation(session domain.Session) string
 	// SavedConversation reports whether the agent has written down the
 	// conversation the session holds (Launch.Conversation), so a restart may
-	// reopen it by name (Launch.Saved). False for an agent whose
+	// reopen it by name (Launch.Saved). SavingUnknown for an agent whose
 	// conversations this runner does not look for that way.
-	SavedConversation(session domain.Session) bool
+	SavedConversation(session domain.Session) domain.Saving
 	// ServedConversation is the conversation the session's agent, one that
 	// serves its conversation (domain.Agent.ServesConversation), was last
 	// heard working in: its process is listened to from the first ask until

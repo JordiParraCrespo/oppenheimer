@@ -15,8 +15,11 @@ default`, `auto` and `yolo`. The first task rides as
 `--prompt-interactive=<task>`, one word, so a task that starts with `-` is
 not read as a flag: the runner now replaces `<prompt>` inside a word. A
 restart reopens the session's conversation by id (`--resume <id>`) once Qwen
-has written it, which the runner checks, and `--continue` before then, since
-`--resume <id>` exits until something has been said. Before a message is
+has written it, which the runner checks, and before then creates it again
+under the same id (`--session-id <id>` with the task), since `--resume <id>`
+exits until something has been said and `--continue` may open another Qwen's
+conversation in the same folder. The chat shows what the person typed, not
+the `@file` contents or hook context Qwen stores with it. Before a message is
 typed, the runner, the API and the console empty Qwen's prompt, which an Up
 arrow, a stopped turn or a rewind can leave holding text, with Ctrl+E,
 Meta+D and Ctrl+U, which its Rewind dialog does not read.

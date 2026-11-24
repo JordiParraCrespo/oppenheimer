@@ -732,7 +732,9 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	}
 	launch := session.Launch
 	launch.Resume = true
-	launch.Saved = s.transcripts != nil && s.transcripts.SavedConversation(session)
+	if s.transcripts != nil {
+		launch.Saved = s.transcripts.SavedConversation(session)
+	}
 	launch.StatusLine = s.statusLine(session.ID)
 	launch.Wrap = s.observer.wrap(session.ID)
 	s.brief(&launch, session.Agent, session)

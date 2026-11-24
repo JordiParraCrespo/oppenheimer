@@ -94,9 +94,42 @@ func TestAQwenConversationReadsAsTheChatsTranscript(t *testing.T) {
 	}
 }
 
+// A message with an `@file` is stored with the file's contents after what
+// the person typed, and one with a hook's context with that context: the
+// chat shows what they typed, or the text Qwen kept to show, as Qwen's own
+// transcript does. Regression: the Chat tab drawing a referenced file's
+// whole body, or a hook's context, as the person's message.
+func TestAQwenMessageReadsAsWhatThePersonTyped(t *testing.T) {
+	projects := t.TempDir()
+	// The parts as Qwen 0.28.4 stored `@a.txt explain this` (watched).
+	atFile := `{"uuid":"u1","type":"user","provenance":"real_user","message":{"role":"user","parts":[` +
+		`{"text":"@a.txt explain this"},{"text":"\n--- Content from referenced files ---"},` +
+		`{"text":"\nContent from a.txt:\n"},{"text":"SECRET FILE BODY\nline2\n"},{"text":"\n--- End of content ---"}]}}`
+	hooked := `{"uuid":"u2","type":"user","provenance":"real_user","message":{"role":"user","parts":[` +
+		`{"text":"run the tests"},{"text":"<qwen:user-prompt-submit-context>\nbranch is dirty\n</qwen:user-prompt-submit-context>"}]}}`
+	shown := `{"uuid":"u3","type":"user","provenance":"real_user","systemPayload":{"displayText":"fix it 🎉"},` +
+		`"message":{"role":"user","parts":[{"text":"fix it 🎉 with the pasted image"},{"inlineData":{"mimeType":"image/png","data":"AA=="}}]}}`
+	writeQwen(t, projects, conversation, atFile+"\n"+hooked+"\n"+shown+"\n", time.Now())
+	sink := &batches{}
+	followSession(t, transcript.Options{QwenProjects: projects},
+		domain.Session{Agent: domain.AgentQwen, Place: domain.PlaceFolder, Folder: "/home/dev/src/app",
+			Launch: domain.Launch{Conversation: conversation}}, sink)
+
+	eventually(t, "the messages", func() bool { return len(sink.entries()) == 3 })
+	got := sink.entries()
+	for i, want := range []string{"@a.txt explain this", "run the tests"} {
+		if blocks := blocksOf(got[i]); len(blocks) != 1 || blocks[0]["text"] != want {
+			t.Fatalf("message %d = %v, want %q alone", i, blocks, want)
+		}
+	}
+	if blocks := blocksOf(got[2]); len(blocks) != 2 || blocks[0]["text"] != "fix it 🎉" || blocks[1]["type"] != "image" {
+		t.Fatalf("the shown message = %v, want its text and its image", blocks)
+	}
+}
+
 // Qwen names the conversation by the session's id at launch, and moves to
-// one of its own choosing on a `/clear`, or on a restart before anything was
-// said (`--continue` opens a fresh one). In a worktree session the session's
+// one of its own choosing on a `/clear`, or on a `--continue` (a restart the
+// runner could not look for its conversation at). In a worktree session the session's
 // conversation is the newest written there since it was created, and not one
 // of Qwen's own agents'; in a folder another Qwen may share, only the named
 // one is. Regression: the chat and the session's conversation stuck on the
@@ -113,8 +146,8 @@ func TestAQwenSessionFollowsTheConversationItMovedTo(t *testing.T) {
 	if got := reader.CurrentConversation(worktree); got != conversation {
 		t.Fatalf("with nothing written, conversation = %q, want the session's own", got)
 	}
-	if reader.SavedConversation(worktree) {
-		t.Fatal("with nothing written, the conversation reads as saved, which `--resume <id>` would exit on")
+	if got := reader.SavedConversation(worktree); got != domain.NotSaved {
+		t.Fatalf("with nothing written, saved = %v, want NotSaved: `--resume <id>` would exit on it", got)
 	}
 	fresh := "0b7f6a3e-1111-4c2d-9e8f-000000000001"
 	writeQwen(t, projects, fresh, line, created.Add(time.Minute))
@@ -127,8 +160,8 @@ func TestAQwenSessionFollowsTheConversationItMovedTo(t *testing.T) {
 	if got := reader.CurrentConversation(worktree); got != conversation {
 		t.Fatalf("named, conversation = %q, want %q", got, conversation)
 	}
-	if !reader.SavedConversation(worktree) {
-		t.Fatal("written, the conversation does not read as saved, so a restart would not reopen it by id")
+	if got := reader.SavedConversation(worktree); got != domain.Saved {
+		t.Fatalf("written, saved = %v, want Saved, so a restart reopens it by id", got)
 	}
 	cleared := "0b7f6a3e-1111-4c2d-9e8f-000000000002"
 	writeQwen(t, projects, cleared, line, created.Add(3*time.Minute))

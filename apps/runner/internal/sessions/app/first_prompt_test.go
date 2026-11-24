@@ -47,7 +47,9 @@ func (t *typedTranscripts) ServedConversation(context.Context, domain.Session) s
 
 func (t *typedTranscripts) CurrentConversation(domain.Session) string { return "" }
 
-func (t *typedTranscripts) SavedConversation(domain.Session) bool { return false }
+func (t *typedTranscripts) SavedConversation(domain.Session) domain.Saving {
+	return domain.SavingUnknown
+}
 
 func (t *typedTranscripts) typeInto(text string) {
 	t.mu.Lock()

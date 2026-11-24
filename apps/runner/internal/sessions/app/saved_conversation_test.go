@@ -15,11 +15,11 @@ import (
 // down, and counts the asks.
 type savedTranscripts struct {
 	typedTranscripts
-	saved map[string]bool
+	saved map[string]domain.Saving
 	asked int
 }
 
-func (t *savedTranscripts) SavedConversation(session domain.Session) bool {
+func (t *savedTranscripts) SavedConversation(session domain.Session) domain.Saving {
 	t.asked++
 	return t.saved[session.Launch.Conversation]
 }
@@ -27,22 +27,23 @@ func (t *savedTranscripts) SavedConversation(session domain.Session) bool {
 // A Restart asks the transcripts whether Qwen wrote the session's
 // conversation: once it has, the restart reopens it by id, since another
 // Qwen in the same folder makes "the newest" possibly the other's; before
-// that, `--resume <id>` would exit, so it is `--continue`. Regression: a
-// restart that resumed "the newest here" in a shared folder, or one that
-// named a conversation Qwen never wrote and came back with no agent.
+// that, `--resume <id>` would exit, so the conversation is created again
+// under the same id. Regression: a restart that resumed "the newest here"
+// in a shared folder, or one that named a conversation Qwen never wrote and
+// came back with no agent.
 func TestARestartAsksWhetherTheConversationWasSaved(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
-		saved bool
+		saved domain.Saving
 		want  string
 	}{
-		{"saved", true, "--resume " + conversation},
-		{"not yet saved", false, "--continue"},
+		{"saved", domain.Saved, "--resume " + conversation},
+		{"not yet saved", domain.NotSaved, "--session-id " + conversation},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			terminals := fake.NewTerminals()
-			transcripts := &savedTranscripts{saved: map[string]bool{conversation: tc.saved}}
+			transcripts := &savedTranscripts{saved: map[string]domain.Saving{conversation: tc.saved}}
 			svc, err := app.New(app.Options{
 				Terminals: terminals, Worktrees: fake.NewWorktrees(), Classifier: manifest.New(manifest.Options{}),
 				Store: &memoryStore{}, Publisher: &recorder{}, Files: fake.NewFiles(), Places: fake.NewPlaces(),

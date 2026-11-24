@@ -34,12 +34,13 @@ type Launch struct {
 	// re-sending the first task would replay it.
 	Conversation string `json:"conversation,omitempty"`
 	Resume       bool   `json:"resume,omitempty"`
-	// Saved says the agent has written Conversation down, so a resume may
-	// name it: an agent whose resume by id exits while there is nothing to
-	// reopen (Qwen Code's `--resume <id>` before the first message) reopens
-	// it by id only then (conversationReopen), and by its folder otherwise.
-	// The runner looks at each restart, so it is never saved.
-	Saved bool `json:"-"`
+	// Saved says whether the agent has written Conversation down, for an
+	// agent whose resume by id exits while there is nothing to reopen (Qwen
+	// Code's `--resume <id>` before the first message): once written, a
+	// resume reopens it by id (conversationReopen); before, it is created
+	// again under the same id, since "the last one here" may be another's in
+	// a shared folder. The runner looks at each restart, so it is never saved.
+	Saved Saving `json:"-"`
 	// Teleport is a cloud session of the agent's own that this session
 	// continues: the agent starts with its branch and history (`claude
 	// --teleport <id>`) in place of a new conversation, and a resume reopens
@@ -277,6 +278,20 @@ type conversationArgs struct {
 	prompt bool
 }
 
+// Saving is whether the agent has written a conversation down, as the
+// runner found it at a restart (Launch.Saved).
+type Saving uint8
+
+const (
+	// SavingUnknown: the runner does not look for this agent's
+	// conversations that way.
+	SavingUnknown Saving = iota
+	// Saved: the agent has written the conversation down.
+	Saved
+	// NotSaved: the runner looked, and the agent has not written it yet.
+	NotSaved
+)
+
 // conversation picks which of the catalog's vector sets this launch opens
 // its conversation with. A choice the catalog has no vector for falls to the
 // next, down to a fresh conversation with the first task.
@@ -307,10 +322,18 @@ func (l Launch) conversation(m launchMap) conversationArgs {
 	// The same, for an agent with no API to hear it through: the session's
 	// own conversation, once the agent has written it, since a folder another
 	// of the same agent shares makes "the last one" possibly the other's.
-	// Before that the by-id form would find nothing (Qwen's exits), and "the
-	// last one" is the one left.
-	case l.Resume && m.conversationReopen != nil && l.Server == nil && l.Saved && l.Conversation != "":
+	case l.Resume && m.conversationReopen != nil && l.Server == nil && l.Saved == Saved && l.Conversation != "":
 		return conversationArgs{argv: substitute(m.conversationReopen, "<conversation>", l.Conversation)}
+	// Before the agent wrote it, the by-id form finds nothing (Qwen's exits)
+	// and "the last one here" may be another's, so the conversation is
+	// created again under the session's id, with the first task: nothing was
+	// said in it, and the agent refuses an id only once it is written.
+	case l.Resume && m.conversationReopen != nil && l.Server == nil && l.Saved == NotSaved &&
+		l.Conversation != "" && m.conversationCreate != nil:
+		return conversationArgs{
+			argv:   substitute(m.conversationCreate, "<conversation>", l.Conversation),
+			prompt: true,
+		}
 	case l.Resume && m.conversationResume != nil && (l.Conversation != "" || !namesConversation(m.conversationResume)):
 		return conversationArgs{
 			argv:  substitute(m.conversationResume, "<conversation>", l.Conversation),

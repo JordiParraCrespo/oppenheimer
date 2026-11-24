@@ -191,18 +191,26 @@ func TestQwenStartsInteractiveWithItsTaskInsideItsFlag(t *testing.T) {
 func TestARestartReopensQwensConversationByIDOnceItIsSaved(t *testing.T) {
 	// Once Qwen has written the session's conversation, a restart names it:
 	// in a folder another Qwen shares, `--continue` may open the other's.
-	// Before that, `--resume <id>` would exit, and `--continue` is left.
+	// Before that, `--resume <id>` would exit, and `--continue` may open the
+	// other's too, so it is created again under its id, with its task.
+	// Regression: a folder session restarted before its first message that
+	// continued another Qwen's conversation.
 	id := "8b4c5d6e-0000-4000-8000-000000000001"
-	saved := Launch{Permission: "ask", Conversation: id, Resume: true, Saved: true, Prompt: "fix it"}.Args(AgentQwen)
+	saved := Launch{Permission: "ask", Conversation: id, Resume: true, Saved: Saved, Prompt: "fix it"}.Args(AgentQwen)
 	if want := []string{"--approval-mode", "default", "--resume", id}; !reflect.DeepEqual(saved, want) {
 		t.Fatalf("saved restart argv = %q, want %q", saved, want)
 	}
-	fresh := Launch{Permission: "ask", Conversation: id, Resume: true, Prompt: "fix it"}.Args(AgentQwen)
-	if want := []string{"--approval-mode", "default", "--continue"}; !reflect.DeepEqual(fresh, want) {
+	fresh := Launch{Permission: "ask", Conversation: id, Resume: true, Saved: NotSaved, Prompt: "fix it"}.Args(AgentQwen)
+	if want := []string{"--approval-mode", "default", "--session-id", id, "--prompt-interactive=fix it"}; !reflect.DeepEqual(fresh, want) {
 		t.Fatalf("unsaved restart argv = %q, want %q", fresh, want)
 	}
+	// Not looked for: the folder's last one, as before the runner looked.
+	unknown := Launch{Permission: "ask", Conversation: id, Resume: true, Prompt: "fix it"}.Args(AgentQwen)
+	if want := []string{"--approval-mode", "default", "--continue"}; !reflect.DeepEqual(unknown, want) {
+		t.Fatalf("unlooked restart argv = %q, want %q", unknown, want)
+	}
 	// A create never reopens, saved or not.
-	created := Launch{Permission: "ask", Conversation: id, Saved: true, Prompt: "fix it"}.Args(AgentQwen)
+	created := Launch{Permission: "ask", Conversation: id, Saved: Saved, Prompt: "fix it"}.Args(AgentQwen)
 	if want := []string{"--approval-mode", "default", "--session-id", id, "--prompt-interactive=fix it"}; !reflect.DeepEqual(created, want) {
 		t.Fatalf("create argv = %q, want %q", created, want)
 	}

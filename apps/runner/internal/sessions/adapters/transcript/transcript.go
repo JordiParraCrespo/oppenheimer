@@ -156,9 +156,12 @@ func (r *Reader) CurrentConversation(session domain.Session) string {
 
 // SavedConversation implements app.Transcripts: Qwen Code's, whose
 // `--resume <id>` exits until the conversation's file exists.
-func (r *Reader) SavedConversation(session domain.Session) bool {
+func (r *Reader) SavedConversation(session domain.Session) domain.Saving {
 	qwen, ok := r.chats[domain.AgentQwen].(qwenSource)
-	return ok && session.Agent == domain.AgentQwen && qwen.saved(session.Launch.Conversation)
+	if !ok || session.Agent != domain.AgentQwen {
+		return domain.SavingUnknown
+	}
+	return qwen.saved(session.Launch.Conversation)
 }
 
 // Teleported implements app.Transcripts. Only Claude Code teleports.

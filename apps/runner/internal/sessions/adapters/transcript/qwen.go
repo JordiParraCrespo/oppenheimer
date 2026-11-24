@@ -105,13 +105,21 @@ func (q qwenSource) file(session domain.Session) string {
 }
 
 // saved reports whether Qwen has written conversation down: its file is
-// created with its first record, not at launch.
-func (q qwenSource) saved(conversation string) bool {
+// created with its first record, not at launch. An id it could not look
+// for is SavingUnknown, which leaves the restart to `--continue`.
+func (q qwenSource) saved(conversation string) domain.Saving {
 	if !conversationPattern.MatchString(conversation) || q.projects == "" {
-		return false
+		return domain.SavingUnknown
 	}
-	named, _ := filepath.Glob(filepath.Join(q.projects, "*", "chats", conversation+".jsonl"))
-	return len(named) > 0
+	named, err := filepath.Glob(filepath.Join(q.projects, "*", "chats", conversation+".jsonl"))
+	switch {
+	case err != nil:
+		return domain.SavingUnknown
+	case len(named) > 0:
+		return domain.Saved
+	default:
+		return domain.NotSaved
+	}
 }
 
 // qwenInternal reports a conversation Qwen keeps for one of its own agents
@@ -167,7 +175,8 @@ type qwenRecord struct {
 		Status string `json:"status"`
 	} `json:"toolCallResult"`
 	SystemPayload struct {
-		SourceType string `json:"sourceType"`
+		SourceType  string  `json:"sourceType"`
+		DisplayText *string `json:"displayText"`
 	} `json:"systemPayload"`
 }
 
@@ -189,6 +198,33 @@ type qwenPart struct {
 	} `json:"functionResponse"`
 }
 
+// qwenAdded matches what Qwen adds to a message after the person typed it,
+// each block to its end marker or to the end: an `@file`'s contents, an MCP
+// resource's, a UserPromptSubmit hook's context and a system reminder (its
+// export and its transcript projection drop the same, 0.28.4).
+var qwenAdded = regexp.MustCompile(`(?s)\n?--- Content from referenced files ---.*?(?:--- End of content ---|$)` +
+	`|\n?--- Content from MCP resource [^\n]*---.*?(?:--- End of MCP resource [^\n]*---|$)` +
+	`|<qwen:user-prompt-submit-context>.*?(?:</qwen:user-prompt-submit-context>|$)` +
+	`|<system-reminder>.*?(?:</system-reminder>|$)`)
+
+// qwenSaid is what the person said in a user record: the text Qwen kept to
+// show (`systemPayload.displayText`) when it kept one, otherwise the text
+// parts joined as Qwen joins them, without what it added. The parts of an
+// `@file` message are the typed text, then the file's header, contents and
+// end marker, each a part of its own (watched), so they are joined first.
+func qwenSaid(record qwenRecord) string {
+	if shown := record.SystemPayload.DisplayText; shown != nil {
+		return *shown
+	}
+	var said strings.Builder
+	for _, part := range record.Message.Parts {
+		if !part.Thought {
+			said.WriteString(part.Text)
+		}
+	}
+	return strings.TrimRight(qwenAdded.ReplaceAllString(said.String(), ""), "\n")
+}
+
 // qwenEntry is one record as the chat's entry, or none.
 func qwenEntry(raw []byte, max int) ([]byte, bool) {
 	var record qwenRecord
@@ -202,12 +238,12 @@ func qwenEntry(raw []byte, max int) ([]byte, bool) {
 			return nil, false
 		}
 		var blocks []chatBlock
+		if said := qwenSaid(record); strings.TrimSpace(said) != "" {
+			cut, truncated := truncate(said, chatTextMax)
+			blocks = append(blocks, chatBlock{Type: "text", Text: cut, Truncated: truncated})
+		}
 		for _, part := range record.Message.Parts {
-			switch {
-			case part.Text != "" && !part.Thought:
-				cut, truncated := truncate(part.Text, chatTextMax)
-				blocks = append(blocks, chatBlock{Type: "text", Text: cut, Truncated: truncated})
-			case len(part.InlineData) > 0 || len(part.FileData) > 0:
+			if len(part.InlineData) > 0 || len(part.FileData) > 0 {
 				blocks = append(blocks, chatBlock{Type: "image"})
 			}
 		}
