@@ -156,7 +156,10 @@
   },
   "botNotice": {
     "title": "{{bot}} has news for you",
-    "openChat": "Open chat"
+    "openChat": "Open chat",
+    "reply": "Reply here",
+    "hideReply": "Hide chat",
+    "chat": "Chat with {{bot}}"
   },
   "report": {
     "sender": "An agent",
