@@ -13,14 +13,18 @@ package state
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/filelock"
 )
 
 var _ app.Store = (*Store)(nil)
@@ -87,50 +91,53 @@ func (s *Store) read() ([]domain.Session, error) {
 func (s *Store) Save(sessions []domain.Session) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if err := os.MkdirAll(filepath.Dir(s.path), 0o700); err != nil {
-		return err
-	}
-	unlock, err := lock(filepath.Join(filepath.Dir(s.path), lockName))
+	release, err := filelock.Acquire(context.Background(), filepath.Join(filepath.Dir(s.path), lockName))
 	if err != nil {
 		return err
 	}
-	defer unlock()
+	defer release()
 
 	onDisk, err := s.read()
 	if err != nil {
 		return err
 	}
-	merged := make([]domain.Session, 0, len(onDisk)+len(sessions))
-	at := map[string]int{}
-	for _, session := range onDisk {
-		at[session.ID] = len(merged)
-		merged = append(merged, session)
-	}
-	changed := map[string][]byte{}
-	for _, session := range sessions {
-		encoded := encode(session)
-		i, there := at[session.ID]
-		if there && bytes.Equal(s.seen[session.ID], encoded) {
-			continue
-		}
-		if there && closedElsewhere(merged[i], s.seen[session.ID], session) {
-			continue
-		}
-		changed[session.ID] = encoded
-		if there {
-			merged[i] = session
-		} else {
-			at[session.ID] = len(merged)
-			merged = append(merged, session)
-		}
-	}
+	merged, written := merge(s.seen, onDisk, sessions)
 	if err := s.write(merged); err != nil {
 		return err
 	}
-	for id, encoded := range changed {
-		s.seen[id] = encoded
-	}
+	maps.Copy(s.seen, written)
 	return nil
+}
+
+// merge is what a save writes: the file's sessions, with this process's
+// own over them. Mine is one this process changed since it last saw it
+// (seen); a session it hands over as it saw it is the file's to keep, and
+// so is one another process closed since, which this one would write back
+// open. written is what this process wrote, by id, for its next seen.
+func merge(seen map[string][]byte, onDisk, mine []domain.Session) (merged []domain.Session, written map[string][]byte) {
+	merged = slices.Clone(onDisk)
+	at := make(map[string]int, len(onDisk))
+	for i, session := range onDisk {
+		at[session.ID] = i
+	}
+	written = map[string][]byte{}
+	for _, session := range mine {
+		encoded := encode(session)
+		i, there := at[session.ID]
+		switch {
+		case !there:
+			at[session.ID] = len(merged)
+			merged = append(merged, session)
+		case bytes.Equal(seen[session.ID], encoded):
+			continue
+		case closedElsewhere(merged[i], seen[session.ID], session):
+			continue
+		default:
+			merged[i] = session
+		}
+		written[session.ID] = encoded
+	}
+	return merged, written
 }
 
 func (s *Store) write(sessions []domain.Session) error {

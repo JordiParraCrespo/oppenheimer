@@ -32,6 +32,7 @@ import (
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/filelock"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/execx"
 )
@@ -126,18 +127,13 @@ func (c *Client) lock(ctx context.Context, store string) (func(), error) {
 	}
 	c.mu.Unlock()
 	m.Lock()
-	file, err := openLock(lockPath(store, "store"))
+	held, err := filelock.Acquire(ctx, lockPath(store, "store"))
 	if err != nil {
-		m.Unlock()
-		return nil, domain.ErrWorktree.WithDetail("lock %s: %v", store, err).WithCause(err)
-	}
-	if err := file.lock(ctx); err != nil {
-		_ = file.f.Close()
 		m.Unlock()
 		return nil, domain.ErrWorktree.WithDetail("wait for %s: %v", store, err).WithCause(err)
 	}
 	return func() {
-		file.release()
+		held()
 		m.Unlock()
 	}, nil
 }
@@ -396,15 +392,11 @@ func (c *Client) deepen(ctx context.Context, repo, store string) {
 		}()
 		// Another runner process deepening the same store is already doing
 		// this one's work.
-		held, err := openLock(lockPath(store, "deepen"))
-		if err != nil {
+		release, ok, err := filelock.TryAcquire(lockPath(store, "deepen"))
+		if err != nil || !ok {
 			return
 		}
-		if !held.tryLock() {
-			_ = held.f.Close()
-			return
-		}
-		defer held.release()
+		defer release()
 		ctx := context.WithoutCancel(ctx)
 		quick := command{timeout: quickTimeout, dir: store}
 		// Promised objects are what a blobless clone records: the blobs of
@@ -430,20 +422,7 @@ func (c *Client) deepeningOf(store string) chan struct{} {
 // isDeepening reports a deepen of store running here or in another runner
 // process, which holds the store's deepen lock while it fetches.
 func (c *Client) isDeepening(store string) bool {
-	return c.deepeningOf(store) != nil || deepenedElsewhere(store)
-}
-
-func deepenedElsewhere(store string) bool {
-	held, err := openLock(lockPath(store, "deepen"))
-	if err != nil {
-		return false
-	}
-	if held.tryLock() {
-		held.release()
-		return false
-	}
-	_ = held.f.Close()
-	return true
+	return c.deepeningOf(store) != nil || filelock.Held(lockPath(store, "deepen"))
 }
 
 // awaitDeepen waits for a running deepen of store to land, here or in
@@ -458,15 +437,10 @@ func (c *Client) awaitDeepen(ctx context.Context, store string) error {
 			return ctx.Err()
 		}
 	}
-	held, err := openLock(lockPath(store, "deepen"))
-	if err != nil {
-		return nil //nolint:nilerr // no lock file to wait on is no deepen to wait for
+	if err := filelock.Wait(ctx, lockPath(store, "deepen")); err != nil && ctx.Err() != nil {
+		return ctx.Err()
 	}
-	if err := held.lock(ctx); err != nil {
-		_ = held.f.Close()
-		return err
-	}
-	held.release()
+	// A lock file that cannot be opened is no deepen to wait for.
 	return nil
 }
 
