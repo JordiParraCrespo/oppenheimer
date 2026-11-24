@@ -1,7 +1,6 @@
 // Package execpolicy is app.ExecPolicies as one JSON file under the runner
-// home (`exec.json`), written by `runner exec` and read on every `host.exec`.
-// Nothing on the link writes it: what bots may run on a host is decided on
-// the host.
+// home (`exec.json`), written by `runner exec`, or by `host.settings.set` when
+// the person asked a bot to, and read on every `host.exec`.
 package execpolicy
 
 import (
@@ -19,7 +18,7 @@ import (
 var _ app.ExecPolicies = File{}
 
 // maxSize bounds what is read: a policy is a mode and a short list.
-const maxSize = 64 << 10
+const maxSize = domain.ExecPolicyMaxBytes
 
 // File is the policy at Path.
 type File struct {

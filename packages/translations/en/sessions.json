@@ -573,7 +573,7 @@
     "composer": {
       "placeholder": "Message {{agent}}",
       "placeholderAnyAgent": "Message the agent",
-      "suggestion": "{{suggestion}}  ·  Tab to use it",
+      "suggestion": "Tab to use it  ·  {{suggestion}}",
       "send": "Send",
       "stop": "Stop",
       "attach": "Attach files",
@@ -624,7 +624,8 @@
     "tasks_other": "{{done}} of {{count}} tasks done",
     "notice": {
       "interrupted": "You stopped this turn",
-      "compacted": "Context compacted"
+      "compacted": "Context compacted",
+      "model": "Model changed to <model>{{model}}</model>"
     },
     "task": {
       "completed": "Background task finished",
@@ -689,6 +690,28 @@
       "dismissed": "You dismissed the questions",
       "noAnswer": "No answer read"
     },
+    "permission": {
+      "command": "Run this command?",
+      "edit": "Make this edit?",
+      "write": "Create this file?",
+      "web": "Open this page?",
+      "tool": "Use this tool?",
+      "allowOnce": "Allow once",
+      "alwaysAllow": "Always allow",
+      "deny": "Deny",
+      "denyHint": "Stop, and tell {{agent}} what to do instead",
+      "keys": "{{first}}–{{last}} to choose · Esc to deny",
+      "withNote": "Deny with a note",
+      "note": "What should {{agent}} do instead?",
+      "noteLabel": "Your note for {{agent}}",
+      "noteHint": "Enter to send · Esc to go back",
+      "sendNote": "Deny and send",
+      "back": "Back",
+      "allowed": "Allowed · {{agent}} goes on",
+      "denied": "Denied · {{agent}} stops here",
+      "caution": "Look closely: this can delete or overwrite work",
+      "truncated": "The rest of this change is longer than the chat shows"
+    },
     "explored": {
       "title": "Explored"
     },
@@ -747,16 +770,10 @@
     "closeTab": "Close {{name}}",
     "launcher": {
       "title": "Open beside this session",
-      "description": "Keep this session in view while you work on something else.",
       "terminal": "Terminal",
-      "terminalDetail": "A shell in this session's worktree",
-      "session": "Session",
-      "sessionDetail": "Another session, on any host",
-      "bot": "Bot",
-      "botDetail": "Pick one of your bots and chat",
-      "browserDetail": "The session's dev server",
-      "simulatorDetail": "The device the session's agent drives",
-      "desktopDetail": "The host's own screen",
+      "session": "Another session",
+      "sessionDetail": "Any host",
+      "bot": "A bot",
       "back": "Back",
       "sessions": "Pick a session",
       "searchSessions": "Search sessions",
@@ -765,11 +782,12 @@
       "searchBots": "Search bots",
       "noBots": "No bot yet. Create one under Employees.",
       "noMatch": "Nothing matches “{{query}}”.",
-      "agent": "Agent",
-      "agentDetail": "Another agent in this worktree",
+      "agent": "Another agent",
+      "agentDetail": "Same worktree",
       "agents": "Pick an agent",
       "agentShares": "It works in this session's worktree, on the same files and git index as the agent already there.",
-      "noAgents": "No agent can start beside this session. Switch one on in Settings → Agents."
+      "noAgents": "No agent can start beside this session. Switch one on in Settings → Agents.",
+      "sideChats": "Side chats"
     },
     "terminal": {
       "name": "Terminal {{index}}",
@@ -903,5 +921,10 @@
       "agentBody": "Paste this into Claude Code, or another coding agent, in a checkout of the repository. It adds the hook and its settings, then tells you what to set in claude.ai. Your key isn’t in the prompt: you paste it into claude.ai yourself.",
       "agentLabel": "Prompt for your agent"
     }
+  },
+  "tabs": {
+    "label": "Open sessions",
+    "new": "New session",
+    "close": "Close {{name}}"
   }
 }

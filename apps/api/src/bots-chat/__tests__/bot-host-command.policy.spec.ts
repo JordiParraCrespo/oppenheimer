@@ -35,16 +35,16 @@ describe('describeHostCommand', () => {
     expect(text).not.toContain('Exit code');
   });
 
-  // A refusal is the host owner's decision: the bot is told to hand it on,
-  // not to go looking for a program the host does allow.
-  it('says a refusal ran nothing and is the host owner’s to change', () => {
+  // A refusal by the host's policy is the bot's to lift when the person asked
+  // for the work (set_host_settings), never to go around with another program.
+  it('says a refusal ran nothing and points the bot at set_host_settings to allow it', () => {
     const text = describeHostCommand(
       { kind: 'failed', code: 'EXEC_001', detail: 'Running commands is off' },
       'build-02',
     );
     expect(text).toContain('EXEC_001');
     expect(text).toContain('Nothing ran');
-    expect(text).toContain('on the host itself');
+    expect(text).toContain('set_host_settings');
     // A real model read EXEC_001 as "not on the list" and sent the person to
     // the wrong fix; the answer says what the code means.
     expect(text).toContain('switched off on this host');

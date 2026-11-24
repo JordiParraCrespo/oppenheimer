@@ -515,6 +515,11 @@ func sessions(ctx context.Context, args []string) (int, error) {
 			return cli.ExitUsage, err
 		}
 		return withDelegation(func(d cli.Delegation) error { return d.WakeIn(ctx, delay, strings.Join(args[1:], " ")) })
+	case "show":
+		if len(args) != 1 {
+			return cli.ExitUsage, errors.New(`usage: runner sessions show <spec.json | ->`)
+		}
+		return withDelegation(func(d cli.Delegation) error { return d.ShowVisual(ctx, args[0]) })
 	case "send-file":
 		fs := flag.NewFlagSet("sessions send-file", flag.ContinueOnError)
 		caption := fs.String("caption", "", "a line about the file, shown with it")
@@ -748,6 +753,7 @@ var commandSections = []struct {
 		{"runner sessions report \"msg\"", "from inside a child: send the parent a message"},
 		{"runner sessions children", "this session's children and what each one says"},
 		{"runner sessions send-file <path> [--caption \"line\"]", "show the person a file in its chat"},
+		{"runner sessions show <spec.json | ->", "show the person a chart, figures or a table in its chat"},
 		{"runner sessions notify \"line\"", "tell the person, in the console's Inbox"},
 		{"runner sessions watch-pr <n> [--repo R] [--off]", "be woken by a pull request's checks, reviews,\ncomments and merge"},
 		{"runner sessions wake-in <30m|2h|1d> \"note\"", "be woken then with the note, instead of polling"},

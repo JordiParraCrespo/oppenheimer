@@ -32,6 +32,14 @@ export function PrivacyScreen() {
         <p>{t('public.privacy.google.separateConsent')}</p>
       </LegalSection>
 
+      <LegalSection id="extension" title={t('public.privacy.extension.title')}>
+        <p>{t('public.privacy.extension.intro')}</p>
+        <p>{t('public.privacy.extension.reads')}</p>
+        <p>{t('public.privacy.extension.stores')}</p>
+        <p>{t('public.privacy.extension.sends')}</p>
+        <p>{t('public.privacy.extension.removal')}</p>
+      </LegalSection>
+
       <LegalSection title={t('public.privacy.purposes.title')}>
         <p>{t('public.privacy.purposes.body')}</p>
       </LegalSection>

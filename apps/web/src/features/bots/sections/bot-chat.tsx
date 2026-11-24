@@ -2,7 +2,7 @@ import { BotAvatar } from '@oppenheimer/design-system-web';
 import { useSuspenseBot } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, PageBar } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotActionsMenu } from '@/features/bots/components/bot-actions-menu';
 import { ToolCallsToggle } from '@/features/bots/components/tool-calls-toggle';
@@ -14,9 +14,11 @@ import { BotChatBody } from './bot-chat-body';
  * A bot's chat: its `PageBar`, the sidebar toggle, the bot's face and name,
  * the wrench that shows or hides its tool calls (kept on this device) and
  * its menu, over the conversation (`BotChatBody`). The header and the
- * conversation both draw this one bot, so it is read here once.
+ * conversation both draw this one bot, so it is read here once. With `tabs`
+ * (inside Sessions) the bar leads with the open tabs instead of the face and
+ * name, which the bot's own tab carries.
  */
-export function BotChat({ botId }: { botId: string }) {
+export function BotChat({ botId, tabs }: { botId: string; tabs?: ReactNode }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: bot, error } = useSuspenseBot(botId);
@@ -26,8 +28,11 @@ export function BotChat({ botId }: { botId: string }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <PageBar
-        leading={<BotAvatar option={{ initials: bot.initials }} size={26} face={bot.face} />}
-        title={bot.name}
+        leading={
+          tabs ? null : <BotAvatar option={{ initials: bot.initials }} size={26} face={bot.face} />
+        }
+        title={tabs ?? bot.name}
+        tone={tabs ? 'chrome' : 'page'}
         actions={
           <>
             <ToolCallsToggle shown={toolCalls.shown} onShownChange={toolCalls.setShown} />

@@ -361,7 +361,10 @@
     "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión.",
     "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host.",
     "BOTS_044": "Ese mensaje ya no está en este chat.",
-    "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción."
+    "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción.",
+    "BOTS_046": "Ese formulario ya no está.",
+    "BOTS_047": "Algunos valores no encajan con el formulario.",
+    "BOTS_048": "Ese formulario ya se envió, o el bot siguió adelante."
   },
   "notFound": {
     "title": "Esta página no existe",

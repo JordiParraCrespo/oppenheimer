@@ -22,6 +22,9 @@ from the tab strip's plus.
 | **Bot** | a bot's chat, searchable by name and job: the same conversation as its page in Employees, without the page's head | this device's |
 | **Browser, Simulator, Desktop** | the previews of note 30 and the host's desktop, each offered when the console and deployment can show it | this device's |
 
+On 2026-11-24 the launcher became large rows, with Agent, Session and Bot
+folded under one **Side chats** row (`33-session-tabs.md` §4).
+
 The tab strip is the chat's (`ChatTabStrip`); a tab's close is its own,
 and the shown tab's neighbour shows when it closes, as a browser does. A
 session or a bot tab adds a link to its own page beside the strip.
