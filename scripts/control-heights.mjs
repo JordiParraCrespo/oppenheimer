@@ -7,10 +7,16 @@
  * belongs to a control and sets `h-*`, `size-*` or `min-h-*` to anything but
  * a `--control-h-*` token.
  *
- * A class list belongs to a control when it styles focus, an open popup or a
- * pressed state (`focus-visible:`, `data-popup-open:`, `data-pressed:`,
- * `aria-expanded:`), or when it is the `className` of a `<button>`,
- * `<input>`, `<Button>`, `<IconButton>`, `<Input>` or a `…Trigger`.
+ * Whether a class string is a control's is read off the syntax tree, never
+ * off the text around it. A string belongs to a class unit: the `className`
+ * attribute it sits in, or else the variable, return or arrow body that holds
+ * it (a `cva()` call, a variant map, a `cn()` list, a `[…].join(' ')`). The
+ * unit is a control's when it is the `className` of a control's element
+ * (`<button>`, `<input>`, `<select>`, or a component whose name ends in
+ * Button, Trigger, Input, Toggle, Tab or Select), or when any of its strings
+ * styles a control's state (`focus-visible:`, `data-popup-open:`,
+ * `data-pressed:`, `aria-expanded:`). A new way of writing classes needs no
+ * new rule as long as its strings share a unit.
  *
  * `CONTROL_HEIGHT_DEBT` (`control-height-debt.mjs`) holds each file that had
  * some when the campaign started to its count: one more fails, and one fewer
@@ -42,8 +48,9 @@ const SKIP = /\.(test|spec|stories)\.tsx$|\.gen\.ts$/;
 const CONTROL_STATE =
   /(?:^|\s)(?:[\w-]+(?:\[[^\]]*\])?(?:\/[\w-]+)?:)*(?:focus-visible|data-popup-open|data-pressed|aria-expanded):/;
 
+/** An element that is a control, by its tag's last name (`Select.Trigger` is `Trigger`). */
 const CONTROL_TAG =
-  /<(?:button|input|select|(?:[A-Z]\w*)?(?:Button|Trigger|Input|Toggle|Tab|Select))\b[^<>]*$/;
+  /^(?:button|input|select|[A-Z]\w*(?:Button|Trigger|Input|Toggle|Tab|Select)|Button|Trigger|Input|Toggle|Tab|Select)$/;
 
 /** A height or a square size, on any variant chain (`group-data-[size=md]/tabs:h-8`). */
 const HEIGHT =
@@ -69,13 +76,37 @@ export function pixels(token) {
 /** `size-*` and `h-*` that only shape a glyph inside the control: `[&_svg]:size-4`. */
 const ON_A_CHILD = /^\[&[^\]]*\]:|^\*:|^has-|^group-has-/;
 
+/** The node a class string belongs to with the strings beside it (see the header). */
+function unitOf(node) {
+  for (let at = node.parent; at; at = at.parent) {
+    if (
+      ts.isJsxAttribute(at) ||
+      ts.isVariableDeclaration(at) ||
+      ts.isReturnStatement(at) ||
+      ts.isExpressionStatement(at)
+    )
+      return at;
+    if (ts.isArrowFunction(at) && !ts.isBlock(at.body)) return at;
+    if (ts.isJsxElement(at) || ts.isJsxSelfClosingElement(at) || ts.isBlock(at)) return node;
+  }
+  return node;
+}
+
+/** The tag of the element whose `className` holds this unit, or null. */
+function classNameTag(unit) {
+  if (!ts.isJsxAttribute(unit) || unit.name.getText() !== 'className') return null;
+  const element = unit.parent.parent;
+  const name = element.tagName.getText();
+  return name.slice(name.lastIndexOf('.') + 1);
+}
+
 function classStrings(source) {
   const strings = [];
   const file = ts.createSourceFile(
     'x.tsx',
     source,
     ts.ScriptTarget.Latest,
-    false,
+    true,
     ts.ScriptKind.TSX,
   );
   const visit = (node) => {
@@ -86,25 +117,12 @@ function classStrings(source) {
       ts.isTemplateMiddle(node) ||
       ts.isTemplateTail(node)
     ) {
-      strings.push({ text: node.text, index: node.getStart(file) });
+      strings.push({ text: node.text, index: node.getStart(file), unit: unitOf(node) });
     }
     ts.forEachChild(node, visit);
   };
   visit(file);
   return strings;
-}
-
-/**
- * A variant map or a `cn()` list splits one control's classes over several
- * strings (`group-data-[size=md]/tabs:h-8` beside the base list that has the
- * focus ring): a string within 600 characters of one that styles a control
- * state counts as that control's.
- */
-function nearControlState(strings, text, index) {
-  return strings.some(
-    (other) =>
-      other.text !== text && Math.abs(other.index - index) < 600 && CONTROL_STATE.test(other.text),
-  );
 }
 
 function lineOf(source, index) {
@@ -116,13 +134,12 @@ function lineOf(source, index) {
 export function findings(source) {
   const out = [];
   const strings = classStrings(source);
-  for (const { text, index } of strings) {
+  for (const { text, index, unit } of strings) {
     if (!/(?:^|[\s:!])(?:min-h|h|size)-/.test(text)) continue;
-    const before = source.slice(Math.max(0, index - 400), index).replaceAll('=>', '');
+    const tag = classNameTag(unit);
     const isControl =
-      CONTROL_STATE.test(text) ||
-      CONTROL_TAG.test(before) ||
-      nearControlState(strings, text, index);
+      (tag !== null && CONTROL_TAG.test(tag)) ||
+      strings.some((other) => other.unit === unit && CONTROL_STATE.test(other.text));
     if (!isControl) continue;
     for (const match of text.matchAll(HEIGHT)) {
       const token = match[1];

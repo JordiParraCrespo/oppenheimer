@@ -21,7 +21,11 @@ covered, the debt left, and the open calls.
 - **`pnpm check:control-heights`** (`scripts/control-heights.mjs`, in
   `ci:local`'s lint job) finds a control whose height is written by hand
   (`h-8`, `size-[30px]`, `group-data-[size=md]/tabs:h-8`) instead of
-  `h-(--control-h-*)`, `size-(--control-h-*)` or a component's `size`.
+  `h-(--control-h-*)`, `size-(--control-h-*)` or a component's `size`. It
+  reads the syntax tree: a class string is a control's when its unit (the
+  `className` it sits in, or the variable or return that holds it) is a
+  control's element or styles a control's state, never by what text is near
+  it. A miss or a false hit is fixed in that rule, not with a special case.
   `scripts/control-height-debt.mjs` holds each file to the count it had; a
   pass lowers counts there as it pays them off, and never raises one.
 - **The measurement** (below) reads real heights off the running console,

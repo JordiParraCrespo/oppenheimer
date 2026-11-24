@@ -63,3 +63,20 @@ test('an important height is still a hand-written one', () => {
   assert.deepEqual(tokens(`const a = 'md:!h-8 focus-visible:ring-2';`), ['md:!h-8']);
   assert.deepEqual(tokens(`const a = 'h-8! focus-visible:ring-2';`), ['h-8!']);
 });
+
+test('a string beside a control only by distance is not the control’s', () => {
+  const source = `const ring = 'focus-visible:ring-2';\nconst row = 'flex h-11 items-center';`;
+  assert.deepEqual(tokens(source), []);
+  assert.deepEqual(
+    tokens(
+      `<div className="flex h-8 items-center"><button className="focus-visible:ring-2" /></div>`,
+    ),
+    [],
+  );
+});
+
+test('a variant map is one control however far its sizes sit from its focus ring', () => {
+  const pad = 'x'.repeat(2000);
+  const source = `const v = cva('inline-flex focus-visible:ring-2 ${pad}', { variants: { size: { xs: 'h-6 px-2' } } });`;
+  assert.deepEqual(tokens(source), ['h-6']);
+});
