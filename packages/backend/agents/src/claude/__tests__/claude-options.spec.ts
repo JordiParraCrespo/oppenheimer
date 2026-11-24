@@ -11,9 +11,9 @@ import { describe, expect, it } from 'vitest';
 import { type BotTurnRequest, compactionThreshold } from '../../bot-engine';
 import {
   BUILT_IN_TOOLS,
-  DEFER_TOOLS_ABOVE_CHARS,
   claudeEnv,
   claudeOptions,
+  DEFER_TOOLS_ABOVE_CHARS,
   DISALLOWED_TOOLS,
   MODEL_VARIABLES,
   pinAllModels,
