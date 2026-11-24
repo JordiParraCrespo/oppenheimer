@@ -1,4 +1,5 @@
 import { useNow } from '@oppenheimer/design-system-mobile';
+import { Button } from '@oppenheimer/design-system-mobile/button';
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import { cardView, type TaskEntity, taskSessionsOf } from '@oppenheimer/frontend-consumer';
 import {
@@ -8,13 +9,15 @@ import {
   useSessions,
 } from '@oppenheimer/frontend-consumer/react';
 import { todayIn } from '@oppenheimer/frontend-core';
+import { RecordState } from '@oppenheimer/frontend-mobile';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { DetailCard } from '../components/detail-card';
 import { DetailLine } from '../components/detail-line';
 import { SessionChip } from '../components/session-chip';
 import { cardContext } from '../lib/card-context';
+import { readsState, retryFailed } from '../lib/reads';
 import { TaskCheck } from './task-check';
 import { TaskStatusPicker } from './task-status';
 
@@ -23,19 +26,37 @@ const DAY_TICK_MS = 60_000;
 /**
  * A task's page on the phone: its title with the done check, its notes, its
  * column (the system's picker), where it is filed and when it is due, and the
- * sessions working on it, each opening its session.
+ * sessions working on it, each opening its session. Until the projects and
+ * milestones that name where it is filed have answered, the page waits (or
+ * says they failed) rather than drawing blank names; the sessions card does
+ * the same for the sessions, so a read that failed never says "No sessions".
  */
 export function TaskDetail({ task }: { task: TaskEntity }) {
   const { t, i18n } = useTranslation();
-  const { data: projects } = useProjects();
-  const { data: milestones } = useMilestones();
-  const { data: sessions } = useSessions();
+  const projectsRead = useProjects();
+  const milestonesRead = useMilestones();
+  const sessionsRead = useSessions();
   const { data: hosts } = useHosts();
   const today = todayIn(useNow(DAY_TICK_MS));
-  const project = projects?.find((row) => row.id === task.projectId);
-  const milestone = task.milestoneId
-    ? milestones?.find((row) => row.id === task.milestoneId)
-    : null;
+  const names = [projectsRead, milestonesRead];
+  const namesState = readsState(names);
+  const sessionsState = readsState([sessionsRead]);
+
+  if (namesState !== 'ready') {
+    return (
+      <RecordState
+        pending={namesState === 'pending'}
+        failed={namesState === 'failed' ? t('tasks.mobile.loadFailed') : null}
+        onRetry={() => retryFailed(names)}
+        notFound={t('tasks.mobile.notFound')}
+      />
+    );
+  }
+
+  const projects = projectsRead.data ?? [];
+  const milestones = milestonesRead.data ?? [];
+  const project = projects.find((row) => row.id === task.projectId);
+  const milestone = task.milestoneId ? milestones.find((row) => row.id === task.milestoneId) : null;
   const view = cardView(
     task,
     cardContext({
@@ -47,13 +68,13 @@ export function TaskDetail({ task }: { task: TaskEntity }) {
         tomorrow: t('tasks.dates.tomorrow'),
         yesterday: t('tasks.dates.yesterday'),
       },
-      projects: projects ?? [],
-      milestones: milestones ?? [],
+      projects,
+      milestones,
     }),
   );
   const working = taskSessionsOf(
     task,
-    new Map((sessions ?? []).map((session) => [session.id, session])),
+    new Map((sessionsRead.data ?? []).map((session) => [session.id, session])),
     new Map((hosts ?? []).map((host) => [host.id, host])),
   );
 
@@ -97,7 +118,20 @@ export function TaskDetail({ task }: { task: TaskEntity }) {
       </DetailCard>
 
       <DetailCard title={t('tasks.mobile.sessions')}>
-        {working.length === 0 ? (
+        {sessionsState === 'pending' ? (
+          <View className="items-start px-4 py-3" aria-busy>
+            <ActivityIndicator />
+          </View>
+        ) : sessionsState === 'failed' ? (
+          <View className="items-start gap-3 px-4 py-3">
+            <Text variant="caption" tone="destructive">
+              {t('sessions.sidebar.loadFailed')}
+            </Text>
+            <Button variant="outline" size="sm" onPress={() => sessionsRead.refetch()}>
+              <Text>{t('common.retry')}</Text>
+            </Button>
+          </View>
+        ) : working.length === 0 ? (
           <Text variant="caption" className="px-4 py-3">
             {t('tasks.mobile.noSessions')}
           </Text>

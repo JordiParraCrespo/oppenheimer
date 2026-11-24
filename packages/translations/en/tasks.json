@@ -266,6 +266,7 @@
   "mobile": {
     "actions": "Task actions",
     "notFound": "This task is gone. It may have been deleted from another device.",
+    "loadFailed": "Couldn’t load the projects and milestones this task is filed under.",
     "due": "Due",
     "sessions": "Sessions",
     "noSessions": "No session works on this task yet. Start one from the console on your computer."
