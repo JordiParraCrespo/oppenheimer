@@ -25,56 +25,57 @@ export function BotGatewaysScreen({ botId }: { botId: string }) {
         title={t('bots.settings.gateways.title')}
         description={t('bots.settings.gateways.subtitle')}
       />
-      <PillTabs
-        size="sm"
-        className="mb-4"
-        aria-label={t('bots.settings.gateways.tabs.label')}
-        value={tab}
-        onValueChange={(next) => setTab(next as BotGatewayTab)}
-      >
-        {BOT_GATEWAY_TABS.map((id) => (
-          <PillTab key={id} value={id} data-testid={`bot-gateway-tab-${id}`}>
-            {t(`bots.settings.gateways.tabs.${id}`)}
-          </PillTab>
-        ))}
-      </PillTabs>
-      <div className="flex flex-col gap-6">
-        {tab === 'whatsapp' ? (
-          <QueryState key="whatsapp">
-            <QueryState.Pending>
-              <BotGatewaysSkeleton />
-            </QueryState.Pending>
-            <QueryState.Error fallback={t('bots.settings.gateways.whatsappFailed')} />
-            <QueryState.Data>
-              <BotWhatsappGateways botId={botId} />
-            </QueryState.Data>
-          </QueryState>
-        ) : null}
-        {tab === 'telegram' ? (
-          <QueryState key="telegram">
-            <QueryState.Pending>
-              <BotGatewaysSkeleton />
-            </QueryState.Pending>
-            <QueryState.Error fallback={t('bots.settings.gateways.telegramFailed')} />
-            <QueryState.Data>
-              <BotTelegramGateways botId={botId} />
-            </QueryState.Data>
-          </QueryState>
-        ) : null}
-        {tab === 'slack' ? (
-          <section data-testid="bot-slack-gateway" className="flex flex-col gap-3">
-            <p className="m-0 px-1 text-sm text-fg-muted">{t('bots.settings.slack.subtitle')}</p>
-            <QueryState key="slack">
+      <div className="flex flex-col gap-4">
+        <PillTabs
+          size="sm"
+          aria-label={t('bots.settings.gateways.tabs.label')}
+          value={tab}
+          onValueChange={(next) => setTab(next as BotGatewayTab)}
+        >
+          {BOT_GATEWAY_TABS.map((id) => (
+            <PillTab key={id} value={id} data-testid={`bot-gateway-tab-${id}`}>
+              {t(`bots.settings.gateways.tabs.${id}`)}
+            </PillTab>
+          ))}
+        </PillTabs>
+        <div className="flex flex-col gap-6">
+          {tab === 'whatsapp' ? (
+            <QueryState key="whatsapp">
               <QueryState.Pending>
-                <BotSlackSkeleton />
+                <BotGatewaysSkeleton />
               </QueryState.Pending>
-              <QueryState.Error fallback={t('bots.settings.slack.loadFailed')} />
+              <QueryState.Error fallback={t('bots.settings.gateways.whatsappFailed')} />
               <QueryState.Data>
-                <BotSlack botId={botId} />
+                <BotWhatsappGateways botId={botId} />
               </QueryState.Data>
             </QueryState>
-          </section>
-        ) : null}
+          ) : null}
+          {tab === 'telegram' ? (
+            <QueryState key="telegram">
+              <QueryState.Pending>
+                <BotGatewaysSkeleton />
+              </QueryState.Pending>
+              <QueryState.Error fallback={t('bots.settings.gateways.telegramFailed')} />
+              <QueryState.Data>
+                <BotTelegramGateways botId={botId} />
+              </QueryState.Data>
+            </QueryState>
+          ) : null}
+          {tab === 'slack' ? (
+            <section data-testid="bot-slack-gateway" className="flex flex-col gap-3">
+              <p className="m-0 px-1 text-sm text-fg-muted">{t('bots.settings.slack.subtitle')}</p>
+              <QueryState key="slack">
+                <QueryState.Pending>
+                  <BotSlackSkeleton />
+                </QueryState.Pending>
+                <QueryState.Error fallback={t('bots.settings.slack.loadFailed')} />
+                <QueryState.Data>
+                  <BotSlack botId={botId} />
+                </QueryState.Data>
+              </QueryState>
+            </section>
+          ) : null}
+        </div>
       </div>
     </>
   );
