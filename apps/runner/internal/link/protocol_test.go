@@ -327,6 +327,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		TerminalScreenMax    int               `json:"terminalScreenMaxBytes"`
 		ComputerScreenEdge   int               `json:"computerScreenMaxEdge"`
 		ComputerScreenshot   int               `json:"computerScreenshotMaxBytes"`
+		HelloCapabilitiesMax int               `json:"helloCapabilitiesMax"`
 	}
 	var schema struct {
 		Constants json.RawMessage `json:"x-constants"`
@@ -360,6 +361,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		"terminalScreenMax":    {constants.TerminalScreenMax, link.TerminalScreenMaxBytes},
 		"computerScreenEdge":   {constants.ComputerScreenEdge, link.ComputerScreenMaxEdge},
 		"computerScreenshot":   {constants.ComputerScreenshot, link.ComputerScreenshotMaxBytes},
+		"helloCapabilitiesMax": {constants.HelloCapabilitiesMax, link.HelloCapabilitiesMax},
 	} {
 		if pair[0] != pair[1] {
 			t.Errorf("%s: the schema says %v, protocol.gen.go %v", name, pair[0], pair[1])
