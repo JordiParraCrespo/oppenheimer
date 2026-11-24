@@ -336,6 +336,60 @@ describe('toTurns', () => {
     expect(turns[0]?.working).toBe(false);
   });
 
+  it('marks where the agent moved to another model, before what it wrote on it, and never for the first one', () => {
+    const on = (model: string, entry: ReturnType<typeof assistant>) => ({
+      ...entry,
+      message: { ...entry.message, model },
+    });
+    const turns = toTurns([
+      user('u1', 'Plan it'),
+      assistant('a1', [{ type: 'text', text: 'Here is the plan' }]),
+      user('u2', 'Go'),
+      on('claude-sonnet-5', assistant('a2', [{ type: 'text', text: 'On it' }])),
+      // What Claude Code writes itself (an API error) names no model it moved to.
+      on('<synthetic>', assistant('a3', [{ type: 'text', text: 'API Error' }])),
+      on('claude-sonnet-5', assistant('a4', [{ type: 'text', text: 'Done' }])),
+    ]);
+    expect(kinds(turns[0]?.steps ?? [])).toEqual(['reply']);
+    expect(kinds(turns[1]?.steps ?? [])).toEqual(['model', 'reply', 'reply', 'reply']);
+    expect(turns[1]?.steps[0]).toMatchObject({ kind: 'model', model: 'claude-sonnet-5' });
+    expect(turns[1]?.model).toBe('claude-sonnet-5');
+    // The change opens the turn; it does not keep it working.
+    expect(turns[1]?.working).toBe(false);
+  });
+
+  it('sees a model change in a turn that arrives after the earlier ones were built', () => {
+    const chat = new SessionChat();
+    const line = (entry: unknown) => JSON.stringify(entry);
+    chat.apply({
+      reset: true,
+      history: 'end',
+      // The second prompt closes the first turn: the next batch builds the second alone.
+      entries: [
+        line(user('u1', 'One')),
+        line(assistant('a1', [{ type: 'text', text: 'Ok' }])),
+        line(user('u2', 'Two')),
+      ],
+    });
+    chat.snapshot();
+    chat.apply({
+      entries: [
+        line({
+          ...assistant('a2', [{ type: 'text', text: 'Ok' }]),
+          message: { role: 'assistant', model: 'claude-haiku-5', content: [] },
+        }),
+        line(assistant('a3', [{ type: 'text', text: 'Back' }])),
+      ],
+    });
+    const [, second] = chat.snapshot().turns;
+    expect(kinds(second?.steps ?? [])).toEqual(['model', 'model', 'reply']);
+    expect(second?.steps.map((step) => (step.kind === 'model' ? step.model : null))).toEqual([
+      'claude-haiku-5',
+      'claude-opus-5-5',
+      null,
+    ]);
+  });
+
   it("reads a background task's end as a step of the turn, not a prompt", () => {
     const turns = toTurns([
       user('u1', 'Merge it once CI is green'),
@@ -445,6 +499,7 @@ describe('SessionChat', () => {
       activity: null,
       suggestion: null,
       feedback: null,
+      permission: null,
       interruptible: true,
       commands: null,
     });
@@ -1165,6 +1220,45 @@ describe('the status line’s figures', () => {
       ],
     });
     expect(chat.snapshot().status).toEqual({ context: null, fiveHour: null, sevenDay: null });
+  });
+});
+
+describe('visuals the agent showed', () => {
+  const visual = (id: string, at: string) =>
+    JSON.stringify({
+      type: 'oppenheimer.visual',
+      id,
+      timestamp: at,
+      visual: { title: 'Bundle size', blocks: [{ type: 'markdown', text: 'Smaller.' }] },
+    });
+  const steps = (chat: SessionChat) =>
+    chat.snapshot().turns.map((turn) => turn.steps.map((step) => step.kind));
+
+  // The regression: a visual held twice when an attachment sends it again,
+  // or landing at the end of the latest turn instead of where it was shown.
+  it('places a visual where it was shown, once however often it comes again', () => {
+    const chat = new SessionChat();
+    chat.apply({
+      reset: true,
+      entries: [
+        JSON.stringify(user('u1', 'How big is the bundle?')),
+        JSON.stringify(
+          assistant('a1', [{ type: 'text', text: 'Measuring.' }], '2026-10-21T09:00:10.000Z'),
+        ),
+        JSON.stringify(
+          assistant(
+            'a2',
+            [{ type: 'text', text: 'Smaller by 38 KB.' }],
+            '2026-10-21T09:00:30.000Z',
+          ),
+        ),
+      ],
+    });
+    chat.apply({ entries: [visual('v1', '2026-10-21T09:00:20.000Z')] });
+    chat.apply({ entries: [visual('v1', '2026-10-21T09:00:20.000Z')] });
+    expect(steps(chat)).toEqual([['reply', 'visual', 'reply']]);
+    const step = chat.snapshot().turns[0]?.steps[1];
+    expect(step?.kind === 'visual' && step.spec).toMatchObject({ title: 'Bundle size' });
   });
 });
 

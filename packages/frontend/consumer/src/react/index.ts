@@ -53,6 +53,12 @@ export {
   useRequestBotMemoryDream,
   useUndoBotMemoryDream,
 } from './bot-dream.queries';
+export {
+  type SubmitBotFormVariables,
+  useBotPendingForm,
+  useDismissBotForm,
+  useSubmitBotForm,
+} from './bot-forms.queries';
 export { useBotGoal, useClearBotGoal, useResumeBotGoal } from './bot-goal.queries';
 export { useBotLoop, useClearBotLoop } from './bot-loop.queries';
 export {
@@ -110,6 +116,7 @@ export {
   type UpdateBotFactVariables,
   type UpdateBotVariables,
   useAddBotFact,
+  useBot,
   useBotDocuments,
   useBotGroups,
   useBots,
@@ -305,6 +312,7 @@ export {
   useRenameSession,
   useRestartSession,
   useRetrySession,
+  useSession,
   useSessionOpening,
   useSessionShare,
   useSessionStartProgress,

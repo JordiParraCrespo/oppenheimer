@@ -216,6 +216,22 @@
       "dismissed": "You dismissed: {{summary}}",
       "failed": "Could not send your answers."
     },
+    "form": {
+      "label": "Form",
+      "submit": "Submit",
+      "sending": "Sending…",
+      "sent": "Sent",
+      "dismiss": "Not now",
+      "required": "Required",
+      "optional": "Optional",
+      "choose": "Choose one",
+      "submitted": "You sent: {{title}}",
+      "dismissed": "You dismissed: {{title}}",
+      "blank": "Left blank",
+      "failed": "Could not send the form.",
+      "fixFields": "Check the highlighted fields.",
+      "loadFailed": "Could not read the form this bot is waiting on."
+    },
     "approval": {
       "needsInput": "Needs input",
       "title": "{{name}} wants to do this",
@@ -842,7 +858,14 @@
       "addCount_one": "Add {{count}} chat",
       "addCount_other": "Add {{count}} chats",
       "telegramTitle": "Telegram · {{name}}",
-      "telegramMeta": "Answers you there. Groups and other people on Telegram come next."
+      "telegramMeta": "Answers you there. Groups and other people on Telegram come next.",
+      "tabs": {
+        "label": "Gateway",
+        "whatsapp": "WhatsApp",
+        "telegram": "Telegram",
+        "slack": "Slack"
+      },
+      "noTelegram": "No Telegram bot answers as this bot yet. Pick it for one in Settings → Telegram."
     },
     "slack": {
       "title": "Slack",

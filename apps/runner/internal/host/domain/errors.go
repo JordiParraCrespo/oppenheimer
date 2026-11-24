@@ -37,6 +37,11 @@ var (
 	// A bot driving a terminal session (`terminal.drive`): a shell runs
 	// anything, so only a host whose exec policy is full takes it.
 	ErrTerminalNeedsFull = problem.New("EXEC_006", http.StatusForbidden, "This host does not let bots drive a terminal")
+	// An allowlist entry a bot asked for (`host.settings.set`) that is not a
+	// program name or an absolute path.
+	ErrExecEntry = problem.New("EXEC_008", http.StatusBadRequest, "Not a program name or an absolute path")
+	// An allowlist a bot asked to grow past what the policy file holds.
+	ErrExecAllowFull = problem.New("EXEC_009", http.StatusRequestEntityTooLarge, "The host's allowlist is full")
 	// A bot using the host's screen, mouse and keyboard (`computer.act`,
 	// 25 §4.2). The codes are the protocol's, named in packages/shared's
 	// computerActSchema.

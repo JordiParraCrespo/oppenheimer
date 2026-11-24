@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { BotOpenTab } from '@/features/bots/sections/bot-open-tab';
 import { BotSideChat } from '@/features/bots/sections/bot-side-chat';
 import { SessionScreen } from '@/features/sessions/screens/session';
+import { SessionTabs } from '@/features/sessions/sections/session-tabs';
 import { SessionTaskLink } from '@/features/tasks/sections/session-task-link';
 
 /**
@@ -20,13 +22,21 @@ function SessionRoute() {
   // Keyed by the id: moving between two sessions is a different terminal, a
   // different socket and a different scrollback, not the same component with
   // new props. Without it xterm would keep the previous session's grid.
-  // The task chip is the tasks feature's, and a bot's chat in the side pane
-  // the bots feature's: the route composes them.
+  // The task chip is the tasks feature's, a bot's chat in the side pane and
+  // a bot's tab the bots feature's, the tabs this one's: the route composes them.
   return (
     <SessionScreen
       key={sessionId}
       sessionId={sessionId}
-      bar={{ back: <SessionTaskLink sessionId={sessionId} /> }}
+      bar={{
+        back: <SessionTaskLink sessionId={sessionId} />,
+        open: (
+          <SessionTabs
+            shown={{ kind: 'session', id: sessionId }}
+            bot={(id, tab) => <BotOpenTab botId={id} {...tab} />}
+          />
+        ),
+      }}
       sideBot={(botId) => <BotSideChat botId={botId} />}
     />
   );

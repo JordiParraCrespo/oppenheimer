@@ -29,5 +29,8 @@ what it does and how it reads them; these are the rules for changing it.
   reason is stored as a code and worded where it is shown.
 - `tap.ts` runs inside claude.ai's page: it must never throw into it, change
   a request or a response, or import anything heavy.
+- **A release is a version bump.** Merging a new `version` in `package.json`
+  publishes it to the Chrome Web Store (`README.md`, "Publish it"); a change
+  people should get bumps it, through a changeset. Nothing else uploads.
 
 Check: `pnpm --filter @oppenheimer/extension build && pnpm --filter @oppenheimer/extension test && pnpm --filter @oppenheimer/extension e2e`.

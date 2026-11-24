@@ -1,4 +1,4 @@
-import { ChatHeader, IconButton, useSidebar } from '@oppenheimer/design-system-web';
+import { ChatHeader, cn, IconButton, useSidebar } from '@oppenheimer/design-system-web';
 import { PanelLeft } from '@oppenheimer/design-system-web/icons';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -42,6 +42,7 @@ export function PageBar({
   status,
   tabs,
   actions,
+  tone = 'page',
   className,
 }: {
   leading?: ReactNode;
@@ -51,6 +52,12 @@ export function PageBar({
   status?: ReactNode;
   tabs?: ReactNode;
   actions?: ReactNode;
+  /**
+   * `chrome`: the bar is a strip of open tabs (`ChatTabStrip`) and stands on
+   * the recessed ground, so the shown tab, lit on the card, reads as part of
+   * the page under it.
+   */
+  tone?: 'page' | 'chrome';
   /** The bar's ground and edge, when the page under it is not the shell's (a session's terminal). */
   className?: string;
 }) {
@@ -68,7 +75,11 @@ export function PageBar({
         status={status}
         tabs={tabs}
         actions={actions}
-        className={className}
+        className={cn(
+          className,
+          tone === 'chrome' &&
+            'border-b border-border-subtle bg-canvas-recessed [--chat-tab-ground:var(--canvas-recessed)]',
+        )}
       />
     </PaneBar>
   );

@@ -111,9 +111,9 @@ describe('use_computer', () => {
     expect(result.content).toContain('action screenshot');
   });
 
-  // The host's own switch is the person's to flip: the bot is told how, and
-  // that nothing happened.
-  it('passes on the host’s refusal with who can change it', async () => {
+  // A screen that is off is the bot's to turn on when the person asked for
+  // the work, and the answer says nothing happened.
+  it('answers the host’s refusal with how to turn the screen on itself', async () => {
     const { call } = setup(
       {},
       { kind: 'failed', code: 'COMPUTER_001', detail: 'runner computer on' },
@@ -121,7 +121,7 @@ describe('use_computer', () => {
     const result = await call({ action: 'screenshot' });
     expect(result.content).toContain('COMPUTER_001');
     expect(result.content).toContain('Nothing was done.');
-    expect(result.content).toContain('`runner computer on`');
+    expect(result.content).toContain('set_host_settings');
     expect(result.images).toBeUndefined();
   });
 });

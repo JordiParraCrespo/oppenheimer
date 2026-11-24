@@ -40,7 +40,7 @@ test("a bot's Slack app from its Gateways page: connect, link the owner, disconn
   const secret = randomBytes(16).toString('hex');
   await signInAs(page, owner.user);
 
-  await page.goto(`/bots/${bot.id}/settings/gateways`);
+  await page.goto(`/bots/${bot.id}/settings/gateways?tab=slack`);
   const slack = page.getByTestId('bot-slack-gateway');
   await expect(slack.getByTestId('slack-setup')).toBeVisible();
   const create = slack.getByRole('link', { name: 'Create in Slack' });

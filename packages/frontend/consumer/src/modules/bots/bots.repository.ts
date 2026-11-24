@@ -4,6 +4,8 @@ import {
   type BotConversationResponseDto,
   type BotDocumentResponseDto,
   type BotDocumentRevisionResponseDto,
+  type BotFormFieldResponseDto,
+  type BotFormResponseDto,
   type BotGroupResponseDto,
   type BotMemoryFactResponseDto,
   type BotMessageResponseDto,
@@ -28,6 +30,7 @@ import {
   BOT_APPROVAL_DECISIONS,
   BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
+  BOT_FORM_OUTCOMES,
   BOT_GITHUB_ASK_VIAS,
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
@@ -39,6 +42,8 @@ import {
   type BotApprovalDecision,
   type BotAttachment,
   type BotDocumentName,
+  type BotFormField,
+  type BotFormValues,
   type BotGoal,
   type BotLoop,
   type BotMemoryDreamState,
@@ -58,6 +63,7 @@ import {
   mailPlanSchema,
 } from '@oppenheimer/shared/schemas/mail';
 import type { ModelProvider } from '@oppenheimer/shared/schemas/model-provider';
+import { parseVisual, type Visual } from '@oppenheimer/shared/schemas/visual';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import { triggerOf } from '../automations/automations.repository';
@@ -84,6 +90,7 @@ import {
 import {
   BotApprovalEntity,
   BotConversationEntity,
+  BotFormCardEntity,
   BotMessageEntity,
   type BotPlanLimits,
   type BotPlanWindow,
@@ -239,6 +246,7 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
   const steps: BotToolStep[] = dto.steps.map((step) => ({
     ...step,
     mailDraft: draftOf(step.mailDraft),
+    visual: visualOf(step.visual),
     rateLimit: step.rateLimit
       ? { system: step.rateLimit.system, resetAt: new Date(step.rateLimit.resetAt) }
       : null,
@@ -292,6 +300,17 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             outcome,
             summary: dto.summary,
             answers: dto.answers.map((answer) => ({ ...answer })),
+          }
+        : null;
+    }
+    case 'form': {
+      const outcome = BOT_FORM_OUTCOMES.find((candidate) => candidate === dto.outcome);
+      return outcome
+        ? {
+            kind: 'form',
+            outcome,
+            title: dto.title,
+            values: dto.values.map((value) => ({ ...value })),
           }
         : null;
     }
@@ -500,6 +519,54 @@ function toQuestionCard(dto: BotQuestionResponseDto): BotQuestionCardEntity {
   );
 }
 
+/** One field as the response carries it, read by its kind: the keys its kind has none of go. */
+function toFormField(dto: BotFormFieldResponseDto): BotFormField | null {
+  const base = {
+    id: dto.id,
+    label: dto.label,
+    placeholder: dto.placeholder,
+    required: dto.required,
+  };
+  const words = typeof dto.default === 'string' ? dto.default : null;
+  switch (dto.kind) {
+    case 'number':
+      return {
+        ...base,
+        kind: 'number',
+        min: dto.min,
+        max: dto.max,
+        default: typeof dto.default === 'number' ? dto.default : null,
+      };
+    case 'select':
+      return { ...base, kind: 'select', options: [...(dto.options ?? [])], default: words };
+    case 'text':
+    case 'textarea':
+    case 'email':
+    case 'date':
+      return { ...base, kind: dto.kind, default: words };
+    default:
+      return null;
+  }
+}
+
+function toFormCard(dto: BotFormResponseDto): BotFormCardEntity {
+  return new BotFormCardEntity(
+    dto.id,
+    dto.turnId,
+    {
+      title: dto.title,
+      description: dto.description,
+      submitLabel: dto.submitLabel,
+      fields: dto.fields.flatMap((field) => {
+        const read = toFormField(field);
+        return read ? [read] : [];
+      }),
+    },
+    dto.status,
+    new Date(dto.createdAt),
+  );
+}
+
 function toPermissions(dto: BotPermissionsResponseDto): BotPermissionsEntity {
   return new BotPermissionsEntity(
     dto.preset,
@@ -513,6 +580,13 @@ function toPermissions(dto: BotPermissionsResponseDto): BotPermissionsEntity {
 function draftOf(raw: unknown): BotMailDraft | null {
   const parsed = botMailDraftSchema.safeParse(raw);
   return parsed.success ? parsed.data : null;
+}
+
+/** A step's visual, checked again: one the API stored under an older schema reads as none. */
+function visualOf(raw: unknown): Visual | null {
+  if (raw === null || raw === undefined) return null;
+  const parsed = parseVisual(raw);
+  return parsed.ok ? parsed.visual : null;
 }
 
 /** The tools whose card stores the message it sends, as `input.plan`. */
@@ -800,6 +874,36 @@ export class BotsRepository {
         }),
       );
       return toQuestionCard(data);
+    });
+  }
+
+  /** The form the bot waits on (`ask_form`); `null` when none does. */
+  findPendingForm(id: string): Promise<BotFormCardEntity | null> {
+    return callApi(BotsErrors.FETCH_FORM_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findPendingBotForm({ path: { id } }));
+      return data.form ? toFormCard(data.form) : null;
+    });
+  }
+
+  /** Sends a form, a value per field id; the bot carries on with them. */
+  submitForm(
+    id: string,
+    formId: string,
+    values: Readonly<BotFormValues>,
+  ): Promise<BotFormCardEntity> {
+    return callApi(BotsErrors.SUBMIT_FORM_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.submitBotForm({ path: { id, formId }, body: { values: { ...values } } }),
+      );
+      return toFormCard(data);
+    });
+  }
+
+  /** Declines a form; the bot is told, and not to ask again. */
+  dismissForm(id: string, formId: string): Promise<BotFormCardEntity> {
+    return callApi(BotsErrors.SUBMIT_FORM_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.dismissBotForm({ path: { id, formId }, body: {} }));
+      return toFormCard(data);
     });
   }
 

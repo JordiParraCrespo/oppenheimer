@@ -868,8 +868,8 @@ export async function lockBot(
 }
 
 /**
- * The line of the card the bot has waiting, of either kind, or null: a bot
- * has one card up at a time, an approval or a card of questions. Read under
+ * The line of the card the bot has waiting, of any kind, or null: a bot has
+ * one card up at a time, an approval, a card of questions or a form. Read under
  * `lockBot`, so two cards raised at once see each other.
  */
 export async function waitingCardWithin(
@@ -877,11 +877,13 @@ export async function waitingCardWithin(
   organizationId: string,
   botId: string,
 ): Promise<string | null> {
-  // UQ_bot_approval_pending, UQ_bot_question_pending.
+  // UQ_bot_approval_pending, UQ_bot_question_pending, UQ_bot_form_pending.
   const rows: { summary: string }[] = await manager.query(
     `SELECT summary FROM bot_approval WHERE "organizationId" = $1 AND "botId" = $2 AND status = 'pending'
      UNION ALL
      SELECT summary FROM bot_question WHERE "organizationId" = $1 AND "botId" = $2 AND status = 'pending'
+     UNION ALL
+     SELECT summary FROM bot_form WHERE "organizationId" = $1 AND "botId" = $2 AND status = 'pending'
      LIMIT 1`,
     [organizationId, botId],
   );
