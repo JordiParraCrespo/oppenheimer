@@ -8,7 +8,7 @@ import { cn } from '../lib/utils';
 /**
  * InlineToken — a trigger reads as a sentence, and every variable part is
  * a token you click to change, so there is no separate form to decode:
- * "Every [weekday] at [09:00]". A 30px pill on the card colour, 14px; a
+ * "Every [weekday] at [09:00]". A 28px pill (the ramp's `sm`) on the card colour, 14px; a
  * `mono` token holds a value a human compares (a time, a branch); `dirty`
  * turns it blue on the selected wash while it differs from what was
  * saved; `open` holds the ring while its popover is up.
@@ -33,7 +33,7 @@ function InlineToken({
   dirty?: boolean;
   open?: boolean;
   chevron?: boolean;
-  /** `sm` is the 28px form in a filter row. */
+  /** Both stand at 28px; `sm` is the hover-wash form in a filter row. */
   size?: 'md' | 'sm';
 }) {
   return (
@@ -45,8 +45,8 @@ function InlineToken({
       data-popup-open={open ? '' : undefined}
       aria-expanded={open}
       className={cn(
-        'inline-flex max-w-full items-center gap-1.5 rounded-pill whitespace-nowrap text-fg outline-none transition-[background-color,box-shadow,transform] duration-fast ease-standard hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-popup-open:bg-selected-surface data-popup-open:ring-3 data-popup-open:ring-ring data-dirty:bg-selected-surface data-dirty:text-link',
-        size === 'md' ? 'h-[30px] bg-card px-[11px] text-operate tracking-[-0.006em]' : 'h-7 bg-hover-surface px-2.5 text-[13px]',
+        'inline-flex h-(--control-h-sm) max-w-full items-center gap-1.5 rounded-pill whitespace-nowrap text-fg outline-none transition-[background-color,box-shadow,transform] duration-fast ease-standard hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-popup-open:bg-selected-surface data-popup-open:ring-3 data-popup-open:ring-ring data-dirty:bg-selected-surface data-dirty:text-link',
+        size === 'md' ? 'bg-card px-[11px] text-operate tracking-[-0.006em]' : 'bg-hover-surface px-2.5 text-[13px]',
         mono && (size === 'md' ? 'figures text-[13px]' : 'figures text-[12.5px]'),
         className,
       )}
@@ -98,7 +98,7 @@ function TriggerCard({
       <div className="flex items-center gap-2.5">
         <span
           aria-hidden
-          className="flex size-[30px] shrink-0 items-center justify-center rounded-pill bg-card text-fg [&_svg:not([class*=size-])]:size-3.5"
+          className="flex size-(--control-h-sm) shrink-0 items-center justify-center rounded-pill bg-card text-fg [&_svg:not([class*=size-])]:size-3.5"
         >
           {icon}
         </span>
@@ -109,7 +109,7 @@ function TriggerCard({
             aria-label={duplicateLabel}
             title={duplicateLabel}
             onClick={onDuplicate}
-            className="flex size-7 shrink-0 items-center justify-center rounded-pill text-fg-subtle transition-colors duration-fast hover:bg-card hover:text-fg"
+            className="flex size-(--control-h-sm) shrink-0 items-center justify-center rounded-pill text-fg-subtle transition-colors duration-fast hover:bg-card hover:text-fg"
           >
             <CopyIcon className="size-3.5" />
           </button>
@@ -119,14 +119,14 @@ function TriggerCard({
             type="button"
             aria-label={removeLabel}
             onClick={onRemove}
-            className="flex size-7 shrink-0 items-center justify-center rounded-pill text-fg-subtle transition-colors duration-fast hover:bg-card hover:text-fg"
+            className="flex size-(--control-h-sm) shrink-0 items-center justify-center rounded-pill text-fg-subtle transition-colors duration-fast hover:bg-card hover:text-fg"
           >
             <XIcon className="size-3.5" />
           </button>
         ) : null}
       </div>
       {preview ? (
-        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 pl-10 text-[12.5px] text-fg-muted">{preview}</div>
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 pl-9.5 text-[12.5px] text-fg-muted">{preview}</div>
       ) : null}
     </div>
   );

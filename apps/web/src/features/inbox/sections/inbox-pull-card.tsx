@@ -17,7 +17,6 @@ import { useTranslation } from 'react-i18next';
 import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
 import { inboxVisit } from '@/features/inbox/lib/inbox-visit';
-import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 
 /** The checks as a gate: passing, blocked, or still to be known. */
 const CHECKS_GATE: Record<string, StatusState> = {
@@ -72,35 +71,7 @@ export function InboxPullCard({
           onDismiss={merge.reset}
         />
       ) : null}
-      <InboxMessageActions
-        leading={
-          <>
-            <InboxLaterButton itemKey={item.key} />
-            <Button
-              variant="secondary"
-              render={
-                <Link
-                  to="/pulls/$installationId/$githubRepoId/$number"
-                  params={{
-                    installationId: pull.installationId,
-                    githubRepoId: String(pull.githubRepoId),
-                    number: String(pull.number),
-                  }}
-                />
-              }
-            >
-              {t('inbox.pull.open')}
-            </Button>
-            <Button
-              variant="ghost"
-              render={<a href={pull.htmlUrl} target="_blank" rel="noreferrer" />}
-            >
-              <SquareArrowOutUpRight />
-              {t('inbox.pull.viewOnGithub')}
-            </Button>
-          </>
-        }
-      >
+      <InboxMessageActions>
         {pull.canMerge ? (
           <Button
             disabled={merge.isPending}
@@ -118,6 +89,28 @@ export function InboxPullCard({
             {t('inbox.pull.merge')}
           </Button>
         ) : null}
+        <Button
+          variant={pull.canMerge ? 'secondary' : 'primary'}
+          render={
+            <Link
+              to="/pulls/$installationId/$githubRepoId/$number"
+              params={{
+                installationId: pull.installationId,
+                githubRepoId: String(pull.githubRepoId),
+                number: String(pull.number),
+              }}
+            />
+          }
+        >
+          {t('inbox.pull.open')}
+        </Button>
+        <Button
+          variant="secondary"
+          render={<a href={pull.htmlUrl} target="_blank" rel="noreferrer" />}
+        >
+          <SquareArrowOutUpRight />
+          {t('inbox.pull.viewOnGithub')}
+        </Button>
       </InboxMessageActions>
     </InboxMessage>
   );

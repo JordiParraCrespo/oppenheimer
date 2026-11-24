@@ -8,9 +8,6 @@
  * takes the ramp where it is written.
  */
 export const CONTROL_HEIGHT_DEBT = new Map([
-  // oppenheimer:begin web
-  ['apps/web/src/features/automations/components/editor-step-tabs.tsx', 1],
-  // oppenheimer:end web
   ['packages/frontend/design-system/web/src/components/avatar-picker.tsx', 2],
   ['packages/frontend/design-system/web/src/components/bot-item.tsx', 1],
   ['packages/frontend/design-system/web/src/components/button.tsx', 2],
@@ -33,8 +30,6 @@ export const CONTROL_HEIGHT_DEBT = new Map([
   ['packages/frontend/design-system/web/src/components/effort-slider.tsx', 1],
   ['packages/frontend/design-system/web/src/components/host-link.tsx', 1],
   ['packages/frontend/design-system/web/src/components/icon-button.tsx', 1],
-  ['packages/frontend/design-system/web/src/components/inbox.tsx', 1],
-  ['packages/frontend/design-system/web/src/components/inline-token.tsx', 4],
   ['packages/frontend/design-system/web/src/components/milestone-timeline.tsx', 1],
   ['packages/frontend/design-system/web/src/components/month-calendar.tsx', 3],
   ['packages/frontend/design-system/web/src/components/password-input.tsx', 1],
@@ -55,5 +50,4 @@ export const CONTROL_HEIGHT_DEBT = new Map([
   ['packages/frontend/web/src/chat/components/emoji-picker.tsx', 2],
   ['packages/frontend/web/src/shell/components/top-bar.tsx', 3],
   ['packages/frontend/web/src/shell/components/user-menu.tsx', 1],
-  ['packages/frontend/web/src/theme/components/theme-toggle.tsx', 1],
 ]);

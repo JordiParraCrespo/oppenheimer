@@ -16,7 +16,6 @@ import {
   ErrorAlert,
   formatAge,
   SidebarSearchField,
-  SidebarToggle,
   useLocale,
   useMultiSelection,
 } from '@oppenheimer/frontend-web';
@@ -128,12 +127,11 @@ export function InboxList() {
         />
       ) : (
         <InboxListHead
-          leading={<SidebarToggle />}
           title={t('inbox.title')}
           count={unread.length ? t('inbox.list.unread', { count: unread.length }) : undefined}
         >
           <IconButton
-            size="xs"
+            size="sm"
             variant="quiet"
             aria-label={t('inbox.list.refresh')}
             title={t('inbox.list.refresh')}
