@@ -18,7 +18,11 @@ describe('parseVisual', () => {
         { type: 'area', labels: ['a'], series: [{ label: 'x', values: [1] }] },
         { type: 'ring', segments: [{ label: 'Auto', value: 3 }] },
         { type: 'ranking', items: [{ label: 'CI', value: 9 }] },
-        { type: 'table', columns: [{ label: 'Name' }, { label: 'Runs', align: 'right' }], rows: [['a', 1]] },
+        {
+          type: 'table',
+          columns: [{ label: 'Name' }, { label: 'Runs', align: 'right' }],
+          rows: [['a', 1]],
+        },
         { type: 'checklist', items: [{ text: 'Ship', done: true }] },
         { type: 'progress', items: [{ label: 'Coverage', value: 81 }] },
         { type: 'record', fields: [{ label: 'Branch', value: 'main' }] },
@@ -40,7 +44,10 @@ describe('parseVisual', () => {
   it('names the block types there are when one is unknown', () => {
     const result = parseVisual({ title: 'x', blocks: [{ type: 'pie' }] });
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.errors[0]).toMatch(/^blocks\[0\]\.type: unknown block type; use one of markdown, metrics/);
+    if (!result.ok)
+      expect(result.errors[0]).toMatch(
+        /^blocks\[0\]\.type: unknown block type; use one of markdown, metrics/,
+      );
   });
 
   it('refuses a table row with a cell too many', () => {
@@ -70,7 +77,11 @@ describe('parseVisual', () => {
 describe('visualFrameOrigin', () => {
   // The frame must never share an origin with the console or a session's preview.
   it('is a label of its own under the preview domain, port kept', () => {
-    expect(visualFrameOrigin('http://preview.localhost:3011')).toBe('http://visuals.preview.localhost:3011');
-    expect(visualFrameOrigin('https://previews.example.com')).toBe('https://visuals.previews.example.com');
+    expect(visualFrameOrigin('http://preview.localhost:3011')).toBe(
+      'http://visuals.preview.localhost:3011',
+    );
+    expect(visualFrameOrigin('https://previews.example.com')).toBe(
+      'https://visuals.previews.example.com',
+    );
   });
 });

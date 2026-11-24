@@ -38,7 +38,11 @@ export function visualFrameCsp(consoleOrigin: string): string {
 }
 
 /** Answers a request for the shell: the page on GET, nothing else. */
-export function serveVisualFrame(req: IncomingMessage, res: ServerResponse, consoleOrigin: string): void {
+export function serveVisualFrame(
+  req: IncomingMessage,
+  res: ServerResponse,
+  consoleOrigin: string,
+): void {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.writeHead(405, { allow: 'GET, HEAD', 'cache-control': 'no-store' });
     res.end();

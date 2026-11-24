@@ -340,8 +340,13 @@ export function visualErrors(error: z.ZodError): string[] {
       return `${at}: unknown block type; use one of ${visualBlockTypes.join(', ')}`;
     }
     if (issue.code === z.ZodIssueCode.custom) {
-      const { visual, got, want } = (issue.params ?? {}) as { visual?: string; got?: number; want?: number };
-      if (visual === 'per-label') return `${at}: has ${got} values for ${want} labels; give one value per label`;
+      const { visual, got, want } = (issue.params ?? {}) as {
+        visual?: string;
+        got?: number;
+        want?: number;
+      };
+      if (visual === 'per-label')
+        return `${at}: has ${got} values for ${want} labels; give one value per label`;
       if (visual === 'per-column') return `${at}: has ${got} cells for ${want} columns`;
       if (visual === 'https') return `${at}: only http and https links`;
     }
