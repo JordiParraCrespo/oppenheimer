@@ -946,6 +946,7 @@
     "connecting": "Conectando…",
     "steps_one": "{{count}} paso",
     "steps_other": "{{count}} pasos",
-    "steps_many": "{{count}} pasos"
+    "steps_many": "{{count}} pasos",
+    "loadFailed": "No se pudo cargar esta sesión."
   }
 }

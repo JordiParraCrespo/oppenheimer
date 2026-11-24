@@ -32,6 +32,15 @@ export function BotScreen({ id }: { id: string }) {
           <View className="flex-1 items-center justify-center" aria-busy>
             <ActivityIndicator />
           </View>
+        ) : list.isError ? (
+          <View className="flex-1 items-center justify-center gap-3 px-6">
+            <Text variant="body" tone="destructive">
+              {t('bots.mobile.botLoadFailed')}
+            </Text>
+            <Button variant="outline" onPress={() => list.refetch()}>
+              <Text>{t('common.retry')}</Text>
+            </Button>
+          </View>
         ) : (
           <View className="flex-1 justify-center px-6">
             <EmptyState>

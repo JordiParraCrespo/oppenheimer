@@ -1793,7 +1793,8 @@
       "connecting": "Conectando…",
       "steps_one": "{{count}} paso",
       "steps_other": "{{count}} pasos",
-      "steps_many": "{{count}} pasos"
+      "steps_many": "{{count}} pasos",
+      "loadFailed": "No se pudo cargar esta sesión."
     }
   },
   "bots": {
@@ -2753,7 +2754,8 @@
       "chatFailed": "No se pudo cargar el chat.",
       "actions": "Acciones del empleado",
       "decideFailed": "La decisión no llegó al bot. Vuelve a intentarlo.",
-      "answerFailed": "La respuesta no llegó al bot. Vuelve a intentarlo."
+      "answerFailed": "La respuesta no llegó al bot. Vuelve a intentarlo.",
+      "botLoadFailed": "No se pudo cargar este empleado."
     }
   },
   "automations": {
