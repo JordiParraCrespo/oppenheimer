@@ -7,7 +7,7 @@ import {
   CircleStop,
 } from '@oppenheimer/design-system-web/icons';
 import type { ChatTaskStatus } from '@oppenheimer/frontend-consumer';
-import { Markdown } from '@oppenheimer/frontend-web';
+import { Markdown, Visual } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChatBlock } from '../lib/chat-blocks';
@@ -64,6 +64,8 @@ export function ChatTurnBlock({
       return <ChatImages images={block.images} source={block.source} />;
     case 'file':
       return <ChatSharedFileCard file={block.file} />;
+    case 'visual':
+      return <Visual spec={block.spec} />;
     case 'thinking': {
       // Open while it is what the agent is doing, folded once it moves on.
       const thinking = live && last;

@@ -97,7 +97,9 @@ export type ChatBlock =
   /** What the call read them from, a path or a URL, when it says. */
   | { kind: 'images'; id: string; source: string | null; images: ChatTranscriptImage[] }
   /** A file the agent showed the person (`runner sessions send-file`). */
-  | { kind: 'file'; id: string; file: ChatSharedFile };
+  | { kind: 'file'; id: string; file: ChatSharedFile }
+  /** A visual the agent showed the person (`runner sessions show`), as its host sent it. */
+  | { kind: 'visual'; id: string; spec: unknown };
 
 export function blocksOf(turn: ChatTurn): ChatBlock[] {
   const blocks: ChatBlock[] = [];
@@ -165,6 +167,8 @@ function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
       return { kind: 'task', id: step.id, status: step.status, summary: step.summary };
     case 'file':
       return { kind: 'file', id: step.id, file: step.file };
+    case 'visual':
+      return { kind: 'visual', id: step.id, spec: step.spec };
     case 'tool':
       if (step.call.kind === 'todo') return null;
       if (step.call.kind === 'plan' && step.call.plan) {

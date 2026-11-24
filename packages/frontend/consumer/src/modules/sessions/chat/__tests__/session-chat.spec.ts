@@ -1168,6 +1168,45 @@ describe('the status line’s figures', () => {
   });
 });
 
+describe('visuals the agent showed', () => {
+  const visual = (id: string, at: string) =>
+    JSON.stringify({
+      type: 'oppenheimer.visual',
+      id,
+      timestamp: at,
+      visual: { title: 'Bundle size', blocks: [{ type: 'markdown', text: 'Smaller.' }] },
+    });
+  const steps = (chat: SessionChat) =>
+    chat.snapshot().turns.map((turn) => turn.steps.map((step) => step.kind));
+
+  // The regression: a visual held twice when an attachment sends it again,
+  // or landing at the end of the latest turn instead of where it was shown.
+  it('places a visual where it was shown, once however often it comes again', () => {
+    const chat = new SessionChat();
+    chat.apply({
+      reset: true,
+      entries: [
+        JSON.stringify(user('u1', 'How big is the bundle?')),
+        JSON.stringify(
+          assistant('a1', [{ type: 'text', text: 'Measuring.' }], '2026-10-21T09:00:10.000Z'),
+        ),
+        JSON.stringify(
+          assistant(
+            'a2',
+            [{ type: 'text', text: 'Smaller by 38 KB.' }],
+            '2026-10-21T09:00:30.000Z',
+          ),
+        ),
+      ],
+    });
+    chat.apply({ entries: [visual('v1', '2026-10-21T09:00:20.000Z')] });
+    chat.apply({ entries: [visual('v1', '2026-10-21T09:00:20.000Z')] });
+    expect(steps(chat)).toEqual([['reply', 'visual', 'reply']]);
+    const step = chat.snapshot().turns[0]?.steps[1];
+    expect(step?.kind === 'visual' && step.spec).toMatchObject({ title: 'Bundle size' });
+  });
+});
+
 describe('files the agent shared', () => {
   const shared = (id: string, at: string, extra: Record<string, unknown> = {}) =>
     JSON.stringify({

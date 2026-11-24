@@ -101,6 +101,18 @@ function itemOf(step: ChatStep): ChatItem {
         event: 'file_shared',
         text: step.file.caption ?? step.file.name,
       };
+    case 'visual': {
+      const spec = step.spec as { title?: unknown } | null;
+      return {
+        type: 'event',
+        id: step.id,
+        status: 'completed',
+        startedAt: at,
+        completedAt: at,
+        event: 'visual_shown',
+        text: typeof spec?.title === 'string' ? spec.title : null,
+      };
+    }
     case 'task':
       return {
         type: 'event',

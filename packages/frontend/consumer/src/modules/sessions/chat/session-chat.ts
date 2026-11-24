@@ -25,8 +25,11 @@ import {
 } from './feedback-draft';
 import {
   type ChatSharedFile,
+  type ChatSharedVisual,
   SHARED_ENTRY,
   sharedFileOf,
+  sharedVisualOf,
+  VISUAL_ENTRY,
   withSharedFiles,
 } from './session-chat-files';
 import { FirstLoad, linesToCome, Quiet } from './session-chat-history';
@@ -169,7 +172,9 @@ export type ChatStep =
   /** A background task finished: the line Claude Code hands the agent, not a prompt. */
   | { kind: 'task'; id: string; at: Date | null; status: ChatTaskStatus; summary: string | null }
   /** A file the agent showed the person (`runner sessions send-file`), placed by when. */
-  | { kind: 'file'; id: string; at: Date | null; file: ChatSharedFile };
+  | { kind: 'file'; id: string; at: Date | null; file: ChatSharedFile }
+  /** A visual the agent showed the person (`runner sessions show`), placed by when; checked where it is drawn. */
+  | { kind: 'visual'; id: string; at: Date | null; spec: unknown };
 
 export interface ChatPrompt {
   id: string;
@@ -602,6 +607,8 @@ export class SessionChat {
   );
   /** The quiet that ends a first load or a replay that came back short. */
   private readonly quiet = new Quiet();
+  /** The visuals the agent showed, in the order they came; each a step of its turn. */
+  private visuals: readonly ChatSharedVisual[] = [];
 
   apply(batch: ChatBatch): void {
     if (batch.older) {
@@ -642,6 +649,13 @@ export class SessionChat {
         // Each attachment sends every shared file again; one is held once.
         const file = sharedFileOf(entry);
         if (file && !files.some((held) => held.id === file.id)) files = [...files, file];
+      } else if (type === VISUAL_ENTRY) {
+        // Each attachment sends every visual again, as it does the files; one is held once.
+        const visual = sharedVisualOf(entry);
+        if (visual && !this.visuals.some((held) => held.id === visual.id)) {
+          this.visuals = [...this.visuals, visual];
+          changed = true;
+        }
       } else {
         const subagent = this.subagents.take(raw, entry);
         if (subagent === null ? this.transcript.take(raw, entry) : subagent) changed = true;
@@ -758,9 +772,9 @@ export class SessionChat {
     this.flush();
   };
 
-  /** The conversation's turns, with the shared files placed in them. */
+  /** The conversation's turns, with the shared files and visuals placed in them. */
   private turnsOf(files: readonly ChatSharedFile[]): ChatTurn[] {
-    return withSharedFiles(this.subagents.place(this.transcript.turns()), files);
+    return withSharedFiles(this.subagents.place(this.transcript.turns()), files, this.visuals);
   }
 
   /** A first load is still arriving. */

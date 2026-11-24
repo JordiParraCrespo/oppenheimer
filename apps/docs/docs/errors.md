@@ -1434,6 +1434,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_020` <a id="sess_020" />         | Claude Code could not send the message to the cloud session | 502 |
 | `SESS_021` <a id="sess_021" />         | Claude Code did not confirm the message to the cloud session in time | 504 |
 | `SESS_022` <a id="sess_022" />         | Codex on this host is not signed in to ChatGPT | 502 |
+| `SESS_023` <a id="sess_023" />         | The visual cannot be shown                   | 400  |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
