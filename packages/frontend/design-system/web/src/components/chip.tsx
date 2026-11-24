@@ -16,7 +16,7 @@ const chipVariants = cva(
       },
       /** `md` is a chip that is a form's field (a task's project), level with the `Input` above it. */
       size: {
-        sm: 'h-7 px-2.5',
+        sm: 'h-(--control-h-sm) px-2.5',
         md: 'h-(--control-h-md) px-3.5',
       },
       interactive: {

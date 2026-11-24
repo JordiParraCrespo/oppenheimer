@@ -841,7 +841,7 @@ export default function Page() {
         id="segmented"
         title="SegmentedControl"
         meta="segmented-control.tsx"
-        desc="Two or three ways to read the same thing, one always on: Command / Agent prompt in the Add host dialog. A pill on the hover surface with 2px of inset; the active segment lifts onto the card colour. Never a form value; that is RadioGroup. Never tabs; a row that switches views is PillTabs. Sizes: sm labels a panel, md (28px) sets how a pane reads (Unified / Split); an item's count rides after its label in mono."
+        desc="Two or three ways to read the same thing, one always on: Command / Agent prompt in the Add host dialog. A pill on the hover surface with 2px of inset; the active segment lifts onto the card colour. Never a form value; that is RadioGroup. Never tabs; a row that switches views is PillTabs. Sizes on the control ramp, the track's height: sm (28px) labels a panel, md (34px) sets how a pane reads (Unified / Split); an item's count rides after its label in mono."
         code={`<SegmentedControl value={tab} onValueChange={setTab}><SegmentedControlItem value="cmd">Command</SegmentedControlItem>…</SegmentedControl>`}
       >
         <SegmentedDemo />
@@ -884,7 +884,7 @@ export default function Page() {
         id="pillgroup"
         title="PillGroup"
         meta="pill-group.tsx"
-        desc="A form value picked from a short row of 30px pills on the hover wash: For how long on Share, the projects and repositories a bot may touch, what it always asks before. A picked pill takes the selected wash and ink. multiple makes it a set; check draws the round tick first; mono sets a repository's name; count rides after in mono. A pill that cannot be picked now is disabled and the description says why. Views of a page are PillTabs."
+        desc="A form value picked from a short row of 28px pills on the hover wash: For how long on Share, the projects and repositories a bot may touch, what it always asks before. A picked pill takes the selected wash and ink. multiple makes it a set; check draws the round tick first; mono sets a repository's name; count rides after in mono. A pill that cannot be picked now is disabled and the description says why. Views of a page are PillTabs."
         code={`<PillGroup value={ttl} onValueChange={setTtl} aria-label="For how long"><PillGroupItem value="1h">1 hour</PillGroupItem><PillGroupItem value="7d" disabled>7 days</PillGroupItem></PillGroup>`}
       >
         <PillGroupDemo />
@@ -1180,7 +1180,7 @@ export default function Page() {
         id="pilltabs"
         title="PillTabs"
         meta="pill-tabs.tsx"
-        desc="Switches views inside a page: Routines / Runs, the template categories, the run status. The selected tab takes a tonal fill, never a colour; counts ride inside the tab in mono. Two sizes: 32px for a page's top row, 28px inside a card."
+        desc="Switches views inside a page: Routines / Runs, the template categories, the run status. The selected tab takes a tonal fill, never a colour; counts ride inside the tab in mono. Two sizes on the control ramp: 34px for a page's top row, 28px inside a card."
         code={`<PillTabs value={view} onValueChange={setView}><PillTab value="runs" count={65}>Runs</PillTab></PillTabs>`}
       >
         <PillTabsDemo />
@@ -1462,7 +1462,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="facetselect"
         title="FacetSelect · SearchableFacetSelect · SearchableFacetMultiSelect · SearchList"
         meta="facet-select.tsx · search-list.tsx"
-        desc="One facet of a list's filter: the first option is the facet unset, and any other pick lights the trigger on the selected wash so a narrowed list never looks whole. FacetSelect is a fixed set as radio rows with the count each pick would leave (the queue's Difficulty, Checks, Waiting). SearchableFacetSelect is the same trigger over a list the workspace grows (Plan's Milestone): it opens a SearchList, the Bots picker's shape, a search field over menu rows with the count and the check. SearchableFacetMultiSelect is that list as checks (Plan's Project): it stays open while rows are toggled, the first row clears the set, and the trigger reads the first pick then +N. SearchList is that body alone, for a menu's submenu or pane, or a set of checks (the card below). pill (30px) is Plan's board; labelled (34px) is the pull-request queue."
+        desc="One facet of a list's filter: the first option is the facet unset, and any other pick lights the trigger on the selected wash so a narrowed list never looks whole. FacetSelect is a fixed set as radio rows with the count each pick would leave (the queue's Difficulty, Checks, Waiting). SearchableFacetSelect is the same trigger over a list the workspace grows (Plan's Milestone): it opens a SearchList, the Bots picker's shape, a search field over menu rows with the count and the check. SearchableFacetMultiSelect is that list as checks (Plan's Project): it stays open while rows are toggled, the first row clears the set, and the trigger reads the first pick then +N. SearchList is that body alone, for a menu's submenu or pane, or a set of checks (the card below). pill (28px) is Plan's board; labelled (34px, or 28px at size sm) is the pull-request queue."
         code={`<FacetSelect label="Difficulty" options={lanes} value={lane} onValueChange={setLane} />
 <SearchableFacetMultiSelect variant="pill" label="Project" icon={<FolderIcon />} options={projects} values={picked} onValuesChange={setPicked} searchPlaceholder="Search projects" emptyText={(q) => \`Nothing matches “\${q}”.\`} />
 <SearchList options={projects} value={shown} onPick={(option, selected) => toggle(option.value, selected)} searchPlaceholder="Search projects" emptyText={noMatch} />`}
