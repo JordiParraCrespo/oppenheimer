@@ -92,7 +92,7 @@ The console draws it in your session's chat with its own charts, in light
 and dark: figures, a chart, a table, a checklist. Blocks: `markdown`
 {text}; `metrics` {items: [{label, value, delta?, good?, hint?}]}; `bar`,
 `line`, `area` {title?, labels, series: [{label, values}]}, one value per
-label, up to five series; `ring` {title?, total?, segments: [{label,
+label and none under zero, up to five series; `ring` {title?, total?, segments: [{label,
 value}]}; `ranking` {title?, items: [{label, value, detail?}]}; `table`
 {title?, columns: [{label, align?}], rows}; `checklist` {title?, items:
 [{text, done, note?}]}; `progress` {title?, items: [{label, value,

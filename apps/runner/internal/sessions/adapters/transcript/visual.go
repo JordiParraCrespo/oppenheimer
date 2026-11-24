@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -107,6 +108,13 @@ func CheckVisual(spec []byte) []string {
 			add("blocks[%d].series: %d series; at most %d", i, len(block.Series), visualSeriesMax)
 		}
 		for s, series := range block.Series {
+			// The console's charts draw from zero: a value under it would be drawn wrong.
+			for v, raw := range series.Values {
+				if value, err := strconv.ParseFloat(string(raw), 64); err == nil && value < 0 {
+					add("blocks[%d].series[%d].values[%d]: %s is under zero; charts draw from zero", i, s, v, raw)
+					break
+				}
+			}
 			if len(block.Labels) > 0 && len(series.Values) != len(block.Labels) {
 				add("blocks[%d].series[%d].values: has %d values for %d labels; give one value per label",
 					i, s, len(series.Values), len(block.Labels))

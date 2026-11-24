@@ -39,7 +39,8 @@ function frameMessage(data: unknown): FrameMessage | null {
  * visuals origin's page): the fragment and the theme posted in when the page
  * is ready, the theme again whenever the console's changes, and its height,
  * its errors and the links it asks to open taken back, from that frame's
- * window alone. A page that never says it is ready fails after 15 seconds.
+ * window alone. A page that never says it is ready fails after 15 seconds;
+ * the frame loads at once (never lazily), so that clock and its load start together.
  */
 export function useVisualFrame(html: string, firstHeight: number) {
   const frame = useRef<HTMLIFrameElement>(null);

@@ -2031,7 +2031,8 @@
         "dismissed": "You dismissed: {{title}}",
         "blank": "Left blank",
         "failed": "Could not send the form.",
-        "fixFields": "Check the highlighted fields."
+        "fixFields": "Check the highlighted fields.",
+        "loadFailed": "Could not read the form this bot is waiting on."
       },
       "approval": {
         "needsInput": "Needs input",

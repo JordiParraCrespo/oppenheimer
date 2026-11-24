@@ -238,7 +238,8 @@
       "dismissed": "Descartaste: {{title}}",
       "blank": "En blanco",
       "failed": "No se pudo enviar el formulario.",
-      "fixFields": "Revisa los campos marcados."
+      "fixFields": "Revisa los campos marcados.",
+      "loadFailed": "No se ha podido leer el formulario que espera este bot."
     },
     "approval": {
       "needsInput": "Necesita tu respuesta",

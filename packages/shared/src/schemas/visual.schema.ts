@@ -73,7 +73,8 @@ const metricsBlock = z
 const seriesSchema = z
   .object({
     label,
-    values: z.array(finite).min(1).max(200),
+    // The console's charts draw from a zero baseline: a value under zero would be drawn wrong, so it is refused.
+    values: z.array(finite.nonnegative()).min(1).max(200),
   })
   .strict();
 

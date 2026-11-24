@@ -29,6 +29,7 @@ func TestCheckVisualNamesEachFaultByItsPath(t *testing.T) {
 		"values per label":   {`{"title":"x","blocks":[{"type":"line","labels":["a","b","c"],"series":[{"label":"s","values":[1,2]}]}]}`, "blocks[0].series[0].values: has 2 values for 3 labels"},
 		"cells per column":   {`{"title":"x","blocks":[{"type":"table","columns":[{"label":"a"}],"rows":[["a","b"]]}]}`, "blocks[0].rows[0]: has 2 cells for 1 columns"},
 		"not an object":      {`[1,2]`, "visual: not a JSON object"},
+		"under zero":         {`{"title":"x","blocks":[{"type":"bar","labels":["a"],"series":[{"label":"s","values":[-1]}]}]}`, "values[0]: -1 is under zero"},
 		"over the entry max": {`{"title":"` + strings.Repeat("x", transcript.VisualSpecMax) + `"}`, "bytes; keep it under"},
 	}
 	for name, c := range cases {

@@ -320,7 +320,7 @@ var mcpTools = []mcpTool{
 			"words (numbers to compare, a trend, a breakdown, progress); a plain Markdown table when they ask for a " +
 			"table. Never make up data. Each block is an object with a `type`: markdown {text}; metrics {items: " +
 			"[{label, value, delta?, good?: up|down, hint?}]}; bar, line, area {title?, labels, series: [{label, " +
-			"values}]}, one value per label, up to 5 series; ring {title?, total?, segments: [{label, value}]}; " +
+			"values}]}, one value per label and none under zero, up to 5 series; ring {title?, total?, segments: [{label, value}]}; " +
 			"ranking {title?, items: [{label, value, detail?}]}; table {title?, columns: [{label, align?}], rows: " +
 			"[[cell, …]]}; checklist {title?, items: [{text, done, note?}]}; progress {title?, items: [{label, " +
 			"value, target?}]}; record {title?, status?: {label, tone?}, fields: [{label, value}]}; callout {tone?: " +

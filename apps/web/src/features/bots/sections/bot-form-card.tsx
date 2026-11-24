@@ -1,4 +1,4 @@
-import { Card, SuccessMark } from '@oppenheimer/design-system-web';
+import { Button, Card, SuccessMark } from '@oppenheimer/design-system-web';
 import { ClipboardList } from '@oppenheimer/design-system-web/icons';
 import {
   useBotPendingForm,
@@ -22,7 +22,7 @@ import { useSentFlash } from '@/features/bots/hooks/use-sent-flash';
  */
 export function BotFormCard({ botId, name }: { botId: string; name: string }) {
   const { t } = useTranslation();
-  const { data: form, refetch } = useBotPendingForm(botId);
+  const { data: form, refetch, error, isFetching } = useBotPendingForm(botId);
   const { sent, flash } = useSentFlash();
   const submit = useSubmitBotForm({
     onSuccess: (card) => flash(card.title),
@@ -41,6 +41,20 @@ export function BotFormCard({ botId, name }: { botId: string; name: string }) {
           </div>
         </div>
       </Card>
+    );
+  }
+  // The bot may be waiting on a form the console could not read: say so, never draw nothing.
+  if (!form && error) {
+    return (
+      <ErrorAlert
+        error={error}
+        fallback={t('bots.chat.form.loadFailed')}
+        action={
+          <Button size="sm" variant="outline" disabled={isFetching} onClick={() => void refetch()}>
+            {t('bots.retry')}
+          </Button>
+        }
+      />
     );
   }
   if (!form) return null;

@@ -8,7 +8,7 @@ Give a `title`, an optional `subtitle` (the period or the source) and up to {{bl
 
 - `markdown`: `text`.
 - `metrics`: `items` (1–8) of `{label, value, delta?, good?: "up"|"down", hint?}`; `value` is a number or short text, `delta` the change in the same units, `good` which way is good (default up).
-- `bar`, `line`, `area`: `title?`, `labels` (the x axis, one per point; up to 60 for bar, 200 otherwise) and `series` (1–{{seriesMax}}) of `{label, values}`, one value per label. Bar compares categories or a few periods; line a trend; area a volume over time.
+- `bar`, `line`, `area`: `title?`, `labels` (the x axis, one per point; up to 60 for bar, 200 otherwise) and `series` (1–{{seriesMax}}) of `{label, values}`, one value per label, none under zero (the charts draw from zero; show a change as a figure in `metrics`). Bar compares categories or a few periods; line a trend; area a volume over time.
 - `ring`: `title?`, `total?` (the word over the total), `segments` (1–{{seriesMax}}) of `{label, value}`: shares of a whole.
 - `ranking`: `title?`, `items` (1–20) of `{label, value, detail?}`, drawn largest first.
 - `table`: `title?`, `columns` (1–10) of `{label, align?}`, `rows` (up to 200) of cells, each a number, text or null; one cell per column.

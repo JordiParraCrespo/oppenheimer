@@ -50,6 +50,13 @@ describe('parseVisual', () => {
       );
   });
 
+  // The charts draw from zero: a negative point would fall off the plot, not be shown.
+  it('refuses a chart value under zero, naming where it is', () => {
+    const result = parseVisual(chart([3, -1, 2]));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors[0]).toMatch(/^blocks\[0\]\.series\[0\]\.values\[1\]: /);
+  });
+
   it('refuses a table row with a cell too many', () => {
     const result = parseVisual({
       title: 'x',

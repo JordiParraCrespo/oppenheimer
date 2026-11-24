@@ -77,7 +77,6 @@ function VisualHtmlFrame({ block, url }: { block: Html; url: string }) {
           title={block.title ?? t('common.visual.html.frameTitle')}
           sandbox="allow-scripts"
           referrerPolicy="no-referrer"
-          loading="lazy"
           className={cn(
             'block w-full border-0 bg-transparent transition-[opacity,height] duration-base ease-out',
             state === 'loading' ? 'opacity-0' : 'opacity-100',
