@@ -12,7 +12,8 @@ import {
 } from '@oppenheimer/design-system-web/avatar-picker';
 import { BotFacePicker } from '@oppenheimer/design-system-web/bot-face-picker';
 import { Badge } from '@oppenheimer/design-system-web/badge';
-import { BotFaceItem, BotFaces, BotItem, BotList } from '@oppenheimer/design-system-web/bot-item';
+import { BotFaceItem, BotFaces } from '@oppenheimer/design-system-web/bot-faces';
+import { BotItem, BotList } from '@oppenheimer/design-system-web/bot-item';
 import { Button } from '@oppenheimer/design-system-web/button';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import { ChevronLeftIcon, ClockIcon, EllipsisIcon, LockIcon, PencilIcon, PlusIcon, WebhookIcon, XIcon } from '@oppenheimer/design-system-web/icons';
@@ -470,7 +471,7 @@ export function EmployeesSection() {
       <Spec
         id="botfaces"
         title="BotFaces · BotFaceItem"
-        meta="bot-item.tsx"
+        meta="bot-faces.tsx"
         desc="A folded Bots heading keeps its bots: SidebarListHead's summary holds a row of 20px faces, 4px apart, in the list's order. Each face opens the bot's chat; the state its row would show rides on its corner as a 7px dot cut out of the sidebar (amber when it needs you, blue when unread), and a working bot's face breathes. The open chat's face is ringed in ink. The tooltip is the name over the last message. When the faces do not all fit, the last place is a +N chip that unfolds the list."
         code={`<SidebarListHead label={fold} summary={<BotFaces moreLabel={more} onMore={unfold}><BotFaceItem name="Deploy Bot" label="Deploy Bot, needs you" initials="DB" needsInput render={<Link … />} /></BotFaces>}>{plus}</SidebarListHead>`}
       >
