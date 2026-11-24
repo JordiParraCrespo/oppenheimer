@@ -75,4 +75,51 @@ export class WhatsappReplyResolver {
     }
     return sentParts;
   }
+
+  /**
+   * Sends a bot's answer as one voice note saying `text`, quoting nothing
+   * (a voice note carries no quote), kept as a reply whose transcript is
+   * what it said. Answers 1 when it went, or when the host's answer timed
+   * out (it may have gone, and sending the words again could say it twice),
+   * and 0 when it surely did not, so the caller can send the words instead.
+   */
+  async sendVoice(
+    account: WhatsappAccountEntity,
+    target: WhatsappReplyTarget,
+    text: string,
+    voice: { audio: Buffer; seconds: number },
+    botId: string,
+  ): Promise<number> {
+    const outcome = await this.device.sendVoice(
+      account.hostId,
+      target.chatId,
+      voice.audio,
+      voice.seconds,
+    );
+    if (outcome.kind !== 'sent') {
+      this.logger.warn({
+        message: 'A WhatsApp voice reply was not sent',
+        accountId: account.id,
+        outcome: outcome.kind,
+        ...(outcome.kind === 'failed' ? { code: outcome.code } : {}),
+      });
+      return outcome.kind === 'timed_out' ? 1 : 0;
+    }
+    await this.messages.recordBotSend(
+      this.mapper.fromBotSend({
+        account,
+        chat: {
+          chatId: target.chatId,
+          chatKind: target.chat?.chatKind ?? 'direct',
+          chatName: target.chat?.chatName ?? null,
+        },
+        text,
+        sent: outcome,
+        botId,
+        isReply: true,
+        voiceSeconds: voice.seconds,
+      }),
+    );
+    return 1;
+  }
 }

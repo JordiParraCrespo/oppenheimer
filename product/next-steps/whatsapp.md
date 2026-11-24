@@ -239,3 +239,18 @@ A group of its own in Settings → Permissions, **WhatsApp**:
   decodes to silence counts as that provider failing (`VOICE_009`), so the
   next one is tried; the host refuses a note silent from end to end
   (`WA_008`). Which of the two the live notes hit was not established.
+- 2026-11-24: a contact's turn, and any turn in a group, may answer as a
+  voice note. Such a turn has no tools, so a bot whose instructions said to
+  answer a group by voice answered a greeting there in text: the reply at
+  the turn's end is text, and the voice tool was not there to call. Where
+  the voice tool would run in that chat without a card (a standing yes for
+  the chat, or the tool allowed outright, never when it is off) and the
+  workspace can speak, the turn is told it may start its reply with
+  `[voice]`, and only when its instructions or the chat ask for audio and
+  the answer is not better read. The reply then goes as one voice note
+  through the same reply path (the chat still allowed, still this bot's),
+  never also as text; a link, a list, code or more than the note's length
+  goes as text, and so does a reply that could not be spoken or that the
+  host refused. A note whose answer timed out is not followed by the
+  words, since it may have gone. The owner's own chat is unchanged: there
+  the bot has the tool.
