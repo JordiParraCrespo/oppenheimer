@@ -12,18 +12,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useConsoleDialog } from '@/lib/console';
 import { AutomationTableRow } from '../components/automation-table-row';
-import { FilterClear } from '../components/filter-clear';
-import { FilterRow } from '../components/filter-row';
-import { SearchChoiceToken } from '../components/search-choice-token';
-import { TriggerFacet } from '../components/trigger-facet';
+import { ListFilterBar } from '../components/list-filter-bar';
 import { useAutomationActions } from '../hooks/use-automation-actions';
-import { useAutomationsFilters } from '../hooks/use-automations-filters';
+import { useListFilters } from '../hooks/use-list-filters';
 import { automationColumns, automationSubline } from '../lib/automation-view';
-import { filterList, STATUS_TABS, usedTriggerSources } from '../lib/list-filters';
+import { filterList, usedTriggerSources } from '../lib/list-filters';
 import { runLocation } from '../lib/run-location';
 import { automationTriggerText } from '../lib/trigger-text';
-
-const ALL = '__all__';
 
 /**
  * The overview's Automations view: one row per automation in the workspace,
@@ -48,7 +43,7 @@ export function AutomationsTable() {
   const navigate = useNavigate();
   const dialogs = useConsoleDialog();
   const { data: rows, error } = useSuspenseAutomations();
-  const filters = useAutomationsFilters();
+  const filters = useListFilters('automations');
   const { data: projectNames = new Map<string, string>() } = useProjects({
     select: (projects) => new Map(projects.map((project) => [project.id, project.name])),
   });
@@ -59,11 +54,13 @@ export function AutomationsTable() {
       navigate({ to: '/automations/$automationId', params: { automationId: id } }),
     onDeleted: () => setDeleting(null),
   });
-  const { state } = filters;
-  const { rows: shown, counts } = filterList(rows, state, (automation) => automation.projectId);
+  const { rows: shown, counts } = filterList(
+    rows,
+    filters.state,
+    (automation) => automation.projectId,
+  );
   // Only the projects some automation is in: a pick never lands on nothing.
   const projectIds = [...new Set(rows.map((automation) => automation.projectId))];
-  const projectLabel = state.owner ? projectNames.get(state.owner) : undefined;
   // The list holds many automations, so its one alert says which one failed.
   const failedName = rows.find((row) => row.id === actions.failedId)?.name;
 
@@ -88,34 +85,16 @@ export function AutomationsTable() {
         </RoutineTable>
       ) : (
         <RoutineTable>
-          <FilterRow
-            tabs={STATUS_TABS}
-            value={state.status}
-            label={(tab) => t(`automations.filter.${tab}`)}
-            count={(tab) => counts[tab]}
-            onValueChange={filters.setStatus}
-          >
-            <SearchChoiceToken
-              label={projectLabel ?? t('automations.runs.allProjects')}
-              value={state.owner ?? ALL}
-              dirty={state.owner !== null}
-              searchPlaceholder={t('common.search.projects')}
-              emptyText={(query) => t('common.search.noMatch', { query })}
-              options={[
-                { value: ALL, label: t('automations.runs.allProjects') },
-                ...projectIds.map((id) => ({ value: id, label: projectNames.get(id) ?? id })),
-              ]}
-              onValueChange={(value) => filters.setProject(value === ALL ? null : value)}
-            />
-            <TriggerFacet
-              value={state.trigger}
-              sources={usedTriggerSources(rows)}
-              onValueChange={filters.setTrigger}
-            />
-            {filters.dirty ? (
-              <FilterClear onClick={filters.clear}>{t('automations.runs.clear')}</FilterClear>
-            ) : null}
-          </FilterRow>
+          <ListFilterBar
+            filters={filters}
+            counts={counts}
+            owner={{
+              allLabel: t('automations.runs.allProjects'),
+              searchPlaceholder: t('common.search.projects'),
+              options: projectIds.map((id) => ({ value: id, label: projectNames.get(id) ?? id })),
+            }}
+            sources={usedTriggerSources(rows)}
+          />
           <RoutineTableHead columns={automationColumns(t)} />
           {shown.length === 0 ? (
             <RunsListEmpty>{t('automations.page.filterNoMatch')}</RunsListEmpty>

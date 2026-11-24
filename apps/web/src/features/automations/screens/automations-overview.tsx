@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { RunHistorySkeleton } from '../components/run-history-skeleton';
 import { TableSkeleton } from '../components/table-skeleton';
-import { useAutomationsFilters } from '../hooks/use-automations-filters';
+import { useListFilters } from '../hooks/use-list-filters';
 import { automationColumns } from '../lib/automation-view';
 import { AutomationsTable } from '../sections/automations-table';
 import { OverviewTop } from '../sections/overview-top';
@@ -17,7 +17,7 @@ import { RunHistoryCard } from '../sections/run-history-card';
 export function AutomationsOverviewScreen() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { state } = useAutomationsFilters();
+  const { state } = useListFilters('automations');
   return (
     <>
       <OverviewTop />

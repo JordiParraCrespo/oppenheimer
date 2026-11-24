@@ -1,4 +1,5 @@
 import type { AutomationTrigger } from '@oppenheimer/frontend-consumer';
+import { z } from 'zod';
 
 /**
  * The status pills of the Automations and Bot routines tabs. A running item
@@ -9,8 +10,28 @@ export const STATUS_TABS = ['all', 'active', 'paused'] as const;
 export type StatusTab = (typeof STATUS_TABS)[number];
 
 /** What an automation or a routine can be started by, in the order the trigger facet lists them. */
-export const TRIGGER_SOURCES = ['schedule', 'gmail', 'github', 'webhook'] as const;
+const TRIGGER_SOURCES = ['schedule', 'gmail', 'github', 'webhook'] as const;
 export type TriggerSource = (typeof TRIGGER_SOURCES)[number];
+
+/**
+ * The search fields every filtered list shares, for its route's schema to
+ * spread beside its owner facet. A value a field does not accept reads as
+ * absent, which is the default, never as an error that fails the route.
+ */
+export const listSearchFields = {
+  status: z.enum(STATUS_TABS).optional().catch(undefined),
+  trigger: z.enum(TRIGGER_SOURCES).optional().catch(undefined),
+};
+
+/** What a list's filter row reads and writes: its state in the URL, and a setter per facet. */
+export interface ListFilters {
+  state: ListFilterState;
+  dirty: boolean;
+  setStatus: (status: StatusTab) => void;
+  setOwner: (owner: string | null) => void;
+  setTrigger: (trigger: TriggerSource | null) => void;
+  clear: () => void;
+}
 
 /** A list's filters: the status pill, the one facet the list is grouped by (a bot, a project), the trigger. */
 export interface ListFilterState {
