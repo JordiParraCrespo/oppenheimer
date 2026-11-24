@@ -17,6 +17,11 @@ export class ReplyOnWhatsappCommand extends CommandBase {
   readonly text: string;
   /** The Oppenheimer bot that wrote it: it must still be the chat's bot. */
   readonly botId: string;
+  /**
+   * Set to send the answer as one voice note saying `text` (a contact turn
+   * that answers by voice, `BotVoiceReplyResolver`), through the same checks.
+   */
+  readonly voice?: { audio: Buffer; seconds: number };
 
   constructor(props: CommandProps<ReplyOnWhatsappCommand>) {
     super(props);
@@ -26,5 +31,6 @@ export class ReplyOnWhatsappCommand extends CommandBase {
     this.replyToRowId = props.replyToRowId;
     this.text = props.text;
     this.botId = props.botId;
+    this.voice = props.voice;
   }
 }

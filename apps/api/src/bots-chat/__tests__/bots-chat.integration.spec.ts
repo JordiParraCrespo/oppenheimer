@@ -47,6 +47,7 @@ import { BotTurnChannelPolicy } from '../application/bot-turn-channel.policy';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
 import { BotTurnHoldPolicy } from '../application/bot-turn-hold.policy';
 import { BotTurnOpeningResolver } from '../application/bot-turn-opening.resolver';
+import type { BotVoiceReplyResolver } from '../application/bot-voice-reply.resolver';
 import { failureKindOf, TurnTranscript } from '../application/turn-transcript.policy';
 import { TurnWriteFactory } from '../application/turn-write.factory';
 import { BotApprovalMapper } from '../bot-approval.mapper';
@@ -1773,6 +1774,8 @@ describe('bots chat (integration)', () => {
       } as unknown as BotRuleReviewerFactory,
       new BotApprovalStartedPolicy(approvals),
       new BotTurnHoldPolicy(turns),
+      // No turn here is a contact's on WhatsApp, so none is offered a voice reply.
+      { maxChars: async () => null } as unknown as BotVoiceReplyResolver,
     );
   }
 
