@@ -126,8 +126,11 @@ const TAB_ATTENTION = {
 } as const;
 
 /**
- * One open thing in a `ChatTabStrip`: its mark, its name, its close. The
- * shown one is lit, on the card inside a hairline, so on a strip that
+ * One open thing in a `ChatTabStrip`: its mark, its name, its close. Every
+ * tab is the same width whatever its name, the way a browser's are: 240px
+ * while the strip has room, then all shrinking alike down to 96px as more
+ * open, past which the strip scrolls; so lighting a tab never moves the
+ * strip. The shown one is lit, on the card inside a hairline, so on a strip that
  * stands on the recessed ground it reads as part of the page under it; the rest are flat on the
  * strip's ground with a hairline between two of them, and the close of a tab
  * not shown appears on hover. A long name fades out over its last 16px
@@ -168,7 +171,7 @@ function ChatTab({
       data-active={active || undefined}
       title={title}
       className={cn(
-        'group/tab relative flex h-(--control-h-md) max-w-60 min-w-28 shrink items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-[13.5px] text-fg-muted transition-colors duration-fast',
+        'group/tab relative flex h-(--control-h-md) min-w-24 shrink basis-60 items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-[13.5px] text-fg-muted transition-colors duration-fast',
         'hover:bg-hover-surface hover:text-fg data-active:border-border-subtle data-active:bg-card data-active:font-medium data-active:text-fg',
         // A hairline between two tabs that are not shown.
         "not-first:before:absolute not-first:before:top-2.5 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
