@@ -2012,6 +2012,12 @@ earlier note:
   without asking, in a chat it answers (`next-steps/slack-for-bots.md` §4,
   `next-steps/answering-on-telegram-and-whatsapp.md` §4). Telegram still
   takes none.
+- `research/device-streaming.md` ("A host's desktop") left the pointer to
+  the screen-sharing server, and a watched Mac showed none: Apple's Screen
+  Sharing sends the cursor's shape but never where it is. On 2026-11-24 the
+  runner took that over: it reads the pointer with CoreGraphics and sends
+  `desktop.pointer` while the reader watches (`versions/mvp/01-protocol.md`),
+  and the console draws the host's cursor there.
 - `versions/mvp/05-screens.md` drew a stopped session as a pane with a
   Restart button, and `02-runner.md` §5 kept every session running until
   someone stopped it. On 2026-11-24, after reading how Orca hibernates

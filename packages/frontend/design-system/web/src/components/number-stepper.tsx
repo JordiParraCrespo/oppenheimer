@@ -6,7 +6,7 @@ import { MinusIcon, PlusIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const STEP_BUTTON =
-  'inline-flex size-(--control-h-sm) shrink-0 items-center justify-center rounded-pill text-fg-muted outline-none transition-[background-color,color,transform] duration-fast ease-standard select-none hover:bg-hover-surface hover:text-fg active:scale-[0.975] focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-disabled:opacity-40 [&_svg]:size-3.25';
+  'inline-flex aspect-square h-full shrink-0 items-center justify-center rounded-pill text-fg-muted outline-none transition-[background-color,color,transform] duration-fast ease-standard select-none hover:bg-hover-surface hover:text-fg active:scale-[0.975] focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-disabled:opacity-40 [&_svg]:size-3.25';
 
 /**
  * NumberStepper — a small whole number with bounds a person nudges rather
@@ -57,7 +57,7 @@ function NumberStepper({
       disabled={disabled}
       className={cn('inline-flex', className)}
     >
-      <NumberFieldPrimitive.Group className="inline-flex items-center gap-0.5 rounded-pill bg-hover-surface p-0.5 data-disabled:opacity-50">
+      <NumberFieldPrimitive.Group className="inline-flex h-(--control-h-sm) items-center gap-0.5 rounded-pill bg-hover-surface p-0.5 data-disabled:opacity-50">
         <NumberFieldPrimitive.Decrement aria-label={labels.decrement} className={STEP_BUTTON}>
           <MinusIcon />
         </NumberFieldPrimitive.Decrement>

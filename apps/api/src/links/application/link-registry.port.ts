@@ -3,6 +3,7 @@ import type {
   AttachmentDirectAnswerMessage,
   AttachmentDirectRefusedMessage,
   AttachmentPathMessage,
+  DesktopPointerMessage,
   DeviceInfoMessage,
   ProtocolMessage,
   RunnerCapability,
@@ -36,6 +37,11 @@ export interface AttachmentSink {
    * the attachment's bytes may flow. Only those two implement it.
    */
   opened?(): void;
+  /**
+   * Where the host's pointer is on a desktop attachment (`desktop.pointer`),
+   * which the screen-sharing server does not say. Only a desktop implements it.
+   */
+  pointer?(message: DesktopPointerMessage): void;
   /**
    * The runner's credit for bytes it wrote to a port attachment's port: the
    * window this side sends under. Only a port attachment implements it.

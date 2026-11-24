@@ -77,7 +77,9 @@ runner signs in to the screen-sharing server already on the host's loopback
 with a VNC password or a macOS account it keeps on the host, and hands the
 browser an RFB stream that asks for none. The browser watches until it takes
 control; until then the runner drops its keys, pointer, clipboard and
-resizes. The choice lives in `~/.oppenheimer/desktop.json`, is read on every
+resizes, and on a Mac tells it where the host's pointer is
+(`desktop.pointer`, read with CoreGraphics), which Screen Sharing never
+does. The choice lives in `~/.oppenheimer/desktop.json`, is read on every
 open, and is never written by the control plane
 (`product/research/device-streaming.md`, "A host's desktop").
 

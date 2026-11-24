@@ -33,6 +33,9 @@ const LOW_WATER_BYTES = 512 * 1024;
  * browser's socket while the host's side is full, and holds the host's side
  * while the browser's socket is.
  *
+ * The runner also says where the host's pointer is (`desktop.pointer`),
+ * which the server does not; it goes to the browser as a `pointer` frame.
+ *
  * The browser starts watching. `desktop.control` asks the runner to let its
  * clicks and keys through, or to drop them again; the runner is what drops
  * them, so a console that lied about watching changes nothing.
@@ -59,7 +62,9 @@ export class DesktopAttachment {
 
   /** `early` is what the browser sent while its ticket was redeemed, in order. */
   start(early: readonly { data: Buffer; isBinary: boolean }[] = []): void {
-    const stream = LinkPortStream.toDesktop(this.link, false);
+    const stream = LinkPortStream.toDesktop(this.link, false, ({ x, y, width, height }) =>
+      this.tell({ type: 'pointer', x, y, width, height }),
+    );
     this.stream = stream;
     stream.whenOpen().then(
       () => {
