@@ -32,9 +32,11 @@ function Harness({ sent }: { sent: string[] }) {
   return (
     <div ref={scroller} data-testid="scroller">
       <div ref={content}>
-        {sent.map((id) => (
-          <div key={id} data-slot="chat-user-message" data-message-id={id} />
-        ))}
+        <div data-newest-sent={sent.at(-1)}>
+          {sent.map((id) => (
+            <div key={id} data-slot="chat-user-message" data-message-id={id} />
+          ))}
+        </div>
       </div>
     </div>
   );

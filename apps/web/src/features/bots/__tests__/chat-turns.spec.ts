@@ -10,6 +10,7 @@ import {
   compactTokens,
   isQuietRoutineRun,
   markersBefore,
+  newestSentId,
   replyText,
   retryContent,
   turnDurationMs,
@@ -207,6 +208,26 @@ describe('chatTurns', () => {
     const [block] = chatTurns(conversation([message('m1', 'old', 'assistant')], []));
     expect(block?.turn).toBeUndefined();
     expect(block?.answer).toHaveLength(1);
+  });
+});
+
+describe('newestSentId', () => {
+  // What breaks this: a page of older history laid above a window that holds
+  // none of your messages counts your last message there as just sent, so the
+  // chat glides it to the top and pins to the end while you scroll up.
+  it('is your newest message in the live window, never one in an older page', () => {
+    const blocks = chatTurns(
+      conversation(
+        [
+          message('m1', 't1', 'user'),
+          message('m2', 't1', 'assistant'),
+          message('m3', 't2', 'activity'),
+        ],
+        [turn('t1'), turn('t2')],
+      ),
+    );
+    expect(newestSentId(blocks)).toBe('m1');
+    expect(newestSentId(blocks, new Set(['m1', 'm2']))).toBeUndefined();
   });
 });
 

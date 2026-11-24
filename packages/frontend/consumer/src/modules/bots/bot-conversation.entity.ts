@@ -179,6 +179,11 @@ export class BotConversationEntity {
     private readonly textBlocksStored: Readonly<Record<string, number>> = {},
     /** The chat holds messages older than these, a page read before the first. */
     public readonly hasOlder = false,
+    /**
+     * Where the live window starts in `messages`: those before it are older
+     * pages the reader scrolled up into, never something just sent.
+     */
+    public readonly windowStart = 0,
   ) {}
 
   /** The same chat with `emoji` as your reaction to message `messageId`, or none. */
@@ -191,6 +196,7 @@ export class BotConversationEntity {
       this.messageCount,
       this.textBlocksStored,
       this.hasOlder,
+      this.windowStart,
     );
   }
 
@@ -298,6 +304,7 @@ export class BotConversationEntity {
     turns: readonly BotTurnEntity[],
     messageCount: number,
     hasOlder = this.hasOlder,
+    windowStart = this.windowStart,
   ): BotConversationEntity {
     return new BotConversationEntity(
       messages,
@@ -305,6 +312,7 @@ export class BotConversationEntity {
       messageCount,
       this.textBlocksStored,
       hasOlder,
+      windowStart,
     );
   }
 }

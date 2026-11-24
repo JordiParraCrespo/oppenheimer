@@ -39,29 +39,31 @@ function joinsWindow(window: BotConversationEntity, older: BotOlderMessages): bo
 /**
  * The chat as the transcript draws it: the older pages read so far under the
  * live window, each message once, and whether more remain. Older pages that
- * no longer join the window are left out until the gap is read
- * ({@link fillOlderGap}); a window that holds the chat from its start (a chat
- * just cleared) needs none.
+ * no longer join the window stay drawn while the messages between are read
+ * ({@link fillOlderGap}): they land below the line the reader is on, where
+ * taking the pages away would have moved the chat to its end. A window that
+ * holds the chat from its start (a chat just cleared) needs none.
  */
 export function withOlderMessages(
   window: BotConversationEntity,
   older: BotOlderMessages | null | undefined,
 ): BotConversationEntity {
-  if (!older || !window.hasOlder || !joinsWindow(window, older)) return window;
+  if (!older || !window.hasOlder) return window;
   const inWindow = new Set(window.messages.map((message) => message.id));
   const windowTurns = new Set(window.turns.map((turn) => turn.id));
+  const laidUnder = older.messages.filter((message) => !inWindow.has(message.id));
   return window.withLines(
-    [...older.messages.filter((message) => !inWindow.has(message.id)), ...window.messages],
+    [...laidUnder, ...window.messages],
     [...older.turns.filter((turn) => !windowTurns.has(turn.id)), ...window.turns],
     window.messageCount,
     older.hasOlder,
+    laidUnder.length,
   );
 }
 
 /**
  * The message the next older page ends before: the oldest one the reader
- * holds, the older pages' when they join the window, else the window's own;
- * `null` when the chat holds nothing older.
+ * holds; `null` when the chat holds nothing older.
  */
 export function olderCursor(
   window: BotConversationEntity,
@@ -98,9 +100,9 @@ function joined(later: Lines, earlier: Lines): Lines {
 
 /**
  * `older` with `page` laid under it: the page read before
- * {@link olderCursor} of this `window`. Older pages that no longer join the
- * window are dropped and the page starts them again, joined to the window as
- * it is now.
+ * {@link olderCursor} of this `window`, or the first older pages, joined to
+ * the window. Pages that no longer join it keep their place: the messages
+ * between are read by whoever found the gap.
  */
 export function addOlderPage(
   window: BotConversationEntity,
@@ -109,7 +111,7 @@ export function addOlderPage(
 ): BotOlderMessages | null {
   const first = window.messages[0];
   if (!first) return null;
-  if (older && joinsWindow(window, older)) {
+  if (older) {
     return { ...older, ...joined(older, linesOf(page)), hasOlder: page.hasOlder };
   }
   return {

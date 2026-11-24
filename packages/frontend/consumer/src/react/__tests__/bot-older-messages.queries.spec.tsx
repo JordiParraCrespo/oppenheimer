@@ -156,7 +156,20 @@ describe('a bot chat scrolled up past its window', () => {
     await waitFor(() => expect(chat.drawn()).toEqual(messages(2, 13)));
   });
 
-  it('draws the newest messages when the read between fails, and the older pages again once it lands', async () => {
+  it('keeps the older pages drawn while the messages between are read, then joins them', async () => {
+    const chat = setup(8);
+    await waitFor(() => expect(chat.drawn()).toEqual(messages(5, 8)));
+    await chat.scrollUp();
+
+    const release = chat.holdOlder();
+    chat.write(5);
+    await chat.readAgain();
+    await waitFor(() => expect(chat.drawn()).toEqual([...messages(2, 5), ...messages(10, 13)]));
+    await act(async () => release());
+    await waitFor(() => expect(chat.drawn()).toEqual(messages(2, 13)));
+  });
+
+  it('lets the older pages go when the read between fails, and draws the newest messages', async () => {
     const chat = setup(8);
     await waitFor(() => expect(chat.drawn()).toEqual(messages(5, 8)));
     await chat.scrollUp();
@@ -165,10 +178,11 @@ describe('a bot chat scrolled up past its window', () => {
     chat.write(5);
     await chat.readAgain();
     await waitFor(() => expect(chat.drawn()).toEqual(messages(10, 13)));
+    expect(chat.result.current.chat.hasOlder).toBe(true);
 
     chat.failOlder(false);
-    await chat.readAgain();
-    await waitFor(() => expect(chat.drawn()).toEqual(messages(2, 13)));
+    await chat.scrollUp();
+    expect(chat.drawn()).toEqual(messages(7, 13));
   });
 
   it('keeps the message the window let go while the first older page was out', async () => {

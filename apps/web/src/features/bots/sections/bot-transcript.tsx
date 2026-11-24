@@ -78,7 +78,11 @@ export function BotTranscript({
   // Retry follows the newest turn, drawn or not: a run hidden after your turn takes it away.
   const again = retryContent(all);
   const newest = newestTurn(all)?.turnId;
-  useSentGlide(newestSentId(blocks));
+  const older = new Set(
+    conversation.messages.slice(0, conversation.windowStart).map((message) => message.id),
+  );
+  const sentId = newestSentId(blocks, older);
+  useSentGlide(sentId);
   const {
     top,
     loading,
@@ -94,7 +98,8 @@ export function BotTranscript({
       ) : (
         <>
           {conversation.hasOlder ? <div ref={top} aria-hidden /> : null}
-          <ChatTranscript>
+          {/* The newest send it counts, for following the chat down to its answer. */}
+          <ChatTranscript data-newest-sent={sentId}>
             {loading ? (
               <ChatMarker icon={<LoaderCircle aria-hidden className="motion-safe:animate-spin" />}>
                 {t('bots.chat.loadingOlder')}

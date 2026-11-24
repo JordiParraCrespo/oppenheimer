@@ -114,8 +114,9 @@ function useBotOlderMessages(id: string): BotOlderMessages | null {
  * what the window let go comes from the read before ({@link slideOlder}),
  * and only a window that moved past all of that reads the messages between
  * ({@link fillOlderGap}), after this read has landed, so the newest messages
- * never wait on it, nor fail with it; the older pages are left out until the
- * gap is read.
+ * never wait on it, nor fail with it. The older pages stay drawn meanwhile;
+ * if the read between fails, they are let go rather than drawn with a hole,
+ * and the next scroll up reads them again.
  */
 function conversationQuery(app: ConsumerApp, queryClient: QueryClient, id: string) {
   const olderKey = botsKeys.olderMessages(id);
@@ -138,8 +139,11 @@ function conversationQuery(app: ConsumerApp, queryClient: QueryClient, id: strin
             queryClient.setQueryData(olderKey, filled);
           }
         },
-        // Left out until the next read tries the gap again.
-        () => undefined,
+        () => {
+          if (queryClient.getQueryData(olderKey) === older) {
+            queryClient.setQueryData(olderKey, null);
+          }
+        },
       );
       return window;
     },
