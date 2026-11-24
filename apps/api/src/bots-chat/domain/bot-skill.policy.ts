@@ -23,28 +23,82 @@ export interface BotSkillView {
   modelInvocable: boolean;
 }
 
-/** A skill the product ships to every bot, listed while the tool it follows with is offered. */
+/** A skill the product ships to every bot, listed while the tools it follows with are offered. */
 export interface BotBuiltInSkill extends BotSkillView {
   /** One of `BOT_BUILT_IN_SKILL_NAMES`, which no skill of a bot's may be given. */
   name: BotBuiltInSkillName;
-  /** The tool the skill's steps call: without it the skill has nothing to follow with. */
-  needsTool: string;
+  /** The tools the skill's steps call: without every one the skill has nothing to follow with. */
+  needsTools: readonly string[];
 }
 
 /** {@link BOT_OPPENHEIMER_SKILL}, followed with Oppenheimer's own guide. */
 export const OPPENHEIMER_SKILL: BotBuiltInSkill = {
   ...BOT_OPPENHEIMER_SKILL,
-  needsTool: 'read_oppenheimer_docs',
+  needsTools: ['read_oppenheimer_docs'],
 };
 
 /** {@link BOT_RECAP_SKILL}, which starts from the person's sessions. */
 export const RECAP_SKILL: BotBuiltInSkill = {
   ...BOT_RECAP_SKILL,
-  needsTool: 'list_sessions',
+  needsTools: ['list_sessions'],
 };
 
+/** The capabilities' skills: each one's words are a skill file in its capability's prompts. */
+type CapabilitySkillName = 'watch-inbox' | 'use-a-computer' | 'use-a-browser';
+
+/**
+ * A capability's skill (2026-11-23): how-to that only some turns need, kept
+ * out of the system prompt and read with `use_skill` when the work comes up,
+ * as Codex and OpenClaw keep theirs. Its words are `<capability>/skill-<name>.md`
+ * in the Agent Skills format; the model uses it unasked, and the person does
+ * not run it.
+ */
+function capabilitySkill(
+  name: CapabilitySkillName,
+  words: { description: string; body: string },
+  needsTools: readonly string[],
+): BotBuiltInSkill {
+  return { name, ...words, needsTools, userInvocable: false, modelInvocable: true };
+}
+
+/** Offering to watch the inbox, read when the person talks about email. */
+export const WATCH_INBOX_SKILL = capabilitySkill(
+  'watch-inbox',
+  {
+    description: promptText('mail/skill-watch-inbox.description'),
+    body: promptText('mail/skill-watch-inbox.body'),
+  },
+  ['list_gmail_accounts', 'update_routine'],
+);
+
+/** Working a screen step by step, read before the first `use_computer`. */
+export const USE_A_COMPUTER_SKILL = capabilitySkill(
+  'use-a-computer',
+  {
+    description: promptText('computer/skill-use-a-computer.description'),
+    body: promptText('computer/skill-use-a-computer.body'),
+  },
+  ['use_computer'],
+);
+
+/** Working a page step by step, read before the first `use_browser`. */
+export const USE_A_BROWSER_SKILL = capabilitySkill(
+  'use-a-browser',
+  {
+    description: promptText('browser/skill-use-a-browser.description'),
+    body: promptText('browser/skill-use-a-browser.body'),
+  },
+  ['use_browser'],
+);
+
 /** Every skill the product ships to every bot, in the order the prompt would list them. */
-export const BOT_BUILT_IN_SKILLS: readonly BotBuiltInSkill[] = [OPPENHEIMER_SKILL, RECAP_SKILL];
+export const BOT_BUILT_IN_SKILLS: readonly BotBuiltInSkill[] = [
+  OPPENHEIMER_SKILL,
+  RECAP_SKILL,
+  WATCH_INBOX_SKILL,
+  USE_A_COMPUTER_SKILL,
+  USE_A_BROWSER_SKILL,
+];
 
 /**
  * Every skill a bot has: its own, then each built-in whose name none of its
@@ -60,12 +114,12 @@ export function withBuiltInSkills<Skill extends BotSkillView>(
 
 /** Whether the skill is one Oppenheimer ships (`BOT_BUILT_IN_SKILLS`), not a row of the bot's. */
 export function isBuiltInSkill(skill: object): skill is BotBuiltInSkill {
-  return 'needsTool' in skill;
+  return 'needsTools' in skill;
 }
 
 /** Whether a turn offering these tools can follow the skill: a built-in needs its tool. */
 export function canFollowSkill(skill: BotSkillView, offeredTools: readonly string[]): boolean {
-  return !('needsTool' in skill) || offeredTools.includes(skill.needsTool as string);
+  return !isBuiltInSkill(skill) || skill.needsTools.every((tool) => offeredTools.includes(tool));
 }
 
 /**

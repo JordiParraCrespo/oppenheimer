@@ -77,7 +77,11 @@ the notes in its history, a slash command), `wake` for what an event says
 to the bot (what opens the turn it starts and the lines it leaves in the
 chat outside one), `job` for a model call that is not a bot's turn (the
 dream, the reviews, the summary, a subagent), `tools` for what a tool tells
-the model (its description, its answers and refusals). The rest of the name
+the model (its description, its answers and refusals), `skill` for a
+built-in skill: how-to that only some turns need, read with `use_skill`
+when the work comes up instead of sent on every turn, written as a SKILL.md
+(a `name` and `description` frontmatter, then the body; Agent Skills, the
+format Claude Code, Codex and OpenClaw read). The rest of the name
 says which, when a capability has several (`mail/tools-write.md`,
 `sessions/wake-failed.md`). Folder and file are the id
 (`core/system-rules`), so a new capability is a new folder, and everything

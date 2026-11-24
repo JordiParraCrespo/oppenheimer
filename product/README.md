@@ -1911,3 +1911,11 @@ earlier note:
   first word (`mail/tools-write.md`), so everything a bot is told about one
   area is in one place and a new area is a new folder
   (`apps/api/AGENTS.md`, "What a model is told is prose").
+- A bot's how-to for a capability was a section of every turn's system
+  prompt that offered the capability's tools. On 2026-11-23 the parts only
+  some turns need became built-in skills, listed by one line and read with
+  `use_skill` when the work comes up, as Codex and OpenClaw keep theirs:
+  `watch-inbox` (mail), `use-a-computer` and `use-a-browser`. What must hold
+  on every turn (ask before sending or buying, never type a password) stayed
+  in the system prompt (`next-steps/mail.md`, Decided;
+  `research/lessons-from-codex-and-openclaw-on-context.md`).

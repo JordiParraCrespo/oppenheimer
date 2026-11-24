@@ -52,6 +52,7 @@
     "migration:new": "pnpm --filter @oppenheimer/api migration:new",
     "generate:api-client": "pnpm generate:openapi && pnpm --filter @oppenheimer/api-client generate",
     "generate:guide": "pnpm --filter @oppenheimer/docs generate:guide",
+    "eval:bot-capability-skills": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-capability-skills/run.ts",
     "eval:bot-channel-ack": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-channel-ack/run.ts",
     "eval:bot-blocked-run": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-blocked-run/run.ts",
     "eval:bot-first-chat": "tsx scripts/evals/bot-first-chat/run.ts",

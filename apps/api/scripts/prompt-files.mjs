@@ -11,6 +11,8 @@
  * kind (`system/`, `turn/`, `wake/`):
  *
  *   core/system-rules.md          one prompt, id `core/system-rules`
+ *   mail/skill-watch-inbox.md     a skill: `mail/skill-watch-inbox.description`
+ *                                 and `.body` (see `parseSkillFile`)
  *   core/system-what-you-can-do.md
  *                                 with `<!-- fragment: plain-refusal -->`
  *                                 markers: `core/system-what-you-can-do.plain-refusal`
@@ -49,6 +51,54 @@ function slotsOf(text, where) {
   return slots;
 }
 
+const SKILL_FILE = /^skill-([a-z][a-z0-9]*(?:-[a-z0-9]+)*)\.md$/;
+const FRONTMATTER = /^---\n([\s\S]*?)\n---\n/;
+const SKILL_NAME_MAX = 64;
+const SKILL_DESCRIPTION_MAX = 1024;
+
+/**
+ * A skill file (`skill-<name>.md`) in the Agent Skills format, the SKILL.md
+ * that Claude Code, Codex and OpenClaw read: a frontmatter of `name` (the
+ * file's, at most 64 characters) and `description` (what it does and when
+ * to use it, at most 1,024), then the body, which the bot reads only when it
+ * uses the skill. Notes may go above the frontmatter and are never sent.
+ * Two prompts: `<file>.description` and `<file>.body`.
+ */
+function parseSkillFile(name, text, file) {
+  const wanted = name.match(SKILL_FILE)[1];
+  let rest = text;
+  while (LEADING_NOTE.test(rest)) rest = rest.replace(LEADING_NOTE, '');
+  rest = rest.replace(/^\s+/, '');
+  const front = rest.match(FRONTMATTER);
+  if (!front)
+    throw new Error(`${name}: a skill opens with a --- frontmatter of name and description.`);
+  const fields = Object.fromEntries(
+    front[1].split('\n').map((line) => {
+      const at = line.indexOf(':');
+      if (at < 1) throw new Error(`${name}: a frontmatter line is \`key: value\`.`);
+      return [line.slice(0, at).trim(), line.slice(at + 1).trim()];
+    }),
+  );
+  if (fields.name !== wanted) {
+    throw new Error(`${name}: its frontmatter's name is "${fields.name}", not "${wanted}".`);
+  }
+  if (wanted.length > SKILL_NAME_MAX)
+    throw new Error(`${name}: a skill's name is at most 64 characters.`);
+  const description = fields.description ?? '';
+  if (!description || description.length > SKILL_DESCRIPTION_MAX) {
+    throw new Error(`${name}: a skill's description is 1 to 1,024 characters.`);
+  }
+  const extra = Object.keys(fields).filter((key) => key !== 'name' && key !== 'description');
+  if (extra.length > 0)
+    throw new Error(`${name}: a skill's frontmatter holds name and description only.`);
+  const body = wordsOf(rest.slice(front[0].length), `${name}, body`);
+  if (!body) throw new Error(`${name}: a skill has a body.`);
+  return [
+    { id: `${file}.description`, text: description, slots: slotsOf(description, name) },
+    { id: `${file}.body`, text: body, slots: slotsOf(body, `${name}, body`) },
+  ];
+}
+
 /** One file's prompts, in the order it writes them; `folder` is the one it sits in, if any. */
 export function parsePromptFile(name, source, folder) {
   if (!FILE_NAME.test(name)) {
@@ -59,6 +109,7 @@ export function parsePromptFile(name, source, folder) {
   }
   const file = `${folder === undefined ? '' : `${folder}/`}${name.replace(/\.md$/, '')}`;
   const text = source.replace(/\r\n/g, '\n');
+  if (SKILL_FILE.test(name)) return parseSkillFile(name, text, file);
   const markers = [...text.matchAll(MARKER)];
   if (markers.length === 0) {
     const words = wordsOf(text, name);
