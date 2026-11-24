@@ -61,7 +61,7 @@ export function BotRoutinesTable() {
               owner={{
                 allLabel: t('automations.routines.filter.allBots'),
                 searchPlaceholder: t('automations.routines.filter.searchBots'),
-                options: botIds.map((id) => ({ value: id, label: botNames.get(id) ?? id })),
+                options: botIds.map((id) => ({ value: id, label: botNames.get(id) ?? '…' })),
               }}
               sources={usedTriggerSources(routines)}
             />

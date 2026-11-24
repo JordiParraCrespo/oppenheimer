@@ -18,7 +18,8 @@ const ALL = '__all__';
  * with their counts, the owner facet (a project, a bot) searchable over the
  * owners the caller lists, the Trigger facet over the sources the caller says
  * are used, and Clear while a filter is on. The table above it only says what
- * its owner is called and which owners and sources it has.
+ * its owner is called and which owners and sources it has; an owner whose
+ * name has not loaded yet is listed as "…", never as its id.
  */
 export function ListFilterBar({
   filters,

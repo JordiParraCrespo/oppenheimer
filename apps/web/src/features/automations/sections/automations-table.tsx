@@ -91,7 +91,7 @@ export function AutomationsTable() {
             owner={{
               allLabel: t('automations.runs.allProjects'),
               searchPlaceholder: t('common.search.projects'),
-              options: projectIds.map((id) => ({ value: id, label: projectNames.get(id) ?? id })),
+              options: projectIds.map((id) => ({ value: id, label: projectNames.get(id) ?? '…' })),
             }}
             sources={usedTriggerSources(rows)}
           />
