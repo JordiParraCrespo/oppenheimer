@@ -71,6 +71,25 @@ const DOCUMENT_PREVIEW_MAX = 4_000;
 const BOT_NOTE_PREFIX = 'By the bot';
 const NOTE_MAX = BOT_REVISION_NOTE_MAX - BOT_NOTE_PREFIX.length - 2;
 
+/**
+ * What the bot is told for each way its reaction did not land, one row per
+ * outcome, so a new channel constraint is a row here, never a branch in the
+ * tool. Each says why and what to do instead.
+ */
+const REACT_REFUSALS: Record<
+  Exclude<ReactAsBotOutcome['kind'], 'reacted'>,
+  (emoji: string) => string
+> = {
+  no_message: () => promptText('core/tools-self.react-no-message'),
+  not_yours: () => promptText('core/tools-self.react-not-yours'),
+  no_name: (emoji) => promptText('core/tools-self.react-no-name', { emoji }),
+  working_sign: () => promptText('core/tools-self.react-working-sign'),
+  unreachable: () => promptText('core/tools-self.react-unreachable'),
+  unsupported: () => promptText('core/tools-self.react-unsupported'),
+  no_channel: () => promptText('core/tools-self.react-not-sent'),
+  not_sent: () => promptText('core/tools-self.react-not-sent'),
+};
+
 /** The most facts one `recall` call returns. */
 const RECALL_LIMIT_MAX = 25;
 
@@ -412,8 +431,9 @@ export class BotSelfToolsFactory implements BotToolArea {
    */
   /**
    * A reaction to the person's message, as a person leaves one: shown on
-   * their bubble in the console chat. On a channel conversation it would be
-   * stored where nobody sees it, so the tool says to answer in words there.
+   * their bubble in the console chat, and on Slack and WhatsApp on the
+   * message there (`ReactAsBotCommandHandler`). Where it cannot land, the
+   * tool says why and to answer in words.
    */
   private react(): BotToolDefinition {
     return defineBotTool({
@@ -425,9 +445,6 @@ export class BotSelfToolsFactory implements BotToolArea {
         message_id: z.uuid().optional().describe(promptText('core/tools-self.react-message-id')),
       }),
       run: async (input, context) => {
-        if (context.conversationId !== context.botId) {
-          throw new BotToolRefusal(promptText('core/tools-self.react-console-only'));
-        }
         const emoji = input.emoji === '' ? null : input.emoji;
         if (emoji !== null && !isReactionEmoji(emoji)) {
           throw new BotToolRefusal(promptText('core/tools-self.react-not-emoji', { emoji }));
@@ -443,11 +460,8 @@ export class BotSelfToolsFactory implements BotToolArea {
             emoji,
           }),
         );
-        if (outcome.kind === 'no_message') {
-          throw new BotToolRefusal(promptText('core/tools-self.react-no-message'));
-        }
-        if (outcome.kind === 'not_yours') {
-          throw new BotToolRefusal(promptText('core/tools-self.react-not-yours'));
+        if (outcome.kind !== 'reacted') {
+          throw new BotToolRefusal(REACT_REFUSALS[outcome.kind](emoji ?? ''));
         }
         return emoji
           ? promptText('core/tools-self.react-done', { emoji, messageId: outcome.messageId })

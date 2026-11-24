@@ -55,6 +55,7 @@ import { BotToolboxFactory } from './bot-toolbox.factory';
 import { BotTurnChannelPolicy } from './bot-turn-channel.policy';
 import { BotTurnHoldPolicy } from './bot-turn-hold.policy';
 import { BotTurnOpeningResolver } from './bot-turn-opening.resolver';
+import { BotVoiceReplyResolver } from './bot-voice-reply.resolver';
 
 const ENGINE_EFFORTS: readonly string[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 
@@ -101,6 +102,7 @@ export class BotTurnContextResolver {
     private readonly reviewers: BotRuleReviewerFactory,
     private readonly approvalStarted: BotApprovalStartedPolicy,
     private readonly hold: BotTurnHoldPolicy,
+    private readonly voiceReplies: BotVoiceReplyResolver,
   ) {}
 
   private readonly logger = new Logger(BotTurnContextResolver.name);
@@ -136,6 +138,10 @@ export class BotTurnContextResolver {
         this.settings.forBot(turn.organizationId, bot.id),
         this.aboutOf(turn.organizationId, bot.createdByUserId),
       ]);
+    const voiceReplyMaxChars = await this.voiceReplies.maxChars(turn, {
+      preset: bot.permission,
+      permissions,
+    });
     const model = {
       provider: turn.provider,
       ...credential,
@@ -221,6 +227,7 @@ export class BotTurnContextResolver {
           lastContext,
           memory: reach.ownerMemory ? { log: inMind.log, toRecall: inMind.toRecall } : undefined,
           contact: reach.contact,
+          voiceReplyMaxChars,
           channel: isChannelOrigin(turn.origin) ? turn.origin : null,
           asItGoes: sendsAsItGoes(turn),
         }),

@@ -27,14 +27,17 @@ afterEach(() => {
   grow = undefined;
 });
 
-function Harness({ sent }: { sent: string[] }) {
+/** `newest` is the send the transcript names, the last of `sent` unless given; `null` names none. */
+function Harness({ sent, newest }: { sent: string[]; newest?: string | null }) {
   const { scroller, content } = useStickToBottom();
   return (
     <div ref={scroller} data-testid="scroller">
       <div ref={content}>
-        {sent.map((id) => (
-          <div key={id} data-slot="chat-user-message" data-message-id={id} />
-        ))}
+        <div data-newest-sent={newest === null ? undefined : (newest ?? sent.at(-1))}>
+          {sent.map((id) => (
+            <div key={id} data-slot="chat-user-message" data-message-id={id} />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -78,6 +81,20 @@ describe('useStickToBottom', () => {
     view.rerender(<Harness sent={['m2', 'm3', 'm4']} />);
     act(() => grow?.());
     expect(box.scrollTop).toBe(1000);
+  });
+
+  // What breaks this: the bot writing past your last message, which moves it
+  // into older history the reader is in, read as a send and the chat pulled
+  // to its end.
+  it('stays where you read when your last message leaves the window', () => {
+    const view = render(<Harness sent={['m1']} />);
+    const box = view.getByTestId('scroller');
+    measure(box);
+    scrollUp(box);
+
+    view.rerender(<Harness sent={['m1']} newest={null} />);
+    act(() => grow?.());
+    expect(box.scrollTop).toBe(100);
   });
 
   it('turns scroll anchoring off while it follows the end, and back on while you read', () => {

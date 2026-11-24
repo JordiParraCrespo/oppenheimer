@@ -233,3 +233,38 @@ describe('RelayWhatsappDeviceAdapter.sendVoice', () => {
     });
   });
 });
+
+describe('RelayWhatsappDeviceAdapter.react', () => {
+  const SENDER = '34600111333@s.whatsapp.net';
+
+  // What breaks this: a reaction keyed to the wrong message or sender, which
+  // WhatsApp drops or puts on another message.
+  it('sends the message’s id and sender to a runner that names whatsapp.react and answers its whatsapp.sent', async () => {
+    const { adapter, sent } = setup({
+      capabilities: ['whatsapp', 'whatsapp.react'],
+      reply: { type: 'whatsapp.sent', commandId: 'c', id: '3EBA', sentAt: '2026-11-24T10:00:00Z' },
+    });
+    const outcome = await adapter.react(HOST, CHAT, { id: '3EB0', senderId: SENDER }, '👍');
+    expect(sent).toEqual([
+      {
+        type: 'whatsapp.react',
+        commandId: expect.any(String),
+        chatId: CHAT,
+        messageId: '3EB0',
+        senderId: SENDER,
+        emoji: '👍',
+      },
+    ]);
+    expect(outcome).toMatchObject({ kind: 'sent', id: '3EBA' });
+  });
+
+  // What breaks this: a runner from before reactions given a frame it never
+  // answers, holding the bot's call until the timeout.
+  it('sends nothing to a runner without whatsapp.react', async () => {
+    const old = setup({ capabilities: ['whatsapp', 'whatsapp.voice'] });
+    await expect(
+      old.adapter.react(HOST, CHAT, { id: '3EB0', senderId: SENDER }, '👍'),
+    ).resolves.toEqual({ kind: 'not_supported' });
+    expect(old.sent).toEqual([]);
+  });
+});

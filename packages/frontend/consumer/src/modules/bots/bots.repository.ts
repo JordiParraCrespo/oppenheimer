@@ -554,6 +554,7 @@ function toConversation(dto: BotConversationResponseDto): BotConversationEntity 
     dto.turns.map(toTurn),
     dto.messageCount,
     dto.storedTextBlocks,
+    dto.hasOlder,
   );
 }
 
@@ -573,10 +574,15 @@ export class BotsRepository {
     private readonly sourceFactory?: EventSourceFactory,
   ) {}
 
-  /** The newest messages of the chat, oldest first, and their turns. */
-  findConversation(id: string): Promise<BotConversationEntity> {
+  /**
+   * The newest messages of the chat, oldest first, and their turns; with
+   * `before` (a message of it), the page just older than that one.
+   */
+  findConversation(id: string, before?: string): Promise<BotConversationEntity> {
     return callApi(BotsErrors.FETCH_CONVERSATION_FAILED, async (api) => {
-      const data = await api.body(heyApiSdk.findBotConversation({ path: { id } }));
+      const data = await api.body(
+        heyApiSdk.findBotConversation({ path: { id }, query: before ? { before } : undefined }),
+      );
       return toConversation(data);
     });
   }

@@ -72,6 +72,15 @@ func (d *fakeDevice) SendVoice(_ context.Context, chatID string, audio []byte, s
 	d.sent = append(d.sent, fmt.Sprintf("%s: voice %ds %dB", chatID, seconds, len(audio)))
 	return fmt.Sprintf("ID%d", len(d.sent)), now, nil
 }
+func (d *fakeDevice) React(_ context.Context, chatID, messageID, senderID, emoji string) (string, time.Time, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.sendErr != nil {
+		return "", time.Time{}, d.sendErr
+	}
+	d.sent = append(d.sent, fmt.Sprintf("%s: react %q on %s by %s", chatID, emoji, messageID, senderID))
+	return fmt.Sprintf("ID%d", len(d.sent)), now, nil
+}
 func (d *fakeDevice) Download(_ context.Context, kind domain.KeptKind, ref []byte, max int) ([]byte, string, error) {
 	if string(ref) != "ref" {
 		return nil, "", errors.New("unknown ref")
@@ -598,5 +607,26 @@ func TestSendVoiceRefusalsAndBudget(t *testing.T) {
 	limited.sendErr = nil
 	if _, _, err := svc.Send(context.Background(), chat, "hi", nil); codeOf(err) != "WA_004" {
 		t.Fatalf("send during WhatsApp's pause after a voice note: %v", err)
+	}
+}
+
+// A reaction reaches the device only from a connected number, naming the
+// message and who wrote it, and spends the host budget a text does:
+// WhatsApp counts it as a message the number sent, so a bot reacting to
+// every line of a busy group must not get round the number's limits.
+func TestReactSpendsTheSendBudget(t *testing.T) {
+	chat := "34600333444@s.whatsapp.net"
+	device := &fakeDevice{}
+	svc, _, _ := started(t, device, domain.NewBudget(1, 10))
+	if _, _, err := svc.React(context.Background(), chat, "3EB0", chat, "👍"); codeOf(err) != "WA_002" {
+		t.Fatalf("a reaction without a device: %v", err)
+	}
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	id, _, err := svc.React(context.Background(), chat, "3EB0", chat, "👍")
+	if err != nil || id != "ID1" || len(device.sent) != 1 || device.sent[0] != chat+`: react "👍" on 3EB0 by `+chat {
+		t.Fatalf("react: %q %v %v", id, err, device.sent)
+	}
+	if _, _, err := svc.React(context.Background(), chat, "3EB0", chat, ""); codeOf(err) != "WA_004" {
+		t.Fatalf("a second reaction past the budget: %v", err)
 	}
 }

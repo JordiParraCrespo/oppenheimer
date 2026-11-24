@@ -54,10 +54,12 @@ The list is newest first across every kind; deprioritized items sort last and re
 
 | Action | Effect |
 | --- | --- |
-| **Mark as done** | Hides this occurrence. It shows under **Show done** for the rest of your visit. On a task an agent made, it also keeps the task on the board as it is. |
+| **Mark as done** | Takes this occurrence out of the list. Turn on **Show done** in the filter menu to see what you marked done on this visit, struck through. On a task an agent made, it also keeps the task on the board as it is. |
 | **Deprioritize** / **Restore priority** | Sorts it last, labelled Low, or puts it back. |
 | **Snooze 1 hour** / **Snooze until tomorrow** | Hides it until then, in **Snoozed** with **Bring back**. |
 | **Delete** | Hides this occurrence for good. |
+
+**Several at once**: **Select** in the list's head shows a checkbox on every row (or hover a row and check its box, or press **X** to check the item on the deck); Shift-click checks a run of rows. The bar that takes the list's head then marks every checked row done, deprioritizes, snoozes or deletes them in one go. **Esc** or the cross leaves selecting.
 
 A mark applies to one occurrence: if the same session blocks again later, or new commits land on a pull request, the item comes back.
 
@@ -104,4 +106,4 @@ In the Inbox a report shows its pictures (select one to see it whole), its link,
 
 **In this browser.** Turn on **Notify me in this browser** in the Inbox's filter menu, and allow notifications when the browser asks. From then on, while the console is open in a tab you are not looking at, a session that comes to wait on you (a permission or a question its agent asks, or a session that failed) and a notice an agent sends each raise one system notification; clicking it brings the console forward on that session. The tab you are looking at raises none, since the Inbox already shows it. What was already waiting when you opened the console is not announced. The switch is kept per browser; if the browser blocks notifications for Oppenheimer, the menu says so, and you allow them again in the browser's site settings.
 
-There are no push notifications to a phone or emails for Inbox items. Oppenheimer emails you only for account and security events, such as a newly paired host or a host connecting from a new country or network. The Oppenheimer Chrome extension tracks your Claude Code cloud sessions and tells you which need you.
+There are no push notifications to a phone or emails for Inbox items. Oppenheimer emails you only for account and security events, such as a newly paired host or a host connecting from a new country or network. The Oppenheimer Chrome extension tracks your Claude Code cloud sessions and tells you which need you; connected to Oppenheimer (its popup's Oppenheimer section, with an API token that has `sessions:write`), it also raises a Chrome notification when a session on your hosts comes to wait on you or its agent sends a notice, checking every minute, and counts them on its badge. A click opens the session in the console.

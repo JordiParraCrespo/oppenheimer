@@ -15,7 +15,8 @@ import { DesktopNotice } from './desktop-notice';
  * A host's own desktop, live: a bar naming it and saying whether the reader
  * watches or drives it, Take control, Full screen, and the screen scaled into
  * whatever room it is given. It opens watching: clicks and keys reach the host
- * only after Take control, and the host itself drops them until then.
+ * only after Take control, and the host itself drops them until then. While
+ * it watches, the host's own pointer is drawn where the host says it is.
  *
  * `connect` is the product package's factory for one dial; `name` is what the
  * bar calls the machine.
@@ -30,7 +31,7 @@ export function DesktopView({
   className?: string;
 }) {
   const { t } = useTranslation();
-  const { screenRef, state, setControl, retry } = useDesktop(connect);
+  const { screenRef, pointerRef, state, setControl, retry } = useDesktop(connect);
   const {
     ref: frameRef,
     active: fullscreen,
@@ -88,6 +89,12 @@ export function DesktopView({
           role="application"
           aria-label={t('hosts.desktop.screen', { name })}
           className={cn('absolute inset-0', !live && 'invisible')}
+        />
+        {/* The host's pointer while the reader watches, placed by `useDesktop`. */}
+        <canvas
+          ref={pointerRef}
+          aria-hidden
+          className="pointer-events-none absolute top-0 left-0 hidden"
         />
         {live ? null : <DesktopNotice state={state} onRetry={retry} />}
       </div>

@@ -58,7 +58,11 @@ test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }
   await page.getByRole('menuitem', { name: /Mark as done/ }).click();
 
   await expect(page.getByText("You're all caught up", { exact: true })).toBeVisible();
-  // Show done keeps it for this visit, struck through.
+  // What is marked done leaves the list; Show done brings it back for the visit.
+  await expect(page.locator('[data-slot="inbox-item"]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Filter the Inbox' }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'Show done' }).click();
+  await page.keyboard.press('Escape');
   await expect(page.locator('[data-slot="inbox-item"][data-done]')).toHaveCount(1);
 
   // The mark is the server's: it is there after a reload, the done row is not.
@@ -83,9 +87,10 @@ test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }
 });
 
 /**
- * Bulk actions: checking rows swaps the
- * list's head for the selection bar, and Mark as done there marks every
- * checked row in one request, leaving the unchecked one in the list.
+ * Bulk actions: Select in the list's head opens the selection bar with every
+ * row's checkbox shown and nothing done until a row is checked; X checks the
+ * item on the deck; Mark as done there marks every checked row in one
+ * request, leaving the unchecked one in the list.
  */
 test('the Inbox: select rows and mark them done at once', async ({ page }) => {
   const owner = await provisionedUser('inbox-bulk');
@@ -106,16 +111,27 @@ test('the Inbox: select rows and mark them done at once', async ({ page }) => {
   const batch = page.waitForRequest(
     (request) => request.method() === 'POST' && request.url().endsWith('/inbox/marks/batch'),
   );
-  await rows.nth(0).hover();
-  await rows.nth(0).getByRole('checkbox').click();
-  await rows.nth(1).getByRole('checkbox').click();
+  await page.getByRole('button', { name: 'Select', exact: true }).click();
   const bar = page.getByRole('toolbar', { name: 'Selected items' });
+  await expect(bar.getByText('0 selected')).toBeVisible();
+  await expect(bar.getByRole('button', { name: 'Mark as done' })).toBeDisabled();
+  // One Escape leaves selecting, even with a row checked: it once only
+  // unchecked the row and left the bar up at "0 selected".
+  await page.keyboard.press('x');
+  await expect(bar.getByText('1 selected')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(bar).toBeHidden();
+
+  await page.getByRole('button', { name: 'Select', exact: true }).click();
+  // X checks the item on the deck, the first; a click checks the second.
+  await page.keyboard.press('x');
+  await rows.nth(1).getByRole('checkbox').click();
   await expect(bar.getByText('2 selected')).toBeVisible();
   await bar.getByRole('button', { name: 'Mark as done' }).click();
 
   await batch;
   await expect(bar).toBeHidden();
-  await expect(page.locator('[data-slot="inbox-row"]:not(:has([data-done]))')).toHaveCount(1);
+  await expect(page.locator('[data-slot="inbox-row"]')).toHaveCount(1);
   await expect
     .poll(async () => {
       const marks = (await (await owner.api.get('/api/v1/inbox/marks')).json()) as {
