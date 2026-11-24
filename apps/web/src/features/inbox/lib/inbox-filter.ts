@@ -66,7 +66,9 @@ export function facetCounts(items: readonly InboxItem[], filter: InboxFilter) {
 /**
  * What the list shows, and the reading pane takes its item from: the open
  * items in this visit's order under the filter and the search (`found`), then
- * — with Show done — those marked done on this visit.
+ * — with Show done — those marked done on this visit: as their source still
+ * lists them, else as they were when marked (a task Done took up has left its
+ * source), but never one that is open again (a mark the server refused).
  */
 export function listedItems(
   view: { open: readonly InboxItem[]; done: readonly InboxItem[] },
@@ -75,10 +77,15 @@ export function listedItems(
   showDone: boolean,
   found: (item: InboxItem) => boolean = () => true,
 ): { open: InboxItem[]; done: InboxItem[] } {
-  const doneThisVisit = new Set(visit.done);
   const shown = (item: InboxItem) => matchesFilter(item, filter) && found(item);
+  const open = new Set(view.open.map((item) => item.key));
+  const listed = new Map(view.done.map((item) => [item.key, item]));
+  const done = visit.done.flatMap((key) => {
+    const item = listed.get(key) ?? visit.doneItems[key];
+    return item && !open.has(key) ? [item] : [];
+  });
   return {
     open: visitOrder(view.open, visit).filter(shown),
-    done: showDone ? view.done.filter((item) => doneThisVisit.has(item.key) && shown(item)) : [],
+    done: showDone ? done.filter(shown) : [],
   };
 }

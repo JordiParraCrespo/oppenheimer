@@ -66,7 +66,7 @@ test('a session that comes to wait raises a notification in a console tab in the
     document.hasFocus = () => false;
   });
   await signInAs(watcher, user);
-  await watcher.goto('/plan/inbox');
+  await watcher.goto('/inbox');
   await watcher.getByRole('button', { name: 'Filter the Inbox' }).click();
   await watcher.getByRole('menuitemcheckbox', { name: 'Notify me in this browser' }).click();
   await expect(

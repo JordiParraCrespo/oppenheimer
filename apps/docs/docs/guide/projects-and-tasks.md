@@ -4,7 +4,7 @@ description: Projects (repositories, default host and agent, the Unassigned proj
 sidebar_position: 4
 ---
 
-**Plan** is the rail item for organising work. Its sidebar has **Inbox**, **Tasks**, **Milestones**, **Calendar** and **Projects**. The Inbox has its own page: [Inbox](./inbox.md).
+**Plan** is the rail item for organising work. Its sidebar has **Tasks**, **TODO**, **Milestones**, **Calendar** and **Projects**, and Plan opens on the one at the top. What needs you is in the [Inbox](./inbox.md), a rail item of its own.
 
 ## Projects
 

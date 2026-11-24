@@ -2,11 +2,11 @@
  * The rail's items by id and route, in the order a reader who never dragged
  * one sees it, and the reader's own order as this device keeps it. Apart from
  * the names and glyphs (`rail-order.ts`) because `/` reads it to pick where
- * the console opens, and that route is on the first load. Plan opens on the
- * view at the top of its own sidebar (`/plan/open` picks it), the Inbox
- * until the reader drags another there.
+ * the console opens, and that route is on the first load. The Inbox leads:
+ * it is where the console opens until the reader drags another item above it.
  */
 export const RAIL_ROUTES = [
+  { id: 'inbox', to: '/inbox' },
   { id: 'bots', to: '/bots' },
   { id: 'sessions', to: '/sessions/new' },
   { id: 'pulls', to: '/pulls' },
@@ -18,15 +18,13 @@ export type RailItemId = (typeof RAIL_ROUTES)[number]['id'];
 
 export const RAIL_ORDER_KEY = 'oppenheimer.rail.order';
 
-/** Where the console lands unless the reader put another item first: Plan, on its top view. */
-const PLAN_LANDING = '/plan/open';
-
 /**
- * The rail item the Inbox was before it moved into Plan. An order stored
- * then still names it; it is no item now, and an order that led with it
- * still lands on Plan.
+ * The Inbox goes first for everyone once (`29-inbox.md`, "Its own page"): an
+ * order stored while it was Plan's section lacks it, and gets it at the
+ * front rather than the end. Once the reader drags, the order they drop is
+ * kept as it is.
  */
-const FORMER_INBOX = 'inbox';
+const LEADS_WHEN_ADDED: RailItemId = 'inbox';
 
 const IDS = new Set<string>(RAIL_ROUTES.map((item) => item.id));
 
@@ -48,13 +46,14 @@ function storedIds(): unknown[] {
 /**
  * The reader's own order, kept on this device: every item once, the stored
  * ones in their stored place, then any this build added since in their
- * default place. Unknown ids (the former Inbox among them) and repeats are
+ * default place, but the Inbox at the front. Unknown ids and repeats are
  * dropped; anything unreadable is the default order.
  */
 export function storedRailOrder(): RailItemId[] {
   const kept = new Set<RailItemId>(storedIds().filter(isRailItemId));
   const added = RAIL_ROUTES.map((item) => item.id).filter((id) => !kept.has(id));
-  return [...kept, ...added];
+  const leading = added.filter((id) => id === LEADS_WHEN_ADDED);
+  return [...leading, ...kept, ...added.filter((id) => id !== LEADS_WHEN_ADDED)];
 }
 
 export function rememberRailOrder(order: readonly RailItemId[]) {
@@ -66,13 +65,11 @@ export function rememberRailOrder(order: readonly RailItemId[]) {
 }
 
 /**
- * Where the console opens: Plan, on the view at the top of its sidebar, for
- * a reader who never dragged the rail, or whose stored order led with the
- * Inbox when it was a rail item; otherwise the first item of the reader's
- * order, so a reader who dragged Employees to the top lands there.
+ * Where the console opens: the first item of the reader's order, the Inbox
+ * for a reader who never dragged the rail, so a reader who dragged Employees
+ * to the top lands there.
  */
 export function railLanding(): (typeof RAIL_ROUTES)[number]['to'] {
-  const first = storedIds().find((id) => id === FORMER_INBOX || isRailItemId(id));
-  if (first === undefined || first === FORMER_INBOX) return PLAN_LANDING;
-  return RAIL_ROUTES.find((item) => item.id === first)?.to ?? PLAN_LANDING;
+  const first = storedRailOrder()[0];
+  return RAIL_ROUTES.find((item) => item.id === first)?.to ?? '/inbox';
 }
