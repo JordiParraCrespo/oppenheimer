@@ -404,7 +404,7 @@ as a channel (`channels.md` §7.3).
   chat, not one per run (note 26 §4).
 - 2026-11-23: a bot that can read your mail and save routines **offers to
   watch your inbox** when you talk about email, once, in one line, unless one
-  of its routines already watches it (`mail/system-watching.md`). On a yes it
+  of its routines already watches it (then `system/watching-mail.md`). On a yes it
   saves one routine with a Gmail trigger per connected account, whose runs
   tell you in two to four sentences only what needs you (what it is, what to
   do, a link to the mail, and that nothing was changed) and stay quiet for

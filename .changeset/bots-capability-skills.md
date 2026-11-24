@@ -11,4 +11,6 @@ names are reserved.
 
 A bot's tools may wait: the Claude engine defers a capability's tools behind
 Claude Code's tool search on Anthropic's own API once their definitions pass
-a tenth of the context window (`BotEngineTool.deferrable`).
+about 5,000 tokens together (`BotEngineTool.deferrable`,
+`DEFER_TOOLS_ABOVE_CHARS`). A turn that cannot read skills gets the
+capabilities' skills in its prompt in full.

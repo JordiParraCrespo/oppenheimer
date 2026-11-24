@@ -70,7 +70,7 @@ export const WATCH_INBOX_SKILL = capabilitySkill(
     description: promptText('mail/skill-watch-inbox.description'),
     body: promptText('mail/skill-watch-inbox.body'),
   },
-  ['list_gmail_accounts', 'update_routine'],
+  ['search_mail', 'update_routine'],
 );
 
 /** Working a screen step by step, read before the first `use_computer`. */

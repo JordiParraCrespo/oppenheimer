@@ -93,6 +93,7 @@ const SECTIONS: readonly PromptSection[] = [
   () => promptText('core/system-rules'),
   // What holds on every turn for each capability the turn can use, in the list's order.
   ...BOT_CAPABILITIES.flatMap((capability) => capability.sections),
+  ({ offered }) => (offered.includes('use_skill') ? null : inlineCapabilitySkills(offered)),
   ({ input }) =>
     written(input.soul, (content) => promptText('core/system-documents.soul', { content })),
   // Its instructions, or, while it has none, how a new bot sets itself up.
@@ -116,6 +117,22 @@ const SECTIONS: readonly PromptSection[] = [
   ({ input }) =>
     listed(input.facts, (facts) => promptText('core/system-documents.own-memory', { facts })),
 ];
+
+/**
+ * The capabilities' skills this turn could follow, in full, for a turn that
+ * cannot read skills (the owner turned `use_skill` Off): their how-to was a
+ * section of the prompt until 2026-11-23, and a bot that cannot read it
+ * would lose it.
+ */
+function inlineCapabilitySkills(offered: readonly string[]): string | null {
+  const skills = BOT_CAPABILITIES.flatMap((capability) => capability.skills).filter((skill) =>
+    canFollowSkill(skill, offered),
+  );
+  if (skills.length === 0) return null;
+  return skills
+    .map((skill) => promptText('skills/system.inline', { name: skill.name, body: skill.body }))
+    .join('\n\n');
+}
 
 /** What `words` makes of a text someone wrote, trimmed; nothing when they wrote none. */
 function written(text: string, words: (text: string) => string): string | null {

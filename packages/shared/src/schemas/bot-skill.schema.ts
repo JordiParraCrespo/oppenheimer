@@ -182,7 +182,11 @@ export const BOT_RECAP_SKILL: BotBuiltInSkillText = {
   modelInvocable: true,
 };
 
-/** Every built-in skill, in the order the prompt and Settings → Skills list them. */
+/**
+ * The built-in skills whose words are here, in the order the prompt and
+ * Settings → Skills list them. The capabilities' skills (`watch-inbox`,
+ * `use-a-computer`, `use-a-browser`) are the API's and not shown there yet.
+ */
 export const BOT_BUILT_IN_SKILL_TEXTS: readonly BotBuiltInSkillText[] = [
   BOT_OPPENHEIMER_SKILL,
   BOT_RECAP_SKILL,

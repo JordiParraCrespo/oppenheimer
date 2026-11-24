@@ -1923,6 +1923,8 @@ earlier note:
   are few"); with every area on that is about 39,000 tokens of definitions,
   five times the system prompt. On 2026-11-23 a capability's tools became
   deferrable: on Anthropic's own API Claude Code's tool search defers them
-  once they pass a tenth of the context window and the model finds what it
+  once their definitions pass about 5,000 tokens together
+  (`DEFER_TOOLS_ABOVE_CHARS`; Claude Code's own `auto`, a tenth of the
+  window, never deferred with a large window) and the model finds what it
   needs, while the bot's own tools (memory, skills, questions, notices)
   always load. GLM and the OpenAI engines send every tool as before.
