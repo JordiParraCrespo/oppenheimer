@@ -3,6 +3,14 @@ import { createTranslator, reasonText } from '@/i18n/translator';
 import { CLAUDE_ORIGIN, sessionUrl } from '@/sessions/links';
 import { sendReport } from '@/sessions/report';
 import {
+  fetchRunnerSessions,
+  newWaits,
+  type RunnerWait,
+  runnerWaits,
+  sessionPageUrl,
+  waitingCount,
+} from '@/sessions/runner';
+import {
   type CloudSessionRecord,
   isSessionRecord,
   nextCursor,
@@ -23,6 +31,8 @@ import { ingest, needsYouCount } from '@/sessions/tracker';
 /**
  * The service worker: keeps the list of your Claude Code cloud sessions,
  * works out which need you, and says so on the badge and in a notification.
+ * Once Oppenheimer is connected it does the same for the sessions on your own
+ * hosts, read from that API after every check (`sessions/runner.ts`).
  *
  * Two things feed it:
  * - the page: whatever claude.ai/code fetches while one of its tabs is open
@@ -39,6 +49,7 @@ const POLL_ALARM = 'poll';
 // The badge's and the notifications' words, in the language Chrome runs in.
 const i18n = createTranslator(navigator.language);
 const NOTIFICATION_PREFIX = 'session:';
+const RUNNER_PREFIX = 'runner:';
 
 // Tried in order, before the page has taught us the endpoint. They are what
 // the Claude Code CLI calls on api.anthropic.com; claude.ai serves its app the same.
@@ -55,7 +66,7 @@ chrome.runtime.onInstalled.addListener(() => void start());
 chrome.runtime.onStartup.addListener(() => void start());
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === POLL_ALARM) void serial(poll);
+  if (alarm.name === POLL_ALARM) void serial(check);
 });
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, reply) => {
@@ -64,7 +75,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, reply) => {
     return false;
   }
   if ((message as { type?: string })?.type === 'refresh') {
-    void serial(poll).then(() => reply(true));
+    void serial(check).then(() => reply(true));
     return true;
   }
   if (isConnect(message)) {
@@ -79,6 +90,11 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, reply) => {
 });
 
 chrome.notifications.onClicked.addListener((id) => {
+  if (id.startsWith(RUNNER_PREFIX)) {
+    void openRunnerSession(id.slice(RUNNER_PREFIX.length).split('|')[0] ?? '');
+    void chrome.notifications.clear(id);
+    return;
+  }
   if (!id.startsWith(NOTIFICATION_PREFIX)) return;
   void chrome.tabs.create({ url: sessionUrl(id.slice(NOTIFICATION_PREFIX.length)) });
   void chrome.notifications.clear(id);
@@ -86,7 +102,44 @@ chrome.notifications.onClicked.addListener((id) => {
 
 async function start() {
   await chrome.alarms.create(POLL_ALARM, { periodInMinutes: 1 });
-  await serial(poll);
+  await serial(check);
+}
+
+/**
+ * One check: the cloud sessions, then the runner sessions. The second does
+ * not wait on the first going well: a person signed out of claude.ai still
+ * hears about their own hosts.
+ */
+async function check() {
+  await poll();
+  await watchRunner();
+}
+
+/**
+ * Reads the runner sessions from the connected API, tells each new wait
+ * once, and counts them on the badge. A failed read keeps what was known: the
+ * report's line in the popup already says when the API does not answer.
+ */
+async function watchRunner() {
+  const { oppenheimer, runnerSeen, sessions } = await readState();
+  if (!oppenheimer) return;
+  let waits: RunnerWait[];
+  try {
+    waits = runnerWaits(await fetchRunnerSessions(oppenheimer));
+  } catch {
+    return;
+  }
+  const { fresh, seen } = newWaits(runnerSeen ?? null, waits);
+  const runnerWaiting = waitingCount(waits);
+  await writeState({ runnerSeen: seen, runnerWaiting });
+  for (const wait of fresh) notifyRunner(wait);
+  await drawBadge(needsYouCount(sessions), runnerWaiting);
+}
+
+async function openRunnerSession(sessionId: string) {
+  const { oppenheimer } = await readState();
+  if (!oppenheimer || !sessionId) return;
+  await chrome.tabs.create({ url: sessionPageUrl(oppenheimer, sessionId) });
 }
 
 async function poll() {
@@ -186,7 +239,7 @@ async function record(records: CloudSessionRecord[], complete: boolean) {
   });
   await writeState({ sessions, seeded: true, status: { ok: true, at: now() } });
   for (const session of moved) notify(session);
-  await drawBadge(needsYouCount(sessions));
+  await drawBadge(needsYouCount(sessions), state.runnerWaiting ?? 0);
   await report();
 }
 
@@ -225,12 +278,16 @@ async function connect(
   }
 }
 
-async function drawBadge(count: number) {
+/** The badge counts both: cloud sessions and the ones on the person's hosts. */
+async function drawBadge(cloud: number, runner: number) {
+  const count = cloud + runner;
+  const lines = [
+    ...(cloud > 0 ? [i18n.t('badge.needsYou', { count: cloud })] : []),
+    ...(runner > 0 ? [i18n.t('badge.runner', { count: runner })] : []),
+  ];
   await chrome.action.setBadgeBackgroundColor({ color: '#d93025' });
   await chrome.action.setBadgeText({ text: count > 0 ? String(count) : '' });
-  await chrome.action.setTitle({
-    title: count === 0 ? i18n.t('badge.none') : i18n.t('badge.needsYou', { count }),
-  });
+  await chrome.action.setTitle({ title: lines.length ? lines.join('\n') : i18n.t('badge.none') });
 }
 
 function notify(session: TrackedSession) {
@@ -242,6 +299,18 @@ function notify(session: TrackedSession) {
       [reasonText(i18n.t, session.reason), session.repo].filter(Boolean).join(' · ') ||
       i18n.t('notification.open'),
     priority: session.state === 'done' ? 0 : 2,
+  });
+}
+
+function notifyRunner(wait: RunnerWait) {
+  // The key makes each occurrence its own notification; a newer one on the
+  // same session does not replace the one before it.
+  void chrome.notifications.create(`${RUNNER_PREFIX}${wait.sessionId}|${wait.key}`, {
+    type: 'basic',
+    iconUrl: chrome.runtime.getURL('icons/icon-128.png'),
+    title: i18n.t(`runner.${wait.kind}`, { name: wait.name }),
+    message: wait.text ?? i18n.t('runner.open'),
+    priority: 2,
   });
 }
 

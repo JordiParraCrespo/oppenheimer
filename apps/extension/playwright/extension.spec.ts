@@ -222,3 +222,71 @@ test.describe('in Spanish', () => {
     await expect(popup.getByRole('button', { name: 'Comprobar ahora' })).toBeVisible();
   });
 });
+
+test('tells you when a session on your own hosts comes to wait on you', async ({
+  context,
+  claude,
+  worker,
+  extensionId,
+}) => {
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'GET, POST',
+  };
+  const row = (state: string, observedSince: string | null) => ({
+    id: 'run-1',
+    name: 'Codex on my laptop',
+    state,
+    lifecycle: 'open',
+    observedSince,
+    stateSeq: 4,
+    cloudSessionId: null,
+    decision: null,
+    notice: null,
+  });
+  let rows = [row('working', null)];
+  const reads: Array<string | undefined> = [];
+  await context.route('http://localhost:3001/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    if (request.method() === 'GET' && new URL(request.url()).pathname === '/api/v1/sessions') {
+      reads.push(request.headers().authorization);
+      return route.fulfill({ headers: cors, json: { data: rows, meta: { nextCursor: null } } });
+    }
+    return route.fulfill({ headers: cors, json: { matched: 0 } });
+  });
+  await worker.evaluate(() =>
+    chrome.storage.local.set({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_test' },
+    }),
+  );
+  claude.sessions = [running('session_01PortExt000', 'Port the extension')];
+
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  // The first look only remembers: nothing was waiting, and nothing is told.
+  await expect.poll(async () => (await stored(worker)).runnerSeen).toEqual([]);
+  expect(reads.at(-1)).toBe('Bearer oppenheimer_pat_test');
+
+  rows = [row('waiting-on-you', '2026-11-24T09:00:00.000Z')];
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  await expect
+    .poll(async () => (await stored(worker)).shown)
+    .toContainEqual({
+      id: 'runner:run-1|session:run-1:2026-11-24T09:00:00.000Z',
+      title: 'Codex on my laptop is waiting on you',
+      message: 'Open it in Oppenheimer',
+    });
+  expect((await stored(worker)).badge).toBe('1');
+
+  // Still waiting on the next check: told once, still counted.
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  await expect.poll(() => reads.length).toBeGreaterThanOrEqual(3);
+  const state = await stored(worker);
+  expect(
+    state.shown?.filter((shown) => (shown as { id: string }).id.startsWith('runner:')),
+  ).toHaveLength(1);
+  expect(state.badge).toBe('1');
+});

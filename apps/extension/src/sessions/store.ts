@@ -15,10 +15,18 @@ export interface StoredState {
   oppenheimer?: OppenheimerConnection;
   /** How the last report went. */
   report?: ReportStatus;
+  /**
+   * The occurrences of runner sessions waiting on the person already told
+   * (`runner.ts`), so each is told once; absent until the first look.
+   */
+  runnerSeen?: string[];
+  /** How many runner sessions wait on the person, for the badge. */
+  runnerWaiting?: number;
 }
 
 /**
- * The person's Oppenheimer API and a personal API token with `sessions:write`.
+ * The person's Oppenheimer API and a personal API token with `sessions:write`
+ * (which reads the sessions too, for the runner sessions that wait on them).
  * The token is theirs, for their own API: it is not a claude.ai credential,
  * and nothing of claude.ai's is ever sent with it.
  */
@@ -26,6 +34,8 @@ export interface OppenheimerConnection {
   /** The API's origin, e.g. `https://api.example.com` or `http://localhost:3001`. */
   apiUrl: string;
   token: string;
+  /** Where the console is, for a notification's click; worked out from `apiUrl` when absent. */
+  consoleUrl?: string;
 }
 
 export type ReportStatus =
@@ -46,7 +56,16 @@ export type SyncStatus =
 /** What went wrong, as the popup words it. */
 export type SyncProblem = 'signed-out' | 'not-found' | 'unreachable';
 
-const KEYS = ['sessions', 'seeded', 'endpoint', 'status', 'oppenheimer', 'report'] as const;
+const KEYS = [
+  'sessions',
+  'seeded',
+  'endpoint',
+  'status',
+  'oppenheimer',
+  'report',
+  'runnerSeen',
+  'runnerWaiting',
+] as const;
 
 export async function readState(): Promise<StoredState> {
   const stored = (await chrome.storage.local.get([...KEYS])) as Partial<StoredState>;
@@ -62,5 +81,5 @@ export async function forgetEndpoint() {
 }
 
 export async function disconnectOppenheimer() {
-  await chrome.storage.local.remove(['oppenheimer', 'report']);
+  await chrome.storage.local.remove(['oppenheimer', 'report', 'runnerSeen', 'runnerWaiting']);
 }

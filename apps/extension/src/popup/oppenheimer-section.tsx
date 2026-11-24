@@ -8,7 +8,10 @@ import { useConnection } from './hooks/use-connection';
  * Oppenheimer: where the statuses go. Connected, the worker reports what the
  * cloud sessions are doing after every check, and the console draws the
  * ones its workspace launched. The token is a personal API token from the
- * console's settings, with `sessions:write`.
+ * console's settings, with `sessions:write`. The same connection reads the
+ * sessions on the person's hosts that wait on them; the console's URL is
+ * where a notification about one opens, worked out from the API's when left
+ * empty.
  */
 export function OppenheimerSection({
   connection,
@@ -21,10 +24,11 @@ export function OppenheimerSection({
   const { connect, disconnect, pending, problem } = useConnection();
   const [apiUrl, setApiUrl] = useState('http://localhost:3001');
   const [token, setToken] = useState('');
+  const [consoleUrl, setConsoleUrl] = useState('');
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    void connect({ apiUrl, token });
+    void connect({ apiUrl, token, consoleUrl });
   }
 
   return (
@@ -53,6 +57,13 @@ export function OppenheimerSection({
             aria-label={t('oppenheimer.apiUrl')}
             value={apiUrl}
             onChange={(event) => setApiUrl(event.target.value)}
+          />
+          <Input
+            size="sm"
+            aria-label={t('oppenheimer.consoleUrl')}
+            placeholder={t('oppenheimer.consoleUrl')}
+            value={consoleUrl}
+            onChange={(event) => setConsoleUrl(event.target.value)}
           />
           <Input
             size="sm"
