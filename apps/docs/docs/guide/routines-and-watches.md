@@ -87,6 +87,8 @@ A watch can also wake on a line the terminal prints that matches a pattern; the 
 
 **Looking at the work.** While that task keeps running, the bot looks at it again every ten minutes, for up to an hour: it reads what the agent has done against the task it gave. When the work is on track it says nothing, and the chat shows only "Checked on session …". When the agent has gone idle without finishing, is going in circles or off the task, waits on something or hits an error, the bot tells you, and it may nudge the agent when its instructions cover what the agent needs. Ask it "how is it going?" and it looks right away.
 
+**Checking back.** For anything else it waits on (a deploy, a pull request, someone's answer), a bot sets its own look with `check_back`: at a time it names, or backing off from 5 minutes to every 2 hours, for a day at most. Each look reads "Checked back on: …".
+
 **Waiting inside a turn.** A bot can also wait up to 120 seconds inside one turn for a session to need input or end, at most three times a turn.
 
 **Pull requests.** `watch_pull_request` follows an open pull request on a repository you can read. A check failing or passing, a review, a comment or the merge wakes the bot with the event's facts (kind, number, check name, reviewer's login), never anyone's words; the bot reads the pull request itself. The merge ends the watch. A pull request closed without merging does not end it yet.

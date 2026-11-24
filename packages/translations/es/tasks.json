@@ -77,6 +77,7 @@
     "emptyTitle": "No hay hitos en este proyecto",
     "ofTasks_one": "de {{count}} tarea",
     "ofTasks_other": "de {{count}} tareas",
+    "ofTasks_many": "de {{count}} tareas",
     "today": "Hoy",
     "earlier": "Antes",
     "later": "Después",

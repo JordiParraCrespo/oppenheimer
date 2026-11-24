@@ -1,4 +1,4 @@
-import { SegmentedControl, SegmentedControlItem, Skeleton } from '@oppenheimer/design-system-web';
+import { PillTab, PillTabs, Skeleton } from '@oppenheimer/design-system-web';
 import type { PullRequestQueueName } from '@oppenheimer/frontend-consumer';
 import { PULL_REQUEST_QUEUES } from '@oppenheimer/shared/schemas/pull-request';
 import { Link } from '@tanstack/react-router';
@@ -22,15 +22,14 @@ export function QueueScopes() {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <SegmentedControl
-        size="lg"
+      <PillTabs
         value={scope}
         onValueChange={(value) => setScope(value as PullRequestQueueName)}
         aria-label={t('pullRequests.queue.scopesLabel')}
         className="self-start"
       >
         {PULL_REQUEST_QUEUES.map((value) => (
-          <SegmentedControlItem
+          <PillTab
             key={value}
             value={value}
             count={
@@ -42,9 +41,9 @@ export function QueueScopes() {
             }
           >
             {t(`pullRequests.queue.scopes.${value}`)}
-          </SegmentedControlItem>
+          </PillTab>
         ))}
-      </SegmentedControl>
+      </PillTabs>
       <p className="m-0 text-sm text-fg-muted">
         {t(`pullRequests.queue.scopeHint.${scope}`)}
         {needsWatchedRepositories(scope) ? (

@@ -82,6 +82,8 @@ func TestInputValidation(t *testing.T) {
 		{domain.Input{Kind: "tap", X: 0.5, Y: 1}, true},
 		{domain.Input{Kind: "tap", X: 1.2, Y: 0.5}, false},
 		{domain.Input{Kind: "swipe", X: 0.1, Y: 0.9, ToX: 0.1, ToY: 0.2}, true},
+		{domain.Input{Kind: "swipe", Y: 0.9, ToY: 0.2, DurationMs: 120, Momentum: true}, true},
+		{domain.Input{Kind: "swipe", Y: 0.9, ToY: 0.2, DurationMs: domain.MaxSwipeMs + 1}, false},
 		{domain.Input{Kind: "text"}, false},
 		{domain.Input{Kind: "key", Key: "enter"}, true},
 		{domain.Input{Kind: "key", Key: "f13"}, false},

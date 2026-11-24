@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 )
@@ -111,6 +112,22 @@ func Agents() []Agent {
 		agents = append(agents, agent)
 	}
 	return agents
+}
+
+// AgentNames is the name `--agent` takes for every agent the runner can
+// start, sorted, for a usage line. withTask keeps only those a first task
+// reaches, for a command that starts one with a task: an agent that
+// DropsTask would be refused there.
+func AgentNames(withTask bool) []string {
+	names := make([]string, 0, len(agentCatalogIDs))
+	for agent := range agentCatalogIDs {
+		if withTask && agent.DropsTask() {
+			continue
+		}
+		names = append(names, string(agent))
+	}
+	slices.Sort(names)
+	return names
 }
 
 // Valid reports an agent the runner knows how to start.

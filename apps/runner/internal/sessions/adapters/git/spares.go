@@ -62,10 +62,6 @@ func (c *Client) claim(ctx context.Context, store, path, branch, base string) bo
 		// None made by this process; one an earlier runner finished is on
 		// disk, and as good.
 		s = &spare{path: c.sparePath(store)}
-		if !c.finished(ctx, store, s.path) {
-			c.mu.Unlock()
-			return false
-		}
 	case !s.ready:
 		c.mu.Unlock()
 		return false
@@ -73,6 +69,12 @@ func (c *Client) claim(ctx context.Context, store, path, branch, base string) bo
 		delete(c.spares, store)
 	}
 	c.mu.Unlock()
+	// Another runner process may have taken the spare this one made, and be
+	// checking a new one out at the same path right now, outside the store's
+	// lock: what is on disk decides, not what this process remembers.
+	if !c.finished(ctx, store, s.path) {
+		return false
+	}
 
 	quick := command{timeout: quickTimeout, dir: store}
 	if _, err := c.run(ctx, quick, "worktree", "move", s.path, path); err != nil {
@@ -144,7 +146,10 @@ func (c *Client) warm(ctx context.Context, store, base string) *spare {
 // registered there is removed first; something the store does not know is
 // left alone, and no spare is made.
 func (c *Client) prepare(ctx context.Context, store, base, path string) error {
-	release := c.lock(store)
+	release, err := c.lock(ctx, store)
+	if err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		release()
 		return domain.ErrWorktree.WithDetail("create %s: %v", filepath.Dir(path), err).WithCause(err)
@@ -161,7 +166,7 @@ func (c *Client) prepare(ctx context.Context, store, base, path string) error {
 		}
 		c.discard(ctx, store, path)
 	}
-	_, err := c.run(ctx, command{timeout: quickTimeout, dir: store},
+	_, err = c.run(ctx, command{timeout: quickTimeout, dir: store},
 		"worktree", "add", "--detach", "--no-checkout", path, startPoint(base))
 	release()
 	if err != nil {

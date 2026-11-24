@@ -81,7 +81,7 @@ describe('BotComposer while the bot works', () => {
   it('turns Stop into Send once something is written, and steers the turn under way with it', () => {
     composer();
     expect(screen.getByRole('button', { name: 'bots.chat.stop' })).toBeTruthy();
-    expect(screen.getByPlaceholderText('bots.chat.placeholderRunning')).toBeTruthy();
+    expect(screen.getByPlaceholderText(/^bots\.chat\.placeholdersRunning\./)).toBeTruthy();
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'And a pull request' } });
     fireEvent.click(screen.getByRole('button', { name: 'bots.chat.send' }));
     expect(state.send).toHaveBeenCalledWith(

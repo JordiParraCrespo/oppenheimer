@@ -136,21 +136,26 @@ function DoneArt() {
   );
 }
 
-/** A clock with a bolt beside it: on a schedule, or when something happens. */
+/** An alarm clock, bells up: it goes off at a set time, or when something happens. */
 function AutomationsArt() {
   return (
     <>
-      <circle cx="56" cy="54" r="23" className="fill-card" {...ink} />
+      <path d="M34.5 38 A11 11 0 0 1 47 25.5 Z" className="fill-canvas-recessed" {...ink} />
+      <path d="M85.5 38 A11 11 0 0 0 73 25.5 Z" className="fill-canvas-recessed" {...ink} />
+      <path d="M60 30.5 V34" {...ink} />
+      <path d="M56.5 30 H63.5" {...ink} strokeWidth="1.8" />
+      <path d="M45.5 70.5 L40.5 77" {...ink} strokeWidth="1.8" />
+      <path d="M74.5 70.5 L79.5 77" {...ink} strokeWidth="1.8" />
+      <circle cx="60" cy="55" r="21" className="fill-card" {...ink} />
+      <circle cx="60" cy="55" r="15" fill="currentColor" opacity="0.07" />
       <g stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" opacity="0.45">
-        <path d="M56 35 V38" />
-        <path d="M75 54 H72" />
-        <path d="M56 73 V70" />
-        <path d="M37 54 H40" />
+        <path d="M60 38 V41" />
+        <path d="M77 55 H74" />
+        <path d="M60 72 V69" />
+        <path d="M43 55 H46" />
       </g>
-      <path d="M56 42 V54 L64 59" {...ink} strokeWidth="1.8" />
-      <circle cx="56" cy="54" r="1.6" fill="currentColor" />
-      <circle cx="81" cy="33" r="11" className="fill-canvas-recessed" {...ink} />
-      <path d="M82.5 25.5 L76.5 34.5 H81 L79.5 40.5 L86 31 H81.5 Z" fill="currentColor" opacity="0.75" />
+      <path d="M60 44 V55 L67.5 59.5" {...ink} strokeWidth="1.8" />
+      <circle cx="60" cy="55" r="1.6" fill="currentColor" />
     </>
   );
 }

@@ -15,6 +15,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type Anthropic from '@anthropic-ai/sdk';
+import { BotCheckBackToolsFactory } from '../../apps/api/src/bots-chat/application/bot-check-back-tools.factory';
 import { BotGoalToolsFactory } from '../../apps/api/src/bots-chat/application/bot-goal-tools.factory';
 import { BotGuideToolsFactory } from '../../apps/api/src/bots-chat/application/bot-guide-tools.factory';
 import { BotLoopToolsFactory } from '../../apps/api/src/bots-chat/application/bot-loop-tools.factory';
@@ -189,6 +190,7 @@ function ownToolNames(): ReadonlySet<string> {
     new BotLoopToolsFactory(none, none),
     new BotQuestionToolsFactory(none, none),
     new BotNoticeToolsFactory(none, none),
+    new BotCheckBackToolsFactory(none, none),
   ]);
 }
 

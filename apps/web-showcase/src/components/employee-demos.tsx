@@ -18,6 +18,7 @@ import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import { ChevronLeftIcon, ClockIcon, EllipsisIcon, LockIcon, PencilIcon, PlusIcon, WebhookIcon, XIcon } from '@oppenheimer/design-system-web/icons';
 import { Input } from '@oppenheimer/design-system-web/input';
 import { RoutineCard } from '@oppenheimer/design-system-web/routine-card';
+import { PillTab, PillTabs } from '@oppenheimer/design-system-web/pill-tabs';
 import { SegmentedControl, SegmentedControlItem } from '@oppenheimer/design-system-web/segmented-control';
 import {
   SettingsAddRow,
@@ -267,14 +268,14 @@ export function SettingsListDemo() {
   const [file, setFile] = React.useState('instructions');
   return (
     <div className="flex w-full max-w-164 flex-col gap-6">
-      <SegmentedControl value={file} onValueChange={setFile} size="md" aria-label="File">
-        <SegmentedControlItem value="soul" mono>
+      <PillTabs value={file} onValueChange={setFile} aria-label="File">
+        <PillTab value="soul" mono>
           SOUL.md
-        </SegmentedControlItem>
-        <SegmentedControlItem value="instructions" mono>
+        </PillTab>
+        <PillTab value="instructions" mono>
           INSTRUCTIONS.md
-        </SegmentedControlItem>
-      </SegmentedControl>
+        </PillTab>
+      </PillTabs>
       <SettingsGroup>
         <SettingsListRow lead="You" meta="INSTRUCTIONS.md · Just now" actions="Current" align="center">
           Ask before force-pushing any branch

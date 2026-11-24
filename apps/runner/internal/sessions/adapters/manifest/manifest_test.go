@@ -448,3 +448,32 @@ func TestFxWorkingIsItsStatusLineNotItsProse(t *testing.T) {
 		}
 	}
 }
+
+// ZCode 0.18.0's input box at rest, mid-turn and under its approval dialog,
+// captured from a real pane. Without a rule for the box at rest a finished
+// turn read `unknown`, which restarts the wait before the session counts as
+// waiting on you.
+func TestZCodeAtItsPromptIsIdleAndMidTurnIsNot(t *testing.T) {
+	c := classifier(t, "")
+	box := func(placeholder string) string {
+		return " ╭─ Build ──────────────────────────────╮\n" +
+			" │ " + placeholder + "\n │\n │\n │ glm-5.3 zai | max\n" +
+			" ╰──────────────────────────────────────╯\n"
+	}
+	cases := []struct {
+		name string
+		body string
+		want domain.State
+	}{
+		{"after a turn", "   c.txt now exists in the working directory.\n" + box("Type a prompt") + "     13.5K (7%)\n", domain.StateIdle},
+		{"a draft typed", box("fix the picker") + "     242 (0%)\n", domain.StateIdle},
+		{"mid-turn", box("Type to queue input") + "  ⠴ esc to interrupt\n", domain.StateWorking},
+		{"approval", " │ Tool has side effects and requires approval\n │   Allow once\n" +
+			" │   Always allow in this project\n │ > Deny\n │ Up/Down choose, Enter confirms, Esc denies\n", domain.StateBlocked},
+	}
+	for _, tc := range cases {
+		if state, _ := c.Classify(app.Screen{Body: tc.body}, domain.AgentZCode); state != tc.want {
+			t.Errorf("%s: state = %q, want %q", tc.name, state, tc.want)
+		}
+	}
+}

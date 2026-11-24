@@ -6,6 +6,7 @@ import {
   type CapabilityFacts,
   TERMINAL_TOOL_NAMES,
 } from './bot-capability.policy';
+import { checkBackPrompt } from './bot-check-back.policy';
 import { githubAskPrompt } from './bot-github-ask.policy';
 import { eventNote, type HistoryMessage } from './bot-history.policy';
 import { peerMessagePrompt, peerReplyPrompt } from './bot-peer-message.policy';
@@ -406,6 +407,8 @@ function eventPrompt(event: BotMessageEvent, content: string): string {
       return githubAskPrompt(content);
     case 'task':
       return taskWakePrompt(event, content);
+    case 'check_back':
+      return checkBackPrompt(content);
     case 'routine':
     case 'goal':
     case 'loop':

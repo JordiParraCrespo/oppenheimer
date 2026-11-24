@@ -70,7 +70,13 @@
       "showLess": "Show less"
     },
     "tooLong": "This message is {{length}} characters long; a bot takes up to {{max}}.",
-    "placeholderRunning": "Steer {{name}} mid-flight · ↵ steer · Alt+↵ queue · Esc stop",
+    "placeholdersRunning": {
+      "steer": "Steer {{name}} while it works…",
+      "nudge": "Nudge {{name}} another way…",
+      "context": "Tell {{name}} something it should know…",
+      "next": "Line up what {{name}} does next…",
+      "course": "Change {{name}}'s course mid-flight…"
+    },
     "steered": "Steered in while it worked",
     "send": "Send",
     "stop": "Stop",
@@ -312,6 +318,7 @@
         "stopped": "Loop “{{prompt}}” stopped: a run of it failed or was stopped",
         "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
       },
+      "checkBack": "Checked back on: {{about}}",
       "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
       "dream": {
         "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
