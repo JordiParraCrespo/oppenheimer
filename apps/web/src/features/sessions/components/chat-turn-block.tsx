@@ -1,6 +1,7 @@
 import { ChatMarker, ProposedPlanCard, ReasoningRow } from '@oppenheimer/design-system-web';
 import {
   Archive,
+  ArrowRightLeft,
   CircleAlert,
   CircleCheck,
   CircleDashed,
@@ -9,8 +10,8 @@ import {
 import type { ChatTaskStatus } from '@oppenheimer/frontend-consumer';
 import { Markdown } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import type { ChatBlock } from '../lib/chat-blocks';
+import { Trans, useTranslation } from 'react-i18next';
+import { type ChatBlock, modelName } from '../lib/chat-blocks';
 import { ChatChanges } from './chat-changes';
 import { ChatCommandOutput } from './chat-command-output';
 import { ChatImages } from './chat-images';
@@ -34,7 +35,8 @@ const TASK_ICONS: Record<ChatTaskStatus, ReactNode> = {
  * font, thinking as a fold that is open while it is what the agent is
  * doing, calls as a group (the ones that only looked around as an Explored
  * one), the subagents a call started as rows that open to their own work,
- * a stop, a compaction or a background task that ended as a note.
+ * a stop, a compaction, a move to another model or a background task that
+ * ended as a note, each the same small marker.
  * `live` and `last` say whether this is the work in flight.
  */
 export function ChatTurnBlock({
@@ -96,6 +98,16 @@ export function ChatTurnBlock({
       return (
         <ChatMarker icon={block.notice === 'compacted' ? <Archive /> : <CircleStop />}>
           {t(`sessions.chat.notice.${block.notice}`)}
+        </ChatMarker>
+      );
+    case 'model':
+      return (
+        <ChatMarker icon={<ArrowRightLeft />}>
+          <Trans
+            i18nKey="sessions.chat.notice.model"
+            values={{ model: modelName(block.model) }}
+            components={{ model: <strong /> }}
+          />
         </ChatMarker>
       );
     case 'output':

@@ -140,6 +140,54 @@ describe('SessionChat', () => {
       screen.queryByPlaceholderText('sessions.chat.composer.placeholder{"agent":"Claude Code"}'),
     ).toBeNull();
   });
+
+  // The transcript has no output for a command until its result lands; the
+  // terminal's screen has its last lines. Breaks if the screen's lines never
+  // reach the running row, reach another command's, or outlive the result.
+  it('shows what a running command last printed under it, off the screen, until its result lands', () => {
+    const chat = new Chat();
+    render(<SessionChat chat={chat} agent="claude-code" readOnly />);
+    const bash = (command: string) => ({
+      type: 'tool_use',
+      id: 't1',
+      name: 'Bash',
+      input: { command },
+    });
+    act(() =>
+      chat.apply({
+        reset: true,
+        entries: [
+          entry({ type: 'user', uuid: 'u', message: { role: 'user', content: 'Build it' } }),
+          entry({ type: 'assistant', uuid: 'a', message: { content: [bash('./build.sh')] } }),
+        ],
+      }),
+    );
+    const reading = (command: string) => ({
+      verb: 'Doodling',
+      detail: '21s',
+      tail: { command, lines: ['step 20 of 40', 'step 21 of 40'] },
+    });
+    act(() => chat.setActivity(reading('./other.sh')));
+    expect(screen.queryByText('step 21 of 40')).toBeNull();
+    act(() => chat.setActivity(reading('./build.sh')));
+    expect(screen.getByText('step 21 of 40')).toBeTruthy();
+
+    act(() =>
+      chat.apply({
+        entries: [
+          entry({
+            type: 'user',
+            uuid: 'r',
+            message: {
+              role: 'user',
+              content: [{ type: 'tool_result', tool_use_id: 't1', content: 'built' }],
+            },
+          }),
+        ],
+      }),
+    );
+    expect(screen.queryByText('step 21 of 40')).toBeNull();
+  });
 });
 
 describe('a settled turn', () => {

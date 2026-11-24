@@ -155,6 +155,12 @@ export type ChatStep =
   | { kind: 'tool'; id: string; at: Date | null; call: ChatToolCall }
   | { kind: 'notice'; id: string; at: Date | null; notice: 'interrupted' | 'compacted' }
   /**
+   * The agent answered on another model than it last did (a `/model`, a plan
+   * mode that switches, a fallback): placed before the first step it wrote
+   * on the new one. Never for the first model the chat holds.
+   */
+  | { kind: 'model'; id: string; at: Date | null; model: string }
+  /**
    * What a command the CLI answers itself printed (`/context`, `/cost`), as
    * text with the terminal's colours taken out; `failed` when it wrote to
    * stderr.
@@ -478,6 +484,8 @@ class Transcript {
       this.lines.length,
       (index) => this.lines[index]?.entry,
       this.openFrom,
+      false,
+      lastModel(this.closed),
     );
     const open = turns.length - 1;
     for (const [index, turn] of turns.slice(0, Math.max(0, open)).entries()) {
@@ -1050,6 +1058,8 @@ type Reading =
   | { kind: 'prompt'; prompt: ChatPrompt }
   | {
       kind: 'steps';
+      /** The transcript line's own id. */
+      id: string;
       steps: ChatStep[];
       model: string | null;
       at: Date | null;
@@ -1088,8 +1098,9 @@ export function classify(value: unknown, index: number, sidechain = false): Read
     });
     return {
       kind: 'steps',
+      id,
       steps,
-      model: text(message.model),
+      model: modelOf(message.model),
       at,
       contextTokens: contextOf(message.usage),
     };
@@ -1098,6 +1109,7 @@ export function classify(value: unknown, index: number, sidechain = false): Read
   if (entry.isCompactSummary === true) {
     return {
       kind: 'steps',
+      id,
       steps: [{ kind: 'notice', id, at, notice: 'compacted' }],
       model: null,
       at,
@@ -1134,7 +1146,7 @@ export function classify(value: unknown, index: number, sidechain = false): Read
           .join('\n'),
   );
   const system = systemSteps(said, id, at);
-  if (system) return { kind: 'steps', steps: system, model: null, at };
+  if (system) return { kind: 'steps', id, steps: system, model: null, at };
   const typed = typedPrompt(said);
   if (typed === null) return null;
   const files = blocks.filter(
@@ -1263,7 +1275,10 @@ function buildTurns(
   entryAt: (index: number) => unknown,
   from: number,
   sidechain = false,
+  /** The model the agent last answered on before `from`, so a change across a build is still seen. */
+  before: string | null = null,
 ): { turns: ChatTurn[]; starts: number[] } {
+  let model = before;
   const turns: ChatTurn[] = [];
   const starts: number[] = [];
   const calls = new Map<string, ChatToolCall>();
@@ -1288,6 +1303,15 @@ function buildTurns(
         // The agent at work again (a background task's end woke it) after a
         // command the CLI answered: the turn is no longer settled by that answer.
         if (reading.steps.length > 0) answered.delete(turn);
+        if (reading.model && model && reading.model !== model) {
+          turn.steps.push({
+            kind: 'model',
+            id: `${reading.id}:model`,
+            at: reading.at,
+            model: reading.model,
+          });
+        }
+        model = reading.model ?? model;
         turn.model = reading.model ?? turn.model;
         turn.contextTokens = reading.contextTokens ?? turn.contextTokens;
         if (reading.at) turn.lastAt = reading.at;
@@ -1343,11 +1367,31 @@ function open(turns: ChatTurn[], prompt: ChatPrompt | null, id: string, at: Date
 
 /** The last turn is the agent's while a call is open or it has not answered in words. */
 function isWorking(turn: ChatTurn): boolean {
-  const tail = turn.steps.at(-1);
+  // A model change says nothing about whether the agent is done.
+  const tail = turn.steps.filter((step) => step.kind !== 'model').at(-1);
   if (tail === undefined) return true;
   if (turn.steps.some((step) => step.kind === 'tool' && step.call.status === 'running'))
     return true;
   return tail.kind !== 'reply' && tail.kind !== 'notice' && tail.kind !== 'output';
+}
+
+/**
+ * The model an answer names, as the agent wrote it; none for Claude Code's
+ * `<synthetic>`, the name it gives a line it wrote itself (an API error, a
+ * stop), which is no model the agent moved to.
+ */
+function modelOf(value: unknown): string | null {
+  const model = text(value);
+  return model && !model.startsWith('<') ? model : null;
+}
+
+/** The model the last of these turns answered on, for a build that starts after them. */
+function lastModel(turns: readonly ChatTurn[]): string | null {
+  for (let index = turns.length - 1; index >= 0; index -= 1) {
+    const model = turns[index]?.model;
+    if (model) return model;
+  }
+  return null;
 }
 
 function toolCall(block: Loose): ChatToolCall {
