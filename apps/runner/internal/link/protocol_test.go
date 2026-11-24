@@ -307,61 +307,78 @@ func TestGeneratedFileIsGofmtClean(t *testing.T) {
 }
 
 // TestConstantsMatchTheSchema is belt and braces against a hand edit of
-// protocol.gen.go: the constants are the schema's x-constants.
+// protocol.gen.go: the constants are the schema's x-constants. A scalar is
+// one row of scalars; every key the schema has is either a row or one of the
+// compounds checked below, so a constant the test was not taught fails here
+// instead of going unchecked.
 func TestConstantsMatchTheSchema(t *testing.T) {
-	var constants struct {
-		ProtocolVersion      int               `json:"protocolVersion"`
-		CloseCodes           map[string]int    `json:"closeCodes"`
-		CloseReasons         map[string]string `json:"closeReasons"`
-		RefusalHeader        string            `json:"refusalHeader"`
-		Refusals             map[string]string `json:"refusals"`
-		FrameHeaderBytes     int               `json:"frameHeaderBytes"`
-		CreditWindowBytes    int               `json:"creditWindowBytes"`
-		MaxFrameBytes        int               `json:"maxFrameBytes"`
-		Capabilities         []string          `json:"capabilities"`
-		MaxEventPayloadBytes int               `json:"maxEventPayloadBytes"`
-		ChatEntryMaxBytes    int               `json:"chatEntryMaxBytes"`
-		ChatBatchMaxEntries  int               `json:"chatBatchMaxEntries"`
-		ChatCommandsMax      int               `json:"chatCommandsMax"`
-		ExecOutputMaxBytes   int               `json:"execOutputMaxBytes"`
-		TerminalScreenMax    int               `json:"terminalScreenMaxBytes"`
-		ComputerScreenEdge   int               `json:"computerScreenMaxEdge"`
-		ComputerScreenshot   int               `json:"computerScreenshotMaxBytes"`
-		HelloCapabilitiesMax int               `json:"helloCapabilitiesMax"`
-	}
 	var schema struct {
-		Constants json.RawMessage `json:"x-constants"`
+		Constants map[string]json.RawMessage `json:"x-constants"`
 	}
 	if err := json.Unmarshal(sharedFile(t, "protocol.schema.json"), &schema); err != nil {
 		t.Fatal(err)
 	}
-	decoder := json.NewDecoder(bytes.NewReader(schema.Constants))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&constants); err != nil {
-		t.Fatalf("x-constants: %v", err)
+	scalars := map[string]any{
+		"protocolVersion":            link.ProtocolVersion,
+		"refusalHeader":              link.RefusalHeader,
+		"frameHeaderBytes":           link.FrameHeader,
+		"creditWindowBytes":          link.CreditWindow,
+		"maxFrameBytes":              link.MaxFrameBytes,
+		"maxEventPayloadBytes":       link.MaxEventPayloadBytes,
+		"chatEntryMaxBytes":          link.ChatEntryMaxBytes,
+		"chatBatchMaxEntries":        link.ChatBatchMaxEntries,
+		"chatCommandsMax":            link.ChatCommandsMax,
+		"execOutputMaxBytes":         link.ExecOutputMaxBytes,
+		"terminalScreenMaxBytes":     link.TerminalScreenMaxBytes,
+		"computerScreenMaxEdge":      link.ComputerScreenMaxEdge,
+		"computerScreenshotMaxBytes": link.ComputerScreenshotMaxBytes,
+		"helloCapabilitiesMax":       link.HelloCapabilitiesMax,
+	}
+	compounds := []string{"closeCodes", "closeReasons", "refusals", "capabilities"}
+	for key := range schema.Constants {
+		if _, ok := scalars[key]; !ok && !slices.Contains(compounds, key) {
+			t.Errorf("x-constants.%s: this test does not check it; add a row to scalars", key)
+		}
+	}
+	for key, want := range scalars {
+		raw, ok := schema.Constants[key]
+		if !ok {
+			t.Errorf("x-constants.%s: missing from the schema", key)
+			continue
+		}
+		got := reflect.New(reflect.TypeOf(want))
+		if err := json.Unmarshal(raw, got.Interface()); err != nil {
+			t.Errorf("x-constants.%s: %v", key, err)
+			continue
+		}
+		if got.Elem().Interface() != want {
+			t.Errorf("%s: the schema says %v, protocol.gen.go %v", key, got.Elem().Interface(), want)
+		}
+	}
+	var constants struct {
+		CloseCodes   map[string]int
+		CloseReasons map[string]string
+		Refusals     map[string]string
+		Capabilities []string
+	}
+	for key, into := range map[string]any{
+		"closeCodes":   &constants.CloseCodes,
+		"closeReasons": &constants.CloseReasons,
+		"refusals":     &constants.Refusals,
+		"capabilities": &constants.Capabilities,
+	} {
+		if err := json.Unmarshal(schema.Constants[key], into); err != nil {
+			t.Fatalf("x-constants.%s: %v", key, err)
+		}
 	}
 	for name, pair := range map[string][2]any{
-		"protocolVersion":      {constants.ProtocolVersion, link.ProtocolVersion},
-		"helloCapabilitiesMax": {constants.HelloCapabilitiesMax, link.HelloCapabilitiesMax},
-		"HELLO_EXPECTED":       {constants.CloseCodes["HELLO_EXPECTED"], link.CloseHelloExpected},
-		"HELLO_TIMEOUT":        {constants.CloseCodes["HELLO_TIMEOUT"], link.CloseHelloTimeout},
-		"REPLACED":             {constants.CloseCodes["REPLACED"], link.CloseReplaced},
-		"UNPAIRED":             {constants.CloseCodes["UNPAIRED"], link.CloseUnpaired},
-		"PROTOCOL_MISMATCH":    {constants.CloseCodes["PROTOCOL_MISMATCH"], link.CloseProtocolMismatch},
-		"closeReasons.WIPE":    {constants.CloseReasons["WIPE"], link.CloseReasonWipe},
-		"refusalHeader":        {constants.RefusalHeader, link.RefusalHeader},
-		"refusals.UNPAIRED":    {constants.Refusals["UNPAIRED"], link.RefusalUnpaired},
-		"frameHeaderBytes":     {constants.FrameHeaderBytes, link.FrameHeader},
-		"creditWindowBytes":    {constants.CreditWindowBytes, link.CreditWindow},
-		"maxFrameBytes":        {constants.MaxFrameBytes, link.MaxFrameBytes},
-		"maxEventPayloadBytes": {constants.MaxEventPayloadBytes, link.MaxEventPayloadBytes},
-		"chatEntryMaxBytes":    {constants.ChatEntryMaxBytes, link.ChatEntryMaxBytes},
-		"chatBatchMaxEntries":  {constants.ChatBatchMaxEntries, link.ChatBatchMaxEntries},
-		"chatCommandsMax":      {constants.ChatCommandsMax, link.ChatCommandsMax},
-		"execOutputMaxBytes":   {constants.ExecOutputMaxBytes, link.ExecOutputMaxBytes},
-		"terminalScreenMax":    {constants.TerminalScreenMax, link.TerminalScreenMaxBytes},
-		"computerScreenEdge":   {constants.ComputerScreenEdge, link.ComputerScreenMaxEdge},
-		"computerScreenshot":   {constants.ComputerScreenshot, link.ComputerScreenshotMaxBytes},
+		"HELLO_EXPECTED":    {constants.CloseCodes["HELLO_EXPECTED"], link.CloseHelloExpected},
+		"HELLO_TIMEOUT":     {constants.CloseCodes["HELLO_TIMEOUT"], link.CloseHelloTimeout},
+		"REPLACED":          {constants.CloseCodes["REPLACED"], link.CloseReplaced},
+		"UNPAIRED":          {constants.CloseCodes["UNPAIRED"], link.CloseUnpaired},
+		"PROTOCOL_MISMATCH": {constants.CloseCodes["PROTOCOL_MISMATCH"], link.CloseProtocolMismatch},
+		"closeReasons.WIPE": {constants.CloseReasons["WIPE"], link.CloseReasonWipe},
+		"refusals.UNPAIRED": {constants.Refusals["UNPAIRED"], link.RefusalUnpaired},
 	} {
 		if pair[0] != pair[1] {
 			t.Errorf("%s: the schema says %v, protocol.gen.go %v", name, pair[0], pair[1])
