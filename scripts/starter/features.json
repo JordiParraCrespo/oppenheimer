@@ -113,9 +113,11 @@
         "e2e/tests/netsim",
         ".agents/skills/netsim",
         ".agents/skills/session-previews",
-        ".agents/skills/add-coding-agent"
+        ".agents/skills/add-coding-agent",
+        "scripts/evals/agentic-ui/sessions.ts",
+        "scripts/evals/agentic-ui/sessions.json"
       ],
-      "scripts": ["dev:mvp", "check:runner-release"]
+      "scripts": ["dev:mvp", "check:runner-release", "eval:agentic-ui:sessions"]
     },
     "e2e": {
       "title": "End-to-end tests",
