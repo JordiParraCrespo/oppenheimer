@@ -30,6 +30,7 @@ function setup(count: number, { sameTime = false } = {}) {
   /** The reads of an older page, by the message each ended before. */
   const before: string[] = [];
   let olderFails = false;
+  let olderGate: Promise<void> | null = null;
   const write = (n: number) => {
     for (let i = 0; i < n; i += 1) {
       const index = chat.length;
@@ -54,6 +55,7 @@ function setup(count: number, { sameTime = false } = {}) {
     findConversation: async (_id: string, cursor?: string) => {
       if (!cursor) return pageOf(chat.length);
       before.push(cursor);
+      if (olderGate) await olderGate;
       if (olderFails) throw new Error('older page refused');
       return pageOf(chat.findIndex((message) => message.id === cursor));
     },
@@ -84,6 +86,17 @@ function setup(count: number, { sameTime = false } = {}) {
     before,
     failOlder: (fails: boolean) => {
       olderFails = fails;
+    },
+    /** Holds every older read until the returned function lets them go. */
+    holdOlder: () => {
+      let release = () => {};
+      olderGate = new Promise<void>((resolve) => {
+        release = () => {
+          olderGate = null;
+          resolve();
+        };
+      });
+      return release;
     },
     /** What the chat draws, oldest first. */
     drawn: () => result.current.chat.messages.map((message) => message.content),
@@ -156,6 +169,20 @@ describe('a bot chat scrolled up past its window', () => {
     chat.failOlder(false);
     await chat.readAgain();
     await waitFor(() => expect(chat.drawn()).toEqual(messages(2, 13)));
+  });
+
+  it('keeps the message the window let go while the first older page was out', async () => {
+    const chat = setup(8);
+    await waitFor(() => expect(chat.drawn()).toEqual(messages(5, 8)));
+    const release = chat.holdOlder();
+    act(() => chat.result.current.older.loadOlder());
+    await waitFor(() => expect(chat.before).toEqual(['m5']));
+
+    chat.write(1);
+    await chat.readAgain();
+    await waitFor(() => expect(chat.drawn()).toEqual(messages(6, 9)));
+    await act(async () => release());
+    await waitFor(() => expect(chat.drawn()).toEqual(messages(2, 9)));
   });
 
   it('shows your reaction on a message in the older pages', async () => {

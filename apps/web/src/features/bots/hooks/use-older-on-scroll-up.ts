@@ -15,13 +15,32 @@ function offsetIn(box: HTMLElement, line: Element): number {
   return line.getBoundingClientRect().top - box.getBoundingClientRect().top;
 }
 
-/** The transcript's first line still in view: the one the reader is on. */
-function lineInView(box: HTMLElement, transcript: Element | null): ReadingLine | null {
-  const top = box.getBoundingClientRect().top;
-  for (const line of transcript?.children ?? []) {
-    if (line.getBoundingClientRect().bottom > top) return { line, offset: offsetIn(box, line) };
+/** How far into the transcript the reader's line is looked for; past it, the element reached stands for it. */
+const LINE_DEPTH_MAX = 12;
+
+/** The first child of `parent` still in view at `top`, if any. */
+function firstInView(parent: Element, top: number): Element | null {
+  for (const child of parent.children) {
+    if (child.getBoundingClientRect().bottom > top) return child;
   }
   return null;
+}
+
+/**
+ * The line the reader is on: the innermost element still in view at the top
+ * of the pane, not the turn around it. A page can end inside a turn, and its
+ * older messages then land inside that turn, above the line but below the
+ * turn's own top.
+ */
+function lineInView(box: HTMLElement, transcript: Element | null): ReadingLine | null {
+  const top = box.getBoundingClientRect().top;
+  let line = transcript ? firstInView(transcript, top) : null;
+  for (let depth = 0; line && depth < LINE_DEPTH_MAX; depth += 1) {
+    const inner = firstInView(line, top);
+    if (!inner) break;
+    line = inner;
+  }
+  return line ? { line, offset: offsetIn(box, line) } : null;
 }
 
 /** Scrolls `box` so `reading.line` is back where it was. */

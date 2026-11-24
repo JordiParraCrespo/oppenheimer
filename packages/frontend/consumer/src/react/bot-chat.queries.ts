@@ -181,18 +181,18 @@ export function useLoadOlderBotMessages(id: string) {
       const older = queryClient.getQueryData<BotOlderMessages | null>(botsKeys.olderMessages(id));
       const before = olderCursor(window, older);
       if (!before) return;
-      const page = await app.bots.findConversation(id, before);
-      // The window as it is now: a read may have landed while this one was out.
-      const now =
-        queryClient.getQueryData<BotConversationEntity>(botsKeys.conversation(id)) ?? window;
-      queryClient.setQueryData(
-        botsKeys.olderMessages(id),
-        addOlderPage(
-          now,
-          queryClient.getQueryData<BotOlderMessages | null>(botsKeys.olderMessages(id)),
-          page,
-        ),
-      );
+      const readBefore = (messageId: string) => app.bots.findConversation(id, messageId);
+      const page = await readBefore(before);
+      // Joined to the window it was asked from, then carried to the window as
+      // it is now: a read that landed meanwhile let go of messages this page
+      // does not hold.
+      let added = addOlderPage(window, older, page);
+      const now = queryClient.getQueryData<BotConversationEntity>(botsKeys.conversation(id));
+      if (added && now && now !== window && now.hasOlder) {
+        const slid = slideOlder(added, window, now);
+        added = slid === 'gap' ? await fillOlderGap(now, added, readBefore) : slid;
+      }
+      queryClient.setQueryData(botsKeys.olderMessages(id), added);
     },
   });
   return { loadOlder: load.mutate, isPending: load.isPending, error: load.error };
