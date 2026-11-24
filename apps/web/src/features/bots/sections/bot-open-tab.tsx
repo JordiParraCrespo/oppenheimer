@@ -1,9 +1,9 @@
-import { useBots } from '@oppenheimer/frontend-consumer/react';
-import { BotTab } from './bot-tab';
+import { ListedBotTab } from './listed-bot-tab';
+import { ShownBotTab } from './shown-bot-tab';
 
 /**
- * A bot's chat open as a tab over Sessions, by its id: nothing while the
- * bots are read or once the bot is gone.
+ * A bot open as a tab over Sessions, by its id: the one on screen from the
+ * bot itself, the others from the bots list.
  */
 export function BotOpenTab({
   botId,
@@ -14,6 +14,9 @@ export function BotOpenTab({
   active: boolean;
   onClose: () => void;
 }) {
-  const { data: bot } = useBots({ select: (bots) => bots.find((one) => one.id === botId) });
-  return bot ? <BotTab bot={bot} active={active} onClose={onClose} /> : null;
+  return active ? (
+    <ShownBotTab botId={botId} onClose={onClose} />
+  ) : (
+    <ListedBotTab botId={botId} onClose={onClose} />
+  );
 }

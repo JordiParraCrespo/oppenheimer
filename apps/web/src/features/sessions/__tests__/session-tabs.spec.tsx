@@ -7,7 +7,8 @@ import { SessionTabs } from '../sections/session-tabs';
  * The tabs over Sessions. Closing the tab on screen goes to its neighbour,
  * and closing the last goes to New session; a session deleted since its tab
  * was opened is left off once the list answers without it, while the page
- * on screen keeps its tab before it is listed. The sessions and bots lists
+ * on screen keeps its tab, drawn from the session itself, whatever the list
+ * holds. The sessions and bots lists
  * are the product package's, mocked here.
  */
 
@@ -16,12 +17,21 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
-const lists = vi.hoisted(() => ({ sessions: [] as unknown[], bots: [] as { id: string }[] }));
+const lists = vi.hoisted(() => ({
+  sessions: [] as { id: string }[],
+  bots: [] as { id: string }[],
+  detail: null as unknown,
+}));
 const navigate = vi.hoisted(() => vi.fn());
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  useSessions: ({ select }: { select: (list: unknown[]) => unknown }) => ({
+  useSessions: ({ select }: { select: (list: { id: string }[]) => unknown }) => ({
     data: select(lists.sessions),
+  }),
+  // The session on screen, as the page reads it: from the list's copy when
+  // it holds one, else from what this test sets as the detail.
+  useSession: (id: string) => ({
+    data: lists.sessions.find((one) => one.id === id) ?? lists.detail ?? undefined,
   }),
   useBots: ({ select }: { select: (list: { id: string }[]) => unknown }) => ({
     data: select(lists.bots),
@@ -89,6 +99,18 @@ describe('the tabs over Sessions', () => {
       to: '/sessions/$sessionId',
       params: { sessionId: 'c' },
     });
+  });
+
+  it('keeps the tab of the session on screen when the list leaves it out, a deleted one opened from a link', () => {
+    lists.sessions = [sessionEntity({ id: 'b', name: 'New website' })];
+    lists.detail = sessionEntity({ id: 'old', name: 'Deleted work' });
+    openFirst('b');
+    render(<SessionTabs shown={{ kind: 'session', id: 'old' }} bot={noBot} />);
+
+    expect(screen.getByRole('link', { name: 'Deleted work' }).getAttribute('aria-current')).toBe(
+      'page',
+    );
+    lists.detail = null;
   });
 
   it('closes a tab not on screen without leaving the page', () => {

@@ -1,5 +1,4 @@
 import { ChatTabStrip } from '@oppenheimer/design-system-web';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useBots, useSessions } from '@oppenheimer/frontend-consumer/react';
 import { useNavigate } from '@tanstack/react-router';
 import { Fragment, type ReactNode } from 'react';
@@ -7,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useOpenTabs } from '../hooks/use-open-tabs';
 import { type OpenTab, openTabKey, openTabOf, tabAfterClosing } from '../lib/open-tabs';
 import { SessionOpenTab } from './session-open-tab';
+import { ShownSessionTab } from './shown-session-tab';
 
 /**
  * The tabs over Sessions: every session and bot this device has open, the
@@ -17,9 +17,10 @@ import { SessionOpenTab } from './session-open-tab';
  *
  * A tab whose session or bot is gone (deleted here or on another device)
  * is left off once the list it belongs to has answered without it; the page
- * on screen keeps its tab whatever the lists say, since a session just
- * created is on screen before it is listed. A bot's tab is drawn by the
- * route (`bot`): it is the bots feature's.
+ * on screen keeps its tab whatever the lists say, drawn from the session
+ * itself (`ShownSessionTab`): one deleted and opened from an old link, one
+ * just created, or any while the list loads or has failed. A bot's tab is
+ * drawn by the route (`bot`): it is the bots feature's.
  */
 export function SessionTabs({
   shown,
@@ -58,15 +59,15 @@ export function SessionTabs({
     } else void navigate({ to: '/sessions/bots/$botId', params: { botId: tab.id } });
   };
 
-  const sessionTab = (key: string, session: SessionEntity | undefined) =>
-    session ? (
-      <SessionOpenTab
-        key={key}
-        session={session}
-        active={key === shownKey}
-        onClose={() => close(key)}
-      />
+  const sessionTab = (key: string, id: string) => {
+    if (key === shownKey) {
+      return <ShownSessionTab key={key} sessionId={id} onClose={() => close(key)} />;
+    }
+    const session = sessions?.get(id);
+    return session ? (
+      <SessionOpenTab key={key} session={session} active={false} onClose={() => close(key)} />
     ) : null;
+  };
 
   return (
     <ChatTabStrip
@@ -78,7 +79,7 @@ export function SessionTabs({
     >
       {drawn.map(({ key, tab }) =>
         tab.kind === 'session' ? (
-          sessionTab(key, sessions?.get(tab.id))
+          sessionTab(key, tab.id)
         ) : (
           <Fragment key={key}>
             {bot(tab.id, { active: key === shownKey, onClose: () => close(key) })}
