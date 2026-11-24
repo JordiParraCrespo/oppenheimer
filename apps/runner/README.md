@@ -21,7 +21,12 @@ conversation, then killed with its process group, and the daemon ends
 any agent still running for a closed or stopped session every 5 minutes. An
 agent in a session can start, tell and wait on other agents as child
 sessions (`runner --skill`), and a session marked kept comes back on its own
-after a reboot (`product/research/lessons-from-herdr.md` §4).
+after a reboot (`product/research/lessons-from-herdr.md` §4). A session whose
+agent has been `done` or `idle` for 2 hours, with nothing attached and nothing
+typed into it, is stopped (never closed) to free its processes. Working,
+blocked, attached and kept sessions are never stopped this way, and nor is a
+child whose parent is live. `RUNNER_IDLE_STOP` sets the window (`90m`, `4h`)
+or turns it `off` (`product/versions/mvp/02-runner.md` §5).
 
 `runner run` holds one outbound WebSocket to the control plane: sessions are
 driven from the console over it, and the git credential helper answers with

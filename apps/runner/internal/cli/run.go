@@ -122,6 +122,19 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 		defer loops.Done()
 		a.strayWrapperLoop(ctx, logger)
 	}()
+	idleAfter, idleProblem := IdleStop()
+	if idleProblem != "" {
+		logger.Warn("idle stop setting ignored", slog.String("problem", idleProblem), slog.Duration("after", idleAfter))
+	}
+	if idleAfter > 0 {
+		loops.Add(1)
+		go func() {
+			defer loops.Done()
+			a.idleStopLoop(ctx, logger, idleAfter)
+		}()
+	} else {
+		logger.Info("idle sessions are never stopped", slog.String("by", EnvIdleStop))
+	}
 	if AgentUpdatesEnabled() {
 		loops.Add(1)
 		go func() {
@@ -363,6 +376,30 @@ func (a *App) strayWrapperLoop(ctx context.Context, logger *slog.Logger) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+		}
+	}
+}
+
+// idleStopInterval is how often the runner looks for sessions idle past
+// their window. A session stops up to this long after it is due.
+const idleStopInterval = 5 * time.Minute
+
+// idleStopLoop stops, every idleStopInterval, the sessions whose agent has
+// been done or at its prompt, unwatched, for longer than after: what frees a
+// host of the agents nobody came back to, each one open away from resuming.
+func (a *App) idleStopLoop(ctx context.Context, logger *slog.Logger, after time.Duration) {
+	ticker := time.NewTicker(idleStopInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+		for _, session := range a.Sessions.StopIdle(ctx, after) {
+			logger.Info("stopped an idle session",
+				slog.String("session", session.ID), slog.String("agent", string(session.Agent)),
+				slog.Duration("idle_after", after))
 		}
 	}
 }

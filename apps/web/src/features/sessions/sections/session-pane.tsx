@@ -1,9 +1,5 @@
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
-import {
-  useRestartSession,
-  useSessionOpening,
-  useSuspenseSession,
-} from '@oppenheimer/frontend-consumer/react';
+import { useSessionOpening, useSuspenseSession } from '@oppenheimer/frontend-consumer/react';
 import { useDeploymentCapabilities, useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert, PageBar } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
@@ -16,6 +12,7 @@ import { PreviewToggle } from '../components/preview-toggle';
 import { SessionClosed } from '../components/session-closed';
 import { usePreviewPane } from '../hooks/use-preview-pane';
 import { useReadOnOpen } from '../hooks/use-read-on-open';
+import { useRestartOnOpen } from '../hooks/use-restart-on-open';
 import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
 import { useClearUnreadOnOpen } from '../hooks/use-session-unread';
 import { DEFAULT_SESSION_VIEW, type PaneReading, type SessionView } from '../lib/chat-blocks';
@@ -141,7 +138,9 @@ export function SessionPane({
   const { offered: chatOffered } = useChatReading(reading);
   // The way back from a stopped session. Held here because this screen is the
   // one that branches on the lifecycle; the pane below it takes props only.
-  const restart = useRestartSession();
+  // Opening a stopped session is asking for it back, so it restarts on its
+  // own; a run's own stopped pane (`closed`) keeps its Open in terminal.
+  const comeback = useRestartOnOpen(session, !closed);
   // A start watched here stays on its pane until the agent is running, not
   // just until the host made the terminal it will run in.
   const opening = useSessionOpening(session);
@@ -243,8 +242,8 @@ export function SessionPane({
           {closed({
             name: session.name,
             branch,
-            restart: () => restart.mutate(session.id),
-            restarting: restart.isPending,
+            restart: comeback.restart,
+            restarting: comeback.restarting,
           })}
         </>
       );
@@ -252,6 +251,11 @@ export function SessionPane({
     return (
       <>
         {alert}
+        {comeback.timedOut ? (
+          <ErrorAlert message={t('sessions.closed.restartFailed')} />
+        ) : (
+          <ErrorAlert error={comeback.failure} fallback={t('sessions.closed.restartFailed')} />
+        )}
         <SessionClosed
           name={session.name}
           copy={
@@ -265,7 +269,7 @@ export function SessionPane({
           newSession={<Link to="/sessions/new" />}
           {...(session.isResolved
             ? {}
-            : { onRestart: () => restart.mutate(session.id), restarting: restart.isPending })}
+            : { onRestart: comeback.restart, restarting: comeback.restarting })}
         />
       </>
     );

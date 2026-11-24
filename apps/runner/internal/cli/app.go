@@ -406,6 +406,9 @@ func unit(paths Paths) svcdomain.Unit {
 	if telegram := os.Getenv(EnvTelegram); telegram != "" {
 		env[EnvTelegram] = telegram
 	}
+	if idle := os.Getenv(EnvIdleStop); idle != "" {
+		env[EnvIdleStop] = idle
+	}
 	// The devices and the Argent the installer was told about.
 	for _, key := range []string{EnvDevices, EnvArgentSimulatorServer, EnvArgentToolsURL, EnvArgentToken, EnvDeviceScreenWidth, "ANDROID_HOME"} {
 		if value := os.Getenv(key); value != "" {

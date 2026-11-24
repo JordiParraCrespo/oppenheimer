@@ -118,6 +118,9 @@ type Service struct {
 	// observer says what an agent is doing: its own word, or its screen
 	// (observer.go).
 	observer observer
+	// presence is who is looking at each session, for the idle stop
+	// (idle.go).
+	presence *presence
 	// watches is each session's terminal watches (watches.go).
 	watches     *watchBook
 	terminals   Terminals
@@ -157,7 +160,7 @@ func New(opts Options) (*Service, error) {
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
 		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, blockedSince: map[string]time.Time{}, decisions: map[string]string{},
 		keeper: newKeeper(), observer: observer{classifier: opts.Classifier, program: opts.ProgramStatus},
-		watches:   newWatchBook(),
+		watches:   newWatchBook(), presence: newPresence(),
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
@@ -416,7 +419,12 @@ func (s *Service) Attach(ctx context.Context, id string, window int, size Size, 
 	if _, ok := session.Window(window); !ok {
 		return nil, domain.ErrNotFound.WithDetail("%v: %d", domain.ErrNoSuchWindow, window)
 	}
-	return s.terminals.Attach(ctx, session.Target(window), size, readOnly)
+	pty, err := s.terminals.Attach(ctx, session.Target(window), size, readOnly)
+	if err != nil {
+		return nil, err
+	}
+	// Someone watching keeps the session from stopping as idle (idle.go).
+	return &watchedAttachment{Attachment: pty, release: s.presence.attach(id, s.now)}, nil
 }
 
 // agentServer is where the session's agent serves its conversation from
@@ -476,6 +484,7 @@ func (s *Service) Send(ctx context.Context, id string, window int, keys string) 
 	if !session.State.Live() {
 		return domain.ErrNotRunning.WithDetail("session %s is %s", id, session.State)
 	}
+	s.presence.touch(id, s.now())
 	return s.terminals.SendKeys(ctx, session.Target(window), keys)
 }
 
@@ -1149,6 +1158,7 @@ func (s *Service) Listen(l Listener) {
 func (s *Service) announced(next domain.Session, stateChanged bool) {
 	if !next.State.Live() {
 		s.observer.forget(next.ID)
+		s.presence.forget(next.ID)
 	}
 	s.mu.Lock()
 	listeners := slices.Clone(s.listeners)

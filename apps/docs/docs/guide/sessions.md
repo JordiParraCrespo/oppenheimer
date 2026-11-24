@@ -78,7 +78,8 @@ The preview toggle opens a pane beside the terminal:
 
 ## Stopping, restarting, deleting
 
-- **Stopped**: the agent and terminal end, the checkout stays. **Restart** brings the agent back in the same folder, resuming its conversation.
+- **Stopped**: the agent and terminal end, the checkout stays. Opening a stopped session restarts it: the pane says **Restarting** and the agent comes back in the same folder, resuming its conversation. It happens only when you open the session, never when you pass over it in the sidebar. If its host is offline, or the restart fails, the pane shows the session stopped, with a **Restart** button and the reason.
+- **Stopped when idle**: a session whose agent has finished, or sits at its prompt, for 2 hours, with nobody watching or typing into it, is stopped by its host to free memory. It is never deleted, and opening it brings it back. A working agent, one waiting on you, a kept session and one with a running parent or child are never stopped this way. Set `RUNNER_IDLE_STOP` on the host before `runner install` to change the wait (`90m`, `4h`) or to turn it `off`.
 - **Delete** stops the session, pushes each checkout's branch if it has commits, removes the worktree and session folder from the host, and drops the transcript. Commits already pushed stay on the remote. If there is work that is not pushed, delete stops unless you tick **Also discard work that is not pushed**. Oppenheimer never commits for you.
 - Deleting a folder session only ends its terminal; the folder stays. If the host is offline, the session is removed when the host is back.
 
