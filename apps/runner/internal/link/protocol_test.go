@@ -318,6 +318,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		FrameHeaderBytes     int               `json:"frameHeaderBytes"`
 		CreditWindowBytes    int               `json:"creditWindowBytes"`
 		MaxFrameBytes        int               `json:"maxFrameBytes"`
+		HelloCapabilitiesMax int               `json:"helloCapabilitiesMax"`
 		Capabilities         []string          `json:"capabilities"`
 		MaxEventPayloadBytes int               `json:"maxEventPayloadBytes"`
 		ChatEntryMaxBytes    int               `json:"chatEntryMaxBytes"`
@@ -352,6 +353,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		"frameHeaderBytes":     {constants.FrameHeaderBytes, link.FrameHeader},
 		"creditWindowBytes":    {constants.CreditWindowBytes, link.CreditWindow},
 		"maxFrameBytes":        {constants.MaxFrameBytes, link.MaxFrameBytes},
+		"helloCapabilitiesMax": {constants.HelloCapabilitiesMax, link.HelloCapabilitiesMax},
 		"maxEventPayloadBytes": {constants.MaxEventPayloadBytes, link.MaxEventPayloadBytes},
 		"chatEntryMaxBytes":    {constants.ChatEntryMaxBytes, link.ChatEntryMaxBytes},
 		"chatBatchMaxEntries":  {constants.ChatBatchMaxEntries, link.ChatBatchMaxEntries},
