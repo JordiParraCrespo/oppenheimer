@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import type { ConfigService } from '@nestjs/config';
 import type { CommandBus } from '@nestjs/cqrs';
 import { None, Some } from 'oxide.ts';
+import { MarkSlackWorkingCommand } from '../../../../slack/commands/mark-slack-working/mark-slack-working.command';
+import { ReplyOnSlackCommand } from '../../../../slack/commands/reply-on-slack/reply-on-slack.command';
 import { ReplyOnTelegramCommand } from '../../../../telegram/commands/reply-on-telegram/reply-on-telegram.command';
 import { ReplyOnWhatsappCommand } from '../../../../whatsapp/commands/reply-on-whatsapp/reply-on-whatsapp.command';
 import { BotChannelReplyResolver } from '../../../application/bot-channel-reply.resolver';
@@ -13,6 +15,7 @@ import type {
 import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
 import type { ChannelTurnLine } from '../../../domain/bot-channel-turn.policy';
+import { slackTurn } from '../../../domain/bot-slack-turn.policy';
 import { telegramTurn } from '../../../domain/bot-telegram-turn.policy';
 import { BotTurnEntity } from '../../../domain/bot-turn.entity';
 import { whatsappSourceKey } from '../../../domain/bot-whatsapp-turn.policy';
@@ -119,7 +122,7 @@ function setup(
   );
   const deliver = () =>
     handler.execute(new DeliverChannelReplyCommand({ turnId: turn?.id ?? randomUUID() }));
-  return { bus, deliver };
+  return { bus, deliver, messages };
 }
 
 const telegramChat: BotChannelChat = {
@@ -129,6 +132,23 @@ const telegramChat: BotChannelChat = {
   telegramAccountId,
   chatId: '123456789',
 };
+const slackAccountId = randomUUID();
+const slackChat: BotChannelChat = {
+  kind: 'slack',
+  organizationId,
+  botId,
+  slackAccountId,
+  chatId: 'C1:1700000000.000100',
+};
+
+function slack(): BotTurnEntity {
+  const { turn } = slackTurn(
+    { organizationId, botId, requestedByUserId: userId, ...engine },
+    { conversationId, slackAccountId, channel: 'C1', ts: '1700000500.000001', text: 'and today?' },
+  );
+  return turn;
+}
+
 const whatsappChat: BotChannelChat = {
   kind: 'whatsapp',
   organizationId,
@@ -211,6 +231,39 @@ describe('DeliverChannelReplyCommandHandler', () => {
     });
   });
 
+  // Breaks if the owner's message keeps the working reaction after its answer,
+  // or the reaction comes off before the answer is in the thread.
+  it('answers in the Slack thread, then takes the working reaction off the message', async () => {
+    const { bus, deliver } = setup(ended(slack()), slackChat);
+    await deliver();
+
+    const [answer, off] = bus.execute.mock.calls.map(([command]) => command) as unknown as [
+      ReplyOnSlackCommand,
+      MarkSlackWorkingCommand,
+    ];
+    expect(answer).toBeInstanceOf(ReplyOnSlackCommand);
+    expect(answer).toMatchObject({ chatId: 'C1:1700000000.000100', text: 'Green since 10:12.' });
+    expect(off).toBeInstanceOf(MarkSlackWorkingCommand);
+    expect(off).toMatchObject({ ts: '1700000500.000001', working: false });
+  });
+
+  // Breaks if an answer Slack refused leaves the eyes on for good.
+  it('takes the working reaction off even when the answer did not go', async () => {
+    const { bus, deliver } = setup(ended(slack()), slackChat);
+    bus.execute.mockRejectedValueOnce(new Error('rate limited'));
+    await expect(deliver()).rejects.toThrow('rate limited');
+    expect(bus.execute.mock.calls[1][0]).toMatchObject({ working: false });
+  });
+
+  // Breaks if a turn whose lines could not be read leaves the eyes on for good.
+  it('takes the working reaction off when the answer could not even be read', async () => {
+    const { bus, deliver, messages } = setup(ended(slack()), slackChat);
+    messages.findTurnLines.mockRejectedValueOnce(new Error('database down'));
+    await expect(deliver()).rejects.toThrow('database down');
+    expect(bus.execute).toHaveBeenCalledTimes(1);
+    expect(bus.execute.mock.calls[0][0]).toMatchObject({ working: false });
+  });
+
   // Breaks if a turn that stopped on a card leaves the chat with no way to it:
   // the card is answered only in the console.
   it('links to the bot in the console when the turn ended on its approval card, and not for another turn’s', async () => {
@@ -282,5 +335,28 @@ describe('DeliverChannelReplyCommandHandler', () => {
     const silent = setup(ended(contactTurn()), whatsappChat, []);
     await silent.deliver();
     expect(silent.bus.execute).not.toHaveBeenCalled();
+  });
+
+  // Breaks if the working reaction goes on another message than the turn's own,
+  // or a Telegram turn is sent a Slack command.
+  it('marks the Slack message a turn is on as being worked on, and nothing on another channel', async () => {
+    const bus = { execute: vi.fn(async () => undefined) };
+    const resolverFor = (chat: BotChannelChat) =>
+      new BotChannelReplyResolver(
+        { findChannelChat: vi.fn(async () => chat) } as unknown as BotConversationRepositoryPort,
+        bus as unknown as CommandBus,
+      );
+    await resolverFor(slackChat).started(slack());
+    const [sent] = bus.execute.mock.calls[0] as unknown as [MarkSlackWorkingCommand];
+    expect(sent).toBeInstanceOf(MarkSlackWorkingCommand);
+    expect(sent).toMatchObject({
+      accountId: slackAccountId,
+      chatId: 'C1:1700000000.000100',
+      ts: '1700000500.000001',
+      botId,
+      working: true,
+    });
+    await resolverFor(telegramChat).started(telegram());
+    expect(bus.execute).toHaveBeenCalledTimes(1);
   });
 });

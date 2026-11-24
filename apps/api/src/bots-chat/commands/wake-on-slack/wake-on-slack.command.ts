@@ -1,4 +1,5 @@
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
+import type { SlackImage } from '../../../slack/domain/slack-inbound.policy';
 
 /**
  * The owner asked their bot in Slack, by a mention or in its DM: a turn in
@@ -19,6 +20,10 @@ export class WakeOnSlackCommand extends CommandBase {
   readonly position: string;
   readonly command: 'message' | 'stop';
   readonly text: string;
+  /** The images the message carries, fetched from Slack when the turn is queued. */
+  readonly images: SlackImage[];
+  /** The files it carries that no bot reads. */
+  readonly skippedFiles: number;
 
   constructor(props: CommandProps<WakeOnSlackCommand>) {
     super(props);
@@ -32,5 +37,7 @@ export class WakeOnSlackCommand extends CommandBase {
     this.position = props.position;
     this.command = props.command;
     this.text = props.text;
+    this.images = props.images;
+    this.skippedFiles = props.skippedFiles;
   }
 }

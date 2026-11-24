@@ -1,0 +1,39 @@
+  ┃
+  ┃  go
+  ┃
+
+     $ touch /tmp/oc-probe
+
+     ▣  Build · m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ┃
+  ┃  △ Permission required
+  ┃    ← Access external directory /tmp
+  ┃
+  ┃  Patterns
+  ┃
+  ┃  - /tmp/*
+  ┃
+  ┃
+  ┃   Allow once   Allow always   Reject                                 ctrl+f fullscreen  ⇆ select  enter confirm
+  ┃
+

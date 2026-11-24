@@ -256,6 +256,7 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     commandId,
     chatId: '34600333444@s.whatsapp.net',
     messageId: '3EB0C7A1F4',
+    kind: 'image',
   },
   'whatsapp.media': {
     type: 'whatsapp.media',

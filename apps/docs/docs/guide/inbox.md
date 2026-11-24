@@ -14,7 +14,7 @@ Items are not stored, with one exception: an item is there while its source says
 
 | Item | From | When | What you can do |
 | --- | --- | --- | --- |
-| A session waiting on you | Sessions | its agent has been blocked 30 seconds or more, it failed to start, or it has been starting for over a minute | **Open session**. An agent's permission prompt or multiple-choice question can be answered right in the Inbox (**Send answers**); your answer is typed into its terminal |
+| A session waiting on you | Sessions | its agent is waiting on a permission or an answer (it shows within seconds), it failed to start, or it has been starting for over a minute | **Open session**. An agent's permission prompt or multiple-choice question can be answered right in the Inbox (**Send answers**); your answer is typed into its terminal |
 | A bot approval | Bots | a bot stopped on a tool set to ask | **Approve**, **Deny**, or **Open chat** |
 | A review request (when shown) | Pull requests | someone asked for your review | **Open**, **View on GitHub** |
 | A pull request ready to merge (when shown) | Pull requests | your pull request has nothing holding it | **Merge**, **Open**, **View on GitHub** |

@@ -1,0 +1,39 @@
+  >_ OpenAI Codex (v0.171.0)
+     ~/work
+
+
+› go
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+• Working (8s • esc to interrupt)
+
+
+› Ask Codex to do anything
+
+  m default · ~/work · go
+  ← for agents · ? for shortcuts                                                              ⚠ 3 warnings · f2 to view

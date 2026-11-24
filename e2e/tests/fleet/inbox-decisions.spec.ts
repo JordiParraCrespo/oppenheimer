@@ -37,16 +37,18 @@ function watchScreen(page: Page): () => string {
 }
 
 /** Opens the session's terminal and runs `command` in the shim's shell. */
-async function runInSession(page: Page, screen: () => string, sessionId: string, command: string) {
+async function runInSession(page: Page, sessionId: string, command: string) {
   await page.goto(`/sessions/${sessionId}`);
-  await expect.poll(() => screen().includes('CLAUDE-SHIM argv='), { timeout: 120_000 }).toBe(true);
+  // The shim's shell prompt: its argv line may have scrolled out of what the
+  // attach replays, so the marker on it is not waited for.
+  await expect(page.locator('.xterm-rows')).toContainText('$', { timeout: 120_000 });
   await expect(linkLive(page)).toBeVisible();
   await page.locator('.xterm').first().click();
   await page.keyboard.type(command);
   await page.keyboard.press('Enter');
 }
 
-/** The session's row in the Inbox, once the API counts it as waiting on you (30 s blocked). */
+/** The session's row in the Inbox, once the API counts it as waiting on you (a confirmed block). */
 async function openInboxItem(page: Page) {
   await page.goto('/plan/inbox');
   const row = page.locator('[data-slot="inbox-row"]', { hasText: 'is waiting on you' });
@@ -113,7 +115,6 @@ test('a permission dialog is answered from its Inbox card, and the session recei
   ].join('\\n');
   await runInSession(
     page,
-    screen,
     sessionId,
     `clear; printf '${dialog}\\n'; stty raw -echo; a=$(head -c 1); stty sane; clear; echo "GOT:$a"`,
   );
@@ -195,7 +196,6 @@ test('an agent question is answered from its Inbox card with the keys its picker
   // picker does, and prints them back in hex.
   await runInSession(
     page,
-    screen,
     sessionId,
     `clear; printf 'Claude is waiting for your input\\n'; stty raw -echo; head -c ${bytes} > /tmp/inbox-keys-$$; stty sane; clear; printf 'GOT:'; od -An -tx1 /tmp/inbox-keys-$$ | tr -d ' \\n'; echo`,
   );

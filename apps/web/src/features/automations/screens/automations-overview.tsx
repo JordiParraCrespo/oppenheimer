@@ -1,12 +1,10 @@
-import {
-  RoutineTable,
-  RoutineTableHead,
-  RoutineTableRowSkeleton,
-} from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { RunHistorySkeleton } from '../components/run-history-skeleton';
+import { TableSkeleton } from '../components/table-skeleton';
+import { useListFilters } from '../hooks/use-list-filters';
+import { automationColumns } from '../lib/automation-view';
 import { AutomationsTable } from '../sections/automations-table';
 import { OverviewTop } from '../sections/overview-top';
 import { RunHistoryCard } from '../sections/run-history-card';
@@ -19,6 +17,7 @@ import { RunHistoryCard } from '../sections/run-history-card';
 export function AutomationsOverviewScreen() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { state } = useListFilters('automations');
   return (
     <>
       <OverviewTop />
@@ -33,19 +32,7 @@ export function AutomationsOverviewScreen() {
       </QueryState>
       <QueryState>
         <QueryState.Pending>
-          <RoutineTable aria-busy>
-            <RoutineTableHead
-              aria-hidden
-              columns={[
-                t('automations.table.automation'),
-                t('automations.table.trigger'),
-                t('automations.table.next'),
-                t('automations.table.status'),
-              ]}
-            />
-            <RoutineTableRowSkeleton index={0} />
-            <RoutineTableRowSkeleton index={1} />
-          </RoutineTable>
+          <TableSkeleton status={state.status} columns={automationColumns(t)} />
         </QueryState.Pending>
         <QueryState.Error fallback={t('automations.page.loadFailed')} />
         <QueryState.Data>
