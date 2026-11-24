@@ -17,11 +17,11 @@ import { cn } from '../lib/utils';
  * Exactly one segment is on, so the value is a string, not the primitive's
  * array.
  *
- * `size` is the track's, on the control ramp so it stands level with the
- * buttons beside it: `sm` (the default, 28px, 11.5px) labels a panel; `md`
- * (34px, 13px medium) switches what a page's pane shows (Briefing /
- * Description / Changes, a lane); `lg` (42px, 13.5px medium) is a page's
- * own top row (Mine / Review requests / Watching). An item's `count` rides
+ * Never tabs: a row that switches which view a page or pane shows is
+ * `PillTabs`. `size` is the track's, on the control ramp so it stands level
+ * with the buttons beside it: `sm` (the default, 28px, 11.5px) labels a
+ * panel; `md` (34px, 13px medium) sets how a pane reads (Unified / Split);
+ * `lg` (42px, 13.5px medium) for the same on a page's top row. An item's `count` rides
  * after its label in mono. On a track wider than its column (a phone) the
  * segments keep their line and the pill scrolls sideways.
  *

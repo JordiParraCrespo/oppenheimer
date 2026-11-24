@@ -163,10 +163,19 @@ func (s *Service) makeRoom(in CreateInput, session domain.Session) (string, erro
 	if session.Place == domain.PlaceFolder {
 		return session.Folder, nil
 	}
+	checkouts := session.Checkouts()
+	folderCheckouts := make([]domain.FolderCheckout, 0, len(checkouts))
+	for _, checkout := range checkouts {
+		folderCheckouts = append(folderCheckouts, domain.FolderCheckout{
+			Repo: checkout.Repo, Directory: filepath.Base(checkout.Worktree),
+		})
+	}
 	if err := s.places.MakeSession(domain.SessionFolder{
 		Dir: session.Dir, SessionID: session.ID, Created: session.Created,
 		Tenant:        domain.Tenant{Account: session.AccountID, Workspace: session.WorkspaceID},
 		WorkspaceSlug: in.WorkspaceSlug,
+		Name:          session.Name, Agent: session.Agent, Branch: session.Branch,
+		Checkouts: folderCheckouts,
 	}); err != nil {
 		return "", err
 	}

@@ -1,4 +1,4 @@
-import { SegmentedControl, SegmentedControlItem } from '@oppenheimer/design-system-web';
+import { PillTab, PillTabs } from '@oppenheimer/design-system-web';
 import { useSuspenseBotDocuments } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import type { BotDocumentName } from '@oppenheimer/shared/schemas/bot';
@@ -27,19 +27,18 @@ export function BotDocuments({ botId }: { botId: string }) {
       <ErrorAlert error={error} fallback={t('bots.settings.instructions.loadFailed')} />
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
-          <SegmentedControl
-            size="md"
+          <PillTabs
             value={file}
             onValueChange={(next) => setFile(next === 'soul' ? 'soul' : 'instructions')}
             aria-label={t('bots.settings.instructions.file')}
           >
-            <SegmentedControlItem value="soul" mono>
+            <PillTab value="soul" mono>
               {DOCUMENT_FILE.soul}
-            </SegmentedControlItem>
-            <SegmentedControlItem value="instructions" mono>
+            </PillTab>
+            <PillTab value="instructions" mono>
               {DOCUMENT_FILE.instructions}
-            </SegmentedControlItem>
-          </SegmentedControl>
+            </PillTab>
+          </PillTabs>
           <span className="text-sm text-fg-subtle">
             {file === 'soul'
               ? t('bots.settings.instructions.soulHint')

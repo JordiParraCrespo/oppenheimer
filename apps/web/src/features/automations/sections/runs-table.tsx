@@ -1,10 +1,7 @@
 import {
-  PillTab,
-  PillTabs,
   RunRow,
   RunsList,
   RunsListEmpty,
-  RunsListFilters,
   RunsListFoot,
   RunsListHead,
 } from '@oppenheimer/design-system-web';
@@ -15,9 +12,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { useDeferredValue } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChoiceToken } from '../components/choice-token';
+import { FilterClear } from '../components/filter-clear';
+import { FilterRow } from '../components/filter-row';
 import { RUNS_PAGE_SIZE, useRunsFilters } from '../hooks/use-runs-filters';
 import { runState, runTitle } from '../lib/automation-view';
-import { RUN_STATUS_TABS, type RunStatusTab } from '../lib/runs-search';
+import { RUN_STATUS_TABS } from '../lib/runs-search';
 import { clock, monthDay } from '../lib/time';
 import { RunsFacets } from './runs-facets';
 
@@ -47,43 +46,28 @@ export function RunsTable({ automationId }: { automationId?: string }) {
 
   return (
     <RunsList>
-      <RunsListFilters>
-        <PillTabs
-          size="sm"
-          value={state.status}
-          onValueChange={(value) => filters.setStatus(value as RunStatusTab)}
-        >
-          {RUN_STATUS_TABS.map((tab) => (
-            <PillTab key={tab} value={tab} count={counts[tab]}>
-              {t(`automations.runs.${tab}`)}
-            </PillTab>
-          ))}
-        </PillTabs>
-        {/* The facets are one group: when the row cannot hold them they wrap
-            together, not the window alone. */}
-        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
-          {automationId ? null : <RunsFacets />}
-          <ChoiceToken
-            label={t(`automations.runs.window.${state.window}`)}
-            value={state.window}
-            dirty={state.window !== '30d'}
-            options={RUN_WINDOWS.map((window) => ({
-              value: window,
-              label: t(`automations.runs.window.${window}`),
-            }))}
-            onValueChange={(value) => filters.setWindow(value as (typeof RUN_WINDOWS)[number])}
-          />
-          {filters.dirty ? (
-            <button
-              type="button"
-              onClick={filters.clear}
-              className="ml-1 text-sm text-fg-muted transition-colors duration-fast hover:text-fg"
-            >
-              {t('automations.runs.clear')}
-            </button>
-          ) : null}
-        </div>
-      </RunsListFilters>
+      <FilterRow
+        tabs={RUN_STATUS_TABS}
+        value={state.status}
+        label={(tab) => t(`automations.runs.${tab}`)}
+        count={(tab) => counts[tab]}
+        onValueChange={filters.setStatus}
+      >
+        {automationId ? null : <RunsFacets />}
+        <ChoiceToken
+          label={t(`automations.runs.window.${state.window}`)}
+          value={state.window}
+          dirty={state.window !== '30d'}
+          options={RUN_WINDOWS.map((window) => ({
+            value: window,
+            label: t(`automations.runs.window.${window}`),
+          }))}
+          onValueChange={(value) => filters.setWindow(value as (typeof RUN_WINDOWS)[number])}
+        />
+        {filters.dirty ? (
+          <FilterClear onClick={filters.clear}>{t('automations.runs.clear')}</FilterClear>
+        ) : null}
+      </FilterRow>
 
       <RunsListHead
         columns={[
