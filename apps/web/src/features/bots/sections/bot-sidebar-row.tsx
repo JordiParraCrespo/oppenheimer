@@ -80,7 +80,7 @@ export function BotSidebarRow({
         error={move.error}
         fallback={t('bots.sidebar.moveFailed')}
         onDismiss={() => move.reset()}
-        className="mx-1.5 my-1"
+        className="my-1"
       />
       {deleting ? <DeleteBotDialog bot={bot} onClose={() => setDeleting(false)} /> : null}
     </>
