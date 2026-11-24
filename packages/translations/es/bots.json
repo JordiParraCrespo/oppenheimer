@@ -71,7 +71,13 @@
       "showLess": "Mostrar menos"
     },
     "tooLong": "Este mensaje tiene {{length}} caracteres; un bot admite hasta {{max}}.",
-    "placeholderRunning": "Reconduce a {{name}} en marcha · ↵ reconduce · Alt+↵ a la cola · Esc detiene",
+    "placeholdersRunning": {
+      "steer": "Reconduce a {{name}} mientras trabaja…",
+      "nudge": "Empuja a {{name}} por otro lado…",
+      "context": "Cuéntale a {{name}} algo que deba saber…",
+      "next": "Deja en cola lo siguiente para {{name}}…",
+      "course": "Cambia el rumbo de {{name}} en marcha…"
+    },
     "steered": "Reconducido mientras trabajaba",
     "send": "Enviar",
     "stop": "Detener",
@@ -81,6 +87,7 @@
     "stopFailed": "No se pudo detener el turno.",
     "queuedImages_one": "{{count}} imagen",
     "queuedImages_other": "{{count}} imágenes",
+    "queuedImages_many": "{{count}} imágenes",
     "failed": "{{provider}} no pudo terminar este turno",
     "failedUnknown": "El turno terminó sin decir por qué.",
     "failure": {
@@ -171,8 +178,10 @@
       "groupFailed_other": "{{count}} con error",
       "delegated_one": "Ejecutó {{count}} subagente",
       "delegated_other": "Ejecutó {{count}} subagentes",
+      "delegated_many": "Ejecutó {{count}} subagentes",
       "delegating_one": "Ejecutando {{count}} subagente",
       "delegating_other": "Ejecutando {{count}} subagentes",
+      "delegating_many": "Ejecutando {{count}} subagentes",
       "delegatingDone_one": "Ejecutando {{count}} subagente · {{done}} terminado",
       "delegatingDone_many": "Ejecutando {{count}} subagentes · {{done}} terminados",
       "delegatingDone_other": "Ejecutando {{count}} subagentes · {{done}} terminados",
@@ -271,7 +280,8 @@
         "progress": "Revisé la sesión «{{name}}»",
         "notice": "La sesión «{{name}}» envió un mensaje",
         "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
-        "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
+        "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»",
+        "matched_many": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
       },
       "pullRequest": {
         "check_failed": "Pull request #{{number}} de {{repository}}: fallaron los checks",
@@ -367,10 +377,13 @@
       "every": {
         "minutes_one": "cada minuto",
         "minutes_other": "cada {{count}} minutos",
+        "minutes_many": "cada {{count}} minutos",
         "hours_one": "cada hora",
         "hours_other": "cada {{count}} horas",
+        "hours_many": "cada {{count}} horas",
         "days_one": "cada día",
         "days_other": "cada {{count}} días",
+        "days_many": "cada {{count}} días",
         "selfPaced": "cuando el bot decida"
       },
       "next": "siguiente a las {{time}}",
@@ -405,6 +418,7 @@
       "breakdown": "Desglose",
       "models_one": "{{count}} modelo",
       "models_other": "{{count}} modelos",
+      "models_many": "{{count}} modelos",
       "input": "Entrada",
       "output": "Salida",
       "cacheRead": "Lectura de caché",
@@ -413,12 +427,16 @@
       "purpose": {
         "goalReview_one": "{{count}} revisión del objetivo",
         "goalReview_other": "{{count}} revisiones del objetivo",
+        "goalReview_many": "{{count}} revisiones del objetivo",
         "summary_one": "{{count}} resumen",
         "summary_other": "{{count}} resúmenes",
+        "summary_many": "{{count}} resúmenes",
         "ruleReview_one": "{{count}} revisión de reglas",
         "ruleReview_other": "{{count}} revisiones de reglas",
+        "ruleReview_many": "{{count}} revisiones de reglas",
         "dream_one": "{{count}} orden de memoria",
         "dream_other": "{{count}} órdenes de memoria",
+        "dream_many": "{{count}} órdenes de memoria",
         "suggestion_one": "{{count}} respuesta sugerida",
         "suggestion_many": "{{count}} respuestas sugeridas",
         "suggestion_other": "{{count}} respuestas sugeridas"
@@ -554,9 +572,11 @@
       "learnFailed": "No se ha podido cambiar cómo aprende el bot.",
       "facts_one": "Datos · {{count}}",
       "facts_other": "Datos · {{count}}",
+      "facts_many": "Datos · {{count}}",
       "clearAll": "Borrar todo",
       "clearTitle_one": "¿Borrar {{count}} dato?",
       "clearTitle_other": "¿Borrar los {{count}} datos?",
+      "clearTitle_many": "¿Borrar los {{count}} datos?",
       "clearBody": "El bot olvida todo lo que se le pidió recordar. Su alma y sus instrucciones se mantienen.",
       "clearing": "Borrando…",
       "clearFailed": "No se ha podido borrar la memoria.",
@@ -608,6 +628,7 @@
       "subtitle": "Formas guardadas de hacer una tarea. Ejecuta una escribiendo / y su nombre en el chat; el bot usa una por su cuenta cuando una petición encaja.",
       "count_one": "Habilidades · {{count}}",
       "count_other": "Habilidades · {{count}}",
+      "count_many": "Habilidades · {{count}}",
       "empty": "Aún no hay habilidades. Añade una, o pide al bot que guarde como habilidad cómo hizo algo.",
       "add": "Añadir habilidad",
       "edit": "Editar {{name}}",
@@ -848,6 +869,7 @@
       "noCandidates": "Ningún chat coincide.",
       "addCount_one": "Añadir {{count}} chat",
       "addCount_other": "Añadir {{count}} chats",
+      "addCount_many": "Añadir {{count}} chats",
       "telegramTitle": "Telegram · {{name}}",
       "telegramMeta": "Te responde allí. Los grupos y otras personas en Telegram llegan después."
     },

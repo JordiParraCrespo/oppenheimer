@@ -294,9 +294,13 @@
   "device.input": {
     "type": "device.input",
     "attachmentId": 9,
-    "kind": "tap",
+    "kind": "swipe",
     "x": 0.5,
-    "y": 0.42
+    "y": 0.8,
+    "toX": 0.5,
+    "toY": 0.2,
+    "durationMs": 120,
+    "momentum": true
   },
   "device.detach": {
     "type": "device.detach",

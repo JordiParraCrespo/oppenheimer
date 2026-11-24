@@ -85,6 +85,7 @@
     "permissionBody": "Su agente se detuvo a preguntar antes de seguir. Tu respuesta se escribe en su terminal.",
     "questionTitle_one": "Una pregunta antes de que {{name}} continúe",
     "questionTitle_other": "{{count}} preguntas antes de que {{name}} continúe",
+    "questionTitle_many": "{{count}} preguntas antes de que {{name}} continúe",
     "questionBody": "Elige una respuesta para cada una, o escribe la tuya, y seguirá donde se detuvo.",
     "send": "Enviar respuestas",
     "sending": "Enviando…",
@@ -144,7 +145,8 @@
     "clearTitle": "Estás al día",
     "clear": "Lo nuevo llega aquí cuando algo necesita una decisión.",
     "clearRunning_one": "{{count}} sesión sigue en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
-    "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión."
+    "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
+    "clearRunning_many": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión."
   },
   "notice": {
     "title": "{{name}} tiene novedades para ti",

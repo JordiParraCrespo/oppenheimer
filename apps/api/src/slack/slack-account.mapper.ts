@@ -5,6 +5,7 @@ import { SlackAccountOrmEntity } from './database/slack-account.orm-entity';
 import { SlackAccountEntity } from './domain/slack-account.entity';
 import { SlackAccountResponseDto } from './dtos/slack-account.response.dto';
 import { SlackAppSetupResponseDto } from './dtos/slack-app-setup.response.dto';
+import { SlackOwnerLinkResponseDto } from './dtos/slack-owner-link.response.dto';
 
 @Injectable()
 export class SlackAccountMapper
@@ -89,6 +90,19 @@ export class SlackAccountMapper
     dto.eventsUrl = eventsUrl;
     dto.manifest = manifest;
     dto.createUrl = `https://api.slack.com/apps?${new URLSearchParams({ new_app: '1', manifest_json: manifest }).toString()}`;
+    return dto;
+  }
+
+  /** The one-time owner code's message, the link that opens the bot's DM, and when it lapses. */
+  toOwnerLinkResponse(link: {
+    message: string;
+    url: string;
+    expiresAt: Date;
+  }): SlackOwnerLinkResponseDto {
+    const dto = new SlackOwnerLinkResponseDto();
+    dto.message = link.message;
+    dto.url = link.url;
+    dto.expiresAt = link.expiresAt.toISOString();
     return dto;
   }
 }

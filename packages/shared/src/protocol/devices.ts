@@ -65,11 +65,23 @@ export type DeviceInfoMessage = z.infer<typeof deviceInfoSchema>;
 
 const devicePoint = () => z.number().min(0).max(1);
 
+/** The longest swipe a reader's drag becomes: a drag held longer is cut to it. */
+export const DEVICE_SWIPE_MAX_MS = 10_000;
+
+/**
+ * How long the reader's finger was down, in milliseconds: the swipe is played
+ * back at the speed it was made. Absent, the device's own default (300 ms).
+ */
+export const deviceSwipeDurationSchema = () => z.number().int().min(1).max(DEVICE_SWIPE_MAX_MS);
+
 /**
  * One gesture or keystroke for a device, from the console. Points are
  * fractions of the screen (0 to 1 from the top left), so the browser never
  * needs the device's resolution. Which fields a kind reads: `tap` x and y,
- * `swipe` x, y, toX and toY, `text` text, `key` key, `button` button. The
+ * `swipe` x, y, toX, toY, durationMs and momentum, `text` text, `key` key,
+ * `button` button. A swipe with `momentum` was a flick: the finger left the
+ * screen moving, and the content flings on; without it the content stops
+ * where the finger lifted. The
  * runner applies it to the session's own device; the message cannot name
  * another.
  */
@@ -81,6 +93,8 @@ export const deviceInputSchema = z.object({
   y: devicePoint().optional(),
   toX: devicePoint().optional(),
   toY: devicePoint().optional(),
+  durationMs: deviceSwipeDurationSchema().optional(),
+  momentum: z.boolean().optional(),
   text: z.string().min(1).max(1000).optional(),
   key: z.enum(DEVICE_KEYS).optional(),
   button: z.enum(DEVICE_BUTTONS).optional(),

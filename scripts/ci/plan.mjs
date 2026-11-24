@@ -102,6 +102,13 @@ export function plan(
     '--test',
     'scripts/evals/bot-session-launch/run.test.mjs',
   ]);
+  // The autoreview eval's fixtures and grader (`scripts/evals/autoreview/`):
+  // every case parses, adds only new files and is graded as its pull request
+  // says. The eval itself needs a reviewer on a model, so it runs by hand.
+  add('lint', 'Autoreview eval fixtures', 'node', [
+    '--test',
+    'scripts/evals/autoreview/run.test.mjs',
+  ]);
   // This pipeline's own selection and runner.
   add('lint', 'CI selection and runner', 'pnpm', ['check:ci']);
   // The pending changesets assemble into the plan the Release workflow builds
@@ -132,6 +139,20 @@ export function plan(
     add('lint', 'Translations assembled', 'node', [
       'packages/translations/scripts/assemble.mjs',
       '--check',
+    ]);
+    // Every counted key has each plural form its locale uses (Spanish `_many`).
+    add('lint', 'Translation plural forms', 'sh', [
+      '-c',
+      'node packages/translations/scripts/check-plurals.mjs && node --test packages/translations/scripts/check-plurals.test.mjs',
+    ]);
+  }
+  if (!dirty) {
+    // A product note that changed moves the brief and the decision list with
+    // it, or a commit says why not (`Product-Sync:`). It reads the branch's
+    // commits, so it has nothing to say about uncommitted work.
+    add('lint', 'Product notes in sync', 'sh', [
+      '-c',
+      'node scripts/check-product-sync.mjs && node --test scripts/check-product-sync.test.mjs',
     ]);
   }
   // oppenheimer:begin docs
