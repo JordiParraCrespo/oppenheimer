@@ -1609,7 +1609,7 @@ export function PageHeaderDemo() {
       </PageHeader>
       <PageHeader>
         <PageHeaderRow
-          icon={<ClockIcon />}
+          icon={<AlarmClockIcon />}
           title={<PageHeaderTitleInput placeholder="Name this routine" aria-label="Routine name" />}
           actions={
             <>
