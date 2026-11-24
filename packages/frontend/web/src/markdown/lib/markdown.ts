@@ -8,7 +8,9 @@ import { Marked, type MarkedToken, type Token, type Tokens } from 'marked';
  * What GitHub renders beyond Markdown is taught to the lexer, not rewritten
  * in the source: a `<details>` fold and an attribute-free inline tag are
  * tokens of their own, and an alert's `[!NOTE]` becomes its word. Any other
- * HTML, comments included, is an `html` token the renderer drops.
+ * HTML, comments included, is an `html` token the renderer drops. TeX
+ * between dollars is a `math` token: `$…$` in a line, `$$…$$` on lines of
+ * its own.
  */
 
 /** A `<details>` fold: its summary as text, its body as blocks. */
@@ -26,13 +28,28 @@ export type BasicTag = 'b' | 'del' | 'em' | 'i' | 'kbd' | 's' | 'strong' | 'sub'
 /** `<kbd>⌘</kbd>`: an attribute-free basic tag around inline tokens. */
 export type BasicHtmlToken = { type: 'basicHtml'; raw: string; tag: BasicTag; tokens: Token[] };
 
+/** TeX to typeset: `$…$` (or `$$…$$`) inside a line, `$$…$$` as a block of its own. */
+export type MathToken = { type: 'math'; raw: string; text: string; display: boolean };
+
 /** Every token the renderer is handed. */
-export type MarkdownToken = MarkedToken | DetailsToken | BasicHtmlToken;
+export type MarkdownToken = MarkedToken | DetailsToken | BasicHtmlToken | MathToken;
 
 const DETAILS_OPEN = /^ {0,3}<details(\s+open)?\s*>\s*<summary>([\s\S]*?)<\/summary>/i;
 const DETAILS_TAG = /<(\/?)details\b[^>]*>/gi;
 const BASIC_HTML = /^<(b|del|em|i|kbd|s|strong|sub|sup|u)>([\s\S]*?)<\/\1>/i;
 const ALERT = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*\n?/i;
+
+/**
+ * Math in a line, by the rule most Markdown readers share so a price is never
+ * TeX: the opening `$` is followed by something other than a space, the
+ * closing one follows something other than a space and is not followed by a
+ * digit. "$5 and $10" is two prices; "$x^2$" is math. `$$…$$` needs no
+ * such care. A `\$` is a dollar in either.
+ */
+const INLINE_MATH = /^\$(?![\s$])((?:\\[\s\S]|[^\\$\n])+?)(?<!\s)\$(?![\d$])/;
+const INLINE_DISPLAY_MATH = /^\$\$((?:\\[\s\S]|[^\\$])+?)\$\$/;
+/** `$$` on a line of its own (or wrapping a line whole), closed the same way. */
+const BLOCK_MATH = /^ {0,3}\$\$([\s\S]+?)\$\$[ \t]*(?:\n+|$)/;
 
 /**
  * A fold at the start of `source`, its closing tag found by counting the
@@ -98,8 +115,52 @@ const markdown = new Marked({
         };
       },
     },
+    {
+      name: 'mathBlock',
+      level: 'block',
+      start: (source) => source.match(/^ {0,3}\$\$/m)?.index,
+      tokenizer(source) {
+        const match = BLOCK_MATH.exec(source);
+        const text = match?.[1]?.trim();
+        if (!match || !text) return undefined;
+        return { type: 'math', raw: match[0], text, display: true };
+      },
+    },
+    {
+      name: 'math',
+      level: 'inline',
+      start: (source) => source.match(/(?<!\\)\$/)?.index,
+      tokenizer(source) {
+        const match = INLINE_DISPLAY_MATH.exec(source) ?? INLINE_MATH.exec(source);
+        const text = match?.[1]?.trim();
+        if (!match || !text) return undefined;
+        return { type: 'math', raw: match[0], text, display: false };
+      },
+    },
   ],
 });
+
+/**
+ * What a fenced block draws as: a `mermaid` fence is a diagram, a `math`
+ * fence is TeX, anything else is code.
+ */
+export function fenceKind(token: Tokens.Code): 'diagram' | 'math' | 'code' {
+  const name = token.lang?.trim().split(/\s+/)[0]?.toLowerCase();
+  if (token.codeBlockStyle === 'indented') return 'code';
+  return name === 'mermaid' ? 'diagram' : name === 'math' ? 'math' : 'code';
+}
+
+/**
+ * Whether a fence has its closing line yet. A reply still being written
+ * holds a fence open to the end of the source, and what is inside it can
+ * still change; a block is drawn from it only once it is closed.
+ */
+export function fenceClosed(token: Tokens.Code): boolean {
+  const open = /^ {0,3}(`{3,}|~{3,})/.exec(token.raw)?.[1];
+  if (!open) return true;
+  const mark = open[0] === '`' ? '`' : '~';
+  return new RegExp(`\\n {0,3}${mark}{${open.length},}[ \\t]*\\n*$`).test(token.raw);
+}
 
 /** `> [!WARNING]` opens with its word, as `> **Warning**`, the way GitHub shows it. */
 function nameAlert(token: Token): void {
@@ -229,6 +290,10 @@ function drawnText(token: MarkdownToken, out: string[]): void {
       return;
     case 'codespan':
       out.push(decodeEntities(token.text));
+      return;
+    case 'math':
+      if (token.display) out.push('\n', token.text, '\n');
+      else out.push(token.text);
       return;
     case 'code':
       out.push('\n', token.text, '\n');

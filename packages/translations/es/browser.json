@@ -181,6 +181,55 @@
       "label": "Proyecto",
       "all": "Todos los proyectos",
       "none": "Sin proyecto"
+    },
+    "visual": {
+      "chart": "Gráfico",
+      "table": "Tabla",
+      "viewAs": "Ver como",
+      "copyData": "Copiar datos",
+      "copiedData": "Datos copiados",
+      "expand": "Ampliar",
+      "showAll": "Ver las {{rows}} filas",
+      "showFewer": "Ver menos",
+      "sortBy": "Ordenar por {{column}}",
+      "checklistDone": "{{done}} de {{total}} hechas",
+      "progressOf": "de {{target}}",
+      "total": "Total",
+      "empty": "—",
+      "label": "Etiqueta",
+      "invalid": "No se ha podido dibujar este visual",
+      "chartLabel": "{{title}}, un gráfico de {{kind}}",
+      "kinds": {
+        "bar": "barras",
+        "line": "líneas",
+        "area": "áreas"
+      },
+      "html": {
+        "notRun": "Parte de este visual es HTML, que esta consola no ejecuta",
+        "showSource": "Ver código",
+        "didNotLoad": "El HTML de este visual no se ha cargado",
+        "frameTitle": "Un visual que dibujó el agente",
+        "failedInside": "Algo ha fallado dentro de este visual: {{message}}",
+        "openLinkTitle": "¿Abrir este enlace?",
+        "openLinkBody": "El visual quiere abrir una página de {{host}} en una pestaña nueva.",
+        "openLink": "Abrir enlace"
+      }
+    },
+    "markdown": {
+      "diagram": {
+        "diagram": "Diagrama",
+        "source": "Código",
+        "views": "Ver el diagrama o su código",
+        "title": "Diagrama",
+        "copy": "Copiar el código",
+        "expand": "Abrir en grande",
+        "drawing": "Dibujando el diagrama…",
+        "unreadable": "No se pudo dibujar este diagrama, así que aquí está su código.",
+        "zoomIn": "Acercar",
+        "zoomOut": "Alejar",
+        "fit": "Ajustar a la ventana",
+        "zoomHint": "Desplaza para acercar, arrastra para moverte, doble clic para acercar o volver."
+      }
     }
   },
   "validation": {
@@ -563,7 +612,10 @@
       "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión.",
       "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host.",
       "BOTS_044": "Ese mensaje ya no está en este chat.",
-      "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción."
+      "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción.",
+      "BOTS_046": "Ese formulario ya no está.",
+      "BOTS_047": "Algunos valores no encajan con el formulario.",
+      "BOTS_048": "Ese formulario ya se envió, o el bot siguió adelante."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -1467,7 +1519,8 @@
       "tasks_many": "{{done}} de {{count}} tareas hechas",
       "notice": {
         "interrupted": "Detuviste este turno",
-        "compacted": "Contexto compactado"
+        "compacted": "Contexto compactado",
+        "model": "Modelo cambiado a <model>{{model}}</model>"
       },
       "task": {
         "completed": "Tarea en segundo plano terminada",
@@ -1542,6 +1595,28 @@
         "waiting": "Esperando tu respuesta",
         "dismissed": "Descartaste las preguntas",
         "noAnswer": "No se pudo leer la respuesta"
+      },
+      "permission": {
+        "command": "¿Ejecutar este comando?",
+        "edit": "¿Hacer este cambio?",
+        "write": "¿Crear este archivo?",
+        "web": "¿Abrir esta página?",
+        "tool": "¿Usar esta herramienta?",
+        "allowOnce": "Permitir una vez",
+        "alwaysAllow": "Permitir siempre",
+        "deny": "Denegar",
+        "denyHint": "Detener y decirle a {{agent}} qué hacer en su lugar",
+        "keys": "{{first}}–{{last}} para elegir · Esc para denegar",
+        "withNote": "Denegar con una nota",
+        "note": "¿Qué debería hacer {{agent}} en su lugar?",
+        "noteLabel": "Tu nota para {{agent}}",
+        "noteHint": "Enter para enviar · Esc para volver",
+        "sendNote": "Denegar y enviar",
+        "back": "Volver",
+        "allowed": "Permitido · {{agent}} sigue",
+        "denied": "Denegado · {{agent}} se detiene aquí",
+        "caution": "Revísalo bien: puede borrar o sobrescribir trabajo",
+        "truncated": "El resto de este cambio es más largo de lo que muestra el chat"
       },
       "explored": {
         "title": "Explorado"
@@ -1993,6 +2068,22 @@
         "answered": "Respondiste: {{summary}}",
         "dismissed": "Descartaste: {{summary}}",
         "failed": "No se pudieron enviar tus respuestas."
+      },
+      "form": {
+        "label": "Formulario",
+        "submit": "Enviar",
+        "sending": "Enviando…",
+        "sent": "Enviado",
+        "dismiss": "Ahora no",
+        "required": "Obligatorio",
+        "optional": "Opcional",
+        "choose": "Elige una opción",
+        "submitted": "Enviaste: {{title}}",
+        "dismissed": "Descartaste: {{title}}",
+        "blank": "En blanco",
+        "failed": "No se pudo enviar el formulario.",
+        "fixFields": "Revisa los campos marcados.",
+        "loadFailed": "No se ha podido leer el formulario que espera este bot."
       },
       "approval": {
         "needsInput": "Necesita tu respuesta",

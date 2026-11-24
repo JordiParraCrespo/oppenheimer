@@ -176,6 +176,7 @@ export {
   ChatReaction,
   ChatReactionBar,
   ChatReply,
+  ChatTable,
   ChatTranscript,
   ChatUserMessage,
   MessageTrail,
@@ -190,6 +191,7 @@ export {
   ToolCallLive,
   ToolCallOutput,
   ToolCallRow,
+  ToolCallTail,
 } from './components/chat-work';
 export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';

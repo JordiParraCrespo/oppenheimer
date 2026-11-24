@@ -26,6 +26,10 @@ import { cn } from '../lib/utils';
  *   it, which shows the whole output as it came.
  * - `ToolCallLive`: the call in flight, in place of the summary: a spinner,
  *   the verb and target breathing, the elapsed time, on a row's one line.
+ * - `ToolCallTail`: under a command in flight, the last lines it printed,
+ *   quiet mono in subtle ink behind a hairline, in a window three lines
+ *   tall from its first line, so it never grows a line at a time; each
+ *   line cut to the column.
  * - `AgentActivity`: rising into place, what the agent says it is doing now, at the
  *   foot of a working turn, as its own terminal draws it: the glyph turning
  *   in Claude's clay, its word ("Mustering…") with a glint sweeping it, and
@@ -238,6 +242,28 @@ function ToolCallLive({
   );
 }
 
+/** The lines a `ToolCallTail` shows: what the eye takes in while a command runs. */
+const TOOL_CALL_TAIL_LINES = 3;
+
+function ToolCallTail({ lines, className }: { lines: readonly string[]; className?: string }) {
+  return (
+    <div
+      data-slot="tool-call-tail"
+      className={cn(
+        'ml-1.75 flex h-[4.8em] flex-col overflow-hidden border-l border-border-subtle pl-3.5 font-mono text-[11.5px] leading-[1.6] text-fg-subtle motion-safe:animate-appear',
+        className,
+      )}
+    >
+      {lines.slice(-TOOL_CALL_TAIL_LINES).map((line, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: a line's place in the window is all it is; the text under it moves up
+        <span key={index} className="truncate whitespace-pre">
+          {line}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function AgentActivity({
   verb,
   detail,
@@ -301,5 +327,5 @@ function ReasoningRow({
   );
 }
 
-export { AgentActivity, ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallOutput, ToolCallRow };
+export { AgentActivity, ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallOutput, ToolCallRow, ToolCallTail };
 export type { ToolCallOutputLabels };

@@ -1,17 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   BOT_APPROVAL_REPOSITORY,
+  BOT_FORM_REPOSITORY,
   BOT_QUESTION_REPOSITORY,
   BOT_STREAM,
 } from '../bots-chat.di-tokens';
 import type { BotApprovalRepositoryPort } from '../database/bot-approval.repository.port';
+import type { BotFormRepositoryPort } from '../database/bot-form.repository.port';
 import type { BotQuestionRepositoryPort } from '../database/bot-question.repository.port';
 import { approvalResolved } from '../domain/bot-approval.policy';
 import type { BotStreamPort } from '../infrastructure/bot-stream.port';
 
 /**
- * The card a bot has waiting, of either kind: an approval or a card of
- * questions. Writing to the bot instead of answering it retires it: the new
+ * The card a bot has waiting, of any kind: an approval, a card of questions
+ * or a form. Writing to the bot instead of answering it retires it: the new
  * turn starts fresh, and nobody decided. A decision that lands first wins, and
  * this does nothing.
  */
@@ -20,6 +22,7 @@ export class BotWaitingCardResolver {
   constructor(
     @Inject(BOT_APPROVAL_REPOSITORY) private readonly approvals: BotApprovalRepositoryPort,
     @Inject(BOT_QUESTION_REPOSITORY) private readonly questions: BotQuestionRepositoryPort,
+    @Inject(BOT_FORM_REPOSITORY) private readonly forms: BotFormRepositoryPort,
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
   ) {}
 
@@ -48,6 +51,14 @@ export class BotWaitingCardResolver {
           questionId: card.id,
           status: 'expired',
         });
+      }
+    }
+    const form = await this.forms.findPending(organizationId, botId);
+    if (form.isSome()) {
+      const card = form.unwrap();
+      card.expire(now);
+      if (await this.forms.saveTransition(card)) {
+        await this.stream.publish(botId, { type: 'form', formId: card.id, status: 'expired' });
       }
     }
   }

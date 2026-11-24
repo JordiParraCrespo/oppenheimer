@@ -15,7 +15,10 @@ import { IconButton } from './icon-button';
  *
  * - `ApprovalPanel`: may the agent do this? Recommended first, stop
  *   everything last; the detail is a command, a file, a tool or the app it
- *   would drive (`detail`).
+ *   would drive (`detail`). Escape is `onDismiss`, the agent's own Esc.
+ *   `tone="caution"` tints the card amber for a request worth a second
+ *   look (a recursive delete, a force push); `picked` fills the row the
+ *   person chose while the agent takes it, and `disabled` holds the rest.
  * - `QuestionPanel`: the agent asks; picking an option advances. Picked rows
  *   fill and take a check; the person may type their own answer instead.
  *   Where the agent allows several, `value` is the set of picks and each row
@@ -29,16 +32,22 @@ import { IconButton } from './icon-button';
 function DecisionCard({
   slot,
   shape = 'card',
+  tone = 'default',
   status,
   title,
   aside,
   onPick,
+  onDismiss,
   count,
   autoFocus = false,
   className,
   children,
 }: {
   slot: string;
+  /** `caution`: an amber hairline and wash, for a request worth a second look. */
+  tone?: 'default' | 'caution';
+  /** Escape inside the card. */
+  onDismiss?: () => void;
   /** `fused`: open at the bottom, to sit on the composer's top edge. */
   shape?: 'card' | 'fused';
   /** A line over the title (the waiting state and why). */
@@ -62,7 +71,14 @@ function DecisionCard({
       ref={ref}
       role="group"
       data-slot={slot}
+      data-tone={tone}
       onKeyDown={(event) => {
+        if (event.nativeEvent.isComposing) return;
+        if (event.key === 'Escape' && onDismiss) {
+          event.preventDefault();
+          onDismiss();
+          return;
+        }
         if (!onPick || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLInputElement) return;
         const n = Number(event.key);
         if (Number.isInteger(n) && n >= 1 && n <= count) {
@@ -71,7 +87,8 @@ function DecisionCard({
         }
       }}
       className={cn(
-        'flex flex-col gap-2.5 border border-border-subtle bg-card px-3.5',
+        'flex flex-col gap-2.5 border bg-card px-3.5 transition-colors duration-base',
+        tone === 'caution' ? 'border-warning/45 bg-warning-surface/50' : 'border-border-subtle',
         shape === 'card' ? 'rounded-lg py-3' : 'animate-appear rounded-t-lg border-b-0 pt-3 pb-2.5',
         className,
       )}
@@ -150,6 +167,17 @@ type ApprovalProps = {
   detail?: React.ReactNode;
   choices: readonly Choice[];
   onChoose: (index: number) => void;
+  /** Escape: the agent's own Esc, which refuses. */
+  onDismiss?: () => void;
+  tone?: 'default' | 'caution';
+  /** The row the person chose, filled while the agent takes it. */
+  picked?: number | null;
+  /** No row takes a press (once one was chosen). */
+  disabled?: boolean;
+  /** Focus the first choice as the panel appears, so its number keys answer at once. */
+  autoFocus?: boolean;
+  /** A line under the choices: a note field, what the keys do, where the answer stands. */
+  foot?: React.ReactNode;
   className?: string;
 };
 
@@ -163,13 +191,22 @@ function Approval({
   detail,
   choices,
   onChoose,
+  onDismiss,
+  tone,
+  picked = null,
+  disabled = false,
+  autoFocus,
+  foot,
   className,
 }: ApprovalProps & { slot: string; shape: 'card' | 'fused'; status?: React.ReactNode }) {
   return (
     <DecisionCard
       slot={slot}
       shape={shape}
+      tone={tone}
       status={status}
+      onDismiss={disabled ? undefined : onDismiss}
+      autoFocus={autoFocus}
       title={
         <>
           {title} {tool ? <span className="ml-1 text-[13px] font-normal text-fg-subtle">{tool}</span> : null}
@@ -183,7 +220,7 @@ function Approval({
         ) : null
       }
       count={choices.length}
-      onPick={onChoose}
+      onPick={disabled ? undefined : onChoose}
       className={className}
     >
       {detail}
@@ -196,10 +233,14 @@ function Approval({
             label={c.label}
             description={c.description}
             tone={c.tone}
+            selected={picked === i}
+            disabled={disabled}
+            className={disabled && picked !== i ? 'opacity-55' : undefined}
             onClick={() => onChoose(i)}
           />
         ))}
       </div>
+      {foot ? <div className="flex items-center gap-2 text-[13px] text-fg-muted">{foot}</div> : null}
     </DecisionCard>
   );
 }
