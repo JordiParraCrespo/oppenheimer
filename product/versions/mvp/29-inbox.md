@@ -698,6 +698,12 @@ the way Mark as unread is set. On top of "A notification in this browser":
 
 Still from the console only: with no console tab open, nothing is told.
 
+The same day the owner found the row menu long with Mute in it and asked
+for a sublevel: Mark as unread and Mute notifications moved into a
+**Notifications & read** pane, opened from the menu the way Move to project
+is. The first level keeps Pin, Rename, Move to project, Share, Select, Hide
+and Delete.
+
 ## Its own page, and a deck (2026-11-24)
 
 The owner asked on 2026-11-24 for the Inbox to leave Plan and have a page of

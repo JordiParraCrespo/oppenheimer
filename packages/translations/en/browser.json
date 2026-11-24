@@ -1207,6 +1207,7 @@
       "mute": "Mute notifications",
       "unmute": "Unmute notifications",
       "mutedLabel": "Notifications muted",
+      "notifyTitle": "Notifications & read",
       "hide": "Hide",
       "show": "Show",
       "hidden": "Hidden",
