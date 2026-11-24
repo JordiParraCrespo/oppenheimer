@@ -5,8 +5,9 @@ import type { PointerEvent, ReactNode } from 'react';
 /**
  * One of the sessions sidebar's sections (Bots, Sessions) as an item of the
  * sidebar's section order. It is picked up by pressing its heading (the
- * `SidebarListHead` inside it) and dragging, so a press on a row below never
- * moves the section, or from the keyboard on the grip that shows in the
+ * `SidebarListHead` inside it, its label or its empty space) and dragging,
+ * so a press on a row below or on a heading's own menu button never moves
+ * the section, or from the keyboard on the grip that shows in the
  * heading's gutter on hover and focus. While carried, its place keeps its
  * height as the drop slot. `grow` lets the section that scrolls (Sessions)
  * take the height left while it is open.
@@ -31,8 +32,17 @@ export function SidebarSectionItem({
     data: { type: 'sidebar-section', label },
   });
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    const head = (event.target as Element).closest('[data-slot="sidebar-list-head"]');
-    if (head && event.currentTarget.contains(head)) listeners?.onPointerDown?.(event);
+    const target = event.target as Element;
+    const head = target.closest('[data-slot="sidebar-list-head"]');
+    if (!head || !event.currentTarget.contains(head)) return;
+    // A heading's own controls keep their press: a menu opens on pointer
+    // down, and a drag begun there would drop on the item released over.
+    // The fold label acts on click, which a started drag swallows.
+    const control = target.closest('button, a, input, [role="button"], [role="combobox"]');
+    if (control && head.contains(control) && !control.matches('[data-slot="sidebar-fold-label"]')) {
+      return;
+    }
+    listeners?.onPointerDown?.(event);
   };
 
   return (
