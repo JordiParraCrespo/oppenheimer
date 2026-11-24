@@ -1904,3 +1904,15 @@ earlier note:
   it is told apart from what the owner wrote, and the App's comments wake
   nothing (`loopGuard`), so an answer never asks a bot again. The guide's
   "writing to a bot only in the console" stopped holding the same day.
+- `research/visuals/README.md` §6 and `research/generative-ui-in-chat.md` §6
+  proposed visuals in the chat and left them unbuilt. On 2026-11-24 the
+  owner asked for all of it: Mermaid and math in every chat's Markdown, one
+  typed visual format (`@oppenheimer/shared/schemas/visual`) drawn by bots
+  (`show_visual`) and sessions (`runner sessions show`, the runner's MCP
+  `show_visual`), an `html` block run in a sandboxed frame on
+  `visuals.<preview domain>` behind the `visual_html` flag, a permission card
+  in the session chat, a form bots can ask the person to fill, a running
+  command's live tail, and the chat's small markers. Picks taken where §8 of
+  each asked: no chart library, the frame's network closed, a visual placed
+  where it was called, and a link in a visual opening only once the reader
+  says so.
