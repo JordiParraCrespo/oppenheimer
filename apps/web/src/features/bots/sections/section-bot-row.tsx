@@ -1,21 +1,21 @@
 import { SortableBotItem, useRowMenu } from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SectionBotRowMenu } from '@/features/bots/components/section-bot-row-menu';
 import { DeleteBotDialog } from '@/features/bots/dialogs/delete-bot';
 import { useBotRowItem } from '@/features/bots/hooks/use-bot-row-item';
 import { useBotUnread } from '@/features/bots/hooks/use-bot-unread';
-import { botChatDestination } from '@/features/bots/lib/bot-chat-destination';
+import { useSectionBotChat } from '@/features/bots/hooks/use-section-bot-chat';
 import { SECTION_NAMES } from '@/features/bots/lib/section-names';
 
 /**
  * One bot under a section's Bots heading, drawn as in Employees: its
  * face on its colour and the name on one line, its last message in the
  * row's tooltip, opening its chat where the section opens one
- * (`botChatDestination`). Its ellipsis opens
+ * (`useSectionBotChat`). Its ellipsis opens
  * Settings, hides it from this section (`onHide`, the heading's write) or
  * deletes it for good, behind the same confirmation as in Employees. A
  * section because it subscribes to the route, to light up on its own chat.
@@ -33,8 +33,7 @@ export function SectionBotRow({
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { to, params, path } = botChatDestination(section, bot.id);
-  const active = useRouterState({ select: (state) => state.location.pathname === path });
+  const { to, params, active } = useSectionBotChat(section, bot.id);
   const menu = useRowMenu();
   const [deleting, setDeleting] = useState(false);
   const item = useBotRowItem(bot);

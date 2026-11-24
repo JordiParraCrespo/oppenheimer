@@ -31,6 +31,22 @@ answered one at a time that day, mostly over mockups.
   created is on screen before it is listed. The strip scrolls when full,
   with no limit. A shared session's guest has no strip.
 
+On 2026-11-24, once it shipped, the owner asked for New session to keep the
+tabs: "on the create new I do not want to disappear the previous tabs". New
+session's bar is the strip, the tabs open as they were, ending in a lit New
+session tab of its own that is not kept (leaving the page leaves no tab);
+the plus steps aside while it shows, and the image's button sits on the
+bar's right. The same day, after trying a shorter grey band, the owner set
+the bar at 45px (`--tab-bar-h`) with every control in it on the medium
+rung, tabs included, and on the same ground as the page under it, the way
+a calm app header reads: the terminal's colour on a session, the pane's
+on New session, with a hairline at its foot. On New session the reader's
+background image lies only under the content below the bar; the bar
+keeps its dark ground over it. With no other tab open, New session keeps
+the quiet bar it had before the tabs: the sidebar toggle and the image's
+button on frosted chips, over an image that runs to the top. The shown
+tab stands out by its card and hairline (§2), not by the band around it.
+
 ## 2. What a tab shows
 
 The shown tab stands on the canvas inside a hairline; the rest are flat,

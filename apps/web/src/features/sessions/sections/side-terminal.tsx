@@ -18,9 +18,8 @@ import { HostLinkFix } from './host-link-fix';
 /**
  * One of the session's shells in the side pane: tmux window `window` (1 and
  * up; 0 is the agent's), in the session's worktree, streamed over the same
- * attach socket as the agent's terminal. A plain shell has no chat to read
- * and no latency readout; a file dropped or pasted on it lands at its prompt,
- * as on the agent's. The grid takes the pane's whole width: the pane is
+ * attach socket as the agent's terminal. A plain shell has no chat to read;
+ * a file dropped or pasted on it lands at its prompt, as on the agent's. The grid takes the pane's whole width: the pane is
  * narrower than the session's column already.
  */
 export function SideTerminal({

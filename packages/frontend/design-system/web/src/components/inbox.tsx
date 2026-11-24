@@ -352,8 +352,9 @@ type InboxDeckExit = InboxSwipe | 'up';
 const SWIPE_AWAY = 96;
 /** Movement a press may make before it is read as a drag rather than a tap, in px. */
 const SWIPE_SLOP = 8;
-/** What a press on which is never a swipe: the card's own controls. */
-const SWIPE_IGNORES = 'button,a,input,textarea,select,label,[role=button],[contenteditable=true]';
+/** What a press on which is never a swipe: the card's own controls, and a region marked `data-swipe-ignore` (a chat on the card, whose text a finger reads and scrolls). */
+const SWIPE_IGNORES =
+  'button,a,input,textarea,select,label,[role=button],[contenteditable=true],[data-swipe-ignore]';
 
 /**
  * The answers on the card in hand, in reading order: the options of the
@@ -382,7 +383,7 @@ function inboxDeckAnswer(deck: HTMLElement | null, n: number): HTMLElement | nul
  * cleared. On touch, the card follows a sideways drag, tilting as it goes and
  * stamping what letting go will do (`swipeLabels`); past 96px it is put away
  * (`onSwipe`), short of it it settles back. A drag that starts on one of the
- * card's controls, or goes more up than across, is the page's scroll, not a
+ * card's controls (or in a `data-swipe-ignore` region), or goes more up than across, is the page's scroll, not a
  * swipe. `leaving` sends the card off that way (right, left or up) over the
  * base duration; the caller swaps in the next item once it has gone. The
  * answers wear their number from 1 where there is a keyboard to press them
