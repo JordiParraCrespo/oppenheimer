@@ -14,6 +14,7 @@ routes counts more controls.
 | 1 | The design-system primitives onto the ramp; the check; Permissions and Automations rows | 10 | 80 | 24×8 · 27×10 · 28×134 · 30×5 · 32×20 · 34×40 · 36×14 · 42×1 |
 | 2 | The console's rows; the spec adds a plan with tasks, `/about` and the routine editor | 5 | 74 | 24×2 · 27×10 · 28×148 · 30×6 · 32×20 · 34×56 · 36×14 · 42×2 |
 | 3 | The chrome; `NOT_A_CONTROL` beside the debt; the composer kept as it was | 5 | 51 | see the pass's note |
+| 4 | The rest of the debt: tokens for heights already on the ramp, `NOT_A_CONTROL` for the rest | 5 | 0 | no height changed |
 
 Pass 1 put on the ramp: `SegmentedControl`'s track (sm 28, md 34, lg 42,
 from about 27 / 32 / 40), `PillTabs` md (34, from 32), `PillGroup` and
@@ -48,17 +49,27 @@ debt lost, 5 were paid off and 18 moved to `NOT_A_CONTROL` in
 `scripts/control-height-debt.mjs`, each with its reason: 8 that are not
 controls and the composers' 10.
 
+Pass 4 changed no height. 12 controls already at 28 or 34 took the token
+(chat suggestions and chips, the tray and viewed buttons, the effort slider,
+the editor's back link, the task board's foot row and card button); 34 moved
+to `NOT_A_CONTROL` with their reasons (sidebar and navigation rows, calendar
+and time-grid cells, glyphs inside a field or a chip, the switch's track, the
+reaction strip, the `xs` rung). The 4 chat chips off the ramp stay as they are, the user's call; they joined
+`NOT_A_CONTROL` too, and the debt is empty.
+
 ## Next
 
-- **Pass 4, the remaining debt** (51, `node scripts/control-heights.mjs
-  --list`), file by file, each either onto the ramp or into `NOT_A_CONTROL`
-  with its reason. The measurement's census names the visible ones: a bot's
-  Profile pickers (colour swatches 32, faces 36: grids of choices, likely not
-  controls), TODO's
-  add field (36), a Calendar button (40), and the chat's pieces (`chat-*`:
-  suggestions, status, transcript jumps).
+The debt is empty. The campaign continues only through its guard: a new
+control off the ramp fails `pnpm check:control-heights`, and a row found at
+mixed heights is a pass of its own, measured, shown to the user before any
+look changes, and recorded here.
 
 ## Open calls
+
+- **Four small chat chips off the ramp** (the avatar picker's Shuffle 30, a
+  subagent card's Stop all 24, a reply's source pill 26, a chat error's
+  action 26). Decided by the user (pass 4): kept as they are, in
+  `NOT_A_CONTROL`.
 
 - **`xs` buttons (24px).** Decided by default (the user kept it): an `xs`
   moves to `sm` where it stands beside a `sm` control (the Inbox header, pass

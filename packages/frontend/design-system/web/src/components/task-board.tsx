@@ -137,7 +137,7 @@ function TaskColumn({
 
 /** A quiet row at a column's foot, under its cards: Add task, and the fold. */
 const COLUMN_FOOT_ROW =
-  'flex h-[34px] items-center gap-2 rounded-sm px-2.5 text-sm text-fg-subtle outline-none transition-colors duration-fast ease-standard hover:bg-control-hover hover:text-fg-muted focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-3.5';
+  'flex h-(--control-h-md) items-center gap-2 rounded-sm px-2.5 text-sm text-fg-subtle outline-none transition-colors duration-fast ease-standard hover:bg-control-hover hover:text-fg-muted focus-visible:outline-2 focus-visible:outline-ring [&_svg]:size-3.5';
 
 /** The column's foot: "+ Add task", quiet until hovered. */
 function TaskColumnAdd({ className, children, ...props }: React.ComponentProps<'button'>) {
@@ -462,7 +462,7 @@ function TaskSessionChip({
       data-state={state}
       {...dragIgnore}
       className={cn(
-        'mt-0.5 flex h-7 w-full min-w-0 items-center gap-[7px] rounded-sm bg-hover-surface px-2 text-left text-xs text-fg outline-none transition-colors duration-instant ease-standard hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-ring',
+        'mt-0.5 flex h-(--control-h-sm) w-full min-w-0 items-center gap-[7px] rounded-sm bg-hover-surface px-2 text-left text-xs text-fg outline-none transition-colors duration-instant ease-standard hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-ring',
         className,
       )}
       {...props}

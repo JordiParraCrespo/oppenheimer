@@ -351,7 +351,7 @@ function ChatTrayButton({
       type="button"
       data-slot="chat-tray-button"
       className={cn(
-        'inline-flex h-7 items-center gap-1.5 rounded-pill px-2.5 text-[13px] text-fg outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-hover-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
+        'inline-flex h-(--control-h-sm) items-center gap-1.5 rounded-pill px-2.5 text-[13px] text-fg outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-hover-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
         className,
       )}
       {...props}
