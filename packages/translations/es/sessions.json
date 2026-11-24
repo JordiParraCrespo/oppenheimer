@@ -578,7 +578,7 @@
     "composer": {
       "placeholder": "Escribe a {{agent}}",
       "placeholderAnyAgent": "Escribe al agente",
-      "suggestion": "{{suggestion}}  ·  Tab para usarlo",
+      "suggestion": "Tab para usarlo  ·  {{suggestion}}",
       "send": "Enviar",
       "stop": "Detener",
       "attach": "Adjuntar archivos",
