@@ -115,6 +115,14 @@ test('the Inbox: select rows and mark them done at once', async ({ page }) => {
   const bar = page.getByRole('toolbar', { name: 'Selected items' });
   await expect(bar.getByText('0 selected')).toBeVisible();
   await expect(bar.getByRole('button', { name: 'Mark as done' })).toBeDisabled();
+  // One Escape leaves selecting, even with a row checked: it once only
+  // unchecked the row and left the bar up at "0 selected".
+  await page.keyboard.press('x');
+  await expect(bar.getByText('1 selected')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(bar).toBeHidden();
+
+  await page.getByRole('button', { name: 'Select', exact: true }).click();
   // X checks the item on the deck, the first; a click checks the second.
   await page.keyboard.press('x');
   await rows.nth(1).getByRole('checkbox').click();
