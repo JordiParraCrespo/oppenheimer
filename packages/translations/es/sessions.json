@@ -945,6 +945,7 @@
     "failed": "No se pudo iniciar la sesión.",
     "connecting": "Conectando…",
     "steps_one": "{{count}} paso",
-    "steps_other": "{{count}} pasos"
+    "steps_other": "{{count}} pasos",
+    "steps_many": "{{count}} pasos"
   }
 }
