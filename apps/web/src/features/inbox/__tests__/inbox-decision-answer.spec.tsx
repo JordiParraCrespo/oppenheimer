@@ -115,12 +115,16 @@ describe('InboxQuestionAnswer', () => {
       other: 'Only settings',
     });
 
+    // Back on a review row: the answer is kept, and Next question goes on
+    // without changing it.
     fireEvent.click(
       screen.getAllByRole('button', { name: 'inbox.question.edit' })[0] as HTMLElement,
     );
     expect(screen.getByText('Which screens?')).toBeTruthy();
-    fireEvent.click(option('Wallet'));
+    fireEvent.click(next());
     expect(screen.getByText('Which platforms?')).toBeTruthy();
+    fireEvent.click(next());
+    expect(send()).not.toBeNull();
   });
 });
 

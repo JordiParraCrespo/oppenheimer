@@ -1,3 +1,4 @@
+import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { inboxAnswered } from '@oppenheimer/frontend-consumer/react';
 
 /**
@@ -16,6 +17,11 @@ export interface InboxVisit {
   later: readonly string[];
   /** Keys marked done this visit: Show done lists these. */
   done: readonly string[];
+  /**
+   * Each of those as it was when marked: what Done also took up (a task an
+   * agent made) leaves its source, and Show done still lists it.
+   */
+  doneItems: Readonly<Record<string, InboxItem>>;
   /** Keys put away this visit, by any means: done, answered, snoozed or deleted. */
   cleared: readonly string[];
   /**
@@ -26,7 +32,7 @@ export interface InboxVisit {
   following: Readonly<Record<string, string | null>>;
 }
 
-const EMPTY: InboxVisit = { later: [], done: [], cleared: [], following: {} };
+const EMPTY: InboxVisit = { later: [], done: [], doneItems: {}, cleared: [], following: {} };
 
 const add = (keys: readonly string[], key: string) => [...keys.filter((k) => k !== key), key];
 
@@ -47,8 +53,13 @@ export const inboxVisit = {
   later(key: string) {
     write({ ...visit, later: add(visit.later, key) });
   },
-  done(key: string) {
-    write({ ...visit, done: add(visit.done, key), cleared: add(visit.cleared, key) });
+  done(item: InboxItem) {
+    write({
+      ...visit,
+      done: add(visit.done, item.key),
+      doneItems: { ...visit.doneItems, [item.key]: item },
+      cleared: add(visit.cleared, item.key),
+    });
   },
   /** Deleted: out of Show done, and cleared. */
   forget(key: string) {

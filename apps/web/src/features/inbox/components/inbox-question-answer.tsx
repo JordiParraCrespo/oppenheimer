@@ -14,8 +14,9 @@ import { type InboxAnswer, isAnswered, UNANSWERED } from '@/features/inbox/lib/i
 /**
  * A questionnaire the agent sent (`AskUserQuestion`), answered on the card one
  * question at a time, as a deck within the card: picking the one answer of a
- * question moves on to the next, a question of several picks or one answered
- * in the reader's own words moves on with Next. After the last, every answer
+ * question moves on to the next; a question of several picks, one answered in
+ * the reader's own words, or one already answered and come back to (Back, a
+ * review row) moves on with Next. After the last, every answer
  * in a list, each a way back to its question, and Send answers; nothing
  * reaches the agent until then. `alert` sits over the answers, `open` (Open
  * session) is the last of them.
@@ -103,7 +104,7 @@ export function InboxQuestionAnswer({
           >
             {t('inbox.session.send')}
           </Button>
-        ) : question && (question.multiSelect || answer.other.trim()) ? (
+        ) : question && (question.multiSelect || isAnswered(answer)) ? (
           <Button disabled={!isAnswered(answer)} onClick={() => setStep(step + 1)}>
             {t('inbox.question.next')}
           </Button>

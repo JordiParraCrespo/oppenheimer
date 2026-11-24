@@ -27,8 +27,8 @@ export type InboxMarkActionName =
 
 interface InboxMarkAction {
   write: (items: readonly InboxItem[], now: Date) => InboxMarkWrite;
-  /** What this visit remembers of each key, for Show done. */
-  visit?: (key: string) => void;
+  /** What this visit remembers of each item, for Show done and the progress. */
+  visit?: (item: InboxItem) => void;
   /** The source an item's action also puts away for good: a task's id to take up, or null. */
   takesUp?: (item: InboxItem) => string | null;
 }
@@ -48,19 +48,23 @@ const taskOf = (item: InboxItem): string | null => (item.kind === 'task' ? item.
  * the deck's progress.
  */
 export const INBOX_MARK_ACTIONS: Record<InboxMarkActionName, InboxMarkAction> = {
-  done: { write: () => ({ mark: 'done' }), visit: (key) => inboxVisit.done(key), takesUp: taskOf },
+  done: {
+    write: () => ({ mark: 'done' }),
+    visit: (item) => inboxVisit.done(item),
+    takesUp: taskOf,
+  },
   toggleLow: { write: (items) => ({ mark: items.every((item) => item.low) ? null : 'low' }) },
   snoozeHour: {
     write: (_, now) => ({ mark: 'snoozed', until: new Date(now.getTime() + HOUR) }),
-    visit: (key) => inboxVisit.cleared(key),
+    visit: (item) => inboxVisit.cleared(item.key),
   },
   snoozeTomorrow: {
     write: (_, now) => ({ mark: 'snoozed', until: tomorrowMorning(now) }),
-    visit: (key) => inboxVisit.cleared(key),
+    visit: (item) => inboxVisit.cleared(item.key),
   },
   remove: {
     write: () => ({ mark: 'deleted' }),
-    visit: (key) => inboxVisit.forget(key),
+    visit: (item) => inboxVisit.forget(item.key),
     takesUp: taskOf,
   },
   bringBack: { write: () => ({ mark: null }) },

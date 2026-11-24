@@ -18,6 +18,7 @@ const item = (key: string, kind: InboxItem['kind'], projectIds: string[] = []) =
 const visit = (patch: Partial<InboxVisit> = {}): InboxVisit => ({
   later: [],
   done: [],
+  doneItems: {},
   cleared: [],
   following: {},
   ...patch,
@@ -39,6 +40,16 @@ describe('listedItems', () => {
       done[1],
     ]);
     expect(listedItems({ open, done }, visit({ done: ['now'] }), ALL, false).done).toEqual([]);
+  });
+
+  // Done on a task an agent made also takes it up, so its source drops it;
+  // Show done still lists it for the visit. A mark the server refused puts
+  // the item back in the list, and then it is not listed as done too.
+  it('keeps what Done took up under Show done, but never an item open again', () => {
+    const task = item('task:t1', 'task');
+    const taken = visit({ done: ['task:t1'], doneItems: { 'task:t1': task } });
+    expect(listedItems({ open, done: [] }, taken, ALL, true).done).toEqual([task]);
+    expect(listedItems({ open: [task], done: [] }, taken, ALL, true).done).toEqual([]);
   });
 
   it('narrows to a type and a project, No project included', () => {
