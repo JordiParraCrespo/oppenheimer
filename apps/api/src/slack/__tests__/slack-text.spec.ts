@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   isSlackFileUrl,
+  slackFileName,
   slackPlainText,
   slackTsPosition,
   slackUserName,
@@ -107,5 +108,16 @@ describe('Slack text', () => {
     const cut = slackUserName({ profile: { display_name: `${'a'.repeat(79)}😀😀` } }) ?? '';
     expect(Array.from(cut)).toHaveLength(80);
     expect(cut.endsWith('😀')).toBe(true);
+  });
+
+  // What breaks this: a file name cut inside an emoji, or holding a NUL, makes the owner's message unstorable.
+  it('carries a shared file by a name cut between characters, with no control characters', () => {
+    const cut = slackFileName(`${'a'.repeat(199)}😀.png`);
+    expect(Array.from(cut)).toHaveLength(200);
+    expect(cut.endsWith('😀')).toBe(true);
+    expect(JSON.stringify(cut)).not.toMatch(/\\ud83d"$/);
+    expect(slackFileName('a\u0000b.png')).toBe('ab.png');
+    expect(slackFileName(undefined)).toBe('image');
+    expect(slackFileName('\u0000')).toBe('image');
   });
 });

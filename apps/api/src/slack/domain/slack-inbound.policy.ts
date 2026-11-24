@@ -145,9 +145,22 @@ export function slackImagesOf(files: readonly SlackEventFile[]): SlackImage[] {
     if (!file.id || !url || !isSlackFileUrl(url)) continue;
     if (!(BOT_IMAGE_MIME_TYPES as readonly string[]).includes(type)) continue;
     if (typeof file.size === 'number' && file.size > BOT_IMAGE_MAX_BYTES) continue;
-    images.push({ id: file.id, name: (file.name ?? 'image').slice(0, 200), url });
+    images.push({ id: file.id, name: slackFileName(file.name), url });
   }
   return images;
+}
+
+/**
+ * A shared file's name as the event carries it: no control characters (a NUL
+ * cannot be stored), cut between characters at `SLACK_FILE_NAME_MAX`, never
+ * inside one, so the event's JSON stays storable.
+ */
+export function slackFileName(name: string | undefined): string {
+  const printable = Array.from(name ?? '').filter((char) => {
+    const code = char.codePointAt(0) ?? 0;
+    return code >= 0x20 && code !== 0x7f;
+  });
+  return printable.slice(0, SLACK_FILE_NAME_MAX).join('') || 'image';
 }
 
 /** Whether `url` is a file on Slack's file host, over HTTPS, with no port or credentials of its own. */
@@ -226,6 +239,9 @@ export function slackTsPosition(ts: string): string | null {
 
 /** The longest name a mention is read by, in characters. */
 export const SLACK_USER_NAME_MAX = 80;
+
+/** The longest file name an event carries, in characters. */
+export const SLACK_FILE_NAME_MAX = 200;
 
 /**
  * A person's name from Slack's `users.info` user: their display name, else
