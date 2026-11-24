@@ -6,6 +6,7 @@ import {
 } from '@oppenheimer/frontend-consumer';
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import { TerminalScreen } from '../lib/terminal-screen';
 
 /** Window 0 is the agent's; the phone shows only that one, as the console does. */
@@ -31,7 +32,10 @@ export interface SessionLink {
  * The phone's attachment to one session: the stream to its agent's window
  * (the same ticketed WebSocket the console opens), the terminal the bytes
  * draw, and the chat the transcript feeds and that types through the stream.
- * Effect: the session stream, an outside system, held open while mounted.
+ * Effect: the session stream, an outside system, held open while mounted,
+ * and the app's foreground state: a socket the phone dropped while the app
+ * was in the background redials the moment it is back, rather than at the
+ * end of its reconnect wait (the console does the same on a tab coming back).
  */
 export function useSessionLink(sessionId: string): SessionLink {
   const open = useSessionStream(sessionId, AGENT_WINDOW);
@@ -53,7 +57,12 @@ export function useSessionLink(sessionId: string): SessionLink {
       (data) => current.send(data),
       current.askOlderChat ? (before) => current.askOlderChat?.(before) : undefined,
     );
+    // Does nothing while the stream is live, dialling or ended.
+    const foreground = AppState.addEventListener('change', (state) => {
+      if (state === 'active') current.reconnectNow();
+    });
     return () => {
+      foreground.remove();
       giveBack();
       offChat?.();
       offEnd();
