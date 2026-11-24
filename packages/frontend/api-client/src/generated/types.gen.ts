@@ -2906,7 +2906,7 @@ export type RoutineWebhookReceivedResponseDto = {
      * `queued`: the bot will run. `skipped`: an hourly cap turned it away, recorded on the run. `duplicate`: an earlier POST with this `Idempotency-Key` made the run.
      */
     status: 'queued' | 'skipped' | 'duplicate';
-    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | 'idle' | null;
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'own_session_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | 'idle' | null;
 };
 
 export type TaskSessionLinkResponseDto = {
@@ -4567,6 +4567,27 @@ export type BotQuestionEventResponseDto = {
     answers: Array<BotAnsweredQuestionResponseDto>;
 };
 
+export type BotSubmittedFormValueResponseDto = {
+    label: string;
+    /**
+     * What was sent, in words; empty for a field left blank.
+     */
+    value: string;
+};
+
+export type BotFormEventResponseDto = {
+    kind: 'form';
+    outcome: 'submitted' | 'dismissed';
+    /**
+     * The form's title.
+     */
+    title: string;
+    /**
+     * Each field and the value sent, in words; empty when dismissed.
+     */
+    values: Array<BotSubmittedFormValueResponseDto>;
+};
+
 export type BotRoutineEventResponseDto = {
     kind: 'routine';
     activity: 'saved' | 'changed' | 'paused' | 'resumed' | 'deleted' | 'ran' | 'failed';
@@ -4936,7 +4957,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGithubAskEventResponseDto | BotTaskEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotFormEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGithubAskEventResponseDto | BotTaskEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
@@ -5467,6 +5488,84 @@ export type AnswerBotQuestionRequest = {
 };
 
 export type DismissBotQuestionRequest = {
+    note?: string;
+};
+
+export type BotFormFieldResponseDto = {
+    /**
+     * What the bot reads the value by.
+     */
+    id: string;
+    kind: 'text' | 'textarea' | 'number' | 'select' | 'email' | 'date';
+    label: string;
+    /**
+     * An example shown in the empty field.
+     */
+    placeholder: string | null;
+    /**
+     * The form cannot be sent without it.
+     */
+    required: boolean;
+    /**
+     * What the field starts with: a number for a `number`, words otherwise.
+     */
+    default: string | number | null;
+    /**
+     * A `number`’s smallest value.
+     */
+    min: number | null;
+    /**
+     * A `number`’s largest value.
+     */
+    max: number | null;
+    /**
+     * A `select`’s options.
+     */
+    options: Array<string> | null;
+};
+
+export type BotFormResponseDto = {
+    id: string;
+    /**
+     * The turn whose call asked.
+     */
+    turnId: string;
+    /**
+     * What the form is for: its line in the chat.
+     */
+    title: string;
+    description: string | null;
+    /**
+     * The button’s word; null for the default.
+     */
+    submitLabel: string | null;
+    fields: Array<BotFormFieldResponseDto>;
+    status: 'pending' | 'submitted' | 'dismissed' | 'expired';
+    /**
+     * A value per field id, once submitted; null for a field left blank.
+     */
+    values: {
+        [key: string]: string | number | null;
+    } | null;
+    /**
+     * What the person added to a dismissal.
+     */
+    note: string | null;
+    decidedAt: string | null;
+    createdAt: string;
+};
+
+export type BotPendingFormResponseDto = {
+    form: BotFormResponseDto | null;
+};
+
+export type SubmitBotFormRequest = {
+    values: {
+        [key: string]: string | number | unknown;
+    };
+};
+
+export type DismissBotFormRequest = {
     note?: string;
 };
 
@@ -17940,6 +18039,120 @@ export type DismissBotQuestionResponses = {
 };
 
 export type DismissBotQuestionResponse = DismissBotQuestionResponses[keyof DismissBotQuestionResponses];
+
+export type FindPendingBotFormData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/form';
+};
+
+export type FindPendingBotFormErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindPendingBotFormError = FindPendingBotFormErrors[keyof FindPendingBotFormErrors];
+
+export type FindPendingBotFormResponses = {
+    200: BotPendingFormResponseDto;
+};
+
+export type FindPendingBotFormResponse = FindPendingBotFormResponses[keyof FindPendingBotFormResponses];
+
+export type SubmitBotFormData = {
+    body: SubmitBotFormRequest;
+    path: {
+        id: string;
+        formId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/forms/{formId}/submit';
+};
+
+export type SubmitBotFormErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_046 — Form not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_048 — Already sent
+     */
+    409: ProblemDetailsDto;
+    /**
+     * BOTS_047 — Values that do not fit
+     */
+    422: ProblemDetailsDto;
+};
+
+export type SubmitBotFormError = SubmitBotFormErrors[keyof SubmitBotFormErrors];
+
+export type SubmitBotFormResponses = {
+    201: BotFormResponseDto;
+};
+
+export type SubmitBotFormResponse = SubmitBotFormResponses[keyof SubmitBotFormResponses];
+
+export type DismissBotFormData = {
+    body: DismissBotFormRequest;
+    path: {
+        id: string;
+        formId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/forms/{formId}/dismiss';
+};
+
+export type DismissBotFormErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_046 — Form not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_048 — Already sent
+     */
+    409: ProblemDetailsDto;
+};
+
+export type DismissBotFormError = DismissBotFormErrors[keyof DismissBotFormErrors];
+
+export type DismissBotFormResponses = {
+    201: BotFormResponseDto;
+};
+
+export type DismissBotFormResponse = DismissBotFormResponses[keyof DismissBotFormResponses];
 
 export type ReactToBotMessageData = {
     body: ReactToBotMessageRequest;

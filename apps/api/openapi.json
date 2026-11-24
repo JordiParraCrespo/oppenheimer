@@ -25238,7 +25238,7 @@
     },
     "/api/v1/bots/{id}/stream": {
       "get": {
-        "description": "Server-Sent Events. `ready` once subscribed, then a `bot` event per change, its `data` one of: `{ type: \"snapshot\", turnId, block, seq, text }` right after `ready`, once per running turn: the whole block of text it is writing and has not stored, in place of what the reader held for that block; `{ type: \"text\", turnId, block, seq, text }` as a turn writes (`block` counts the blocks the turn stored before it, `seq` its text writes; one at or below what the reader holds is a duplicate); `{ type: \"retrying\", turnId, reason }` while a turn waits on a provider that refused a call; `{ type: \"subagents\", turnId, callId, runs }` where each child of a running `delegate` call is; `{ type: \"message\", turnId, messageId }` when a message is stored; `{ type: \"turn\", turnId, status }` when a turn moves; `{ type: \"approval\", approvalId, status }` and `{ type: \"question\", questionId, status }` when a card is raised or settled. The stored conversation is the record; read it again on `ready`, `message` and `turn`. A `keepalive` holds an idle stream open, and the stream ends after 15 minutes so the redial is authenticated again.",
+        "description": "Server-Sent Events. `ready` once subscribed, then a `bot` event per change, its `data` one of: `{ type: \"snapshot\", turnId, block, seq, text }` right after `ready`, once per running turn: the whole block of text it is writing and has not stored, in place of what the reader held for that block; `{ type: \"text\", turnId, block, seq, text }` as a turn writes (`block` counts the blocks the turn stored before it, `seq` its text writes; one at or below what the reader holds is a duplicate); `{ type: \"retrying\", turnId, reason }` while a turn waits on a provider that refused a call; `{ type: \"subagents\", turnId, callId, runs }` where each child of a running `delegate` call is; `{ type: \"message\", turnId, messageId }` when a message is stored; `{ type: \"turn\", turnId, status }` when a turn moves; `{ type: \"approval\", approvalId, status }` and `{ type: \"question\", questionId, status }` and `{ type: \"form\", formId, status }` when a card is raised or settled. The stored conversation is the record; read it again on `ready`, `message` and `turn`. A `keepalive` holds an idle stream open, and the stream ends after 15 minutes so the redial is authenticated again.",
         "operationId": "streamBot",
         "parameters": [
           {
@@ -25914,6 +25914,273 @@
           }
         ],
         "summary": "Dismiss a bot's questions",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/bots/{id}/form": {
+      "get": {
+        "description": "The form the bot asked you to fill with `ask_form` and is waiting on; null when none waits. A bot has one card up at a time: a form, questions or an approval.",
+        "operationId": "findPendingBotForm",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotPendingFormResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A bot's waiting form",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/bots/{id}/forms/{formId}/submit": {
+      "post": {
+        "description": "A value per field id: words, or a number for a number field; null or blank for a field left empty. Each must fit its field. The bot gets a turn that reads them, under the scopes both the asking turn and your credential cover. Nothing else runs.",
+        "operationId": "submitBotForm",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "formId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitBotFormRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotFormResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_046 — Form not found\n\nBOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_048 — Already sent",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "BOTS_047 — Values that do not fit",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit a bot's form",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/bots/{id}/forms/{formId}/dismiss": {
+      "post": {
+        "description": "Declines to fill it, with a note if you like. The bot gets a turn that is told so, under the scopes both the asking turn and your credential cover, and is asked not to ask again unless you bring it up.",
+        "operationId": "dismissBotForm",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "formId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DismissBotFormRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotFormResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_046 — Form not found\n\nBOTS_001 — Bot not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_048 — Already sent",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dismiss a bot's form",
         "tags": [
           "Bots"
         ]
@@ -36653,6 +36920,7 @@
               "paused",
               "deleted",
               "own_event",
+              "own_session_event",
               "automation_rate_limited",
               "workspace_rate_limited",
               "overlapping",
@@ -41205,6 +41473,57 @@
           "answers"
         ]
       },
+      "BotSubmittedFormValueResponseDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string",
+            "description": "What was sent, in words; empty for a field left blank."
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ]
+      },
+      "BotFormEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "form"
+            ]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "dismissed"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "description": "The form's title."
+          },
+          "values": {
+            "description": "Each field and the value sent, in words; empty when dismissed.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotSubmittedFormValueResponseDto"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "outcome",
+          "title",
+          "values"
+        ]
+      },
       "BotRoutineEventResponseDto": {
         "type": "object",
         "properties": {
@@ -41988,6 +42307,9 @@
               },
               {
                 "$ref": "#/components/schemas/BotQuestionEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotFormEventResponseDto"
               },
               {
                 "$ref": "#/components/schemas/BotRoutineEventResponseDto"
@@ -43273,6 +43595,214 @@
         ]
       },
       "DismissBotQuestionRequest": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      },
+      "BotFormFieldResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "What the bot reads the value by."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "text",
+              "textarea",
+              "number",
+              "select",
+              "email",
+              "date"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "placeholder": {
+            "type": "string",
+            "nullable": true,
+            "description": "An example shown in the empty field."
+          },
+          "required": {
+            "type": "boolean",
+            "description": "The form cannot be sent without it."
+          },
+          "default": {
+            "type": "object",
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "nullable": true,
+            "description": "What the field starts with: a number for a `number`, words otherwise."
+          },
+          "min": {
+            "type": "number",
+            "nullable": true,
+            "description": "A `number`’s smallest value."
+          },
+          "max": {
+            "type": "number",
+            "nullable": true,
+            "description": "A `number`’s largest value."
+          },
+          "options": {
+            "nullable": true,
+            "description": "A `select`’s options.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label",
+          "placeholder",
+          "required",
+          "default",
+          "min",
+          "max",
+          "options"
+        ]
+      },
+      "BotFormResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "turnId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The turn whose call asked."
+          },
+          "title": {
+            "type": "string",
+            "description": "What the form is for: its line in the chat."
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "submitLabel": {
+            "type": "string",
+            "nullable": true,
+            "description": "The button’s word; null for the default."
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BotFormFieldResponseDto"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "submitted",
+              "dismissed",
+              "expired"
+            ]
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "nullable": true
+            },
+            "nullable": true,
+            "description": "A value per field id, once submitted; null for a field left blank."
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the person added to a dismissal."
+          },
+          "decidedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "turnId",
+          "title",
+          "description",
+          "submitLabel",
+          "fields",
+          "status",
+          "values",
+          "note",
+          "decidedAt",
+          "createdAt"
+        ]
+      },
+      "BotPendingFormResponseDto": {
+        "type": "object",
+        "properties": {
+          "form": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BotFormResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "form"
+        ]
+      },
+      "SubmitBotFormRequest": {
+        "type": "object",
+        "properties": {
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "maxLength": 2000
+                },
+                {
+                  "type": "number"
+                },
+                {}
+              ]
+            }
+          }
+        },
+        "required": [
+          "values"
+        ]
+      },
+      "DismissBotFormRequest": {
         "type": "object",
         "properties": {
           "note": {

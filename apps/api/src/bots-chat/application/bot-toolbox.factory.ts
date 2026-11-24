@@ -21,6 +21,7 @@ import { BotAutomationToolsFactory } from './bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './bot-bots-tools.factory';
 import { BotBrowserToolsFactory } from './bot-browser-tools.factory';
 import { BotComputerToolsFactory } from './bot-computer-tools.factory';
+import { BotFormToolsFactory } from './bot-form-tools.factory';
 import { BotGithubToolsFactory } from './bot-github-tools.factory';
 import { BotGoalToolsFactory } from './bot-goal-tools.factory';
 import { BotGuideToolsFactory } from './bot-guide-tools.factory';
@@ -101,6 +102,7 @@ export class BotToolboxFactory {
     goals: BotGoalToolsFactory,
     loops: BotLoopToolsFactory,
     questions: BotQuestionToolsFactory,
+    forms: BotFormToolsFactory,
     notices: BotNoticeToolsFactory,
     planWatches: BotPlanWatchToolsFactory,
   ) {
@@ -111,6 +113,7 @@ export class BotToolboxFactory {
       goals,
       loops,
       questions,
+      forms,
       notices,
       hosts,
       sessions,

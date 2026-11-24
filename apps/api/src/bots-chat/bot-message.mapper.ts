@@ -6,6 +6,7 @@ import {
   BOT_APPROVAL_EVENT_STAGES,
   BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
+  BOT_FORM_OUTCOMES,
   BOT_GITHUB_ASK_VIAS,
   BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
@@ -25,6 +26,7 @@ import {
   type BotMessageRole,
   type BotSubagentProgress,
   type BotSubagentRun,
+  type BotSubmittedFormValue,
   botMailDraftSchema,
   PULL_REQUEST_WAKE_EVENTS,
   TASK_STATUSES,
@@ -46,6 +48,7 @@ import {
   BotApprovalEventResponseDto,
   BotCompactionEventResponseDto,
   BotDreamEventResponseDto,
+  BotFormEventResponseDto,
   BotGithubAskEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
@@ -320,6 +323,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotApprovalEventResponseDto(), event);
     case 'question':
       return Object.assign(new BotQuestionEventResponseDto(), event);
+    case 'form':
+      return Object.assign(new BotFormEventResponseDto(), event);
     case 'routine':
       return Object.assign(new BotRoutineEventResponseDto(), event);
     case 'bot_message':
@@ -354,6 +359,15 @@ function toAnsweredQuestions(raw: readonly unknown[]): BotAnsweredQuestion[] {
   });
 }
 
+/** A submitted form's labels and values in words, narrowed once; anything else is dropped. */
+function toSubmittedValues(raw: readonly unknown[]): BotSubmittedFormValue[] {
+  return raw.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const { label, value } = item as Record<string, unknown>;
+    return typeof label === 'string' && typeof value === 'string' ? [{ label, value }] : [];
+  });
+}
+
 /** A stored event, narrowed once; anything the mapper did not write reads as none. */
 function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
   if (!raw) return null;
@@ -379,6 +393,16 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       outcome,
       summary: String(raw.summary ?? ''),
       answers: Array.isArray(raw.answers) ? toAnsweredQuestions(raw.answers) : [],
+    };
+  }
+  if (raw.kind === 'form') {
+    const outcome = BOT_FORM_OUTCOMES.find((known) => known === raw.outcome);
+    if (!outcome) return null;
+    return {
+      kind: 'form',
+      outcome,
+      title: String(raw.title ?? ''),
+      values: Array.isArray(raw.values) ? toSubmittedValues(raw.values) : [],
     };
   }
   if (raw.kind === 'routine') {

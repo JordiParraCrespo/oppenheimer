@@ -560,7 +560,10 @@
       "SESSIONS_059": "The host refused to change the session's terminals.",
       "SESSIONS_060": "This host's runner can't start a second agent. Update the runner on the host.",
       "BOTS_044": "That message is no longer in this chat.",
-      "BOTS_045": "Only your messages and the bot's words take a reaction."
+      "BOTS_045": "Only your messages and the bot's words take a reaction.",
+      "BOTS_046": "That form is no longer here.",
+      "BOTS_047": "Some values do not fit the form.",
+      "BOTS_048": "That form was already sent, or the bot moved on."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -1942,6 +1945,21 @@
         "answered": "You answered: {{summary}}",
         "dismissed": "You dismissed: {{summary}}",
         "failed": "Could not send your answers."
+      },
+      "form": {
+        "label": "Form",
+        "submit": "Submit",
+        "sending": "Sending…",
+        "sent": "Sent",
+        "dismiss": "Not now",
+        "required": "Required",
+        "optional": "Optional",
+        "choose": "Choose one",
+        "submitted": "You sent: {{title}}",
+        "dismissed": "You dismissed: {{title}}",
+        "blank": "Left blank",
+        "failed": "Could not send the form.",
+        "fixFields": "Check the highlighted fields."
       },
       "approval": {
         "needsInput": "Needs input",

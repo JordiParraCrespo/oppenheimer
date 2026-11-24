@@ -563,7 +563,10 @@
       "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión.",
       "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host.",
       "BOTS_044": "Ese mensaje ya no está en este chat.",
-      "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción."
+      "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción.",
+      "BOTS_046": "Ese formulario ya no está.",
+      "BOTS_047": "Algunos valores no encajan con el formulario.",
+      "BOTS_048": "Ese formulario ya se envió, o el bot siguió adelante."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -1989,6 +1992,21 @@
         "answered": "Respondiste: {{summary}}",
         "dismissed": "Descartaste: {{summary}}",
         "failed": "No se pudieron enviar tus respuestas."
+      },
+      "form": {
+        "label": "Formulario",
+        "submit": "Enviar",
+        "sending": "Enviando…",
+        "sent": "Enviado",
+        "dismiss": "Ahora no",
+        "required": "Obligatorio",
+        "optional": "Opcional",
+        "choose": "Elige una opción",
+        "submitted": "Enviaste: {{title}}",
+        "dismissed": "Descartaste: {{title}}",
+        "blank": "En blanco",
+        "failed": "No se pudo enviar el formulario.",
+        "fixFields": "Revisa los campos marcados."
       },
       "approval": {
         "needsInput": "Necesita tu respuesta",
