@@ -253,11 +253,11 @@ function ChatComposer({
     </div>
   ) : null;
   const recorder = dictation?.recorder ? (
-    // The bar is 12px taller than the foot row it replaces; it takes
+    // The bar is 18px taller than the 28px foot row it replaces; it takes
     // that from the field's bottom padding, so the box keeps its height.
     <ComposerRecorder
       data-slot="chat-composer-recorder"
-      className={inline ? 'w-full' : '-mt-3 px-3 pb-3'}
+      className={inline ? 'w-full' : '-mt-4.5 px-3 pb-3'}
       onEnter={submit}
     >
       {dictation.recorder}
@@ -287,13 +287,13 @@ function ChatComposer({
               {attached}
               <div className="flex items-end">
                 {paperclip || emoji ? (
-                  <span className="flex shrink-0 items-center gap-0.5 p-1.5 pr-0">
+                  <span className="flex shrink-0 items-center gap-0.5 px-1.5 py-2 pr-0">
                     {paperclip}
                     {emoji}
                   </span>
                 ) : null}
                 {field}
-                <span className="flex shrink-0 items-center gap-1 p-1.5">{send}</span>
+                <span className="flex shrink-0 items-center gap-1 px-1.5 py-2">{send}</span>
               </div>
             </>
           ))
