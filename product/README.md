@@ -1987,3 +1987,7 @@ earlier note:
   checkbox only on hover, and the owner did not find it. On 2026-11-24
   Select in the list's head shows every checkbox, and X checks the item on
   the deck ("Selecting, found at a glance").
+- `versions/mvp/29-inbox.md`, "As built: the console" (2026-10-26), had
+  Show done on by default, so a done item stayed in the list struck
+  through. On 2026-11-24 the owner asked that it leave: Show done is off
+  unless turned on in the filter menu ("Done leaves the list").

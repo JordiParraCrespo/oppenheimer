@@ -58,7 +58,11 @@ test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }
   await page.getByRole('menuitem', { name: /Mark as done/ }).click();
 
   await expect(page.getByText("You're all caught up", { exact: true })).toBeVisible();
-  // Show done keeps it for this visit, struck through.
+  // What is marked done leaves the list; Show done brings it back for the visit.
+  await expect(page.locator('[data-slot="inbox-item"]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Filter the Inbox' }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'Show done' }).click();
+  await page.keyboard.press('Escape');
   await expect(page.locator('[data-slot="inbox-item"][data-done]')).toHaveCount(1);
 
   // The mark is the server's: it is there after a reload, the done row is not.
@@ -119,7 +123,7 @@ test('the Inbox: select rows and mark them done at once', async ({ page }) => {
 
   await batch;
   await expect(bar).toBeHidden();
-  await expect(page.locator('[data-slot="inbox-row"]:not(:has([data-done]))')).toHaveCount(1);
+  await expect(page.locator('[data-slot="inbox-row"]')).toHaveCount(1);
   await expect
     .poll(async () => {
       const marks = (await (await owner.api.get('/api/v1/inbox/marks')).json()) as {
