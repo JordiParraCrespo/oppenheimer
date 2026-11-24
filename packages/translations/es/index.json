@@ -1519,7 +1519,8 @@
       "tasks_many": "{{done}} de {{count}} tareas hechas",
       "notice": {
         "interrupted": "Detuviste este turno",
-        "compacted": "Contexto compactado"
+        "compacted": "Contexto compactado",
+        "model": "Modelo cambiado a <model>{{model}}</model>"
       },
       "task": {
         "completed": "Tarea en segundo plano terminada",

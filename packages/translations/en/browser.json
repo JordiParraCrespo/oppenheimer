@@ -1500,7 +1500,8 @@
       "tasks_other": "{{done}} of {{count}} tasks done",
       "notice": {
         "interrupted": "You stopped this turn",
-        "compacted": "Context compacted"
+        "compacted": "Context compacted",
+        "model": "Model changed to <model>{{model}}</model>"
       },
       "task": {
         "completed": "Background task finished",

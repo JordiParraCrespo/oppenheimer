@@ -81,6 +81,16 @@ function itemOf(step: ChatStep): ChatItem {
         event: step.notice,
         text: null,
       };
+    case 'model':
+      return {
+        type: 'event',
+        id: step.id,
+        status: 'completed',
+        startedAt: at,
+        completedAt: at,
+        event: 'notice',
+        text: step.model,
+      };
     case 'output':
       return {
         type: 'event',

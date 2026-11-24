@@ -1,4 +1,5 @@
 import type {
+  ChatCommandTail,
   ChatFileEdit,
   ChatSharedFile,
   ChatStatus,
@@ -90,6 +91,8 @@ export type ChatBlock =
   | { kind: 'plan'; id: string; call: ChatToolCall }
   | { kind: 'question'; id: string; call: ChatToolCall }
   | { kind: 'notice'; id: string; notice: 'interrupted' | 'compacted' }
+  /** The agent moved to another model: the id it answers on from here. */
+  | { kind: 'model'; id: string; model: string }
   /** What a command the CLI answered itself printed (`/context`). */
   | { kind: 'output'; id: string; text: string; failed: boolean }
   | { kind: 'task'; id: string; status: ChatTaskStatus; summary: string | null }
@@ -161,6 +164,8 @@ function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
       };
     case 'notice':
       return { kind: 'notice', id: step.id, notice: step.notice };
+    case 'model':
+      return { kind: 'model', id: step.id, model: step.model };
     case 'output':
       return { kind: 'output', id: step.id, text: step.text, failed: step.failed };
     case 'task':
@@ -184,11 +189,13 @@ function blockOf(step: ChatStep, next: ChatStep | undefined): ChatBlock | null {
 
 /**
  * What a folded turn keeps besides its answer: its cards and its pictures,
- * what was asked and answered among them, and what a slash command printed,
- * which is that command's whole answer. The words it said on the way there
- * fold with the work they narrated.
+ * what was asked and answered among them, what a slash command printed,
+ * which is that command's whole answer, and a move to another model, which
+ * holds for the turns after it. The words it said on the way there fold
+ * with the work they narrated.
  */
 const SETTLED_KINDS = new Set<ChatBlock['kind']>([
+  'model',
   'output',
   'plan',
   'question',
@@ -441,6 +448,23 @@ export function firstLine(text: string | null): string | null {
     .map((part) => part.trim())
     .find(Boolean);
   return line ?? null;
+}
+
+const squash = (text: string) => text.replace(/\s+/g, ' ').trim();
+
+/**
+ * What a running command printed, off the agent's screen, if it is this
+ * command's: the screen names the call it draws (cut short, or with a
+ * prefix the agent drops), so the call's command has to hold what the
+ * screen shows of it. None when it is another command's, or there is none.
+ */
+export function tailLinesOf(
+  tail: ChatCommandTail | undefined,
+  command: string | null,
+): readonly string[] | null {
+  if (!tail) return null;
+  if (tail.command && !squash(command ?? '').includes(squash(tail.command))) return null;
+  return tail.lines;
 }
 
 /** A span of the chat's work as its header says it, live or settled: "48s", "1m 13s". */

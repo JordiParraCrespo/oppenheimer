@@ -145,6 +145,12 @@ to `SKILL.md`.
 - **The next version moves fields.** Codex 0.167 moved what the reader read
   (`c18fdf18d`): test on samples a real session wrote, and say in the reader
   when the shape is undocumented.
+- **One version, two screens.** Claude Code 2.1.331 draws a running shell
+  call's last output lines under it on its inline renderer and only "(8s ·
+  9 lines)" on its fullscreen one (`CLAUDE_CODE_NO_FLICKER` picks); a
+  reading of the screen (`readCommandTail`) is captured on both, and reads
+  nothing where the screen shows nothing. A loopback stand-in for the
+  model API that scripts one `tool_use` is enough to watch every state.
 
 ## 7. Proving it live
 
