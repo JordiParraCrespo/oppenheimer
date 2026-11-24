@@ -2005,6 +2005,14 @@ earlier note:
   2026-11-24 the owner, filtering to their Mac Studio, wanted a second
   machine beside it: the Host facet takes several hosts, as Repository
   does, a chip each, and lists a session on any of them.
+- `versions/mvp/29-inbox.md`, "Bulk actions" (2026-11-11), showed a row's
+  checkbox only on hover, and the owner did not find it. On 2026-11-24
+  Select in the list's head shows every checkbox, and X checks the item on
+  the deck ("Selecting, found at a glance").
+- `versions/mvp/29-inbox.md`, "As built: the console" (2026-10-26), had
+  Show done on by default, so a done item stayed in the list struck
+  through. On 2026-11-24 the owner asked that it leave: Show done is off
+  unless turned on in the filter menu ("Done leaves the list").
 - A bot's `react` tool worked in its console chat only, refusing on a
   channel's conversation ("answer in words"). On 2026-11-24 the owner asked
   for the bot to decide its reactions on the channels too, keeping Slack's
