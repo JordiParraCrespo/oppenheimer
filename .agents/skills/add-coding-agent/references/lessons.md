@@ -64,6 +64,12 @@ to `SKILL.md`.
   fresh TUI under a random id, and every later `--continue` kept to it, so
   the session's own id named nothing; the chat follows it (§5,
   `494d61e0c`).
+- **Reopen by id once the CLI has written it, by folder before.** Qwen's
+  restart was `--continue` alone, which in a folder another Qwen shares can
+  open the other's conversation. The runner now asks the transcripts whether
+  the session's conversation was saved (`SavedConversation`, setting
+  `Launch.Saved`) and reopens it with `conversation.reopen`
+  (`--resume <id>`) only then, since before it the by-id form exits.
 
 ## 2. The catalog entry
 

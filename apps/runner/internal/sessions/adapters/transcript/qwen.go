@@ -104,6 +104,16 @@ func (q qwenSource) file(session domain.Session) string {
 	return best
 }
 
+// saved reports whether Qwen has written conversation down: its file is
+// created with its first record, not at launch.
+func (q qwenSource) saved(conversation string) bool {
+	if !conversationPattern.MatchString(conversation) || q.projects == "" {
+		return false
+	}
+	named, _ := filepath.Glob(filepath.Join(q.projects, "*", "chats", conversation+".jsonl"))
+	return len(named) > 0
+}
+
 // qwenInternal reports a conversation Qwen keeps for one of its own agents
 // rather than for the person (a `session_source` record naming `agent` or
 // `agent-host`), which `--continue` passes over as well.

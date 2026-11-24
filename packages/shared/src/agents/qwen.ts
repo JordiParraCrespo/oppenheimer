@@ -74,19 +74,19 @@ export const QWEN_AGENT: CodingAgentDefinition = Object.freeze({
   launch: Object.freeze({
     model: Object.freeze(['--model', '<model>']),
     // `--session-id <uuid>` names a new conversation and refuses one that
-    // exists ("Session Id … already exists"). The restart is `--continue`,
-    // the newest conversation of this folder, not `--resume <id>`: Qwen
-    // writes `<id>.jsonl` only once something is said, and until then
-    // `--resume <id>` prints "No saved session found with ID …" and exits 1
-    // (watched), so a session restarted before its first message would come
-    // back with no agent. `--continue` with nothing saved opens a fresh TUI
-    // (watched), under an id of Qwen's choosing, which the chat follows in a
-    // worktree session (`transcript/qwen.go`). In a folder another Qwen
-    // shares, "the newest" may be the other's; a reopen by id once the file
-    // exists is a runner change still to make.
+    // exists ("Session Id … already exists"). A restart reopens it by id,
+    // `--resume <id>`, once Qwen has written `<id>.jsonl`, which the runner
+    // looks for (`Launch.Saved`): in a folder another Qwen shares, the newest
+    // conversation may be the other's. Qwen writes the file only once
+    // something is said, and until then `--resume <id>` prints "No saved
+    // session found with ID …" and exits 1 (watched), so a restart before the
+    // first message is `--continue`, which with nothing saved opens a fresh
+    // TUI (watched), under an id of Qwen's choosing that the chat follows in
+    // a worktree session and the session then keeps (`transcript/qwen.go`).
     conversation: Object.freeze({
       create: Object.freeze(['--session-id', '<conversation>']),
       resume: Object.freeze(['--continue']),
+      reopen: Object.freeze(['--resume', '<conversation>']),
     }),
     // `--approval-mode plan|default|auto-edit|auto|yolo`. Ask is `default`
     // ("Require approval for file edits or shell commands"), sent although

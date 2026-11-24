@@ -273,6 +273,7 @@ var launchCatalog = map[string]launchMap{
 		prompt:             []string{"--prompt-interactive=<prompt>"},
 		conversationCreate: []string{"--session-id", "<conversation>"},
 		conversationResume: []string{"--continue"},
+		conversationReopen: []string{"--resume", "<conversation>"},
 	},
 	"shell": {
 		command:    "",

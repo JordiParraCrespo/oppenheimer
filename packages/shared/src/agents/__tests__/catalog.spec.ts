@@ -47,17 +47,20 @@ describe('coding agent catalog', () => {
     expect(keys.replace(/\u001bd/g, '')).not.toContain('\u001b');
   });
 
-  it('starts Qwen Code interactive with its task in one word, and restarts it on what this folder holds', () => {
+  it('starts Qwen Code interactive with its task in one word, and reopens it by id once saved', () => {
     // A positional is Qwen's one-shot run, and `--prompt-interactive` with
     // its value as a word of its own reads a task starting with `-` as a flag
     // (`-v` printed the version and exited): the `=` form keeps it a value.
-    // `--resume <id>` exits before the first message has been written, where
-    // `--continue` opens a fresh TUI; Ask is `default`, not Qwen's own `auto`.
+    // `--resume <id>` exits before the first message has been written, so it
+    // is the reopen once the runner sees the file, and `--continue`, which
+    // opens a fresh TUI, the resume before; Ask is `default`, not Qwen's own
+    // `auto`.
     const { prompt, conversation, permission, effort } = CODING_AGENTS.qwen.launch;
     expect(prompt).toEqual(['--prompt-interactive=<prompt>']);
     expect(conversation).toEqual({
       create: ['--session-id', '<conversation>'],
       resume: ['--continue'],
+      reopen: ['--resume', '<conversation>'],
     });
     expect(permission?.ask.argv).toEqual(['--approval-mode', 'default']);
     expect(permission?.full.argv).toEqual(['--approval-mode', 'yolo']);

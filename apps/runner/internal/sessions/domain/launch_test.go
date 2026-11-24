@@ -188,6 +188,26 @@ func TestQwenStartsInteractiveWithItsTaskInsideItsFlag(t *testing.T) {
 	}
 }
 
+func TestARestartReopensQwensConversationByIDOnceItIsSaved(t *testing.T) {
+	// Once Qwen has written the session's conversation, a restart names it:
+	// in a folder another Qwen shares, `--continue` may open the other's.
+	// Before that, `--resume <id>` would exit, and `--continue` is left.
+	id := "8b4c5d6e-0000-4000-8000-000000000001"
+	saved := Launch{Permission: "ask", Conversation: id, Resume: true, Saved: true, Prompt: "fix it"}.Args(AgentQwen)
+	if want := []string{"--approval-mode", "default", "--resume", id}; !reflect.DeepEqual(saved, want) {
+		t.Fatalf("saved restart argv = %q, want %q", saved, want)
+	}
+	fresh := Launch{Permission: "ask", Conversation: id, Resume: true, Prompt: "fix it"}.Args(AgentQwen)
+	if want := []string{"--approval-mode", "default", "--continue"}; !reflect.DeepEqual(fresh, want) {
+		t.Fatalf("unsaved restart argv = %q, want %q", fresh, want)
+	}
+	// A create never reopens, saved or not.
+	created := Launch{Permission: "ask", Conversation: id, Saved: true, Prompt: "fix it"}.Args(AgentQwen)
+	if want := []string{"--approval-mode", "default", "--session-id", id, "--prompt-interactive=fix it"}; !reflect.DeepEqual(created, want) {
+		t.Fatalf("create argv = %q, want %q", created, want)
+	}
+}
+
 func TestATaskThatStartsWithADashStaysQwensTask(t *testing.T) {
 	// `qwen --prompt-interactive "-v"` printed Qwen's version and exited: a
 	// value of its own that starts with `-` is a flag to its parser. In the

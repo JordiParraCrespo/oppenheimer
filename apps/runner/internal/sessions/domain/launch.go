@@ -34,6 +34,12 @@ type Launch struct {
 	// re-sending the first task would replay it.
 	Conversation string `json:"conversation,omitempty"`
 	Resume       bool   `json:"resume,omitempty"`
+	// Saved says the agent has written Conversation down, so a resume may
+	// name it: an agent whose resume by id exits while there is nothing to
+	// reopen (Qwen Code's `--resume <id>` before the first message) reopens
+	// it by id only then (conversationReopen), and by its folder otherwise.
+	// The runner looks at each restart, so it is never saved.
+	Saved bool `json:"-"`
 	// Teleport is a cloud session of the agent's own that this session
 	// continues: the agent starts with its branch and history (`claude
 	// --teleport <id>`) in place of a new conversation, and a resume reopens
@@ -195,7 +201,8 @@ type launchMap struct {
 	// following it.
 	conversationResumeLeads bool
 	// conversationReopen reopens, on a restart, the conversation the runner
-	// heard the agent's process work in (AgentServer.Conversation), for an
+	// heard the agent's process work in (AgentServer.Conversation), or the
+	// session's own once the agent has written it (Launch.Saved), for an
 	// agent whose resume names none.
 	conversationReopen []string
 	// How a cloud session is continued here, `<teleport>` its id, and how
@@ -297,6 +304,13 @@ func (l Launch) conversation(m launchMap) conversationArgs {
 	// the runner heard this session's agent work in is reopened by its id.
 	case l.Resume && m.conversationReopen != nil && l.Server != nil && l.Server.Conversation != "":
 		return conversationArgs{argv: substitute(m.conversationReopen, "<conversation>", l.Server.Conversation)}
+	// The same, for an agent with no API to hear it through: the session's
+	// own conversation, once the agent has written it, since a folder another
+	// of the same agent shares makes "the last one" possibly the other's.
+	// Before that the by-id form would find nothing (Qwen's exits), and "the
+	// last one" is the one left.
+	case l.Resume && m.conversationReopen != nil && l.Server == nil && l.Saved && l.Conversation != "":
+		return conversationArgs{argv: substitute(m.conversationReopen, "<conversation>", l.Conversation)}
 	case l.Resume && m.conversationResume != nil && (l.Conversation != "" || !namesConversation(m.conversationResume)):
 		return conversationArgs{
 			argv:  substitute(m.conversationResume, "<conversation>", l.Conversation),

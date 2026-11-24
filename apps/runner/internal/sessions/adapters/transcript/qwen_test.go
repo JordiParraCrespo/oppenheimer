@@ -113,6 +113,9 @@ func TestAQwenSessionFollowsTheConversationItMovedTo(t *testing.T) {
 	if got := reader.CurrentConversation(worktree); got != conversation {
 		t.Fatalf("with nothing written, conversation = %q, want the session's own", got)
 	}
+	if reader.SavedConversation(worktree) {
+		t.Fatal("with nothing written, the conversation reads as saved, which `--resume <id>` would exit on")
+	}
 	fresh := "0b7f6a3e-1111-4c2d-9e8f-000000000001"
 	writeQwen(t, projects, fresh, line, created.Add(time.Minute))
 	writeQwen(t, projects, "0b7f6a3e-1111-4c2d-9e8f-00000000000e", line, created.Add(-time.Minute))
@@ -123,6 +126,9 @@ func TestAQwenSessionFollowsTheConversationItMovedTo(t *testing.T) {
 	writeQwen(t, projects, conversation, line, created.Add(2*time.Minute))
 	if got := reader.CurrentConversation(worktree); got != conversation {
 		t.Fatalf("named, conversation = %q, want %q", got, conversation)
+	}
+	if !reader.SavedConversation(worktree) {
+		t.Fatal("written, the conversation does not read as saved, so a restart would not reopen it by id")
 	}
 	cleared := "0b7f6a3e-1111-4c2d-9e8f-000000000002"
 	writeQwen(t, projects, cleared, line, created.Add(3*time.Minute))

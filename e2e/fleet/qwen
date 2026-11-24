@@ -4,7 +4,7 @@
 # task as a `real_user` record of
 # `$QWEN_HOME/projects/<cwd, non-alphanumerics as dashes>/chats/<--session-id>.jsonl`),
 # then hands the pane to an interactive shell, as the `claude` shim beside it
-# does. A `--continue` writes nothing. A test appends the rest of the
+# does. A restart (`--resume`, `--continue`) writes nothing. A test appends the rest of the
 # conversation to the same file, in Qwen 0.28.4's record shape.
 printf 'QWEN-SHIM argv=%s\n' "$*"
 python3 - "$PWD" "$@" <<'PY'

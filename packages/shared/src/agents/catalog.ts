@@ -244,10 +244,12 @@ export interface CodingAgentLaunch {
      */
     readonly resumeLeads?: boolean;
     /**
-     * Reopens a conversation the runner learned the name of while the agent
-     * ran, on a restart, in place of `resume`, for an agent whose `resume`
-     * names none: OpenCode, where another OpenCode in the same folder makes
-     * "the last one" someone else's.
+     * Reopens a conversation by its name, on a restart, in place of `resume`,
+     * for an agent whose `resume` names none, since another of the same agent
+     * in the same folder makes "the last one" someone else's: OpenCode's, the
+     * one the runner heard its process work in, and Qwen Code's, the
+     * session's own once Qwen has written it (its by-id resume exits before
+     * that).
      */
     readonly reopen?: readonly string[];
   };

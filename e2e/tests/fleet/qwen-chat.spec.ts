@@ -13,7 +13,7 @@ import { signInAs } from '../../support/web';
  * word, so a task starting with `-` stays a task), the runner finds the
  * conversation Qwen keeps under `~/.qwen/projects/<folder>/chats/<session
  * id>.jsonl`, the console draws its records as the chat, then each record
- * written after it opened, and a restart reopens it with `--continue`. Every
+ * written after it opened, and a restart reopens it by id. Every
  * host carries a `qwen` shim (`e2e/fleet/qwen`) that writes the first record
  * as Qwen does; the rest is written here. Needs the console on `WEB_URL`.
  */
@@ -46,7 +46,7 @@ with open(path, "a") as out:
   );
 }
 
-test('a Qwen Code session starts qwen with its task, reads as the chat, live, and restarts on --continue', async ({
+test('a Qwen Code session starts qwen with its task, reads as the chat, live, and restarts on its own conversation', async ({
   page,
   request,
 }) => {
@@ -144,7 +144,8 @@ test('a Qwen Code session starts qwen with its task, reads as the chat, live, an
   ]);
   await expect(page.getByText('Fixed and tested.')).toBeVisible({ timeout: 15_000 });
 
-  // Restarted, it reopens this folder's conversation, with no id and no task.
+  // Restarted once Qwen has written the conversation, it reopens it by id,
+  // with no task: another Qwen in the folder may own "the newest".
   expect((await api.post(`/api/v1/sessions/${sessionId}/stop`)).status()).toBeLessThan(300);
   const stoppedAt = async () =>
     (
@@ -157,7 +158,7 @@ test('a Qwen Code session starts qwen with its task, reads as the chat, live, an
   await expect.poll(stoppedAt, { timeout: 60_000 }).toBeNull();
   const restarted = await attach(api, sessionId);
   await restarted.waitFor(
-    'QWEN-SHIM argv=--model qwen3.8-max --approval-mode default --continue',
+    `QWEN-SHIM argv=--model qwen3.8-max --approval-mode default --resume ${sessionId}`,
     120_000,
   );
   await restarted.close();
