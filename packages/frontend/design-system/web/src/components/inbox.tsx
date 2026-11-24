@@ -25,8 +25,8 @@ function InboxList({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 /**
- * InboxListHead — the list column's 48px head: `leading` (the sidebar
- * toggle), the Inbox's name, the unread count in mono, and `children` (the
+ * InboxListHead — the list column's 48px head: `leading` (anything that
+ * leads it), the Inbox's name, the unread count in mono, and `children` (the
  * filter) on the right.
  */
 function InboxListHead({

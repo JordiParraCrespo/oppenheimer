@@ -4133,12 +4133,6 @@
       "dismiss": "Descartar",
       "dismissing": "Descartando…"
     },
-    "folders": {
-      "label": "Carpetas de la bandeja",
-      "kinds": "Carpetas",
-      "all": "Todo",
-      "projects": "Proyectos"
-    },
     "deck": {
       "swipeDone": "Hecho",
       "swipeLater": "Luego",

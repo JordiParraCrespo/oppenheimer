@@ -606,12 +606,11 @@ changed from "As built: the Inbox in Plan":
 - **Where the console lands.** The rail's first item: the Inbox, put at the
   front once for a reader whose stored rail order predates it (as Decided 1
   had it); one who then drags another item first lands there.
-- **The sidebar is folders**, as a mail client's: Everything and each kind
-  (Sessions, Bots, Tasks, Reports, Automations, Pull requests while shown)
-  with its count, then each project that holds an item, No project last. A
-  folder sets the list's Type or Project facet, so it is a link and Back
-  undoes it; the filter menu still sets both, and keeps Show done and Show
-  pull requests.
+- **No sidebar.** The page stands beside the rail with nothing between: its
+  list column and the deck are the whole window (a route says so with
+  `sidebar: 'none'`, which the shell reads). A first cut drew the kinds and
+  projects there as folders; the owner asked for it gone the same day. Type
+  and Project stay in the list's filter menu.
 - **The reading pane is a deck.** The item in hand is a card, with up to two
   cards peeking under it for what is left. Its answers (a session's choices,
   else the answer row's right side: Approve, Merge, Send answers) wear the
@@ -637,6 +636,6 @@ Decided by the agent that built it, for the owner to accept or change:
    stray swipe cannot approve a command.
 2. The rail's dot is the Inbox's count, not its unread count: anything that
    needs you lights it.
-3. The filter menu keeps Type and Project beside the sidebar's folders,
-   since the sidebar is hidden on a phone and when collapsed.
+3. The account menu, which lives in the sidebar's foot, is reached from any
+   other page; the Inbox has no sidebar to hold it.
 

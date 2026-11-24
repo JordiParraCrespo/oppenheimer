@@ -4,7 +4,7 @@ description: The Inbox, the console's first rail item, what lands there (waiting
 sidebar_position: 8
 ---
 
-The **Inbox** is one list of what needs you. It is the first item of the rail, with a dot and a count while anything needs you, and the console opens on it unless you dragged another rail item to the top. Its sidebar holds folders: one per kind of item and one per project, each with its count.
+The **Inbox** is one list of what needs you. It is the first item of the rail, with a dot and a count while anything needs you, and the console opens on it unless you dragged another rail item to the top. It has no sidebar: the list and the deck take the whole window.
 
 It looks like a mail client: a list column (search, unread rows with the sender, a subject and a line of body) beside a deck, the item in hand as a card on the stack of what is left, with a toolbar over it. On a phone the list fills the screen until you open an item.
 
@@ -61,7 +61,7 @@ A mark applies to one occurrence: if the same session blocks again later, or new
 
 **Unread** is kept per item in this browser: an item is read once shown on the deck. It does not sync between devices.
 
-**Filters**: the sidebar's folders, Type (Everything, Pull requests while they are shown, Bots, Sessions, Automations, Reports, Tasks) and Project, which the filter menu also sets; Show done and Show pull requests in the filter menu; and a search over sender, subject, body and source.
+**Filters**, in the list's filter menu: Type (All, Pull requests while they are shown, Bots, Sessions, Automations, Reports, Tasks), Project, Show done and Show pull requests; and a search over sender, subject, body and source.
 
 When nothing needs you, the deck says so and counts the sessions still running.
 

@@ -1909,8 +1909,7 @@ earlier note:
   On 2026-11-24 the owner asked for it to be one of the platform's core
   features, with its own page, and as easy to answer and move on from as a
   swipe: it is the rail's first item again at `/inbox` (the Plan address
-  redirects), with a dot and a count, its sidebar is folders by kind and by
-  project, Plan opens on its board, and the reading pane is a deck of cards
+  redirects), with a dot and a count, and no sidebar, Plan opens on its board, and the reading pane is a deck of cards
   answered by number keys or a swipe ("Its own page, and a deck").
 - `27-bot-subscriptions.md` §4.2 had a bot's look at a task it handed off
   stay quiet (`nothing_to_report`) while the task was on track, so the chat

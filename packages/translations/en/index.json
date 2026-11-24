@@ -4049,12 +4049,6 @@
       "dismiss": "Dismiss",
       "dismissing": "Dismissing…"
     },
-    "folders": {
-      "label": "Inbox folders",
-      "kinds": "Folders",
-      "all": "Everything",
-      "projects": "Projects"
-    },
     "deck": {
       "swipeDone": "Done",
       "swipeLater": "Later",

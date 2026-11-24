@@ -32,7 +32,7 @@ The console is a rail of sections on the left, a sidebar for the section you are
 
 | Rail item | What it holds |
 | --- | --- |
-| **Inbox** | What needs you, one card at a time, with folders by kind and by project. |
+| **Inbox** | What needs you, one card at a time. It has no sidebar. |
 | **Employees** | Your bots: a sidebar of bots in groups, a chat with each, and each bot's settings. |
 | **Sessions** | New session, and the sidebar of your sessions grouped by project, with Pinned at the top. |
 | **Pull requests** | The PR queue, Analytics, and review sessions under For review. |

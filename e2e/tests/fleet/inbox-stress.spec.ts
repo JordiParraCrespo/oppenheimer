@@ -153,13 +153,17 @@ async function listedKeys(page: Page): Promise<string[]> {
   );
 }
 
-/** The count on the Inbox's Everything folder in its sidebar: what needs you. */
+/** The count the rail's Inbox item reads out beside its name: what needs you. */
 async function counts(page: Page) {
-  const row =
-    (await page
-      .getByRole('navigation', { name: 'Inbox folders' })
-      .locator('[data-slot="routine-item"]', { hasText: 'Everything' })
-      .textContent()) ?? '';
+  const row = await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('link', { name: 'Inbox' })
+    .evaluate((link) =>
+      (link.getAttribute('aria-describedby') ?? '')
+        .split(' ')
+        .map((id) => document.getElementById(id)?.textContent ?? '')
+        .join(' '),
+    );
   return { nav: Number(/(\d+)/.exec(row)?.[1] ?? 0) };
 }
 
@@ -538,7 +542,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
       await expectAnswered(page, plan);
     }
     page.off('request', tally);
-    // The Inbox's sidebar counts what the list shows the moment an answer lands,
+    // The rail counts what the list shows the moment an answer lands,
     // not once each runner reports its agent moved on.
     const right = { ...(await counts(page)), list: (await listedKeys(page)).length };
     note(`just after the last answer: sidebar ${right.nav}, list ${right.list}`);
