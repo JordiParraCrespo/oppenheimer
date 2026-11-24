@@ -83,7 +83,7 @@ When the desktop cannot open, it says why: the host does not share its desktop (
 
 Each agent runs from the host's own installation and its own login. You sign in once per host by starting a session with that agent and following its sign-in in the terminal; a sign-in link the agent prints becomes a button. Oppenheimer never stores an agent's credentials.
 
-From the host you can install more later: `oppenheimer-runner agents install claude` (or `codex`, `opencode`, `grok`, `pi`, `omp`, `antigravity`, `muse`, `qwen`), and `oppenheimer-runner tools install gh`. These install in your home directory without sudo. `git` and `tmux` stay with your package manager. The runner updates installed agent CLIs on its own about hourly unless `RUNNER_AGENT_UPDATES=off` is set before install. `oppenheimer-runner tools` lists what is installed.
+From the host you can install more later: `oppenheimer-runner agents install claude` (or `codex`, `opencode`, `grok`, `pi`, `omp`, `antigravity`, `muse`, `qwen`), and `oppenheimer-runner tools install gh`. These install in your home directory without sudo. `git` and `tmux` stay with your package manager. The runner updates installed agent CLIs on its own about hourly unless `RUNNER_AGENT_UPDATES=off` is set before install, except Qwen Code: the runner does not update it, and `agents install qwen` leaves one already installed alone, so update it on the host with `npm install --global --prefix ~/.local @qwen-code/qwen-code@latest`. `oppenheimer-runner tools` lists what is installed.
 
 ## Letting bots use the screen
 
