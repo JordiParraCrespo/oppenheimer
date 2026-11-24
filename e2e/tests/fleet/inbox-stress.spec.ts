@@ -191,11 +191,12 @@ async function answerPermission(page: Page, plan: Planned) {
 async function answerQuestion(page: Page, plan: Planned) {
   const scenario = plan.scenario as QuestionScenario;
   const card = await openRow(page, plan.id);
-  const questions = card.locator('[data-slot="inbox-question"]');
-  await expect(questions).toHaveCount(scenario.questions.length);
+  // One question at a time: a single pick moves on by itself; several picks,
+  // or words of the reader's own, move on with Next question.
   for (const [i, question] of scenario.questions.entries()) {
     const answer = scenario.answers[i];
-    const field = questions.nth(i);
+    const field = card.locator('[data-slot="inbox-question"]');
+    await expect(field).toHaveCount(1);
     await expect(field).toContainText(question.question);
     for (const pick of answer.picks) {
       const label = question.options[pick].label;
@@ -206,6 +207,9 @@ async function answerQuestion(page: Page, plan: Planned) {
         .click();
     }
     if (answer.other) await field.getByRole('textbox').fill(answer.other);
+    if (question.multiSelect || answer.other) {
+      await card.getByRole('button', { name: 'Next question' }).click();
+    }
   }
   await card.getByRole('button', { name: 'Send answers' }).click();
 }

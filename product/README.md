@@ -1975,4 +1975,11 @@ earlier note:
   filter menu, for each session that comes to wait on the reader and each
   agent notice, in a tab they are not looking at (`29-inbox.md`, "A
   notification in this browser").
-
+- `versions/mvp/29-inbox.md`, "Its own page, and a deck" (2026-11-24),
+  put Done, Snooze, Deprioritize and Delete over the card and Later on it,
+  with E, S, L and a swipe left for Later. The same day the owner asked for
+  fewer choices: the card shows only its answers, a dock under it has
+  Previous, Done and Next, a card that waits on an answer (a blocked
+  session, a bot's approval) has no Done, a questionnaire goes one question
+  at a time, and Mark as done takes up a task an agent made, as Dismiss did
+  ("The card's actions, reshaped").

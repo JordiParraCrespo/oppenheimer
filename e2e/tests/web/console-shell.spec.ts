@@ -136,9 +136,10 @@ test('the rail is dragged into the reader’s own order, which a reload keeps', 
 
   const rail = page.getByRole('navigation', { name: 'Main navigation' });
   const order = () =>
-    rail
-      .getByRole('link')
-      .evaluateAll((links) => links.map((link) => link.getAttribute('aria-label')));
+    rail.getByRole('link').evaluateAll((links) =>
+      // The mark above the items leads home and is no list.
+      links.map((link) => link.getAttribute('aria-label')).filter((n) => n !== 'Oppenheimer home'),
+    );
   await expect
     .poll(order)
     .toEqual(['Inbox', 'Employees', 'Sessions', 'Pull requests', 'Automations', 'Plan']);

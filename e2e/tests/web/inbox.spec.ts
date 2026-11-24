@@ -6,7 +6,8 @@ import { provisionedUser, signInAs } from '../../support/web';
  * The Inbox in a browser, against the real control plane: the console lands on
  * the Inbox, the rail's first item, a workspace with nothing waiting reads
  * "You're all caught up", a bot's pending approval comes in as a mail row and
- * as the card on the deck, and E marks it done: the row stays under Show done for the visit, the mark is stored, and
+ * as the card on the deck, Approve first, with no Done on the dock while the
+ * bot waits, and the row's menu marks it done: the row stays under Show done for the visit, the mark is stored, and
  * the deck is clear again.
  */
 test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }) => {
@@ -37,12 +38,24 @@ test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }
   await expect(
     message.getByText('Start a session on acme/app to fix the flaky login test.'),
   ).toBeVisible();
-  await expect(message.getByRole('button', { name: 'Approve', exact: true })).toBeVisible();
-  await expect(message.getByRole('button', { name: 'Deny', exact: true })).toBeVisible();
+  const answers = message.locator('[data-slot="inbox-message-actions"]').getByRole('button');
+  await expect(answers).toHaveText(['Approve', 'Deny']);
   await expect(page.getByText('1 of 1', { exact: true })).toBeVisible();
 
-  // E puts the card in hand away as done.
+  // A bot that waits on its approval has no Done on the dock, and E does nothing.
+  const dock = page.getByRole('toolbar', { name: 'Move through the Inbox' });
+  await expect(dock.getByRole('button', { name: 'Next' })).toBeVisible();
+  await expect(dock.getByRole('button', { name: 'Done' })).toHaveCount(0);
   await page.keyboard.press('e');
+  await expect(row).toBeVisible();
+
+  // The row's menu still marks it done.
+  await row.hover();
+  await page
+    .locator('[data-slot="inbox-row"]', { has: row })
+    .getByRole('button', { name: 'Item actions' })
+    .click();
+  await page.getByRole('menuitem', { name: /Mark as done/ }).click();
 
   await expect(page.getByText("You're all caught up", { exact: true })).toBeVisible();
   // Show done keeps it for this visit, struck through.

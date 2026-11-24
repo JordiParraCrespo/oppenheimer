@@ -2,47 +2,39 @@ import {
   IconButton,
   InboxClear,
   InboxDeck,
-  InboxDeckKeys,
+  InboxDock,
   InboxToolbar,
   inboxDeckAnswer,
   useIsMobile,
   useNow,
 } from '@oppenheimer/design-system-web';
-import {
-  Check,
-  ChevronLeft,
-  Clock,
-  TrendingDown,
-  TrendingUp,
-  X,
-} from '@oppenheimer/design-system-web/icons';
+import { ChevronLeft } from '@oppenheimer/design-system-web/icons';
 import { useSessions } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, formatAge } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { InboxDeckContext, useInboxDeck } from '@/features/inbox/hooks/use-inbox-deck';
+import { useInboxDeck } from '@/features/inbox/hooks/use-inbox-deck';
 import { useInboxKeys } from '@/features/inbox/hooks/use-inbox-keys';
 import { useInboxListing } from '@/features/inbox/hooks/use-inbox-listing';
 import { useInboxMarks } from '@/features/inbox/hooks/use-inbox-marks';
 import { useMarkRead } from '@/features/inbox/hooks/use-inbox-read';
 import { useFollowNext } from '@/features/inbox/hooks/use-inbox-visit';
 import { inboxCopy, inboxFrom } from '@/features/inbox/lib/inbox-copy';
-import type { InboxMarkActionName } from '@/features/inbox/lib/inbox-mark-actions';
-import { inboxVisit } from '@/features/inbox/lib/inbox-visit';
+import { canPutAway } from '@/features/inbox/lib/inbox-put-away';
 import { InboxItemMessage } from '@/features/inbox/sections/inbox-item-message';
 
 /**
- * The deck: a toolbar that marks the item in hand done, snoozes it until
- * tomorrow, deprioritizes or deletes it, with its place in the list and how
- * much of the visit is cleared; under it the item as a card on the stack of
- * what is left, and the keys that answer it — or "You're all caught up". It
- * takes its item from the same list the column draws, under the same filter
- * and search, and showing it marks it read.
+ * The deck: a bar with the item's place in the list and how much of the visit
+ * is cleared; under it the item as a card on the stack of what is left, with
+ * only its answers, numbered; under that the dock, Previous, Done and Next —
+ * or "You're all caught up". It takes its item from the same list the column
+ * draws, under the same filter and search, and showing it marks it read.
  *
- * Putting a card away (its toolbar, E and S, a swipe, Later) sends it off
- * and moves on to the item after it; answering it on the card does too, once
- * the answer lands (`currentItem` follows `following`). J and K, or the arrows,
+ * Done (the dock, E, a swipe right) sends the card off and moves on to the
+ * item after it; answering it on the card does too, once the answer lands
+ * (`currentItem` follows `following`). A card that waits on an answer has no
+ * Done (`canPutAway`). Previous and Next (K and J, the arrows, a swipe left)
  * go through the stack without putting anything away, and 1–9 press the
  * card's numbered answers.
  */
@@ -65,21 +57,22 @@ export function InboxCurrent() {
   const copy = item ? inboxCopy(item, t) : null;
   useMarkRead(item?.key ?? null, search.item !== null);
 
-  const away = (action: InboxMarkActionName, exit: 'right' | 'up') => {
-    if (!item) return;
-    putAway(item.key, exit, () => {
+  const doneable = item ? canPutAway(item) : false;
+  const done = () => {
+    if (!item || !doneable) return;
+    putAway(item.key, 'right', () => {
       // At the end of the stack the address keeps naming the item: on a phone
       // the deck stays open, to say it is clear or show a write that failed.
       search.advance(next ?? item.key);
-      marks.apply(action, item);
+      marks.apply('done', item);
     });
   };
-  const later = () => {
+  const toNext = () => search.advance(next ?? open[0]?.key ?? null);
+  const toPrevious = () => search.advance(previous ?? open.at(-1)?.key ?? null);
+  // Swiped left, the card goes off and the next comes up; this one stays.
+  const swipeNext = () => {
     if (!item) return;
-    putAway(item.key, 'left', () => {
-      inboxVisit.later(item.key);
-      search.advance(next);
-    });
+    putAway(item.key, 'left', toNext);
   };
   // On a phone the deck is hidden until an item is opened: no key acts on a
   // card the reader cannot see.
@@ -88,11 +81,9 @@ export function InboxCurrent() {
   useInboxKeys(
     item && shown
       ? {
-          onDone: () => away('done', 'right'),
-          onLow: () => marks.apply('toggleLow', item),
-          onSnooze: () => away('snoozeTomorrow', 'up'),
-          onNext: () => search.advance(next ?? open[0]?.key ?? null),
-          onPrevious: () => search.advance(previous ?? open.at(-1)?.key ?? null),
+          onDone: done,
+          onNext: toNext,
+          onPrevious: toPrevious,
           onAnswer: (n) => {
             // A card on its way out takes no answer.
             if (leaving) return false;
@@ -159,32 +150,15 @@ export function InboxCurrent() {
     now - item.since.getTime() < 60_000
       ? formatAge(item.since, now, t)
       : t('inbox.pane.ago', { age: formatAge(item.since, now, t) });
+  const several = open.length > 1;
   return (
-    <InboxDeckContext value={putAway}>
+    <>
       <InboxToolbar
         aria-label={t('inbox.pane.toolbar')}
         position={t('inbox.pane.position', { n: index + 1, total: open.length })}
         progress={progress}
       >
         {back}
-        <IconButton aria-label={t('inbox.menu.done')} onClick={() => away('done', 'right')}>
-          <Check />
-        </IconButton>
-        <IconButton
-          aria-label={t('inbox.menu.snoozeTomorrow')}
-          onClick={() => away('snoozeTomorrow', 'up')}
-        >
-          <Clock />
-        </IconButton>
-        <IconButton
-          aria-label={item.low ? t('inbox.menu.restore') : t('inbox.menu.low')}
-          onClick={() => marks.apply('toggleLow', item)}
-        >
-          {item.low ? <TrendingUp /> : <TrendingDown />}
-        </IconButton>
-        <IconButton aria-label={t('inbox.menu.delete')} onClick={() => away('remove', 'up')}>
-          <X />
-        </IconButton>
       </InboxToolbar>
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
         {errors}
@@ -197,21 +171,30 @@ export function InboxCurrent() {
           ref={deck}
           behind={open.length - 1}
           leaving={leaving}
-          onSwipe={(direction) => (direction === 'right' ? away('done', 'right') : later())}
-          swipeLabels={{ right: t('inbox.deck.swipeDone'), left: t('inbox.deck.swipeLater') }}
+          onSwipe={(direction) => (direction === 'right' ? done() : swipeNext())}
+          swipeLabels={{
+            right: doneable ? t('inbox.dock.done') : undefined,
+            left: several ? t('inbox.dock.next') : undefined,
+          }}
         >
           <InboxItemMessage item={item} copy={copy} from={from} age={age} />
         </InboxDeck>
-        <InboxDeckKeys
-          keys={[
-            { keys: ['1–9'], label: t('inbox.deck.keys.answer') },
-            { keys: ['E'], label: t('inbox.deck.keys.done') },
-            { keys: ['S'], label: t('inbox.deck.keys.snooze') },
-            { keys: ['J', 'K'], label: t('inbox.deck.keys.move') },
-          ]}
-          touch={t('inbox.deck.touch')}
+        <InboxDock
+          aria-label={t('inbox.dock.label')}
+          previous={{
+            label: t('inbox.dock.previous'),
+            keyHint: 'K',
+            onClick: toPrevious,
+            disabled: !several,
+          }}
+          next={{ label: t('inbox.dock.next'), keyHint: 'J', onClick: toNext, disabled: !several }}
+          done={
+            doneable
+              ? { label: t('inbox.dock.done'), keyHint: 'E', onClick: done, disabled: !!leaving }
+              : undefined
+          }
         />
       </div>
-    </InboxDeckContext>
+    </>
   );
 }

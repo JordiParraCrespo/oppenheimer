@@ -14,12 +14,8 @@ function arrowsTaken(target: EventTarget | null): boolean {
 }
 
 export interface InboxKeyHandlers {
-  /** E. */
+  /** E: Done, where the card can be put away. */
   onDone: () => void;
-  /** L: deprioritize, or restore. */
-  onLow: () => void;
-  /** S: snooze until tomorrow. */
-  onSnooze: () => void;
   /** J or →: the next item. */
   onNext: () => void;
   /** K or ←: the one before. */
@@ -29,9 +25,9 @@ export interface InboxKeyHandlers {
 }
 
 /**
- * The deck's keys, for the item in hand: E marks it done, S snoozes it until
- * tomorrow, L deprioritizes it (or restores it), J / → and K / ← move to the
- * next and previous item, and 1–9 press the card's answer with that number.
+ * The deck's keys, for the item in hand, as the dock and the answers wear
+ * them: E is Done, J / → and K / ← move to the next and previous item, and
+ * 1–9 press the card's answer with that number.
  * Not while the reader is typing, not with a modifier, so ⌘L and the
  * browser keep theirs, and not the arrows where they already move focus. Syncs with the document's key events; `null` listens
  * for nothing.
@@ -45,8 +41,6 @@ export function useInboxKeys(handlers: InboxKeyHandlers | null): void {
       const key = event.key.toLowerCase();
       if (key.startsWith('arrow') && arrowsTaken(event.target)) return;
       if (key === 'e') handlers.onDone();
-      else if (key === 'l') handlers.onLow();
-      else if (key === 's') handlers.onSnooze();
       else if (key === 'j' || key === 'arrowright') handlers.onNext();
       else if (key === 'k' || key === 'arrowleft') handlers.onPrevious();
       else if (/^[1-9]$/.test(key)) {

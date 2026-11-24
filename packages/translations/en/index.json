@@ -4005,7 +4005,6 @@
       "open": "Open run"
     },
     "card": {
-      "later": "Later",
       "answerFailed": "Could not do that. Try again."
     },
     "pane": {
@@ -4022,13 +4021,11 @@
       "cleared_other": "You cleared {{count}} items on this visit."
     },
     "notice": {
-      "title": "{{name}} has news for you",
-      "done": "Done"
+      "title": "{{name}} has news for you"
     },
     "botNotice": {
       "title": "{{bot}} has news for you",
-      "openChat": "Open chat",
-      "done": "Done"
+      "openChat": "Open chat"
     },
     "report": {
       "sender": "An agent",
@@ -4039,31 +4036,30 @@
       "answerPlaceholder": "What should it do?",
       "send": "Send answer",
       "sending": "Sending…",
-      "done": "Done",
       "answerFailed": "Could not send the answer. Try again."
     },
     "task": {
       "sender": "An agent",
       "short": "New task: {{title}}",
-      "body": "An agent added this task to your board. Put it on today, start a session on it, or dismiss it to keep it on the board as it is.",
+      "body": "An agent added this task to your board. Put it on today or start a session on it; Done keeps it on the board as it is.",
       "due": "Due {{date}}",
-      "open": "Open task",
       "start": "Start session",
       "today": "Put on today",
-      "planning": "Putting on today…",
-      "dismiss": "Dismiss",
-      "dismissing": "Dismissing…"
+      "planning": "Putting on today…"
     },
-    "deck": {
-      "swipeDone": "Done",
-      "swipeLater": "Later",
-      "touch": "Swipe right when it's done, left for later.",
-      "keys": {
-        "answer": "Answer",
-        "done": "Done",
-        "snooze": "Snooze",
-        "move": "Next / previous"
-      }
+    "question": {
+      "step": "Question {{n}} of {{total}}",
+      "ready": "Ready to send",
+      "back": "Back",
+      "next": "Next question",
+      "edit": "Change the answer to: {{question}}",
+      "label": "Question {{n}}"
+    },
+    "dock": {
+      "label": "Move through the Inbox",
+      "previous": "Previous",
+      "next": "Next",
+      "done": "Done"
     }
   },
   "settings": {

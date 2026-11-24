@@ -714,3 +714,39 @@ Decided by the agent that built it, for the owner to accept or change:
 3. The account menu, which lives in the sidebar's foot, is reached from any
    other page; the Inbox has no sidebar to hold it.
 
+### The card's actions, reshaped (2026-11-24)
+
+Shown the first deck, the owner found the answer row busy (Later, Open task,
+Start session, Dismiss, Put on today) and asked, mock-up by mock-up, for
+fewer choices and one place for the moves every card shares. Built the same
+day:
+
+- **The bar over the deck** keeps only "3 of 12" and the progress line. Its
+  Done, Snooze, Deprioritize and Delete buttons are gone; the row menu in the
+  list keeps them all.
+- **The card shows only its answers**, as full-width rows, the main one
+  first and numbered from 1 (two side by side, more one under the other).
+  Later is gone everywhere; Done buttons on the cards are gone (the dock has
+  it); a task loses Dismiss, which Done now does, and Open task, since Start
+  session is there.
+- **The dock under the card**: Previous, Done and Next, each with its key
+  (K, E, J). Next moves on without acting, so the item stays.
+- **No Done while something waits on an answer**: a session whose agent is
+  blocked (`lifecycle` open), and a bot's approval. Done would hide the card
+  and leave the agent stuck; such a card leaves only when answered, and Open
+  session is its last answer, to answer in the terminal.
+- **A swipe**: right is Done (only where Done is offered), left is Next.
+- **A questionnaire goes one question at a time**: the bars and "Question 2
+  of 3" over it, Back; one pick of a single choice moves on by itself,
+  several picks or words of one's own move on with Next question; then the
+  answers in a list, each a way back to its question, and Send answers.
+- **Mark as done takes up a task an agent made** (it used to be a mark
+  only), as Dismiss did, so a task marked done does not come back.
+- The numbers on the answers are written by the deck on each one
+  (`data-answer-key`): a CSS counter was not recounted when the
+  questionnaire moved to its next question.
+
+This replaces, in "Its own page, and a deck" above: E, S and L (S and L are
+gone), the swipe left as Later, the keys line under the deck, and Decided 1
+(a swipe still never answers; right is Done, left is Next).
+

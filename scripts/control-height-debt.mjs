@@ -33,7 +33,6 @@ export const CONTROL_HEIGHT_DEBT = new Map([
   ['packages/frontend/design-system/web/src/components/effort-slider.tsx', 1],
   ['packages/frontend/design-system/web/src/components/host-link.tsx', 1],
   ['packages/frontend/design-system/web/src/components/icon-button.tsx', 1],
-  ['packages/frontend/design-system/web/src/components/inbox.tsx', 1],
   ['packages/frontend/design-system/web/src/components/inline-token.tsx', 4],
   ['packages/frontend/design-system/web/src/components/milestone-timeline.tsx', 1],
   ['packages/frontend/design-system/web/src/components/month-calendar.tsx', 3],

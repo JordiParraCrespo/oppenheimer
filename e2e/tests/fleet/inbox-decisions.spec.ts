@@ -206,23 +206,24 @@ test('an agent question is answered from its Inbox card with the keys its picker
   await expect(
     card.getByRole('heading', { name: /^2 questions before .+ continues$/ }),
   ).toBeVisible();
-  const questions = card.locator('[data-slot="inbox-question"]');
-  await expect(questions).toHaveCount(2);
-  await expect(questions.nth(0)).toContainText('Which screens should change?');
-  await expect(questions.nth(0)).toContainText('Wallet, Swap and Settings');
-  const send = card.getByRole('button', { name: 'Send answers' });
-  await expect(send).toBeDisabled();
-
-  await questions
-    .nth(0)
-    .getByRole('button', { name: /^Every tab/ })
-    .click();
-  await expect(send).toBeDisabled();
+  // One question at a time, then the answers in a list and Send.
+  const question = card.locator('[data-slot="inbox-question"]');
+  await expect(question).toHaveCount(1);
+  await expect(question).toContainText('Which screens should change?');
+  await expect(question).toContainText('Wallet, Swap and Settings');
+  await expect(card.getByText('Question 1 of 2')).toBeVisible();
   await photograph(page, 'inbox-question');
 
-  await questions.nth(1).getByRole('button', { name: 'iOS' }).click();
-  await questions.nth(1).getByRole('button', { name: 'Web' }).click();
-  await questions.nth(1).getByRole('textbox').fill('Linux');
+  // One pick of a single choice moves on by itself.
+  await question.getByRole('button', { name: /^Every tab/ }).click();
+  await expect(card.getByText('Question 2 of 2')).toBeVisible();
+  await question.getByRole('button', { name: 'iOS' }).click();
+  await question.getByRole('button', { name: 'Web' }).click();
+  await question.getByRole('textbox').fill('Linux');
+  await card.getByRole('button', { name: 'Next question' }).click();
+
+  await expect(card.getByText('Ready to send')).toBeVisible();
+  const send = card.getByRole('button', { name: 'Send answers' });
   await expect(send).toBeEnabled();
   await send.click();
   await expect(card).toHaveCount(0);

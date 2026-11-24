@@ -357,10 +357,11 @@ export { IconButton, iconButtonVariants } from './components/icon-button';
 export type { CarouselSlide } from './components/image-carousel';
 export { ImageCarousel } from './components/image-carousel';
 export {
+  InboxAnswerSummary,
   InboxClear,
   InboxDeck,
   type InboxDeckExit,
-  InboxDeckKeys,
+  InboxDock,
   InboxItem,
   InboxItemSkeleton,
   InboxList,
@@ -373,6 +374,7 @@ export {
   InboxQuestion,
   InboxQuestionOption,
   InboxQuestionOptions,
+  InboxQuestionSteps,
   InboxQuestions,
   InboxSelectionHead,
   InboxSnoozedRow,

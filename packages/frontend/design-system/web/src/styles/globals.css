@@ -1452,28 +1452,13 @@
 /* The Inbox's deck (`InboxDeck`): the message sits on a card, so it keeps a
    card's bottom inset rather than a page's; and where there is a keyboard,
    each answer on the card in hand wears its number, the digit that presses
-   it. The set counted is `ANSWERS` in `components/inbox.tsx`, kept in step
-   with this selector. */
+   it, which the deck writes on it (`data-answer-key`). */
 [data-slot='inbox-deck-card'] [data-slot='inbox-message'] {
   padding-bottom: 1.75rem;
 }
-[data-slot='inbox-deck-card'] {
-  counter-reset: inbox-answer;
-}
 @media (hover: hover) and (pointer: fine) {
-  [data-slot='inbox-deck-card']
-    :is(
-      [data-slot='inbox-message-choices'] > *,
-      [data-slot='inbox-message-actions'] > div:last-child > *
-    ) {
-    counter-increment: inbox-answer;
-  }
-  [data-slot='inbox-deck-card']
-    :is(
-      [data-slot='inbox-message-choices'] > *,
-      [data-slot='inbox-message-actions'] > div:last-child > *
-    )::before {
-    content: counter(inbox-answer);
+  [data-slot='inbox-deck-card'] [data-answer-key]::before {
+    content: attr(data-answer-key);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1486,5 +1471,8 @@
     font-weight: 500;
     line-height: 1;
     font-variant-numeric: tabular-nums;
+  }
+  [data-slot='inbox-question-option']::before {
+    grid-row: 1 / span 2;
   }
 }

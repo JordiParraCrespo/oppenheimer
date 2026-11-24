@@ -76,7 +76,7 @@ describe('a report as a row', () => {
 describe('ReportAnswerForm', () => {
   function renderForm(pending = false) {
     const onSubmit = vi.fn();
-    render(<ReportAnswerForm pending={pending} onSubmit={onSubmit} alert={null} leading={null} />);
+    render(<ReportAnswerForm pending={pending} onSubmit={onSubmit} alert={null} link={null} />);
     return {
       onSubmit,
       field: screen.getByLabelText('inbox.report.answerLabel') as HTMLTextAreaElement,

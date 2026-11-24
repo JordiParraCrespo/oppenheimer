@@ -1,5 +1,5 @@
 import type { InboxDeckExit } from '@oppenheimer/design-system-web';
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /** How long the card in hand takes to leave: the deck's base duration. */
 const EXIT_MS = 220;
@@ -10,14 +10,8 @@ const STUCK_MS = 1200;
 export type InboxPutAway = (key: string, exit: InboxDeckExit, then: () => void) => void;
 
 /**
- * The deck's put-away, for the controls inside a card (Later). The value
- * never changes, so nothing re-renders through it.
- */
-export const InboxDeckContext = createContext<InboxPutAway | null>(null);
-
-/**
  * The card in hand and the way it is leaving. `putAway` draws the card
- * going off (right for done, left for later, up for snoozed) and does the
+ * going off (right for done, left for the next) and does the
  * action once it has gone, so the next card rises in its place; with reduced
  * motion it does it at once. One card leaves at a time. A card the action
  * did not take away (a refused write) settles back after a moment. Syncs
@@ -58,9 +52,4 @@ export function useInboxDeck(itemKey: string | null) {
   );
 
   return { leaving: away && away.key === itemKey ? away.exit : null, putAway };
-}
-
-/** The deck's put-away where there is one; outside a deck, the action at once. */
-export function useInboxPutAway(): InboxPutAway {
-  return useContext(InboxDeckContext) ?? ((_key, _exit, then) => then());
 }

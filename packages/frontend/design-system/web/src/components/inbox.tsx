@@ -4,7 +4,7 @@
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import { Toggle as TogglePrimitive } from '@base-ui/react/toggle';
 import { ToggleGroup as ToggleGroupPrimitive } from '@base-ui/react/toggle-group';
-import { ClockIcon } from 'lucide-react';
+import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, ClockIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
@@ -356,13 +356,14 @@ const SWIPE_SLOP = 8;
 const SWIPE_IGNORES = 'button,a,input,textarea,select,label,[role=button],[contenteditable=true]';
 
 /**
- * The answers on the card in hand, in reading order: a session's choices, or
- * the answer row's right side (Approve, Merge, Send answers). The deck's
- * number badges count the same set (`globals.css`, `inbox-deck`), so the
- * digit a person presses is the badge they read.
+ * The answers on the card in hand, in reading order: the options of the
+ * question in view, a session's choices, then the answer rows (Approve, Merge,
+ * Send answers, Open session). The deck writes each one's number on it
+ * (`data-answer-key`), which its badge shows (`globals.css`, `inbox-deck`),
+ * so the digit a person presses is the badge they read.
  */
 const ANSWERS =
-  '[data-slot=inbox-message-choices] > *, [data-slot=inbox-message-actions] > div:last-child > *';
+  '[data-slot=inbox-question-options] > *, [data-slot=inbox-message-choices] > *, [data-slot=inbox-message-actions] > *';
 
 /**
  * The `n`th answer on the deck's card in hand (from 1), or null when there is
@@ -400,13 +401,35 @@ function InboxDeck({
   behind?: number;
   leaving?: InboxDeckExit | null;
   onSwipe?: (direction: InboxSwipe) => void;
-  /** What each way does, stamped on the card while it is dragged: { right: "Done", left: "Later" }. */
-  swipeLabels?: Record<InboxSwipe, React.ReactNode>;
+  /**
+   * What each way does, stamped on the card while it is dragged: { right:
+   * "Done", left: "Next" }. A way with no label is not offered: let go, the
+   * card settles back.
+   */
+  swipeLabels?: Partial<Record<InboxSwipe, React.ReactNode>>;
 }) {
   const card = React.useRef<HTMLDivElement>(null);
   const stamps = React.useRef<Partial<Record<InboxSwipe, HTMLSpanElement | null>>>({});
   const press = React.useRef<{ x: number; y: number; id: number; dragging: boolean } | null>(null);
   const offset = React.useRef(0);
+
+  // Numbers the answers as the card draws them, again whenever its content
+  // changes (the next question, an answer row that comes or goes): a CSS
+  // counter is not recounted on every change. Syncs with the card's DOM.
+  React.useLayoutEffect(() => {
+    const node = card.current;
+    if (!node) return;
+    const number = () => {
+      node.querySelectorAll<HTMLElement>(ANSWERS).forEach((answer, index) => {
+        const key = String(index + 1);
+        if (answer.dataset.answerKey !== key) answer.dataset.answerKey = key;
+      });
+    };
+    number();
+    const observer = new MutationObserver(number);
+    observer.observe(node, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
 
   const paint = React.useCallback((x: number, settle: boolean) => {
     const node = card.current;
@@ -448,8 +471,9 @@ function InboxDeck({
     press.current = null;
     if (!held?.dragging || event.pointerId !== held.id) return;
     const x = offset.current;
-    if (event.type === 'pointerup' && Math.abs(x) >= SWIPE_AWAY && onSwipe) {
-      onSwipe(x > 0 ? 'right' : 'left');
+    const way = x > 0 ? 'right' : 'left';
+    if (event.type === 'pointerup' && Math.abs(x) >= SWIPE_AWAY && onSwipe && swipeLabels?.[way]) {
+      onSwipe(way);
       return;
     }
     offset.current = 0;
@@ -511,6 +535,7 @@ function InboxDeck({
         >
           {swipeLabels ? (
             <>
+              {swipeLabels.right ? (
               <span
                 ref={(node) => {
                   stamps.current.right = node;
@@ -520,6 +545,8 @@ function InboxDeck({
               >
                 {swipeLabels.right}
               </span>
+              ) : null}
+              {swipeLabels.left ? (
               <span
                 ref={(node) => {
                   stamps.current.left = node;
@@ -529,6 +556,7 @@ function InboxDeck({
               >
                 {swipeLabels.left}
               </span>
+              ) : null}
             </>
           ) : null}
           {children}
@@ -538,39 +566,138 @@ function InboxDeck({
   );
 }
 
+interface InboxDockAction {
+  label: string;
+  /** The key that does the same, shown under the label where there is a keyboard. */
+  keyHint?: string;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
 /**
- * InboxDeckKeys — under the deck, what the keys do: each entry its keys as
- * `Kbd` glyphs and what they do, in a quiet wrapping row. Where the pointer
- * is a finger it gives way to `touch`, the line that says how to swipe.
+ * InboxDock — under the deck, the moves every card shares: Previous and Next
+ * as quiet round buttons, and between them Done, the large light one, where
+ * the card in hand can be put away (`done`; a card that waits on an answer
+ * has none, and only its answers take it off the deck). Each button's name
+ * is under it, with its key where there is a keyboard.
  */
-function InboxDeckKeys({
-  keys,
-  touch,
+function InboxDock({
+  previous,
+  next,
+  done,
   className,
   ...props
-}: React.ComponentProps<'div'> & {
-  keys: readonly { keys: readonly string[]; label: React.ReactNode }[];
-  touch?: React.ReactNode;
+}: Omit<React.ComponentProps<'div'>, 'children'> & {
+  previous: InboxDockAction;
+  next: InboxDockAction;
+  done?: InboxDockAction;
+}) {
+  const actions: { action: InboxDockAction; glyph: React.ReactNode; main?: boolean }[] = [
+    { action: previous, glyph: <ChevronLeftIcon aria-hidden /> },
+    ...(done ? [{ action: done, glyph: <CheckIcon aria-hidden />, main: true }] : []),
+    { action: next, glyph: <ChevronRightIcon aria-hidden /> },
+  ];
+  return (
+    <div
+      role="toolbar"
+      data-slot="inbox-dock"
+      className={cn('flex justify-center px-6 pt-5 pb-10', className)}
+      {...props}
+    >
+      <div className="flex items-start gap-4">
+        {actions.map(({ action, glyph, main }) => (
+          <div key={action.label} className="flex w-14 flex-col items-center gap-1.5">
+            <ButtonPrimitive
+              aria-label={action.label}
+              disabled={action.disabled}
+              onClick={action.onClick}
+              className={cn(
+                'flex items-center justify-center rounded-pill outline-none transition-[background-color,transform] duration-instant ease-standard active:scale-[0.95] focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-5',
+                main
+                  ? 'size-13 bg-fg text-canvas hover:bg-fg/90'
+                  : 'mt-1.5 size-(--control-h-lg) border border-border bg-card text-fg hover:bg-hover-surface',
+              )}
+            >
+              {glyph}
+            </ButtonPrimitive>
+            <span className="text-[11.5px] text-fg-subtle">{action.label}</span>
+            {action.keyHint ? (
+              <Kbd className="[@media(pointer:coarse)]:hidden">{action.keyHint}</Kbd>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * InboxQuestionSteps — over a questionnaire taken one question at a time: a
+ * bar per question (done, in view, to come), where it stands in words
+ * ("Question 2 of 3", "Ready to send"), and `action` (Back) on the right.
+ */
+function InboxQuestionSteps({
+  total,
+  current,
+  label,
+  action,
+  className,
+}: {
+  total: number;
+  /** The question in view, from 0; `total` is the review. */
+  current: number;
+  label: React.ReactNode;
+  action?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div data-slot="inbox-question-steps" className={cn('flex items-center gap-1.5', className)}>
+      {Array.from({ length: total }, (_, index) => (
+        <span
+          // biome-ignore lint/suspicious/noArrayIndexKey: a bar stands for a question's place.
+          key={index}
+          aria-hidden
+          className={cn(
+            'h-1 w-6 rounded-pill',
+            index < current ? 'bg-primary/60' : index === current ? 'bg-primary' : 'bg-border',
+          )}
+        />
+      ))}
+      <span className="ml-1.5 text-[12px] text-fg-subtle">{label}</span>
+      {action ? <span className="ml-auto">{action}</span> : null}
+    </div>
+  );
+}
+
+/**
+ * InboxAnswerSummary — a questionnaire's answers before they are sent: a row
+ * per question, its tag on the left and the answer on the right, each a
+ * button back to its question.
+ */
+function InboxAnswerSummary({
+  rows,
+  className,
+}: {
+  rows: readonly { label: React.ReactNode; answer: React.ReactNode; onEdit: () => void; editLabel: string }[];
+  className?: string;
 }) {
   return (
     <div
-      data-slot="inbox-deck-keys"
-      className={cn('mx-auto w-full max-w-[800px] px-6 pt-4 pb-8 text-[12px] text-fg-subtle max-sm:px-3', className)}
-      {...props}
+      data-slot="inbox-answer-summary"
+      className={cn('flex flex-col overflow-hidden rounded-md border border-border-subtle', className)}
     >
-      <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2 [@media(pointer:coarse)]:hidden">
-        {keys.map((entry) => (
-          <li key={entry.keys.join('')} className="flex items-center gap-1.5">
-            <span className="flex items-center gap-0.5">
-              {entry.keys.map((key) => (
-                <Kbd key={key}>{key}</Kbd>
-              ))}
-            </span>
-            {entry.label}
-          </li>
-        ))}
-      </ul>
-      {touch ? <p className="hidden text-center [@media(pointer:coarse)]:block">{touch}</p> : null}
+      {rows.map((row, index) => (
+        <ButtonPrimitive
+          // biome-ignore lint/suspicious/noArrayIndexKey: a row is a question's place.
+          key={index}
+          aria-label={row.editLabel}
+          onClick={row.onEdit}
+          className="flex items-baseline gap-3 border-t border-border-subtle px-4 py-2.5 text-left text-[13.5px] outline-none first:border-t-0 hover:bg-hover-surface focus-visible:bg-hover-surface"
+        >
+          <span className="w-24 shrink-0 truncate text-fg-subtle">{row.label}</span>
+          <span className="min-w-0 flex-1 text-fg">{row.answer}</span>
+        </ButtonPrimitive>
+      ))}
     </div>
   );
 }
@@ -652,32 +779,27 @@ function InboxMessageFacts({ className, ...props }: React.ComponentProps<'div'>)
 }
 
 /**
- * The answer row: `leading` (Later, a link to the thing) on the left, the
- * answers (`children`) on the right, the primary last.
+ * The card's answers, the first one the main one: full-width rows of the
+ * control height, two side by side when there are exactly two, else one
+ * under the other. Each answer is a `Button` the caller styles (the first
+ * `primary`, the rest `secondary`); where there is a keyboard the deck wears
+ * their numbers (`inboxDeckAnswer`). What is not an answer (Done, moving on)
+ * is the dock's, under the card.
  */
-function InboxMessageActions({
-  leading,
-  children,
-  className,
-}: {
-  leading?: React.ReactNode;
-  children?: React.ReactNode;
-  className?: string;
-}) {
+const ANSWER_ROWS =
+  'grid gap-2 sm:[&:has(>:nth-child(2):last-child)]:grid-cols-2 [&>*]:h-(--control-h-lg) [&>*]:w-full [&>*]:min-w-0 [&>*]:justify-start [&>*]:rounded-md [&>*]:px-4 [&>*]:text-[14px]';
+
+function InboxMessageActions({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <div data-slot="inbox-message-actions" className={cn('flex flex-wrap items-center gap-2', className)}>
-      {leading ? <div className="flex flex-wrap items-center gap-2">{leading}</div> : null}
-      {/* The answers keep together, on the right, and wrap as one under the rest. */}
-      <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{children}</div>
-    </div>
+    <div data-slot="inbox-message-actions" className={cn(ANSWER_ROWS, className)} {...props} />
   );
 }
 
 /**
- * InboxMessageChoices — the answers a session waits on, in the card's body, in
- * the order the agent offers them (the frame's "A session is waiting on a
- * decision"): one `Button` each, the first the primary. The row wraps; a
- * label too long for the card is cut, with the whole of it on the button's
+ * InboxMessageChoices — the answers a session waits on, in the order the
+ * agent offers them (a permission's Yes, Yes and don't ask again, No): one
+ * `Button` each, the first the primary, as answer rows one under the other.
+ * A label too long for the card is cut, with the whole of it on the button's
  * own `title`.
  */
 function InboxMessageChoices({ className, ...props }: React.ComponentProps<'div'>) {
@@ -685,7 +807,7 @@ function InboxMessageChoices({ className, ...props }: React.ComponentProps<'div'
     <div
       role="group"
       data-slot="inbox-message-choices"
-      className={cn('flex min-w-0 flex-wrap gap-1.5 [&>*]:max-w-full', className)}
+      className={cn(ANSWER_ROWS, 'sm:[&:has(>:nth-child(2):last-child)]:grid-cols-1', className)}
       {...props}
     />
   );
@@ -744,8 +866,8 @@ type InboxQuestionOptionsProps = Omit<
 };
 
 /**
- * InboxQuestionOptions — a question's options as pills: one pick, or several
- * when `multiple`. Pressing the picked one of a single choice keeps it.
+ * InboxQuestionOptions — a question's options, one row each: one pick, or
+ * several when `multiple`. Pressing the picked one of a single choice keeps it.
  */
 function InboxQuestionOptions({
   multiple = false,
@@ -765,17 +887,17 @@ function InboxQuestionOptions({
         const one = picked.find((v) => !value.includes(v));
         if (one !== undefined) onValueChange([one]);
       }}
-      className={cn('flex flex-wrap gap-1.5', className)}
+      className={cn('flex flex-col gap-2', className)}
       {...props}
     />
   );
 }
 
 /**
- * InboxQuestionOption — one option, a 32px pill on a hairline (the frame's
- * `qs` pills); picked, it takes the selected wash and a primary ring. Its
- * `description` sits under the label in subtle ink, and the pill rounds to a
- * card around the two.
+ * InboxQuestionOption — one option, an answer row as tall as the card's
+ * other answers, its `description` under the label in subtle ink; picked, it
+ * takes the selected wash and a primary ring. Where there is a keyboard the
+ * deck's number sits before the two.
  */
 function InboxQuestionOption({
   index,
@@ -793,15 +915,14 @@ function InboxQuestionOption({
       data-slot="inbox-question-option"
       value={String(index)}
       className={cn(
-        'flex min-h-8 max-w-full flex-col items-start justify-center gap-0.5 border border-border px-3.5 py-1.5 text-left text-[13px] text-fg outline-none transition-[background-color,border-color,transform] duration-instant ease-standard select-none hover:bg-hover-surface active:scale-[0.975] focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-disabled:opacity-40 data-pressed:border-primary data-pressed:bg-selected-surface',
-        description ? 'rounded-md' : 'rounded-pill',
+        'grid min-h-(--control-h-lg) w-full grid-cols-[auto_minmax(0,1fr)] content-center items-center gap-x-2.5 gap-y-0.5 rounded-md border border-border-subtle bg-control px-4 py-2 text-left text-[14px] text-fg outline-none transition-[background-color,border-color,transform] duration-instant ease-standard select-none hover:bg-hover-surface active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-disabled:opacity-40 data-pressed:border-primary data-pressed:bg-selected-surface',
         className,
       )}
       {...props}
     >
-      <span className="leading-[1.35]">{label}</span>
+      <span className="col-start-2 leading-[1.35] font-medium">{label}</span>
       {description ? (
-        <span className="text-[12px] leading-[1.35] text-fg-subtle">{description}</span>
+        <span className="col-start-2 text-[12.5px] leading-[1.35] text-fg-subtle">{description}</span>
       ) : null}
     </TogglePrimitive>
   );
@@ -834,8 +955,9 @@ function InboxClear({
 
 export {
   InboxClear,
+  InboxAnswerSummary,
   InboxDeck,
-  InboxDeckKeys,
+  InboxDock,
   inboxDeckAnswer,
   InboxItem,
   InboxItemSkeleton,
@@ -849,6 +971,7 @@ export {
   InboxQuestion,
   InboxQuestionOption,
   InboxQuestionOptions,
+  InboxQuestionSteps,
   InboxQuestions,
   InboxSelectionHead,
   InboxSnoozedRow,
