@@ -22,7 +22,7 @@ export const ALL_PROJECTS = 'all';
 export const NO_PROJECT = 'none';
 
 /**
- * `/plan/inbox`'s search: the item in the reading pane, the list's words
+ * `/inbox`'s search: the item in the reading pane, the list's words
  * (`q`) and its facets, so a narrowed Inbox is a link. A value the schema does not accept reads as
  * absent, which is the default. Show done is on unless `hideDone` says not.
  */

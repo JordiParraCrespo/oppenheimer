@@ -1,12 +1,12 @@
 import { Button, cn, InboxListHead } from '@oppenheimer/design-system-web';
-import { ErrorAlert, QueryState, SidebarToggle } from '@oppenheimer/frontend-web';
+import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { InboxListSkeleton } from '@/features/inbox/components/inbox-list-skeleton';
 import { InboxList } from '@/features/inbox/sections/inbox-list';
 
 /**
  * The Inbox's list column, beside the reading pane: the list read under
- * Suspense, its head with the sidebar toggle in every state. On a phone it
+ * Suspense, its head in every state. On a phone it
  * takes the width, and gives way to the reading pane once an item is opened
  * (`reading`).
  */
@@ -28,7 +28,7 @@ export function InboxListColumn({ reading }: { reading: boolean }) {
         <QueryState.Error>
           {(error, retry) => (
             <>
-              <InboxListHead leading={<SidebarToggle />} title={t('inbox.title')} />
+              <InboxListHead title={t('inbox.title')} />
               <ErrorAlert
                 error={error}
                 fallback={t('inbox.list.failed')}

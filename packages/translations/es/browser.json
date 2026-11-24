@@ -1878,6 +1878,8 @@
       "copyMessage": "Copiar mensaje",
       "copyReply": "Copiar respuesta",
       "toLatest": "Ir a lo último",
+      "loadingOlder": "Cargando mensajes anteriores…",
+      "olderFailed": "No se pudieron cargar los mensajes anteriores. Vuelve a desplazarte hacia arriba para intentarlo de nuevo.",
       "switchedModel": "Cambiado a <model>{{model}}</model>",
       "tokens_one": "{{tokens}} token",
       "tokens_many": "{{tokens}} tokens",
@@ -3448,7 +3450,6 @@
     "backToTask": "Volver a la tarea",
     "nav": {
       "label": "Plan",
-      "inbox": "Bandeja",
       "tasks": "Tareas",
       "calendar": "Calendario",
       "milestones": "Hitos",
@@ -4088,7 +4089,6 @@
       "open": "Abrir ejecución"
     },
     "card": {
-      "later": "Más tarde",
       "answerFailed": "No se pudo hacer. Inténtalo de nuevo."
     },
     "pane": {
@@ -4101,16 +4101,17 @@
       "clear": "Lo nuevo llega aquí cuando algo necesita una decisión.",
       "clearRunning_one": "{{count}} sesión sigue en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
       "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
-      "clearRunning_many": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión."
+      "clearRunning_many": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
+      "cleared_one": "Has despejado {{count}} elemento en esta visita.",
+      "cleared_other": "Has despejado {{count}} elementos en esta visita.",
+      "cleared_many": "Has despejado {{count}} elementos en esta visita."
     },
     "notice": {
-      "title": "{{name}} tiene novedades para ti",
-      "done": "Hecho"
+      "title": "{{name}} tiene novedades para ti"
     },
     "botNotice": {
       "title": "{{bot}} tiene novedades para ti",
-      "openChat": "Abrir chat",
-      "done": "Hecho"
+      "openChat": "Abrir chat"
     },
     "report": {
       "sender": "Un agente",
@@ -4121,20 +4122,30 @@
       "answerPlaceholder": "¿Qué debería hacer?",
       "send": "Enviar respuesta",
       "sending": "Enviando…",
-      "done": "Hecho",
       "answerFailed": "No se pudo enviar la respuesta. Inténtalo de nuevo."
     },
     "task": {
       "sender": "Un agente",
       "short": "Nueva tarea: {{title}}",
-      "body": "Un agente añadió esta tarea a tu tablero. Ponla para hoy, empieza una sesión con ella o descártala para dejarla en el tablero tal como está.",
+      "body": "Un agente añadió esta tarea a tu tablero. Ponla para hoy o empieza una sesión con ella; Hecho la deja en el tablero tal como está.",
       "due": "Vence el {{date}}",
-      "open": "Abrir tarea",
       "start": "Empezar sesión",
       "today": "Poner para hoy",
-      "planning": "Poniéndola para hoy…",
-      "dismiss": "Descartar",
-      "dismissing": "Descartando…"
+      "planning": "Poniéndola para hoy…"
+    },
+    "question": {
+      "step": "Pregunta {{n}} de {{total}}",
+      "ready": "Listo para enviar",
+      "back": "Atrás",
+      "next": "Siguiente pregunta",
+      "edit": "Cambiar la respuesta a: {{question}}",
+      "label": "Pregunta {{n}}"
+    },
+    "dock": {
+      "label": "Moverse por la bandeja",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "done": "Hecho"
     }
   },
   "settings": {
@@ -4692,7 +4703,8 @@
     "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Empleados"
+    "employees": "Empleados",
+    "inbox": "Bandeja"
   },
   "language": {
     "label": "Idioma",

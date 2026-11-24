@@ -1904,6 +1904,13 @@ earlier note:
   it is told apart from what the owner wrote, and the App's comments wake
   nothing (`loopGuard`), so an answer never asks a bot again. The guide's
   "writing to a bot only in the console" stopped holding the same day.
+- `versions/mvp/29-inbox.md`, "As built: the Inbox in Plan" (2026-10-29),
+  made the Inbox Plan's first section at `/plan/inbox`, with no rail item.
+  On 2026-11-24 the owner asked for it to be one of the platform's core
+  features, with its own page, and as easy to answer and move on from as a
+  swipe: it is the rail's first item again at `/inbox` (the Plan address
+  redirects), with a dot and a count, and no sidebar, Plan opens on its board, and the reading pane is a deck of cards
+  answered by number keys or a swipe ("Its own page, and a deck").
 - `27-bot-subscriptions.md` §4.2 had a bot's look at a task it handed off
   stay quiet (`nothing_to_report`) while the task was on track, so the chat
   showed only "Checked on session". On 2026-11-23, after the owner had to
@@ -1968,6 +1975,21 @@ earlier note:
   filter menu, for each session that comes to wait on the reader and each
   agent notice, in a tab they are not looking at (`29-inbox.md`, "A
   notification in this browser").
+- `versions/mvp/29-inbox.md`, "Its own page, and a deck" (2026-11-24),
+  put Done, Snooze, Deprioritize and Delete over the card and Later on it,
+  with E, S, L and a swipe left for Later. The same day the owner asked for
+  fewer choices: the card shows only its answers, a dock under it has
+  Previous, Done and Next, a card that waits on an answer (a blocked
+  session, a bot's approval) has no Done, a questionnaire goes one question
+  at a time, and Mark as done takes up a task an agent made, as Dismiss did
+  ("The card's actions, reshaped").
+- The Chrome extension (`apps/extension`) told only about Claude Code cloud
+  sessions, and sent Oppenheimer their states without reading anything
+  back. On 2026-11-24, connected to Oppenheimer, it also reads the
+  workspace's open sessions with the same token and tells, with a Chrome
+  notification and its badge, each session on the person's hosts that comes
+  to wait on them and each agent notice (`29-inbox.md`, "The Chrome
+  extension tells about your hosts too").
 - A bot's `react` tool worked in its console chat only, refusing on a
   channel's conversation ("answer in words"). On 2026-11-24 the owner asked
   for the bot to decide its reactions on the channels too, keeping Slack's
