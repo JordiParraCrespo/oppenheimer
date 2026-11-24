@@ -39,8 +39,8 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
 }));
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ params, ...props }: { params: { sessionId: string } }) => (
-    <a href={`/sessions/${params.sessionId}`} {...props} />
+  Link: ({ to, params, ...props }: { to: string; params?: { sessionId: string } }) => (
+    <a href={params ? `/sessions/${params.sessionId}` : to} {...props} />
   ),
   useNavigate: () => navigate,
 }));
@@ -124,5 +124,20 @@ describe('the tabs over Sessions', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'sessions.tabs.close' })[1]);
     expect(navigate).not.toHaveBeenCalled();
     expect(screen.getAllByRole('link').map((link) => link.textContent)).toEqual(['Fix login']);
+  });
+
+  it('keeps the open tabs on New session, adds none for it, and lights a New session tab', () => {
+    lists.sessions = [sessionEntity({ id: 'a', name: 'Fix login' })];
+    openFirst('a');
+    render(<SessionTabs shown={null} bot={noBot} />);
+
+    const links = screen.getAllByRole('link');
+    expect(links.map((link) => link.textContent)).toEqual(['Fix login', 'sessions.tabs.new']);
+    expect(links[1].getAttribute('aria-current')).toBe('page');
+    expect(screen.queryByRole('button', { name: 'sessions.tabs.new' })).toBeNull();
+    expect(window.localStorage.getItem('oppenheimer.sessions.tabs')).toBe('["session:a"]');
+
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.tabs.close' }));
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

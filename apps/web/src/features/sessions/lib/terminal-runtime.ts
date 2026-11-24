@@ -74,8 +74,6 @@ export interface SessionTerminalOptions {
   snapshot?: string;
   /** Hands the pane's picture over as it unmounts, to be the next `snapshot`. */
   keepSnapshot?: (snapshot: string) => void;
-  /** The key the echo readout is published under, for the session's bar. */
-  latencyKey?: string;
   /**
    * What the agent's spinner line says as the screen changes, for the chat
    * drawn over the grid (`bindAgentActivity`); none once it is gone.
@@ -169,8 +167,6 @@ export function mountSessionTerminal(
     readOnly: options.readOnly ?? false,
     typeahead: options.typeahead ?? (() => false),
     renderer: () => renderer,
-    onPath: stream.onPath?.bind(stream),
-    latencyKey: options.latencyKey,
   });
   const send = echo.send;
 

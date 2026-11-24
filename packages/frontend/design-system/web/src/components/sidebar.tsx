@@ -358,17 +358,21 @@ function SidebarSearch({
 /**
  * SidebarListHead — the line over a grouped list: the list's name as a muted
  * uppercase label, its count in mono, then any actions (New project, the
- * filter menu). Both of the console's lists open on one.
+ * filter menu). Both of the console's lists open on one. A folded list can
+ * leave a `summary` beside its label (a Bots heading's faces).
  */
 function SidebarListHead({
   label,
   count,
+  summary,
   className,
   children,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'children'> & {
   label: React.ReactNode;
   count?: React.ReactNode;
+  /** What stands for the list while it is folded (`BotFaces`), in the space between the label and the actions. */
+  summary?: React.ReactNode;
   /** Icon buttons after the count. */
   children?: React.ReactNode;
 }) {
@@ -378,9 +382,15 @@ function SidebarListHead({
       className={cn('flex items-center gap-2 px-3 pt-0.5 pb-1.5 [&_button]:rounded-nav', className)}
       {...props}
     >
-      <span className="eyebrow min-w-0 flex-1 font-normal tracking-[0.04em] text-fg-muted">
+      <span
+        className={cn(
+          'eyebrow min-w-0 font-normal tracking-[0.04em] text-fg-muted',
+          summary ? 'shrink-0' : 'flex-1',
+        )}
+      >
         {label}
       </span>
+      {summary ? <div className="flex min-w-0 flex-1">{summary}</div> : null}
       {count !== undefined ? (
         <span className="figures text-micro leading-(--leading-body) tracking-normal text-fg-muted">{count}</span>
       ) : null}

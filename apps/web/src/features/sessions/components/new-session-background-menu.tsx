@@ -26,7 +26,7 @@ export function NewSessionBackgroundMenu({
   const input = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="absolute top-2 right-3.5">
+    <>
       <input
         ref={input}
         type="file"
@@ -65,6 +65,6 @@ export function NewSessionBackgroundMenu({
           ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
+    </>
   );
 }

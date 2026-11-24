@@ -1228,6 +1228,10 @@
       "markUnread": "Marcar como no leída",
       "markRead": "Marcar como leída",
       "unreadLabel": "No leída",
+      "mute": "Silenciar notificaciones",
+      "unmute": "Activar notificaciones",
+      "mutedLabel": "Notificaciones silenciadas",
+      "notifyTitle": "Notificaciones y lectura",
       "hide": "Ocultar",
       "show": "Mostrar",
       "hidden": "Oculta",
@@ -2822,7 +2826,13 @@
       "manage": "Bots en {{section}}",
       "checkedHint": "Los bots marcados aparecen en {{section}}.",
       "manageAll": "Gestionar en {{employees}}",
-      "hide": "Ocultar de {{section}}"
+      "hide": "Ocultar de {{section}}",
+      "faceWaiting": "{{name}}, te necesita",
+      "faceUnread": "{{name}}, sin leer",
+      "faceWorking": "{{name}}, trabajando",
+      "more_one": "{{count}} bot más: mostrar la lista",
+      "more_many": "{{count}} bots más: mostrar la lista",
+      "more_other": "{{count}} bots más: mostrar la lista"
     }
   },
   "automations": {
@@ -4226,7 +4236,10 @@
     },
     "botNotice": {
       "title": "{{bot}} tiene novedades para ti",
-      "openChat": "Abrir chat"
+      "openChat": "Abrir chat",
+      "reply": "Responder aquí",
+      "hideReply": "Ocultar chat",
+      "chat": "Chat con {{bot}}"
     },
     "report": {
       "sender": "Un agente",
@@ -4261,6 +4274,12 @@
       "previous": "Anterior",
       "next": "Siguiente",
       "done": "Hecho"
+    },
+    "alert": {
+      "doneTitle": "{{name}} terminó su turno",
+      "doneBody": "Abre la sesión para ver qué hizo.",
+      "staleTitle": "{{name}} lleva 30 minutos esperando",
+      "staleBody": "Todavía te necesita. Abre la sesión para retomarla."
     }
   },
   "settings": {

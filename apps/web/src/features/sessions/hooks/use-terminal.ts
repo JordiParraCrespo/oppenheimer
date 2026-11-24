@@ -71,8 +71,6 @@ export function useTerminal(
     chatClear?: CodingAgentClear;
     /** How the agent's permission dialog reads, for the chat to answer it (`permissionPromptOf`). */
     chatPermission?: PermissionPromptSpec;
-    /** Where the echo readout is published (`SessionTerminalOptions.latencyKey`). */
-    latencyKey?: string;
   } = {},
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -110,7 +108,6 @@ export function useTerminal(
   const chat = options.chat;
   const chatClear = options.chatClear;
   const chatPermission = options.chatPermission;
-  const latencyKey = options.latencyKey;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: generation is the re-run key
   useEffect(() => {
@@ -135,7 +132,6 @@ export function useTerminal(
         : undefined,
       onFiles: (files) => onFilesRef.current?.(files),
       typeahead: () => typeaheadRef.current,
-      latencyKey,
       // A reconnect replays the scrollback, so a session that has already run
       // answers this on its first frame and the waiting state never shows.
       onFirstOutput: () => setHasOutput(true),
@@ -201,7 +197,6 @@ export function useTerminal(
     chat,
     chatClear,
     chatPermission,
-    latencyKey,
   ]);
 
   const hostId = options.hostId;

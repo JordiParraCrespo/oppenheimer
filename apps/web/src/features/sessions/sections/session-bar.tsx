@@ -5,7 +5,6 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AgentReportNote } from '../components/agent-report-note';
 import { agentNoteFor, dotFor } from '../lib/session-run-state';
-import { LatencyReadout } from './latency-readout';
 import { SessionShareButton } from './session-share-button';
 
 /**
@@ -18,13 +17,9 @@ import { SessionShareButton } from './session-share-button';
  * When the agent itself said what it is doing (OSC 7501), its word follows
  * the state: why it waits, and its own message.
  *
- * With the echo readout switched on (`latency-readout.ts`), the terminal's
- * keystroke round trip sits after the state, in the bar rather than over
- * the grid.
- *
  * Under Sessions the route hands it the open tabs (`open`): they take the
- * name's place, the state moves to the tab's dot and tooltip, the readout
- * to the right, and the bar keeps one line.
+ * name's place, the state moves to the tab's dot and tooltip, and the bar
+ * keeps one line.
  *
  * Every state of the session draws it — starting, live, stopped — so the way
  * back to the sidebar never moves. `preview` is the toggle for the pane the
@@ -70,8 +65,6 @@ export function SessionBar({
               {t(`sessions.session.state.${stateWordFor(session)}`)}
             </StatusDot>
             {note ? <AgentReportNote word={note.word} message={note.message} /> : null}
-            {/* A cloud session has no terminal here: nothing to time, nothing to share. */}
-            {session.isCloud ? null : <LatencyReadout sessionId={session.id} />}
           </>
         )
       }
@@ -80,7 +73,6 @@ export function SessionBar({
       actions={
         session.isCloud ? null : (
           <>
-            {open ? <LatencyReadout sessionId={session.id} /> : null}
             {open && tabs ? (
               <span aria-hidden className="mx-1.5 h-4.5 w-px bg-border-subtle" />
             ) : null}
@@ -93,7 +85,7 @@ export function SessionBar({
       // on screen: the chat stands on the same ground, so bar, grid and chat
       // read as one surface and switching views changes no colour.
       tone={open ? 'chrome' : 'page'}
-      className="border-b border-border-subtle bg-term-bg"
+      className="border-b border-border-subtle bg-term-bg [--chat-tab-ground:var(--term-bg)]"
     />
   );
 }
