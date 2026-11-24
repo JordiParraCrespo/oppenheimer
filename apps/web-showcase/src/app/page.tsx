@@ -841,7 +841,7 @@ export default function Page() {
         id="segmented"
         title="SegmentedControl"
         meta="segmented-control.tsx"
-        desc="Two or three ways to read the same thing, one always on: Command / Agent prompt in the Add host dialog. A pill on the hover surface with 2px of inset; the active segment lifts onto the card colour. Never a form value; that is RadioGroup. Three sizes: sm labels a panel, md (28px) switches what a pane shows (Description / Changes), lg (32px) is a page's top row (Mine / Review requests / Watching); an item's count rides after its label in mono."
+        desc="Two or three ways to read the same thing, one always on: Command / Agent prompt in the Add host dialog. A pill on the hover surface with 2px of inset; the active segment lifts onto the card colour. Never a form value; that is RadioGroup. Never tabs; a row that switches views is PillTabs. Sizes: sm labels a panel, md (28px) sets how a pane reads (Unified / Split); an item's count rides after its label in mono."
         code={`<SegmentedControl value={tab} onValueChange={setTab}><SegmentedControlItem value="cmd">Command</SegmentedControlItem>…</SegmentedControl>`}
       >
         <SegmentedDemo />
