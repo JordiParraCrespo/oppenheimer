@@ -1086,7 +1086,9 @@ const hostExecAllowEntrySchema = z.string().min(1).max(1_024).regex(/^\S+$/);
  * `host.settings` with the same `commandId` and what the host now allows, or
  * by `command.failed` (`EXEC_005`, `COMPUTER_005`, `BROWSER_005` the file
  * cannot be written, `EXEC_008` an allowlist entry is not a program name or
- * an absolute path).
+ * an absolute path, `EXEC_009` the allowlist would outgrow its file). Every
+ * check runs before any file is written; a write that fails after another
+ * landed says in its detail what was already saved.
  */
 export const hostSettingsSetSchema = z.object({
   type: z.literal('host.settings.set'),

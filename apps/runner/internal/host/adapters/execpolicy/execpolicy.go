@@ -18,7 +18,7 @@ import (
 var _ app.ExecPolicies = File{}
 
 // maxSize bounds what is read: a policy is a mode and a short list.
-const maxSize = 64 << 10
+const maxSize = domain.ExecPolicyMaxBytes
 
 // File is the policy at Path.
 type File struct {

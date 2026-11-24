@@ -1356,6 +1356,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `EXEC_006` <a id="exec_006" />         | This host does not let bots drive a terminal | 403  |
 | `EXEC_007` <a id="exec_007" />         | The session is not a blank terminal          | 409  |
 | `EXEC_008` <a id="exec_008" />         | Not a program name or an absolute path       | 400  |
+| `EXEC_009` <a id="exec_009" />         | The host's allowlist is full                 | 413  |
 | `COMPUTER_001` <a id="computer_001" /> | Using this host's screen is off              | 403  |
 | `COMPUTER_002` <a id="computer_002" /> | This host has no screen the runner can use   | 424  |
 | `COMPUTER_003` <a id="computer_003" /> | The action does not fit the screen           | 400  |

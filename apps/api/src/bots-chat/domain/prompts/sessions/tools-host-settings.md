@@ -46,4 +46,4 @@ The runner on {{host}} is too old to change its switches from here: nothing chan
 
 <!-- fragment: refused -->
 
-{{host}} refused ({{code}}): {{detail}}. Nothing changed.
+{{host}} refused ({{code}}): {{detail}}. Tell the person what was saved and what was not, as the reason says.

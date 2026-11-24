@@ -424,8 +424,10 @@ runner does with it and point back.
   `runner computer` and `runner exec` write and answers `{ browser,
   computer, execMode, execAllow }`, what the host allows after it; or
   `command.failed` with `EXEC_008` (an entry that is not a program name or an
-  absolute path, which changes nothing) or the `*_005` of a file it cannot
-  write. One lane for the host. Sent only to a runner whose `hello` names
+  absolute path), `EXEC_009` (an allowlist that would outgrow its 64 KB file)
+  or the `*_005` of a file it cannot read or write. Every check runs before
+  any file is written; a write that fails after another landed says in its
+  detail what was already saved. One lane for the host. Sent only to a runner whose `hello` names
   `host.settings`, and waited on for 15 seconds.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the

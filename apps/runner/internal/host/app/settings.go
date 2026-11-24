@@ -1,9 +1,13 @@
 package app
 
 import (
+	"encoding/json"
+	"errors"
 	"slices"
+	"strings"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
+	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 )
 
 // Settings is what this host lets bots do: its browser, its screen and its
@@ -43,31 +47,24 @@ func (s *Service) Settings() (Settings, error) {
 }
 
 // ApplySettings writes the change, the same way the `runner` commands do,
-// and answers with the switches after it. Every entry is checked before any
-// file is written, so a bad entry changes nothing.
+// and answers with the switches after it. Everything is read and checked
+// before anything is written, so a bad entry, a full allowlist or an
+// unreadable exec policy changes nothing. A write that fails after an
+// earlier one landed says in its detail what was already saved.
 func (s *Service) ApplySettings(change SettingsChange) (Settings, error) {
 	for _, entry := range change.Allow {
 		if err := domain.ValidExecEntry(entry); err != nil {
-			return Settings{}, domain.ErrExecEntry.WithDetail("%v", err).WithCause(err)
+			return Settings{}, domain.ErrExecEntry.WithDetail("%v; nothing changed", err).WithCause(err)
 		}
 	}
 	if change.ExecMode != nil && !slices.Contains(domain.ExecModes, *change.ExecMode) {
-		return Settings{}, domain.ErrExecEntry.WithDetail("unknown exec mode %q", *change.ExecMode)
+		return Settings{}, domain.ErrExecEntry.WithDetail("unknown exec mode %q; nothing changed", *change.ExecMode)
 	}
-	if change.Browser != nil {
-		if err := s.SetBrowserPolicy(domain.BrowserPolicy{Enabled: *change.Browser}); err != nil {
-			return Settings{}, err
-		}
-	}
-	if change.Computer != nil {
-		if err := s.SetComputerPolicy(domain.ComputerPolicy{Enabled: *change.Computer}); err != nil {
-			return Settings{}, err
-		}
-	}
+	var exec *domain.ExecPolicy
 	if change.ExecMode != nil || len(change.Allow) > 0 {
 		policy, err := s.ExecPolicy()
 		if err != nil {
-			return Settings{}, err
+			return Settings{}, nothingChanged(err)
 		}
 		if change.ExecMode != nil {
 			policy.Mode = *change.ExecMode
@@ -77,9 +74,56 @@ func (s *Service) ApplySettings(change SettingsChange) (Settings, error) {
 				policy.Allow = append(policy.Allow, entry)
 			}
 		}
-		if err := s.SetExecPolicy(policy); err != nil {
-			return Settings{}, err
+		if raw, err := json.MarshalIndent(policy, "", "  "); err != nil || len(raw)+1 > domain.ExecPolicyMaxBytes {
+			return Settings{}, domain.ErrExecAllowFull.WithDetail(
+				"the list would pass %d bytes; remove entries with `runner exec deny` first. Nothing changed",
+				domain.ExecPolicyMaxBytes)
+		}
+		exec = &policy
+	}
+
+	var saved []string
+	if change.Browser != nil {
+		if err := s.SetBrowserPolicy(domain.BrowserPolicy{Enabled: *change.Browser}); err != nil {
+			return Settings{}, partly(err, saved)
+		}
+		saved = append(saved, "browser "+onOff(*change.Browser))
+	}
+	if change.Computer != nil {
+		if err := s.SetComputerPolicy(domain.ComputerPolicy{Enabled: *change.Computer}); err != nil {
+			return Settings{}, partly(err, saved)
+		}
+		saved = append(saved, "screen "+onOff(*change.Computer))
+	}
+	if exec != nil {
+		if err := s.SetExecPolicy(*exec); err != nil {
+			return Settings{}, partly(err, saved)
 		}
 	}
 	return s.Settings()
+}
+
+// nothingChanged says so on a failure before any write.
+func nothingChanged(err error) error {
+	return partly(err, nil)
+}
+
+// partly adds to a failure what was saved before it, so the bot never tells
+// the person a request changed nothing when part of it landed.
+func partly(err error, saved []string) error {
+	var pe *problem.Error
+	if !errors.As(err, &pe) {
+		return err
+	}
+	if len(saved) == 0 {
+		return pe.WithDetail("%s; nothing changed", pe.Detail)
+	}
+	return pe.WithDetail("%s; already saved before it failed: %s", pe.Detail, strings.Join(saved, ", "))
+}
+
+func onOff(on bool) string {
+	if on {
+		return "on"
+	}
+	return "off"
 }

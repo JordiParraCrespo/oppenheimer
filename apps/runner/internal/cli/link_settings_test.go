@@ -2,10 +2,13 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -131,5 +134,56 @@ func TestABadAllowlistEntryChangesNothing(t *testing.T) {
 	}
 	if browser, _ := s.browser.Load(); browser.Enabled {
 		t.Fatal("the browser was turned on by a refused change")
+	}
+}
+
+// An exec policy that cannot be read refuses the whole change before any
+// file is written: a browser turned on beside it would be a change the bot
+// was told never happened.
+func TestAnUnreadableExecPolicyChangesNothingElse(t *testing.T) {
+	s := newSettingsHarness(t)
+	if err := os.WriteFile(s.exec.Path, []byte("{not json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	const id = "77777777-7777-4777-8777-777777777774"
+	s.set(t, id, map[string]any{"browser": "on", "execMode": "full"})
+
+	failed := s.sent.waitFor(t, "command.failed", isCommandFailed(id)).(link.CommandFailed)
+	if failed.Code != hostdomain.ErrExecPolicyFile.Code || !strings.Contains(failed.Detail, "nothing changed") {
+		t.Fatalf("failed = %+v", failed)
+	}
+	if browser, _ := s.browser.Load(); browser.Enabled {
+		t.Fatal("the browser was turned on by a change that failed")
+	}
+}
+
+// An allowlist grown past what the policy file holds is refused before it
+// is saved: a file over the bound can no longer be read, which would break
+// every later command on the host.
+func TestAnAllowlistIsNeverGrownPastWhatItsFileHolds(t *testing.T) {
+	s := newSettingsHarness(t)
+	long := func(batch, i int) string { return fmt.Sprintf("/opt/%d/%d/%s", batch, i, strings.Repeat("a", 1000)) }
+	for batch := 0; ; batch++ {
+		entries := make([]string, 32)
+		for i := range entries {
+			entries[i] = long(batch, i)
+		}
+		id := fmt.Sprintf("77777777-7777-4777-8777-%012d", 100+batch)
+		s.set(t, id, map[string]any{"execMode": "allowlist", "execAllow": entries})
+		sent := s.sent.waitFor(t, "an answer", func(sent any) bool {
+			return isHostSettings(id)(sent) || isCommandFailed(id)(sent)
+		})
+		if failed, ok := sent.(link.CommandFailed); ok {
+			if failed.Code != hostdomain.ErrExecAllowFull.Code {
+				t.Fatalf("code = %s, want %s", failed.Code, hostdomain.ErrExecAllowFull.Code)
+			}
+			break
+		}
+		if batch > 10 {
+			t.Fatal("the allowlist kept growing")
+		}
+	}
+	if _, err := s.exec.Load(); err != nil {
+		t.Fatalf("the policy file can no longer be read: %v", err)
 	}
 }

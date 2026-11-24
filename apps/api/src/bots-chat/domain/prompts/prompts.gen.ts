@@ -2492,7 +2492,7 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "sessions/tools-host-settings.host-offline": "{{host}} is offline: nothing changed. Try again when it is back, or use another host.",
   "sessions/tools-host-settings.runner-too-old": "The runner on {{host}} is too old to change its switches from here: nothing changed. The person can update it from the host's page, or run the `runner` command on the host.",
   "sessions/tools-host-settings.timed-out": "{{host}} did not answer in time, so whether it changed is unknown. Call again: the same change is harmless twice.",
-  "sessions/tools-host-settings.refused": "{{host}} refused ({{code}}): {{detail}}. Nothing changed.",
+  "sessions/tools-host-settings.refused": "{{host}} refused ({{code}}): {{detail}}. Tell the person what was saved and what was not, as the reason says.",
   "sessions/tools-host.id-of": "No host named and you have no home host: ask which host to use, and say they can set one in Settings → Home host.",
   "sessions/tools-host.usable": "{{hostId}} is not one of the person's hosts. Leave host_id out to use your home host, or take a host id from list_hosts or the turn context; never make one up.",
   "sessions/tools-host.list-hosts": "Lists the hosts (machines) the person has connected, whether each is online, how many sessions run on it, and which coding agents it can start. Offline means its runner is not connected now; it says nothing about the machine itself.",

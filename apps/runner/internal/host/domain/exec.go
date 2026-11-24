@@ -24,6 +24,11 @@ const (
 	ExecFull ExecMode = "full"
 )
 
+// ExecPolicyMaxBytes bounds the policy file, as written and as read: a mode
+// and a short list. A list a bot grows past it is refused before it is
+// saved, since a file over it can no longer be read.
+const ExecPolicyMaxBytes = 64 << 10
+
 // ExecModes is every mode, in the order `runner exec` lists them.
 var ExecModes = []ExecMode{ExecOff, ExecAllowlist, ExecFull}
 

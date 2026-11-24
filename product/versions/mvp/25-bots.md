@@ -1509,7 +1509,9 @@ never written by the control plane.
   `full`, and `exec_allow` adds programs to the allowlist (it never removes
   one). Only the fields given change. The runner writes the same files the
   `runner` commands do and answers with what the host now allows. A bad
-  allowlist entry changes nothing (`EXEC_008`).
+  allowlist entry (`EXEC_008`), an allowlist that would outgrow its file
+  (`EXEC_009`) or an exec policy that cannot be read changes nothing: all is
+  checked before any file is written.
 - **Only on the person's word.** The tool is offered only on the owner's
   own turns in their chat (the console, and their own WhatsApp, Telegram
   or Slack chat): never a contact's or a group's turn, a routine, a wake or
