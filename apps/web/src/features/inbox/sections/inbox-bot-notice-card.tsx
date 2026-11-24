@@ -59,12 +59,16 @@ export function InboxBotNoticeCard({
           {t('inbox.botNotice.openChat')}
         </Button>
       </InboxMessageActions>
+      {/* The transcript scrolls in its own pane; a question, an approval and
+          the composer stand under it at their own height. Taller than the
+          panel (a question of four options on a phone), the panel scrolls,
+          so none of them is cut off. */}
       {chat && replying ? (
         <section
           id={`inbox-bot-chat-${item.key}`}
           aria-label={t('inbox.botNotice.chat', { bot: copy.sender })}
           data-swipe-ignore
-          className="flex h-120 max-h-[70dvh] flex-col overflow-hidden rounded-lg border border-border-subtle bg-surface-sunken"
+          className="flex h-120 max-h-[70dvh] flex-col overflow-y-auto rounded-lg border border-border-subtle bg-surface-sunken"
         >
           {chat(botId)}
         </section>
