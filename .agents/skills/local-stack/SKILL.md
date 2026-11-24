@@ -1,6 +1,6 @@
 ---
 name: local-stack
-description: Verify a change end to end against the real API, a real runner and the console, and photograph the console for a pull request. Use it on every change that alters what the console shows (apps/web, packages/frontend/web, the web design system, the translations), before its pull request is pushed, to take and show light and dark screenshots of each screen it touches. Use it also when a change to apps/runner, the API's relay, links, sessions or hosts modules, or the console's terminal needs more than unit tests, or when asked to run the product and show it working.
+description: Verify a change end to end against the real API, a real runner and the console, and photograph the console for a pull request. Use it on every change that alters what the console shows (apps/web, packages/frontend/web, the web design system, the translations), before its pull request is pushed, to take and show light and dark screenshots of each screen it touches. Use it also when a change to apps/runner, the API's relay, links, sessions or hosts modules, or the console's terminal needs more than unit tests, or when asked to run the product and show it working. In a cloud session the stack is already starting and a push waits for `stack.mjs verified` (or `skip` with a reason): use it on every change there that runs.
 ---
 
 # Verify a change end to end
@@ -15,6 +15,24 @@ and the browsers' system libraries. A docker group it just added needs a
 re-login, which no script can do for you.
 
 ## 1. Stand the stack up
+
+In a cloud session it is already coming up: the SessionStart hook runs
+`scripts/stack/cloud-warmup.sh`, which starts Postgres and Redis, creates the
+`oppenheimer` role and database, and runs `stack.mjs up --web` in the
+background (log `.stack/warmup.log`, about a minute). Check with
+`node scripts/stack/stack.mjs status`; run `scripts/stack/cloud-warmup.sh --wait`
+when it is not up. A cloud session's push is refused until the branch, as it
+is now, was checked here (step 2) and recorded:
+
+```bash
+node scripts/stack/stack.mjs verified "e2e:api green; created a host in the console"
+node scripts/stack/stack.mjs skip "a type only; nothing running changes"
+```
+
+`verified` needs the API answering. An edit to the code after the record
+asks again; an edit to a comment does not.
+
+Elsewhere:
 
 ```bash
 node scripts/stack/stack.mjs up          # add --web when the console is involved

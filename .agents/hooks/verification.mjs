@@ -40,10 +40,13 @@ const NOT_RUNTIME = [
 
 export const CHECKS = {
   stack: {
-    title: 'the local stack',
+    title: 'on the local stack',
     paths: [
       /^apps\/api\/src\//,
+      // oppenheimer:begin runner
       /^apps\/runner\/(?!docs\/)/,
+      /^packages\/go\//,
+      // oppenheimer:end runner
       // oppenheimer:begin web
       /^apps\/web\/src\//,
       // oppenheimer:end web
@@ -51,14 +54,13 @@ export const CHECKS = {
       /^packages\/backend\/[^/]+\/src\//,
       /^packages\/frontend\/[^/]+\/src\//,
       /^packages\/frontend\/design-system\/web\/src\//,
-      /^packages\/go\//,
     ],
     record: '.stack/verified.md',
     // A laptop runs what its owner chooses; a cloud session has the stack up.
     applies: () => process.env.CLAUDE_CODE_REMOTE === 'true',
   },
   evals: {
-    title: 'the evals',
+    title: 'by an eval',
     paths: [
       /^apps\/api\/src\/bots-chat\//,
       /^apps\/api\/src\/bots\/domain\//,
@@ -133,7 +135,7 @@ export function owed(root, options) {
     if (!change || recorded(root, name).includes(change.fingerprint)) continue;
     const listed = change.files.slice(0, 6).join(', ');
     const more = change.files.length > 6 ? ` and ${change.files.length - 6} more` : '';
-    out.push({ name, text: `It changes ${listed}${more} and has not been checked on ${check.title} as it is now.` });
+    out.push({ name, text: `It changes ${listed}${more} and has not been checked ${check.title} as it is now.` });
   }
   return out;
 }

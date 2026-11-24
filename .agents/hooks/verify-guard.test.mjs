@@ -18,18 +18,24 @@ describe('what each check covers', () => {
   const agentic = matcher(CHECKS.evals);
   for (const path of [
     'apps/api/src/hosts/hosts.module.ts',
-    'apps/runner/internal/link/link.go',
-    'apps/web/src/features/sessions/list.tsx',
     'packages/shared/src/link/protocol.ts',
     'packages/backend/queue/src/index.ts',
+    // oppenheimer:begin runner
+    'apps/runner/internal/link/link.go',
     'packages/go/ws/conn.go',
+    // oppenheimer:end runner
+    // oppenheimer:begin web
+    'apps/web/src/features/sessions/list.tsx',
+    // oppenheimer:end web
   ])
     it(`runs ${path} on the stack`, () => assert.equal(stack(path), true));
   for (const path of [
     'apps/api/src/hosts/__tests__/hosts.spec.ts',
+    // oppenheimer:begin runner
     'apps/runner/internal/link/link_test.go',
     'apps/runner/README.md',
-    'apps/docs/docs/errors.md',
+    // oppenheimer:end runner
+    'AGENTS.md',
     '.agents/skills/local-stack/SKILL.md',
   ])
     it(`does not ask the stack for ${path}`, () => assert.equal(stack(path), false));
@@ -101,7 +107,7 @@ describe('the hook', () => {
   commit('scripts/stack/stack.mjs', '');
 
   it('lets a branch that changes nothing that runs push', () => {
-    commit('apps/docs/docs/guide.md');
+    commit('product/notes.md');
     assert.equal(push(), null);
   });
 
@@ -132,7 +138,7 @@ describe('the hook', () => {
   it('refuses an agentic change (a bot’s tools) without a green eval, on any machine', () => {
     commit('apps/api/src/bots-chat/application/bot-new-tools.factory.ts', 'export const t = 1;\n');
     for (const env of [{}, { CLAUDE_CODE_REMOTE: '' }])
-      assert.match(push(env) ?? '', /bot-new-tools\.factory\.ts.*evals.*pnpm eval:bot-/);
+      assert.match(push(env) ?? '', /bot-new-tools\.factory\.ts.*by an eval.*pnpm eval:bot-/);
   });
 
   it('lets it push once an eval passed on it as it is', () => {
@@ -141,7 +147,7 @@ describe('the hook', () => {
     record(root, 'evals', { eval: 'bot-skills', args: '--runs 1' }, { fetch: false });
     assert.equal(push(), null);
     write('apps/api/src/bots-chat/application/bot-new-tools.factory.ts', 'export const t = 2;\n');
-    assert.match(push({ CLAUDE_CODE_REMOTE: '' }) ?? '', /the evals/);
+    assert.match(push({ CLAUDE_CODE_REMOTE: '' }) ?? '', /by an eval/);
   });
 
   it('stands down when told to', () => {
