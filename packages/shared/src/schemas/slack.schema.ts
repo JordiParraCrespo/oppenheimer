@@ -20,13 +20,15 @@ export type SlackAccountStatus = (typeof SLACK_ACCOUNT_STATUSES)[number];
 
 /**
  * The bot scopes the manifest asks for: read a mention or a DM, answer in its
- * thread, mark the message it is working on (`reactions:write`) and read the
- * people a message mentions by name (`users:read`). An app made before the
- * last two works without them: no reaction, mentions read as ids.
+ * thread, mark the message it is working on (`reactions:write`), read the
+ * people a message mentions by name (`users:read`) and the images it shares
+ * (`files:read`). An app made before the last three works without them: no
+ * reaction, mentions read as ids, images not seen (the bot is told so).
  */
 export const SLACK_BOT_SCOPES = [
   'app_mentions:read',
   'chat:write',
+  'files:read',
   'im:history',
   'im:read',
   'im:write',

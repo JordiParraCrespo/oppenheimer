@@ -93,6 +93,8 @@ export class ReceiveSlackEventCommandHandler
         position,
         command: action.command,
         text: action.command === 'stop' ? '' : action.text,
+        images: action.images,
+        skippedFiles: action.skippedFiles,
       }),
     ]);
     if (action.command === 'stop')

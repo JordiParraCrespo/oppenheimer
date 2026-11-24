@@ -979,6 +979,7 @@ export type PromptId =
   | "turn/images.shown"
   | "turn/images.came-with"
   | "turn/images.attached"
+  | "turn/images.slack-unread"
   | "turn/slash-command.ran-a-skill"
   | "turn/slash-command.with-input"
   | "turn/slash-command.with-no-input"
@@ -1546,6 +1547,7 @@ export interface PromptSlots {
   "turn/images.shown": { namesCount: string; listed: string };
   "turn/images.came-with": { what: string; ids: string; them: string };
   "turn/images.attached": { ids: string };
+  "turn/images.slack-unread": { what: string; why: string };
   "turn/slash-command.ran-a-skill": { name: string; input: string };
   "turn/slash-command.not-a-skill": { name: string; yours: string };
   "turn/slash-command.skills-they-can-run": { skills: string };
@@ -2608,6 +2610,7 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "turn/images.shown": "[Oppenheimer: here you showed the person {{namesCount}} with show_image: {{listed}}.]",
   "turn/images.came-with": "[Oppenheimer: this message came with {{what}}{{ids}}. Only a turn's own images are sent, so you cannot see {{them}} now; if you need to look at {{them}} again, ask the person to send {{them}} again.]",
   "turn/images.attached": "[Oppenheimer: the images with this message{{ids}}; to attach one to mail, give its id as chat_image.]",
+  "turn/images.slack-unread": "[Oppenheimer: the owner shared {{what}} in Slack with this message that you cannot see: {{why}}.]",
   "turn/slash-command.ran-a-skill": "The person ran your skill /{{name}}. Follow it for this request. {{input}}",
   "turn/slash-command.with-input": "What they wrote after the command is its input.",
   "turn/slash-command.with-no-input": "They gave it no input: use what the chat already says, or ask for what it needs.",

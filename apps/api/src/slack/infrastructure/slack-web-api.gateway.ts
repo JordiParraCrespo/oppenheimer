@@ -4,6 +4,7 @@ import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError, type RefusalReader, UpstreamLimiter } from '@oppenheimer/backend-core';
 import { SlackErrors } from '../domain/slack.errors';
 import type { SlackIdentity } from '../domain/slack-account.entity';
+import { isSlackFileUrl } from '../domain/slack-inbound.policy';
 import type { SlackAppAccess, SlackPosted, SlackWebApiPort } from './slack-web-api.port';
 
 const TIMEOUT_MS = 15_000;
@@ -61,6 +62,8 @@ const REFUSED_TOKEN = new Set([
  *   again for an hour. Each family counts in its own bucket
  *   (`<app bucket>:users`, `<app bucket>:reactions`), as Slack counts per
  *   method, so neither can spend the forty posts a minute an answer needs.
+ *   An image the owner shares is one download from the file host, at most
+ *   four a message, in `<app bucket>:files`.
  */
 @Injectable()
 export class SlackWebApiGateway implements SlackWebApiPort {
@@ -158,6 +161,46 @@ export class SlackWebApiGateway implements SlackWebApiPort {
     );
   }
 
+  async download(access: SlackAppAccess, url: string, maxBytes: number): Promise<Buffer> {
+    if (!isSlackFileUrl(url)) {
+      throw new AppError(SlackErrors.UNAVAILABLE, { detail: 'Not a file on Slack’s file host' });
+    }
+    const files = `${access.bucket}:files`;
+    const { response, errorBody } = await this.limiter
+      .exchange(
+        files,
+        () =>
+          fetch(url, {
+            headers: { Authorization: `Bearer ${access.botToken}` },
+            // A redirect would take the token, or a sign-in page, somewhere else.
+            redirect: 'error',
+            signal: AbortSignal.timeout(TIMEOUT_MS),
+          }),
+        readRefusal,
+      )
+      .catch((error: unknown) => {
+        if (error instanceof AppError) throw error;
+        throw new AppError(SlackErrors.UNAVAILABLE, {
+          detail: `Slack did not hand over a file: ${error instanceof Error ? error.message : String(error)}`,
+        });
+      });
+    if (errorBody !== null) {
+      throw new AppError(SlackErrors.UNAVAILABLE, {
+        detail: `Slack answered a file with ${response.status}`,
+      });
+    }
+    const declared = Number(response.headers.get('content-length') ?? '0');
+    if (declared > maxBytes) {
+      await response.body?.cancel().catch(() => undefined);
+      throw new AppError(SlackErrors.UNAVAILABLE, { detail: `The file is over ${maxBytes} bytes` });
+    }
+    const bytes = await readCapped(response, maxBytes);
+    if (!bytes) {
+      throw new AppError(SlackErrors.UNAVAILABLE, { detail: `The file is over ${maxBytes} bytes` });
+    }
+    return bytes;
+  }
+
   private async call(
     access: SlackAppAccess,
     method: string,
@@ -213,6 +256,24 @@ export class SlackWebApiGateway implements SlackWebApiPort {
 const readRefusal: RefusalReader = (body) => ({
   limited: /"error"\s*:\s*"ratelimited"/.test(body),
 });
+
+/** A response's body, read no further than `maxBytes`: null past it, the rest left unread. */
+async function readCapped(response: Response, maxBytes: number): Promise<Buffer | null> {
+  if (!response.body) return Buffer.alloc(0);
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) return Buffer.concat(chunks);
+    size += value.byteLength;
+    if (size > maxBytes) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(value);
+  }
+}
 
 function recordOf(value: unknown): Record<string, unknown> {
   return value !== null && typeof value === 'object' ? (value as Record<string, unknown>) : {};

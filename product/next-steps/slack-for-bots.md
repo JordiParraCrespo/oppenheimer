@@ -35,9 +35,10 @@ app per bot too (`../research/orca-bots.md`).
   values once is the smaller thing to keep. It can come later without
   changing anything else.
 - **Scopes:** `app_mentions:read`, `chat:write`, `im:history`, `im:read`,
-  `im:write`, and since 2026-11-24 `reactions:write` and `users:read` (§4).
-  An app made before then keeps working without those two: no reaction, and
-  mentions read as ids, until its scopes are updated and it is reinstalled.
+  `im:write`, and since 2026-11-24 `reactions:write`, `users:read` (§4) and
+  `files:read` (§3). An app made before then keeps working without those
+  three: no reaction, mentions read as ids, and images not seen (the bot is
+  told so), until its scopes are updated and it is reinstalled.
   **Events:** `app_mention` and `message.im`. A thread in a
   channel is answered when the bot is mentioned in it; the bot does not read
   channels it is not asked in.
@@ -81,8 +82,18 @@ owner's only.
   arrives by the name their workspace shows (`users.info`, at most ten a
   message, kept a day, 1.5 seconds for all of them), or by id when Slack will
   not say in time. Lookups and reactions count apart from the answer's posts,
-  so they never spend its rate budget. Nothing else from the
-  channel reaches it: the bot reads no thread history.
+  so they never spend its rate budget. Nothing else from the channel reaches
+  it: the bot reads no thread history.
+- **Images the owner shares** (since 2026-11-24) reach the bot as a console
+  message's do. Up to four images a message (PNG, JPEG, GIF, WebP, 5 MB each)
+  are fetched when the turn is queued, never while Slack waits for its
+  answer. They are fetched with the app's token from `files.slack.com` only,
+  following no redirect, judged by their bytes and kept as the owner's
+  uploads. A file the bot cannot see (another type, too large, past four,
+  refused by Slack, or a bot whose model reads no images) is named in the
+  words the turn reads, so the bot does not answer as if nothing was
+  shared. A message with images is a turn of its own: it is never folded
+  into a running one.
 
 ## 4. Answers go in the thread
 
@@ -154,4 +165,5 @@ owner's only.
   name, the 👀 reaction while working, a long answer in one message instead
   of cut at 3,900 characters, and secrets redacted in what goes to Slack.
   Two scopes added (`reactions:write`, `users:read`). Images on a Slack
-  request, and retrying a failed turn from its thread, are not built yet.
+  request were added the same day, with `files:read` (§3). Retrying a
+  failed turn from its thread is not built yet.

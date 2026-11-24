@@ -20,6 +20,8 @@ import { SlackErrors } from '../domain/slack.errors';
 import { SlackAccountEntity } from '../domain/slack-account.entity';
 import type { SlackSealerPort } from '../infrastructure/slack-sealer.port';
 import type { SlackWebApiPort } from '../infrastructure/slack-web-api.port';
+import { FindSlackImagesQuery } from '../queries/find-slack-images/find-slack-images.query';
+import { FindSlackImagesQueryHandler } from '../queries/find-slack-images/find-slack-images.query-handler';
 
 /**
  * What stands between Slack and a bot: only a request signed with the app's
@@ -111,6 +113,7 @@ function fakeSlack(overrides: Partial<SlackWebApiPort> = {}): SlackWebApiPort {
     post: vi.fn(async (_access, message) => ({ channel: message.channel, ts: '1.000001' })),
     userName: vi.fn(async (_access, userId: string) => (userId === 'U0MAYA' ? 'Maya' : null)),
     react: vi.fn(async () => {}),
+    download: vi.fn(async () => Buffer.from('image')),
     ...overrides,
   };
 }
@@ -264,6 +267,43 @@ describe('a request to a bot’s Slack events address', () => {
       ),
     );
     expect(slack.react).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a screenshot the owner shares never reaches the bot,
+  // or the app sends its token to a host Slack does not own.
+  it('carries the images the owner shares from Slack’s file host only, and counts the rest', async () => {
+    const { handler, published } = receiver([app()]);
+    const file = (id: string, mimetype: string, url: string, size = 1_000) => ({
+      id,
+      name: `${id}.png`,
+      mimetype,
+      size,
+      url_private_download: url,
+    });
+    await handler.execute(
+      signed(
+        eventOf({
+          type: 'app_mention',
+          subtype: 'file_share',
+          user: OWNER,
+          text: `<@${APP_USER}>`,
+          ts: '1700000000.000100',
+          channel: 'C1',
+          files: [
+            file('F1', 'image/png', 'https://files.slack.com/files-pri/T0-F1/a.png'),
+            file('F2', 'image/png', 'https://files.slack.com.evil.example/a.png'),
+            file('F3', 'application/pdf', 'https://files.slack.com/files-pri/T0-F3/a.pdf'),
+            file('F4', 'image/jpeg', 'https://files.slack.com/files-pri/T0-F4/a.jpg', 9e9),
+          ],
+        }),
+      ),
+    );
+    expect(published[0]).toMatchObject({
+      command: 'message',
+      text: '',
+      images: [{ id: 'F1', name: 'F1.png', url: 'https://files.slack.com/files-pri/T0-F1/a.png' }],
+      skippedFiles: 3,
+    });
   });
 
   it('ignores anyone but the owner, in a channel or in the DM, and says nothing back', async () => {
@@ -520,6 +560,44 @@ describe('a bot’s turn starting on a Slack message', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('the images the owner shared, fetched for the bot’s turn', () => {
+  const images = [
+    { id: 'F1', name: 'a.png', url: 'https://files.slack.com/files-pri/T0-F1/a.png' },
+    { id: 'F2', name: 'b.png', url: 'https://files.slack.com/files-pri/T0-F2/b.png' },
+  ];
+  const query = (accountId: string, botId = BOT) =>
+    new FindSlackImagesQuery({ organizationId: ORG, accountId, botId, images, maxBytes: 100 });
+
+  // What breaks this: one image Slack will not hand over loses the owner's whole message,
+  // or another bot's app fetches files for a turn that is not its own.
+  it('answers the ones that came, as this bot’s app only', async () => {
+    const account = app();
+    const slack = fakeSlack({
+      download: vi.fn(async (_access, url: string) => {
+        if (url.includes('F2')) throw new AppError(SlackErrors.UNAVAILABLE);
+        return Buffer.from('png');
+      }),
+    });
+    const handler = new FindSlackImagesQueryHandler(
+      fakeAccounts([account]).repository,
+      new SlackLineResolver(sealer, slack),
+    );
+    await expect(handler.execute(query(account.id))).resolves.toEqual([
+      { name: 'a.png', bytes: Buffer.from('png') },
+    ]);
+    expect(slack.download).toHaveBeenCalledWith(
+      { botToken: 'xoxb-token', bucket: 'app:T0ACME:U0JUNO' },
+      images[0].url,
+      100,
+    );
+    vi.mocked(slack.download).mockClear();
+    await expect(
+      handler.execute(query(account.id, '0b3e2a1c-9999-4c5d-8e6f-70819203b4c5')),
+    ).resolves.toEqual([]);
+    expect(slack.download).not.toHaveBeenCalled();
   });
 });
 

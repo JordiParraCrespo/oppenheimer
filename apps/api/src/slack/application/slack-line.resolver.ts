@@ -109,4 +109,9 @@ export class SlackLineResolver {
         }),
       );
   }
+
+  /** A file the owner shared, fetched as the bot's app; throws as the download does. */
+  file(account: SlackAccountEntity, url: string, maxBytes: number): Promise<Buffer> {
+    return this.slack.download(this.access(account), url, maxBytes);
+  }
 }

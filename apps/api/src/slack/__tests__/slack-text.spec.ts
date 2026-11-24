@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { slackPlainText, slackTsPosition } from '../domain/slack-inbound.policy';
+import { isSlackFileUrl, slackPlainText, slackTsPosition } from '../domain/slack-inbound.policy';
 import {
   SLACK_MESSAGE_MAX,
   slackMessages,
@@ -75,5 +75,20 @@ describe('Slack text', () => {
       threadTs: '1700000000.000200',
     });
     expect(slackThreadOf('C1')).toBeNull();
+  });
+
+  // What breaks this: the app's token goes to a host that only looks like Slack's.
+  it('takes a file address only on Slack’s own file host, over HTTPS', () => {
+    expect(isSlackFileUrl('https://files.slack.com/files-pri/T0-F1/a.png')).toBe(true);
+    for (const url of [
+      'http://files.slack.com/files-pri/T0-F1/a.png',
+      'https://files.slack.com.evil.example/a.png',
+      'https://evil.example/files.slack.com/a.png',
+      'https://files.slack.com:8443/a.png',
+      'https://me:pw@files.slack.com/a.png',
+      'not a url',
+    ]) {
+      expect(isSlackFileUrl(url)).toBe(false);
+    }
   });
 });

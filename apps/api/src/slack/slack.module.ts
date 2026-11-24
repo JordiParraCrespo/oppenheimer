@@ -25,6 +25,7 @@ import { FindSlackAccountsHttpController } from './queries/find-slack-accounts/f
 import { FindSlackAccountsQueryHandler } from './queries/find-slack-accounts/find-slack-accounts.query-handler';
 import { FindSlackAppSetupHttpController } from './queries/find-slack-app-setup/find-slack-app-setup.http.controller';
 import { FindSlackAppSetupQueryHandler } from './queries/find-slack-app-setup/find-slack-app-setup.query-handler';
+import { FindSlackImagesQueryHandler } from './queries/find-slack-images/find-slack-images.query-handler';
 import { SLACK_ACCOUNT_REPOSITORY, SLACK_SEALER, SLACK_WEB_API } from './slack.di-tokens';
 import { SlackResource } from './slack.resource';
 import { SlackAccountMapper } from './slack-account.mapper';
@@ -52,6 +53,7 @@ const queryHandlers: Provider[] = [
   FindSlackAccountsQueryHandler,
   FindSlackAccountQueryHandler,
   FindSlackAppSetupQueryHandler,
+  FindSlackImagesQueryHandler,
 ];
 
 /**

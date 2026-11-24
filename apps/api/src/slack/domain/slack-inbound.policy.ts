@@ -1,3 +1,9 @@
+import {
+  BOT_IMAGE_MAX_BYTES,
+  BOT_IMAGE_MIME_TYPES,
+  BOT_MESSAGE_IMAGES_MAX,
+} from '@oppenheimer/shared';
+
 /**
  * The part of a Slack event callback (`type: 'event_callback'`) the app acts
  * on: a mention in a channel (`app_mention`) or a message in its DM
@@ -13,6 +19,28 @@ export interface SlackEvent {
   channel_type?: string;
   bot_id?: string;
   subtype?: string;
+  /** What the message shares (`file_share`): its files, as Slack describes them. */
+  files?: SlackEventFile[];
+}
+
+/** One file a message shares, the fields the app reads. */
+export interface SlackEventFile {
+  id?: string;
+  name?: string;
+  mimetype?: string;
+  size?: number;
+  url_private_download?: string;
+  url_private?: string;
+}
+
+/**
+ * An image the owner's message carries, to be fetched with the app's token
+ * when the turn is queued: only ever from Slack's own file host.
+ */
+export interface SlackImage {
+  id: string;
+  name: string;
+  url: string;
 }
 
 /**
@@ -24,7 +52,8 @@ export interface SlackEvent {
  *   thread it was asked in (`message`), or that thread's running turn stopped
  *   (`stop`).
  * - `ignore`: anyone else (Slack is the owner's only), the app's own and other
- *   bots' messages, edits and deletions, and anything without words.
+ *   bots' messages, edits and deletions, and anything with neither words nor
+ *   a file.
  */
 export type SlackInboundAction =
   | { kind: 'link'; code: string; user: string; channel: string; ts: string }
@@ -36,6 +65,10 @@ export type SlackInboundAction =
       /** The thread the answer goes in: the one asked in, or the message itself when it is top-level. */
       threadTs: string;
       ts: string;
+      /** The images it carries that a bot can read, at most `BOT_MESSAGE_IMAGES_MAX`. */
+      images: SlackImage[];
+      /** The files it carries that are left out: not an image a bot reads, too large, or past the limit. */
+      skippedFiles: number;
     }
   | { kind: 'ignore' };
 
@@ -79,15 +112,58 @@ export function slackInboundAction(
     const link = direct ? LINK.exec(text) : null;
     return link ? { kind: 'link', code: link[1], user, channel, ts } : { kind: 'ignore' };
   }
-  if (!text) return { kind: 'ignore' };
+  const files = event.files ?? [];
+  if (!text && files.length === 0) return { kind: 'ignore' };
+  const images = slackImagesOf(files);
   return {
     kind: 'owner',
-    command: STOP.test(text) ? 'stop' : 'message',
+    command: STOP.test(text) && files.length === 0 ? 'stop' : 'message',
     text,
     channel,
     threadTs: event.thread_ts ?? ts,
     ts,
+    images,
+    skippedFiles: files.length - images.length,
   };
+}
+
+/** Slack's file host: the one place the app sends its token to fetch a file. */
+export const SLACK_FILE_HOST = 'files.slack.com';
+
+/**
+ * The files of a message a bot can read as images, in order: a type a bot
+ * reads (`BOT_IMAGE_MIME_TYPES`, as Slack says; the bytes are judged again
+ * when fetched), no larger than `BOT_IMAGE_MAX_BYTES`, on Slack's file host
+ * over HTTPS, at most `BOT_MESSAGE_IMAGES_MAX`.
+ */
+export function slackImagesOf(files: readonly SlackEventFile[]): SlackImage[] {
+  const images: SlackImage[] = [];
+  for (const file of files) {
+    if (images.length >= BOT_MESSAGE_IMAGES_MAX) break;
+    const url = file.url_private_download ?? file.url_private;
+    const type = file.mimetype ?? '';
+    if (!file.id || !url || !isSlackFileUrl(url)) continue;
+    if (!(BOT_IMAGE_MIME_TYPES as readonly string[]).includes(type)) continue;
+    if (typeof file.size === 'number' && file.size > BOT_IMAGE_MAX_BYTES) continue;
+    images.push({ id: file.id, name: (file.name ?? 'image').slice(0, 200), url });
+  }
+  return images;
+}
+
+/** Whether `url` is a file on Slack's file host, over HTTPS, with no port or credentials of its own. */
+export function isSlackFileUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === 'https:' &&
+      parsed.hostname === SLACK_FILE_HOST &&
+      parsed.port === '' &&
+      parsed.username === '' &&
+      parsed.password === ''
+    );
+  } catch {
+    return false;
+  }
 }
 
 /** At most this many people a message mentions are looked up by name; past it the rest stay ids. */

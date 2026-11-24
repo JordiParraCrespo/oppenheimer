@@ -41,4 +41,11 @@ export interface SlackWebApiPort {
     message: { channel: string; ts: string; name: string },
     on: boolean,
   ): Promise<void>;
+  /**
+   * A file the app can see, fetched with its token from Slack's file host
+   * (`SLACK_FILE_HOST`; any other address is refused before a request is
+   * made), its bytes at most `maxBytes`. Needs `files:read`. Throws
+   * `SLACK_006` for a file it could not fetch, as `post` does otherwise.
+   */
+  download(access: SlackAppAccess, url: string, maxBytes: number): Promise<Buffer>;
 }
