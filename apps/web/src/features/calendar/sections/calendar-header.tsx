@@ -68,7 +68,7 @@ export function CalendarHeader() {
         }
         title={headerTitle(shown, locale)}
         actions={
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2">
             <PillTabs
               className="mr-2.5"
               aria-label={t('calendar.header.views')}
@@ -88,21 +88,23 @@ export function CalendarHeader() {
                 </PillTab>
               ))}
             </PillTabs>
-            <Button variant="secondary" onClick={() => at({ view })}>
-              {t('calendar.header.today')}
-            </Button>
-            <IconButton
-              aria-label={t('calendar.header.previous')}
-              onClick={() => at({ view, ...step(view, { anchor, month }, -1) })}
-            >
-              <ChevronLeft />
-            </IconButton>
-            <IconButton
-              aria-label={t('calendar.header.next')}
-              onClick={() => at({ view, ...step(view, { anchor, month }, 1) })}
-            >
-              <ChevronRight />
-            </IconButton>
+            <div className="flex items-center gap-1.5">
+              <Button variant="secondary" onClick={() => at({ view })}>
+                {t('calendar.header.today')}
+              </Button>
+              <IconButton
+                aria-label={t('calendar.header.previous')}
+                onClick={() => at({ view, ...step(view, { anchor, month }, -1) })}
+              >
+                <ChevronLeft />
+              </IconButton>
+              <IconButton
+                aria-label={t('calendar.header.next')}
+                onClick={() => at({ view, ...step(view, { anchor, month }, 1) })}
+              >
+                <ChevronRight />
+              </IconButton>
+            </div>
             <Button
               className="ml-3"
               onClick={() =>
