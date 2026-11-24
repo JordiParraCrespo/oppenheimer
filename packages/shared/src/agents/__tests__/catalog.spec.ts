@@ -44,7 +44,10 @@ describe('coding agent catalog', () => {
     // `--continue` opens a fresh TUI; Ask is `default`, not Qwen's own `auto`.
     const { prompt, conversation, permission, effort } = CODING_AGENTS.qwen.launch;
     expect(prompt).toEqual(['--prompt-interactive=<prompt>']);
-    expect(conversation).toEqual({ create: ['--session-id', '<conversation>'], resume: ['--continue'] });
+    expect(conversation).toEqual({
+      create: ['--session-id', '<conversation>'],
+      resume: ['--continue'],
+    });
     expect(permission?.ask.argv).toEqual(['--approval-mode', 'default']);
     expect(permission?.full.argv).toEqual(['--approval-mode', 'yolo']);
     expect(effort).toBeUndefined();

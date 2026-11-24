@@ -5,7 +5,6 @@
 "@oppenheimer/shared": minor
 "@oppenheimer/api-client": patch
 "@oppenheimer/design-system-web": patch
-"@oppenheimer/docs": patch
 ---
 
 Qwen Code (`qwen`, `@qwen-code/qwen-code`) is an agent a session can run, with

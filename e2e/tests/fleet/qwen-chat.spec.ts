@@ -62,8 +62,7 @@ test('a Qwen Code session starts qwen with its task, reads as the chat, live, an
   const [box] = await pairedHosts(api, 1, 'qwen');
   const sessionId = await createSession(api, box.id, installationId, {
     agent: 'qwen',
-    model: 'qwen3.8-max',
-    permission: 'ask',
+    launch: { model: 'qwen3.8-max', permission: 'ask' },
     prompt: '-v the empty wallet',
   });
 
@@ -147,18 +146,15 @@ test('a Qwen Code session starts qwen with its task, reads as the chat, live, an
 
   // Restarted, it reopens this folder's conversation, with no id and no task.
   expect((await api.post(`/api/v1/sessions/${sessionId}/stop`)).status()).toBeLessThan(300);
-  await expect
-    .poll(
-      async () =>
-        (
-          (await (await api.get(`/api/v1/sessions/${sessionId}`)).json()) as {
-            stoppedAt: string | null;
-          }
-        ).stoppedAt,
-      { timeout: 30_000 },
-    )
-    .not.toBeNull();
+  const stoppedAt = async () =>
+    (
+      (await (await api.get(`/api/v1/sessions/${sessionId}`)).json()) as {
+        stoppedAt: string | null;
+      }
+    ).stoppedAt;
+  await expect.poll(stoppedAt, { timeout: 30_000 }).not.toBeNull();
   expect((await api.post(`/api/v1/sessions/${sessionId}/restart`)).status()).toBeLessThan(300);
+  await expect.poll(stoppedAt, { timeout: 60_000 }).toBeNull();
   const restarted = await attach(api, sessionId);
   await restarted.waitFor(
     'QWEN-SHIM argv=--model qwen3.8-max --approval-mode default --continue',
