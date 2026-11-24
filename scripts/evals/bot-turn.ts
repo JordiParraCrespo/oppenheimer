@@ -12,9 +12,10 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type Anthropic from '@anthropic-ai/sdk';
+import { startEvalRecording } from '../../.agents/hooks/verification.mjs';
 import { BotCheckBackToolsFactory } from '../../apps/api/src/bots-chat/application/bot-check-back-tools.factory';
 import { BotFormToolsFactory } from '../../apps/api/src/bots-chat/application/bot-form-tools.factory';
 import { BotGoalToolsFactory } from '../../apps/api/src/bots-chat/application/bot-goal-tools.factory';
@@ -29,6 +30,11 @@ import { BotVisualToolsFactory } from '../../apps/api/src/bots-chat/application/
 import { DEFER_TOOLS_ABOVE_CHARS } from '../../packages/backend/agents/src/claude/claude-options';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+
+// Every bot eval loads this first: its green exit then records it in
+// `.evals/passed.json` as having checked the agentic code as it was loaded,
+// which answers the verification guard's eval check (`.agents/hooks/verification.mjs`).
+startEvalRecording(join(HERE, '../..'), basename(dirname(process.argv[1] ?? '')));
 
 // The repository root depends on none of these: take each from the
 // workspace package that does, so the versions are the ones the API runs.

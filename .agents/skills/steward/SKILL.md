@@ -29,10 +29,16 @@ other skills point here.
    "Show a visual change" (stack up `--web`, `pnpm screens <route>...`).
    An edit after them that only touches comments or layout keeps them;
    any other edit to a visual file means taking them again.
+   **Run and eval:** in a cloud session, check the change on the stack the
+   session started (`local-stack`) and record it with `stack.mjs verified`;
+   on any machine, an agentic change runs the evals that cover it
+   (`scripts/evals/README.md`). The verification guard asks for both, and
+   either can be answered with a reason instead (`stack.mjs skip`,
+   `record.mjs --skip`), said again in the description.
 7. **`pnpm ci:local`** on that commit. A stack already up with `--web` stays
    up; the run swaps in the API it built.
-8. **Push** on green, with the report, the autoreview and the screenshots
-   in the description.
+8. **Push** on green, with the report, the autoreview, the screenshots, what
+   ran on the stack and which evals passed in the description.
 
 A fix after step 7 goes back to step 2 for that fix, and through 4–8 again;
 once the pull request is open, step 5 runs again only for a fix that

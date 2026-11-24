@@ -199,4 +199,20 @@ describe('session-start.sh', () => {
     write('pnpm-lock.yaml', 'lockfileVersion: 9.0\nchanged: again\n');
     assert.match(start({ CLAUDE_CODE_REMOTE: 'true' }), /failed/);
   });
+
+  // Regression: a cloud session whose lockfile already matched returned before
+  // the stack was started, so the verification guard asked for a stack nobody
+  // had brought up.
+  it('starts the local stack in a cloud session, installed or not', () => {
+    write('scripts/stack/cloud-warmup.sh', '#!/bin/sh\necho warming\n', 0o755);
+    assert.match(start({ CLAUDE_CODE_REMOTE: 'true' }), /warming/);
+    write('bin/pnpm', '#!/bin/sh\nmkdir -p node_modules\n', 0o755);
+    write('pnpm-lock.yaml', 'lockfileVersion: 9.0\nchanged: once more\n');
+    assert.match(start({ CLAUDE_CODE_REMOTE: 'true' }), /Installed dependencies[\s\S]*warming/);
+    assert.equal(start({ CLAUDE_CODE_REMOTE: 'true' }), 'warming');
+  });
+
+  it('leaves the stack alone on a machine of its own', () => {
+    assert.doesNotMatch(start({ CLAUDE_CODE_REMOTE: '' }), /warming/);
+  });
 });
