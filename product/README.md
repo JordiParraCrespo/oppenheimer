@@ -1766,6 +1766,12 @@ earlier note:
   open sessions and bots are tabs in a one-line bar, the state moves to the
   tab's dot and tooltip, and the launcher is large rows with Agent, Session
   and Bot folded under Side chats.
+- `versions/mvp/33-session-tabs.md` §1 left New session without the tab
+  strip. The same day, once it shipped, the owner asked for the tabs to stay
+  there too: New session's bar is the strip with a lit New session tab that
+  is not kept. The bar is 45px with its controls on the medium rung, on the
+  page's own ground rather than the grey band §3's contrast pass first gave
+  it.
 - `versions/mvp/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
   a job over four tiles (next-step pills once it had instructions), over the
   stacked composer. On 2026-11-16 the owner found it loud in the side pane
@@ -2082,3 +2088,18 @@ earlier note:
   bot to run `runner browser on` after saying "do it yourself", did not want
   that guardrail: a bot changes them with `set_host_settings` when the
   person asks in their own chat ("The host's switches").
+- `versions/mvp/22-direct-terminal-path.md` (step 0) drew the keystroke
+  round trip, `echo p50 / p95 ms · path`, in the session's bar when a
+  `localStorage` switch was set, and gated each step on it. On 2026-11-24
+  the owner did not want it in the header: it is gone, and the netsim
+  bench times keydown to echo in the page instead.
+- `versions/mvp/29-inbox.md` ("A notification in this browser",
+  2026-11-24) told only a session that comes to wait on you and an agent's
+  notice. The same day the owner asked for more: a turn that ends (the
+  row's blue dot) is told, a session left amber or blue for thirty minutes
+  is told once more, and Mute notifications in a row's menu silences one
+  session on this browser ("A finished turn, a long wait, and a mute").
+- `versions/mvp/29-inbox.md` ("A finished turn, a long wait, and a mute")
+  put Mute notifications beside Mark as unread on a session row's menu.
+  The same day the owner asked for a sublevel: both moved into a
+  Notifications & read pane.

@@ -439,7 +439,7 @@ function ChatReaction({
   ...props
 }: Omit<React.ComponentProps<'button'>, 'children'> & { emoji: string }) {
   const classes = cn(
-    'inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-border-subtle bg-card px-1.5 text-[15px] leading-none shadow-sm motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:fade-in-0 motion-safe:duration-200',
+    'inline-flex h-(--control-h-sm) min-w-7 items-center justify-center rounded-full border border-border-subtle bg-card px-1.5 text-[15px] leading-none shadow-sm motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:fade-in-0 motion-safe:duration-200',
     onClick ? 'cursor-pointer transition-transform duration-fast ease-standard hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring' : null,
     className,
   );

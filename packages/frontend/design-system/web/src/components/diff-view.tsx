@@ -215,7 +215,7 @@ function DiffFileHeader({
         type="button"
         aria-pressed={viewed}
         onClick={() => onViewedChange?.(!viewed)}
-        className="group/viewed flex h-7 shrink-0 items-center gap-[7px] rounded-pill px-2.5 text-xs text-fg-muted outline-none transition-colors duration-instant ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring"
+        className="group/viewed flex h-(--control-h-sm) shrink-0 items-center gap-[7px] rounded-pill px-2.5 text-xs text-fg-muted outline-none transition-colors duration-instant ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring"
       >
         <span
           aria-hidden

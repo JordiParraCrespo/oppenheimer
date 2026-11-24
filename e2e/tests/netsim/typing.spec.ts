@@ -10,11 +10,12 @@ import { startLocalHost } from '../../support/fleet-local';
 import {
   browserOn,
   buildNetsim,
+  bytesBetween,
   enter,
-  legStats,
   netsimAvailable,
   netsimDown,
   netsimUp,
+  onPath,
   type Placement,
   place,
   resetLegStats,
@@ -26,8 +27,8 @@ import { linkLive, signInAs } from '../../support/web';
  * How typing feels from different places to hosts behind different internet
  * connections, on the relay and on the direct path: the browser and every
  * host on a simulated network (`e2e/netsim`), the relay in Falkenstein where
- * the dev deployment runs, and the console's own echo readout as the measure —
- * keystroke out to its echo drawn, the number the typeahead also reads.
+ * the dev deployment runs. The measure is taken in the page: from the
+ * keydown to the grid's text changing with the echo.
  *
  * A bench, not a gate: it asserts only that each path was the one measured,
  * and writes the table to `test-results/netsim-typing.md`. The page loads on
@@ -88,38 +89,59 @@ interface Reading {
   p50: number;
   p95: number;
   n: number;
-  path: string;
 }
 
-const READOUT = /echo (\d+) \/ (\d+) ms · (\d+) · (\w+)/;
+/**
+ * One key's round trip, in the page: from its keydown to the grid's text
+ * changing with the echo. Null when no echo came within ten seconds.
+ */
+async function echoMs(page: Page, key: string): Promise<number | null> {
+  await page.evaluate(() => {
+    const rows = document.querySelector('.xterm-rows');
+    const before = rows?.textContent;
+    (window as unknown as { echo: Promise<number | null> }).echo = new Promise((resolve) => {
+      if (!rows) return resolve(null);
+      let start = 0;
+      document.addEventListener(
+        'keydown',
+        () => {
+          start = performance.now();
+        },
+        { capture: true, once: true },
+      );
+      const observer = new MutationObserver(() => {
+        if (!start || rows.textContent === before) return;
+        observer.disconnect();
+        resolve(performance.now() - start);
+      });
+      observer.observe(rows, { subtree: true, childList: true, characterData: true });
+      setTimeout(() => {
+        observer.disconnect();
+        resolve(null);
+      }, 10_000);
+    });
+  });
+  await page.keyboard.press(key);
+  return page.evaluate(() => (window as unknown as { echo: Promise<number | null> }).echo);
+}
 
-async function reading(page: Page): Promise<Reading | null> {
-  const text =
-    (await page
-      .getByText(/^echo .* · \w+$/)
-      .first()
-      .textContent()) ?? '';
-  const m = READOUT.exec(text);
-  return m ? { p50: +m[1], p95: +m[2], n: +m[3], path: m[4] } : null;
+function quantile(sorted: number[], q: number): number {
+  return Math.round(sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))]);
 }
 
 /** Types `KEYS` keys, each once the last one's echo is in. */
 async function typeAndRead(page: Page): Promise<Reading> {
   await page.locator('.xterm').first().click();
+  const samples: number[] = [];
   for (let i = 0; i < KEYS; i += 1) {
-    const before = (await reading(page))?.n ?? 0;
-    await page.keyboard.press(String.fromCharCode(97 + (i % 26)));
-    await expect
-      .poll(async () => (await reading(page))?.n ?? 0, { timeout: 10_000, intervals: [100] })
-      .toBeGreaterThan(before)
-      .catch(() => {});
-    // The readout only starts a sample after 200 ms of quiet.
+    const ms = await echoMs(page, String.fromCharCode(97 + (i % 26)));
+    if (ms !== null) samples.push(ms);
     await page.waitForTimeout(250);
   }
   await page.keyboard.press('Control+U');
-  const last = await reading(page);
-  if (!last) throw new Error('the readout never showed a sample');
-  return last;
+  if (samples.length === 0) throw new Error('no key was echoed');
+  samples.sort((a, b) => a - b);
+  return { p50: quantile(samples, 0.5), p95: quantile(samples, 0.95), n: samples.length };
 }
 
 type FlagRow = { enabled: boolean; rules: unknown; fallthrough: unknown };
@@ -194,7 +216,12 @@ test('typing latency: relay vs direct, by place and host connection', async () =
     restoreFlag = await enableDirectPath(api);
 
     const chrome = process.env.PLAYWRIGHT_CHROMIUM_PATH ?? chromium.executablePath();
-    browser = await chromium.launch({ executablePath: browserOn('browser', chrome) });
+    // No GPU: the console refuses software WebGL, so the grid stays on the DOM
+    // renderer, whose `.xterm-rows` the specs read.
+    browser = await chromium.launch({
+      executablePath: browserOn('browser', chrome),
+      args: ['--disable-gpu'],
+    });
 
     const rows: string[] = [];
     for (const scenario of browsers) {
@@ -208,7 +235,6 @@ test('typing latency: relay vs direct, by place and host connection', async () =
             viewport: { width: 1280, height: 760 },
           });
           const page = await context.newPage();
-          await page.addInitScript(() => localStorage.setItem('oppenheimer.terminal.latency', '1'));
           if (path === 'relay') {
             await page.addInitScript(() => {
               // No WebRTC in this tab: the console stays on the relay.
@@ -218,24 +244,27 @@ test('typing latency: relay vs direct, by place and host connection', async () =
           await signInAs(page, user);
           await page.goto(`/sessions/${host.sessionId}`);
           await expect(linkLive(page)).toBeVisible({ timeout: 120_000 });
-          await expect(page.getByText(`· ${path}`)).toBeVisible({ timeout: 60_000 });
+          await onPath(path, host.name);
 
           await place('browser', scenario.placement);
           if (scenario.sameLan) await place(host.name, { ...host.placement, lan: 'home' });
           await page.waitForTimeout(1_500);
           await resetLegStats();
           const read = await typeAndRead(page);
-          const legs = await legStats();
-          const bytes = (a: string, b: string) =>
-            legs
-              .filter((l) => (l.from === a && l.to === b) || (l.from === b && l.to === a))
-              .reduce((sum, l) => sum + l.bytes, 0);
           result[path] = {
             ...read,
-            relayBytes: bytes('browser', 'relay'),
-            directBytes: bytes('browser', host.name),
+            relayBytes: await bytesBetween('browser', 'relay'),
+            directBytes: await bytesBetween('browser', host.name),
           };
-          expect(read.path, `${scenario.name} → ${host.name} ended on ${read.path}`).toBe(path);
+          // The keys took this run's path: its leg carried more of the typing
+          // than the other one (ICE keepalives alone are a few hundred bytes).
+          const { relayBytes, directBytes } = result[path];
+          const [ours, other] =
+            path === 'direct' ? [directBytes, relayBytes] : [relayBytes, directBytes];
+          expect(
+            ours,
+            `${scenario.name} → ${host.name} typed off the ${path} path`,
+          ).toBeGreaterThan(other);
           await page.screenshot({
             path: join('test-results', `netsim-${scenario.name}-${host.name}-${path}.png`),
           });
@@ -251,7 +280,7 @@ test('typing latency: relay vs direct, by place and host connection', async () =
     const report = [
       '# Typing latency, relay vs direct (netsim)',
       '',
-      `Relay in Falkenstein (data centre); hosts in Barcelona. ${KEYS} keys per cell; echo p50 / p95 in ms, keystroke to echo, from the console's readout.`,
+      `Relay in Falkenstein (data centre); hosts in Barcelona. ${KEYS} keys per cell; echo p50 / p95 in ms, keydown to echo drawn, timed in the page.`,
       '',
       '| Browser | Host connection | Relay p50 / p95 | Direct p50 / p95 | Saved at p50 | Direct run: bytes via relay / direct |',
       '| --- | --- | --- | --- | --- | --- |',

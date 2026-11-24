@@ -1,9 +1,9 @@
-import { ChatTabStrip } from '@oppenheimer/design-system-web';
-import { useBots, useSessions } from '@oppenheimer/frontend-consumer/react';
-import { useNavigate } from '@tanstack/react-router';
+import { ChatTab, ChatTabStrip } from '@oppenheimer/design-system-web';
+import { PlusIcon } from '@oppenheimer/design-system-web/icons';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Fragment, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useOpenTabs } from '../hooks/use-open-tabs';
+import { useDrawnTabs } from '../hooks/use-drawn-tabs';
 import { type OpenTab, openTabKey, openTabOf, tabAfterClosing } from '../lib/open-tabs';
 import { SessionOpenTab } from './session-open-tab';
 import { ShownSessionTab } from './shown-session-tab';
@@ -14,6 +14,10 @@ import { ShownSessionTab } from './shown-session-tab';
  * its page, from the sidebar or anywhere else; closing the one on screen
  * goes to its neighbour, the way a browser does, and closing the last goes
  * to New session.
+ *
+ * New session keeps the strip, the tabs open as they were, and ends it with
+ * a lit New session tab of its own, which is not kept: the plus that leads
+ * there steps aside while it shows, and leaving the page leaves no tab.
  *
  * A tab whose session or bot is gone (deleted here or on another device)
  * is left off once the list it belongs to has answered without it; the page
@@ -26,31 +30,19 @@ export function SessionTabs({
   shown,
   bot,
 }: {
-  shown: OpenTab;
+  /** The page on screen; null on New session, which opens no tab. */
+  shown: OpenTab | null;
   bot: (botId: string, tab: { active: boolean; onClose: () => void }) => ReactNode;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const shownKey = openTabKey(shown);
-  const tabs = useOpenTabs(shownKey);
-  const { data: sessions } = useSessions({
-    select: (list) => new Map(list.map((session) => [session.id, session])),
-  });
-  const { data: botIds } = useBots({ select: (list) => new Set(list.map((one) => one.id)) });
-
-  const drawn = tabs.keys.flatMap((key) => {
-    const tab = openTabOf(key);
-    if (!tab) return [];
-    if (key === shownKey) return [{ key, tab }];
-    if (tab.kind === 'session' && !sessions?.has(tab.id)) return [];
-    if (tab.kind === 'bot' && !botIds?.has(tab.id)) return [];
-    return [{ key, tab }];
-  });
+  const shownKey = shown ? openTabKey(shown) : null;
+  const { drawn, sessions, close: closeTab } = useDrawnTabs(shownKey);
   const order = drawn.map((one) => one.key);
 
   const close = (key: string) => {
     const next = tabAfterClosing(order, shownKey, key);
-    tabs.close(key);
+    closeTab(key);
     if (next === shownKey) return;
     const tab = next ? openTabOf(next) : null;
     if (!tab) void navigate({ to: '/sessions/new' });
@@ -73,7 +65,7 @@ export function SessionTabs({
     <ChatTabStrip
       navigation
       label={t('sessions.tabs.label')}
-      onNew={() => void navigate({ to: '/sessions/new' })}
+      onNew={shown ? () => void navigate({ to: '/sessions/new' }) : undefined}
       newLabel={t('sessions.tabs.new')}
     >
       {drawn.map(({ key, tab }) =>
@@ -84,6 +76,11 @@ export function SessionTabs({
             {bot(tab.id, { active: key === shownKey, onClose: () => close(key) })}
           </Fragment>
         ),
+      )}
+      {shown ? null : (
+        <ChatTab active icon={<PlusIcon />} render={<Link to="/sessions/new" search={true} />}>
+          {t('sessions.tabs.new')}
+        </ChatTab>
       )}
     </ChatTabStrip>
   );

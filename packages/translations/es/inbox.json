@@ -160,7 +160,10 @@
   },
   "botNotice": {
     "title": "{{bot}} tiene novedades para ti",
-    "openChat": "Abrir chat"
+    "openChat": "Abrir chat",
+    "reply": "Responder aquí",
+    "hideReply": "Ocultar chat",
+    "chat": "Chat con {{bot}}"
   },
   "report": {
     "sender": "Un agente",
@@ -195,5 +198,11 @@
     "previous": "Anterior",
     "next": "Siguiente",
     "done": "Hecho"
+  },
+  "alert": {
+    "doneTitle": "{{name}} terminó su turno",
+    "doneBody": "Abre la sesión para ver qué hizo.",
+    "staleTitle": "{{name}} lleva 30 minutos esperando",
+    "staleBody": "Todavía te necesita. Abre la sesión para retomarla."
   }
 }
