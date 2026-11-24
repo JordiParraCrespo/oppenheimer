@@ -24,6 +24,12 @@ export function slackSourceKey(
   return `slack:${message.slackAccountId}:${message.channel}:${message.ts}`;
 }
 
+/** The Slack timestamp of the message a turn's key names (`slackSourceKey`), or null for any other key. */
+export function slackTsOf(sourceKey: string | null): string | null {
+  const match = /^slack:[0-9a-f-]{36}:[A-Z0-9]{1,32}:(\d{1,12}\.\d{6})$/.exec(sourceKey ?? '');
+  return match?.[1] ?? null;
+}
+
 /** The turn the owner's message on Slack queues, in its thread's conversation. */
 export function slackTurn(
   props: ChannelTurnProps,

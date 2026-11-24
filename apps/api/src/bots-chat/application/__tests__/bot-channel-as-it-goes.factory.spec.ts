@@ -67,7 +67,12 @@ describe('BotChannelAsItGoesFactory', () => {
 
     await run([call('c1'), call('c2'), done('c1')]);
     expect(channel.send).toHaveBeenCalledTimes(1);
-    expect(channel.send).toHaveBeenCalledWith(turn, 'On it, checking your sessions.', undefined);
+    expect(channel.send).toHaveBeenCalledWith(
+      turn,
+      'On it, checking your sessions.',
+      undefined,
+      false,
+    );
     expect(stored.length).toBeGreaterThan(1);
   });
 

@@ -13,6 +13,7 @@ import {
   type SlackEvent,
   type SlackInboundAction,
   slackInboundAction,
+  slackMentionsToName,
   slackTsPosition,
 } from '../../domain/slack-inbound.policy';
 import { isSlackSigned } from '../../domain/slack-signature.policy';
@@ -31,8 +32,10 @@ import { type ReceivedSlackEvent, ReceiveSlackEventCommand } from './receive-sla
  *
  * An event from the app's workspace is acted on (`slackInboundAction`): the
  * owner's message wakes the bot through `SlackOwnerWroteDomainEvent`, a `link`
- * code records the owner, and anyone else is ignored. Slack wants an answer
- * within three seconds, so the lines the app sends back are not waited on.
+ * code records the owner, and anyone else is ignored. The owner's message
+ * gets the working reaction until its answer goes; those it mentions are read
+ * by name (a short lookup each). Slack wants an answer within three seconds,
+ * so the lines and the reaction the app sends back are not waited on.
  */
 @CommandHandler(ReceiveSlackEventCommand)
 export class ReceiveSlackEventCommandHandler
@@ -56,7 +59,9 @@ export class ReceiveSlackEventCommandHandler
     }
     if (payload.type !== 'event_callback' || payload.team_id !== account.teamId) return {};
     const event = (payload.event ?? {}) as SlackEvent;
-    await this.act(account, slackInboundAction(account, event), command.metadata.correlationId);
+    const names = await this.lines.namesOf(account, slackMentionsToName(account, event));
+    const action = slackInboundAction(account, event, names);
+    await this.act(account, action, command.metadata.correlationId);
     return {};
   }
 
@@ -92,6 +97,7 @@ export class ReceiveSlackEventCommandHandler
     ]);
     if (action.command === 'stop')
       this.lines.say(account, action.channel, action.threadTs, SLACK_STOP_LINE);
+    else this.lines.working(account, { channel: action.channel, ts: action.ts }, true);
   }
 }
 

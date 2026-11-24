@@ -57,10 +57,14 @@ const STOP = /^stop[.!]?$/i;
 /** Message subtypes that are still someone writing; any other (an edit, a join) is not. */
 const WRITTEN_SUBTYPES = new Set(['file_share', 'thread_broadcast']);
 
-/** What one event comes to, for an app that knows `account`. */
+/**
+ * What one event comes to, for an app that knows `account`; `names` are the
+ * display names of the people its words mention, as far as they are known.
+ */
 export function slackInboundAction(
   account: SlackInboundAccount,
   event: SlackEvent,
+  names: ReadonlyMap<string, string> = new Map(),
 ): SlackInboundAction {
   const direct = event.type === 'message' && event.channel_type === 'im';
   if (!direct && event.type !== 'app_mention') return { kind: 'ignore' };
@@ -69,7 +73,7 @@ export function slackInboundAction(
   }
   const { user, channel, ts } = event;
   if (!user || !channel || !ts || user === account.botUserId) return { kind: 'ignore' };
-  const text = slackPlainText(event.text ?? '', account.botUserId);
+  const text = slackPlainText(event.text ?? '', account.botUserId, names);
   const isOwner = account.ownerSlackUserId !== null && user === account.ownerSlackUserId;
   if (!isOwner) {
     const link = direct ? LINK.exec(text) : null;
@@ -86,16 +90,45 @@ export function slackInboundAction(
   };
 }
 
+/** At most this many people a message mentions are looked up by name; past it the rest stay ids. */
+export const SLACK_MENTIONS_NAMED_MAX = 10;
+
+/**
+ * The Slack users a message mentions by id alone (`<@U0123>`, which Slack sends
+ * with no name), the app's own left out, in order and once each, at most
+ * `SLACK_MENTIONS_NAMED_MAX`: the ones to look up so the bot reads names.
+ */
+export function slackMentionedUsers(text: string, botUserId: string): string[] {
+  const ids = new Set<string>();
+  for (const match of text.matchAll(/<@([UW][A-Z0-9]{1,32})>/g)) {
+    if (match[1] !== botUserId) ids.add(match[1]);
+  }
+  return [...ids].slice(0, SLACK_MENTIONS_NAMED_MAX);
+}
+
+/** The people to look up by name for an event: those the owner's message mentions, and none for any other. */
+export function slackMentionsToName(account: SlackInboundAccount, event: SlackEvent): string[] {
+  if (slackInboundAction(account, event).kind !== 'owner') return [];
+  return slackMentionedUsers(event.text ?? '', account.botUserId);
+}
+
 /**
  * A message's text as plain words: the app's own mention dropped, other
- * mentions and links in their readable form, and Slack's three escapes
- * undone (`https://api.slack.com/reference/surfaces/formatting#escaping`).
+ * mentions and links in their readable form (a person by the name in
+ * `names`, else by the label Slack sent, else by id), and Slack's three
+ * escapes undone (`https://api.slack.com/reference/surfaces/formatting#escaping`).
  */
-export function slackPlainText(text: string, botUserId: string): string {
+export function slackPlainText(
+  text: string,
+  botUserId: string,
+  names: ReadonlyMap<string, string> = new Map(),
+): string {
   return text
     .replaceAll(`<@${botUserId}>`, '')
     .replace(/<([@#!])([^>|]+)(?:\|([^>]*))?>/g, (_, sigil: string, id: string, label?: string) =>
-      sigil === '!' ? `@${label || id}` : `${sigil}${label || id}`,
+      sigil === '!'
+        ? `@${label || id}`
+        : `${sigil}${label || (sigil === '@' ? names.get(id) : undefined) || id}`,
     )
     .replace(/<([^>|]+)\|([^>]+)>/g, '$2 ($1)')
     .replace(/<([^>]+)>/g, '$1')

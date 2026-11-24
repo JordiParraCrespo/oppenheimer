@@ -1904,3 +1904,9 @@ earlier note:
   it is told apart from what the owner wrote, and the App's comments wake
   nothing (`loopGuard`), so an answer never asks a bot again. The guide's
   "writing to a bot only in the console" stopped holding the same day.
+- `next-steps/slack-for-bots.md` §4 cut a bot's Slack answer at 3,900
+  characters, into several messages. On 2026-11-24, copying Orca's Slack
+  fixes, an answer goes in one message up to 39,000 (Slack folds it behind
+  "Show more"), the owner's message carries a 👀 reaction while the bot
+  works, mentions arrive by name, and secrets are redacted in what goes to
+  Slack; the manifest asks for `reactions:write` and `users:read` too.

@@ -107,6 +107,8 @@ function fakeSlack(overrides: Partial<SlackWebApiPort> = {}): SlackWebApiPort {
       botName: 'juno',
     })),
     post: vi.fn(async (_access, message) => ({ channel: message.channel, ts: '1.000001' })),
+    userName: vi.fn(async (_access, userId: string) => (userId === 'U0MAYA' ? 'Maya' : null)),
+    react: vi.fn(async () => {}),
     ...overrides,
   };
 }
@@ -203,6 +205,82 @@ describe('a request to a bot’s Slack events address', () => {
       ),
     );
     expect(published[0]).toMatchObject({ chatId: 'D1:1700000000.000100', text: 'and today?' });
+  });
+
+  // What breaks this: the bot reads "@U0MAYA" and cannot tell who the owner means.
+  it('reads the people the owner mentions by name, and by id when Slack will not say', async () => {
+    const { handler, published, slack } = receiver([app()]);
+    await handler.execute(
+      signed(
+        eventOf({
+          type: 'app_mention',
+          user: OWNER,
+          text: `<@${APP_USER}> ask <@U0MAYA> and <@U0GONE> about it`,
+          ts: '1700000000.000100',
+          channel: 'C1',
+        }),
+      ),
+    );
+    expect(published[0]).toMatchObject({ text: 'ask @Maya and @U0GONE about it' });
+    expect(slack.userName).not.toHaveBeenCalledWith(expect.anything(), APP_USER);
+  });
+
+  // What breaks this: an app made before it asked for users:read stops answering mentions.
+  it('still wakes the bot when Slack refuses to name anyone', async () => {
+    const slack = fakeSlack({
+      userName: vi.fn(async () => {
+        throw new AppError(SlackErrors.TOKEN_REFUSED, { detail: 'missing_scope' });
+      }),
+    });
+    const { handler, published } = receiver([app()], slack);
+    await handler.execute(
+      signed(
+        eventOf({
+          type: 'app_mention',
+          user: OWNER,
+          text: `<@${APP_USER}> ping <@U0MAYA>`,
+          ts: '1700000000.000100',
+          channel: 'C1',
+        }),
+      ),
+    );
+    expect(published[0]).toMatchObject({ text: 'ping @U0MAYA' });
+  });
+
+  // What breaks this: the owner cannot tell from Slack whether the bot heard them.
+  it('marks the owner’s message as being worked on, and not a stop', async () => {
+    const { handler, slack } = receiver([app()]);
+    await handler.execute(
+      signed(
+        eventOf({
+          type: 'app_mention',
+          user: OWNER,
+          text: `<@${APP_USER}> what failed?`,
+          ts: '1700000000.000100',
+          channel: 'C1',
+        }),
+      ),
+    );
+    await vi.waitFor(() =>
+      expect(slack.react).toHaveBeenCalledWith(
+        expect.anything(),
+        { channel: 'C1', ts: '1700000000.000100', name: 'eyes' },
+        true,
+      ),
+    );
+    await handler.execute(
+      signed(
+        eventOf({
+          type: 'app_mention',
+          user: OWNER,
+          text: `<@${APP_USER}> stop`,
+          ts: '1700000001.000100',
+          thread_ts: '1700000000.000100',
+          channel: 'C1',
+        }),
+      ),
+    );
+    expect(slack.react).toHaveBeenCalledTimes(1);
   });
 
   it('ignores anyone but the owner, in a channel or in the DM, and says nothing back', async () => {
@@ -331,6 +409,7 @@ describe('a bot’s answer in Slack', () => {
       chatId: 'C1:1700000000.000100',
       text,
       botId: BOT,
+      endsTs: null,
     });
 
   it('goes in the thread it was asked in, in Slack’s own markdown', async () => {
@@ -350,6 +429,50 @@ describe('a bot’s answer in Slack', () => {
       threadTs: '1700000000.000100',
       text: '*3 failed*, see <https://ci.example/1|the run>',
     });
+  });
+
+  // What breaks this: a pasted token in an answer is read by everyone in the channel.
+  it('sends a secret in the words as [redacted]', async () => {
+    const account = app();
+    const slack = fakeSlack();
+    const handler = new ReplyOnSlackCommandHandler(
+      fakeAccounts([account]).repository,
+      new SlackLineResolver(sealer, slack),
+    );
+    const token = `ghp_${'a1B2c3D4'.repeat(5)}`;
+    await handler.execute(
+      new ReplyOnSlackCommand({ ...reply(`Use ${token} for the push`), accountId: account.id }),
+    );
+    const sent = vi.mocked(slack.post).mock.calls[0][1].text;
+    expect(sent).not.toContain(token);
+    expect(sent).toContain('[redacted]');
+  });
+
+  // What breaks this: a long answer arrives cut into pieces, or the eyes stay on after it.
+  it('sends a long last answer whole, then takes the working reaction off', async () => {
+    const account = app();
+    const slack = fakeSlack();
+    const handler = new ReplyOnSlackCommandHandler(
+      fakeAccounts([account]).repository,
+      new SlackLineResolver(sealer, slack),
+    );
+    const long = `${'word '.repeat(500).trim()}\n\n`.repeat(6).trim();
+    await expect(
+      handler.execute(
+        new ReplyOnSlackCommand({
+          ...reply(long),
+          accountId: account.id,
+          endsTs: '1700000000.000100',
+        }),
+      ),
+    ).resolves.toBe(1);
+    await vi.waitFor(() =>
+      expect(slack.react).toHaveBeenCalledWith(
+        expect.anything(),
+        { channel: 'C1', ts: '1700000000.000100', name: 'eyes' },
+        false,
+      ),
+    );
   });
 
   it('marks the app revoked when Slack refuses its token, so its settings say why the bot went quiet', async () => {

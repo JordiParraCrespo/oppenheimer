@@ -1,5 +1,9 @@
-/** Slack's advice for one message's text: past this a long answer goes in several. */
-export const SLACK_MESSAGE_MAX = 3_900;
+/**
+ * The longest message a bot's answer goes in: Slack cuts a message's text at
+ * 40,000 characters and folds a long one behind "Show more", so an answer up
+ * to this arrives whole, in one message; only a longer one goes in several.
+ */
+export const SLACK_MESSAGE_MAX = 39_000;
 
 /** A fenced block or an inline code span: what Slack shows as written, so nothing in it is restyled. */
 const CODE = /(```[\s\S]*?```|`[^`\n]+`)/;

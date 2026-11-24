@@ -53,7 +53,7 @@ export class DeliverChannelReplyCommandHandler
     const text = turn.contact
       ? contactReplyOf(turn, texts)
       : channelReplyOf(turn, texts, await this.approvalNotice(turn));
-    if (text) await this.channel.send(turn, text, metadata.correlationId);
+    if (text) await this.channel.send(turn, text, metadata.correlationId, true);
   }
 
   private async approvalNotice(turn: BotTurnEntity): Promise<string | null> {

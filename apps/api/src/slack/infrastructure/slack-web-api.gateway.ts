@@ -7,6 +7,10 @@ import type { SlackIdentity } from '../domain/slack-account.entity';
 import type { SlackAppAccess, SlackPosted, SlackWebApiPort } from './slack-web-api.port';
 
 const TIMEOUT_MS = 15_000;
+/** A name looked up while Slack waits for its event's answer: short, or the id stands. */
+const NAME_TIMEOUT_MS = 1_500;
+/** What `reactions.add` and `reactions.remove` answer when the message already is as asked. */
+const REACTION_SETTLED = new Set(['already_reacted', 'no_reaction']);
 /** A bot's answers come a few at a time; a burst past twenty waiting answers `SLACK_007`. */
 const LIMITS = { maxInFlight: 8, maxQueued: 20, maxWaitMs: 5_000 };
 /**
@@ -38,13 +42,17 @@ const REFUSED_TOKEN = new Set([
  *   before Slack has named the app, is bucketed by the token's last
  *   characters (`connect:<hint>`) and spends no budget.
  * - **The windows.** `chat.postMessage` is "special": about one message a
- *   second per channel, with bursts allowed; `auth.test` is Tier 4 (100+ a
- *   minute). The limiter keeps forty posts a minute per app.
+ *   second per channel, with bursts allowed; `auth.test` and `users.info`
+ *   are Tier 4 (100+ a minute), `reactions.add` and `reactions.remove`
+ *   Tier 3 (50+). The limiter keeps forty calls a minute per app, whatever
+ *   the method.
  * - **How it says stop.** `429` with `Retry-After` in seconds; the limiter
  *   pauses the bucket and answers `SLACK_007`. Every other refusal is
  *   `200` with `{ ok: false, error }`.
  * - **What one job costs.** A turn posts its answer, and as it goes one post
- *   per run of tool calls: a handful a turn, one turn at a time per bot.
+ *   per run of tool calls: a handful a turn, one turn at a time per bot. The
+ *   owner's message adds a reaction when it arrives and takes it off with
+ *   the answer, and one `users.info` per person it mentions, at most ten.
  */
 @Injectable()
 export class SlackWebApiGateway implements SlackWebApiPort {
@@ -97,11 +105,38 @@ export class SlackWebApiGateway implements SlackWebApiPort {
     return { channel: stringOf(body.channel) ?? message.channel, ts: stringOf(body.ts) ?? '' };
   }
 
+  async userName(access: SlackAppAccess, userId: string): Promise<string | null> {
+    const body = await this.call(access, 'users.info', { user: userId }, 1, NAME_TIMEOUT_MS);
+    const user = recordOf(body.user);
+    const profile = recordOf(user.profile);
+    const name =
+      stringOf(profile.display_name)?.trim() ||
+      stringOf(profile.real_name)?.trim() ||
+      stringOf(user.real_name)?.trim() ||
+      stringOf(user.name)?.trim();
+    return name ? name.slice(0, 80) : null;
+  }
+
+  async react(
+    access: SlackAppAccess,
+    message: { channel: string; ts: string; name: string },
+    on: boolean,
+  ): Promise<void> {
+    const payload = { channel: message.channel, timestamp: message.ts, name: message.name };
+    await this.call(access, on ? 'reactions.add' : 'reactions.remove', payload).catch(
+      (error: unknown) => {
+        const code = error instanceof AppError ? error.extensions.upstreamCode : undefined;
+        if (typeof code !== 'string' || !REACTION_SETTLED.has(code)) throw error;
+      },
+    );
+  }
+
   private async call(
     access: SlackAppAccess,
     method: string,
     payload: Record<string, unknown>,
     cost = 1,
+    timeoutMs = TIMEOUT_MS,
   ): Promise<Record<string, unknown>> {
     const url = `${this.configService.get<string>('slack.apiUrl') ?? 'https://slack.com/api'}/${method}`;
     const { response, errorBody } = await this.limiter
@@ -115,7 +150,7 @@ export class SlackWebApiGateway implements SlackWebApiPort {
               'Content-Type': 'application/json; charset=utf-8',
             },
             body: JSON.stringify(payload),
-            signal: AbortSignal.timeout(TIMEOUT_MS),
+            signal: AbortSignal.timeout(timeoutMs),
           }),
         readRefusal,
         cost,

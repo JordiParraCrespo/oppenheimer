@@ -8,6 +8,7 @@ import type {
   BotChannelChat,
   BotConversationRepositoryPort,
 } from '../database/bot-conversation.repository.port';
+import { slackTsOf } from '../domain/bot-slack-turn.policy';
 import { telegramMessageIdOf } from '../domain/bot-telegram-turn.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { whatsappMessageRowIdOf } from '../domain/bot-whatsapp-turn.policy';
@@ -20,11 +21,15 @@ type ChannelReply = Omit<
 
 type ChannelReplyCommand = ReplyOnTelegramCommand | ReplyOnWhatsappCommand | ReplyOnSlackCommand;
 
-/** The reply for a chat's channel, quoting the message the turn's key names. */
+/**
+ * The reply for a chat's channel, quoting the message the turn's key names;
+ * on Slack, the turn's `last` answer also ends that message's working reaction.
+ */
 function replyOn(
   chat: BotChannelChat,
   sourceKey: string | null,
   reply: ChannelReply,
+  last: boolean,
 ): ChannelReplyCommand {
   switch (chat.kind) {
     case 'telegram':
@@ -41,7 +46,11 @@ function replyOn(
       });
     // A Slack chat is the thread itself, so the answer needs nothing to quote.
     case 'slack':
-      return new ReplyOnSlackCommand({ ...reply, accountId: chat.slackAccountId });
+      return new ReplyOnSlackCommand({
+        ...reply,
+        accountId: chat.slackAccountId,
+        endsTs: last ? slackTsOf(sourceKey) : null,
+      });
   }
 }
 
@@ -52,7 +61,7 @@ function replyOn(
  * chat. Answers how many messages went: none for a conversation that is no
  * channel's chat (any more), a chat this bot no longer answers, or a host
  * that did not send. What the turn's end owes and what it sends as it goes
- * are the callers'.
+ * are the callers'; `last` says this is the turn's end.
  */
 @Injectable()
 export class BotChannelReplyResolver {
@@ -66,6 +75,7 @@ export class BotChannelReplyResolver {
     turn: Pick<BotTurnEntity, 'organizationId' | 'conversationId' | 'botId' | 'sourceKey'>,
     text: string,
     correlationId: string | undefined,
+    last: boolean,
   ): Promise<number> {
     const chat = await this.conversations.findChannelChat(turn.organizationId, turn.conversationId);
     if (!chat) return 0;
@@ -76,6 +86,8 @@ export class BotChannelReplyResolver {
       botId: turn.botId,
       metadata: { correlationId },
     };
-    return this.commands.execute<ChannelReplyCommand, number>(replyOn(chat, turn.sourceKey, reply));
+    return this.commands.execute<ChannelReplyCommand, number>(
+      replyOn(chat, turn.sourceKey, reply, last),
+    );
   }
 }

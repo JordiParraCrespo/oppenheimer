@@ -35,7 +35,7 @@ export class BotChannelAsItGoesFactory {
 
   private async send(turn: BotTurnEntity, text: string): Promise<boolean> {
     try {
-      return (await this.channel.send(turn, text, undefined)) > 0;
+      return (await this.channel.send(turn, text, undefined, false)) > 0;
     } catch (error) {
       this.logger.warn({
         message: 'Could not send a channel turn’s words as it went',

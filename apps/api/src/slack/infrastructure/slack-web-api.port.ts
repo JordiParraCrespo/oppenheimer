@@ -25,4 +25,20 @@ export interface SlackWebApiPort {
     access: SlackAppAccess,
     message: { channel: string; text: string; threadTs: string | null },
   ): Promise<SlackPosted>;
+  /**
+   * A person's name as their workspace shows it (`users.info`): their display
+   * name, else their full name, else their handle; null when Slack has none.
+   * Needs `users:read`; throws as `post` does.
+   */
+  userName(access: SlackAppAccess, userId: string): Promise<string | null>;
+  /**
+   * Puts the app's reaction `name` on a message (`reactions.add`), or takes it
+   * off (`reactions.remove`). One already there, or already gone, is no
+   * error. Needs `reactions:write`; throws as `post` does.
+   */
+  react(
+    access: SlackAppAccess,
+    message: { channel: string; ts: string; name: string },
+    on: boolean,
+  ): Promise<void>;
 }

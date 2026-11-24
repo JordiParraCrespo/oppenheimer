@@ -57,7 +57,7 @@ describe('Slack text', () => {
 
   it('cuts a long answer at a paragraph, losing nothing', () => {
     const paragraph = `${'word '.repeat(500).trim()}\n\n`;
-    const text = paragraph.repeat(4).trim();
+    const text = paragraph.repeat(40).trim();
     const parts = slackMessages(text);
     expect(parts.length).toBeGreaterThan(1);
     expect(parts.every((part) => part.length <= SLACK_MESSAGE_MAX)).toBe(true);

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { ConfigService } from '@nestjs/config';
 import type { CommandBus } from '@nestjs/cqrs';
 import { None, Some } from 'oxide.ts';
+import { ReplyOnSlackCommand } from '../../../../slack/commands/reply-on-slack/reply-on-slack.command';
 import { ReplyOnTelegramCommand } from '../../../../telegram/commands/reply-on-telegram/reply-on-telegram.command';
 import { ReplyOnWhatsappCommand } from '../../../../whatsapp/commands/reply-on-whatsapp/reply-on-whatsapp.command';
 import { BotChannelReplyResolver } from '../../../application/bot-channel-reply.resolver';
@@ -13,6 +14,7 @@ import type {
 import type { BotMessageRepositoryPort } from '../../../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
 import type { ChannelTurnLine } from '../../../domain/bot-channel-turn.policy';
+import { slackTurn } from '../../../domain/bot-slack-turn.policy';
 import { telegramTurn } from '../../../domain/bot-telegram-turn.policy';
 import { BotTurnEntity } from '../../../domain/bot-turn.entity';
 import { whatsappSourceKey } from '../../../domain/bot-whatsapp-turn.policy';
@@ -129,6 +131,23 @@ const telegramChat: BotChannelChat = {
   telegramAccountId,
   chatId: '123456789',
 };
+const slackAccountId = randomUUID();
+const slackChat: BotChannelChat = {
+  kind: 'slack',
+  organizationId,
+  botId,
+  slackAccountId,
+  chatId: 'C1:1700000000.000100',
+};
+
+function slack(): BotTurnEntity {
+  const { turn } = slackTurn(
+    { organizationId, botId, requestedByUserId: userId, ...engine },
+    { conversationId, slackAccountId, channel: 'C1', ts: '1700000500.000001', text: 'and today?' },
+  );
+  return turn;
+}
+
 const whatsappChat: BotChannelChat = {
   kind: 'whatsapp',
   organizationId,
@@ -208,6 +227,21 @@ describe('DeliverChannelReplyCommandHandler', () => {
       replyToRowId: messageRowId,
       text: 'Green since 10:12.',
       botId,
+    });
+  });
+
+  // Breaks if the owner's message keeps the working reaction after its answer.
+  it('ends the Slack message it answers with its last words, so its working reaction comes off', async () => {
+    const { bus, deliver } = setup(ended(slack()), slackChat);
+    await deliver();
+
+    const [sent] = bus.execute.mock.calls[0] as unknown as [ReplyOnSlackCommand];
+    expect(sent).toBeInstanceOf(ReplyOnSlackCommand);
+    expect(sent).toMatchObject({
+      accountId: slackAccountId,
+      chatId: 'C1:1700000000.000100',
+      endsTs: '1700000500.000001',
+      text: 'Green since 10:12.',
     });
   });
 
