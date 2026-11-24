@@ -36653,6 +36653,7 @@
               "paused",
               "deleted",
               "own_event",
+              "own_session_event",
               "automation_rate_limited",
               "workspace_rate_limited",
               "overlapping",
@@ -41709,6 +41710,43 @@
           "reason"
         ]
       },
+      "BotCheckBackEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "check_back"
+            ]
+          },
+          "chainId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The looks at one thing: the id of the turn that set the chain's first look."
+          },
+          "step": {
+            "type": "number",
+            "description": "Which look of the chain this is, from 0."
+          },
+          "chainStartedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the chain's first look was set; a chain stops 24 hours later."
+          },
+          "about": {
+            "type": "string",
+            "description": "What the bot is waiting on and what to look at, in its own words.",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "kind",
+          "chainId",
+          "step",
+          "chainStartedAt",
+          "about"
+        ]
+      },
       "BotDreamEventResponseDto": {
         "type": "object",
         "properties": {
@@ -42015,6 +42053,9 @@
               },
               {
                 "$ref": "#/components/schemas/BotLoopEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotCheckBackEventResponseDto"
               },
               {
                 "$ref": "#/components/schemas/BotDreamEventResponseDto"
