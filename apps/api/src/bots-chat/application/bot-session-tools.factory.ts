@@ -9,6 +9,7 @@ import { FindProjectQuery } from '../../projects/queries/find-project/find-proje
 import { AnswerSessionDecisionCommand } from '../../sessions/commands/answer-session-decision/answer-session-decision.command';
 import { CloseSessionCommand } from '../../sessions/commands/close-session/close-session.command';
 import { CreateSessionCommand } from '../../sessions/commands/create-session/create-session.command';
+import { RestartSessionCommand } from '../../sessions/commands/restart-session/restart-session.command';
 import { SendSessionPromptCommand } from '../../sessions/commands/send-session-prompt/send-session-prompt.command';
 import { StartCloudSessionCommand } from '../../sessions/commands/start-cloud-session/start-cloud-session.command';
 import { StopSessionCommand } from '../../sessions/commands/stop-session/stop-session.command';
@@ -96,6 +97,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       this.sendToSession(),
       this.answerSession(),
       this.stopSession(),
+      this.restartSession(),
       this.closeSession(),
     ];
   }
@@ -383,10 +385,10 @@ export class BotSessionToolsFactory implements BotToolArea {
         watch: z.boolean().optional().describe(promptText('sessions/tools.send-to-session-watch')),
       }),
       summarize: async (input, context) =>
-        promptSummary(input, await this.session(context, input.session_id)),
+        promptSummary(input, await this.promptable(context, input.session_id)),
       run: async (input, context) => {
         // Read first: the prompt opens the next task, or joins the live one.
-        const turn = sentTurnOf((await this.session(context, input.session_id)).latestTurn);
+        const turn = sentTurnOf((await this.promptable(context, input.session_id)).latestTurn);
         const sent = await this.commandBus.execute<SendSessionPromptCommand, SessionCommandResult>(
           new SendSessionPromptCommand({
             scope: context.owner,
@@ -510,6 +512,27 @@ export class BotSessionToolsFactory implements BotToolArea {
   }
 
   /**
+   * Brings a stopped session back in the worktrees it has, as opening it in
+   * the console does, so a bot whose session stopped idle (or with its host)
+   * carries on without sending the person to open it. Only a stopped session
+   * on a host: `restartRefusal` turns the rest away before any card.
+   */
+  private restartSession(): BotToolDefinition {
+    return this.sessionAction({
+      name: 'restart_session',
+      verb: 'restart',
+      description: promptText('sessions/tools.restart-session'),
+      input: z.object({
+        session_id: z.uuid().describe(promptText('sessions/tools.restart-session-session-id')),
+      }),
+      refusal: restartRefusal,
+      summary: (session) => `Restart the session "${session.name}" (${session.id})`,
+      command: (input, context) =>
+        new RestartSessionCommand({ scope: context.owner, sessionId: input.session_id }),
+    });
+  }
+
+  /**
    * Closes a session a bot started, most often one that failed, so it does not
    * stay in the owner's sidebar: the sessions' own close, which pushes each
    * branch and removes the worktrees. Whose sessions a bot may close is
@@ -540,7 +563,7 @@ export class BotSessionToolsFactory implements BotToolArea {
   }
 
   /**
-   * A tool that ends something about one session (stop, close): it asks
+   * A tool that acts on one session's lifecycle (stop, restart, close): it asks
    * first, the card names the session, `refusal` turns a session it may not
    * touch away before any card and again when an approved call runs, the
    * sessions' own command does the work, and the answer says whether it is
@@ -558,7 +581,7 @@ export class BotSessionToolsFactory implements BotToolArea {
     command: (
       input: z.output<Input>,
       context: BotToolCallContext,
-    ) => StopSessionCommand | CloseSessionCommand;
+    ) => StopSessionCommand | RestartSessionCommand | CloseSessionCommand;
   }): BotToolDefinition {
     const allowed = async (context: BotToolCallContext, sessionId: string) => {
       const session = await this.session(context, sessionId);
@@ -578,7 +601,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       run: async (input, context) => {
         const session = await allowed(context, input.session_id);
         const result = await this.commandBus.execute<
-          StopSessionCommand | CloseSessionCommand,
+          StopSessionCommand | RestartSessionCommand | CloseSessionCommand,
           SessionCommandResult
         >(spec.command(input, context));
         return sessionActionAnswer({
@@ -589,6 +612,21 @@ export class BotSessionToolsFactory implements BotToolArea {
         });
       },
     });
+  }
+
+  /**
+   * The session `send_to_session` prompts, turned away when it is stopped with
+   * the way back (`restart_session`), before a card asks the person about a
+   * prompt the session could not take.
+   */
+  private async promptable(context: BotToolCallContext, sessionId: string) {
+    const session = await this.session(context, sessionId);
+    if (stoppedOnHost(session)) {
+      throw new BotToolRefusal(
+        promptText('sessions/tools.send-to-session-stopped', { id: sessionId }),
+      );
+    }
+    return session;
   }
 
   /** The session a call acts on, as a card offers to always allow the tool on it. */
@@ -618,6 +656,34 @@ export class BotSessionToolsFactory implements BotToolArea {
       new FindProjectQuery({ scope: context.owner, projectId }),
     );
   }
+}
+
+/** A session stopped on its host: it takes no prompt until it is restarted. */
+function stoppedOnHost(session: WorkSessionEntity): boolean {
+  return !session.isResolved && session.place !== 'cloud' && session.stoppedAt !== null;
+}
+
+/**
+ * Why `restart_session` leaves a session as it is, or null when it restarts:
+ * only one stopped on its host, with no close owed, has a window to bring back. A running one would
+ * lose its agent mid-task, so it is refused rather than restarted.
+ */
+function restartRefusal(session: WorkSessionEntity): string | null {
+  if (session.isResolved) {
+    return promptText('sessions/tools.restart-session-closed', { id: session.id });
+  }
+  if (session.place === 'cloud') {
+    return promptText('sessions/tools.restart-session-cloud', { id: session.id });
+  }
+  // A restart drops a close still owed to the host (the person's change of
+  // mind when they restart it), so a bot never overrides the person's close.
+  if (session.closeRequest) {
+    return promptText('sessions/tools.restart-session-closing', { id: session.id });
+  }
+  if (!session.stoppedAt) {
+    return promptText('sessions/tools.restart-session-not-stopped', { id: session.id });
+  }
+  return null;
 }
 
 /** The sessions' own command that starts what a cloud plan says, as the owner, marked as the bot's. */

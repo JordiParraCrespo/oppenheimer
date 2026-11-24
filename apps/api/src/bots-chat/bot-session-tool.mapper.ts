@@ -302,7 +302,7 @@ export interface SessionActionOutcome {
   doneHere: boolean;
 }
 
-export type SessionActionVerb = 'stop' | 'close';
+export type SessionActionVerb = 'stop' | 'restart' | 'close';
 
 /**
  * Each verb's answers, one per outcome. An offline host is told apart by
@@ -318,6 +318,11 @@ const SESSION_ACTION_ANSWERS: Readonly<
     sent: (id) => promptText('sessions/tools.session-action-answers-stop-sent', { id }),
     offline: (id) => promptText('sessions/tools.session-action-answers-stop-offline', { id }),
   },
+  restart: {
+    done: (id) => `Session ${id} is restarted.`,
+    sent: (id) => promptText('sessions/tools.session-action-answers-restart-sent', { id }),
+    offline: (id) => promptText('sessions/tools.session-action-answers-restart-offline', { id }),
+  },
   close: {
     done: (id) => `Session ${id} is closed.`,
     sent: (id) => promptText('sessions/tools.session-action-answers-close-sent', { id }),
@@ -325,7 +330,7 @@ const SESSION_ACTION_ANSWERS: Readonly<
   },
 };
 
-/** `stop_session`'s and `close_session`'s answer: done, sent, or owed to an offline host. */
+/** `stop_session`'s, `restart_session`'s and `close_session`'s answer: done, sent, or owed to an offline host. */
 export function sessionActionAnswer(outcome: SessionActionOutcome): string {
   const answers = SESSION_ACTION_ANSWERS[outcome.verb];
   const kind = outcome.doneHere

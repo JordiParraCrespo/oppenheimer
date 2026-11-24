@@ -6,6 +6,7 @@ import { FindHostQuery } from '../../../hosts/queries/find-host/find-host.query'
 import { AnswerSessionDecisionCommand } from '../../../sessions/commands/answer-session-decision/answer-session-decision.command';
 import { CloseSessionCommand } from '../../../sessions/commands/close-session/close-session.command';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
+import { RestartSessionCommand } from '../../../sessions/commands/restart-session/restart-session.command';
 import { SendSessionPromptCommand } from '../../../sessions/commands/send-session-prompt/send-session-prompt.command';
 import { StartCloudSessionCommand } from '../../../sessions/commands/start-cloud-session/start-cloud-session.command';
 import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop-session.command';
@@ -712,6 +713,66 @@ describe('BotSessionToolsFactory', () => {
     const result = await call('stop_session', { session_id: session.id });
     expect(result.content).toContain('the stop did not reach it and is not sent again');
     expect(result.content).not.toContain('when it comes back');
+  });
+
+  // What breaks this: a session stopped idle could be brought back only by the
+  // person opening it in the console, so a bot that followed it stalled there.
+  it('restarts a stopped session through the sessions’ own command, and says to prompt once it is back', async () => {
+    const { commandBus, call, session } = setup('full');
+    session.recordEvent({
+      seq: 5,
+      kind: SESSION_EVENT_KINDS.STOPPED,
+      payload: {},
+      occurredAt: new Date(),
+    });
+    const result = await call('restart_session', { session_id: session.id });
+    expect(commandBus.execute).toHaveBeenCalledWith(expect.any(RestartSessionCommand));
+    expect(commandBus.execute.mock.calls[0][0]).toMatchObject({
+      scope: owner,
+      sessionId: session.id,
+    });
+    expect(result.isError).toBeFalsy();
+    expect(result.content).toContain('send your prompt then, not before');
+  });
+
+  it('turns a prompt to a stopped session away with the way back, before any card', async () => {
+    const { commandBus, approvals, call, session } = setup('auto');
+    session.recordEvent({
+      seq: 5,
+      kind: SESSION_EVENT_KINDS.STOPPED,
+      payload: {},
+      occurredAt: new Date(),
+    });
+    const result = await call('send_to_session', { session_id: session.id, text: 'Go on' });
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain('Call restart_session to bring it back');
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a restart drops a close still owed to the host, so a bot
+  // restarting a session the person closed while its host was away undid the close.
+  it('refuses to restart a stopped session whose close is still owed, before any card', async () => {
+    const { commandBus, approvals, call, session } = setup('auto');
+    session.recordEvents([
+      { seq: 5, kind: SESSION_EVENT_KINDS.STOPPED, payload: {}, occurredAt: new Date() },
+      { seq: 6, kind: SESSION_EVENT_KINDS.CLOSE_REQUESTED, payload: {}, occurredAt: new Date() },
+    ]);
+    const result = await call('restart_session', { session_id: session.id });
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain('a restart would cancel it');
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a restart of a running session ends its agent mid-task.
+  it('refuses to restart a session that is not stopped, before any card', async () => {
+    const { commandBus, approvals, call, session } = setup('auto');
+    const result = await call('restart_session', { session_id: session.id });
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain('is not stopped, so there is nothing to restart');
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
   it('asks before prompting a session, the card naming the session and the words', async () => {
