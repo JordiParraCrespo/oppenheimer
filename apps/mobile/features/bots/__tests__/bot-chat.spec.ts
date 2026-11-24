@@ -27,6 +27,7 @@ describe('a bot’s chat on the phone', () => {
     allowedBy: null,
     mailDraft: null,
     rateLimit: null,
+    visual: null,
   };
   const message = (
     id: string,
