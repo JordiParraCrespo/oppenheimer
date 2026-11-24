@@ -2050,3 +2050,10 @@ earlier note:
   bot to run `runner browser on` after saying "do it yourself", did not want
   that guardrail: a bot changes them with `set_host_settings` when the
   person asks in their own chat ("The host's switches").
+- `versions/mvp/09-runner-install-and-update.md` closed a pending update
+  once the new process stayed up for the health gate. On 2026-11-24 runner
+  0.1.24 stayed up for it while the control plane refused every hello it
+  sent, and the host was offline on a "healthy" update: the gate now also
+  waits for a link, and five refused hellos in a row with no link roll the
+  update back. A control plane it cannot reach at all keeps it pending, as a
+  network that is down says nothing about the binary ("The state machine").

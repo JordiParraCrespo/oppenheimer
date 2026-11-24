@@ -92,6 +92,11 @@ type Options struct {
 	// composition root can record it where `runner status` will read it.
 	// wipe is the close's ErrWipe.
 	OnUnpaired func(wipe bool)
+	// OnHelloRefused runs each time the control plane read this runner's
+	// hello and closed with CloseHelloExpected: it was reached and refused
+	// what this binary says, which no redial changes. The update loop counts
+	// these against a pending update; a network that is down never calls it.
+	OnHelloRefused func()
 }
 
 // Client keeps one link open to the control plane for the life of a context.
@@ -179,6 +184,9 @@ func (c *Client) Run(ctx context.Context) error {
 				c.opts.OnUnpaired(errors.Is(err, ErrWipe))
 			}
 			return err
+		}
+		if websocket.CloseStatus(err) == CloseHelloExpected && c.opts.OnHelloRefused != nil {
+			c.opts.OnHelloRefused()
 		}
 		// A link that held for a while resets the ladder: the next drop is a
 		// fresh incident, not the same one.

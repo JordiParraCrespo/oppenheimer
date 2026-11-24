@@ -27,6 +27,9 @@ type controlPlane struct {
 	fingerprint string
 	refuse      *link.Hint
 	gone        bool
+	// refuseHello closes every hello with 4400, as a control plane whose
+	// schema refuses what this runner says.
+	refuseHello bool
 	// strangerGone answers a bare 410, as a proxy in front of the control
 	// plane might: not the control plane's verdict.
 	strangerGone bool
@@ -73,7 +76,7 @@ func newControlPlane(t *testing.T) *controlPlane {
 			return
 		}
 		var hello link.Hello
-		if err := json.Unmarshal(data, &hello); err != nil || hello.Type != "hello" {
+		if err := json.Unmarshal(data, &hello); err != nil || hello.Type != "hello" || cp.refuseHello {
 			conn.Close(4400, "hello expected")
 			return
 		}

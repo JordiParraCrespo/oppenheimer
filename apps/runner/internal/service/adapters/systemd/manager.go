@@ -116,8 +116,10 @@ func (m *Manager) Uninstall(ctx context.Context) error {
 
 // Restart is what an update calls: the unit's ExecStart is the `current`
 // symlink, so restarting is all that is needed to run a new version.
+// Detached from ctx's cancellation as launchd's is: the daemon's own shutdown
+// must not kill the systemctl that is restarting it.
 func (m *Manager) Restart(ctx context.Context) error {
-	if out, err := m.commands.Run(ctx, "systemctl", "--user", "restart", domain.SystemdUnit); err != nil {
+	if out, err := m.commands.Run(context.WithoutCancel(ctx), "systemctl", "--user", "restart", domain.SystemdUnit); err != nil {
 		return controlFailed("systemctl --user restart", out, err)
 	}
 	return nil
