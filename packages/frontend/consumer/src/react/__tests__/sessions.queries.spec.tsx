@@ -8,6 +8,7 @@ import type { SessionEntity } from '../../modules/sessions/session.entity';
 import { sessionEntity } from '../../testing';
 import { sessionsKeys } from '../sessions.keys';
 import {
+  useAcknowledgeSessionReport,
   useCloseSession,
   useCloseSessionWindow,
   useCreateSession,
@@ -38,6 +39,7 @@ function setup(
   service: {
     findById?: unknown;
     findAll?: unknown;
+    acknowledgeReport?: unknown;
     close?: unknown;
     startProgress?: unknown;
     create?: unknown;
@@ -384,6 +386,53 @@ describe('a deleted session', () => {
       vi.useRealTimers();
     }
   }, 15_000);
+});
+
+/**
+ * Opening a finished session reads its turn, and the sidebar's dot is the
+ * row's `ready-for-review`. It waited on the API's answer and the lists read
+ * after it, so the dot outlived the click by a round trip or two.
+ */
+describe('a session read on open', () => {
+  const finished = sessionEntity({ id: 'r-1', state: 'ready-for-review' });
+
+  function reading(acknowledgeReport: ReturnType<typeof vi.fn>) {
+    const findAll = vi.fn().mockResolvedValue([finished]);
+    const { wrapper } = setup({ findAll, acknowledgeReport });
+    const { result } = renderHook(
+      () => ({ list: useSessions(), read: useAcknowledgeSessionReport() }),
+      { wrapper },
+    );
+    return { result, findAll };
+  }
+
+  it('leaves ready-for-review in the list on the click, before the API answers', async () => {
+    const { result } = reading(vi.fn(() => new Promise(() => {})));
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+
+    result.current.read.mutate('r-1');
+    await waitFor(() => expect(result.current.list.data?.[0]?.state).toBe('idle'));
+  });
+
+  it('is ready for review again when the API refuses the read', async () => {
+    const { result, findAll } = reading(vi.fn().mockRejectedValue(new Error('refused')));
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+    const reads = findAll.mock.calls.length;
+
+    result.current.read.mutate('r-1');
+    await waitFor(() => expect(findAll.mock.calls.length).toBeGreaterThan(reads));
+    await waitFor(() => expect(result.current.list.data?.[0]?.state).toBe('ready-for-review'));
+  });
+
+  it('is ready for review again when the API cannot be reached to read it or the list', async () => {
+    const { result, findAll } = reading(vi.fn().mockRejectedValue(new Error('offline')));
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+    findAll.mockRejectedValue(new Error('offline'));
+
+    result.current.read.mutate('r-1');
+    await waitFor(() => expect(result.current.read.isError).toBe(true));
+    expect(result.current.list.data?.[0]?.state).toBe('ready-for-review');
+  });
 });
 
 /**
