@@ -1190,6 +1190,7 @@
     },
     "sidebar": {
       "sessions": "Sessions",
+      "moveSection": "Move {{name}}",
       "search": "Search sessions",
       "clearSearch": "Clear search",
       "noMatches": "No sessions match “{{query}}”.",

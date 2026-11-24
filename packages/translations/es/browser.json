@@ -1201,6 +1201,7 @@
     },
     "sidebar": {
       "sessions": "Sesiones",
+      "moveSection": "Mover {{name}}",
       "search": "Buscar sesiones",
       "clearSearch": "Borrar búsqueda",
       "noMatches": "Ninguna sesión coincide con “{{query}}”.",
