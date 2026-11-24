@@ -39,7 +39,7 @@ export class BotApprovedCallResolver {
     const owner = await this.owners.resolve(bot.organizationId, bot.createdByUserId);
     if (!owner) {
       return {
-        content: promptText('tools/toolbox.resolve-content'),
+        content: promptText('core/tools-toolbox.resolve-content'),
         isError: true,
       };
     }

@@ -49,7 +49,7 @@ export function sessionWaitAnswer(
   waitedSeconds: number,
 ): string {
   if (!outcome.settled) {
-    return promptText('tools/sessions.wait-still-working', {
+    return promptText('sessions/tools.wait-still-working', {
       sessionId,
       waitedSeconds: String(waitedSeconds),
     });
@@ -66,7 +66,7 @@ export function sessionWaitAnswer(
             : outcome.state === 'cancelled'
               ? 'had its task stopped'
               : 'had its task expire before it ran';
-  return promptText('tools/sessions.wait-ended', {
+  return promptText('sessions/tools.wait-ended', {
     sessionId,
     what,
     waitedSeconds: String(waitedSeconds),

@@ -39,7 +39,7 @@ const scheduleTrigger = z.object({
   source: z.literal('schedule'),
   frequency: z
     .enum(SCHEDULE_FREQUENCIES)
-    .describe(promptText('tools/routine.schedule-trigger-frequency')),
+    .describe(promptText('routines/tools.schedule-trigger-frequency')),
   hour: z.number().int().min(0).max(23).default(9),
   minute: z.number().int().min(0).max(59).default(0),
   days: z
@@ -48,8 +48,8 @@ const scheduleTrigger = z.object({
     .describe('Weekly: 0 = Sunday … 6 = Saturday.'),
   day_of_month: z.number().int().min(1).max(28).optional(),
   date: z.string().optional().describe('Once: YYYY-MM-DD.'),
-  cron: z.string().optional().describe(promptText('tools/routine.schedule-trigger-cron')),
-  timezone: z.string().optional().describe(promptText('tools/routine.schedule-trigger-timezone')),
+  cron: z.string().optional().describe(promptText('routines/tools.schedule-trigger-cron')),
+  timezone: z.string().optional().describe(promptText('routines/tools.schedule-trigger-timezone')),
 });
 
 const githubTrigger = z.object({
@@ -58,28 +58,28 @@ const githubTrigger = z.object({
   repositories: z
     .array(z.number().int().positive())
     .min(1)
-    .describe(promptText('tools/routine.github-trigger-repositories')),
-  branch: z.string().optional().describe(promptText('tools/routine.github-trigger-branch')),
+    .describe(promptText('routines/tools.github-trigger-repositories')),
+  branch: z.string().optional().describe(promptText('routines/tools.github-trigger-branch')),
 });
 
 const gmailTrigger = z.object({
   source: z.literal('gmail'),
-  account: z.string().min(1).describe(promptText('tools/routine.gmail-trigger-account')),
+  account: z.string().min(1).describe(promptText('routines/tools.gmail-trigger-account')),
   query: z
     .string()
     .trim()
     .max(500)
     .optional()
-    .describe(promptText('tools/routine.gmail-trigger-query')),
+    .describe(promptText('routines/tools.gmail-trigger-query')),
 });
 
 const webhookTrigger = z
   .object({ source: z.literal('webhook') })
-  .describe(promptText('tools/routine.webhook-trigger'));
+  .describe(promptText('routines/tools.webhook-trigger'));
 
 const routineInput = z.object({
-  action: z.enum(ROUTINE_ACTIONS).describe(promptText('tools/routine.routine-action')),
-  routine_id: z.uuid().optional().describe(promptText('tools/routine.routine-routine-id')),
+  action: z.enum(ROUTINE_ACTIONS).describe(promptText('routines/tools.routine-action')),
+  routine_id: z.uuid().optional().describe(promptText('routines/tools.routine-routine-id')),
   name: z.string().trim().min(1).max(NAME_MAX).optional(),
   prompt: z
     .string()
@@ -87,22 +87,22 @@ const routineInput = z.object({
     .min(1)
     .max(PROMPT_MAX)
     .optional()
-    .describe(promptText('tools/routine.routine-prompt')),
+    .describe(promptText('routines/tools.routine-prompt')),
   triggers: z
     .array(z.union([scheduleTrigger, githubTrigger, gmailTrigger, webhookTrigger]))
     .min(1)
     .max(TRIGGERS_MAX)
     .optional()
-    .describe(promptText('tools/routine.routine-triggers')),
-  enabled: z.boolean().optional().describe(promptText('tools/routine.routine-enabled')),
+    .describe(promptText('routines/tools.routine-triggers')),
+  enabled: z.boolean().optional().describe(promptText('routines/tools.routine-enabled')),
 });
 
 const input = routineInput
   .refine((call) => call.action !== 'create' || (call.name && call.prompt && call.triggers), {
-    message: promptText('tools/routine.input-message-create-needs-name'),
+    message: promptText('routines/tools.input-message-create-needs-name'),
   })
   .refine((call) => ['list', 'create'].includes(call.action) || call.routine_id, {
-    message: promptText('tools/routine.input-message-action-needs-routine'),
+    message: promptText('routines/tools.input-message-action-needs-routine'),
   });
 
 type RoutineCall = z.output<typeof input>;
@@ -163,7 +163,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
     return {
       name: 'update_routine',
       scope: 'automations:write' as const,
-      description: promptText('tools/routine.update-routine'),
+      description: promptText('routines/tools.update-routine'),
       input,
       normalize: (call: RoutineCall, context: BotToolCallContext) => this.checked(call, context),
       summarize: async (call: RoutineCall, context: BotToolCallContext) => {
@@ -287,7 +287,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
     const routine = automations.find((candidate) => candidate.id === routineId);
     if (!routine) {
       throw new BotToolRefusal(
-        promptText('tools/routine.routine-of', { routineId: routineId ?? '(none)' }),
+        promptText('routines/tools.routine-of', { routineId: routineId ?? '(none)' }),
       );
     }
     return routine;
@@ -315,7 +315,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
         ];
         return `${routine.id} "${routine.name}" [${parts.join('; ')}]\n  prompt: ${cut(routine.revision.prompt, 300)}`;
       }),
-      promptText('tools/routine.listing'),
+      promptText('routines/tools.listing'),
       { shown: automations.length, total: automations.length, hint: '' },
     );
   }
@@ -330,8 +330,8 @@ function webhookUrlState(
   return [
     promptText(
       webhooks?.has(routine.id)
-        ? 'tools/routine.describe-webhook-issued'
-        : 'tools/routine.describe-webhook-not-issued',
+        ? 'routines/tools.describe-webhook-issued'
+        : 'routines/tools.describe-webhook-not-issued',
     ),
   ];
 }
@@ -348,7 +348,8 @@ function describeCall(
   if (trigger.source === 'github') {
     return `GitHub ${trigger.event}${trigger.branch ? ` on ${trigger.branch}` : ''}`;
   }
-  if (trigger.source === 'webhook') return promptText('tools/automation.describe-trigger-webhook');
+  if (trigger.source === 'webhook')
+    return promptText('routines/tools-automation.describe-trigger-webhook');
   if (trigger.frequency === 'cron') {
     // The owner approves words, never the raw fields.
     return cronToEnglish(trigger.cron ?? '') ?? 'a custom schedule';
