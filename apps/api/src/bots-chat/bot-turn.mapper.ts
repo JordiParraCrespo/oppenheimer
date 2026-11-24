@@ -6,9 +6,12 @@ import {
   type BotProvider,
   type BotTurnLane,
   type BotTurnStatus,
+  botDefaultModel,
+  SCOPES,
   type Scope,
 } from '@oppenheimer/shared';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
+import type { BotEntity } from '../bots/domain/bot.entity';
 import { BotTurnOrmEntity, type BotTurnPlanLimitsRecord } from './database/bot-turn.orm-entity';
 import {
   BOT_CONTACT_CHATS,
@@ -18,6 +21,7 @@ import {
 } from './domain/bot-turn.entity';
 import { BotActivityResponseDto } from './dtos/bot-activity.response.dto';
 import { type BotTurnPlanLimitsDto, BotTurnResponseDto } from './dtos/bot-turn.response.dto';
+import type { CheckBack } from './infrastructure/bot-check-backs.port';
 
 @Injectable()
 export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, BotTurnResponseDto> {
@@ -157,6 +161,82 @@ export class BotTurnMapper implements Mapper<BotTurnEntity, BotTurnOrmEntity, Bo
     dto.startedAt = entity.startedAt?.toISOString() ?? null;
     dto.endedAt = entity.endedAt?.toISOString() ?? null;
     return dto;
+  }
+
+  /**
+   * What a look's turn is queued with (`checkBackTurn`): the bot's model, as
+   * its owner, with the scopes and zone of the turn that set the look.
+   */
+  toCheckBackTurnProps(
+    look: Pick<CheckBack, 'organizationId' | 'credentialScopes' | 'timeZone'>,
+    bot: Pick<BotEntity, 'id' | 'provider' | 'model' | 'effort'>,
+    ownerUserId: string,
+  ): Omit<Parameters<typeof BotTurnEntity.queue>[0], 'origin' | 'sourceKey' | 'lane'> {
+    return {
+      organizationId: look.organizationId,
+      botId: bot.id,
+      requestedByUserId: ownerUserId,
+      provider: bot.provider,
+      model: bot.model ?? botDefaultModel(bot.provider).id,
+      effort: bot.effort,
+      timeZone: look.timeZone,
+      credentialScopes: look.credentialScopes,
+    };
+  }
+
+  /** A look as its job's payload carries it: the look, dates as ISO 8601. */
+  toCheckBackPayload(look: CheckBack): Record<string, unknown> {
+    return {
+      botId: look.botId,
+      organizationId: look.organizationId,
+      originTurnId: look.originTurnId,
+      chainId: look.chainId,
+      step: look.step,
+      chainStartedAt: look.chainStartedAt.toISOString(),
+      about: look.about,
+      at: look.at.toISOString(),
+      credentialScopes: look.credentialScopes ? [...look.credentialScopes] : null,
+      timeZone: look.timeZone,
+    };
+  }
+
+  /** A job's payload read back as the look it was staged from; null for one that does not read as one. */
+  toCheckBack(input: unknown): CheckBack | null {
+    const data =
+      typeof input === 'object' && input !== null ? (input as Record<string, unknown>) : {};
+    const text = (key: string) => (typeof data[key] === 'string' ? (data[key] as string) : null);
+    const date = (key: string) => {
+      const parsed = new Date(text(key) ?? Number.NaN);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+    const [botId, organizationId, originTurnId, chainId, about] = [
+      'botId',
+      'organizationId',
+      'originTurnId',
+      'chainId',
+      'about',
+    ].map(text);
+    const chainStartedAt = date('chainStartedAt');
+    const at = date('at');
+    const step = data.step;
+    if (!botId || !organizationId || !originTurnId || !chainId || !about) return null;
+    if (!chainStartedAt || !at || typeof step !== 'number' || !Number.isInteger(step)) return null;
+    return {
+      botId,
+      organizationId,
+      originTurnId,
+      chainId,
+      step,
+      chainStartedAt,
+      about,
+      at,
+      credentialScopes: Array.isArray(data.credentialScopes)
+        ? data.credentialScopes.filter((scope): scope is Scope =>
+            (SCOPES as readonly unknown[]).includes(scope),
+          )
+        : null,
+      timeZone: text('timeZone') ?? 'UTC',
+    };
   }
 }
 

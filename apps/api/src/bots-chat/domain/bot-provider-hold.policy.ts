@@ -28,11 +28,12 @@ export function isAccountFailure(failure: BotTurnFailure | null | undefined): bo
 }
 
 /**
- * The turns that run with nobody waiting and nothing else to stop them: a
+ * The turns that run with nobody waiting and nothing else to stop them (a
+ * routine's run, a wake, a look the bot asked for): a
  * goal pauses and a loop stops on the failure on their own, and a bot's ask
  * is answered by its turn's end, so they keep their own rules.
  */
-const HELD_ORIGINS: readonly BotTurnOrigin[] = ['routine', 'subscription'];
+const HELD_ORIGINS: readonly BotTurnOrigin[] = ['routine', 'subscription', 'check_back'];
 
 /** Whether a turn of this origin can be held at all: the read of the last turn is spent only then. */
 export function holdableOrigin(origin: BotTurnOrigin): boolean {

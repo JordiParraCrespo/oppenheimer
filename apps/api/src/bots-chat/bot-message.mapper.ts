@@ -44,6 +44,7 @@ import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
 import {
   BotApprovalEventResponseDto,
+  BotCheckBackEventResponseDto,
   BotCompactionEventResponseDto,
   BotDreamEventResponseDto,
   BotGithubAskEventResponseDto,
@@ -338,6 +339,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotGoalEventResponseDto(), event);
     case 'loop':
       return Object.assign(new BotLoopEventResponseDto(), event);
+    case 'check_back':
+      return Object.assign(new BotCheckBackEventResponseDto(), event);
     case 'dream':
       return Object.assign(new BotDreamEventResponseDto(), event);
     case 'compaction':
@@ -453,6 +456,16 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       intervalMinutes: typeof raw.intervalMinutes === 'number' ? raw.intervalMinutes : null,
       run: typeof raw.run === 'number' ? raw.run : 0,
       reason: typeof raw.reason === 'string' ? raw.reason : null,
+    };
+  }
+  if (raw.kind === 'check_back') {
+    if (typeof raw.chainId !== 'string' || typeof raw.chainStartedAt !== 'string') return null;
+    return {
+      kind: 'check_back',
+      chainId: raw.chainId,
+      step: typeof raw.step === 'number' ? raw.step : 0,
+      chainStartedAt: raw.chainStartedAt,
+      about: String(raw.about ?? ''),
     };
   }
   if (raw.kind === 'dream') {
