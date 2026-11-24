@@ -194,7 +194,7 @@ function facesThatFit(width: number): number {
 /**
  * BotFaces — the bots of a folded list, drawn in its heading as a row of
  * `BotFaceItem`s 4px apart, so the list folds away and the people in it
- * stay. It shows as many as its width holds; when they do not all fit, the
+ * stay. It fills the space it is given and shows as many as that holds; when they do not all fit, the
  * last place is a `+N` chip (`moreLabel` names it) that calls `onMore`, which
  * unfolds the list. It sits in `SidebarListHead`'s `summary`.
  */
@@ -232,7 +232,7 @@ function BotFaces({
       ref={ref}
       data-slot="bot-faces"
       role="list"
-      className={cn('flex h-7 min-w-0 items-center gap-1 overflow-hidden', className)}
+      className={cn('flex h-7 min-w-0 flex-1 items-center gap-1 overflow-hidden', className)}
       {...props}
     >
       {faces.slice(0, shown).map((face, index) => (
@@ -278,9 +278,8 @@ function BotFaceItem({
   active,
   className,
   render,
-  nativeButton,
   ...props
-}: Omit<ButtonPrimitive.Props, 'children'> & {
+}: Omit<React.ComponentProps<'button'>, 'children'> & {
   name: string;
   /** The name and the state, read in place of the face. */
   label: string;
@@ -292,40 +291,37 @@ function BotFaceItem({
   unread?: boolean;
   needsInput?: boolean;
   active?: boolean;
+  /** The element the face is: a link to the chat, so it reads and opens as one. */
+  render?: React.ReactElement;
 }) {
   const dot = needsInput ? 'bg-warning' : unread ? 'bg-primary' : null;
   return (
     <Tooltip>
       <TooltipTrigger
-        render={
-          <ButtonPrimitive
-            data-slot="bot-face-item"
-            data-active={active || undefined}
-            data-working={working || undefined}
-            aria-label={label}
-            aria-current={active ? 'true' : undefined}
-            render={render}
-            nativeButton={nativeButton ?? render === undefined}
-            className={cn(
-              'relative flex shrink-0 rounded-xs outline-none ring-offset-1 ring-offset-sidebar focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring data-active:ring-1 data-active:ring-fg',
-              className,
-            )}
-            {...props}
-          >
-            <BotAvatar
-              option={{ image, initials }}
-              size={FACE_SIZE}
-              face={face}
-              className={cn('transition-opacity duration-fast hover:opacity-85', working && 'motion-safe:animate-pulse')}
-            />
-            {dot ? (
-              <span aria-hidden className="absolute -top-0.75 -right-0.75 flex size-2.75 rounded-pill bg-sidebar p-0.5">
-                <span className={cn('size-full rounded-pill', dot)} />
-              </span>
-            ) : null}
-          </ButtonPrimitive>
-        }
-      />
+        render={render ?? <button type="button" />}
+        data-slot="bot-face-item"
+        data-active={active || undefined}
+        data-working={working || undefined}
+        aria-label={label}
+        aria-current={active ? 'true' : undefined}
+        className={cn(
+          'relative flex shrink-0 rounded-xs outline-none ring-offset-1 ring-offset-sidebar focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring data-active:ring-1 data-active:ring-fg',
+          className,
+        )}
+        {...props}
+      >
+        <BotAvatar
+          option={{ image, initials }}
+          size={FACE_SIZE}
+          face={face}
+          className={cn('transition-opacity duration-fast hover:opacity-85', working && 'motion-safe:animate-pulse')}
+        />
+        {dot ? (
+          <span aria-hidden className="absolute -top-0.75 -right-0.75 flex size-2.75 rounded-pill bg-sidebar p-0.5">
+            <span className={cn('size-full rounded-pill', dot)} />
+          </span>
+        ) : null}
+      </TooltipTrigger>
       <TooltipContent side="bottom" align="center" sideOffset={6} className="flex-col items-start gap-0.5">
         <span className="font-medium">{name}</span>
         {preview ? <span className="line-clamp-3 opacity-75">{preview}</span> : null}
