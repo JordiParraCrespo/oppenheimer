@@ -403,7 +403,7 @@ function QuestionsPill({
       type="button"
       data-slot="questions-pill"
       className={cn(
-        'inline-flex h-7 items-center gap-1.5 rounded-pill border border-border px-3 text-[13px] text-fg-muted outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.25',
+        'inline-flex h-(--control-h-sm) items-center gap-1.5 rounded-pill border border-border px-3 text-[13px] text-fg-muted outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.25',
         className,
       )}
       {...props}

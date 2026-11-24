@@ -248,6 +248,7 @@ export const TOC: TocGroup[] = [
     group: 'Employees',
     items: [
       { id: 'botitem', label: 'BotItem', icon: BotIcon, components: ['bot-item'] },
+      { id: 'botfaces', label: 'BotFaces', icon: BotIcon, components: ['bot-faces'] },
       { id: 'avatarpicker', label: 'AvatarPicker', icon: CircleUserRoundIcon, components: ['avatar-picker'] },
       { id: 'avatarcolorpicker', label: 'AvatarColorPicker', icon: CircleUserRoundIcon, components: [] },
       { id: 'botfacepicker', label: 'BotFacePicker', icon: CircleUserRoundIcon, components: ['bot-face-picker'] },

@@ -10,6 +10,7 @@ import { useNewBot } from '@/features/bots/hooks/use-create-bot';
 import { useFoldedBots } from '@/features/bots/hooks/use-folded-bots';
 import { withPlacement } from '@/features/bots/lib/placement';
 import { rememberedBotCount } from '@/features/bots/lib/section-bot-count';
+import { SectionBotFaces } from './section-bot-faces';
 import { SectionBotsList } from './section-bots-list';
 import { SectionBotsMenu } from './section-bots-menu';
 
@@ -22,7 +23,8 @@ import { SectionBotsMenu } from './section-bots-menu';
  * says when one fails. `saving` holds the placements in flight, by bot,
  * until each settles. The heading needs no read and stays in every state;
  * the rows are read under Suspense. The label folds the rows away
- * (`useFoldedBots`), and a fold leaves the plus and its alerts.
+ * (`useFoldedBots`), and a fold leaves the bots' faces beside the label
+ * (`SectionBotFaces`), the plus and its alerts.
  */
 export function SectionBots({ section }: { section: BotSection }) {
   const { t } = useTranslation();
@@ -51,6 +53,11 @@ export function SectionBots({ section }: { section: BotSection }) {
           <SidebarFoldLabel open={fold.open} onOpenChange={fold.setOpen}>
             {t('bots.section.heading')}
           </SidebarFoldLabel>
+        }
+        summary={
+          fold.open ? null : (
+            <SectionBotFaces section={section} onUnfold={() => fold.setOpen(true)} />
+          )
         }
       >
         <SectionBotsMenu

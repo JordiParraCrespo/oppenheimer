@@ -67,9 +67,6 @@ test('the console reads a Claude Code session as a chat, live, and types into it
     entry('assistant', 'a2', [{ type: 'text', text: 'Found it: `reduce` had no initial value.' }]),
   ]);
 
-  // The readout reaches over the grid at its own z-index; it is on here so
-  // the chat is shown to cover it.
-  await page.addInitScript(() => localStorage.setItem('oppenheimer.terminal.latency', '1'));
   await signInAs(page, user);
   await page.goto(`/sessions/${sessionId}`);
   const toggle = page.getByRole('group', { name: 'How to read this session' });

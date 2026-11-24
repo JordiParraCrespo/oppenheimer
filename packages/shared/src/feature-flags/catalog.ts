@@ -71,10 +71,7 @@ export const FEATURE_FLAGS = {
    *
    * Default `true`, like every flag: it is the terminal's intended
    * behaviour, and a wrong guess costs one frame of overlay. Switching it off
-   * returns panes to the host's echo at their next
-   * mount. The latency readout (`localStorage['oppenheimer.terminal.latency']`)
-   * is a measuring tool for whoever tunes this, not a second switch: it shows
-   * the round trip and changes nothing.
+   * returns panes to the host's echo at their next mount.
    */
   terminal_typeahead: {
     description: "Draw typed characters in the session terminal before the host's echo arrives.",
@@ -174,6 +171,20 @@ export const FEATURE_FLAGS = {
     client: true,
     bucketBy: 'user',
     expiresAt: '2027-04-30',
+  },
+  /**
+   * HTML an agent wrote, in a visual's `html` block: run in a sandboxed frame
+   * on the deployment's visuals origin with the network closed. Off, the
+   * block shows as a note in the console and the bots' tool refuses it, so a
+   * workspace can keep visuals to the typed blocks that run no agent code.
+   */
+  visual_html: {
+    description: "Run the HTML in an agent's visual, in a sandboxed frame on its own origin.",
+    kind: 'ops',
+    owner: 'console',
+    type: 'boolean',
+    defaultValue: true,
+    client: true,
   },
   /**
    * Dictation in the console: the composer's mic records, the API transcribes

@@ -29,8 +29,8 @@ node scripts/stack/stack.mjs up --web
 `e2e/tests/netsim/typing.spec.ts` pairs one host per connection type, all in
 Barcelona. Then, for each browser place and each host, it opens the session
 twice, once on the relay and once on the direct path. Each time it types
-`NETSIM_KEYS` keys, waiting for every echo, and reads the console's echo
-readout (p50 / p95, keystroke to echo).
+`NETSIM_KEYS` keys, waiting for every echo, and times each in the page,
+keydown to the grid's text changing (p50 / p95).
 
 ```bash
 PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome \

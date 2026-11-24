@@ -92,6 +92,15 @@ import {
 
 /* ------------------------------------------------------------------ runner → control plane, and the ack */
 
+/**
+ * The most capabilities one `hello` may name. Far above what any runner names
+ * today, on purpose: a runner that names more than the control plane allows
+ * has its whole hello refused and never links, and 0.1.24 went offline on
+ * every host with all its features on when `whatsapp.react` made 33 against a
+ * cap of 32. Raise it well ahead of `RUNNER_CAPABILITIES`; never lower it.
+ */
+export const HELLO_CAPABILITIES_MAX = 256;
+
 /** What a runner can name in `hello.capabilities`. */
 export const RUNNER_CAPABILITIES = [
   'session.image',
@@ -284,6 +293,12 @@ export const RUNNER_CAPABILITIES = [
    * control plane refuses the open before sending it.
    */
   'session.window.agent',
+  /**
+   * Answers `host.settings.set` with `host.settings`: a bot turns this host's
+   * browser, screen or exec policy on or off when the person asked it to
+   * (`product/versions/mvp/25-bots.md` §4.2, "The host's switches").
+   */
+  'host.settings',
 ] as const;
 export type RunnerCapability = (typeof RUNNER_CAPABILITIES)[number];
 
@@ -332,7 +347,7 @@ export const helloSchema = z.object({
    * comes. Absent is none.
    */
   /** Open-ended on purpose; read through `knownCapabilities`. */
-  capabilities: z.array(z.string().min(1).max(64)).max(32).default([]),
+  capabilities: z.array(z.string().min(1).max(64)).max(HELLO_CAPABILITIES_MAX).default([]),
 });
 
 export type HelloMessage = z.infer<typeof helloSchema>;
@@ -1055,6 +1070,63 @@ export const hostExecResultSchema = z.object({
 
 export type HostExecResultMessage = z.infer<typeof hostExecResultSchema>;
 
+/** What a host lets bots run, as `runner exec mode` names it. */
+export const HOST_EXEC_MODES = ['off', 'allowlist', 'full'] as const;
+export type HostExecMode = (typeof HOST_EXEC_MODES)[number];
+
+/** A host switch as `runner browser` and `runner computer` take it. */
+export const HOST_SWITCH_STATES = ['on', 'off'] as const;
+export type HostSwitchState = (typeof HOST_SWITCH_STATES)[number];
+
+/** The most programs one `host.settings.set` adds to the exec allowlist. */
+export const HOST_EXEC_ALLOW_MAX = 32;
+
+/** One exec allowlist entry: a program name, or an absolute path or glob. */
+const hostExecAllowEntrySchema = z.string().min(1).max(1_024).regex(/^\S+$/);
+
+/**
+ * Change what this host lets bots do, when the person asked a bot to
+ * (`product/versions/mvp/25-bots.md` §4.2, "The host's switches"): the same
+ * files `runner browser`, `runner computer` and `runner exec` write. Each
+ * field is optional and only a field that is given changes: `browser` and
+ * `computer` turn those `on` or `off`, `execMode` sets the exec mode, and
+ * `execAllow` adds programs to the exec allowlist (never removes one). Sent
+ * only to a runner whose `hello` named `host.settings`; answered by
+ * `host.settings` with the same `commandId` and what the host now allows, or
+ * by `command.failed` (`EXEC_005`, `COMPUTER_005`, `BROWSER_005` the file
+ * cannot be written, `EXEC_008` an allowlist entry is not a program name or
+ * an absolute path, `EXEC_009` the allowlist would outgrow its file). Every
+ * check runs before any file is written; a write that fails after another
+ * landed says in its detail what was already saved.
+ */
+export const hostSettingsSetSchema = z.object({
+  type: z.literal('host.settings.set'),
+  commandId: commandIdSchema,
+  browser: z.enum(HOST_SWITCH_STATES).optional(),
+  computer: z.enum(HOST_SWITCH_STATES).optional(),
+  execMode: z.enum(HOST_EXEC_MODES).optional(),
+  execAllow: z.array(hostExecAllowEntrySchema).min(1).max(HOST_EXEC_ALLOW_MAX).optional(),
+});
+
+export type HostSettingsSetMessage = z.infer<typeof hostSettingsSetSchema>;
+
+/** What a host lets bots do after a `host.settings.set`. */
+export const hostSettingsSchema = z.object({
+  type: z.literal('host.settings'),
+  commandId: commandIdSchema,
+  browser: z.enum(HOST_SWITCH_STATES),
+  computer: z.enum(HOST_SWITCH_STATES),
+  execMode: z.enum(HOST_EXEC_MODES),
+  /**
+   * The whole allowlist, as long as the host's file holds (64 KB): `runner
+   * exec allow` bounds neither the count nor an entry, so neither is bounded
+   * here below what that file can carry, or a saved change would read as lost.
+   */
+  execAllow: z.array(z.string().max(65_536)).max(65_536),
+});
+
+export type HostSettingsMessage = z.infer<typeof hostSettingsSchema>;
+
 /**
  * The keys `terminal.drive` may press after its text, by tmux's own names:
  * the ones a person needs to run and leave programs in a shell.
@@ -1742,6 +1814,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   fsFoundSchema,
   hostExecSchema,
   hostExecResultSchema,
+  hostSettingsSetSchema,
+  hostSettingsSchema,
   terminalDriveSchema,
   terminalScreenSchema,
   computerActSchema,

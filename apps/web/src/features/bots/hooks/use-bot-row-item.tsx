@@ -12,20 +12,32 @@ import { useBotUnread } from './use-bot-unread';
  * (a card pending, a turn failed since you read the chat) is the amber dot;
  * working (a turn queued or running) shimmers the name; done with a message
  * you have not read, or marked unread on this device, is the blue dot. The
- * rows add their own route, menu and drag.
+ * rows add their own route, menu and drag. `state` names the winner, for a
+ * surface that says it in words (a face's label).
  */
+/** The one state a bot's row shows, first match wins; null shows none. */
+export type BotRowState = 'needsInput' | 'working' | 'unread' | null;
+
 export function useBotRowItem(bot: BotEntity) {
   const { t } = useTranslation();
   const waiting = useBotWaitingOnYou(bot.id);
   const working = useBotWorking(bot.id);
   const marked = useBotUnread(bot.id).unread;
   const line = bot.lastMessagePreview || bot.description;
+  const state: BotRowState = waiting
+    ? 'needsInput'
+    : working
+      ? 'working'
+      : bot.unread || marked
+        ? 'unread'
+        : null;
   return {
     id: bot.id,
     name: bot.name,
     initials: bot.initials,
     face: bot.face,
     preview: line ? <MarkdownLine source={line} /> : t('bots.sidebar.noMessages'),
+    state,
     needsInput: waiting,
     working: !waiting && working,
     unread: !waiting && ((!working && bot.unread) || marked),

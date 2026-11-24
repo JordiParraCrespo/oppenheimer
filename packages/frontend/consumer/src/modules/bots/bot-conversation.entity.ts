@@ -3,6 +3,8 @@ import type {
   BotApprovalReach,
   BotApprovalStatus,
   BotAttachment,
+  BotFormSpec,
+  BotFormStatus,
   BotMessageEvent,
   BotMessageRole,
   BotProvider,
@@ -13,6 +15,7 @@ import type {
   BotTurnStatus,
 } from '@oppenheimer/shared/schemas/bot';
 import type { BotMailDraft, MailPlan } from '@oppenheimer/shared/schemas/mail';
+import type { Visual } from '@oppenheimer/shared/schemas/visual';
 
 /** One tool call in an activity line: what the bot asked for and what came back. */
 export interface BotToolStep {
@@ -31,6 +34,8 @@ export interface BotToolStep {
   allowedBy: string | null;
   /** The draft a mail call saved in Gmail, for the chat's card; `null` for any other call. */
   mailDraft: BotMailDraft | null;
+  /** The visual a `show_visual` call drew, for the chat's card; `null` for any other call. */
+  visual: Visual | null;
   /** The system that was limiting our requests when the call ended, and until when; `null` when none. */
   rateLimit: BotToolRateLimit | null;
 }
@@ -395,6 +400,26 @@ export class BotQuestionCardEntity {
     public readonly status: BotQuestionStatus,
     public readonly createdAt: Date,
   ) {}
+}
+
+/**
+ * A form a bot asked its owner to fill (`ask_form`): submitted or dismissed,
+ * never approved, and nothing runs on it. A card of its own beside approvals
+ * and questions; a bot has one card up at a time of any kind.
+ */
+export class BotFormCardEntity {
+  constructor(
+    public readonly id: string,
+    public readonly turnId: string,
+    public readonly spec: BotFormSpec,
+    public readonly status: BotFormStatus,
+    public readonly createdAt: Date,
+  ) {}
+
+  /** The form's line in the chat: its title. */
+  get title(): string {
+    return this.spec.title;
+  }
 }
 
 /**

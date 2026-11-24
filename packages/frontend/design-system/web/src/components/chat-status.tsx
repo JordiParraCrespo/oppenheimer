@@ -210,7 +210,7 @@ function FloatingChip({
         data-slot="floating-chip"
         data-variant="round"
         className={cn(
-          'inline-flex size-8.5 items-center justify-center rounded-pill border border-border-subtle bg-card text-fg shadow-popover outline-none transition-colors duration-fast hover:bg-control-hover focus-visible:ring-2 focus-visible:ring-ring motion-safe:animate-appear-fast [&_svg]:size-4',
+          'inline-flex size-(--control-h-md) items-center justify-center rounded-pill border border-border-subtle bg-card text-fg shadow-popover outline-none transition-colors duration-fast hover:bg-control-hover focus-visible:ring-2 focus-visible:ring-ring motion-safe:animate-appear-fast [&_svg]:size-4',
           className,
         )}
         {...props}
@@ -236,7 +236,7 @@ function FloatingChip({
       type="button"
       data-slot="floating-chip"
       className={cn(
-        'inline-flex h-7 items-center gap-1.5 rounded-pill border border-border bg-popover px-3 font-medium text-[12.5px] text-fg shadow-popover outline-none transition-colors duration-fast hover:bg-control-hover focus-visible:ring-2 focus-visible:ring-ring motion-safe:animate-appear-fast [&_svg]:size-3.25',
+        'inline-flex h-(--control-h-sm) items-center gap-1.5 rounded-pill border border-border bg-popover px-3 font-medium text-[12.5px] text-fg shadow-popover outline-none transition-colors duration-fast hover:bg-control-hover focus-visible:ring-2 focus-visible:ring-ring motion-safe:animate-appear-fast [&_svg]:size-3.25',
         className,
       )}
       {...props}

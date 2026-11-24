@@ -23,10 +23,12 @@ import { BotPeerToolsFactory } from './bot-bots-tools.factory';
 import { BotBrowserToolsFactory } from './bot-browser-tools.factory';
 import { BotCheckBackToolsFactory } from './bot-check-back-tools.factory';
 import { BotComputerToolsFactory } from './bot-computer-tools.factory';
+import { BotFormToolsFactory } from './bot-form-tools.factory';
 import { BotGithubToolsFactory } from './bot-github-tools.factory';
 import { BotGoalToolsFactory } from './bot-goal-tools.factory';
 import { BotGuideToolsFactory } from './bot-guide-tools.factory';
 import { BotHostCommandToolsFactory } from './bot-host-command-tools.factory';
+import { BotHostSettingsToolsFactory } from './bot-host-settings-tools.factory';
 import { BotHostToolsFactory } from './bot-host-tools.factory';
 import { BotIssueToolsFactory } from './bot-issue-tools.factory';
 import { BotLoopToolsFactory } from './bot-loop-tools.factory';
@@ -57,6 +59,7 @@ import {
   ownersOwnTurn,
   raisedCard,
 } from './bot-tool.factory';
+import { BotVisualToolsFactory } from './bot-visual-tools.factory';
 import { BotWatchToolsFactory } from './bot-watch-tools.factory';
 import { BotWebToolsFactory } from './bot-web-tools.factory';
 import { BotWhatsappGrantToolsFactory } from './bot-whatsapp-grant-tools.factory';
@@ -78,6 +81,7 @@ export class BotToolboxFactory {
     hosts: BotHostToolsFactory,
     sessions: BotSessionToolsFactory,
     hostCommands: BotHostCommandToolsFactory,
+    hostSettings: BotHostSettingsToolsFactory,
     terminals: BotTerminalToolsFactory,
     computers: BotComputerToolsFactory,
     browsers: BotBrowserToolsFactory,
@@ -99,10 +103,12 @@ export class BotToolboxFactory {
     telegram: BotTelegramToolsFactory,
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
+    visuals: BotVisualToolsFactory,
     subagents: BotSubagentToolsFactory,
     goals: BotGoalToolsFactory,
     loops: BotLoopToolsFactory,
     questions: BotQuestionToolsFactory,
+    forms: BotFormToolsFactory,
     notices: BotNoticeToolsFactory,
     planWatches: BotPlanWatchToolsFactory,
     checkBacks: BotCheckBackToolsFactory,
@@ -115,10 +121,12 @@ export class BotToolboxFactory {
       loops,
       checkBacks,
       questions,
+      forms,
       notices,
       hosts,
       sessions,
       hostCommands,
+      hostSettings,
       terminals,
       computers,
       browsers,
@@ -141,6 +149,7 @@ export class BotToolboxFactory {
       telegram,
       peers,
       web,
+      visuals,
       subagents,
     ];
   }

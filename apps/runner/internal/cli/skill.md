@@ -71,6 +71,46 @@ path. Use it for what the person should look at rather than read in your
 answer: a screenshot, a chart, a page you rendered. The file stays on this
 host; send it again after you change it.
 
+## Show the person a visual
+
+```sh
+runner sessions show visual.json
+cat <<'JSON' | runner sessions show -
+{"title": "Bundle size by route", "subtitle": "main vs this branch",
+ "blocks": [
+  {"type": "metrics", "items": [{"label": "Total", "value": 412, "delta": -38, "good": "down"}],
+   "format": {"suffix": " KB"}},
+  {"type": "bar", "labels": ["/", "/sessions", "/settings"],
+   "series": [{"label": "main", "values": [180, 142, 128]},
+              {"label": "branch", "values": [161, 139, 112]}],
+   "format": {"suffix": " KB"}}
+ ]}
+JSON
+```
+
+The console draws it in your session's chat with its own charts, in light
+and dark: figures, a chart, a table, a checklist. Blocks: `markdown`
+{text}; `metrics` {items: [{label, value, delta?, good?, hint?}]}; `bar`,
+`line`, `area` {title?, labels, series: [{label, values}]}, one value per
+label and none under zero, up to five series; `ring` {title?, total?, segments: [{label,
+value}]}; `ranking` {title?, items: [{label, value, detail?}]}; `table`
+{title?, columns: [{label, align?}], rows}; `checklist` {title?, items:
+[{text, done, note?}]}; `progress` {title?, items: [{label, value,
+target?}]}; `record` {title?, status?, fields: [{label, value}]}; `callout`
+{tone?, title?, text}; `links` {title?, items: [{label, url,
+description?}]}; `html` {title?, html, height?}, a fragment with inline
+`<style>` and `<script>` for what no other block draws (a simulation, a
+custom diagram), run in a sandbox with the network closed: no fetch and
+nothing loaded from a URL, the console's colours in CSS variables (`--fg`,
+`--card`, `--border`, `--chart-1` to `--chart-5`). Numeric blocks take
+`format` {prefix?, suffix?, decimals?, compact?}. Up to 24 blocks. A spec it cannot draw is refused
+with each fault by its path: fix those and run it again.
+
+Use it only when a visual reads faster than words: numbers to compare, a
+trend, a breakdown, progress. Write a plain Markdown table when the person
+asks for a table. Never make up data. Do not repeat the visual's numbers
+in your answer; say what they mean.
+
 ## Tell the person
 
 ```sh

@@ -100,6 +100,10 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
       `DELETE FROM bot_question WHERE "organizationId" = $1 AND "botId" = $2`,
       params,
     );
+    await manager.query(
+      `DELETE FROM bot_form WHERE "organizationId" = $1 AND "botId" = $2`,
+      params,
+    );
     // A channel chat's conversations with no turn at work, their turns and
     // messages with them (FK_bot_turn_conversation, FK_bot_message_conversation).
     await manager.query(

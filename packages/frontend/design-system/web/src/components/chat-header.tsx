@@ -51,7 +51,8 @@ function ChatHeader({
     >
       {leading}
       <span className="flex min-w-0 flex-1 items-center gap-2">
-        <span className="truncate text-[14px] font-medium text-fg">{title}</span>
+        {/* A strip of tabs for a title fills the bar, so its tabs size against the bar and not their names. */}
+        <span className="truncate text-[14px] font-medium text-fg has-[>[data-slot=chat-tab-strip]]:flex-1">{title}</span>
         {meta}
       </span>
       {status ? <span className="flex shrink-0 items-center gap-1.5 text-[12.5px] text-fg-muted">{status}</span> : null}
@@ -150,11 +151,14 @@ const TAB_ATTENTION = {
 } as const;
 
 /**
- * One open thing in a `ChatTabStrip`: its mark, its name, its close. The
- * shown one is lit, on the card inside a hairline, so on a strip that
+ * One open thing in a `ChatTabStrip`: its mark, its name, its close. Every
+ * tab is the same width whatever its name, the way a browser's are: 240px
+ * while the strip has room, then all shrinking alike down to 96px as more
+ * open, past which the strip scrolls; so lighting a tab never moves the
+ * strip. The close of a tab not shown takes no room until it is hovered or
+ * focused, so a narrow tab keeps its name. The shown one is lit, on the card inside a hairline, so on a strip that
  * stands on the recessed ground it reads as part of the page under it; the rest are flat on the
- * strip's ground with a hairline between two of them, and the close of a tab
- * not shown appears on hover. A long name fades out (`fade-end`) rather than
+ * strip's ground with a hairline between two of them. A long name fades out (`fade-end`) rather than
  * ending in an ellipsis; a name that fits ends before the fade. What it needs from the reader is a dot on its mark (amber
  * `needs-you`, blue `done` and `unread`, as a sidebar row draws them), work
  * in flight its name's shimmer. With `render` (a router `Link`) it is a link
@@ -192,7 +196,7 @@ function ChatTab({
       data-active={active || undefined}
       title={title}
       className={cn(
-        'group/tab relative flex h-(--control-h-sm) max-w-56 min-w-24 shrink items-center gap-2 rounded-sm border border-transparent pr-0.5 pl-2.5 text-sm text-fg-muted transition-colors duration-fast',
+        'group/tab relative flex h-(--control-h-sm) min-w-24 shrink basis-60 items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-sm text-fg-muted transition-colors duration-fast',
         'hover:bg-hover-surface hover:text-fg data-active:border-border-subtle data-active:bg-card data-active:font-medium data-active:text-fg',
         // A hairline between two tabs that are not shown.
         "not-first:before:absolute not-first:before:top-1/2 not-first:before:-translate-y-1/2 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
@@ -240,7 +244,7 @@ function ChatTab({
           size="xs"
           aria-label={closeLabel}
           onClick={onClose}
-          className="opacity-0 group-hover/tab:opacity-100 group-data-active/tab:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring"
+          className="hidden group-focus-within/tab:flex group-hover/tab:flex group-data-active/tab:flex focus-visible:ring-2 focus-visible:ring-ring"
         >
           <XIcon />
         </IconButton>
@@ -375,7 +379,7 @@ function ChatTrayButton({
       type="button"
       data-slot="chat-tray-button"
       className={cn(
-        'inline-flex h-7 items-center gap-1.5 rounded-pill px-2.5 text-[13px] text-fg outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-hover-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
+        'inline-flex h-(--control-h-sm) items-center gap-1.5 rounded-pill px-2.5 text-[13px] text-fg outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-hover-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
         className,
       )}
       {...props}
