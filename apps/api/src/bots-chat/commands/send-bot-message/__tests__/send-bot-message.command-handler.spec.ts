@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
-import type { Scope } from '@oppenheimer/shared';
+import { botFormSpecSchema, type Scope } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import type { BotLookupResolver } from '../../../../bots/application/bot-lookup.resolver';
 import type { ModelProviderCredentialRepositoryPort } from '../../../../bots/database/model-provider-credential.repository.port';
@@ -13,10 +13,12 @@ import { BotSentTurnResolver } from '../../../application/bot-sent-turn.resolver
 import { BotWaitingCardResolver } from '../../../application/bot-waiting-card.resolver';
 import type { BotApprovalRepositoryPort } from '../../../database/bot-approval.repository.port';
 import type { BotAttachmentRepositoryPort } from '../../../database/bot-attachment.repository.port';
+import type { BotFormRepositoryPort } from '../../../database/bot-form.repository.port';
 import type { BotQuestionRepositoryPort } from '../../../database/bot-question.repository.port';
 import type { BotTurnRepositoryPort } from '../../../database/bot-turn.repository.port';
 import { BotApprovalEntity } from '../../../domain/bot-approval.entity';
 import { BotAttachmentEntity } from '../../../domain/bot-attachment.entity';
+import { BotFormEntity } from '../../../domain/bot-form.entity';
 import { BotGoalEntity } from '../../../domain/bot-goal.entity';
 import { BotLoopEntity } from '../../../domain/bot-loop.entity';
 import { BotQuestionEntity } from '../../../domain/bot-question.entity';
@@ -47,6 +49,7 @@ function setup(
     sealer?: boolean;
     pending?: boolean;
     question?: boolean;
+    form?: boolean;
     lost?: boolean;
     provider?: BotEntity['provider'];
     replaced?: BotGoalEntity;
@@ -124,6 +127,19 @@ function setup(
     findPending: vi.fn(async () => (options.question ? Some(asked) : None)),
     saveTransition: vi.fn(async () => !options.lost),
   } satisfies Partial<BotQuestionRepositoryPort>;
+  const filling = BotFormEntity.ask({
+    organizationId: bot.organizationId,
+    botId: bot.id,
+    turnId: randomUUID(),
+    spec: botFormSpecSchema.parse({
+      title: 'Release details',
+      fields: [{ id: 'version', kind: 'text', label: 'Version' }],
+    }),
+  });
+  const forms = {
+    findPending: vi.fn(async () => (options.form ? Some(filling) : None)),
+    saveTransition: vi.fn(async () => !options.lost),
+  } satisfies Partial<BotFormRepositoryPort>;
   const handler = new SendBotMessageCommandHandler(
     { bot: async () => bot } as unknown as BotLookupResolver,
     credentials as unknown as ModelProviderCredentialRepositoryPort,
@@ -132,6 +148,7 @@ function setup(
     new BotWaitingCardResolver(
       approvals as unknown as BotApprovalRepositoryPort,
       questions as unknown as BotQuestionRepositoryPort,
+      forms as unknown as BotFormRepositoryPort,
       stream,
     ),
     new BotMessageAttachmentsResolver(attachments as unknown as BotAttachmentRepositoryPort),
@@ -156,7 +173,21 @@ function setup(
     uploads.push(created);
     return created;
   };
-  return { handler, turns, goals, loops, bot, approvals, card, questions, asked, stream, upload };
+  return {
+    handler,
+    turns,
+    goals,
+    loops,
+    bot,
+    approvals,
+    card,
+    questions,
+    asked,
+    forms,
+    filling,
+    stream,
+    upload,
+  };
 }
 
 const send = (
@@ -276,6 +307,18 @@ describe('SendBotMessageCommandHandler', () => {
     expect(stream.publish).toHaveBeenCalledWith(bot.id, {
       type: 'question',
       questionId: asked.id,
+      status: 'expired',
+    });
+  });
+
+  it('retires a form the same way: nothing sent, and an open chat is told', async () => {
+    const { handler, bot, forms, filling, stream } = setup({ form: true });
+    await send(handler, bot.id);
+    expect(filling).toMatchObject({ status: 'expired', values: null, decidedByUserId: null });
+    expect(forms.saveTransition).toHaveBeenCalledWith(filling);
+    expect(stream.publish).toHaveBeenCalledWith(bot.id, {
+      type: 'form',
+      formId: filling.id,
       status: 'expired',
     });
   });

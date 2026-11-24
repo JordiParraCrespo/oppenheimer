@@ -3,6 +3,8 @@ export const BOT_MESSAGE_REPOSITORY = Symbol('BOT_MESSAGE_REPOSITORY');
 export const BOT_APPROVAL_REPOSITORY = Symbol('BOT_APPROVAL_REPOSITORY');
 /** The cards of questions a bot puts to its owner (`ask_user`). */
 export const BOT_QUESTION_REPOSITORY = Symbol('BOT_QUESTION_REPOSITORY');
+/** The forms a bot asks its owner to fill (`ask_form`). */
+export const BOT_FORM_REPOSITORY = Symbol('BOT_FORM_REPOSITORY');
 /** Each bot's latest line to the person (`notify`). */
 export const BOT_NOTICE_REPOSITORY = Symbol('BOT_NOTICE_REPOSITORY');
 export const BOT_STREAM = Symbol('BOT_STREAM');

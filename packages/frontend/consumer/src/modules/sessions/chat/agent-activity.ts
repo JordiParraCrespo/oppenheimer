@@ -10,6 +10,23 @@ export interface ChatActivity {
   verb: string;
   /** The counts after the word, without the "esc to interrupt" hint; none when it shows none. */
   detail: string | null;
+  /**
+   * What the command in flight last printed, as Claude Code shows it under
+   * the call while it runs (`readCommandTail`); absent while no command
+   * runs, or when the screen shows none of its output.
+   */
+  tail?: ChatCommandTail;
+}
+
+/**
+ * The last lines a running command printed, read off the screen: the
+ * transcript has none of its output until the result lands.
+ */
+export interface ChatCommandTail {
+  /** The command as the call's header shows it, cut where Claude Code cut it; none when it could not be read. */
+  command: string | null;
+  /** Its last lines, oldest first, as wide as the screen drew them; empty before it printed anything. */
+  lines: string[];
 }
 
 /**
@@ -48,7 +65,8 @@ const WRAPPED_ROWS = 2;
  * long draft can stand between the spinner and the foot. The lowest match
  * wins, since an earlier frame's line can survive above the live one. A line
  * whose bracket is still open takes the rows under it when they close it,
- * the way a narrow screen wrapped it.
+ * the way a narrow screen wrapped it. A shell call running above the
+ * spinner brings what it last printed (`tail`).
  */
 export function readAgentActivity(rows: readonly string[]): ChatActivity | null {
   for (let index = rows.length - 1; index >= 0; index--) {
@@ -68,12 +86,116 @@ export function readAgentActivity(rows: readonly string[]): ChatActivity | null 
     if (!COUNTS.test(counts)) continue;
     if (rows.slice(index + 1).some((row) => ASKING.some((asking) => asking.test(row)))) return null;
     const detail = counts.replace(HINT, ' · ').replace(/^[\s·]+|[\s·]+$/g, '');
-    return { verb: verb.trim(), detail: detail === '' ? null : detail };
+    const activity: ChatActivity = { verb: verb.trim(), detail: detail === '' ? null : detail };
+    const tail = readCommandTail(rows.slice(0, index));
+    return tail ? { ...activity, tail } : activity;
   }
   return null;
 }
 
+/**
+ * How Claude Code draws a shell call in flight (2.1.331, its inline
+ * renderer, seen in tmux): the tool and its command on a header row, then
+ * the output's last lines hung from `⎿`, each further row indented five,
+ * then the row that says it is still running: the lines above the tail and
+ * the clock ("… +17 lines (21s)"), the clock alone ("(3s)"), the background
+ * hint, or "Running…" before any output. A call that finished ends on
+ * "(ctrl+o to expand)" or on its last line, with no clock. Its fullscreen
+ * renderer shows only "$ <command> (8s · 9 lines)" under a "Running …"
+ * header, no output, so nothing is read there.
+ */
+const SHELL_HEADER = /^\s*(?:[●⏺]\s*)?(?:Bash|PowerShell)\((.*)$/u;
+const TAIL_FIRST = /^\s*⎿[ \u00a0]{1,2}(.*)$/u;
+const TAIL_NEXT = /^ {5}(.*)$/;
+const STILL_RUNNING = [
+  /^\s*(?:… \+\d+ lines? )?\(\d+(?:\.\d+)?[hms]\b[^)]*\)/u,
+  /^\s*\((?:ctrl|alt|cmd|meta|shift)\+\S+(?: \S+)* (?:to )?run in background\)\s*$/i,
+];
+const RUNNING_WORD = /^Running…/u;
+/** How far under its header a call's `⎿` row may start: a long command wraps onto a second row. */
+const HEADER_ROWS = 3;
+/** The lines the chat shows, and the characters they may hold together. */
+const TAIL_LINES = 3;
+const TAIL_CHARS = 600;
+
+/**
+ * The output of the shell call in flight, off the rows above the spinner;
+ * none when no call there is still running, or the screen shows no output
+ * for it. The lowest call that is still running wins: a finished call's
+ * lines above it are history.
+ */
+export function readCommandTail(rows: readonly string[]): ChatCommandTail | null {
+  for (let index = rows.length - 1; index >= 0; index--) {
+    const header = SHELL_HEADER.exec(rows[index] ?? '');
+    if (!header) continue;
+    const tail = tailUnder(rows, index + 1);
+    if (tail === undefined) continue;
+    const command =
+      header[1]
+        ?.replace(/\)\s*$/, '')
+        .replace(/…$/u, '')
+        .trim() ?? '';
+    return { command: command === '' ? null : command, lines: tail };
+  }
+  return null;
+}
+
+/**
+ * The lines under a call's header while it runs, its output's last lines
+ * (none yet before it printed anything); `undefined` when it is not a call
+ * in flight.
+ */
+function tailUnder(rows: readonly string[], from: number): string[] | undefined {
+  let at = from;
+  while (at < rows.length && at < from + HEADER_ROWS && !TAIL_FIRST.test(rows[at] ?? '')) at++;
+  const first = TAIL_FIRST.exec(rows[at] ?? '');
+  if (!first) return undefined;
+  const lines = [first[1] ?? ''];
+  for (at += 1; at < rows.length; at++) {
+    const next = TAIL_NEXT.exec(rows[at] ?? '');
+    if (!next) break;
+    lines.push(next[1] ?? '');
+  }
+  const end = lines.findIndex((line) => STILL_RUNNING.some((running) => running.test(line)));
+  if (end < 0) return lines.length === 1 && RUNNING_WORD.test(lines[0] ?? '') ? [] : undefined;
+  return clip(
+    lines
+      .slice(0, end)
+      .map((line) => line.trimEnd())
+      .filter((line) => line.trim() !== '' && !RUNNING_WORD.test(line)),
+  );
+}
+
+/** The last lines, and of them no more than the characters the chat holds, cut at the front. */
+function clip(lines: string[]): string[] {
+  const last = lines.slice(-TAIL_LINES);
+  let room = TAIL_CHARS;
+  const kept: string[] = [];
+  for (let index = last.length - 1; index >= 0 && room > 0; index--) {
+    const chars = Array.from(last[index] ?? '');
+    kept.unshift(chars.length > room ? `…${chars.slice(-room + 1).join('')}` : chars.join(''));
+    room -= chars.length;
+  }
+  return kept;
+}
+
 /** Whether two readings say the same, so an unchanged screen publishes nothing. */
 export function sameActivity(a: ChatActivity | null, b: ChatActivity | null): boolean {
-  return a === b || (a !== null && b !== null && a.verb === b.verb && a.detail === b.detail);
+  return (
+    a === b ||
+    (a !== null &&
+      b !== null &&
+      a.verb === b.verb &&
+      a.detail === b.detail &&
+      sameTail(a.tail, b.tail))
+  );
+}
+
+function sameTail(a: ChatCommandTail | undefined, b: ChatCommandTail | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return (
+    a.command === b.command &&
+    a.lines.length === b.lines.length &&
+    a.lines.every((line, index) => line === b.lines[index])
+  );
 }

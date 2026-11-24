@@ -11,6 +11,7 @@ import type {
   BotTurnLane,
   BotTurnOrigin,
   Scope,
+  Visual,
 } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import { MAIL_DRAFT_DATA_KEY } from '../bot-mail-tool.mapper';
@@ -44,6 +45,7 @@ import {
 } from '../domain/bot-tool-permission.policy';
 import { fitToolOutput } from '../domain/bot-tool-text.policy';
 import type { BotTurnBudget } from '../domain/bot-turn-budget.policy';
+import { VISUAL_DATA_KEY } from '../domain/bot-visual.policy';
 import type { BotApprovalRequesterPort } from './bot-approval-requester.port';
 import type { BotRuleReviewer } from './bot-rule-reviewer.factory';
 
@@ -169,6 +171,8 @@ export interface BotToolAnswer {
   images?: readonly BotAttachment[];
   /** The draft a mail call saved in Gmail, for the chat to draw as a card. */
   mailDraft?: BotMailDraft;
+  /** The visual a `show_visual` call drew, checked, for the chat to draw as a card. */
+  visual?: Visual;
   /** The limit that stopped the call partway, when one did (`bot-rate-limit.policy.ts`). */
   rateLimit?: BotRateLimit;
   /**
@@ -187,6 +191,7 @@ export interface BotToolResult {
   subagents?: readonly BotSubagentRun[];
   images?: readonly BotAttachment[];
   mailDraft?: BotMailDraft;
+  visual?: Visual;
   /** The limit the call met, before or partway through its work. */
   rateLimit?: BotRateLimit;
   /** Images for the model alone (`BotToolAnswer.modelImages`). */
@@ -390,6 +395,7 @@ export function defineBotTool<Input extends z.ZodType>(
         ...(answer.subagents ? { subagents: answer.subagents } : {}),
         ...(answer.images?.length ? { images: answer.images } : {}),
         ...(answer.mailDraft ? { mailDraft: answer.mailDraft } : {}),
+        ...(answer.visual ? { visual: answer.visual } : {}),
         ...(answer.rateLimit ? { rateLimit: answer.rateLimit } : {}),
         ...(answer.modelImages?.length ? { modelImages: answer.modelImages } : {}),
       };
@@ -637,12 +643,14 @@ export class BotToolRefusal extends Error {}
  * refused or failed, goes through here.
  */
 function toEngineResult(result: BotToolResult): Awaited<ReturnType<BotEngineTool['run']>> {
-  const { sessionId, subagents, images, mailDraft, rateLimit, modelImages, ...rest } = result;
+  const { sessionId, subagents, images, mailDraft, visual, rateLimit, modelImages, ...rest } =
+    result;
   const data = {
     ...(sessionId ? { sessionId } : {}),
     ...(subagents ? { [SUBAGENT_DATA_KEY]: JSON.stringify(subagents) } : {}),
     ...(images?.length ? { [SHOWN_IMAGES_DATA_KEY]: JSON.stringify(images) } : {}),
     ...(mailDraft ? { [MAIL_DRAFT_DATA_KEY]: JSON.stringify(mailDraft) } : {}),
+    ...(visual ? { [VISUAL_DATA_KEY]: JSON.stringify(visual) } : {}),
     ...(rateLimit ? { [RATE_LIMIT_DATA_KEY]: rateLimitData(rateLimit) } : {}),
   };
   return {

@@ -15,8 +15,8 @@ import (
 )
 
 // MCP is `runner mcp`: the commands an agent types in its session
-// (`runner sessions run|send|children|wait|report|notify|send-file|watch-pr|
-// wake-in`) as the tools of an MCP server on stdin and stdout, which the
+// (`runner sessions run|send|children|wait|report|notify|send-file|show|
+// watch-pr|wake-in`) as the tools of an MCP server on stdin and stdout, which the
 // runner registers with each agent it launches (domain/briefing.go). Each
 // tool is the command: the same Delegation call, its printed answer the
 // tool's text, a problem the daemon answers an error result. It serves
@@ -161,22 +161,25 @@ func AgentChoices(withTask bool) string {
 
 // mcpArgs is every tool's arguments; each tool reads its own.
 type mcpArgs struct {
-	Task           string   `json:"task"`
-	Agent          string   `json:"agent"`
-	Name           string   `json:"name"`
-	Repo           string   `json:"repo"`
-	Base           string   `json:"base"`
-	OutliveParent  bool     `json:"outlive_parent"`
-	Keep           bool     `json:"keep"`
-	ID             string   `json:"id"`
-	IDs            []string `json:"ids"`
-	Message        string   `json:"message"`
-	TimeoutMinutes int      `json:"timeout_minutes"`
-	Path           string   `json:"path"`
-	Caption        string   `json:"caption"`
-	Number         int      `json:"number"`
-	Off            bool     `json:"off"`
-	Delay          string   `json:"delay"`
+	Task           string          `json:"task"`
+	Agent          string          `json:"agent"`
+	Name           string          `json:"name"`
+	Repo           string          `json:"repo"`
+	Base           string          `json:"base"`
+	OutliveParent  bool            `json:"outlive_parent"`
+	Keep           bool            `json:"keep"`
+	ID             string          `json:"id"`
+	IDs            []string        `json:"ids"`
+	Message        string          `json:"message"`
+	TimeoutMinutes int             `json:"timeout_minutes"`
+	Path           string          `json:"path"`
+	Caption        string          `json:"caption"`
+	Number         int             `json:"number"`
+	Off            bool            `json:"off"`
+	Delay          string          `json:"delay"`
+	Title          string          `json:"title"`
+	Subtitle       string          `json:"subtitle"`
+	Blocks         json.RawMessage `json:"blocks"`
 }
 
 // call runs one tool as its command, returning what the command prints.
@@ -213,7 +216,7 @@ func (s *mcpServer) call(ctx context.Context, name string, raw json.RawMessage) 
 }
 
 const mcpInstructions = "Tools for the Oppenheimer session this agent runs in: start other agents as sessions " +
-	"of your own and hear back from them, tell the person, show them a file, and be woken later or by a " +
+	"of your own and hear back from them, tell the person, show them a file or a visual, and be woken later or by a " +
 	"pull request. They are the `runner sessions` commands; `runner --skill` is the full manual."
 
 // mcpTool is one tool: what tools/list says of it and what tools/call runs,
@@ -309,6 +312,42 @@ var mcpTools = []mcpTool{
 		},
 		required: []string{"path"},
 		run:      func(ctx context.Context, d Delegation, a mcpArgs) error { return d.SendFile(ctx, a.Path, a.Caption) },
+	},
+	{
+		name: "show_visual",
+		description: "Show the person a visual in this session's chat, drawn by the console with its own charts, " +
+			"light and dark: figures, a chart, a table, a checklist. Use it only when a visual reads faster than " +
+			"words (numbers to compare, a trend, a breakdown, progress); a plain Markdown table when they ask for a " +
+			"table. Never make up data. Each block is an object with a `type`: markdown {text}; metrics {items: " +
+			"[{label, value, delta?, good?: up|down, hint?}]}; bar, line, area {title?, labels, series: [{label, " +
+			"values}]}, one value per label and none under zero, up to 5 series; ring {title?, total?, segments: [{label, value}]}; " +
+			"ranking {title?, items: [{label, value, detail?}]}; table {title?, columns: [{label, align?}], rows: " +
+			"[[cell, …]]}; checklist {title?, items: [{text, done, note?}]}; progress {title?, items: [{label, " +
+			"value, target?}]}; record {title?, status?: {label, tone?}, fields: [{label, value}]}; callout {tone?: " +
+			"neutral|info|success|warning|danger, title?, text}; links {title?, items: [{label, url, description?}]}; " +
+			"html {title?, html}, a fragment with inline style and script for what no other block draws, run sandboxed " +
+			"with the network closed. " +
+			"Numeric blocks take format {prefix?, suffix?, decimals?, compact?}. Up to 24 blocks; `runner --skill` " +
+			"has an example.",
+		properties: map[string]any{
+			"title":    mcpString("What it shows, in a few words."),
+			"subtitle": mcpString("The period, the source or the scope."),
+			"blocks": map[string]any{
+				"type": "array", "description": "The blocks, in order.",
+				"items": map[string]any{"type": "object"},
+			},
+		},
+		required: []string{"title", "blocks"},
+		run: func(ctx context.Context, d Delegation, a mcpArgs) error {
+			spec, err := json.Marshal(map[string]any{"title": a.Title, "subtitle": a.Subtitle, "blocks": a.Blocks})
+			if err != nil {
+				return err
+			}
+			if a.Subtitle == "" {
+				spec, _ = json.Marshal(map[string]any{"title": a.Title, "blocks": a.Blocks})
+			}
+			return d.showVisual(ctx, spec)
+		},
 	},
 	{
 		name:        "watch_pull_request",
