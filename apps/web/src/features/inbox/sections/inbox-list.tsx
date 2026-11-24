@@ -1,15 +1,20 @@
 import {
   Button,
+  EmptyState,
   IconButton,
   InboxListHead,
   InboxList as InboxRows,
   InboxSnoozedRow,
-  SidebarEmptyRow,
   SidebarListHead,
   useIsMobile,
   useNow,
 } from '@oppenheimer/design-system-web';
-import { ListChecks, RotateCwIcon } from '@oppenheimer/design-system-web/icons';
+import {
+  CheckCheck,
+  ListChecks,
+  RotateCwIcon,
+  SearchX,
+} from '@oppenheimer/design-system-web/icons';
 import { useInboxPullsShown, useRefreshInbox } from '@oppenheimer/frontend-consumer/react';
 import {
   dateFormatter,
@@ -56,6 +61,7 @@ export function InboxList() {
   const [alerts, setAlerts] = useAlertSwitch();
   const selection = useMultiSelection(open.map((item) => item.key));
   const picked = open.filter((item) => selection.has(item.key));
+  const noneMatching = Boolean(search.dirty || search.query) && inbox.open.length > 0;
   // Select (the head's button) shows every row's checkbox before anything is
   // checked; checking a row does as much on its own.
   const [selectMode, setSelectMode] = useState(false);
@@ -207,11 +213,22 @@ export function InboxList() {
         ) : null}
 
         {rows.length === 0 ? (
-          <SidebarEmptyRow className="mt-5 ml-3.5">
-            {(search.dirty || search.query) && inbox.open.length > 0
-              ? t('inbox.list.noneMatching')
-              : t('inbox.list.empty')}
-          </SidebarEmptyRow>
+          <EmptyState className="px-4 py-14">
+            <EmptyState.Header>
+              <EmptyState.Media
+                variant="icon"
+                className={noneMatching ? undefined : 'bg-success-surface text-success'}
+              >
+                {noneMatching ? <SearchX /> : <CheckCheck />}
+              </EmptyState.Media>
+              <EmptyState.Title className="text-operate">
+                {t(noneMatching ? 'inbox.list.noneMatchingTitle' : 'inbox.list.emptyTitle')}
+              </EmptyState.Title>
+              <EmptyState.Description>
+                {t(noneMatching ? 'inbox.list.noneMatching' : 'inbox.list.empty')}
+              </EmptyState.Description>
+            </EmptyState.Header>
+          </EmptyState>
         ) : (
           <InboxRows>
             {rows.map(({ item, done: isDone }) => {

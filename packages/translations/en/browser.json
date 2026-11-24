@@ -3882,7 +3882,9 @@
   "inbox": {
     "title": "Inbox",
     "list": {
+      "emptyTitle": "Inbox zero",
       "empty": "Nothing needs you.",
+      "noneMatchingTitle": "No matches",
       "noneMatching": "Nothing matching these filters or words needs you.",
       "low": "Low",
       "snoozed": "Snoozed",

@@ -3962,7 +3962,9 @@
   "inbox": {
     "title": "Bandeja",
     "list": {
+      "emptyTitle": "Bandeja vacía",
       "empty": "Nada te necesita.",
+      "noneMatchingTitle": "Sin coincidencias",
       "noneMatching": "Nada que coincida con estos filtros o palabras te necesita.",
       "low": "Baja",
       "snoozed": "Pospuestos",
