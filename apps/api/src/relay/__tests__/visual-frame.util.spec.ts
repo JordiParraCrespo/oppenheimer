@@ -10,7 +10,7 @@ import {
   isVisualFrameHost,
   serveVisualFrame,
   VISUAL_FRAME_SHELL,
-} from '../infrastructure/visual-frame.page';
+} from '../infrastructure/visual-frame.util';
 
 const BASE = 'http://preview.localhost:3011';
 const CONSOLE = 'http://localhost:3000';

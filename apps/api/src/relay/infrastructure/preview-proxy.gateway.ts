@@ -47,7 +47,7 @@ import {
   verifyPreviewCookie,
 } from './preview-http.util';
 import { refuseUpgrade } from './upgrade.util';
-import { isVisualFrameHost, serveVisualFrame } from './visual-frame.page';
+import { isVisualFrameHost, serveVisualFrame } from './visual-frame.util';
 
 /** Readers whose last judgement is remembered, so a page's hundred requests are judged once a minute. */
 const MAX_JUDGED = 1_000;
@@ -79,7 +79,7 @@ type Judged = { at: number; verdict: Promise<{ allowed: boolean; hostId?: string
  *   stream of its own, piped raw.
  * - **As what:** the app sees `localhost:<port>` (`preview-http.util.ts`).
  * - **And:** `visuals.<domain>` is not a preview but the static page an
- *   agent's visual HTML runs in (`visual-frame.page.ts`).
+ *   agent's visual HTML runs in (`visual-frame.util.ts`).
  *
  * Off (no `PREVIEW_BASE_URL`), it listens on nothing.
  */
