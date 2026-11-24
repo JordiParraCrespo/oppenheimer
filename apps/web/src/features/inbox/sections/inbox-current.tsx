@@ -5,6 +5,7 @@ import {
   InboxDeckKeys,
   InboxToolbar,
   inboxDeckAnswer,
+  useIsMobile,
   useNow,
 } from '@oppenheimer/design-system-web';
 import {
@@ -80,8 +81,12 @@ export function InboxCurrent() {
       search.advance(next);
     });
   };
+  // On a phone the deck is hidden until an item is opened: no key acts on a
+  // card the reader cannot see.
+  const phone = useIsMobile();
+  const shown = !phone || search.item !== null;
   useInboxKeys(
-    item
+    item && shown
       ? {
           onDone: () => away('done', 'right'),
           onLow: () => marks.apply('toggleLow', item),
@@ -181,7 +186,10 @@ export function InboxCurrent() {
       </InboxToolbar>
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
         {errors}
+        {/* Keyed by the item: the next card starts with no drag, tilt or stamp
+            left on it, whether or not the last one left with an animation. */}
         <InboxDeck
+          key={item.key}
           ref={deck}
           behind={open.length - 1}
           leaving={leaving}
