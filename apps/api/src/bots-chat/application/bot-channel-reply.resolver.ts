@@ -25,6 +25,9 @@ type ChannelTurn = Pick<BotTurnEntity, 'organizationId' | 'conversationId' | 'bo
 
 type ChannelReplyCommand = ReplyOnTelegramCommand | ReplyOnWhatsappCommand | ReplyOnSlackCommand;
 
+/** A voice note the reply is spoken as; only WhatsApp sends one (`sendVoice`). */
+type ChannelVoice = { audio: Buffer; seconds: number };
+
 /** The reply for a chat's channel, quoting the message the turn's key names. */
 function replyOn(
   chat: BotChannelChat,
@@ -56,7 +59,8 @@ function replyOn(
  * (telegram, whatsapp, slack), which sends only while this bot still answers that
  * chat. Answers how many messages went: none for a conversation that is no
  * channel's chat (any more), a chat this bot no longer answers, or a host
- * that did not send. What the turn's end owes and what it sends as it goes
+ * that did not send. `sendVoice` is the one other kind of reply: a WhatsApp
+ * chat hears the words as one voice note. What the turn's end owes and what it sends as it goes
  * are the callers'. A turn's start and end are shown on the chat where its
  * channel has a way to (`started`, `ended`).
  */
@@ -71,14 +75,47 @@ export class BotChannelReplyResolver {
   async send(turn: ChannelTurn, text: string, correlationId: string | undefined): Promise<number> {
     const chat = await this.conversations.findChannelChat(turn.organizationId, turn.conversationId);
     if (!chat) return 0;
-    const reply: ChannelReply = {
+    return this.commands.execute<ChannelReplyCommand, number>(
+      replyOn(chat, turn.sourceKey, this.replyOf(turn, chat, text, correlationId)),
+    );
+  }
+
+  /**
+   * Sends the words as one voice note saying them. Only a WhatsApp chat can
+   * hear one, so any other chat, or none, answers 0 and the caller sends
+   * the words instead.
+   */
+  async sendVoice(
+    turn: ChannelTurn,
+    text: string,
+    correlationId: string | undefined,
+    voice: ChannelVoice,
+  ): Promise<number> {
+    const chat = await this.conversations.findChannelChat(turn.organizationId, turn.conversationId);
+    if (chat?.kind !== 'whatsapp') return 0;
+    return this.commands.execute<ReplyOnWhatsappCommand, number>(
+      new ReplyOnWhatsappCommand({
+        ...this.replyOf(turn, chat, text, correlationId),
+        accountId: chat.whatsappAccountId,
+        replyToRowId: whatsappMessageRowIdOf(turn.sourceKey),
+        voice,
+      }),
+    );
+  }
+
+  private replyOf(
+    turn: ChannelTurn,
+    chat: BotChannelChat,
+    text: string,
+    correlationId: string | undefined,
+  ): ChannelReply {
+    return {
       organizationId: turn.organizationId,
       chatId: chat.chatId,
       text,
       botId: turn.botId,
       metadata: { correlationId },
     };
-    return this.commands.execute<ChannelReplyCommand, number>(replyOn(chat, turn.sourceKey, reply));
   }
 
   /** The turn's run started: the chat shows it is being worked on, where its channel can. */

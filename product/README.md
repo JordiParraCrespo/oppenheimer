@@ -1983,6 +1983,17 @@ earlier note:
   session, a bot's approval) has no Done, a questionnaire goes one question
   at a time, and Mark as done takes up a task an agent made, as Dismiss did
   ("The card's actions, reshaped").
+- `next-steps/answering-on-telegram-and-whatsapp.md` gave a contact's
+  turn, and any turn in a group, no tools, so it could only ever answer in
+  text, and a bot told to answer a group by voice never could. On
+  2026-11-24 such a turn may answer as one voice note where
+  `send_whatsapp_voice_note` would run in that chat without asking (a
+  standing yes for the chat, or the tool allowed outright with no ask
+  rule) and the
+  workspace can speak: it is told so, marks its reply, and the reply goes
+  as the note and never also as text, falling back to text when it cannot
+  be spoken or sent (`next-steps/whatsapp.md`, 2026-11-24). It still gets
+  no tools.
 - The Chrome extension (`apps/extension`) told only about Claude Code cloud
   sessions, and sent Oppenheimer their states without reading anything
   back. On 2026-11-24, connected to Oppenheimer, it also reads the
@@ -1990,6 +2001,10 @@ earlier note:
   notification and its badge, each session on the person's hosts that comes
   to wait on them and each agent notice (`29-inbox.md`, "The Chrome
   extension tells about your hosts too").
+- `versions/mvp/05-screens.md`'s sidebar filter menu took one host. On
+  2026-11-24 the owner, filtering to their Mac Studio, wanted a second
+  machine beside it: the Host facet takes several hosts, as Repository
+  does, a chip each, and lists a session on any of them.
 - `versions/mvp/29-inbox.md`, "Bulk actions" (2026-11-11), showed a row's
   checkbox only on hover, and the owner did not find it. On 2026-11-24
   Select in the list's head shows every checkbox, and X checks the item on

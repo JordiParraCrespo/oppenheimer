@@ -860,6 +860,66 @@ describe('ReplyOnWhatsappCommandHandler', () => {
     await expect(stranger.run('Hi', BOT, '34699000000@s.whatsapp.net')).resolves.toBe(0);
     expect(stranger.device.send).not.toHaveBeenCalled();
   });
+
+  // What breaks this: a voice reply skipping the checks a text reply has
+  // (the chat still allowed, still this bot's), going as a note and as text,
+  // or a note the host may have sent reported as not sent, so the words
+  // would follow it.
+  it('sends a voice reply as one note through the same checks, and says when it surely did not go', async () => {
+    const GROUP = '120363000000000001@g.us';
+    const allowed = [grant(GROUP, 'group', 'bot-family')];
+    const audio = Buffer.from('ogg');
+    const voiceReply = (outcome: Awaited<ReturnType<WhatsappDevicePort['sendVoice']>>) => {
+      const linked = owned();
+      const device = fakeDevice({ sendVoice: vi.fn(async () => outcome) });
+      const messages = fakeMessages();
+      const handler = new ReplyOnWhatsappCommandHandler(
+        fakeAccounts([linked]).repository,
+        messages,
+        fakeGrants(allowed),
+        new WhatsappReplyResolver(device, messages, new WhatsappMessageMapper()),
+      );
+      const run = (botId: string, chatId = GROUP) =>
+        handler.execute(
+          new ReplyOnWhatsappCommand({
+            organizationId: ORG,
+            accountId: linked.id,
+            chatId,
+            replyToRowId: null,
+            text: 'Hi everyone.',
+            botId,
+            voice: { audio, seconds: 2 },
+          }),
+        );
+      return { device, messages, run };
+    };
+
+    const heard = voiceReply({ kind: 'sent', id: '3EBV', sentAt: new Date() });
+    await expect(heard.run('bot-family')).resolves.toBe(1);
+    expect(heard.device.sendVoice).toHaveBeenCalledWith(HOST, GROUP, audio, 2);
+    expect(heard.device.send).not.toHaveBeenCalled();
+    expect(vi.mocked(heard.messages.recordBotSend).mock.calls[0]?.[0]).toMatchObject({
+      chatId: GROUP,
+      chatKind: 'group',
+      media: 'audio',
+      voiceSeconds: 2,
+      transcript: 'Hi everyone.',
+      sentByBotId: 'bot-family',
+    });
+
+    const notThisBots = voiceReply({ kind: 'sent', id: '3EBV', sentAt: new Date() });
+    await expect(notThisBots.run(BOT)).resolves.toBe(0);
+    const notAllowed = voiceReply({ kind: 'sent', id: '3EBV', sentAt: new Date() });
+    await expect(notAllowed.run('bot-family', '120363000000000002@g.us')).resolves.toBe(0);
+    expect(notThisBots.device.sendVoice).not.toHaveBeenCalled();
+    expect(notAllowed.device.sendVoice).not.toHaveBeenCalled();
+
+    const refused = voiceReply({ kind: 'failed', code: 'WA_007' });
+    await expect(refused.run('bot-family')).resolves.toBe(0);
+    expect(refused.messages.recordBotSend).not.toHaveBeenCalled();
+    const unknown = voiceReply({ kind: 'timed_out' });
+    await expect(unknown.run('bot-family')).resolves.toBe(1);
+  });
 });
 
 describe('UpdateWhatsappAccountCommandHandler', () => {
