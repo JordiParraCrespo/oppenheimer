@@ -950,6 +950,12 @@
     "manage": "Bots en {{section}}",
     "checkedHint": "Los bots marcados aparecen en {{section}}.",
     "manageAll": "Gestionar en {{employees}}",
-    "hide": "Ocultar de {{section}}"
+    "hide": "Ocultar de {{section}}",
+    "faceWaiting": "{{name}}, te necesita",
+    "faceUnread": "{{name}}, sin leer",
+    "faceWorking": "{{name}}, trabajando",
+    "more_one": "{{count}} bot más: mostrar la lista",
+    "more_many": "{{count}} bots más: mostrar la lista",
+    "more_other": "{{count}} bots más: mostrar la lista"
   }
 }

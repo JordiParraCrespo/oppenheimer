@@ -12,7 +12,7 @@ import {
 } from '@oppenheimer/design-system-web/avatar-picker';
 import { BotFacePicker } from '@oppenheimer/design-system-web/bot-face-picker';
 import { Badge } from '@oppenheimer/design-system-web/badge';
-import { BotItem, BotList } from '@oppenheimer/design-system-web/bot-item';
+import { BotFaceItem, BotFaces, BotItem, BotList } from '@oppenheimer/design-system-web/bot-item';
 import { Button } from '@oppenheimer/design-system-web/button';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import { ChevronLeftIcon, ClockIcon, EllipsisIcon, LockIcon, PencilIcon, PlusIcon, WebhookIcon, XIcon } from '@oppenheimer/design-system-web/icons';
@@ -26,7 +26,13 @@ import {
   SettingsListRow,
 } from '@oppenheimer/design-system-web/settings-group';
 import { SettingsTopBar } from '@oppenheimer/design-system-web/settings-shell';
-import { SidebarEmptyCard, SidebarProjectGroup, SidebarProjectHeader } from '@oppenheimer/design-system-web/sidebar';
+import {
+  SidebarEmptyCard,
+  SidebarListHead,
+  SidebarProjectGroup,
+  SidebarProjectHeader,
+} from '@oppenheimer/design-system-web/sidebar';
+import { SidebarFoldLabel } from '@oppenheimer/design-system-web/sidebar-fold-label';
 import { Switch } from '@oppenheimer/design-system-web/switch';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 
@@ -102,6 +108,72 @@ export function BotItemsDemo() {
           <BuiltInGroup active="" onPick={() => {}} />
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── BotFaces ────────────────────────────────────────────────────────────── */
+
+const FOLDED = [
+  { id: 'deploy', name: 'Deploy Bot', initials: 'DB', color: 'sky', preview: 'Tag v0.9.0 and push it?', needsInput: true },
+  { id: 'release', name: 'Release Bot', initials: 'RB', color: 'coral', preview: 'The stop path now reaches the tool layer.', working: true },
+  { id: 'new', name: 'New Bot', initials: 'NB', color: 'mint', preview: 'What would you most like help with?', unread: true },
+  { id: 'quota', name: 'Quota Bot', initials: 'QB', color: 'lemon', preview: 'You: Added a banner to the workspace page' },
+  { id: 'plan', name: 'Plan Bot', initials: 'PB', color: 'lilac', preview: 'Friday’s milestone has two tasks left.' },
+  { id: 'github', name: 'GitHub Bot', initials: 'GB', color: 'moss', preview: '3 pull requests wait on review.' },
+  { id: 'docs', name: 'Docs Bot', initials: 'DO', color: 'sky', preview: 'The guide is up to date.' },
+  { id: 'triage', name: 'Triage Bot', initials: 'TB', color: 'coral', preview: 'Two new issues, both labelled.' },
+] as const;
+
+function FoldedBots({ width, count }: { width: string; count: number }) {
+  const [open, setOpen] = React.useState(false);
+  const [active, setActive] = React.useState('quota');
+  const bots = FOLDED.slice(0, count);
+  return (
+    <div className={`flex flex-col rounded-lg bg-sidebar pt-2 pb-1 ${width}`}>
+      <SidebarListHead
+        label={
+          <SidebarFoldLabel open={open} onOpenChange={setOpen}>
+            Bots
+          </SidebarFoldLabel>
+        }
+        summary={
+          open ? null : (
+            <BotFaces aria-label="Bots" moreLabel={(hidden) => `${hidden} more bots: show the list`} onMore={() => setOpen(true)}>
+              {bots.map(({ color, ...bot }) => (
+                <BotFaceItem
+                  key={bot.id}
+                  {...bot}
+                  label={bot.name}
+                  face={{ color, seed: bot.id }}
+                  active={bot.id === active}
+                  onClick={() => setActive(bot.id)}
+                />
+              ))}
+            </BotFaces>
+          )
+        }
+      >
+        <IconButton size="sm" aria-label="Add a bot">
+          <PlusIcon />
+        </IconButton>
+      </SidebarListHead>
+      {open ? (
+        <BotList className="mx-1.5">
+          {bots.map(({ color, ...bot }) => (
+            <BotItem key={bot.id} {...bot} face={{ color, seed: bot.id }} active={bot.id === active} onClick={() => setActive(bot.id)} />
+          ))}
+        </BotList>
+      ) : null}
+    </div>
+  );
+}
+
+export function BotFacesDemo() {
+  return (
+    <div className="flex flex-wrap items-start gap-6">
+      <FoldedBots width="w-72" count={4} />
+      <FoldedBots width="w-56" count={8} />
     </div>
   );
 }
@@ -393,6 +465,16 @@ export function EmployeesSection() {
         code={`<BotList><SortableBotItem id={bot.id} name="Release Bot" initials="RB" image={photo} preview={last} working active /></BotList>`}
       >
         <BotItemsDemo />
+      </Spec>
+
+      <Spec
+        id="botfaces"
+        title="BotFaces · BotFaceItem"
+        meta="bot-item.tsx"
+        desc="A folded Bots heading keeps its bots: SidebarListHead's summary holds a row of 20px faces, 4px apart, in the list's order. Each face opens the bot's chat; the state its row would show rides on its corner as a 7px dot cut out of the sidebar (amber when it needs you, blue when unread), and a working bot's face breathes. The open chat's face is ringed in ink. The tooltip is the name over the last message. When the faces do not all fit, the last place is a +N chip that unfolds the list."
+        code={`<SidebarListHead label={fold} summary={<BotFaces moreLabel={more} onMore={unfold}><BotFaceItem name="Deploy Bot" label="Deploy Bot, needs you" initials="DB" needsInput render={<Link … />} /></BotFaces>}>{plus}</SidebarListHead>`}
+      >
+        <BotFacesDemo />
       </Spec>
 
       <Spec
