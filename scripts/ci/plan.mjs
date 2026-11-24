@@ -102,6 +102,13 @@ export function plan(
     '--test',
     'scripts/evals/bot-session-launch/run.test.mjs',
   ]);
+  // The autoreview eval's fixtures and grader (`scripts/evals/autoreview/`):
+  // every case parses, adds only new files and is graded as its pull request
+  // says. The eval itself needs a reviewer on a model, so it runs by hand.
+  add('lint', 'Autoreview eval fixtures', 'node', [
+    '--test',
+    'scripts/evals/autoreview/run.test.mjs',
+  ]);
   // This pipeline's own selection and runner.
   add('lint', 'CI selection and runner', 'pnpm', ['check:ci']);
   // The pending changesets assemble into the plan the Release workflow builds
@@ -116,6 +123,9 @@ export function plan(
   // The design-system catalog names only public components, and every
   // component has a row or an `// uncatalogued:` reason (`scripts/ui-catalog.mjs`).
   add('lint', 'UI catalog', 'pnpm', ['check:ui-catalog']);
+  // Every control stands on the 28 / 34 / 42 ramp; a hand-written height
+  // fails beyond the campaign's debt (`scripts/control-heights.mjs`).
+  add('lint', 'Control heights', 'pnpm', ['check:control-heights']);
   // The React Compiler gives up silently on a function it cannot compile (the
   // build prints nothing). The web tier is at zero bail-outs; keep it.
   add('lint', 'React Compiler bail-outs', 'pnpm', ['check:compiler', '--strict']);
@@ -132,6 +142,20 @@ export function plan(
     add('lint', 'Translations assembled', 'node', [
       'packages/translations/scripts/assemble.mjs',
       '--check',
+    ]);
+    // Every counted key has each plural form its locale uses (Spanish `_many`).
+    add('lint', 'Translation plural forms', 'sh', [
+      '-c',
+      'node packages/translations/scripts/check-plurals.mjs && node --test packages/translations/scripts/check-plurals.test.mjs',
+    ]);
+  }
+  if (!dirty) {
+    // A product note that changed moves the brief and the decision list with
+    // it, or a commit says why not (`Product-Sync:`). It reads the branch's
+    // commits, so it has nothing to say about uncommitted work.
+    add('lint', 'Product notes in sync', 'sh', [
+      '-c',
+      'node scripts/check-product-sync.mjs && node --test scripts/check-product-sync.test.mjs',
     ]);
   }
   // oppenheimer:begin docs

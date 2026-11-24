@@ -88,7 +88,7 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
       // A message sent meanwhile that this turn cannot take waits for its own turn.
       const steering = shape.takesSteers ? this.steering.steering(turn) : undefined;
       const signal = watch.signal;
-      const write = this.asItGoes.wrap(turn, this.writes.writer(turn));
+      const write = await this.asItGoes.wrap(turn, this.writes.writer(turn));
       const request = { ...shape.request, signal, scratchDir, steering };
       for await (const event of this.engine.run(request)) {
         watch.saw(event);

@@ -16,15 +16,16 @@ import { InboxQuestionAnswer } from '@/features/inbox/components/inbox-question-
 import { useAnswerDecision } from '@/features/inbox/hooks/use-answer-decision';
 import { toAnswers } from '@/features/inbox/lib/inbox-answer';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
-import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 import { InboxSessionFailure } from '@/features/inbox/sections/inbox-session-failure';
 
 /**
  * A session waiting on you, in the pane. What its agent waits on, when the
  * host could read it, is answered here: a permission dialog by one of its
- * options, a question by an answer to each of its questions. A failed launch
+ * options, a questionnaire one question at a time, then Send. Open session is
+ * the last answer on each, to answer in the terminal instead. A failed launch
  * says why it failed, as its page does; otherwise the answer is Open
- * session.
+ * session. A session whose agent waits has no Done on the dock: only an
+ * answer takes it off the deck.
  *
  * The card stays mounted for the session while its decision changes (the
  * pane keys it by session), so an answer refused as stale keeps its error
@@ -47,7 +48,6 @@ export function InboxSessionCard({
   const { session } = item;
   const { decision } = session;
 
-  const later = <InboxLaterButton itemKey={item.key} />;
   const open = (variant: 'primary' | 'secondary') => (
     <Button
       variant={variant}
@@ -95,14 +95,7 @@ export function InboxSessionCard({
             onChoose={(option) => answer.send({ id: decision.id, option })}
           />
           {alert}
-          <InboxMessageActions
-            leading={
-              <>
-                {later}
-                {open('secondary')}
-              </>
-            }
-          />
+          <InboxMessageActions>{open('secondary')}</InboxMessageActions>
         </>
       ) : decision?.kind === 'question' ? (
         <InboxQuestionAnswer
@@ -111,17 +104,12 @@ export function InboxSessionCard({
           pending={answer.pending}
           onSend={(answers) => answer.send({ id: decision.id, answers: toAnswers(answers) })}
           alert={alert}
-          leading={
-            <>
-              {later}
-              {open('secondary')}
-            </>
-          }
+          open={open('secondary')}
         />
       ) : (
         <>
           {alert}
-          <InboxMessageActions leading={later}>{open('primary')}</InboxMessageActions>
+          <InboxMessageActions>{open('primary')}</InboxMessageActions>
         </>
       )}
     </InboxMessage>

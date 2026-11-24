@@ -22,7 +22,7 @@ interface HeaderWritableResponse {
  *
  * The id is the one pino-http logs as `req.id` (whichever of the two runs first
  * sets it and the other reuses it), echoed as `x-correlation-id` on the
- * response. Apply it to every route: `consumer.apply(...).forRoutes('*')`.
+ * response. Apply it to every route: `consumer.apply(...).forRoutes('{*splat}')`.
  */
 @Injectable()
 export class RequestContextMiddleware implements NestMiddleware {

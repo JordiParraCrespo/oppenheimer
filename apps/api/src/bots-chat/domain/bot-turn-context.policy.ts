@@ -58,8 +58,9 @@ export interface TurnContextInput {
  * chat there, as plain text, read on a phone.
  */
 const CHANNEL_LINES: Readonly<Record<BotChannelOrigin, PlainPromptId>> = {
-  telegram: 'turn/context.on-telegram',
-  whatsapp: 'turn/context.on-whatsapp',
+  telegram: 'core/turn-context.on-telegram',
+  whatsapp: 'core/turn-context.on-whatsapp',
+  slack: 'core/turn-context.on-slack',
 };
 
 /** How many hosts the turn context lists; the rest are counted. */
@@ -86,7 +87,7 @@ type ContextLine = (moment: Moment) => string | null;
  * A new fact of the moment is a row.
  */
 const nowLine: ContextLine = ({ input, zone }) =>
-  promptText('turn/context.now', { now: formatNow(input.now, zone) });
+  promptText('core/turn-context.now', { now: formatNow(input.now, zone) });
 
 /**
  * A contact's block: the time, and who they are to the bot. Nothing of the
@@ -96,7 +97,9 @@ const CONTACT_LINES: readonly ContextLine[] = [
   nowLine,
   ({ input }) =>
     promptText(
-      input.contact === 'group' ? 'turn/context.contact-group' : 'turn/context.contact-direct',
+      input.contact === 'group'
+        ? 'core/turn-context.contact-group'
+        : 'core/turn-context.contact-direct',
     ),
 ];
 
@@ -104,15 +107,16 @@ const CONTEXT_LINES: readonly ContextLine[] = [
   nowLine,
   ({ input }) =>
     input.homeHost
-      ? promptText('turn/context.home-host', {
+      ? promptText('core/turn-context.home-host', {
           name: input.homeHost.name,
           state: input.homeHost.online ? 'online' : 'offline',
         })
-      : promptText('turn/context.no-home-host'),
+      : promptText('core/turn-context.no-home-host'),
   ({ input }) => describeHosts(input.hosts),
   ({ input }) => (input.channel ? promptText(CHANNEL_LINES[input.channel]) : null),
-  ({ input }) => (input.channel ? promptText('turn/context.on-a-phone') : null),
-  ({ input }) => (input.channel && input.asItGoes ? promptText('turn/context.as-it-goes') : null),
+  ({ input }) => (input.channel ? promptText('core/turn-context.on-a-phone') : null),
+  ({ input }) =>
+    input.channel && input.asItGoes ? promptText('core/turn-context.as-it-goes') : null,
   ({ input }) => describeRoom(input.lastContext),
   ({ input, zone }) => describeLog(input.memory?.log ?? [], zone),
   ({ input }) => describeOlderFacts(input.memory?.toRecall ?? 0),
@@ -136,11 +140,11 @@ export function composeTurnContext(input: TurnContextInput): string {
 
 /** The owner's hosts, the first few by name and the rest counted, or why there are none to name. */
 function describeHosts(hosts: TurnContextInput['hosts']): string {
-  if (hosts === null) return promptText('turn/context.hosts-not-read');
-  if (hosts.length === 0) return promptText('turn/context.no-hosts');
+  if (hosts === null) return promptText('core/turn-context.hosts-not-read');
+  if (hosts.length === 0) return promptText('core/turn-context.no-hosts');
   const shown = hosts.slice(0, BOT_PROMPT_HOSTS_MAX).map(describeHost);
   const more = hosts.length - shown.length;
-  return promptText('turn/context.hosts', {
+  return promptText('core/turn-context.hosts', {
     hosts: `${shown.join('; ')}${more > 0 ? `; and ${more} more` : ''}`,
   });
 }
@@ -156,15 +160,15 @@ function describeLog(
     (entry) =>
       `- ${day.format(entry.createdAt)}${entry.scope === 'person' ? ' (general memory)' : ''}: ${asOneLogLine(entry.content)}`,
   );
-  return `${promptText('turn/context.log')}\n${entries.join('\n')}`;
+  return `${promptText('core/turn-context.log')}\n${entries.join('\n')}`;
 }
 
 /** How many facts the bot keeps only for `recall`. */
 function describeOlderFacts(older: number): string | null {
   if (!(older > 0)) return null;
   return older === 1
-    ? promptText('turn/context.one-older-fact')
-    : promptText('turn/context.older-facts', { count: String(older) });
+    ? promptText('core/turn-context.one-older-fact')
+    : promptText('core/turn-context.older-facts', { count: String(older) });
 }
 
 /**
@@ -195,16 +199,16 @@ function describeRoom(context: TurnContextInput['lastContext']): string | null {
   const { said, tight } = context.window
     ? roomOf(context.tokens, context.window, tokens)
     : {
-        said: promptText('turn/context.room-in-tokens', { tokens }),
+        said: promptText('core/turn-context.room-in-tokens', { tokens }),
         tight: context.tokens >= BOT_CONTEXT_TIGHT_TOKENS,
       };
-  return tight ? `${said} ${promptText('turn/context.narrow-reads')}` : said;
+  return tight ? `${said} ${promptText('core/turn-context.narrow-reads')}` : said;
 }
 
 function roomOf(used: number, window: number, tokens: string): { said: string; tight: boolean } {
   const percent = Math.min(100, Math.round((used / window) * 100));
   return {
-    said: promptText('turn/context.room-in-percent', {
+    said: promptText('core/turn-context.room-in-percent', {
       percent: String(percent),
       tokens,
       window: window.toLocaleString('en-GB'),

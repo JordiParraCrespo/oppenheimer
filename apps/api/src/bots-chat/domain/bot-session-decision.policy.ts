@@ -17,7 +17,7 @@ import { promptText } from './bot-prompt-text.policy';
  * asks it to (the needs-input wake, `answer_session`). What escalates is
  * `answerNeedsPerson`'s; this only tells the bot.
  */
-export const SESSION_UNBLOCK_RULE = promptText('tools/sessions.unblock-rule');
+export const SESSION_UNBLOCK_RULE = promptText('sessions/tools.unblock-rule');
 
 /**
  * What a permission dialog asks about when it names something that cannot

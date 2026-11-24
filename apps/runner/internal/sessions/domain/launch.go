@@ -34,6 +34,14 @@ type Launch struct {
 	// re-sending the first task would replay it.
 	Conversation string `json:"conversation,omitempty"`
 	Resume       bool   `json:"resume,omitempty"`
+	// Saved says whether the agent has written Conversation down, for an
+	// agent whose resume by id exits while there is nothing to reopen (Qwen
+	// Code's `--resume <id>` before the first message): once written, a
+	// resume reopens it by id (conversationReopen); before, it is created
+	// again under the same id, since "the last one here" may be another's in
+	// a shared folder. The runner looks at each restart, so it is never saved.
+	// SavingUnknown, the zero value, keeps the agent's own resume.
+	Saved Saving `json:"-"`
 	// Teleport is a cloud session of the agent's own that this session
 	// continues: the agent starts with its branch and history (`claude
 	// --teleport <id>`) in place of a new conversation, and a resume reopens
@@ -66,6 +74,18 @@ type Launch struct {
 	// reports. It names this host's binary, so it is set at each launch and
 	// never saved.
 	Wrap []string `json:"-"`
+	// Note is the session note's path (Session.Note), handed to an agent that
+	// does not find it on its own; "" hands none. Tools is the command of the
+	// runner's MCP server (`runner mcp`), registered with every agent that
+	// takes one on its command line; nil registers none. Both are this host's,
+	// so they are set at each launch and never saved (briefing.go).
+	Note  string   `json:"-"`
+	Tools []string `json:"-"`
+	// OwnInstructions is what the person told the agent in a key of its
+	// config the briefing sets outright (Codex's developer_instructions),
+	// kept ahead of the briefing's line. It is read at each launch and never
+	// saved.
+	OwnInstructions string `json:"-"`
 }
 
 // AgentServer is where an agent's local API listens and the password it
@@ -108,6 +128,20 @@ func (a Agent) ServesConversation() bool {
 // conversation over.
 func (a Agent) NamesConversation() bool {
 	return len(launchCatalog[a.CatalogID()].conversationCreate) > 0
+}
+
+// MovesConversation reports whether the session follows its agent when the
+// agent leaves the conversation the session named for one of its own (Qwen
+// Code on a `/clear`, found by the newest in a worktree session's folder).
+func (a Agent) MovesConversation() bool { return a == AgentQwen }
+
+// DropsTask reports whether a first task given to this agent never reaches
+// it: its CLI takes none on the command line (ZCode) and the task is not a
+// note for the person, as the blank terminal's is. A caller that requires a
+// task refuses such an agent rather than start it idle.
+func (a Agent) DropsTask() bool {
+	m := launchCatalog[a.CatalogID()]
+	return len(m.prompt) == 0 && !m.taskIsNote
 }
 
 // NewAgentServer mints a password for an agent's API on port, for the
@@ -162,6 +196,9 @@ type launchMap struct {
 	effortUnset  string
 	effortLevels map[string][]string
 	prompt       []string
+	// taskIsNote says the first task is a note for whoever reads the session
+	// (the blank terminal's), not something the agent reads.
+	taskIsNote bool
 	// How the agent's own conversation is named at launch and reopened
 	// afterwards. These CLIs keep the transcript themselves, so what a resume
 	// needs is a name both sides agree on: the session's id, pinned here.
@@ -171,7 +208,8 @@ type launchMap struct {
 	// following it.
 	conversationResumeLeads bool
 	// conversationReopen reopens, on a restart, the conversation the runner
-	// heard the agent's process work in (AgentServer.Conversation), for an
+	// heard the agent's process work in (AgentServer.Conversation), or the
+	// session's own once the agent has written it (Launch.Saved), for an
 	// agent whose resume names none.
 	conversationReopen []string
 	// How a cloud session is continued here, `<teleport>` its id, and how
@@ -220,6 +258,7 @@ func (l Launch) Args(agent Agent) []string {
 	if l.Server != nil && agent.ServesConversation() {
 		args = append(args, "--port", strconv.Itoa(l.Server.Port), "--hostname", "127.0.0.1")
 	}
+	args = append(args, l.briefingFor(agent, nil).args...)
 	if l.Model != "" && m.model != nil {
 		args = append(args, substitute(m.model, "<model>", l.Model)...)
 	}
@@ -231,7 +270,7 @@ func (l Launch) Args(agent Agent) []string {
 	}
 	args = append(args, open.argv...)
 	if open.prompt && l.Prompt != "" && m.prompt != nil {
-		args = append(args, substitute(m.prompt, "<prompt>", l.Prompt)...)
+		args = append(args, substituteWithin(m.prompt, "<prompt>", l.Prompt)...)
 	}
 	return args
 }
@@ -244,6 +283,20 @@ type conversationArgs struct {
 	leads  bool
 	prompt bool
 }
+
+// Saving is whether the agent has written a conversation down, as the
+// runner found it at a restart (Launch.Saved).
+type Saving uint8
+
+const (
+	// SavingUnknown: the runner does not look for this agent's
+	// conversations that way.
+	SavingUnknown Saving = iota
+	// Saved: the agent has written the conversation down.
+	Saved
+	// NotSaved: the runner looked, and the agent has not written it yet.
+	NotSaved
+)
 
 // conversation picks which of the catalog's vector sets this launch opens
 // its conversation with. A choice the catalog has no vector for falls to the
@@ -272,6 +325,21 @@ func (l Launch) conversation(m launchMap) conversationArgs {
 	// the runner heard this session's agent work in is reopened by its id.
 	case l.Resume && m.conversationReopen != nil && l.Server != nil && l.Server.Conversation != "":
 		return conversationArgs{argv: substitute(m.conversationReopen, "<conversation>", l.Server.Conversation)}
+	// The same, for an agent with no API to hear it through: the session's
+	// own conversation, once the agent has written it, since a folder another
+	// of the same agent shares makes "the last one" possibly the other's.
+	case l.Resume && m.conversationReopen != nil && l.Server == nil && l.Saved == Saved && l.Conversation != "":
+		return conversationArgs{argv: substitute(m.conversationReopen, "<conversation>", l.Conversation)}
+	// Before the agent wrote it, the by-id form finds nothing (Qwen's exits)
+	// and "the last one here" may be another's, so the conversation is
+	// created again under the session's id; the agent refuses an id only
+	// once it is written. Without the first task, as any resume: a runner
+	// that finds nothing written cannot tell that nothing was done (Qwen
+	// with its chat recording off writes nothing), and the task again would
+	// ask for the same work twice.
+	case l.Resume && m.conversationReopen != nil && l.Server == nil && l.Saved == NotSaved &&
+		l.Conversation != "" && m.conversationCreate != nil:
+		return conversationArgs{argv: substitute(m.conversationCreate, "<conversation>", l.Conversation)}
 	case l.Resume && m.conversationResume != nil && (l.Conversation != "" || !namesConversation(m.conversationResume)):
 		return conversationArgs{
 			argv:  substitute(m.conversationResume, "<conversation>", l.Conversation),
@@ -325,15 +393,18 @@ func (l Launch) effortLevel(m launchMap) launchLevel {
 func (l Launch) Env(agent Agent) map[string]string {
 	m := launchCatalog[agent.CatalogID()]
 	permission, effort := m.permission[l.Permission].env, l.effortLevel(m).env
-	if len(effort) == 0 {
-		return permission
-	}
-	env := make(map[string]string, len(permission)+len(effort))
+	env := make(map[string]string, len(permission)+len(effort)+1)
 	for name, value := range effort {
 		env[name] = value
 	}
 	for name, value := range permission {
 		env[name] = value
+	}
+	for name, value := range l.briefingFor(agent, env).env {
+		env[name] = value
+	}
+	if len(env) == 0 {
+		return nil
 	}
 	return env
 }
@@ -372,6 +443,19 @@ func namesConversation(vector []string) bool {
 		}
 	}
 	return false
+}
+
+// substituteWithin is substitute for a placeholder that may stand inside a
+// word, as the value a flag carries after its `=` (Qwen Code's
+// `--prompt-interactive=<prompt>`, since a value of its own that starts with
+// `-` is read as a flag). The value is spliced in once and never read again,
+// so a value holding the placeholder's own text stays as it was.
+func substituteWithin(vector []string, placeholder, value string) []string {
+	out := make([]string, len(vector))
+	for i, word := range vector {
+		out[i] = strings.ReplaceAll(word, placeholder, value)
+	}
+	return out
 }
 
 func substitute(vector []string, placeholder, value string) []string {

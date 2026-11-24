@@ -33,15 +33,17 @@ function owners(): BotTurnEntity {
   ).turn;
 }
 
-function setup(turn: BotTurnEntity) {
+async function setup(turn: BotTurnEntity) {
   const stored: TranscriptWrite[] = [];
-  const channel = { send: vi.fn().mockResolvedValue(1) };
-  const write = new BotChannelAsItGoesFactory(channel as unknown as BotChannelReplyResolver).wrap(
-    turn,
-    async (each) => {
-      stored.push(each);
-    },
-  );
+  const channel = {
+    send: vi.fn().mockResolvedValue(1),
+    started: vi.fn().mockResolvedValue(undefined),
+  };
+  const write = await new BotChannelAsItGoesFactory(
+    channel as unknown as BotChannelReplyResolver,
+  ).wrap(turn, async (each) => {
+    stored.push(each);
+  });
   const transcript = new TurnTranscript(turn);
   const run = async (events: Parameters<TurnTranscript['apply']>[0][]) => {
     for (const each of events.flatMap((event) => transcript.apply(event))) await write(each);
@@ -61,7 +63,7 @@ describe('BotChannelAsItGoesFactory', () => {
   // goes out twice.
   it('sends the owner’s chat what the bot wrote once its tool calls begin, once, after storing it', async () => {
     const turn = owners();
-    const { channel, run, stored } = setup(turn);
+    const { channel, run, stored } = await setup(turn);
     await run([ack]);
     expect(channel.send).not.toHaveBeenCalled();
 
@@ -71,8 +73,16 @@ describe('BotChannelAsItGoesFactory', () => {
     expect(stored.length).toBeGreaterThan(1);
   });
 
+  // Breaks if the owner's Slack message never shows the bot is on it, or a
+  // message folded into a running turn (whose run never starts) gets marked.
+  it('shows the chat the turn is being worked on as its run starts, and only then', async () => {
+    const turn = owners();
+    const { channel } = await setup(turn);
+    expect(channel.started).toHaveBeenCalledExactlyOnceWith(turn);
+  });
+
   // Breaks if a console turn's words reach a channel.
-  it('hands a console turn’s writer back as it is', () => {
+  it('hands a console turn’s writer back as it is', async () => {
     const turn = BotTurnEntity.queue({
       organizationId: ids.organizationId,
       botId: ids.botId,
@@ -80,15 +90,15 @@ describe('BotChannelAsItGoesFactory', () => {
       ...engine,
     });
     const write = vi.fn();
-    expect(new BotChannelAsItGoesFactory({} as BotChannelReplyResolver).wrap(turn, write)).toBe(
-      write,
-    );
+    await expect(
+      new BotChannelAsItGoesFactory({} as BotChannelReplyResolver).wrap(turn, write),
+    ).resolves.toBe(write);
   });
 
   // Breaks if a channel that is down ends the work the person asked for, or
   // if words that did not go are dropped rather than sent with the next.
   it('goes on when a send fails, and sends those words with the next run of calls', async () => {
-    const { channel, run } = setup(owners());
+    const { channel, run } = await setup(owners());
     channel.send.mockRejectedValueOnce(new Error('runner offline')).mockResolvedValueOnce(0);
     await expect(run([ack, call('c1'), done('c1')])).resolves.toBeUndefined();
     await run([{ type: 'text.done', text: 'Two found so far.' }, call('c2'), done('c2')]);

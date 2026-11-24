@@ -195,7 +195,7 @@ test.describe('Session screen', () => {
     await pane.getByRole('option', { name: /^Bot/ }).click();
     await pane.getByRole('option', { name: /Side Bot/ }).click();
     await expect(pane.getByRole('tab', { name: 'Side Bot' })).toBeVisible();
-    await expect(pane.getByPlaceholder('Message Side Bot')).toBeVisible();
+    await expect(pane.getByRole('textbox', { name: 'Message Side Bot' })).toBeVisible();
 
     await pane.getByRole('button', { name: 'Open something else' }).click();
     await pane.getByRole('option', { name: /^Session/ }).click();
@@ -207,7 +207,7 @@ test.describe('Session screen', () => {
     await expect(pane.getByRole('tab', { name: 'Side Bot' })).toBeVisible();
     await pane.getByRole('button', { name: 'Close Other work' }).click();
     await expect(pane.getByRole('tab', { name: 'Other work' })).toHaveCount(0);
-    await expect(pane.getByPlaceholder('Message Side Bot')).toBeVisible();
+    await expect(pane.getByRole('textbox', { name: 'Message Side Bot' })).toBeVisible();
 
     await owner.api.dispose();
   });

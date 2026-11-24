@@ -1,0 +1,204 @@
+{
+  "now": "2026-11-23T23:40:00Z",
+  "bot": {
+    "name": "Oppie",
+    "description": "Runs Jordi's releases and keeps an eye on the work he hands off.",
+    "instructions": "You help Jordi ship Oppenheimer: start coding sessions on his hosts for releases and fixes, watch them through, and tell him how they went."
+  },
+  "hosts": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "Mac-Studio",
+      "online": true,
+      "runningSessions": 1
+    }
+  ],
+  "projects": [
+    {
+      "id": "44444444-4444-4444-8444-444444444444",
+      "name": "Oppenheimer"
+    }
+  ],
+  "sessions": {
+    "running": {
+      "name": "Release next Oppenheimer runner to dev stable",
+      "task": "Cut runner 0.1.21 for dev stable: tag it, build and sign the four downloads (darwin arm64 and amd64, linux arm64 and amd64), publish them and check each one downloads and verifies.",
+      "log": [
+        {
+          "at": "2026-11-23T23:10:00Z",
+          "prompt": true
+        },
+        {
+          "at": "2026-11-23T23:10:20Z",
+          "started": true
+        },
+        {
+          "at": "2026-11-23T23:10:40Z",
+          "observed": "working"
+        },
+        {
+          "at": "2026-11-23T23:24:00Z",
+          "note": "Tagged runner-v0.1.21; building the four downloads."
+        }
+      ],
+      "transcript": [
+        {
+          "at": "2026-11-23T23:12:00Z",
+          "role": "assistant",
+          "text": "Tagging runner-v0.1.21 on main."
+        },
+        {
+          "at": "2026-11-23T23:24:00Z",
+          "role": "assistant",
+          "text": "Tagged runner-v0.1.21. Building the four downloads now: darwin arm64, darwin amd64, linux arm64, linux amd64."
+        }
+      ]
+    },
+    "moved": {
+      "name": "Release next Oppenheimer runner to dev stable",
+      "task": "Cut runner 0.1.21 for dev stable: tag it, build and sign the four downloads (darwin arm64 and amd64, linux arm64 and amd64), publish them and check each one downloads and verifies.",
+      "log": [
+        {
+          "at": "2026-11-23T23:10:00Z",
+          "prompt": true
+        },
+        {
+          "at": "2026-11-23T23:10:20Z",
+          "started": true
+        },
+        {
+          "at": "2026-11-23T23:10:40Z",
+          "observed": "working"
+        },
+        {
+          "at": "2026-11-23T23:24:00Z",
+          "note": "Tagged runner-v0.1.21; building the four downloads."
+        },
+        {
+          "at": "2026-11-23T23:37:00Z",
+          "note": "All four built and signed; publishing to dev stable."
+        }
+      ],
+      "transcript": [
+        {
+          "at": "2026-11-23T23:12:00Z",
+          "role": "assistant",
+          "text": "Tagging runner-v0.1.21 on main."
+        },
+        {
+          "at": "2026-11-23T23:24:00Z",
+          "role": "assistant",
+          "text": "Tagged runner-v0.1.21. Building the four downloads now: darwin arm64, darwin amd64, linux arm64, linux amd64."
+        },
+        {
+          "at": "2026-11-23T23:37:00Z",
+          "role": "assistant",
+          "text": "All four downloads are built and signed. Publishing them to dev stable now."
+        }
+      ]
+    },
+    "done": {
+      "name": "Release next Oppenheimer runner to dev stable",
+      "task": "Cut runner 0.1.21 for dev stable: tag it, build and sign the four downloads (darwin arm64 and amd64, linux arm64 and amd64), publish them and check each one downloads and verifies.",
+      "log": [
+        {
+          "at": "2026-11-23T23:10:00Z",
+          "prompt": true
+        },
+        {
+          "at": "2026-11-23T23:10:20Z",
+          "started": true
+        },
+        {
+          "at": "2026-11-23T23:10:40Z",
+          "observed": "working"
+        },
+        {
+          "at": "2026-11-23T23:24:00Z",
+          "note": "Tagged runner-v0.1.21; building the four downloads."
+        },
+        {
+          "at": "2026-11-23T23:38:00Z",
+          "result": "Runner 0.1.21 is live on dev stable: all four downloads published, each downloaded and its signature verified."
+        },
+        {
+          "at": "2026-11-23T23:38:05Z",
+          "observed": "idle"
+        }
+      ],
+      "transcript": [
+        {
+          "at": "2026-11-23T23:12:00Z",
+          "role": "assistant",
+          "text": "Tagging runner-v0.1.21 on main."
+        },
+        {
+          "at": "2026-11-23T23:24:00Z",
+          "role": "assistant",
+          "text": "Tagged runner-v0.1.21. Building the four downloads now: darwin arm64, darwin amd64, linux arm64, linux amd64."
+        },
+        {
+          "at": "2026-11-23T23:38:00Z",
+          "role": "assistant",
+          "text": "Runner 0.1.21 is live on dev stable; each of the four downloads fetched and its signature verified."
+        }
+      ]
+    }
+  },
+  "lastLine": "Still on it: runner-v0.1.21 is tagged and the four downloads are building.",
+  "cases": [
+    {
+      "id": "deploy-wait",
+      "kind": "ask",
+      "session": "running",
+      "message": "I just started the deploy of the API to dev from my laptop; it takes about 20 minutes. Make sure it comes up healthy and tell me.",
+      "expect": "check_back",
+      "why": "Work the bot did not start and no watch covers: only a look it sets brings it back."
+    },
+    {
+      "id": "waiting-on-person",
+      "kind": "ask",
+      "session": "running",
+      "message": "Marta said she would push the signed contract to the contracts repo this afternoon. Keep an eye on it and nudge me if it isn't there by 6.",
+      "expect": "check_back",
+      "why": "Waiting on a person: nothing in Oppenheimer wakes the bot when she pushes."
+    },
+    {
+      "id": "ci-on-main",
+      "kind": "ask",
+      "session": "running",
+      "message": "CI on main is running after my merge. Let me know if it goes red.",
+      "expect": "check_back",
+      "why": "A run elsewhere that ends on its own time: the bot must set a look to hear its end."
+    },
+    {
+      "id": "quick-answer",
+      "kind": "ask",
+      "session": "running",
+      "message": "Which of my hosts are online right now?",
+      "expect": "no_check_back",
+      "why": "Answered in the turn: nothing is left pending."
+    },
+    {
+      "id": "look-nothing-moved",
+      "kind": "look",
+      "session": "running",
+      "expect": "quiet_and_rearm",
+      "why": "The release is where the last line left it: no words, and the next look set."
+    },
+    {
+      "id": "look-moved",
+      "kind": "look",
+      "session": "moved",
+      "expect": "say_and_rearm",
+      "why": "The release moved since the last line: one line where it stands, and the next look set."
+    },
+    {
+      "id": "look-done",
+      "kind": "look",
+      "session": "done",
+      "expect": "report_and_stop",
+      "why": "The release is done: report it and set no more looks."
+    }
+  ]
+}

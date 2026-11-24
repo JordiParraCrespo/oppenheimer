@@ -27,10 +27,23 @@ describe('translator', () => {
   });
 
   it('has the same words in every language', () => {
+    // A counted word's plural forms differ by language (Spanish has `_many`,
+    // English does not), so the words are compared, not their forms.
     const keys = (catalog: object, prefix = ''): string[] =>
       Object.entries(catalog).flatMap(([key, value]) =>
-        typeof value === 'object' ? keys(value, `${prefix}${key}.`) : [`${prefix}${key}`],
+        typeof value === 'object'
+          ? keys(value, `${prefix}${key}.`)
+          : [`${prefix}${key.replace(/_(zero|one|two|few|many|other)$/, '')}`],
       );
-    expect(keys(CATALOGS.es).sort()).toEqual(keys(CATALOGS.en).sort());
+    const words = (catalog: object) => [...new Set(keys(catalog))].sort();
+    expect(words(CATALOGS.es)).toEqual(words(CATALOGS.en));
+  });
+
+  it('counts a million in Spanish with its own form, not the raw key', () => {
+    const t = createTranslator('es').t;
+    // Without `_many`, i18next falls back to the English catalog here.
+    expect(t('badge.needsYou', { count: 1_000_000 })).toBe(
+      '1000000 sesiones de Claude Code te necesitan',
+    );
   });
 });

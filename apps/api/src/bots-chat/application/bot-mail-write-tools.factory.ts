@@ -43,12 +43,12 @@ import {
   defineBotTool,
 } from './bot-tool.factory';
 
-const account = z.string().trim().min(1).max(320).describe(promptText('tools/mail-write.account'));
+const account = z.string().trim().min(1).max(320).describe(promptText('mail/tools-write.account'));
 const recipients = z
   .array(z.string().trim().min(3).max(320))
   .max(MAIL_RECIPIENTS_MAX)
   .default([])
-  .describe(promptText('tools/mail-write.recipients'));
+  .describe(promptText('mail/tools-write.recipients'));
 
 /** What a message is, as create_draft, update_draft and send_mail take it. */
 const message = z.object({
@@ -56,14 +56,14 @@ const message = z.object({
   kind: z
     .enum(['new', 'reply', 'reply_all', 'forward'])
     .default('new')
-    .describe(promptText('tools/mail-write.message-kind')),
+    .describe(promptText('mail/tools-write.message-kind')),
   message_id: z
     .string()
     .trim()
     .min(1)
     .max(100)
     .optional()
-    .describe(promptText('tools/mail-write.message-message-id')),
+    .describe(promptText('mail/tools-write.message-message-id')),
   to: recipients,
   cc: recipients,
   bcc: recipients,
@@ -72,10 +72,10 @@ const message = z.object({
     .trim()
     .max(500)
     .optional()
-    .describe(promptText('tools/mail-write.message-subject')),
-  body: z.string().max(50_000).describe(promptText('tools/mail-write.message-body')),
-  from: z.string().trim().max(320).optional().describe(promptText('tools/mail-write.message-from')),
-  signature: z.boolean().default(true).describe(promptText('tools/mail-write.message-signature')),
+    .describe(promptText('mail/tools-write.message-subject')),
+  body: z.string().max(50_000).describe(promptText('mail/tools-write.message-body')),
+  from: z.string().trim().max(320).optional().describe(promptText('mail/tools-write.message-from')),
+  signature: z.boolean().default(true).describe(promptText('mail/tools-write.message-signature')),
   attachments: z
     .array(
       z.union([
@@ -85,7 +85,7 @@ const message = z.object({
     )
     .max(25)
     .default([])
-    .describe(promptText('tools/mail-write.message-attachments')),
+    .describe(promptText('mail/tools-write.message-attachments')),
 });
 
 type MessageInput = z.output<typeof message>;
@@ -94,7 +94,7 @@ type MessageInput = z.output<typeof message>;
 const plan = z
   .record(z.string(), z.unknown())
   .optional()
-  .describe(promptText('tools/mail-write.plan-leave-out-oppenheimer'));
+  .describe(promptText('mail/tools-write.plan-leave-out-oppenheimer'));
 
 /**
  * Mail, the writes: drafts written freely into the owner's Gmail, since a draft
@@ -131,7 +131,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'create_draft',
       scope: 'mail:write',
-      description: promptText('tools/mail-write.create-draft'),
+      description: promptText('mail/tools-write.create-draft'),
       input: message,
       run: async (input, context) => {
         const planned = await this.plan(input, context);
@@ -151,14 +151,14 @@ export class BotMailWriteToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'update_draft',
       scope: 'mail:write',
-      description: promptText('tools/mail-write.update-draft'),
+      description: promptText('mail/tools-write.update-draft'),
       input: message.extend({
         draft_id: z
           .string()
           .trim()
           .min(1)
           .max(100)
-          .describe(promptText('tools/mail-write.update-draft-draft-id')),
+          .describe(promptText('mail/tools-write.update-draft-draft-id')),
       }),
       run: async (input, context) => {
         const planned = await this.plan(input, context);
@@ -180,7 +180,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
       name: 'delete_draft',
       asks: true,
       scope: 'mail:write',
-      description: promptText('tools/mail-write.delete-draft'),
+      description: promptText('mail/tools-write.delete-draft'),
       input: z.object({
         account,
         draft_id: z
@@ -188,7 +188,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
           .trim()
           .min(1)
           .max(100)
-          .describe(promptText('tools/mail-write.update-draft-draft-id')),
+          .describe(promptText('mail/tools-write.update-draft-draft-id')),
       }),
       // The card stores the account's id: a rename while it waits does not change what a yes deletes.
       normalize: async (input, context) => ({
@@ -216,7 +216,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
   private sendMail(): BotToolDefinition {
     return this.sending({
       name: 'send_mail',
-      description: promptText('tools/mail-write.send-mail', {
+      description: promptText('mail/tools-write.send-mail', {
         mailRecipientsMax: String(MAIL_RECIPIENTS_MAX),
       }),
       input: message.extend({ plan }),
@@ -230,21 +230,21 @@ export class BotMailWriteToolsFactory implements BotToolArea {
       asks: 'always',
       perCallOnly: true,
       scope: 'mail:write',
-      description: promptText('tools/mail-write.schedule-mail', {
+      description: promptText('mail/tools-write.schedule-mail', {
         mailScheduleMaxDays: String(MAIL_SCHEDULE_MAX_DAYS),
       }),
       input: message.partial({ body: true }).extend({
         send_at: z
           .string()
           .datetime({ offset: true })
-          .describe(promptText('tools/mail-write.schedule-mail-send-at')),
+          .describe(promptText('mail/tools-write.schedule-mail-send-at')),
         draft_id: z
           .string()
           .trim()
           .min(1)
           .max(100)
           .optional()
-          .describe(promptText('tools/mail-write.schedule-mail-draft-id')),
+          .describe(promptText('mail/tools-write.schedule-mail-draft-id')),
         plan,
       }),
       normalize: async (input, context) => ({
@@ -267,7 +267,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
             botId: context.botId,
           }),
         );
-        return promptText('tools/mail-write.schedule-mail-scheduled-id-from', {
+        return promptText('mail/tools-write.schedule-mail-scheduled-id-from', {
           id,
           email: planned.from.email,
           formatToolTime: formatToolTime(new Date(input.send_at), context.timeZone),
@@ -281,15 +281,15 @@ export class BotMailWriteToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'cancel_scheduled_mail',
       scope: 'mail:write',
-      description: promptText('tools/mail-write.cancel-scheduled-mail'),
+      description: promptText('mail/tools-write.cancel-scheduled-mail'),
       input: z.object({
-        id: z.string().uuid().describe(promptText('tools/mail-write.cancel-scheduled-mail-id')),
+        id: z.string().uuid().describe(promptText('mail/tools-write.cancel-scheduled-mail-id')),
       }),
       run: async (input, context) => {
         await this.commandBus.execute(
           new CancelScheduledMailCommand({ scope: context.owner, sendId: input.id }),
         );
-        return promptText('tools/mail-write.cancel-scheduled-mail-done', {
+        return promptText('mail/tools-write.cancel-scheduled-mail-done', {
           id: input.id,
         });
       },
@@ -299,7 +299,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
   private sendDraft(): BotToolDefinition {
     return this.sending({
       name: 'send_draft',
-      description: promptText('tools/mail-write.send-draft'),
+      description: promptText('mail/tools-write.send-draft'),
       input: z.object({
         account,
         draft_id: z
@@ -307,7 +307,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
           .trim()
           .min(1)
           .max(100)
-          .describe(promptText('tools/mail-write.update-draft-draft-id')),
+          .describe(promptText('mail/tools-write.update-draft-draft-id')),
         plan,
       }),
       planOf: (input, context) => this.draftPlan(input, context),
@@ -343,7 +343,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
       name: 'list_sent_mail',
       readOnly: true,
       scope: 'mail:read',
-      description: promptText('tools/mail-write.list-sent-mail'),
+      description: promptText('mail/tools-write.list-sent-mail'),
       input: z.object({ limit: z.number().int().min(1).max(50).default(20) }),
       run: async (input, context) => {
         const sends = await this.queryBus.execute<FindSentMailQuery, MailSendEntity[]>(
@@ -352,7 +352,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
         return formatToolList(
           'Sent by bots',
           sends.map((send) => describeSend(send, context.timeZone)),
-          promptText('tools/mail-write.list-sent-mail-bot-has-sent'),
+          promptText('mail/tools-write.list-sent-mail-bot-has-sent'),
         );
       },
     });
@@ -373,7 +373,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
         localFiles: await this.chatFiles.bytes(planned, context),
       }),
     );
-    return promptText('tools/mail-write.send', {
+    return promptText('mail/tools-write.send', {
       email: planned.from.email,
       value: [...planned.to, ...planned.cc, ...planned.bcc].join(', '),
       subject: planned.subject,
@@ -383,7 +383,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
   private async plan(input: MessageInput, context: BotToolCallContext): Promise<MailPlan> {
     if (input.kind !== 'new' && !input.message_id) {
       throw new BotToolRefusal(
-        promptText('tools/mail-write.plan-names-message-answers', { kind: input.kind }),
+        promptText('mail/tools-write.plan-names-message-answers', { kind: input.kind }),
       );
     }
     const connection = await this.accounts.one(context.owner, input.account);
@@ -447,7 +447,7 @@ function approvedCard(
   tool: string,
 ): string {
   if (!context.approvalId) {
-    throw new BotToolRefusal(promptText('tools/mail-write.approved-card', { done, tool }));
+    throw new BotToolRefusal(promptText('mail/tools-write.approved-card', { done, tool }));
   }
   return context.approvalId;
 }
@@ -455,7 +455,7 @@ function approvedCard(
 function storedPlan(stored: unknown): MailPlan {
   const parsed = mailPlanSchema.safeParse(stored);
   if (!parsed.success) {
-    throw new BotToolRefusal(promptText('tools/mail-write.stored-plan'));
+    throw new BotToolRefusal(promptText('mail/tools-write.stored-plan'));
   }
   return parsed.data;
 }
@@ -468,7 +468,7 @@ function draftAnswer(
   const said = saved === 'created' ? 'Draft saved' : 'Draft updated';
   return {
     content: [
-      promptText('tools/mail-write.draft-answer-content', {
+      promptText('mail/tools-write.draft-answer-content', {
         said,
         accountEmail: planned.accountEmail,
         draftId: draft.draftId,

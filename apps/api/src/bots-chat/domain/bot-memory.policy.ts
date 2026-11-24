@@ -88,7 +88,7 @@ function newestWithin(facts: readonly RememberedFact[], chars: number): Remember
  * test leans to the bot's own memory: a misfiled own fact costs one bot a
  * lookup, a misfiled general fact costs every bot its prompt.
  */
-export const MEMORY_CHOICE_RULE = promptText('tools/memory.which-memory');
+export const MEMORY_CHOICE_RULE = promptText('memory/tools.which-memory');
 
 /**
  * What `remember` tells the model: save as it goes,
@@ -97,18 +97,18 @@ export const MEMORY_CHOICE_RULE = promptText('tools/memory.which-memory');
  * words and the rule change together.
  */
 export const REMEMBER_DESCRIPTION = [
-  promptText('tools/memory.remember-what-it-saves', {
+  promptText('memory/tools.remember-what-it-saves', {
     memoryFactMax: String(BOT_MEMORY_FACT_MAX),
   }),
-  promptText('tools/memory.remember-as-you-go'),
-  promptText('tools/memory.remember-learning-off'),
+  promptText('memory/tools.remember-as-you-go'),
+  promptText('memory/tools.remember-learning-off'),
   MEMORY_CHOICE_RULE,
-  promptText('tools/memory.remember-tiers', {
+  promptText('memory/tools.remember-tiers', {
     memoryFactsMax: String(BOT_MEMORY_FACTS_MAX),
   }),
 ].join(' ');
 
-export const REMEMBER_TIER_HINT = promptText('tools/memory.remember-tier-hint');
+export const REMEMBER_TIER_HINT = promptText('memory/tools.remember-tier-hint');
 
 /** The tier `remember` keeps a fact in when the model names none. */
 export const REMEMBER_DEFAULT_TIER: BotMemoryTier = 'log';
@@ -116,7 +116,7 @@ export const REMEMBER_DEFAULT_TIER: BotMemoryTier = 'log';
 /** Which memory `remember` writes to, as the model names it. */
 export const REMEMBER_MEMORY = ['yours', 'general'] as const;
 
-export const REMEMBER_MEMORY_HINT = promptText('tools/memory.remember-memory-hint');
+export const REMEMBER_MEMORY_HINT = promptText('memory/tools.remember-memory-hint');
 
 /** The memory a fact is in, by the name `remember` and the dream use for it. */
 export function memoryNameOf(scope: BotMemoryScope): (typeof REMEMBER_MEMORY)[number] {
@@ -141,6 +141,6 @@ export function describeKept(
 ): string {
   const tier = fact.tier === 'profile' ? 'in mind' : 'in the log';
   if (fact.scope === 'bot') return `your memory, ${tier}`;
-  const by = botId && fact.botId !== botId ? promptText('tools/memory.saved-by-another-bot') : '';
+  const by = botId && fact.botId !== botId ? promptText('memory/tools.saved-by-another-bot') : '';
   return `general memory, ${tier}${by}`;
 }

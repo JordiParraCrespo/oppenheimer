@@ -30,7 +30,14 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   Weight never exceeds 600. Every number a human compares is the system mono
   (SF Mono on Apple platforms), tabular (`figures` utility). Nothing is
   vendored: the fonts are the reader's own.
-- **One control ramp**: 28 / 34 / 42px for Button, IconButton, Input, ChipSelect.
+- **One control ramp**: 28 / 34 / 42px (`--control-h-sm|md|lg`) for every
+  control you press or type into: Button, IconButton, Input, the selects
+  (FieldSelect, FacetSelect, ChipSelect), PillTabs, PillGroup,
+  SegmentedControl's track, the composer's buttons. **A row of controls
+  stands on one rung**, which the caller picks through each one's `size`; a
+  height written by hand on a control fails `pnpm check:control-heights`,
+  and the controls still off the ramp are the `control-height-campaign`
+  skill's ledger.
   **A form's fields stand at 34px**: `Input`, `DatePicker` and
   `FieldSelect`'s field look default to the `md` rung, and a `Chip` that is a
   field takes `size="md"`, so a label column of mixed controls reads as one
@@ -75,8 +82,9 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   pick, and Escape closes it.
 - **Third-party marks are the vendors' own or nothing.** `AgentMark` ships
   Anthropic's Claude mark, the OpenAI mark for Codex, OpenCode's square,
-  Grok's slashed circle, Cursor's cube, Pi's three blocks and Oh My Pi's
-  gradient π from their published brand assets,
+  Grok's slashed circle, Antigravity's arch, Cursor's cube, Pi's three
+  blocks, Oh My Pi's gradient π, fx's tile and Qwen's mark (the icon Qwen
+  Code's npm package ships) from their published brand assets,
   and for a bot's providers Z.ai's mark for GLM and OpenAI's for ChatGPT (it
   publishes none of its own), in the vendor's colour where it has one
   and the current ink otherwise. An agent with no published mark takes the

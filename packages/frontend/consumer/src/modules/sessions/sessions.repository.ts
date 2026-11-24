@@ -245,9 +245,14 @@ export function toCreateSessionRequest(input: CreateSessionInput): CreateSession
 @injectable()
 export class SessionsRepository {
   /**
-   * Every session in the workspace, whatever the endpoint's page size: the
-   * sidebar groups, searches and filters the whole list in the browser, so a
-   * page would be a list that silently ends.
+   * Every session in the workspace that is not resolved, whatever the
+   * endpoint's page size: the sidebar groups, searches and filters the whole
+   * list in the browser, so a page would be a list that silently ends.
+   *
+   * Resolved sessions are left out on the API (`resolved=false`): they are
+   * tombstones no list draws, and they pile up with every session closed, so
+   * walking them made each read of the list several requests (five at 499
+   * sessions with 20 open), on every refetch the workspace stream asks for.
    *
    * The list is walked **by cursor**, at the largest page the API allows, until
    * `meta.nextCursor` is null: no page pays for an offset or a count, and a
@@ -260,7 +265,11 @@ export class SessionsRepository {
       for (;;) {
         const data = await api.body(
           heyApiSdk.findSessions({
-            query: { limit: PAGINATION.MAX_LIMIT, ...(cursor ? { cursor } : {}) },
+            query: {
+              limit: PAGINATION.MAX_LIMIT,
+              resolved: 'false',
+              ...(cursor ? { cursor } : {}),
+            },
           }),
           (body) => Array.isArray(body.data),
         );

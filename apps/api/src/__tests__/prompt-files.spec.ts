@@ -132,6 +132,30 @@ describe('prompt files', () => {
     );
   });
 
+  // A skill is the SKILL.md other agents read (Agent Skills): a name that
+  // must match its file, so `use_skill` finds it by that name, and a
+  // description the bot picks it by. What breaks this: a skill whose
+  // frontmatter is sent as words, or one listed under another name.
+  it('reads a skill file as its description and its body, in the Agent Skills format', () => {
+    const source =
+      '<!-- why it is a skill -->\n\n---\nname: watch-inbox\ndescription: Offer to watch the inbox.\n---\n\n1. Check.\n';
+    expect(parsePromptFile('skill-watch-inbox.md', source, 'mail')).toEqual([
+      { id: 'mail/skill-watch-inbox.description', text: 'Offer to watch the inbox.', slots: [] },
+      { id: 'mail/skill-watch-inbox.body', text: '1. Check.', slots: [] },
+    ]);
+    const named = (name: string) => `---\nname: ${name}\ndescription: D.\n---\nBody.`;
+    expect(() => parsePromptFile('skill-watch-inbox.md', named('inbox'))).toThrow(
+      /not "watch-inbox"/,
+    );
+    expect(() => parsePromptFile('skill-a.md', 'Body.')).toThrow(/frontmatter/);
+    expect(() =>
+      parsePromptFile('skill-a.md', `---\nname: a\ndescription: ${'x'.repeat(1025)}\n---\nBody.`),
+    ).toThrow(/1,024/);
+    expect(() => parsePromptFile('skill-a.md', '---\nname: a\ndescription: D.\n---\n')).toThrow(
+      /body/,
+    );
+  });
+
   it('types a prompt by its slots, so an unfilled one does not compile', () => {
     const module = renderPromptModule([
       { id: 'rules', text: 'Never guess.', slots: [] },

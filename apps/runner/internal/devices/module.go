@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/adapters/argent"
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/adapters/jpegfit"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/devices/domain"
 )
@@ -26,6 +27,9 @@ type Options struct {
 	// ArgentHome is Argent's own directory (~/.argent), where the
 	// tool-server is found when ToolsURL is empty.
 	ArgentHome string
+	// ScreenWidth is the widest a screen frame goes to a reader, in pixels;
+	// 0 sends frames at the device's own resolution.
+	ScreenWidth int
 }
 
 // New builds the context, or nil when the host offers no device: none
@@ -50,5 +54,6 @@ func New(opts Options) *app.Service {
 		}),
 		Waker:  argent.ADBWaker{ADB: adb},
 		Finder: finder,
+		Fitter: jpegfit.Fitter{Width: opts.ScreenWidth},
 	})
 }

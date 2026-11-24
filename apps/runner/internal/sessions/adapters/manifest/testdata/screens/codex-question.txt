@@ -1,0 +1,39 @@
+  >_ OpenAI Codex (v0.171.0)
+     ~/work
+
+• Model changed to m medium for Plan mode.
+
+
+› pick a db
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Question 1/1 (1 unanswered)
+  Which database should I use?
+
+  › 1. Postgres (Recommended)  What the repo uses.
+    2. SQLite                  Lighter.
+    3. None of the above       Optionally, add details in notes (tab)
+
+  tab to add notes | enter to submit answer | esc to interrupt
+

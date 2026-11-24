@@ -139,7 +139,29 @@
     },
     "emoji": {
       "menu": "Emoji",
-      "pick": "Insert {{emoji}} :{{name}}:"
+      "pick": "Insert {{emoji}} :{{name}}:",
+      "open": "Emoji",
+      "search": "Search emoji",
+      "noResults": "No emoji match",
+      "results": "Results",
+      "groups": {
+        "recent": "Recently used",
+        "smileys": "Smileys & emotion",
+        "people": "People & body",
+        "nature": "Animals & nature",
+        "food": "Food & drink",
+        "travel": "Travel & places",
+        "activities": "Activities",
+        "objects": "Objects",
+        "symbols": "Symbols",
+        "flags": "Flags"
+      },
+      "react": "React",
+      "reactWith": "React with {{emoji}}",
+      "removeReaction": "Remove reaction {{emoji}}",
+      "more": "More emoji",
+      "yourReaction": "Your reaction: {{emoji}}",
+      "reactFailed": "Could not save the reaction"
     }
   },
   "search": {

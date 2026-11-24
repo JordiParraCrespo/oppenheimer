@@ -45,7 +45,7 @@ export function useInboxMarks() {
         const taskId = takesUp?.(item);
         if (taskId) triage(taskId);
       }
-      if (visit) for (const item of items) visit(item.key);
+      if (visit) for (const item of items) visit(item);
     },
   };
 }

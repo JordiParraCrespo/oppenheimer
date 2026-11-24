@@ -194,6 +194,7 @@ describe('waking a bot on WhatsApp (integration)', () => {
       command: 'message',
       text: `Message ${seq}`,
       voiceNote: false,
+      image: false,
       metadata: { correlationId: randomUUID(), timestamp: Date.now() },
       ...overrides,
     });
@@ -374,6 +375,7 @@ describe('waking a bot on WhatsApp (integration)', () => {
         botId: juno.id,
         text: `@Juno message ${seq}`,
         metadata: { correlationId: randomUUID(), timestamp: Date.now() },
+        image: false,
         ...overrides,
       });
 

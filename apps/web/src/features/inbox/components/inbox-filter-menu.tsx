@@ -18,6 +18,7 @@ import { SlidersVertical } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import type { InboxFilter } from '../lib/inbox-filter';
 import { ALL_PROJECTS, type InboxTypeFilter, typesFor } from '../lib/inbox-search';
+import type { AlertSwitch } from '../lib/session-alerts';
 
 export interface InboxFacetOption {
   value: string;
@@ -28,7 +29,7 @@ export interface InboxFacetOption {
 /**
  * The filter button beside the count and its menu (the frame's
  * `.op-filtermenu`): Type and Project, each option with its count, then Show
- * done, Show pull requests and Clear filters. Type offers Pull requests only
+ * done, Show pull requests, Notify me in this browser and Clear filters. Type offers Pull requests only
  * while they are shown. Lit while open or while anything is narrowed.
  * Props only: the list owns the filter, because it draws what it narrows.
  */
@@ -38,11 +39,13 @@ export function InboxFilterMenu({
   projects,
   showDone,
   pullsShown,
+  alerts,
   dirty,
   onTypeChange,
   onProjectChange,
   onShowDoneChange,
   onPullsShownChange,
+  onAlertsChange,
   onClear,
 }: {
   filter: InboxFilter;
@@ -51,11 +54,14 @@ export function InboxFilterMenu({
   projects: InboxFacetOption[];
   showDone: boolean;
   pullsShown: boolean;
+  /** The browser notification switch; not offered where the browser has none. */
+  alerts: AlertSwitch;
   dirty: boolean;
   onTypeChange: (type: InboxTypeFilter) => void;
   onProjectChange: (project: string | null) => void;
   onShowDoneChange: (show: boolean) => void;
   onPullsShownChange: (shown: boolean) => void;
+  onAlertsChange: (on: boolean) => void;
   onClear: () => void;
 }) {
   const { t } = useTranslation();
@@ -70,7 +76,7 @@ export function InboxFilterMenu({
       <DropdownMenuTrigger
         render={
           <IconButton
-            size="xs"
+            size="sm"
             variant="quiet"
             aria-label={t('inbox.filter.label')}
             data-dirty={dirty || undefined}
@@ -129,6 +135,15 @@ export function InboxFilterMenu({
         <DropdownMenuCheckboxItem checked={pullsShown} onCheckedChange={onPullsShownChange}>
           {t('inbox.filter.showPulls')}
         </DropdownMenuCheckboxItem>
+        {alerts === 'unsupported' ? null : (
+          <DropdownMenuCheckboxItem
+            checked={alerts === 'on'}
+            disabled={alerts === 'blocked'}
+            onCheckedChange={onAlertsChange}
+          >
+            {alerts === 'blocked' ? t('inbox.filter.alertsBlocked') : t('inbox.filter.alerts')}
+          </DropdownMenuCheckboxItem>
+        )}
 
         <DropdownMenuSeparator />
 

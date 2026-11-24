@@ -5,6 +5,7 @@ package app
 
 import (
 	"context"
+	"image"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
 )
@@ -80,4 +81,46 @@ type ExecPolicies interface {
 // is an error; one that ran and failed is a result with its exit code.
 type Executor interface {
 	Run(ctx context.Context, req domain.ExecRequest) (domain.ExecResult, error)
+}
+
+// ComputerPolicies is where the host keeps whether bots may use its screen:
+// a file only the person on the host writes (`runner computer`). Load
+// answers the default, off, when nothing was ever saved.
+type ComputerPolicies interface {
+	Load() (domain.ComputerPolicy, error)
+	Save(domain.ComputerPolicy) error
+}
+
+// BrowserPolicies is where the host keeps whether bots may drive a browser
+// on it: a file only the person on the host writes (`runner browser`). Load
+// answers the default, off, when nothing was ever saved.
+type BrowserPolicies interface {
+	Load() (domain.BrowserPolicy, error)
+	Save(domain.BrowserPolicy) error
+}
+
+// Browsers is the bots' browsers on this host: one each, started on a bot's
+// first open and kept between its actions. A host with no browser to start
+// answers an error that wraps domain.ErrNoBrowser; a ref the page no longer
+// has, domain.ErrBrowserRef; an action before any page, domain.ErrBrowserNotOpen.
+type Browsers interface {
+	// Act does one action and answers with the page after it.
+	Act(ctx context.Context, req domain.BrowserRequest) (domain.BrowserPage, error)
+	// Available says which browser would be started, or why none can be.
+	Available() (string, error)
+	// CloseAll ends every browser that is open.
+	CloseAll()
+}
+
+// Desktop is the host's screen, mouse and keyboard. A host with none it can
+// reach answers an error that wraps domain.ErrNoScreen, with what is missing;
+// any other error is a screen that is there and could not be read or used.
+type Desktop interface {
+	// Screen is the screen's size in the units Act points in.
+	Screen(ctx context.Context) (domain.Screen, error)
+	// Capture is what the screen shows now, at whatever size it is drawn.
+	Capture(ctx context.Context) (image.Image, error)
+	// Act does one action, its coordinates already in Screen's units. It is
+	// never asked to take a screenshot or to wait.
+	Act(ctx context.Context, req domain.ComputerRequest) error
 }

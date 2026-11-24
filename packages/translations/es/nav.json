@@ -26,5 +26,6 @@
   "pullRequests": "Pull requests",
   "employees": "Empleados",
   "account": "Cuenta",
-  "pullRequestsShort": "PRs"
+  "pullRequestsShort": "PRs",
+  "inbox": "Bandeja"
 }

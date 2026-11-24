@@ -239,13 +239,13 @@ export function liveTaskOf(
 /** What `watch_session` adds about the looks it owes the task it follows, if that task runs. */
 export function checkInAnswer(running: boolean, minutes: number | null): string {
   if (!running) {
-    return minutes === null ? '' : promptText('tools/sessions.check-in-task-not-running');
+    return minutes === null ? '' : promptText('sessions/tools.check-in-task-not-running');
   }
   const asked =
     minutes === null
       ? ''
-      : ` ${promptText('tools/sessions.check-in-as-asked', { minutes: String(minutes) })}`;
-  return promptText('tools/sessions.check-in-while-it-runs', { asked });
+      : ` ${promptText('sessions/tools.check-in-as-asked', { minutes: String(minutes) })}`;
+  return promptText('sessions/tools.check-in-while-it-runs', { asked });
 }
 
 /** The soonest and latest a bot may ask to look at a task it follows again (`watch_session`'s `check_in_minutes`). */
@@ -354,19 +354,19 @@ function stallReasonOf(task: StallTask, place: string): StallReason | null {
 
 /** What became of the task, in words. */
 const STATE_PHRASES: Readonly<Record<BotSessionWakeState, string>> = {
-  requires_action: promptText('wake/session.became-requires-action'),
-  completed: promptText('wake/session.became-completed'),
-  failed: promptText('wake/session.became-failed'),
-  cancelled: promptText('wake/session.became-cancelled'),
-  expired: promptText('wake/session.became-expired'),
+  requires_action: promptText('sessions/wake.became-requires-action'),
+  completed: promptText('sessions/wake.became-completed'),
+  failed: promptText('sessions/wake.became-failed'),
+  cancelled: promptText('sessions/wake.became-cancelled'),
+  expired: promptText('sessions/wake.became-expired'),
 };
 
 /** What the stall check found, in words. */
 const STALL_PHRASES: Readonly<Record<StallReason, string>> = {
-  not_started: promptText('wake/session.stuck-not-started', {
+  not_started: promptText('sessions/wake.stuck-not-started', {
     minutes: String(BOT_STALL_CHECK_DELAY_MS / 60_000),
   }),
-  not_working: promptText('wake/session.stuck-not-working', {
+  not_working: promptText('sessions/wake.stuck-not-working', {
     minutes: String(BOT_STALL_CHECK_DELAY_MS / 60_000),
   }),
 };
@@ -489,14 +489,14 @@ export function wakeSourceKey(wake: Pick<SessionWake, 'subscriptionId' | 'cause'
  */
 export function sessionWakeText(wake: SessionWake): string {
   const { cause } = wake;
-  const session = promptText('wake/session.followed', {
+  const session = promptText('sessions/wake.followed', {
     name: oneLine(wake.sessionName),
     id: wake.sessionId,
   });
   const lines = [headline(session, cause)];
-  if (wake.purpose) lines.push(promptText('wake/session.followed-to', { purpose: wake.purpose }));
+  if (wake.purpose) lines.push(promptText('sessions/wake.followed-to', { purpose: wake.purpose }));
   lines.push(
-    promptText(wake.ends ? 'wake/session.unsubscribed' : 'wake/session.still-subscribed'),
+    promptText(wake.ends ? 'sessions/wake.unsubscribed' : 'sessions/wake.still-subscribed'),
     ...quotedLines(cause),
   );
   return lines.join('\n');
@@ -506,13 +506,13 @@ export function sessionWakeText(wake: SessionWake): string {
 function headline(session: string, cause: SessionWakeCause): string {
   switch (cause.kind) {
     case 'state':
-      return promptText('wake/session.task-became', {
+      return promptText('sessions/wake.task-became', {
         session,
         seq: String(cause.task.seq),
         became: STATE_PHRASES[cause.state],
       });
     case 'stall':
-      return promptText('wake/session.task-looks-stuck', {
+      return promptText('sessions/wake.task-looks-stuck', {
         session,
         seq: String(cause.task.seq),
         why: STALL_PHRASES[cause.reason],
@@ -520,25 +520,25 @@ function headline(session: string, cause: SessionWakeCause): string {
     // A regular look says when it is, by its time; the one the bot asked for says so.
     case 'progress':
       return isRequestedCheck(cause.check)
-        ? promptText('wake/session.still-running-asked', { session, seq: String(cause.task.seq) })
-        : promptText('wake/session.still-running-regular', {
+        ? promptText('sessions/wake.still-running-asked', { session, seq: String(cause.task.seq) })
+        : promptText('sessions/wake.still-running-regular', {
             session,
             seq: String(cause.task.seq),
             minutes: String(checkDelayMs(cause.check) / 60_000),
           });
     case 'match':
       return cause.count === 1
-        ? promptText('wake/session.matched-once', {
+        ? promptText('sessions/wake.matched-once', {
             session,
             pattern: quotePattern(cause.pattern),
           })
-        : promptText('wake/session.matched', {
+        : promptText('sessions/wake.matched', {
             session,
             pattern: quotePattern(cause.pattern),
             count: String(cause.count),
           });
     case 'notice':
-      return promptText('wake/session.agent-sent', { session });
+      return promptText('sessions/wake.agent-sent', { session });
   }
 }
 
@@ -555,7 +555,7 @@ function quotedLines(cause: SessionWakeCause): string[] {
       return cause.task.prompt ? promptLines(cause.task.prompt) : [];
     case 'notice':
       return [
-        promptText('wake/session.what-its-agent-sent'),
+        promptText('sessions/wake.what-its-agent-sent'),
         fenceUntrusted('session_notice', cut(cause.text, NOTICE_QUOTE_MAX)),
       ];
     // A match quotes nothing: it says it matched, never what was printed.
@@ -567,7 +567,7 @@ function quotedLines(cause: SessionWakeCause): string[] {
 /** The task the session was given, fenced as the session's words. */
 function promptLines(prompt: string): string[] {
   return [
-    promptText('wake/session.task-given'),
+    promptText('sessions/wake.task-given'),
     fenceUntrusted('session_task', cut(prompt, TASK_QUOTE_MAX)),
   ];
 }
@@ -578,21 +578,21 @@ function taskLines(cause: Extract<SessionWakeCause, { kind: 'state' }>): string[
   const lines: string[] = task.prompt ? promptLines(task.prompt) : [];
   if (task.result) {
     lines.push(
-      promptText('wake/session.result'),
+      promptText('sessions/wake.result'),
       fenceUntrusted('session_output', cut(task.result, RESULT_QUOTE_MAX)),
     );
   } else if (state === 'completed') {
-    lines.push(promptText('wake/session.no-result'));
+    lines.push(promptText('sessions/wake.no-result'));
   }
   // A watch that never fired says so once the task is over.
   if (cause.silentPattern && state !== 'requires_action') {
     lines.push(
-      promptText('wake/session.never-matched', { pattern: quotePattern(cause.silentPattern) }),
+      promptText('sessions/wake.never-matched', { pattern: quotePattern(cause.silentPattern) }),
     );
   }
   if (task.failureDetail) {
     lines.push(
-      promptText('wake/session.why-it-failed'),
+      promptText('sessions/wake.why-it-failed'),
       fenceUntrusted('session_output', cut(task.failureDetail, FAILURE_QUOTE_MAX)),
     );
   }
@@ -601,17 +601,17 @@ function taskLines(cause: Extract<SessionWakeCause, { kind: 'state' }>): string[
 
 /** What the turn a wake opens is asked to do, by what the event says. */
 const WAKE_ASKS: Readonly<Record<BotSessionEventState, string>> = {
-  requires_action: promptText('wake/session.ask-requires-action', {
+  requires_action: promptText('sessions/wake.ask-requires-action', {
     unblockRule: SESSION_UNBLOCK_RULE,
   }),
-  completed: promptText('wake/session.ask-completed'),
+  completed: promptText('sessions/wake.ask-completed'),
   failed: failedWakeAsk(),
-  cancelled: promptText('wake/session.ask-cancelled'),
-  expired: promptText('wake/session.ask-expired'),
-  matched: promptText('wake/session.ask-matched'),
-  notice: promptText('wake/session.ask-notice'),
-  progress: promptText('wake/session.ask-progress'),
-  stalled: promptText('wake/session.ask-stalled'),
+  cancelled: promptText('sessions/wake.ask-cancelled'),
+  expired: promptText('sessions/wake.ask-expired'),
+  matched: promptText('sessions/wake.ask-matched'),
+  notice: promptText('sessions/wake.ask-notice'),
+  progress: promptText('sessions/wake.ask-progress'),
+  stalled: promptText('sessions/wake.ask-stalled'),
 };
 
 /**
@@ -623,7 +623,7 @@ export function sessionWakePrompt(event: BotSessionEvent, content: string): stri
 
 ${WAKE_ASKS[event.state]}
 
-${promptText('wake/session.closing')}`;
+${promptText('sessions/wake.closing')}`;
 }
 
 /**

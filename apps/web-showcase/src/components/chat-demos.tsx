@@ -6,6 +6,7 @@ import { Button } from '@oppenheimer/design-system-web/button';
 import {
   AnsweredQuestions,
   BotExchange,
+  BotExchangeFoldTurn,
   BotExchangeTurn,
   ChangedFileRow,
   ChangedFilesCard,
@@ -80,6 +81,8 @@ import {
   ChatAttachment,
   ChatCommand,
   ChatMention,
+  ChatReaction,
+  ChatReactionBar,
   ChatReply,
   ChatTranscript,
   ChatUserMessage,
@@ -104,6 +107,7 @@ import {
   CheckCircleIcon,
   CheckIcon,
   ChevronDownIcon,
+  AlarmClockIcon,
   ClockIcon,
   CopyIcon,
   CpuIcon,
@@ -131,7 +135,6 @@ import {
   TerminalIcon,
   WorkflowIcon,
   XIcon,
-  ZapIcon,
 } from '@oppenheimer/design-system-web/icons';
 import { JsonTree } from '@oppenheimer/design-system-web/json-tree';
 import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
@@ -178,10 +181,23 @@ function ChatTranscriptBody() {
   const [open, setOpen] = React.useState(true);
   return (
     <ChatTranscript>
-      <ChatUserMessage time="09:12" actions={<>{icon(CopyIcon, 'Copy message')}{icon(PencilIcon, 'Edit message')}</>}>
+      <ChatUserMessage
+        time="09:12"
+        actions={<>{icon(CopyIcon, 'Copy message')}{icon(PencilIcon, 'Edit message')}</>}
+        reaction={<ChatReaction emoji="🙏" aria-label="Remove reaction 🙏" onClick={() => undefined} />}
+      >
         When a run is stopped from the console, in-flight tool calls keep running until they time out. Wire cancel
         through the agent gateway.
       </ChatUserMessage>
+      <div className="flex justify-end">
+        <ChatReactionBar
+          emoji={['👍', '❤️', '😂', '😮', '😢', '🙏']}
+          selected="❤️"
+          onPick={() => undefined}
+          onMore={() => undefined}
+          labels={{ react: (emoji) => `React with ${emoji}`, remove: (emoji) => `Remove reaction ${emoji}`, more: 'More emoji' }}
+        />
+      </div>
       <ChatUserMessage
         attachments={
           <>
@@ -555,9 +571,9 @@ function ChatCardsBody() {
           >
             Is the cancel path on this week’s milestone, or can it wait for 0.9?
           </BotExchangeTurn>
-          <BotExchangeTurn direction="in" reply lead="Plan Bot replied">
+          <BotExchangeFoldTurn direction="in" reply lead="Plan Bot replied">
             It is on Friday’s milestone, as the second of three tasks. Ship it this week.
-          </BotExchangeTurn>
+          </BotExchangeFoldTurn>
         </BotExchange>
         <BotExchange>
           <BotExchangeTurn
@@ -591,7 +607,7 @@ function ChatCardsBody() {
           }
         />
         <ContextCard
-          icon={<ZapIcon />}
+          icon={<AlarmClockIcon />}
           title="Automation created"
           meta={
             <>

@@ -168,6 +168,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     slugOf: vi.fn().mockResolvedValue('jordi'),
     isMember: vi.fn().mockResolvedValue(true),
     ownedBy: vi.fn().mockResolvedValue([]),
+    ownerOf: vi.fn().mockResolvedValue(null),
   };
   const config = {
     get: (key: string) =>
@@ -2084,6 +2085,20 @@ describe('device attach socket', () => {
       x: 0.5,
       y: 0.25,
     });
+
+    // A drag reaches the runner with its pace and whether it was a flick.
+    const swipe = nextMessage(runner);
+    const flick = {
+      kind: 'swipe',
+      x: 0.5,
+      y: 0.8,
+      toX: 0.5,
+      toY: 0.2,
+      durationMs: 90,
+      momentum: true,
+    };
+    browser.send(JSON.stringify({ type: 'device.input', ...flick }));
+    expect((await swipe).text).toEqual({ type: 'device.input', attachmentId: 1, ...flick });
 
     const pick = nextMessage(runner);
     browser.send(JSON.stringify({ type: 'device.select', serial: 'emulator-5556' }));

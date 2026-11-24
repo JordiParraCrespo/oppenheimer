@@ -18,6 +18,7 @@ import { PullRequestSnapshotResolver } from './application/pull-request-snapshot
 import { PullRequestSourceResolver } from './application/pull-request-source.resolver';
 import { PullRequestWriteResolver } from './application/pull-request-write.resolver';
 import { RepositoryAccessResolver } from './application/repository-access.resolver';
+import { AddAppIssueCommentCommandHandler } from './commands/add-app-issue-comment/add-app-issue-comment.command-handler';
 import { AddGithubTokenCommandHandler } from './commands/add-github-token/add-github-token.command-handler';
 import { AddGithubTokenHttpController } from './commands/add-github-token/add-github-token.http.controller';
 import { AddIssueCommentCommandHandler } from './commands/add-issue-comment/add-issue-comment.command-handler';
@@ -74,6 +75,7 @@ import { GithubPullsAdapter } from './infrastructure/github-pulls.adapter';
 import { GithubRestAdapter } from './infrastructure/github-rest.adapter';
 import { GithubTokensAdapter } from './infrastructure/github-tokens.adapter';
 import { mountGithubWebhookBodyParser } from './infrastructure/github-webhook-body.util';
+import { FindGithubLoginQueryHandler } from './queries/find-github-login/find-github-login.query-handler';
 import { FindGithubTokenReadsHttpController } from './queries/find-github-token-reads/find-github-token-reads.http.controller';
 import { FindGithubTokenReadsQueryHandler } from './queries/find-github-token-reads/find-github-token-reads.query-handler';
 import { FindGithubTokensHttpController } from './queries/find-github-tokens/find-github-tokens.http.controller';
@@ -110,6 +112,7 @@ const httpControllers = [
 ];
 
 const commandHandlers: Provider[] = [
+  AddAppIssueCommentCommandHandler,
   AddGithubTokenCommandHandler,
   AddIssueCommentCommandHandler,
   CheckGithubTokenCommandHandler,
@@ -125,6 +128,7 @@ const commandHandlers: Provider[] = [
 ];
 
 const queryHandlers: Provider[] = [
+  FindGithubLoginQueryHandler,
   FindGithubTokenReadsQueryHandler,
   FindGithubTokensQueryHandler,
   FindInstallationQueryHandler,

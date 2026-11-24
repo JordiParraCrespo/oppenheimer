@@ -52,6 +52,7 @@ import {
   formatToolTime,
 } from '../domain/bot-tool-text.policy';
 import { describeCloudSession } from './bot-cloud-session.policy';
+import { BotSessionLinkResolver } from './bot-session-link.resolver';
 import { describeSessionSearch } from './bot-session-search.policy';
 import {
   type BotToolArea,
@@ -115,6 +116,7 @@ export class BotHostToolsFactory implements BotToolArea {
   constructor(
     private readonly queryBus: QueryBus,
     private readonly commandBus: CommandBus,
+    private readonly links: BotSessionLinkResolver,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -135,7 +137,7 @@ export class BotHostToolsFactory implements BotToolArea {
       name: 'list_hosts',
       readOnly: true,
       scope: 'hosts:read',
-      description: promptText('tools/host.list-hosts'),
+      description: promptText('sessions/tools-host.list-hosts'),
       input: z.object({}),
       run: async (_input, context) => {
         const hosts = await this.queryBus.execute<FindHostsQuery, HostView[]>(
@@ -144,7 +146,7 @@ export class BotHostToolsFactory implements BotToolArea {
         return formatToolList(
           'Hosts',
           hosts.map((view) => describeHost(view, context)),
-          promptText('tools/host.list-hosts-hosts-connected-person'),
+          promptText('sessions/tools-host.list-hosts-hosts-connected-person'),
         );
       },
     });
@@ -160,9 +162,9 @@ export class BotHostToolsFactory implements BotToolArea {
         key: input.host_id,
         label: await this.hostName(context, input.host_id),
       }),
-      description: promptText('tools/host.update-host-runner'),
+      description: promptText('sessions/tools-host.update-host-runner'),
       input: z.object({
-        host_id: z.uuid().describe(promptText('tools/host.update-host-runner-host-id')),
+        host_id: z.uuid().describe(promptText('sessions/tools-host.update-host-runner-host-id')),
       }),
       summarize: async (input, context) =>
         `Update the runner on ${await this.hostName(context, input.host_id)} to the newest release`,
@@ -171,7 +173,7 @@ export class BotHostToolsFactory implements BotToolArea {
           new UpdateHostRunnerCommand({ scope: context.owner, hostId: input.host_id }),
         );
         const name = await this.hostName(context, input.host_id);
-        return promptText('tools/host.update-host-runner-asked-runner-update', {
+        return promptText('sessions/tools-host.update-host-runner-asked-runner-update', {
           name,
           hostId: input.host_id,
         });
@@ -184,22 +186,30 @@ export class BotHostToolsFactory implements BotToolArea {
       name: 'list_sessions',
       readOnly: true,
       scope: 'sessions:read',
-      description: promptText('tools/host.list-sessions', {
+      description: promptText('sessions/tools-host.list-sessions', {
         sessionsLimitMax: String(SESSIONS_LIMIT_MAX),
         groupGlossary: GROUP_GLOSSARY,
       }),
       input: z.object({
-        project_id: z.uuid().optional().describe(promptText('tools/host.list-sessions-project-id')),
-        host_id: z.uuid().optional().describe(promptText('tools/host.list-sessions-host-id')),
+        project_id: z
+          .uuid()
+          .optional()
+          .describe(promptText('sessions/tools-host.list-sessions-project-id')),
+        host_id: z
+          .uuid()
+          .optional()
+          .describe(promptText('sessions/tools-host.list-sessions-host-id')),
         state: z
           .enum(SESSION_STATES)
           .optional()
-          .describe(promptText('tools/host.list-sessions-state')),
+          .describe(promptText('sessions/tools-host.list-sessions-state')),
         group: z
           .enum(SESSION_GROUPS)
           .optional()
           .describe(
-            promptText('tools/host.list-sessions-group', { groupScan: String(GROUP_SCAN) }),
+            promptText('sessions/tools-host.list-sessions-group', {
+              groupScan: String(GROUP_SCAN),
+            }),
           ),
         limit: z
           .number()
@@ -208,7 +218,7 @@ export class BotHostToolsFactory implements BotToolArea {
           .max(SESSIONS_LIMIT_MAX)
           .default(10)
           .describe(
-            promptText('tools/host.list-sessions-limit', {
+            promptText('sessions/tools-host.list-sessions-limit', {
               sessionsLimitMax: String(SESSIONS_LIMIT_MAX),
             }),
           ),
@@ -238,7 +248,7 @@ export class BotHostToolsFactory implements BotToolArea {
           'Sessions',
           shown.map((session) => describeSession(session, projects, context, now)),
           scanning
-            ? promptText('tools/host.list-sessions-session-among-newest', {
+            ? promptText('sessions/tools-host.list-sessions-session-among-newest', {
                 groupScan: String(GROUP_SCAN),
                 group: String(input.group),
               })
@@ -246,7 +256,7 @@ export class BotHostToolsFactory implements BotToolArea {
           {
             shown: shown.length,
             total: scanning ? matching.length : (page.total ?? page.data.length),
-            hint: promptText('tools/host.list-sessions-hint'),
+            hint: promptText('sessions/tools-host.list-sessions-hint'),
           },
         );
       },
@@ -258,9 +268,9 @@ export class BotHostToolsFactory implements BotToolArea {
       name: 'get_session',
       readOnly: true,
       scope: 'sessions:read',
-      description: promptText('tools/host.get-session'),
+      description: promptText('sessions/tools-host.get-session'),
       input: z.object({
-        session_id: z.uuid().describe(promptText('tools/host.get-session-session-id')),
+        session_id: z.uuid().describe(promptText('sessions/tools-host.get-session-session-id')),
       }),
       run: async (input, context) => {
         const [session, projects] = await Promise.all([
@@ -276,25 +286,26 @@ export class BotHostToolsFactory implements BotToolArea {
           `- group: ${group} (${SESSION_GROUP_PHRASES[group]})`,
           `- state: ${session.state}`,
           `- project: ${projectLabel(session.projectId, projects)}`,
-          `- host: ${session.hostId ?? promptText('tools/host.get-session-none-runs-vendors')}`,
+          `- host: ${session.hostId ?? promptText('sessions/tools-host.get-session-none-runs-vendors')}`,
           `- agent: ${session.agent}`,
           `- started by: ${session.origin}`,
           `- where: ${session.folderPath ? `folder ${session.folderPath}` : `branch ${session.branch ?? 'none yet'}`}`,
           `- last activity: ${formatToolTime(session.lastEventAt, context.timeZone)}`,
           `- stopped: ${session.stoppedAt ? formatToolTime(session.stoppedAt, context.timeZone) : 'no'}`,
+          `- link: ${this.links.link(session.id)}`,
         ];
         const cloud = describeCloudSession(session);
         if (cloud) lines.push(cloud);
         if (turn) lines.push(...describeTurn(turn));
         if (session.pendingDecision) {
           lines.push(
-            promptText('tools/host.get-session-what-waits-from', {
+            promptText('sessions/tools-host.get-session-what-waits-from', {
               fenceUntrusted: fenceUntrusted(
                 'session_output',
                 describeDecision(session.pendingDecision).join('\n'),
               ),
             }),
-            `  ${promptText('tools/host.get-session-unblock-answer-session')}`,
+            `  ${promptText('sessions/tools-host.get-session-unblock-answer-session')}`,
           );
         }
         lines.push(...describeSharedFiles(session.sharedFiles));
@@ -306,28 +317,34 @@ export class BotHostToolsFactory implements BotToolArea {
   /**
    * The console's Open session button on the call's line, for a session the
    * bot only found: the chat draws it from the call's session, never from
-   * the words, as it does for one `start_session` started.
+   * the words, as it does for one `start_session` started. A channel's chat
+   * draws no buttons, so there the answer is the link the bot writes.
    */
   private showSession(): BotToolDefinition {
     return defineBotTool({
       name: 'show_session',
       readOnly: true,
       scope: 'sessions:read',
-      description: promptText('tools/host.show-session'),
+      description: promptText('sessions/tools-host.show-session'),
       input: z.object({
-        session_id: z.uuid().describe(promptText('tools/host.get-session-session-id')),
+        session_id: z.uuid().describe(promptText('sessions/tools-host.get-session-session-id')),
       }),
       run: async (input, context) => {
         const session = await this.queryBus.execute<FindSessionQuery, WorkSessionEntity>(
           new FindSessionQuery({ scope: context.owner, sessionId: input.session_id }),
         );
-        return {
-          content: promptText('tools/host.show-session-content', {
-            id: session.id,
-            name: session.name,
-          }),
-          sessionId: session.id,
-        };
+        const link = this.links.forTurn(context, session.id);
+        const content = link
+          ? promptText('sessions/tools-host.show-session-channel-content', {
+              id: session.id,
+              name: session.name,
+              link,
+            })
+          : promptText('sessions/tools-host.show-session-content', {
+              id: session.id,
+              name: session.name,
+            });
+        return { content, sessionId: session.id };
       },
     });
   }
@@ -337,18 +354,18 @@ export class BotHostToolsFactory implements BotToolArea {
       name: 'read_session',
       readOnly: true,
       scope: 'sessions:read',
-      description: promptText('tools/host.read-session', {
+      description: promptText('sessions/tools-host.read-session', {
         activityLimitMax: String(ACTIVITY_LIMIT_MAX),
       }),
       input: z.object({
-        session_id: z.uuid().describe(promptText('tools/host.get-session-session-id')),
+        session_id: z.uuid().describe(promptText('sessions/tools-host.get-session-session-id')),
         limit: z.number().int().min(1).max(ACTIVITY_LIMIT_MAX).default(40),
         after_seq: z
           .number()
           .int()
           .min(0)
           .optional()
-          .describe(promptText('tools/host.read-session-after-seq')),
+          .describe(promptText('sessions/tools-host.read-session-after-seq')),
       }),
       run: async (input, context) => {
         if (context.budget.overspent(SESSION_READ_BUDGET_KEY, SESSION_READ_CHARS_PER_TURN)) {
@@ -367,22 +384,22 @@ export class BotHostToolsFactory implements BotToolArea {
       name: 'read_session_transcript',
       readOnly: true,
       scope: 'sessions:read',
-      description: promptText('tools/host.read-session-transcript', {
+      description: promptText('sessions/tools-host.read-session-transcript', {
         transcriptLimitMax: String(TRANSCRIPT_LIMIT_MAX),
       }),
       input: z.object({
-        session_id: z.uuid().describe(promptText('tools/host.get-session-session-id')),
+        session_id: z.uuid().describe(promptText('sessions/tools-host.get-session-session-id')),
         limit: z.number().int().min(1).max(TRANSCRIPT_LIMIT_MAX).default(20),
         cursor: z
           .string()
           .min(1)
           .max(SESSION_TRANSCRIPT_CURSOR_MAX)
           .optional()
-          .describe(promptText('tools/host.read-session-transcript-cursor')),
+          .describe(promptText('sessions/tools-host.read-session-transcript-cursor')),
         from: z
           .enum(SESSION_TRANSCRIPT_FROM)
           .default('latest')
-          .describe(promptText('tools/host.read-session-transcript-from')),
+          .describe(promptText('sessions/tools-host.read-session-transcript-from')),
       }),
       run: async (input, context) => {
         if (context.budget.overspent(SESSION_READ_BUDGET_KEY, SESSION_READ_CHARS_PER_TURN)) {
@@ -414,7 +431,7 @@ export class BotHostToolsFactory implements BotToolArea {
       name: 'search_sessions',
       readOnly: true,
       scope: 'sessions:read',
-      description: promptText('tools/host.search-sessions', {
+      description: promptText('sessions/tools-host.search-sessions', {
         sessionSearchHitsPerSession: String(SESSION_SEARCH_HITS_PER_SESSION),
         sessionSearchLimitMax: String(SESSION_SEARCH_LIMIT_MAX),
       }),
@@ -424,13 +441,19 @@ export class BotHostToolsFactory implements BotToolArea {
           .trim()
           .min(1)
           .max(200)
-          .describe(promptText('tools/host.search-sessions-query')),
-        host_id: z.uuid().optional().describe(promptText('tools/host.list-sessions-host-id')),
-        project_id: z.uuid().optional().describe(promptText('tools/host.list-sessions-project-id')),
+          .describe(promptText('sessions/tools-host.search-sessions-query')),
+        host_id: z
+          .uuid()
+          .optional()
+          .describe(promptText('sessions/tools-host.list-sessions-host-id')),
+        project_id: z
+          .uuid()
+          .optional()
+          .describe(promptText('sessions/tools-host.list-sessions-project-id')),
         since: z
           .union([z.iso.date(), z.iso.datetime({ offset: true })])
           .optional()
-          .describe(promptText('tools/host.search-sessions-since')),
+          .describe(promptText('sessions/tools-host.search-sessions-since')),
         limit: z.number().int().min(1).max(SESSION_SEARCH_LIMIT_MAX).default(10),
       }),
       run: async (input, context) => {
@@ -473,11 +496,11 @@ export class BotHostToolsFactory implements BotToolArea {
     const last = events.at(-1)?.seq ?? input.after_seq ?? null;
     if (!lines.length) {
       return input.after_seq === undefined
-        ? promptText('tools/host.describe-activity-session-has-activity', {
+        ? promptText('sessions/tools-host.describe-activity-session-has-activity', {
             id: session.id,
             name: session.name,
           })
-        : promptText('tools/host.describe-activity-nothing-new-session', {
+        : promptText('sessions/tools-host.describe-activity-nothing-new-session', {
             id: session.id,
             name: session.name,
             afterSeq: String(input.after_seq),
@@ -490,7 +513,7 @@ export class BotHostToolsFactory implements BotToolArea {
         ? `Its last ${lines.length} entries`
         : `${lines.length} entries after entry ${input.after_seq}`;
     return [
-      promptText('tools/host.describe-activity-session-now-from', {
+      promptText('sessions/tools-host.describe-activity-session-now-from', {
         id: session.id,
         name: session.name,
         group,
@@ -499,8 +522,10 @@ export class BotHostToolsFactory implements BotToolArea {
       }),
       fenceUntrusted('session_activity', lines.join('\n')),
       nextSeq !== null
-        ? promptText('tools/host.describe-activity-more-follows-read', { last: String(last) })
-        : promptText('tools/host.describe-activity-all-so-far', { last: String(last) }),
+        ? promptText('sessions/tools-host.describe-activity-more-follows-read', {
+            last: String(last),
+          })
+        : promptText('sessions/tools-host.describe-activity-all-so-far', { last: String(last) }),
     ].join('\n');
   }
 
@@ -595,7 +620,7 @@ function describeSession(
     ? `folder ${session.folderPath}`
     : `branch ${session.branch ?? '-'}`;
   const group: SessionGroup = session.group(now);
-  return promptText('tools/host.describe-session', {
+  return promptText('sessions/tools-host.describe-session', {
     id: session.id,
     name: session.name,
     group,
@@ -618,7 +643,7 @@ function describeTurn(turn: NonNullable<WorkSessionEntity['latestTurn']>): strin
   const lines = [`- latest task (${turn.state}): ${cut(turn.prompt ?? '(no prompt)', 300)}`];
   if (turn.result) {
     lines.push(
-      promptText('tools/host.describe-turn', {
+      promptText('sessions/tools-host.describe-turn', {
         fenceUntrusted: fenceUntrusted('session_output', cut(turn.result, 2_000)),
       }),
     );

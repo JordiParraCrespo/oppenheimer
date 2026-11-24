@@ -1,4 +1,4 @@
-import { BotExchange, BotExchangeTurn } from '@oppenheimer/design-system-web';
+import { BotExchange, BotExchangeFoldTurn, BotExchangeTurn } from '@oppenheimer/design-system-web';
 import type { BotPeerMessageEvent, BotPeerReplyEvent } from '@oppenheimer/shared/schemas/bot';
 import { Trans } from 'react-i18next';
 
@@ -15,7 +15,9 @@ function leadKey(event: BotPeerMessageEvent | BotPeerReplyEvent) {
 /**
  * Another bot's message, or its answer to one this bot asked, as a
  * `BotExchange` card naming the bot Oppenheimer recorded as the sender,
- * with what it said.
+ * with what it said. An answer comes back folded to its lead ("Oppie
+ * replied"): it can run long, and the bot's own reply under it says what it
+ * took from it; the person opens it when they want the words.
  */
 export function PeerEventCard({
   event,
@@ -26,11 +28,13 @@ export function PeerEventCard({
   messageId: string;
   content: string;
 }) {
+  const isReply = event.kind === 'bot_reply';
+  const Turn = isReply ? BotExchangeFoldTurn : BotExchangeTurn;
   return (
     <BotExchange data-message-id={messageId}>
-      <BotExchangeTurn
+      <Turn
         direction="in"
-        reply={event.kind === 'bot_reply'}
+        reply={isReply}
         lead={
           <Trans
             i18nKey={leadKey(event)}
@@ -40,7 +44,7 @@ export function PeerEventCard({
         }
       >
         <span className="whitespace-pre-wrap">{content}</span>
-      </BotExchangeTurn>
+      </Turn>
     </BotExchange>
   );
 }

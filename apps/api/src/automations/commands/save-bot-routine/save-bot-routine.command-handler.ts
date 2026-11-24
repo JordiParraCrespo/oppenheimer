@@ -18,6 +18,8 @@ import { SaveBotRoutineCommand } from './save-bot-routine.command';
  * change to what it runs or when takes the scopes of the credential that made
  * it, so a routine never runs wider than whoever last edited it; a pause, a
  * resume, or a name and prompt sent unchanged leave them as they were.
+ * Triggers saved without a webhook take its URL with them (the repository's
+ * save drops it in the same transaction).
  */
 @CommandHandler(SaveBotRoutineCommand)
 export class SaveBotRoutineCommandHandler

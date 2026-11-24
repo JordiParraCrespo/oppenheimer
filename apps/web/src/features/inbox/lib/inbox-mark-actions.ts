@@ -27,8 +27,8 @@ export type InboxMarkActionName =
 
 interface InboxMarkAction {
   write: (items: readonly InboxItem[], now: Date) => InboxMarkWrite;
-  /** What this visit remembers of each key, for Show done. */
-  visit?: (key: string) => void;
+  /** What this visit remembers of each item, for Show done and the progress. */
+  visit?: (item: InboxItem) => void;
   /** The source an item's action also puts away for good: a task's id to take up, or null. */
   takesUp?: (item: InboxItem) => string | null;
 }
@@ -41,20 +41,30 @@ const taskOf = (item: InboxItem): string | null => (item.kind === 'task' ? item.
  * menu, the pane's toolbar, E and L) as for a selection (the bulk bar). Mark
  * as done also keeps the items under Show done for this visit; Delete takes
  * them out of it. Deprioritize restores priority instead when every item is
- * already low. Delete also takes up a task an agent made, as Dismiss does;
- * Mark as done does not, so a task marked done stays under Show done for the
- * visit like every other item (the mark is the person's, on every device).
+ * already low. Mark as done and Delete also take up a task an agent made, so
+ * it leaves the Inbox for good and stays on the board as it is (the card's
+ * Dismiss before 2026-11-24).
+ * Every action that takes an item out of the list counts it as cleared for
+ * the deck's progress.
  */
 export const INBOX_MARK_ACTIONS: Record<InboxMarkActionName, InboxMarkAction> = {
-  done: { write: () => ({ mark: 'done' }), visit: (key) => inboxVisit.done(key) },
+  done: {
+    write: () => ({ mark: 'done' }),
+    visit: (item) => inboxVisit.done(item),
+    takesUp: taskOf,
+  },
   toggleLow: { write: (items) => ({ mark: items.every((item) => item.low) ? null : 'low' }) },
   snoozeHour: {
     write: (_, now) => ({ mark: 'snoozed', until: new Date(now.getTime() + HOUR) }),
+    visit: (item) => inboxVisit.cleared(item.key),
   },
-  snoozeTomorrow: { write: (_, now) => ({ mark: 'snoozed', until: tomorrowMorning(now) }) },
+  snoozeTomorrow: {
+    write: (_, now) => ({ mark: 'snoozed', until: tomorrowMorning(now) }),
+    visit: (item) => inboxVisit.cleared(item.key),
+  },
   remove: {
     write: () => ({ mark: 'deleted' }),
-    visit: (key) => inboxVisit.forget(key),
+    visit: (item) => inboxVisit.forget(item.key),
     takesUp: taskOf,
   },
   bringBack: { write: () => ({ mark: null }) },

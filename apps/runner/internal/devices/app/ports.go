@@ -20,6 +20,12 @@ type Screens interface {
 	Open(ctx context.Context, device domain.Device) (Screen, error)
 }
 
+// Fitter readies a screen frame for the link: the screen at the width the
+// reader is shown it, which is a fraction of the bytes a simulator sends.
+type Fitter interface {
+	Fit(frame []byte) ([]byte, error)
+}
+
 // Controls applies an input to a device.
 type Controls interface {
 	Apply(ctx context.Context, device domain.Device, input domain.Input) error

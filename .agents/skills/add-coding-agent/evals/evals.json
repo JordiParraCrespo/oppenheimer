@@ -1,0 +1,29 @@
+{
+  "skill_name": "add-coding-agent",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Read-only, in /home/user/oppenheimer: plan how to add Qwen Code (the `qwen` CLI, npm `@qwen-code/qwen-code`, open source at QwenLM/qwen-code) as a coding agent an Oppenheimer session can run, with a chat view if it can have one. Install the package into a scratch directory, read its parser and TUI source or run its --help, and note the version. Never ask for an API key. Write the plan: every file to create or change, the exact catalog entry values with the source of each, the screen-manifest rules, how the chat view reads the conversation, and how to prove it live and what to commit as tests.",
+      "expected_output": "A plan that sources every flag from the CLI at a named version, puts the agent in its own catalog module, avoids a resume flag that exits before the first message, ships no updater that is a no-op, wires the runner, manifest, install lists and chat reader by name, considers a recalled prompt and the three senders, and proves it on the local fleet with the real CLI plus a committed stand-in.",
+      "files": [],
+      "expectations": [
+        "CLI facts come from its parser or --help at a named version, not from docs",
+        "A module under packages/shared/src/agents/, the id in CODING_AGENT_IDS before shell, each field commented with its source",
+        "Models, permission (Ask sent even when the CLI defaults permissive) and effort decided with evidence; labels reuse those another agent already gives the same model id",
+        "The first task goes through the TUI's interactive flag, not a positional that runs headless, and a task starting with '-' is passed so it is not read as a flag",
+        "The resume chosen does not exit when a session restarts before its first message, and a learned id uses the existing conversation.reopen",
+        "Install through host-setup.ts / install-scripts.ts; `update` only if the updater was seen working on that install",
+        "pnpm --filter @oppenheimer/shared build regenerates the Go tables, and check:generated holds them",
+        "Runner: Agent constant and agentCatalogIDs, Tool and ProbedTools, main.go help lines conditioned on task and install",
+        "Manifest named by the runner's Agent value, every rule with a note, working rule anchored to the status line, an idle rule, strings seen in tmux",
+        "Runner tests by name: TestBundledManifestsLoad, launch_test.go, TestInstallScriptsByKindAndPlatform, TestOnlyUnattendedAgentUpdatersAreRun",
+        "install.sh KNOWN_AGENTS, runner-release.config.ts and the runner README, with an alias when the id is not the binary",
+        "Whether Up recalls a prompt into an empty input, input.clear if so, and the three senders (SessionChat.send, promptTyping, Children.Tell)",
+        "Chat reader wired in transcript.go and internal/cli/app.go, only this session's conversation, hidden rows dropped before any window, tested on real samples",
+        "agent-mark.tsx, agent-choices.ts OFFERED_BY_DEFAULT, generate:api-client, guide pages and generate:guide, a changeset, light and dark screenshots",
+        "Live proof with the real CLI on the local fleet, the key through request_credential, reading what the agent stored, plus a committed fleet stand-in listed in SHIMS and a fleet spec",
+        "Pickers, bots and automations that need a first task considered, and whether quit applies"
+      ]
+    }
+  ]
+}

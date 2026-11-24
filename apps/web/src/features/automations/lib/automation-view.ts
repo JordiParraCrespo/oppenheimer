@@ -90,6 +90,16 @@ export function automationSubline(
   return [automationAgentText(automation, t), project].filter(Boolean).join(' · ');
 }
 
+/** The automations table's column heads, for the table and its placeholder. */
+export function automationColumns(t: TFunction): [string, string, string, string] {
+  return [
+    t('automations.table.automation'),
+    t('automations.table.trigger'),
+    t('automations.table.next'),
+    t('automations.table.status'),
+  ];
+}
+
 /** The bot routines table's column heads, for the table and its placeholder. */
 export function botRoutineColumns(t: TFunction): [string, string, string, string] {
   return [

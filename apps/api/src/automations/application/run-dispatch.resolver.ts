@@ -62,7 +62,7 @@ export class RunDispatchResolver {
     const scope = await this.owners.resolve(automation.organizationId, automation.ownerUserId);
     if (!scope) return { kind: 'skip', reason: 'not_launchable', pause: 'owner_lost_access' };
 
-    const event = await this.eventOf(run);
+    const event = await this.eventOf(run, automation);
     // A run started by an event that is gone (retention, a replay that never
     // landed) does not know why it exists, nor where it should start.
     if (run.cause === 'event' && !event) {
@@ -73,7 +73,12 @@ export class RunDispatchResolver {
     return decideWith(this.targets.get(automation.runTarget), context);
   }
 
-  private async eventOf(run: AutomationRunEntity): Promise<RunEventView | null> {
+  private async eventOf(
+    run: AutomationRunEntity,
+    automation: AutomationEntity,
+  ): Promise<RunEventView | null> {
+    // A webhook's run carries what was posted itself.
+    if (run.webhookPayload) return this.mapper.webhookEventViewOf(automation, run.webhookPayload);
     if (!run.inboundEventId) return null;
     const found = await this.events.findOne(run.organizationId, run.inboundEventId);
     return found.isSome() ? this.mapper.eventViewOf(found.unwrap()) : null;

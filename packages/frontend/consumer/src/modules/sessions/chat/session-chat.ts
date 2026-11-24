@@ -12,11 +12,17 @@
  * a line this does not recognise is skipped, never an error.
  */
 
+import type { CodingAgentClear } from '@oppenheimer/shared/agents';
 import type { ChatCommand } from '@oppenheimer/shared/protocol';
 import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
 import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
 import { type ChatToolKind, classifyTool, fieldOf, todosOf } from '../../chat/chat-tools';
 import { type ChatActivity, sameActivity } from './agent-activity';
+import {
+  type ChatFeedbackAction,
+  type ChatFeedbackDraft,
+  sameFeedbackDraft,
+} from './feedback-draft';
 import {
   type ChatSharedFile,
   SHARED_ENTRY,
@@ -256,6 +262,13 @@ export interface ChatState {
    */
   suggestion: string | null;
   /**
+   * The feedback report the agent drafted, as the card over the terminal's
+   * input box shows it (`setFeedback`, `readFeedbackDraft`), for the chat to
+   * offer its keys (`pressFeedback`). None while it shows none, or while no
+   * terminal is drawn to read it from.
+   */
+  feedback: ChatFeedbackDraft | null;
+  /**
    * Whether what the chat is connected to can stop the agent's turn: a
    * terminal can (Escape), a Claude Code cloud session's hooks cannot
    * (`connect`). While it cannot, the composer offers no Stop, and a message
@@ -299,6 +312,7 @@ const EMPTY: ChatState = {
   older: 'none',
   activity: null,
   suggestion: null,
+  feedback: null,
   interruptible: true,
   commands: null,
 };
@@ -313,6 +327,12 @@ const PASTE_END = '\u001b[201~';
 const ESCAPE = '\u001b';
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
+/**
+ * How long a key pressed on the drafted-feedback card holds the next one
+ * while the card on screen has not moved: long enough for a double click,
+ * short enough that a key the card ignored does not leave it dead.
+ */
+const FEEDBACK_KEY_HOLD_MS = 1500;
 /**
  * How long a queued message that went waits for its turn to show before
  * the next may go: a message that opens no turn (a slash command the CLI
@@ -548,12 +568,16 @@ class Transcript {
  * reads it and types through it without knowing there is a stream.
  */
 export class SessionChat {
+  /** When a key last went to the drafted-feedback card whose reading still stands. */
+  private feedbackPressedAt: number | null = null;
   private readonly transcript = new Transcript();
   /** The subagents the agent ran, held apart and put into their calls (`turnsOf`). */
   private readonly subagents = new Subagents(sidechainTurns);
   /** A first load's history, held until it has all come (`ChatState.loading`). */
   private readonly firstLoad = new FirstLoad();
   private type: ((data: string) => void) | null = null;
+  /** How the agent's prompt is emptied before a message; null for an agent that needs nothing. */
+  private clear: CodingAgentClear | null = null;
   /** Asks the host for the turns before an offset, lent with the input (`connect`). */
   private askOlder: ((before: number) => void) | null = null;
   /** Where in the transcript the lines held start: 0 for its first line. */
@@ -859,13 +883,16 @@ export class SessionChat {
    * Lends the chat a way to type into the session's PTY, and to ask its host
    * for older turns; the function returned takes them back. `interruptible:
    * false` says the source cannot stop a turn (`ChatState.interruptible`).
+   * `clear` empties the agent's prompt before a message (`clearOf`, ZCode's
+   * Ctrl+U).
    */
   connect(
     type: (data: string) => void,
     askOlder?: (before: number) => void,
-    { interruptible = true }: { interruptible?: boolean } = {},
+    { interruptible = true, clear }: { interruptible?: boolean; clear?: CodingAgentClear } = {},
   ): () => void {
     this.type = type;
+    this.clear = clear ?? null;
     this.askOlder = askOlder ?? null;
     if (this.state.interruptible !== interruptible) this.publish({ ...this.state, interruptible });
     return () => {
@@ -891,8 +918,21 @@ export class SessionChat {
     const type = this.type;
     const empty = message.trim() === '';
     if (!type || (empty && !withFiles)) return;
-    if (!empty) type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
-    setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
+    const typeMessage = () => {
+      if (!empty) type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
+      setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
+    };
+    // A prompt can hold text nobody left there (ZCode recalls its last one on
+    // an Up arrow), which the message would be sent joined to: the clear keys
+    // go first, and the words once the agent has acted on them, since words
+    // in the same burst land in the prompt it has not emptied yet. Not with
+    // files: their paths are already in the prompt, pasted for this message.
+    if (!empty && !withFiles && this.clear) {
+      type(this.clear.keys);
+      setTimeout(typeMessage, this.clear.settleMs);
+    } else {
+      typeMessage();
+    }
     // A source that cannot stop the turn says itself what waits with it, and
     // one taken into the turn under way opens no prompt to replace it.
     if (!empty && this.state.interruptible && !this.busy()) this.startSending(message);
@@ -941,6 +981,37 @@ export class SessionChat {
   setSuggestion(suggestion: string | null): void {
     if (this.state.suggestion === suggestion) return;
     this.publish({ ...this.state, suggestion });
+  }
+
+  /**
+   * The drafted feedback the terminal under the chat shows now
+   * (`readFeedbackDraft`); none once it is gone. A reading that says what the
+   * last one said publishes nothing.
+   */
+  setFeedback(feedback: ChatFeedbackDraft | null): void {
+    if (sameFeedbackDraft(this.state.feedback, feedback)) return;
+    this.feedbackPressedAt = null;
+    this.publish({ ...this.state, feedback });
+  }
+
+  /**
+   * Answers the drafted-feedback card with one of the keys it names, typed
+   * as the person would type it in the terminal. False when nothing is
+   * connected to type it.
+   */
+  pressFeedback(action: ChatFeedbackAction): boolean {
+    const type = this.type;
+    if (!type) return false;
+    // The card asks twice on purpose (send, then send without reviewing;
+    // dismiss, then turn drafting off): a second press before the screen
+    // shows the card's next state would answer a question nobody saw.
+    const now = Date.now();
+    if (this.feedbackPressedAt !== null && now - this.feedbackPressedAt < FEEDBACK_KEY_HOLD_MS) {
+      return false;
+    }
+    this.feedbackPressedAt = now;
+    type(action.key);
+    return true;
   }
 
   snapshot = (): ChatState => this.state;

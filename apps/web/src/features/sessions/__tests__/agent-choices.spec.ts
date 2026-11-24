@@ -8,11 +8,17 @@ import { toEngineAgents } from '../lib/session-options';
  * any agent the reader switches off leaves the picker unless the draft is on
  * it. What breaks this: Pi showing on a fresh device, a switch that does not
  * survive (stored as the default it equals), or the draft's own agent
- * filtered out, which would leave the button naming nothing.
+ * filtered out, which would leave the button naming nothing. Cursor, once its
+ * key is saved, is offered the same way and switched off the same way.
  */
+
+const cursor = { id: 'cursor', label: 'Cursor', models: [] };
 
 const ids = (choices: readonly string[], current: string, hostCloud = false) =>
   withoutHidden(toEngineAgents(hostCloud, null), choices, current).map((option) => option.id);
+
+const withCursor = (choices: readonly string[], current: string) =>
+  withoutHidden(toEngineAgents(false, cursor), choices, current).map((option) => option.id);
 
 describe('agent choices', () => {
   it('offers the four and the blank terminal on a fresh device', () => {
@@ -37,5 +43,15 @@ describe('agent choices', () => {
     expect(ids([], 'omp')).toContain('omp');
     expect(ids(['codex:off'], 'claude-code', true)).toEqual(['claude-code']);
     expect(ids(['codex:off'], 'codex', true)).toEqual(['claude-code', 'codex']);
+  });
+
+  it('offers Cursor until it is switched off, and keeps it for a draft already on it', () => {
+    expect(withCursor([], 'claude-code')).toContain('cursor');
+
+    const choices = withAgentShown([], 'cursor', false);
+    expect(choices).toEqual(['cursor:off']);
+    expect(withCursor(choices, 'claude-code')).not.toContain('cursor');
+    expect(withCursor(choices, 'cursor')).toContain('cursor');
+    expect(shownAgents(choices)).toEqual(['claude-code', 'codex', 'opencode', 'grok', 'shell']);
   });
 });

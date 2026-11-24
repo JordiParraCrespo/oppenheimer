@@ -13,6 +13,7 @@ import {
   BUILT_IN_TOOLS,
   claudeEnv,
   claudeOptions,
+  DEFER_TOOLS_ABOVE_CHARS,
   DISALLOWED_TOOLS,
   MODEL_VARIABLES,
   pinAllModels,
@@ -90,6 +91,38 @@ describe('claudeOptions', () => {
 
   it('offers the engine its web search and to-do list on a turn', () => {
     expect(options(base)).toMatchObject({ tools: BUILT_IN_TOOLS, allowedTools: BUILT_IN_TOOLS });
+  });
+
+  // What breaks this: a bot with every area on sending ~39,000 tokens of
+  // tool definitions on every turn (2026-11-23), or one whose tools are
+  // deferred with no `ToolSearch` to find them (Claude Code then loads them
+  // all), or tool search asked of an endpoint not known to serve it.
+  it('lets Claude Code defer the tools that may wait, on Anthropic only, with its tool search', () => {
+    // Big enough together to be worth a search (`DEFER_TOOLS_ABOVE_CHARS`).
+    const tool = (name: string, deferrable?: boolean) => ({
+      name,
+      description: 'x'.repeat(DEFER_TOOLS_ABOVE_CHARS),
+      inputSchema: {},
+      run: async () => ({ content: '' }),
+      ...(deferrable === undefined ? {} : { deferrable }),
+    });
+    const anthropic = { ...base, provider: 'anthropic' as const };
+    const mixed = options({ ...anthropic, tools: [tool('remember'), tool('search_mail', true)] });
+    expect(mixed.tools).toEqual([...BUILT_IN_TOOLS, 'ToolSearch']);
+    expect(mixed.env?.ENABLE_TOOL_SEARCH).toBe('true');
+    const small = { ...tool('search_mail', true), description: 'Searches mail.' };
+    expect(options({ ...anthropic, tools: [small] }).env?.ENABLE_TOOL_SEARCH).toBe('false');
+    for (const none of [
+      { ...anthropic, tools: [tool('remember')] },
+      { ...base, tools: [tool('search_mail', true)] },
+      { ...anthropic, baseUrl: 'https://proxy.example', tools: [tool('search_mail', true)] },
+    ]) {
+      expect(options(none).tools).toEqual(BUILT_IN_TOOLS);
+      expect(options(none).env?.ENABLE_TOOL_SEARCH).toBe('false');
+    }
+    expect(options({ ...anthropic, engineTools: false, tools: [tool('a', true)] }).tools).toEqual(
+      [],
+    );
   });
 
   it('offers no engine tool to a completion, and keeps the rest denied', () => {

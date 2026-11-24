@@ -57,35 +57,35 @@ export class BotWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'watch_session',
       scope: 'sessions:read',
-      description: promptText('tools/watch.watch-session', {
+      description: promptText('sessions/tools-watch.watch-session', {
         subscriptionWakeLimit: String(BOT_SUBSCRIPTION_WAKE_LIMIT),
         subscriptionsPerBot: String(BOT_SUBSCRIPTIONS_PER_BOT),
       }),
       input: z.object({
-        session_id: z.uuid().describe(promptText('tools/watch.watch-session-session-id')),
+        session_id: z.uuid().describe(promptText('sessions/tools-watch.watch-session-session-id')),
         until: z
           .enum(['task', 'closed'])
           .optional()
-          .describe(promptText('tools/watch.watch-session-until')),
+          .describe(promptText('sessions/tools-watch.watch-session-until')),
         purpose: z
           .string()
           .min(1)
           .max(BOT_SUBSCRIPTION_PURPOSE_MAX)
           .optional()
-          .describe(promptText('tools/watch.watch-session-purpose')),
+          .describe(promptText('sessions/tools-watch.watch-session-purpose')),
         pattern: z
           .string()
           .min(1)
           .max(TERMINAL_WATCH_PATTERN_MAX)
           .optional()
-          .describe(promptText('tools/watch.watch-session-pattern')),
+          .describe(promptText('sessions/tools-watch.watch-session-pattern')),
         check_in_minutes: z
           .number()
           .int()
           .min(BOT_CHECK_IN_MINUTES.min)
           .max(BOT_CHECK_IN_MINUTES.max)
           .optional()
-          .describe(promptText('tools/watch.watch-session-check-in-minutes')),
+          .describe(promptText('sessions/tools-watch.watch-session-check-in-minutes')),
       }),
       run: async (input, context) => {
         const { subscription, session } = await this.watches.watch(context, input.session_id, {
@@ -119,9 +119,11 @@ export class BotWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'unwatch_session',
       scope: 'sessions:read',
-      description: promptText('tools/watch.unwatch-session'),
+      description: promptText('sessions/tools-watch.unwatch-session'),
       input: z.object({
-        session_id: z.uuid().describe(promptText('tools/watch.unwatch-session-session-id')),
+        session_id: z
+          .uuid()
+          .describe(promptText('sessions/tools-watch.unwatch-session-session-id')),
       }),
       run: async (input, context) => {
         // Its terminal watch goes too, if it had one: nobody else is woken by it.
@@ -139,10 +141,10 @@ export class BotWatchToolsFactory implements BotToolArea {
           input.session_id,
         );
         return removed
-          ? promptText('tools/watch.unwatch-session-longer-follow-session', {
+          ? promptText('sessions/tools-watch.unwatch-session-longer-follow-session', {
               sessionId: input.session_id,
             })
-          : promptText('tools/watch.unwatch-session-were-following-session', {
+          : promptText('sessions/tools-watch.unwatch-session-were-following-session', {
               sessionId: input.session_id,
             });
       },
@@ -154,7 +156,7 @@ export class BotWatchToolsFactory implements BotToolArea {
       name: 'list_watches',
       scope: 'sessions:read',
       readOnly: true,
-      description: promptText('tools/watch.list-watches'),
+      description: promptText('sessions/tools-watch.list-watches'),
       input: z.object({}),
       run: async (_input, context) => {
         const watched = await this.subscriptions.findForBot(
@@ -162,7 +164,8 @@ export class BotWatchToolsFactory implements BotToolArea {
           context.botId,
           BOT_SUBSCRIPTIONS_PER_BOT,
         );
-        if (!watched.length) return promptText('tools/watch.list-watches-follow-sessions-pull');
+        if (!watched.length)
+          return promptText('sessions/tools-watch.list-watches-follow-sessions-pull');
         return watched
           .map((subscription) => describeWatch(subscription, context.timeZone))
           .join('\n');
@@ -174,12 +177,14 @@ export class BotWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'wait_for_session',
       scope: 'sessions:read',
-      description: promptText('tools/watch.wait-for-session', {
+      description: promptText('sessions/tools-watch.wait-for-session', {
         sessionWaitMaxSeconds: String(BOT_SESSION_WAIT_MAX_SECONDS),
         sessionWaitsPerTurn: String(BOT_SESSION_WAITS_PER_TURN),
       }),
       input: z.object({
-        session_id: z.uuid().describe(promptText('tools/watch.wait-for-session-session-id')),
+        session_id: z
+          .uuid()
+          .describe(promptText('sessions/tools-watch.wait-for-session-session-id')),
         seconds: z
           .number()
           .int()
@@ -191,7 +196,7 @@ export class BotWatchToolsFactory implements BotToolArea {
       run: async (input, context, signal) => {
         if (!context.budget.take('wait_for_session', BOT_SESSION_WAITS_PER_TURN)) {
           throw new BotToolRefusal(
-            promptText('tools/watch.wait-for-session-have-waited-times', {
+            promptText('sessions/tools-watch.wait-for-session-have-waited-times', {
               sessionWaitsPerTurn: String(BOT_SESSION_WAITS_PER_TURN),
             }),
           );

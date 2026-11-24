@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule } from '@nestjs/swagger';
-import { SanitizePipe } from '@oppenheimer/backend-core';
+import { QuietBootLogger, SanitizePipe } from '@oppenheimer/backend-core';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
@@ -29,7 +29,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const logger = app.get(Logger);
 
-  app.useLogger(logger);
+  app.useLogger(new QuietBootLogger(logger));
 
   // Trust the configured number of reverse-proxy hops so `req.ip` is the real
   // client (the throttler keys on it, and API-token IP allowlists and audit

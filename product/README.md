@@ -1395,6 +1395,19 @@ earlier note:
   `read_terminal` type into a blank-terminal session and read its screen,
   only on a host whose `runner exec` mode is `full`. A coding agent is still
   given a task, never typed at.
+- `versions/mvp/25-bots.md` §2 said the engines' computer tools are off and
+  `research/lessons-from-grok-bot.md` left computer use out. On 2026-11-09
+  the owner asked that a bot can use a computer on a host remotely:
+  `use_computer` looks at a host's screen and uses its mouse and keyboard
+  through the runner, on a Mac's own desktop or a Linux X display (a virtual
+  one where there is none), only after `runner computer on` on that host.
+  Nothing runs on the control plane, which is what §2 was protecting.
+- `versions/mvp/25-bots.md` gave a bot the web through fetching a public
+  page only. On 2026-11-11 the owner asked for browser use beside computer
+  use: `use_browser` drives a browser of the bot's own on a host through the
+  runner, reading a page as elements with refs and acting on a ref, only
+  after `runner browser on` on that host. Fetching stays for a public page a
+  bot only reads.
 - `versions/mvp/25-bots.md` §4.1 (2026-10-29) let a bot file a fact as
   "about the person (their name, their role, their preferences)", read by
   all their bots. Bots filed their job there: Facturas read another bot's
@@ -1857,6 +1870,14 @@ earlier note:
   a bot there allows the chat; a bot's settings show the chats it answers
   and add more. Only listed chats are answered (no catch-all), and a
   number allows up to 1,000.
+- `versions/mvp/02-runner.md` ("Close") ended a session with `tmux
+  kill-session` and took its hangup to end the agent. On 2026-11-21 one
+  host ran out of memory with ~110 agents of closed sessions still
+  running, because Claude Code ignored the hangup: the `pty` wrapper now
+  kills its program's group 10 s after the hangup, closing a session
+  confirms its processes are gone, and the daemon ends any agent left by
+  a session that is over every 5 minutes. Nothing changed about tmux
+  sessions it does not recognise (still reported, not reaped).
 - `next-steps/answering-on-telegram-and-whatsapp.md` §5 (2026-11-20) woke a
   bot in a group only when a message @-mentioned the number or replied to
   it, and listed only the chats a number had seen a message in. On
@@ -1880,3 +1901,102 @@ earlier note:
   the transcription provider and model, the voice-note provider, model and
   voice, and the polish model or none. A choice is tried first, the old
   order after it; the env servers stay as the last provider.
+- `versions/mvp/26-bot-routines.md` §8 slice E planned a routine's webhook as
+  `POST /automations/webhook/{id}` with a key in `Authorization: Bearer`. Built
+  on 2026-11-20 (#953) with the token in the URL instead,
+  `POST /api/v1/routine-webhooks/{token}`, optionally signed with an HMAC
+  secret, issued and revoked on the Routines tab, since the senders it is for
+  are often given a URL and nothing else (the note's Decided, 2026-11-20).
+- `next-steps/channels.md` §7.2 had one Oppenheimer Slack app per Slack
+  workspace, speaking as each bot. On 2026-11-20, asked for a way to ask a
+  bot from Slack (JordiParraCrespo/oppenheimer#954), each bot got an app of
+  its own instead, so it has its own name and face and nothing routes by
+  mention (`next-steps/slack-for-bots.md`): made from a manifest the console
+  fills in, its token and secret pasted and sealed, answering only its
+  owner's Slack user in the thread asked in. A channel turn that ends on an
+  approval card now says so with a link, on Telegram and WhatsApp too.
+- `25-bots.md` §4.4 made every GitHub write of a bot's in the owner's own
+  name (2026-10-20). On 2026-11-20 a bot became askable on GitHub (§3.3,
+  issue #952), and its answer there is posted by Oppenheimer's App instead:
+  it is told apart from what the owner wrote, and the App's comments wake
+  nothing (`loopGuard`), so an answer never asks a bot again. The guide's
+  "writing to a bot only in the console" stopped holding the same day.
+- `versions/mvp/29-inbox.md`, "As built: the Inbox in Plan" (2026-10-29),
+  made the Inbox Plan's first section at `/plan/inbox`, with no rail item.
+  On 2026-11-24 the owner asked for it to be one of the platform's core
+  features, with its own page, and as easy to answer and move on from as a
+  swipe: it is the rail's first item again at `/inbox` (the Plan address
+  redirects), with a dot and a count, and no sidebar, Plan opens on its board, and the reading pane is a deck of cards
+  answered by number keys or a swipe ("Its own page, and a deck").
+- `27-bot-subscriptions.md` §4.2 had a bot's look at a task it handed off
+  stay quiet (`nothing_to_report`) while the task was on track, so the chat
+  showed only "Checked on session". On 2026-11-23, after the owner had to
+  ask a bot whether the release it delegated had finished while it still
+  ran, each look that finds the task moved says in one line where it stands; `notify` stays for
+  what is off.
+- `27-bot-subscriptions.md` §4.2 said nothing but a subscription or the
+  hourly heartbeat brings a bot back, so a bot was told never to promise to
+  come back to anything else. On 2026-11-23, after a bot said it would
+  verify a release before calling it done and went silent, a bot checks
+  back on anything it delegated or waits on with `check_back` (§7.3): a look
+  at a time it names, or on a backoff, for a day.
+- The bots' prompt files were sorted by where their words are sent
+  (`system/`, `turn/`, `wake/`, `jobs/`, `tools/`, 2026-11-18). On
+  2026-11-23 they were sorted by capability instead, one folder each
+  (`core/`, `mail/`, `sessions/`, `github/`…), the kind becoming the file's
+  first word (`mail/tools-write.md`), so everything a bot is told about one
+  area is in one place and a new area is a new folder
+  (`apps/api/AGENTS.md`, "What a model is told is prose").
+- A bot's how-to for a capability was a section of every turn's system
+  prompt that offered the capability's tools. On 2026-11-23 the parts only
+  some turns need became built-in skills, listed by one line and read with
+  `use_skill` when the work comes up, as Codex and OpenClaw keep theirs:
+  `watch-inbox` (mail), `use-a-computer` and `use-a-browser`. What must hold
+  on every turn (ask before sending or buying, never type a password) stayed
+  in the system prompt (`next-steps/mail.md`, Decided;
+  `research/lessons-from-codex-and-openclaw-on-context.md`).
+- Every bot tool went to Claude on every turn (`alwaysLoad`, "a bot's tools
+  are few"); with every area on that is about 39,000 tokens of definitions,
+  five times the system prompt. On 2026-11-23 a capability's tools became
+  deferrable: on Anthropic's own API Claude Code's tool search defers them
+  once their definitions pass about 5,000 tokens together
+  (`DEFER_TOOLS_ABOVE_CHARS`; Claude Code's own `auto`, a tenth of the
+  window, never deferred with a large window) and the model finds what it
+  needs, while the bot's own tools (memory, skills, questions, notices)
+  and the tools a built-in skill calls always load. GLM and the OpenAI engines send every tool as before.
+- `next-steps/whatsapp.md` §3 kept an image on the phone, the bot told
+  "[image]" and the caption, after voice notes became the one exception
+  (2026-11-18). On 2026-11-24 the owner reported that the WhatsApp bots
+  cannot see images: the runner keeps each image's media key and path for
+  48 hours as it does a voice note's, and when the turn the image woke
+  starts the API asks for it (`whatsapp.media.get`, `kind: "image"`), the
+  runner scaling one past a link frame to a JPEG that fits; the bot's chat
+  keeps the copy as an image of the message and the bot sees it.
+- `29-inbox.md` counted a session as waiting on you once its agent had been
+  blocked 30 s, measured from the runner's second report 15 s in, so a
+  question reached the Inbox about a minute after it was asked. On
+  2026-11-23 the 30 s went: a block a second report confirms is waiting on
+  you at once, and the runner sends that report 3 s after the first
+  ("A question reaches you in seconds"). Codex's and OpenCode's detection
+  rules were rewritten from their real screens the same day.
+- `next-steps/slack-for-bots.md` §4 cut a bot's Slack answer at 3,900
+  characters, into several messages. On 2026-11-24, copying Orca's Slack
+  fixes, an answer goes in one message up to 39,000 (Slack folds it behind
+  "Show more"), the owner's message carries a 👀 reaction while the bot
+  works, mentions arrive by name, secrets are redacted in what goes to
+  Slack, and images the owner shares reach the bot (§1 said the bot reads
+  only words); the manifest asks for `reactions:write`, `users:read` and
+  `files:read` too.
+- `next-steps/agent-tools.md` §2 left a browser notification for later. On
+  2026-11-24 the console raised one, opt-in per browser from the Inbox's
+  filter menu, for each session that comes to wait on the reader and each
+  agent notice, in a tab they are not looking at (`29-inbox.md`, "A
+  notification in this browser").
+- `versions/mvp/29-inbox.md`, "Its own page, and a deck" (2026-11-24),
+  put Done, Snooze, Deprioritize and Delete over the card and Later on it,
+  with E, S, L and a swipe left for Later. The same day the owner asked for
+  fewer choices: the card shows only its answers, a dock under it has
+  Previous, Done and Next, a card that waits on an answer (a blocked
+  session, a bot's approval) has no Done, a questionnaire goes one question
+  at a time, and Mark as done takes up a task an agent made, as Dismiss did
+  ("The card's actions, reshaped").
