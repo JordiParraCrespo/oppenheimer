@@ -11,6 +11,14 @@ import { visualFrameOrigin } from '@oppenheimer/shared';
  * `data:` and `blob:`, no form posted, no frame inside, and only the console
  * may frame it. What the page may ask of the console is three messages:
  * its size, an error, and a link to open, which the console asks about.
+ *
+ * What stays open: a fragment that navigates its own frame is refused and
+ * ended, but the browser looks the target's host up in DNS first, so a host
+ * name can carry a few bytes out and the viewer's address is seen by that
+ * name's DNS. Frames, refreshes and prefetches, which would do the same, are
+ * stripped or refused. An agent that writes such a page can already reach the
+ * network (a bot through `web_fetch`, a session's agent from its host), so
+ * this adds no reach it lacks; `visual_html` turns HTML off where it matters.
  */
 
 /** Whether a request's `Host` is the visuals origin of this preview domain. */
@@ -110,6 +118,26 @@ const FRAGMENT_PRELUDE = `(() => {
     event.preventDefault();
     if (/^https?:/i.test(link.href)) post({ type: 'open-link', href: link.href.slice(0, 2048) });
   }, true);
+  // A frame is a way to the network a CSP cannot close (the browser looks its host up before
+  // refusing it), so the fragment may not make one: refused from script, and the page ends if one appears.
+  const FRAMES = /^(iframe|frame|frameset|object|embed|portal)$/i;
+  for (const name of ['createElement', 'createElementNS']) {
+    const make = Document.prototype[name];
+    Document.prototype[name] = function (...args) {
+      const tag = String(name === 'createElement' ? args[0] : args[1]);
+      if (FRAMES.test(tag.split(':').pop())) throw new DOMException('frames are not allowed in a visual', 'NotSupportedError');
+      return make.apply(this, args);
+    };
+  }
+  new MutationObserver((records) => {
+    for (const record of records) for (const node of record.addedNodes) {
+      if (node.nodeType === 1 && (FRAMES.test(node.nodeName) || node.querySelector?.('iframe,frame,frameset,object,embed,portal'))) {
+        node.remove();
+        post({ type: 'escaped' });
+        return;
+      }
+    }
+  }).observe(document, { childList: true, subtree: true });
   addEventListener('DOMContentLoaded', () => {
     const size = () => post({ type: 'size', height: Math.ceil(document.documentElement.scrollHeight) });
     new ResizeObserver(size).observe(document.documentElement);
@@ -152,6 +180,7 @@ export const VISUAL_FRAME_SHELL = `<!doctype html>
         inner.style.height = height + 'px';
         post({ type: 'size', height });
       } else if (data.type === 'error') post({ type: 'error', message: String(data.message || '').slice(0, 300) });
+      else if (data.type === 'escaped') end('the visual tried to open a frame');
       else if (data.type === 'open-link' && typeof data.href === 'string' && /^https?:\\/\\//i.test(data.href)) post({ type: 'open-link', href: data.href.slice(0, 2048) });
       return;
     }
@@ -166,7 +195,11 @@ export const VISUAL_FRAME_SHELL = `<!doctype html>
     inner.setAttribute('sandbox', 'allow-scripts');
     inner.setAttribute('title', 'visual');
     inner.addEventListener('load', () => { loads += 1; if (loads > 1) end('the visual tried to leave its frame'); });
-    inner.srcdoc = '<!doctype html><html data-theme="' + scheme + '" style="color-scheme:' + scheme + ';' + escape(vars) + '"><head><meta charset="utf-8"><style>' + STYLE + '</style><script>' + PRELUDE + '<\\/script></head><body>' + data.html + '</body></html>';
+    // Parsed inert first: frames, refreshes and a <base> never reach the page, so none can start a lookup.
+    const parsed = new DOMParser().parseFromString('<!doctype html><body>' + data.html, 'text/html');
+    for (const node of parsed.querySelectorAll('iframe,frame,frameset,object,embed,portal,base,meta[http-equiv],link[rel~="dns-prefetch"],link[rel~="preconnect"]')) node.remove();
+    const fragment = parsed.head.innerHTML + parsed.body.innerHTML;
+    inner.srcdoc = '<!doctype html><html data-theme="' + scheme + '" style="color-scheme:' + scheme + ';' + escape(vars) + '"><head><meta charset="utf-8"><style>' + STYLE + '</style><script>' + PRELUDE + '<\\/script></head><body>' + fragment + '</body></html>';
     document.body.appendChild(inner);
   });
   post({ type: 'ready' });

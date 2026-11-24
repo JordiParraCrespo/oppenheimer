@@ -16,12 +16,17 @@ import { provisionedUser, signInAs } from '../../support/web';
 let outside: Server;
 let outsideUrl = '';
 const hits: string[] = [];
+/** Connections opened to the outside, a request on them or not: a browser's preconnect counts. */
+let connections = 0;
 
 test.beforeAll(async () => {
   outside = createServer((req, res) => {
     hits.push(req.url ?? '');
     res.setHeader('access-control-allow-origin', '*');
     res.end('<h1>OUTSIDE</h1>');
+  });
+  outside.on('connection', () => {
+    connections += 1;
   });
   await new Promise<void>((resolve) => outside.listen(0, '127.0.0.1', resolve));
   outsideUrl = `http://127.0.0.1:${(outside.address() as AddressInfo).port}`;
@@ -93,4 +98,29 @@ test('a visual that navigates its frame away is ended, and nothing outside is re
   await expect(card).toContainText('Show source');
   await expect(page.getByText('OUTSIDE')).toHaveCount(0);
   expect(hits).toEqual([]);
+});
+
+// What breaks this: a frame or a refresh in the fragment, which the browser
+// connects to (and looks up in DNS) before its CSP refuses the page, so a host
+// name could carry data out. They are stripped before the fragment runs, and a
+// frame made from script is refused.
+test('a visual can open no frame and no refresh, from markup or from script', async ({ page }) => {
+  hits.length = 0;
+  connections = 0;
+  const { owner, bot } = await botWithHtml(`<p id="out">running</p>
+    <iframe src="${outsideUrl}/framed"></iframe>
+    <meta http-equiv="refresh" content="0;url=${outsideUrl}/refreshed">
+    <object data="${outsideUrl}/object"></object>
+    <script>
+      let made = 'made';
+      try { document.createElement('iframe'); } catch { made = 'refused'; }
+      document.getElementById('out').textContent = made + ':' + document.querySelectorAll('iframe,meta[http-equiv],object').length;
+    </script>`);
+  await signInAs(page, owner.user);
+  await page.goto(`/bots/${bot.id}`);
+  const frame = page.frameLocator('[data-slot="visual"] iframe').frameLocator('iframe');
+  await expect(frame.locator('#out')).toHaveText('refused:0', { timeout: 20_000 });
+  await page.waitForTimeout(1000);
+  expect(hits).toEqual([]);
+  expect(connections).toBe(0);
 });
