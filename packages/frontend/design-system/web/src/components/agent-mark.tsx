@@ -15,6 +15,7 @@ type AgentId =
   | 'fx'
   | 'hermes'
   | 'muse'
+  | 'qwen'
   | 'glm'
   | 'chatgpt'
   | 'cursor'
@@ -135,6 +136,19 @@ function MetaMark(props: React.ComponentProps<'svg'>) {
   );
 }
 
+const QWEN_BLUE = '#082DFF';
+
+/** Qwen's mark, the one Qwen Code ships as its web shell's icon. */
+function QwenMark(props: React.ComponentProps<'svg'>) {
+  return (
+    <svg viewBox="17.5 27.7 135.6 135.6" fill={QWEN_BLUE} aria-hidden {...props}>
+      <path d="M130.06,43.66h-33.37c0-1.42-.37-2.84-1.1-4.11l-4.47-7.74c-1.47-2.54-4.18-4.11-7.12-4.11h-8.93c-2.94,0-5.65,1.57-7.12,4.11l-13.68,23.69c-1.47,2.54-1.47,5.67,0,8.22l4.47,7.74c1.47,2.54,4.18,4.11,7.12,4.11h64.19c2.94,0,5.65-1.57,7.12-4.11l4.47-7.74c1.47-2.54,1.47-5.67,0-8.22l-4.47-7.74c-1.47-2.54-4.18-4.11-7.12-4.11Z" />
+      <path d="M19.75,83.66l16.68,28.9c-1.23.71-2.27,1.74-3.01,3.01l-4.47,7.74c-1.47,2.54-1.47,5.67,0,8.22l4.47,7.74c1.47,2.54,4.18,4.11,7.12,4.11h27.35c2.94,0,5.65-1.57,7.12-4.11l4.47-7.74c1.47-2.54,1.47-5.67,0-8.22l-32.1-55.59c-1.47-2.54-4.18-4.11-7.12-4.11h-8.93c-2.94,0-5.65,1.57-7.12,4.11l-4.47,7.74c-1.47,2.54-1.47,5.67,0,8.22Z" />
+      <path d="M109.55,159.19l16.68-28.9c1.23.71,2.64,1.1,4.11,1.1h8.93c2.94,0,5.65-1.57,7.12-4.11l4.47-7.74c1.47-2.54,1.47-5.67,0-8.22l-13.68-23.69c-1.47-2.54-4.18-4.11-7.12-4.11h-8.93c-2.94,0-5.65,1.57-7.12,4.11l-32.1,55.59c-1.47,2.54-1.47,5.67,0,8.22l4.47,7.74c1.47,2.54,4.18,4.11,7.12,4.11h8.93c2.94,0,5.65-1.57,7.12-4.11Z" />
+    </svg>
+  );
+}
+
 function CursorMark(props: React.ComponentProps<'svg'>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
@@ -167,6 +181,7 @@ const MARKS: Readonly<Record<string, () => React.ReactNode>> = {
   fx: () => <FxMark className={SHARED} />,
   hermes: () => <HermesMark className={INKED} />,
   muse: () => <MetaMark className={INKED} />,
+  qwen: () => <QwenMark className={SHARED} />,
   glm: () => <ZaiMark className={INKED} />,
   chatgpt: () => <OpenAIMark className={INKED} />,
   cursor: () => <CursorMark className={INKED} />,
@@ -191,8 +206,8 @@ function markOf(agent: AgentId): React.ReactNode {
  * has no published mark of its own and wears OpenAI's, as Codex does, and
  * Muse Code wears Meta's. "Blank
  * terminal" takes a terminal glyph, and an unknown id the neutral bot glyph.
- * Pi's blocks, Oh My Pi's gradient π and fx's black tile carry their own
- * colours, which do not re-point in dark either.
+ * Pi's blocks, Oh My Pi's gradient π, fx's black tile and Qwen's blue carry
+ * their own colours, which do not re-point in dark either.
  *
  * Inline SVG, so no asset pipeline and it scales with the text. Sources, never
  * a redrawn imitation: the Claude and OpenAI marks from Simple Icons (CC0);
@@ -206,7 +221,9 @@ function markOf(agent: AgentId): React.ReactNode {
  * `icons/cursor.svg` and `icons/meta.svg`, CC0);
  * Pi's from its site's own download (`pi.dev/logo-auto.svg`) and Oh My Pi's
  * from its site's favicon (`omp.sh/favicon.svg`); fx's from the sign-in page
- * its own binary serves (`vercel-labs/fx` v0.0.17).
+ * its own binary serves (`vercel-labs/fx` v0.0.17); Qwen's from the icon
+ * Qwen Code's package ships (`@qwen-code/qwen-code@0.28.4`
+ * `web-shell/assets/icon.svg`, Apache-2.0).
  *
  * ```tsx
  * <AgentMark agent="claude-code" />
