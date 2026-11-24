@@ -1908,6 +1908,8 @@
       "copyMessage": "Copiar mensaje",
       "copyReply": "Copiar respuesta",
       "toLatest": "Ir a lo último",
+      "loadingOlder": "Cargando mensajes anteriores…",
+      "olderFailed": "No se pudieron cargar los mensajes anteriores. Vuelve a desplazarte hacia arriba para intentarlo de nuevo.",
       "switchedModel": "Cambiado a <model>{{model}}</model>",
       "tokens_one": "{{tokens}} token",
       "tokens_many": "{{tokens}} tokens",
@@ -4038,7 +4040,8 @@
       "low": "Bajar prioridad",
       "restore": "Restaurar prioridad",
       "snooze": "Posponer",
-      "delete": "Eliminar"
+      "delete": "Eliminar",
+      "start": "Seleccionar"
     },
     "filter": {
       "label": "Filtrar la bandeja",

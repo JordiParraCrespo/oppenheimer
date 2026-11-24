@@ -39,6 +39,7 @@ import type { ConfigService } from '@nestjs/config';
 import type { CommandBus } from '@nestjs/cqrs';
 import { BotChannelAsItGoesFactory } from '../../../apps/api/src/bots-chat/application/bot-channel-as-it-goes.factory';
 import { BotChannelReplyResolver } from '../../../apps/api/src/bots-chat/application/bot-channel-reply.resolver';
+import type { BotVoiceReplyResolver } from '../../../apps/api/src/bots-chat/application/bot-voice-reply.resolver';
 import {
   type TranscriptWrite,
   TurnTranscript,
@@ -286,9 +287,18 @@ async function phoneOf(turn: Turn, c: Case): Promise<PhoneLine[]> {
     findPending: async () => ({ isSome: () => false }),
   } as unknown as BotApprovalRepositoryPort;
   const config = { get: () => undefined } as unknown as ConfigService;
-  await new DeliverChannelReplyCommandHandler(turns, messages, approvals, channel, config).execute(
-    new DeliverChannelReplyCommand({ turnId: entity.id }),
-  );
+  // Every case is the owner's own chat, which never answers by voice.
+  const voiceReplies = {
+    prepare: async (_turn: unknown, text: string) => ({ text, voice: null }),
+  } as unknown as BotVoiceReplyResolver;
+  await new DeliverChannelReplyCommandHandler(
+    turns,
+    messages,
+    approvals,
+    channel,
+    config,
+    voiceReplies,
+  ).execute(new DeliverChannelReplyCommand({ turnId: entity.id }));
   return phone;
 }
 

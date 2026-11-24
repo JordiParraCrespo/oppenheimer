@@ -36,4 +36,5 @@ The provider you picked is tried first. If its key was removed or it fails, the 
 
 - One setting per workspace: every bot speaks in the same voice.
 - A voice note says at most 600 characters, about 40 seconds; a longer reply is sent as text.
+- In a WhatsApp group or a contact's chat your number allows, a bot answers by voice only where you let it send voice notes to that chat without asking (**Always allow for** the chat on a voice note's **Needs input** card, or `send_whatsapp_voice_note` set to Allow in **Settings → Permissions**, or the bot on **Full access**, with no "Ask me first when…" rule; Off stops it), and only when its instructions or the chat ask for audio. That reply goes as the voice note alone; a link, a list or code, or a note that could not be spoken, goes as text instead.
 - Telegram voice notes are not available yet.

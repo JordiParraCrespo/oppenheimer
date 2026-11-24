@@ -5,6 +5,7 @@ import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
 import { WhatsappAnswerResolver } from './application/whatsapp-answer.resolver';
+import { WhatsappAnsweringBotResolver } from './application/whatsapp-answering-bot.resolver';
 import { WhatsappChatResolver } from './application/whatsapp-chat.resolver';
 import { WhatsappChatRoutesResolver } from './application/whatsapp-chat-routes.resolver';
 import { WhatsappReplyResolver } from './application/whatsapp-reply.resolver';
@@ -14,6 +15,7 @@ import { ConfirmWhatsappOwnerCommandHandler } from './commands/confirm-whatsapp-
 import { ConfirmWhatsappOwnerHttpController } from './commands/confirm-whatsapp-owner/confirm-whatsapp-owner.http.controller';
 import { LinkWhatsappCommandHandler } from './commands/link-whatsapp/link-whatsapp.command-handler';
 import { LinkWhatsappHttpController } from './commands/link-whatsapp/link-whatsapp.http.controller';
+import { ReactOnWhatsappCommandHandler } from './commands/react-on-whatsapp/react-on-whatsapp.command-handler';
 import { ReceiveWhatsappMessagesCommandHandler } from './commands/receive-whatsapp-messages/receive-whatsapp-messages.command-handler';
 import { RecordWhatsappChatsCommandHandler } from './commands/record-whatsapp-chats/record-whatsapp-chats.command-handler';
 import { RecordWhatsappStateCommandHandler } from './commands/record-whatsapp-state/record-whatsapp-state.command-handler';
@@ -82,7 +84,8 @@ const httpControllers = [
 /**
  * The relay dispatches the host's reports (`RecordWhatsappState`,
  * `RecordWhatsappChats`, `ReceiveWhatsappMessages`); a bot's tools dispatch the send, the end of a
- * WhatsApp turn its reply (`ReplyOnWhatsapp`, from `bots-chat`), and a wake on
+ * WhatsApp turn its reply (`ReplyOnWhatsapp`, from `bots-chat`), a bot's
+ * reaction (`ReactOnWhatsapp`, also from `bots-chat`), and a wake on
  * the owner's voice note its hearing (`TranscribeWhatsappVoiceNote`), and one
  * on an image its fetching (`SeeWhatsappImage`).
  */
@@ -92,6 +95,7 @@ const commandHandlers: Provider[] = [
   RequestWhatsappOwnerCommandHandler,
   ConfirmWhatsappOwnerCommandHandler,
   ReplyOnWhatsappCommandHandler,
+  ReactOnWhatsappCommandHandler,
   RemoveWhatsappAccountCommandHandler,
   RecordWhatsappStateCommandHandler,
   RecordWhatsappChatsCommandHandler,
@@ -151,6 +155,7 @@ const queryHandlers: Provider[] = [
     WhatsappChatResolver,
     WhatsappChatRoutesResolver,
     WhatsappReplyResolver,
+    WhatsappAnsweringBotResolver,
     WhatsappAnswerResolver,
     { provide: WHATSAPP_ACCOUNT_REPOSITORY, useClass: WhatsappAccountRepository },
     { provide: WHATSAPP_MESSAGE_REPOSITORY, useClass: WhatsappMessageRepository },

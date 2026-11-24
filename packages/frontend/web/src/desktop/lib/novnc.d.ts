@@ -5,6 +5,19 @@
  * a WebSocket's shape.
  */
 declare module '@novnc/novnc' {
+  /**
+   * The cursor shape the server sent, in framebuffer pixels: `rgbaPixels` is
+   * `w` by `h` RGBA, the hot spot at `hotx`, `hoty`. Dispatched as the
+   * `cursorimage` event's detail (patches/@novnc__novnc@1.7.0.patch).
+   */
+  export interface CursorImage {
+    rgbaPixels: ArrayLike<number>;
+    hotx: number;
+    hoty: number;
+    w: number;
+    h: number;
+  }
+
   export default class RFB extends EventTarget {
     constructor(target: HTMLElement, channel: string | object, options?: { shared?: boolean });
     viewOnly: boolean;

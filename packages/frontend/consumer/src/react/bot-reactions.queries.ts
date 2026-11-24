@@ -5,6 +5,7 @@ import type {
   BotConversationEntity,
   BotMessageEntity,
 } from '../modules/bots/bot-conversation.entity';
+import { type BotOlderMessages, olderWithReaction } from '../modules/bots/older-messages';
 import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
 
@@ -33,20 +34,31 @@ export function useReactToBotMessage(
 ) {
   const app = useConsumerApp();
   const queryClient = useQueryClient();
-  const setReaction = (id: string, messageId: string, emoji: string | null) =>
+  // On the window, or on the older pages the reader scrolled up into, wherever the message is.
+  const setReaction = (id: string, messageId: string, emoji: string | null) => {
     queryClient.setQueryData<BotConversationEntity>(botsKeys.conversation(id), (conversation) =>
       conversation?.withReaction(messageId, emoji),
     );
+    queryClient.setQueryData<BotOlderMessages | null>(botsKeys.olderMessages(id), (older) =>
+      olderWithReaction(older, messageId, emoji),
+    );
+  };
+  const reactionOf = (id: string, messageId: string): string | null => {
+    const lines = [
+      ...(queryClient.getQueryData<BotConversationEntity>(botsKeys.conversation(id))?.messages ??
+        []),
+      ...(queryClient.getQueryData<BotOlderMessages | null>(botsKeys.olderMessages(id))?.messages ??
+        []),
+    ];
+    return lines.find((message) => message.id === messageId)?.reaction ?? null;
+  };
   return useMutation({
     ...options,
     mutationFn: ({ id, messageId, emoji }: ReactToBotMessageVariables) =>
       app.bots.react(id, messageId, emoji),
     onMutate: async ({ id, messageId, emoji }) => {
       await queryClient.cancelQueries({ queryKey: botsKeys.conversation(id) });
-      const before =
-        queryClient
-          .getQueryData<BotConversationEntity>(botsKeys.conversation(id))
-          ?.messages.find((message) => message.id === messageId)?.reaction ?? null;
+      const before = reactionOf(id, messageId);
       setReaction(id, messageId, emoji);
       return { before };
     },

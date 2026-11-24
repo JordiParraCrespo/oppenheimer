@@ -12,6 +12,7 @@ import { ConnectSlackHttpController } from './commands/connect-slack/connect-sla
 import { MarkSlackWorkingCommandHandler } from './commands/mark-slack-working/mark-slack-working.command-handler';
 import { OpenSlackOwnerLinkCommandHandler } from './commands/open-slack-owner-link/open-slack-owner-link.command-handler';
 import { OpenSlackOwnerLinkHttpController } from './commands/open-slack-owner-link/open-slack-owner-link.http.controller';
+import { ReactOnSlackCommandHandler } from './commands/react-on-slack/react-on-slack.command-handler';
 import { ReceiveSlackEventCommandHandler } from './commands/receive-slack-event/receive-slack-event.command-handler';
 import { ReceiveSlackEventHttpController } from './commands/receive-slack-event/receive-slack-event.http.controller';
 import { RemoveSlackAccountCommandHandler } from './commands/remove-slack-account/remove-slack-account.command-handler';
@@ -40,10 +41,14 @@ const httpControllers = [
   ReceiveSlackEventHttpController,
 ];
 
-/** The end of a Slack turn dispatches its answer (`ReplyOnSlack`, from `bots-chat`). */
+/**
+ * The end of a Slack turn dispatches its answer (`ReplyOnSlack`, from
+ * `bots-chat`), and a bot's `react` its reaction (`ReactOnSlack`).
+ */
 const commandHandlers: Provider[] = [
   ConnectSlackCommandHandler,
   MarkSlackWorkingCommandHandler,
+  ReactOnSlackCommandHandler,
   OpenSlackOwnerLinkCommandHandler,
   RemoveSlackAccountCommandHandler,
   ReceiveSlackEventCommandHandler,
