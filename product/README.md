@@ -2018,3 +2018,10 @@ earlier note:
   runner took that over: it reads the pointer with CoreGraphics and sends
   `desktop.pointer` while the reader watches (`versions/mvp/01-protocol.md`),
   and the console draws the host's cursor there.
+- `versions/mvp/05-screens.md` drew a stopped session as a pane with a
+  Restart button, and `02-runner.md` §5 kept every session running until
+  someone stopped it. On 2026-11-24, after reading how Orca hibernates
+  agents (`research/session-resume/README.md`), opening a stopped session
+  as its owner restarts it, and the button is the fallback for a restart
+  that fails. The runner also stops, never closes, a session left `done`
+  or `idle` and unwatched for two hours (`RUNNER_IDLE_STOP`).

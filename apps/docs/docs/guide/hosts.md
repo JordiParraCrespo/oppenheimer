@@ -103,7 +103,7 @@ A host is **Offline** when its runner is not connected: the machine is off or as
 
 - Sessions already running keep running in tmux on the host if only the connection is lost. The terminal shows "Host offline" and reconnects on its own, catching up on output.
 - A session you start on an offline host waits as **Queued** and starts when the runner reconnects.
-- After a **reboot**, sessions come back stopped, with a **Restart** button that reopens the agent in the same worktree. A session marked kept (`runner sessions keep`, run from inside it) restarts on its own.
+- After a **reboot**, sessions come back stopped; opening one restarts it in the same worktree, and its **Restart** button does the same. A session marked kept (`runner sessions keep`, run from inside it) restarts on its own.
 - Automations defer runs aimed at an offline host; bots check that a host is online before starting work.
 
 When a terminal says the host is offline, **How to fix** gives the commands to run on the host (`oppenheimer-runner status`, the log, a reinstall) and a troubleshooting prompt you can hand to an agent there.

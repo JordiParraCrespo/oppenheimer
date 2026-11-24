@@ -202,6 +202,7 @@ export {
   useRepositoryBranchesFor,
   useStartInstallation,
 } from './installations.queries';
+export { RESTART_WATCH_MS } from './live-poll';
 export {
   useCancelScheduledMail,
   useConnectGmail,

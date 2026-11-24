@@ -278,6 +278,9 @@ func New(version string) (*App, error) {
 		// The same wrappers, found in the process table: what makes sure an
 		// agent that ignores its hangup does not outlive its session.
 		Wrappers: programStatus,
+		// A person attached on the host keeps a session from stopping as
+		// idle, as the console's attaches do.
+		Clients: terminals,
 	})
 	if err != nil {
 		return nil, err
@@ -401,6 +404,9 @@ func unit(paths Paths) svcdomain.Unit {
 	}
 	if telegram := os.Getenv(EnvTelegram); telegram != "" {
 		env[EnvTelegram] = telegram
+	}
+	if idle := os.Getenv(EnvIdleStop); idle != "" {
+		env[EnvIdleStop] = idle
 	}
 	// The devices and the Argent the installer was told about.
 	for _, key := range []string{EnvDevices, EnvArgentSimulatorServer, EnvArgentToolsURL, EnvArgentToken, EnvDeviceScreenWidth, "ANDROID_HOME"} {
