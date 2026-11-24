@@ -11,6 +11,7 @@ import {
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { clearOf } from '@oppenheimer/shared/agents';
+import { permissionPromptOf } from '@oppenheimer/shared/sessions';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatCover } from '../components/chat-cover';
@@ -72,7 +73,7 @@ export function SessionTerminal({
   reading,
 }: {
   sessionId: string;
-  /** The session's agent: how its prompt is emptied before the chat types into it. */
+  /** The session's agent: how its prompt is emptied before the chat types into it, and how its permission dialog reads. */
   agent: string;
   hostId: string;
   /** The chat this terminal feeds, and how the pane around it reads it. */
@@ -92,6 +93,7 @@ export function SessionTerminal({
   const terminal = useTerminal(createStream, {
     chat,
     chatClear: clearOf(agent),
+    chatPermission: permissionPromptOf(agent),
     onEnd: refresh,
     agentWindow: true,
     onFiles: upload.send,

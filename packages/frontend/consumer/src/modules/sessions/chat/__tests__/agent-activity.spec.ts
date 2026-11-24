@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { readAgentActivity } from '../agent-activity';
+import { readAgentActivity, readCommandTail } from '../agent-activity';
+import * as captured from './claude-screens';
 
 /** A Claude Code screen's foot while it works: output, the spinner, the prompt box under it. */
 function screen(spinner: string): string[] {
@@ -89,5 +90,57 @@ describe('readAgentActivity', () => {
   it('reads nothing off a settled screen or a line of output that only starts with a star, so a done turn is not shown working', () => {
     expect(readAgentActivity(screen('✻ Worked for 4m 31s'))).toBeNull();
     expect(readAgentActivity(screen('* Building… (see the log above)'))).toBeNull();
+  });
+});
+
+describe('the running command’s tail', () => {
+  it('reads the last lines a running command printed under its call, so the chat shows them before the result lands', () => {
+    expect(readAgentActivity(captured.running)?.tail).toEqual({
+      command: './build.sh',
+      lines: [
+        'building step 19 of 40: compiling module_19.ts',
+        'building step 20 of 40: compiling module_20.ts',
+        'building step 21 of 40: compiling module_21.ts',
+      ],
+    });
+  });
+
+  it('keeps the rows as a narrow screen wrapped them, a leading space of the output included', () => {
+    expect(readAgentActivity(captured.runningNarrow)?.tail?.lines).toEqual([
+      ' PASS',
+      'src/modules/sessions/chat/__tests__/agent-activity-number-5.spec.ts',
+      '(12 tests) 35ms',
+    ]);
+  });
+
+  it('reads the running call, not a finished one above it, nor the tip under the spinner', () => {
+    expect(readAgentActivity(captured.runningUnderDone)?.tail?.lines).toEqual([
+      ' PASS',
+      'src/modules/sessions/chat/__tests__/agent-activity-number-5.spec.ts',
+      '(12 tests) 35ms',
+    ]);
+  });
+
+  it('reads a command that printed nothing yet as running with no lines, so no “Running…” reaches the chat', () => {
+    expect(readAgentActivity(captured.runningNoOutput)?.tail).toEqual({
+      command: './test.sh',
+      lines: [],
+    });
+  });
+
+  it('reads no tail where the screen shows none: the fullscreen renderer, a finished turn, a stopped one', () => {
+    const fullscreen = readAgentActivity(captured.fullscreenRunning);
+    expect(fullscreen?.verb).toBe('Ideating');
+    expect(fullscreen?.tail).toBeUndefined();
+    expect(readAgentActivity(captured.done)).toBeNull();
+    expect(readAgentActivity(captured.interrupted)).toBeNull();
+    expect(readCommandTail(captured.done)).toBeNull();
+  });
+
+  it('cuts a long line at its front, so the tail holds the end a person reads', () => {
+    const tail = readCommandTail(['● Bash(make)', `  ⎿  ${'x'.repeat(900)}`, '     (4s)']);
+    expect(tail?.lines).toHaveLength(1);
+    expect(Array.from(tail?.lines[0] ?? '')).toHaveLength(600);
+    expect(tail?.lines[0]?.startsWith('…')).toBe(true);
   });
 });

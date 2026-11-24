@@ -80,6 +80,7 @@ describe('chatExportHeader and chatExportChunk', () => {
             subagents: null,
             allowedBy: null,
             mailDraft: null,
+            visual: null,
             rateLimit: null,
           },
           {
@@ -92,6 +93,7 @@ describe('chatExportHeader and chatExportChunk', () => {
             subagents: null,
             allowedBy: null,
             mailDraft: null,
+            visual: null,
             rateLimit: null,
           },
           {
@@ -104,6 +106,7 @@ describe('chatExportHeader and chatExportChunk', () => {
             subagents: null,
             allowedBy: null,
             mailDraft: null,
+            visual: null,
             rateLimit: null,
           },
           {
@@ -116,6 +119,7 @@ describe('chatExportHeader and chatExportChunk', () => {
             subagents: null,
             allowedBy: null,
             mailDraft: null,
+            visual: null,
             rateLimit: { system: 'Gmail', resetAt: at(5) },
           },
         ],
@@ -159,6 +163,7 @@ describe('chatExportHeader and chatExportChunk', () => {
             subagents: [run('Check #12', 'completed'), run('Check #13', 'timed_out')],
             allowedBy: null,
             mailDraft: null,
+            visual: null,
             rateLimit: null,
           },
         ],

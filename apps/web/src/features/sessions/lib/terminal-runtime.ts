@@ -1,9 +1,11 @@
 import {
   type ChatActivity,
   type ChatFeedbackDraft,
+  type ChatPermissionPrompt,
   createResizeCoalescer,
   type SessionStream,
 } from '@oppenheimer/frontend-consumer';
+import type { PermissionPromptSpec } from '@oppenheimer/shared/sessions';
 import { ClipboardAddon, type IClipboardProvider } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
@@ -13,6 +15,7 @@ import { type ILinkHandler, Terminal } from '@xterm/xterm';
 import { bindAgentActivity } from './agent-activity';
 import { CursorFrames } from './cursor-frames';
 import { bindFeedbackDraft } from './feedback-draft';
+import { bindPermissionPrompt } from './permission-prompt';
 import { bindPromptSuggestion } from './prompt-suggestion';
 import { createSnapshotHandover } from './snapshot-handover';
 import { bindTerminalEcho } from './terminal-echo';
@@ -86,6 +89,16 @@ export interface SessionTerminalOptions {
    * chat to answer (`bindFeedbackDraft`); none once it is gone.
    */
   onFeedback?: (feedback: ChatFeedbackDraft | null) => void;
+  /**
+   * The permission dialog the agent draws before a tool runs, read with its
+   * spec, for the chat to answer (`bindPermissionPrompt`); none once it is
+   * gone. Without it, for an agent whose dialog the console does not read,
+   * nothing is read.
+   */
+  permission?: {
+    spec: PermissionPromptSpec;
+    onPermission: (permission: ChatPermissionPrompt | null) => void;
+  };
 }
 
 /** How much scrollback a kept picture carries: enough to look like the pane. */
@@ -352,11 +365,15 @@ export function mountSessionTerminal(
   const unbindFeedback = options.onFeedback
     ? bindFeedbackDraft(term, options.onFeedback)
     : undefined;
+  const unbindPermission = options.permission
+    ? bindPermissionPrompt(term, options.permission.spec, options.permission.onPermission)
+    : undefined;
 
   return () => {
     unbindActivity?.();
     unbindSuggestion?.();
     unbindFeedback?.();
+    unbindPermission?.();
     if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
     unbindFiles();

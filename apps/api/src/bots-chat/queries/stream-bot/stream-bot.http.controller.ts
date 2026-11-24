@@ -45,7 +45,7 @@ export class StreamBotHttpController {
       '`{ type: "retrying", turnId, reason }` while a turn waits on a provider that refused a call;',
       '`{ type: "subagents", turnId, callId, runs }` where each child of a running `delegate` call is;',
       '`{ type: "message", turnId, messageId }` when a message is stored; `{ type: "turn", turnId, status }` when a turn moves;',
-      '`{ type: "approval", approvalId, status }` and `{ type: "question", questionId, status }` when a card is raised or settled.',
+      '`{ type: "approval", approvalId, status }` and `{ type: "question", questionId, status }` and `{ type: "form", formId, status }` when a card is raised or settled.',
       'The stored conversation is the record; read it again on `ready`, `message` and `turn`. A `keepalive` holds an idle stream open, and the stream ends after 15 minutes so the redial is authenticated again.',
     ].join(' '),
   })

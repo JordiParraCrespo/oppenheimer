@@ -3,10 +3,12 @@ import { type IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { WORKSPACE_BOT_APPROVALS_MAX } from '@oppenheimer/shared';
 import {
   BOT_APPROVAL_REPOSITORY,
+  BOT_FORM_REPOSITORY,
   BOT_QUESTION_REPOSITORY,
   BOT_TURN_REPOSITORY,
 } from '../../bots-chat.di-tokens';
 import type { BotApprovalRepositoryPort } from '../../database/bot-approval.repository.port';
+import type { BotFormRepositoryPort } from '../../database/bot-form.repository.port';
 import type { BotQuestionRepositoryPort } from '../../database/bot-question.repository.port';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import { type BotActivity, FindBotActivityQuery } from './find-bot-activity.query';
@@ -29,19 +31,22 @@ export class FindBotActivityQueryHandler
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
     @Inject(BOT_APPROVAL_REPOSITORY) private readonly approvals: BotApprovalRepositoryPort,
     @Inject(BOT_QUESTION_REPOSITORY) private readonly questions: BotQuestionRepositoryPort,
+    @Inject(BOT_FORM_REPOSITORY) private readonly forms: BotFormRepositoryPort,
   ) {}
 
   async execute({ scope }: FindBotActivityQuery): Promise<BotActivity> {
-    const [working, approvals, questions, failed] = await Promise.all([
+    const [working, approvals, questions, forms, failed] = await Promise.all([
       this.turns.findWorkingBotIds(scope),
       this.approvals.findInWorkspace(scope, 'pending', WORKSPACE_BOT_APPROVALS_MAX),
       this.questions.findPendingBotIds(scope),
+      this.forms.findPendingBotIds(scope),
       this.turns.findBotIdsWithUnreadFailure(scope),
     ]);
     const busy = new Set(working);
     const waiting = new Set([
       ...approvals.map((approval) => approval.botId),
       ...questions,
+      ...forms,
       ...failed.filter((botId) => !busy.has(botId)),
     ]);
     return { working, waitingOnYou: [...waiting] };

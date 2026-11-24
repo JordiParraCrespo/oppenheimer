@@ -8,7 +8,7 @@ import { ToolCallsShownContext } from '../hooks/use-tool-calls-shown';
  * A run of tool calls with the chat's tool calls hidden. What breaks this:
  * the hidden trace still drawn, or hiding it taking the way into a session
  * a call started with it, so the reader has to show every call again to
- * reach that session.
+ * reach that session, or a visual the bot drew going with the trace.
  */
 
 vi.mock('react-i18next', async (importOriginal) => ({
@@ -30,6 +30,7 @@ const step = (callId: string, overrides: Partial<BotToolStep> = {}): BotToolStep
   subagents: null,
   allowedBy: null,
   mailDraft: null,
+  visual: null,
   rateLimit: null,
   ...overrides,
 });
@@ -59,5 +60,25 @@ describe('BotActivity with tool calls hidden', () => {
       </ToolCallsShownContext>,
     );
     expect(container.innerHTML).toBe('');
+  });
+
+  it('keeps a visual the bot drew, its card in place of the hidden trace', () => {
+    render(
+      <ToolCallsShownContext value={false}>
+        <BotActivity
+          steps={[
+            step('a', {
+              name: 'show_visual',
+              visual: {
+                title: 'Deploys this week',
+                blocks: [{ type: 'markdown', text: 'All green.' }],
+              },
+            }),
+          ]}
+        />
+      </ToolCallsShownContext>,
+    );
+    expect(screen.getByText('Deploys this week')).toBeTruthy();
+    expect(screen.getByText('All green.')).toBeTruthy();
   });
 });

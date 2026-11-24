@@ -318,7 +318,6 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		FrameHeaderBytes     int               `json:"frameHeaderBytes"`
 		CreditWindowBytes    int               `json:"creditWindowBytes"`
 		MaxFrameBytes        int               `json:"maxFrameBytes"`
-		HelloCapabilitiesMax int               `json:"helloCapabilitiesMax"`
 		Capabilities         []string          `json:"capabilities"`
 		MaxEventPayloadBytes int               `json:"maxEventPayloadBytes"`
 		ChatEntryMaxBytes    int               `json:"chatEntryMaxBytes"`
@@ -328,6 +327,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		TerminalScreenMax    int               `json:"terminalScreenMaxBytes"`
 		ComputerScreenEdge   int               `json:"computerScreenMaxEdge"`
 		ComputerScreenshot   int               `json:"computerScreenshotMaxBytes"`
+		HelloCapabilitiesMax int               `json:"helloCapabilitiesMax"`
 	}
 	var schema struct {
 		Constants json.RawMessage `json:"x-constants"`
@@ -342,6 +342,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 	}
 	for name, pair := range map[string][2]any{
 		"protocolVersion":      {constants.ProtocolVersion, link.ProtocolVersion},
+		"helloCapabilitiesMax": {constants.HelloCapabilitiesMax, link.HelloCapabilitiesMax},
 		"HELLO_EXPECTED":       {constants.CloseCodes["HELLO_EXPECTED"], link.CloseHelloExpected},
 		"HELLO_TIMEOUT":        {constants.CloseCodes["HELLO_TIMEOUT"], link.CloseHelloTimeout},
 		"REPLACED":             {constants.CloseCodes["REPLACED"], link.CloseReplaced},
@@ -353,7 +354,6 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		"frameHeaderBytes":     {constants.FrameHeaderBytes, link.FrameHeader},
 		"creditWindowBytes":    {constants.CreditWindowBytes, link.CreditWindow},
 		"maxFrameBytes":        {constants.MaxFrameBytes, link.MaxFrameBytes},
-		"helloCapabilitiesMax": {constants.HelloCapabilitiesMax, link.HelloCapabilitiesMax},
 		"maxEventPayloadBytes": {constants.MaxEventPayloadBytes, link.MaxEventPayloadBytes},
 		"chatEntryMaxBytes":    {constants.ChatEntryMaxBytes, link.ChatEntryMaxBytes},
 		"chatBatchMaxEntries":  {constants.ChatBatchMaxEntries, link.ChatBatchMaxEntries},

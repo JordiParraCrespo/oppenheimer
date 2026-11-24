@@ -348,6 +348,37 @@ function TurnHeader({
  * rows and columns, the header row on the same wash), each scrolling
  * sideways in its own box when it is wider than the column. A fenced block is a `ChatCodeBlock` the renderer draws.
  */
+/**
+ * How a table reads in the chat: a framed card, its 10px corners on a
+ * hairline; the header row on the wash over a hairline, hairlines between
+ * rows and columns. One set of rules for a reply's Markdown tables
+ * (`ChatReply`) and every other table the chat draws (`ChatTable`), so the two
+ * never drift apart.
+ */
+const CHAT_TABLE_RULES = cn(
+  '[&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:rounded-sm [&_table]:border [&_table]:border-border-subtle [&_table]:text-[14px] [&_table]:leading-normal [&_table]:tabular-nums',
+  '[&_:is(th,td)]:border-border-subtle [&_:is(th,td):not(:last-child)]:border-e [&_:is(th,td)]:px-3 [&_:is(th,td)]:text-start',
+  '[&_th]:border-b [&_th]:bg-chat-wash [&_th]:py-2 [&_th]:font-semibold',
+  '[&_thead_tr:first-child_th:first-child]:rounded-ss-[9px] [&_thead_tr:first-child_th:last-child]:rounded-se-[9px]',
+  '[&_td]:border-b [&_td]:py-2.5 [&_td]:align-top [&_tbody_tr:last-child_td]:border-b-0',
+);
+
+/**
+ * A table in the chat that is not a reply's Markdown (a visual's table): the
+ * `<table>` goes inside, and reads exactly as a reply's tables do, at the
+ * chat's 14px, scrolling sideways in its own box when it is wider than the
+ * column.
+ */
+function ChatTable({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="chat-table"
+      className={cn('min-w-0 overflow-x-auto text-fg', CHAT_TABLE_RULES, className)}
+      {...props}
+    />
+  );
+}
+
 function ChatReply({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -369,13 +400,7 @@ function ChatReply({ className, ...props }: React.ComponentProps<'div'>) {
         '[&_summary]:cursor-pointer [&_summary]:font-medium',
         // Inline code, on the chat's wash (a fenced block is a `ChatCodeBlock`)
         '[&_:not(pre)>code]:rounded-[5px] [&_:not(pre)>code]:bg-chat-wash [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.86em]',
-        // Tables: a framed card, its 10px corners on a hairline; the header
-        // row on the wash over a hairline, hairlines between rows and columns
-        '[&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:rounded-sm [&_table]:border [&_table]:border-border-subtle [&_table]:text-[14px] [&_table]:leading-normal [&_table]:tabular-nums',
-        '[&_:is(th,td)]:border-border-subtle [&_:is(th,td):not(:last-child)]:border-e [&_:is(th,td)]:px-3 [&_:is(th,td)]:text-start',
-        '[&_th]:border-b [&_th]:bg-chat-wash [&_th]:py-2 [&_th]:font-semibold',
-        '[&_thead_tr:first-child_th:first-child]:rounded-ss-[9px] [&_thead_tr:first-child_th:last-child]:rounded-se-[9px]',
-        '[&_td]:border-b [&_td]:py-2.5 [&_td]:align-top [&_tbody_tr:last-child_td]:border-b-0',
+        CHAT_TABLE_RULES,
         className,
       )}
       {...props}
@@ -515,5 +540,5 @@ function StreamingCaret({ className }: { className?: string }) {
   );
 }
 
-export { ChatAttachment, ChatCommand, ChatCommandText, ChatMention, ChatReaction, ChatReactionBar, ChatReply, ChatTranscript, ChatUserMessage, MessageTrail, StreamingCaret, TurnHeader };
+export { ChatAttachment, ChatCommand, ChatCommandText, ChatMention, ChatReaction, ChatReactionBar, ChatReply, ChatTable, ChatTranscript, ChatUserMessage, MessageTrail, StreamingCaret, TurnHeader };
 export type { ChatReactionBarLabels, TurnHeaderLabels, TurnState };
