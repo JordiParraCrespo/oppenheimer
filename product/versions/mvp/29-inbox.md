@@ -682,8 +682,10 @@ the way Mark as unread is set. On top of "A notification in this browser":
   when the console opened is not announced. The reader's own Mark as unread
   is blue too but is theirs, so it is never told.
 - **A long wait is told once more.** A session still amber or blue thirty
-  minutes after it got there (by the host's `observedSince`, else when the
-  tab first saw it) raises one reminder, "<name> has waited 30 minutes".
+  minutes after it got there (by the host's `observedSince` when it moves
+  while the tab looks, else when the tab saw it; a session already waiting
+  when the console opens is reminded thirty minutes after that) raises one
+  reminder, "<name> has waited 30 minutes".
   Once per stay: a session that moves on and comes back starts a new clock.
   An idle or working session is never "stale". The console looks once a
   minute, so the reminder lands within a minute of the thirty.

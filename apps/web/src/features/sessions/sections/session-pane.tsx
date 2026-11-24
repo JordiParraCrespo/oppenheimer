@@ -19,7 +19,6 @@ import { useClearUnreadOnOpen } from '../hooks/use-session-unread';
 import { DEFAULT_SESSION_VIEW, type PaneReading, type SessionView } from '../lib/chat-blocks';
 import { createFileHandOff } from '../lib/file-hand-off';
 import type { PreviewTab } from '../lib/preview-open';
-import { LatencyReadout } from './latency-readout';
 import { SessionBar } from './session-bar';
 import { SessionChat } from './session-chat';
 import { SessionCloud } from './session-cloud';
@@ -184,7 +183,6 @@ export function SessionPane({
         head: null,
         statusItems: (
           <>
-            <LatencyReadout sessionId={session.id} />
             {chatOffered ? <ChatViewToggle view={view} onViewChange={setView} /> : null}
             <SessionShareButton sessionId={session.id} place="status" />
           </>
@@ -199,7 +197,7 @@ export function SessionPane({
 
   // A cloud session launched at its vendor has no host and no terminal of
   // ours to attach to or start: it is followed at the vendor. Its bar is its
-  // name alone, with none of a host session's Share or latency.
+  // name alone, with none of a host session's Share.
   if (session.cloud) {
     return (
       <>

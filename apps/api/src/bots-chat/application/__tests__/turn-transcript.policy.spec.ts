@@ -138,6 +138,7 @@ describe('TurnTranscript', () => {
         subagents: null,
         allowedBy: null,
         mailDraft: null,
+        visual: null,
         rateLimit: null,
       },
       {
@@ -150,6 +151,7 @@ describe('TurnTranscript', () => {
         subagents: null,
         allowedBy: null,
         mailDraft: null,
+        visual: null,
         rateLimit: null,
       },
     ]);

@@ -141,7 +141,7 @@ export function SessionSidePane({
       aria-label={t('sessions.side.label')}
       className="flex w-110 min-w-90 shrink-0 flex-col border-l border-border-subtle bg-card"
     >
-      <header className="flex min-h-11.5 items-center gap-1 border-b border-border-subtle pr-2">
+      <header className="flex min-h-11.5 items-center gap-1 border-b border-border-subtle px-2">
         <ChatTabStrip
           className="min-w-0 flex-1 bg-transparent"
           onNew={() => side.show(null)}

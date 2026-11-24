@@ -11,6 +11,7 @@ import {
 } from '../lib/chat-blocks';
 import { chatToolIcon } from '../lib/chat-icons';
 import { exploredPartsOf } from '../lib/explored';
+import { ChatCommandTail } from './chat-command-tail';
 import { ChatToolRow } from './chat-tool-row';
 import { ChatToolTarget } from './chat-tool-target';
 import { ElapsedClock } from './elapsed-clock';
@@ -21,7 +22,8 @@ import { ElapsedClock } from './elapsed-clock';
  * line opens to the calls. It stays folded while the agent is still in it,
  * so a long run never pushes its words off screen: the call in flight is the
  * line under it, saying what it is doing now, in the present tense, with its
- * clock running. A run that only looked around (`explored`) says so instead
+ * clock running, and for a command what it last printed under it, off the
+ * terminal (`ChatCommandTail`). A run that only looked around (`explored`) says so instead
  * of counting, "Explored" ("Exploring" while it is still at it) with what it
  * read, searched and listed after it, and opens to the same rows.
  */
@@ -90,6 +92,7 @@ export function ChatToolGroup({
           }
         />
       ) : null}
+      {running?.kind === 'command' ? <ChatCommandTail command={running.target} /> : null}
     </div>
   );
 }

@@ -161,11 +161,11 @@ export function isQuietRoutineRun(block: ChatTurnBlock, toolCallsShown: boolean)
 
 /**
  * Whether a tool step made something the chat draws even while its tool
- * calls are hidden (`BotActivity`): a session to open, a draft's card. A new
+ * calls are hidden (`BotActivity`): a session to open, a draft's card, a visual. A new
  * thing of that kind is a line here, so a run that made one is never hidden.
  */
 function stepShowsWithToolsHidden(step: BotToolStep): boolean {
-  return Boolean(step.sessionId || step.mailDraft);
+  return Boolean(step.sessionId || step.mailDraft || step.visual);
 }
 
 /**

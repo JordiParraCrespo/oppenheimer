@@ -216,6 +216,22 @@
       "dismissed": "You dismissed: {{summary}}",
       "failed": "Could not send your answers."
     },
+    "form": {
+      "label": "Form",
+      "submit": "Submit",
+      "sending": "Sending…",
+      "sent": "Sent",
+      "dismiss": "Not now",
+      "required": "Required",
+      "optional": "Optional",
+      "choose": "Choose one",
+      "submitted": "You sent: {{title}}",
+      "dismissed": "You dismissed: {{title}}",
+      "blank": "Left blank",
+      "failed": "Could not send the form.",
+      "fixFields": "Check the highlighted fields.",
+      "loadFailed": "Could not read the form this bot is waiting on."
+    },
     "approval": {
       "needsInput": "Needs input",
       "title": "{{name}} wants to do this",
@@ -918,6 +934,11 @@
     "manage": "Bots in {{section}}",
     "checkedHint": "Checked bots show in {{section}}.",
     "manageAll": "Manage in {{employees}}",
-    "hide": "Hide from {{section}}"
+    "hide": "Hide from {{section}}",
+    "faceWaiting": "{{name}}, needs you",
+    "faceUnread": "{{name}}, unread",
+    "faceWorking": "{{name}}, working",
+    "more_one": "{{count}} more bot: show the list",
+    "more_other": "{{count}} more bots: show the list"
   }
 }

@@ -11,6 +11,7 @@ module.exports = require('@oppenheimer/tsconfig/depcruise/frontend-kit.cjs')({
     'dictation',
     'chat',
     'desktop',
+    'visual',
   ],
   middle: ['layout', 'pairing'],
   top: ['shell', 'auth'],

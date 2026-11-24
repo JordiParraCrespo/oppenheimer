@@ -121,7 +121,7 @@ function EffortSlider<V extends string>({
       onLostPointerCapture={onLostPointerCapture}
       onKeyDown={onKeyDown}
       className={cn(
-        'relative h-7 cursor-pointer touch-none overflow-hidden rounded-sm bg-hover-surface outline-none select-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+        'relative h-(--control-h-sm) cursor-pointer touch-none overflow-hidden rounded-sm bg-hover-surface outline-none select-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
         className,
       )}
       {...props}

@@ -1911,6 +1911,21 @@ earlier note:
   it is told apart from what the owner wrote, and the App's comments wake
   nothing (`loopGuard`), so an answer never asks a bot again. The guide's
   "writing to a bot only in the console" stopped holding the same day.
+- `research/visuals/README.md` §6 and `research/generative-ui-in-chat.md` §6
+  proposed visuals in the chat and left them unbuilt. On 2026-11-24 the
+  owner asked for all of it: Mermaid and math in every chat's Markdown, one
+  typed visual format (`@oppenheimer/shared/schemas/visual`) drawn by bots
+  (`show_visual`) and sessions (`runner sessions show`, the runner's MCP
+  `show_visual`), an `html` block run in a sandboxed frame on
+  `visuals.<preview domain>` behind the `visual_html` flag, a permission card
+  in the session chat, a form bots can ask the person to fill, a running
+  command's live tail, and the chat's small markers. Picks taken where §8 of
+  each asked: no chart library, the frame's network closed, a visual placed
+  where it was called, and a link in a visual opening only once the reader
+  says so. The owner kept HTML visuals on (2026-11-24) knowing one residue a
+  page cannot close: a fragment's script that navigates its frame or inserts
+  a frame is refused and the visual ended, but the browser looks the target's
+  host up in DNS first; `visual_html` turns HTML off.
 - `versions/mvp/29-inbox.md`, "As built: the Inbox in Plan" (2026-10-29),
   made the Inbox Plan's first section at `/plan/inbox`, with no rail item.
   On 2026-11-24 the owner asked for it to be one of the platform's core
@@ -2050,6 +2065,11 @@ earlier note:
   bot to run `runner browser on` after saying "do it yourself", did not want
   that guardrail: a bot changes them with `set_host_settings` when the
   person asks in their own chat ("The host's switches").
+- `versions/mvp/22-direct-terminal-path.md` (step 0) drew the keystroke
+  round trip, `echo p50 / p95 ms · path`, in the session's bar when a
+  `localStorage` switch was set, and gated each step on it. On 2026-11-24
+  the owner did not want it in the header: it is gone, and the netsim
+  bench times keydown to echo in the page instead.
 - `versions/mvp/29-inbox.md` ("A notification in this browser",
   2026-11-24) told only a session that comes to wait on you and an agent's
   notice. The same day the owner asked for more: a turn that ends (the
