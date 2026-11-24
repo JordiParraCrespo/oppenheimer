@@ -207,9 +207,9 @@ export function claudeMessageParts(
 /**
  * The size of definitions, in characters, past which the tools that may wait
  * are deferred: about 5,000 tokens. Below it a search costs a round trip for
- * little; above it, a bot with every area on sent about 78,000 tokens a
- * request with every tool loaded and about 20,000 with them deferred
- * (measured 2026-11-24).
+ * little; above it, a bot with every area on sent about 77,000 tokens a
+ * request with every tool loaded and about 25,000 with a capability's tools
+ * deferred (measured 2026-11-24).
  */
 export const DEFER_TOOLS_ABOVE_CHARS = 20_000;
 

@@ -22,6 +22,7 @@ import { BotNoticeToolsFactory } from '../../apps/api/src/bots-chat/application/
 import { BotQuestionToolsFactory } from '../../apps/api/src/bots-chat/application/bot-question-tools.factory';
 import { BotSelfToolsFactory } from '../../apps/api/src/bots-chat/application/bot-self-tools.factory';
 import { BotSkillToolsFactory } from '../../apps/api/src/bots-chat/application/bot-skill-tools.factory';
+import { alwaysLoaded } from '../../apps/api/src/bots-chat/application/bot-toolbox.factory';
 import { DEFER_TOOLS_ABOVE_CHARS } from '../../packages/backend/agents/src/claude/claude-options';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -177,10 +178,10 @@ function toolSearchMode(): 'engine' | 'true' | 'false' {
   return mode;
 }
 
-/** The bot's own tools (its areas grouped `self`), which the engine never defers. */
+/** The tools the engine never defers (`alwaysLoaded`): the bot's own, and those a built-in skill calls. */
 function ownToolNames(): ReadonlySet<string> {
   const none = undefined as never;
-  const areas = [
+  return alwaysLoaded([
     new BotSelfToolsFactory(none, none, none),
     new BotSkillToolsFactory(none, none),
     new BotGuideToolsFactory(none),
@@ -188,8 +189,7 @@ function ownToolNames(): ReadonlySet<string> {
     new BotLoopToolsFactory(none, none),
     new BotQuestionToolsFactory(none, none),
     new BotNoticeToolsFactory(none, none),
-  ];
-  return new Set(areas.flatMap((area) => area.definitions().map((tool) => tool.name)));
+  ]);
 }
 
 function claudeCode(model: string): Transport['turn'] {

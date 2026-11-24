@@ -39,8 +39,10 @@ BOT_EVAL_TOOL_SEARCH=true pnpm eval:bot-capability-skills   # defer every tool t
 engine would (`claudeToolSearch`), so the `*-all` cases defer and the others
 do not.
 
-On 2026-11-24, with Sonnet 5.5 on the Claude Code login, 3 runs a case:
-24/27 on main (every tool loaded, the how-to in the system prompt; a bot
-with every area on never offered to watch the inbox) and 27/27 with the
-skills and the tool search, the skill read before the capability was used
-in 6 of 6.
+On 2026-11-24, with Sonnet 5.5 on the Claude Code login: 24/27 on main
+(3 runs a case; every tool loaded, the how-to in the system prompt; a bot
+with every area on never offered to watch the inbox) and 36/36 with the
+skills and the tool search (4 runs a case), the skill read before the
+capability was used in 8 of 8. With the tools a skill calls deferred too, a
+bot with every area on sometimes skipped the skill's check and offered a
+watch that already ran (16/18): those tools stay loaded (`alwaysLoaded`).

@@ -11,6 +11,7 @@ import {
 import { ownerLacksPermission } from '../domain/bot-owner-permission.policy';
 import type { BotPromptTool } from '../domain/bot-prompt.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
+import { BOT_BUILT_IN_SKILLS } from '../domain/bot-skill.policy';
 import {
   BotSkillNudge,
   carrySkillNudge,
@@ -209,20 +210,13 @@ export class BotToolboxFactory {
     context: BotToolContext,
     held: HeldScopes,
   ): BotEngineTool[] {
-    const own = new Set(
-      this.areas
-        .filter((area) => area.group === 'self')
-        .flatMap((area) => area.definitions().map((definition) => definition.name)),
-    );
+    const loaded = alwaysLoaded(this.areas);
     return definitions.map((definition) => {
       const tool = definition.bind(context);
       // The permission comes before asking: a refused tool raises no card.
       return {
         ...tool,
-        // A capability's tool may wait until the model looks for it (tool
-        // search, 2026-11-23); the bot's own (memory, skills, questions,
-        // notices) are always there, since it reaches for them unprompted.
-        deferrable: !own.has(definition.name),
+        deferrable: !loaded.has(definition.name),
         run: async (input, options) =>
           (await refusalFor(definition, held)) ?? tool.run(input, options),
       };
@@ -323,6 +317,23 @@ function nudging(tools: readonly BotEngineTool[], nudge: BotSkillNudge): BotEngi
       return { ...result, content: carrySkillNudge(result.content, due) };
     },
   }));
+}
+
+/**
+ * The tools never left waiting behind the tool search (2026-11-23): the
+ * bot's own (memory, skills, questions, notices), which it reaches for
+ * unprompted, and every tool a built-in skill's steps call. An eval found a
+ * bot that read `watch-inbox` and skipped its first step, the check with
+ * `update_routine`, when that tool was deferred, then offered a watch that
+ * already ran. Any other tool is a capability's and may wait.
+ */
+export function alwaysLoaded(areas: readonly BotToolArea[]): ReadonlySet<string> {
+  return new Set([
+    ...areas
+      .filter((area) => area.group === 'self')
+      .flatMap((area) => area.definitions().map((definition) => definition.name)),
+    ...BOT_BUILT_IN_SKILLS.flatMap((skill) => skill.needsTools),
+  ]);
 }
 
 /** Where a bot's tools stand: its preset and what its owner set. */
