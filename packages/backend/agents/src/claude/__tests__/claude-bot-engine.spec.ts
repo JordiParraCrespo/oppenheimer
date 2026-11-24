@@ -297,6 +297,77 @@ describe('ClaudeBotEngine', () => {
     expect(events.at(-1)).toEqual({ type: 'done', reason: 'completed' });
   });
 
+  // What breaks this: the prompt, a description or an answer names a tool
+  // bare (`get_session`), the model calls it by that name, and Claude Code
+  // answers "No such tool" without running it, so the bot gives up on work it
+  // could do (2026-11-24: about half of a bot eval's runs).
+  it('names our tools as Claude Code serves them wherever the model reads them, and as ours in what the chat shows', async () => {
+    const start: BotEngineTool = {
+      name: 'start_session',
+      description: 'Starts a session. Then call get_session to follow it.',
+      inputSchema: { type: 'object', properties: {} },
+      run: async () => ({
+        content: 'Started. get_session shows it; resend_to_session_x is not ours.',
+      }),
+    };
+    const get: BotEngineTool = {
+      name: 'get_session',
+      description: 'Reads a session.',
+      inputSchema: { type: 'object', properties: {} },
+      run: async () => ({ content: '' }),
+    };
+    let listed: { name: string; description?: string }[] = [];
+    let modelRead: unknown;
+    const { seen } = scripted(async function* (options) {
+      const server = (options.mcpServers as Record<string, { instance: McpServer }>).oppenheimer
+        .instance;
+      const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+      await server.connect(serverSide);
+      const client = new Client({ name: 'test', version: '1.0.0' });
+      await client.connect(clientSide);
+      listed = (await client.listTools()).tools;
+      const started = await client.callTool({ name: 'start_session', arguments: {} });
+      modelRead = started.content;
+      await client.close();
+      yield assistant([
+        { type: 'tool_use', id: 'toolu_1', name: 'mcp__oppenheimer__start_session', input: {} },
+      ]);
+      yield toolResults([
+        { type: 'tool_result', tool_use_id: 'toolu_1', content: started.content, is_error: false },
+      ]);
+      yield success();
+    });
+
+    const events = await collect(
+      new ClaudeBotEngine().run(
+        request({
+          systemPrompt: 'Use start_session, then get_session. mcp__oppenheimer__get_session too.',
+          tools: [start, get],
+        }),
+      ),
+    );
+
+    expect(seen.options?.systemPrompt).toBe(
+      'Use mcp__oppenheimer__start_session, then mcp__oppenheimer__get_session. mcp__oppenheimer__get_session too.',
+    );
+    expect(listed.find((tool) => tool.name === 'start_session')?.description).toBe(
+      'Starts a session. Then call mcp__oppenheimer__get_session to follow it.',
+    );
+    expect(modelRead).toEqual([
+      {
+        type: 'text',
+        text: 'Started. mcp__oppenheimer__get_session shows it; resend_to_session_x is not ours.',
+      },
+    ]);
+    expect(events).toContainEqual({
+      type: 'tool.finished',
+      callId: 'toolu_1',
+      name: 'start_session',
+      output: 'Started. get_session shows it; resend_to_session_x is not ours.',
+      isError: false,
+    });
+  });
+
   it('hands back what a call made on its own end, matched by the tool use Claude Code names, never to the model', async () => {
     const start: BotEngineTool = {
       name: 'start_session',
@@ -587,7 +658,7 @@ describe('ClaudeBotEngine', () => {
 
   // What breaks this: the transcript in the system prompt, which then
   // changed on every turn, so the provider's prompt cache missed all of it.
-  it('keeps the system prompt as the bot wrote it and opens the message with earlier turns', async () => {
+  it('keeps the system prompt as the bot wrote it, with no tool to name, and opens the message with earlier turns', async () => {
     const { seen } = scripted(() => [success()]);
 
     await collect(

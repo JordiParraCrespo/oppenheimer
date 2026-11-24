@@ -4,7 +4,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BotTurnRequest } from '../bot-engine';
 import { BOT_COMPACTION_PERCENT, compactionThreshold } from '../bot-engine';
 import { type MessagePart, messageParts } from '../turn';
-import { qualifiedToolName, TOOL_SERVER_NAME } from './claude-tool-server';
+import { qualifiedToolName, qualifyToolNames, TOOL_SERVER_NAME } from './claude-tool-server';
 
 /** z.ai's Anthropic-compatible endpoint, the default for provider `glm`. */
 export const GLM_BASE_URL = 'https://api.z.ai/api/anthropic';
@@ -252,7 +252,11 @@ export function claudeOptions(
     request.engineTools === false ? [] : [...BUILT_IN_TOOLS, ...(search ? [TOOL_SEARCH_TOOL] : [])];
   return {
     model: request.model,
-    systemPrompt: request.systemPrompt,
+    // Named as Claude Code serves them, so a call by a name the prompt gives runs.
+    systemPrompt: qualifyToolNames(
+      request.systemPrompt,
+      request.tools.map((tool) => tool.name),
+    ),
     cwd: dirs.cwd,
     env: { ...claudeEnv(request, dirs), ENABLE_TOOL_SEARCH: search ? 'true' : 'false' },
     tools: builtIns,

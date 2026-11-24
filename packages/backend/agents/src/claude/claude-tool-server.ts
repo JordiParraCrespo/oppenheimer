@@ -15,6 +15,28 @@ export function qualifiedToolName(name: string): string {
   return `${TOOL_PREFIX}${name}`;
 }
 
+/**
+ * `text` with each of our tool names as Claude Code serves it. Our prompts,
+ * descriptions and answers name tools bare (`send_to_session`), and a model
+ * that calls one by that name is answered "No such tool" without the tool
+ * running; given the served name, it calls that. A name already qualified
+ * (the prefix ends in `_`), or inside a longer word, is left as it is.
+ */
+export function qualifyToolNames(text: string, names: readonly string[]): string {
+  if (names.length === 0 || !text) return text;
+  const alternatives = [...names]
+    .sort((a, b) => b.length - a.length)
+    .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('|');
+  const bare = new RegExp(`(?<![A-Za-z0-9_])(${alternatives})(?![A-Za-z0-9_])`, 'g');
+  return text.replace(bare, (name) => qualifiedToolName(name));
+}
+
+/** `text` with our tools named as we name them again: what `qualifyToolNames` added, taken off. */
+export function unqualifyToolNames(text: string): string {
+  return text.split(TOOL_PREFIX).join('');
+}
+
 /** Our name for a tool Claude Code reports: the MCP prefix stripped, built-ins as they are. */
 export function botToolName(name: string): string {
   return name.startsWith(TOOL_PREFIX) ? name.slice(TOOL_PREFIX.length) : name;
@@ -38,11 +60,12 @@ export function createToolServer(
     { capabilities: { tools: {} } },
   );
   const byName = new Map(tools.map((tool) => [tool.name, tool]));
+  const names = tools.map((tool) => tool.name);
 
   mcp.server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: tools.map((tool) => ({
       name: tool.name,
-      description: tool.description,
+      description: qualifyToolNames(tool.description, names),
       inputSchema: { type: 'object' as const, ...tool.inputSchema },
       // A tool that may not wait is loaded up front; the rest Claude Code may
       // defer behind its tool search (`claudeToolSearch`).
@@ -67,7 +90,7 @@ export function createToolServer(
     });
     made.record(callId, result.data);
     const text = await deliverSteers(
-      result.content,
+      qualifyToolNames(result.content, names),
       { steering: turn.steering, signal: turn.signal, callId },
       made,
     );
