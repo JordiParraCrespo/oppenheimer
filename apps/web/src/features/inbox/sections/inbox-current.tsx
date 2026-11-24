@@ -68,7 +68,9 @@ export function InboxCurrent() {
   const away = (action: InboxMarkActionName, exit: 'right' | 'up') => {
     if (!item) return;
     putAway(item.key, exit, () => {
-      search.advance(next);
+      // At the end of the stack the address keeps naming the item: on a phone
+      // the deck stays open, to say it is clear or show a write that failed.
+      search.advance(next ?? item.key);
       marks.apply(action, item);
     });
   };
@@ -92,6 +94,8 @@ export function InboxCurrent() {
           onNext: () => search.advance(next ?? open[0]?.key ?? null),
           onPrevious: () => search.advance(previous ?? open.at(-1)?.key ?? null),
           onAnswer: (n) => {
+            // A card on its way out takes no answer.
+            if (leaving) return false;
             const answer = inboxDeckAnswer(deck.current, n);
             answer?.click();
             return answer !== null;
