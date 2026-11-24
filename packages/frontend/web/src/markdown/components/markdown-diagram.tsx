@@ -84,9 +84,10 @@ function DiagramPicture({ diagram, alt }: { diagram: DrawnDiagram; alt: string }
           style={{
             display: 'block',
             // A tall drawing (a pie) shrinks to the chat's height, never stretched.
-            width: 'auto',
-            maxWidth: `min(100%, ${diagram.width}px)`,
+            width: '100%',
+            maxWidth: diagram.width,
             maxHeight: 'min(28rem, 70vh)',
+            objectFit: 'contain',
             minWidth: floor,
             height: 'auto',
             margin: '0 auto',
