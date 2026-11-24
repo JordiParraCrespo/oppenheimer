@@ -1,4 +1,5 @@
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
+import { inboxCardKey } from '@/features/inbox/lib/inbox-card-key';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
 import { InboxApprovalCard } from '@/features/inbox/sections/inbox-approval-card';
 import { InboxBotNoticeCard } from '@/features/inbox/sections/inbox-bot-notice-card';
@@ -10,10 +11,8 @@ import { InboxSessionCard } from '@/features/inbox/sections/inbox-session-card';
 import { InboxTaskCard } from '@/features/inbox/sections/inbox-task-card';
 
 /**
- * The item in the reading pane as its kind's message. Keyed by the item, so
- * the next one rises in fresh with its own answer state — a session by the
- * session instead, so a refused answer stays over the decision it now waits
- * on.
+ * The item in the reading pane as its kind's message, keyed as the deck is
+ * (`inboxCardKey`): the next one rises in fresh with its own answer state.
  */
 export function InboxItemMessage({
   item,
@@ -34,7 +33,15 @@ export function InboxItemMessage({
     case 'notice':
       return <InboxNoticeCard key={item.key} item={item} copy={copy} from={from} age={age} />;
     case 'botNotice':
-      return <InboxBotNoticeCard key={item.key} item={item} copy={copy} from={from} age={age} />;
+      return (
+        <InboxBotNoticeCard
+          key={inboxCardKey(item)}
+          item={item}
+          copy={copy}
+          from={from}
+          age={age}
+        />
+      );
     case 'run':
       return <InboxRunCard key={item.key} item={item} copy={copy} from={from} age={age} />;
     case 'report':
@@ -43,13 +50,7 @@ export function InboxItemMessage({
       return <InboxTaskCard key={item.key} item={item} copy={copy} from={from} age={age} />;
     case 'session':
       return (
-        <InboxSessionCard
-          key={`session:${item.session.id}`}
-          item={item}
-          copy={copy}
-          from={from}
-          age={age}
-        />
+        <InboxSessionCard key={inboxCardKey(item)} item={item} copy={copy} from={from} age={age} />
       );
   }
 }

@@ -172,7 +172,7 @@ function RepositoryRow({
                 aria-label={branchLabel}
                 aria-haspopup="listbox"
                 data-slot="repository-row-branch"
-                className="flex h-7 w-full items-center gap-1.5 rounded-pill bg-hover-surface pr-2 pl-2.5 text-fg-subtle outline-none transition-[background-color,box-shadow] duration-fast ease-standard hover:bg-control-hover data-popup-open:bg-selected-surface data-popup-open:ring-3 data-popup-open:ring-ring focus-visible:ring-3 focus-visible:ring-ring"
+                className="flex h-(--control-h-sm) w-full items-center gap-1.5 rounded-pill bg-hover-surface pr-2 pl-2.5 text-fg-subtle outline-none transition-[background-color,box-shadow] duration-fast ease-standard hover:bg-control-hover data-popup-open:bg-selected-surface data-popup-open:ring-3 data-popup-open:ring-ring focus-visible:ring-3 focus-visible:ring-ring"
               />
             }
           >

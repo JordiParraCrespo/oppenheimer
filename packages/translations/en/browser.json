@@ -1216,6 +1216,10 @@
       "markUnread": "Mark as unread",
       "markRead": "Mark as read",
       "unreadLabel": "Unread",
+      "mute": "Mute notifications",
+      "unmute": "Unmute notifications",
+      "mutedLabel": "Notifications muted",
+      "notifyTitle": "Notifications & read",
       "hide": "Hide",
       "show": "Show",
       "hidden": "Hidden",
@@ -2771,7 +2775,12 @@
       "manage": "Bots in {{section}}",
       "checkedHint": "Checked bots show in {{section}}.",
       "manageAll": "Manage in {{employees}}",
-      "hide": "Hide from {{section}}"
+      "hide": "Hide from {{section}}",
+      "faceWaiting": "{{name}}, needs you",
+      "faceUnread": "{{name}}, unread",
+      "faceWorking": "{{name}}, working",
+      "more_one": "{{count}} more bot: show the list",
+      "more_other": "{{count}} more bots: show the list"
     },
     "mobile": {
       "search": "Search employees",
@@ -4172,7 +4181,10 @@
     },
     "botNotice": {
       "title": "{{bot}} has news for you",
-      "openChat": "Open chat"
+      "openChat": "Open chat",
+      "reply": "Reply here",
+      "hideReply": "Hide chat",
+      "chat": "Chat with {{bot}}"
     },
     "report": {
       "sender": "An agent",
@@ -4207,6 +4219,12 @@
       "previous": "Previous",
       "next": "Next",
       "done": "Done"
+    },
+    "alert": {
+      "doneTitle": "{{name}} finished its turn",
+      "doneBody": "Open the session to see what it did.",
+      "staleTitle": "{{name}} has waited 30 minutes",
+      "staleBody": "It still needs you. Open the session to pick it up."
     }
   },
   "settings": {
