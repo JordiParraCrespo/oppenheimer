@@ -51,7 +51,7 @@
         },
         "capabilities": {
           "default": [],
-          "maxItems": 32,
+          "maxItems": 256,
           "type": "array",
           "items": {
             "type": "string",
@@ -3876,6 +3876,7 @@
       "session.window.agent",
       "host.settings"
     ],
+    "helloCapabilitiesMax": 256,
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,
     "chatBatchMaxEntries": 256,
