@@ -1,13 +1,13 @@
 import { EmptyState } from '@oppenheimer/design-system-mobile/empty-state';
 import { useBotLive, useSuspenseBotConversation } from '@oppenheimer/frontend-consumer/react';
-import { useRef } from 'react';
+import { useStickToBottom } from '@oppenheimer/frontend-mobile';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 import { TranscriptLine } from '../components/transcript-line';
 import { transcriptRows } from '../lib/transcript-rows';
 
 /**
- * A bot's chat, following the newest line: what is stored, and the words a
+ * A bot's chat, following the newest line while the reader is at the foot: what is stored, and the words a
  * turn is writing as they stream (`useBotLive`, the same stream the console
  * reads). Under a Suspense boundary: the conversation is always there.
  */
@@ -15,7 +15,7 @@ export function BotTranscript({ botId, bottomInset }: { botId: string; bottomIns
   const { t } = useTranslation();
   const { data: conversation } = useSuspenseBotConversation(botId);
   const live = useBotLive(botId);
-  const scroller = useRef<ScrollView>(null);
+  const stick = useStickToBottom();
   const rows = transcriptRows(conversation, live.text);
 
   if (rows.length === 0) {
@@ -32,11 +32,10 @@ export function BotTranscript({ botId, bottomInset }: { botId: string; bottomIns
 
   return (
     <ScrollView
-      ref={scroller}
+      {...stick}
       className="flex-1"
       contentContainerClassName="gap-4 px-4 pt-4"
       contentContainerStyle={{ paddingBottom: bottomInset + 16 }}
-      onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })}
     >
       {rows.map((row) => (
         <TranscriptLine

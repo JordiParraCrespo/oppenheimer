@@ -4,4 +4,5 @@ export * from './components/error-fallback';
 export { ListGroup } from './components/list-group';
 export { TabPlaceholder } from './components/tab-placeholder';
 export { TabScreen } from './components/tab-screen';
+export { type StickToBottom, useStickToBottom } from './hooks/use-stick-to-bottom';
 export { initials } from './lib/initials';
