@@ -1,11 +1,17 @@
 import type { BotApprovalEventStage, BotMessageEvent, BotToolGroup } from '@oppenheimer/shared';
 import { approvalAsk } from './bot-approval.policy';
+import {
+  type AreaIntro,
+  BOT_CAPABILITIES,
+  type CapabilityFacts,
+  TERMINAL_TOOL_NAMES,
+} from './bot-capability.policy';
 import { githubAskPrompt } from './bot-github-ask.policy';
 import { eventNote, type HistoryMessage } from './bot-history.policy';
 import { peerMessagePrompt, peerReplyPrompt } from './bot-peer-message.policy';
 import { type PlainPromptId, promptText } from './bot-prompt-text.policy';
 import { pullRequestWakePrompt } from './bot-pull-request-wake.policy';
-import { hostCases, recoveryBullets } from './bot-recovery.policy';
+import { recoveryBullets } from './bot-recovery.policy';
 import {
   type BotSkillView,
   canFollowSkill,
@@ -61,14 +67,8 @@ export interface BotPromptInput {
 }
 
 /** What the sections are decided from: the bot, and what the turn's tools allow. */
-interface PromptFacts {
+interface PromptFacts extends CapabilityFacts {
   input: BotPromptInput;
-  /** The names of the tools the turn offers. */
-  offered: readonly string[];
-  /** Whether the turn may start a session, run a command, and which terminal tools it has. */
-  sessions: boolean;
-  commands: boolean;
-  terminals: ReadonlySet<string>;
 }
 
 /** One section of the prompt: its words, or null when this turn has none for it. */
@@ -78,9 +78,9 @@ type PromptSection = (facts: PromptFacts) => string | null;
  * The prompt's sections in the order they are sent: who the bot is, how a
  * turn goes, how it checks what it did, what it can and cannot do (a closed
  * list, so a missing tool is a plain "I can't" rather than a search of the
- * machine it runs on), the rules no instruction overrides, how it works on
- * code through sessions when the turn may start one, its own documents, its
- * skills and memory. A new section is a row; where the row is, is where it
+ * machine it runs on), the rules no instruction overrides, what holds for
+ * each capability the turn can use (`BOT_CAPABILITIES`), its own documents,
+ * its skills and memory. A new section is a row; where the row is, is where it
  * is sent. An empty document is left out rather than shown blank.
  */
 const SECTIONS: readonly PromptSection[] = [
@@ -95,13 +95,8 @@ const SECTIONS: readonly PromptSection[] = [
   ({ input, sessions, commands, terminals }) =>
     whatYouCanDo(input.engineCapabilities, input.tools, sessions, commands, terminals.size > 0),
   () => promptText('core/system-rules'),
-  ({ sessions, commands, terminals }) =>
-    sessions ? workingOnCode(commands, terminals.size > 0) : null,
-  ({ commands }) => (commands ? promptText('sessions/system-commands-on-a-host') : null),
-  ({ commands, terminals }) => (terminals.size > 0 ? drivingATerminal(commands, terminals) : null),
-  ({ offered }) => (offered.includes('use_computer') ? promptText('computer/system') : null),
-  ({ offered }) =>
-    offered.includes('use_browser') ? usingABrowser(offered.includes('use_computer')) : null,
+  // What holds on every turn for each capability the turn can use, in the list's order.
+  ...BOT_CAPABILITIES.flatMap((capability) => capability.sections),
   ({ input }) =>
     written(input.soul, (content) => promptText('core/system-documents.soul', { content })),
   // Its instructions, or, while it has none, how a new bot sets itself up.
@@ -191,73 +186,13 @@ function gettingStarted(name: string, tools: readonly BotPromptTool[]): string {
  * What a new bot tells the person it can do for them, one phrase per area of
  * tools its turn offers, so a person who knows nothing yet hears
  * what Oppenheimer's bots are for and a tool the turn lacks is never promised.
- */
-interface AreaIntro {
-  /** What the bot can do there, in the greeting's list. */
-  does: PlainPromptId;
-  /** The tools that do it: the area is offered when the turn has any of them. */
-  doneBy: readonly string[];
-  /** What the person may still have to connect for it, named in the offer to help. */
-  connects?: PlainPromptId;
-  /** A job this area makes possible, among the examples Getting started offers. */
-  example?: PlainPromptId;
-}
-
-/**
  * Keyed by the tools that act, not by area, so an area the turn can only
  * read (a read-only credential, a tool switched Off) is not promised: an
  * eval of a bot with `list_hosts` alone offered to start coding agents.
  */
-const AREA_INTROS: readonly AreaIntro[] = [
-  {
-    does: 'core/system-getting-started-areas.hosts-does',
-    doneBy: ['start_session', 'start_cloud_session'],
-    connects: 'core/system-getting-started-areas.hosts-connects',
-    example: 'core/system-getting-started-areas.hosts-example',
-  },
-  { does: 'core/system-getting-started-areas.commands-does', doneBy: ['run_command'] },
-  {
-    does: 'core/system-getting-started-areas.plan-does',
-    doneBy: ['create_task', 'update_task'],
-    example: 'core/system-getting-started-areas.plan-example',
-  },
-  {
-    does: 'core/system-getting-started-areas.gmail-does',
-    doneBy: ['send_mail', 'send_draft'],
-    connects: 'core/system-getting-started-areas.gmail-connects',
-    example: 'core/system-getting-started-areas.gmail-example',
-  },
-  {
-    does: 'core/system-getting-started-areas.whatsapp-does',
-    doneBy: ['send_whatsapp_message'],
-    connects: 'core/system-getting-started-areas.whatsapp-connects',
-  },
-  {
-    does: 'core/system-getting-started-areas.telegram-does',
-    doneBy: ['send_telegram_message'],
-    connects: 'core/system-getting-started-areas.telegram-connects',
-  },
-  {
-    does: 'core/system-getting-started-areas.github-does',
-    doneBy: ['review_pull_request', 'comment_on_pull_request', 'create_issue'],
-    connects: 'core/system-getting-started-areas.github-connects',
-    example: 'core/system-getting-started-areas.github-example',
-  },
-  {
-    does: 'core/system-getting-started-areas.routines-does',
-    doneBy: ['update_routine'],
-    example: 'core/system-getting-started-areas.routines-example',
-  },
-  {
-    does: 'core/system-getting-started-areas.bots-does',
-    doneBy: ['message_bot', 'create_bot', 'update_bot'],
-  },
-  {
-    does: 'core/system-getting-started-areas.web-does',
-    doneBy: ['web_fetch'],
-    example: 'core/system-getting-started-areas.web-example',
-  },
-];
+const AREA_INTROS: readonly AreaIntro[] = BOT_CAPABILITIES.flatMap(
+  (capability) => capability.intros,
+);
 
 function offeredAreas(tools: readonly BotPromptTool[]): readonly AreaIntro[] {
   const offered = new Set(tools.map((tool) => tool.name));
@@ -341,19 +276,13 @@ function howATurnGoes(remembers: boolean): string {
   return remembers ? `${body}\n${promptText('core/system-how-a-turn-goes.save-as-you-go')}` : body;
 }
 
-/** How the prompt names each area of tools; the order is the list's. */
-const TOOL_GROUP_LABELS: Readonly<Record<BotToolGroup, string>> = {
-  self: 'Yourself (memory, skills, goals, loops, questions, notices)',
-  sessions: 'Hosts and sessions',
-  plan: 'Plan and projects',
-  github: 'GitHub',
-  automations: 'Automations and routines',
-  mail: 'Gmail',
-  whatsapp: 'WhatsApp',
-  telegram: 'Telegram',
-  bots: 'Other bots',
-  web: 'The web and subagents',
-};
+/** How the prompt names each area of tools: the bot's own, then each capability's, in the list's order. */
+const TOOL_GROUP_LABELS: ReadonlyMap<BotToolGroup, string> = new Map([
+  ['self', 'Yourself (memory, skills, goals, loops, questions, notices)'],
+  ...BOT_CAPABILITIES.flatMap((capability) =>
+    capability.lists ? [[capability.lists.group, capability.lists.label] as const] : [],
+  ),
+]);
 
 /**
  * The closed list of what the bot can do: the engine's own abilities in
@@ -370,10 +299,10 @@ function whatYouCanDo(
 ): string {
   const byGroup = new Map<string, string[]>();
   for (const tool of tools) {
-    const label = tool.group ? TOOL_GROUP_LABELS[tool.group] : 'Other';
+    const label = (tool.group && TOOL_GROUP_LABELS.get(tool.group)) || 'Other';
     byGroup.set(label, [...(byGroup.get(label) ?? []), `\`${tool.name}\``]);
   }
-  const order = [...Object.values(TOOL_GROUP_LABELS), 'Other'];
+  const order = [...TOOL_GROUP_LABELS.values(), 'Other'];
   const lines = [
     ...engine.map((capability) => `- ${capability}`),
     ...order.flatMap((label) => {
@@ -417,23 +346,11 @@ function offersTool(tools: readonly BotPromptTool[], name: string): boolean {
   return tools.some((tool) => tool.name === name);
 }
 
-/**
- * How a bot uses its browser. `computer` says it also has `use_computer`, so
- * it is told which of the two a website goes to.
- */
-function usingABrowser(computer: boolean): string {
-  return promptText('browser/system.body', {
-    besideAComputer: computer ? `\n- ${promptText('browser/system.not-the-computer')}` : '',
-  });
-}
-
 /** Which of the terminal tools the turn is offered; empty when none. */
 function offeredTerminalTools(tools: readonly BotPromptTool[]): ReadonlySet<string> {
   return new Set(tools.map((tool) => tool.name).filter((name) => TERMINAL_TOOLS.has(name)));
 }
 
-/** The terminal tools: any one offered is a terminal to explain. */
-const TERMINAL_TOOL_NAMES = ['open_terminal', 'type_in_terminal', 'read_terminal'] as const;
 const TERMINAL_TOOLS: ReadonlySet<string> = new Set(TERMINAL_TOOL_NAMES);
 
 /** Whether the turn may run a program on a host (`run_command`). */
@@ -445,108 +362,6 @@ function offersCommands(tools: readonly BotPromptTool[]): boolean {
 function offersSessions(tools: readonly BotPromptTool[]): boolean {
   return tools.some((tool) => tool.name === 'start_session');
 }
-
-/**
- * The rest of the delegate bullet, by what the bot has: a bot with no way to
- * run anything is told it never does; one with `run_command` where the line
- * with a session falls; one with a terminal, nothing that says it never sees
- * one.
- */
-function delegateTail(commands: boolean, terminals: boolean): string {
-  if (commands) {
-    return ` ${promptText(
-      terminals
-        ? 'sessions/system-working-on-code.run-command-or-session-with-terminal'
-        : 'sessions/system-working-on-code.run-command-or-session',
-    )}`;
-  }
-  return terminals ? '' : ` ${promptText('sessions/system-working-on-code.never-runs-commands')}`;
-}
-
-/**
- * Real work on code is a session on a host: every
- * bot that may start one is told so here, once, rather than each owner
- * writing it into INSTRUCTIONS.md. The host order is `sessionHostId`'s.
- * Static per tool set, so the prompt stays the same bytes; the hosts of the moment are
- * the turn context's.
- */
-function workingOnCode(commands: boolean, terminals: boolean): string {
-  const opening = promptText(
-    terminals
-      ? 'sessions/system-working-on-code.delegates-code-work'
-      : 'sessions/system-working-on-code.delegates-not-a-terminal',
-  );
-  return promptText('sessions/system-working-on-code.body', {
-    delegate: `${opening}${delegateTail(commands, terminals)}`,
-    hostCases: hostCases(),
-  });
-}
-
-/**
- * How to drive a terminal, built
- * from the terminal tools the turn is offered, since the owner turns each
- * on or off: a bot is never told to open or type with a tool it lacks. The
- * same bytes for the same tool set.
- */
-function drivingATerminal(commands: boolean, tools: ReadonlySet<string>): string {
-  const named = TERMINAL_TOOL_NAMES.filter((name) => tools.has(name)).map((name) => `\`${name}\``);
-  const has: TerminalTools = {
-    commands,
-    opens: tools.has('open_terminal'),
-    types: tools.has('type_in_terminal'),
-    reads: tools.has('read_terminal'),
-  };
-  const lines = TERMINAL_LINES.filter((line) => line.when(has)).map(
-    (line) => `- ${promptText(line.id)}`,
-  );
-  return promptText('sessions/system-driving-a-terminal.body', {
-    tools: named.join(', '),
-    lines: lines.join('\n'),
-  });
-}
-
-/** What a bot has, as the terminal section's lines read it. */
-interface TerminalTools {
-  commands: boolean;
-  opens: boolean;
-  types: boolean;
-  reads: boolean;
-}
-
-/** One line of the terminal section, and when the tools make it true. */
-interface TerminalLine {
-  when: (has: TerminalTools) => boolean;
-  id: PlainPromptId;
-}
-
-/** The terminal section's lines, in order; each shows only when its tools are offered. */
-const TERMINAL_LINES: readonly TerminalLine[] = [
-  {
-    when: (has) => has.commands && has.types,
-    id: 'sessions/system-driving-a-terminal.prefer-run-command',
-  },
-  { when: (has) => has.opens, id: 'sessions/system-driving-a-terminal.look-before-you-guess' },
-  {
-    when: (has) => has.opens && has.reads,
-    id: 'sessions/system-driving-a-terminal.open-then-read',
-  },
-  {
-    when: (has) => has.opens && !has.reads && has.types,
-    id: 'sessions/system-driving-a-terminal.open-then-wait',
-  },
-  { when: (has) => !has.opens, id: 'sessions/system-driving-a-terminal.cannot-open' },
-  { when: (has) => has.types, id: 'sessions/system-driving-a-terminal.type-a-command' },
-  { when: (has) => !has.types && has.reads, id: 'sessions/system-driving-a-terminal.read-only' },
-  { when: (has) => has.opens, id: 'sessions/system-driving-a-terminal.one-terminal-per-job' },
-  { when: (has) => has.types, id: 'sessions/system-driving-a-terminal.never-type-a-secret' },
-  { when: (has) => !has.types, id: 'sessions/system-driving-a-terminal.never-read-a-secret' },
-  { when: () => true, id: 'sessions/system-driving-a-terminal.screen-is-outside-text' },
-  { when: () => true, id: 'sessions/system-driving-a-terminal.host-must-allow' },
-  {
-    when: (has) => has.opens || has.types,
-    id: 'sessions/system-driving-a-terminal.leave-it-for-the-person',
-  },
-];
 
 /** What an approval's turn is asked: what came of the card, then what to do about it. */
 function approvalPrompt(content: string, stage?: BotApprovalEventStage): string {

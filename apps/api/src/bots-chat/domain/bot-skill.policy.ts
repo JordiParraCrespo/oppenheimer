@@ -8,6 +8,7 @@ import {
   botScheduleCommandOf,
   builtInSkillsBeside,
 } from '@oppenheimer/shared';
+import { BOT_CAPABILITIES } from './bot-capability.policy';
 import { goalSetPrompt } from './bot-goal.policy';
 import { loopSetPrompt } from './bot-loop-message.factory';
 import { promptText } from './bot-prompt-text.policy';
@@ -43,61 +44,11 @@ export const RECAP_SKILL: BotBuiltInSkill = {
   needsTools: ['list_sessions'],
 };
 
-/** The capabilities' skills: each one's words are a skill file in its capability's prompts. */
-type CapabilitySkillName = 'watch-inbox' | 'use-a-computer' | 'use-a-browser';
-
-/**
- * A capability's skill (2026-11-23): how-to that only some turns need, kept
- * out of the system prompt and read with `use_skill` when the work comes up,
- * as Codex and OpenClaw keep theirs. Its words are `<capability>/skill-<name>.md`
- * in the Agent Skills format; the model uses it unasked, and the person does
- * not run it.
- */
-function capabilitySkill(
-  name: CapabilitySkillName,
-  words: { description: string; body: string },
-  needsTools: readonly string[],
-): BotBuiltInSkill {
-  return { name, ...words, needsTools, userInvocable: false, modelInvocable: true };
-}
-
-/** Offering to watch the inbox, read when the person talks about email. */
-export const WATCH_INBOX_SKILL = capabilitySkill(
-  'watch-inbox',
-  {
-    description: promptText('mail/skill-watch-inbox.description'),
-    body: promptText('mail/skill-watch-inbox.body'),
-  },
-  ['list_gmail_accounts', 'update_routine'],
-);
-
-/** Working a screen step by step, read before the first `use_computer`. */
-export const USE_A_COMPUTER_SKILL = capabilitySkill(
-  'use-a-computer',
-  {
-    description: promptText('computer/skill-use-a-computer.description'),
-    body: promptText('computer/skill-use-a-computer.body'),
-  },
-  ['use_computer'],
-);
-
-/** Working a page step by step, read before the first `use_browser`. */
-export const USE_A_BROWSER_SKILL = capabilitySkill(
-  'use-a-browser',
-  {
-    description: promptText('browser/skill-use-a-browser.description'),
-    body: promptText('browser/skill-use-a-browser.body'),
-  },
-  ['use_browser'],
-);
-
 /** Every skill the product ships to every bot, in the order the prompt would list them. */
 export const BOT_BUILT_IN_SKILLS: readonly BotBuiltInSkill[] = [
   OPPENHEIMER_SKILL,
   RECAP_SKILL,
-  WATCH_INBOX_SKILL,
-  USE_A_COMPUTER_SKILL,
-  USE_A_BROWSER_SKILL,
+  ...BOT_CAPABILITIES.flatMap((capability) => capability.skills),
 ];
 
 /**

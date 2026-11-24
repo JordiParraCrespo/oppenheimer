@@ -85,7 +85,11 @@ format Claude Code, Codex and OpenClaw read). The rest of the name
 says which, when a capability has several (`mail/tools-write.md`,
 `sessions/wake-failed.md`). Folder and file are the id
 (`core/system-rules`), so a new capability is a new folder, and everything
-it tells a model is in it. A module with few prompts (`src/sessions/`) keeps one
+it tells a model is in it, plus one row in `BOT_CAPABILITIES`
+(`bots-chat/domain/bot-capability.policy.ts`): its "What you can do"
+label, what a new bot's hello says of it, the sections that hold on every
+turn offering its tools, and its built-in skills. The prompt's core names
+no capability; it reads that list. A module with few prompts (`src/sessions/`) keeps one
 folder per kind (`system/`, `turn/`, `wake/`). A file is
 one prompt, or several fragments under
 `<!-- fragment: name -->` markers when the code chooses among them;
