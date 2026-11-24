@@ -85,6 +85,9 @@ type Options struct {
 	// GrokSessions is Grok's `sessions/` folder, `~/.grok/sessions` or
 	// `$GROK_HOME/sessions`, for the chat view.
 	GrokSessions string
+	// QwenProjects is Qwen Code's `projects/` folder, `~/.qwen/projects` or
+	// `$QWEN_HOME/projects`, for the chat view.
+	QwenProjects string
 	// ZCodeDatabase is ZCode's conversation database,
 	// `~/.zcode/cli/db/db.sqlite`, for the chat view.
 	ZCodeDatabase string
@@ -115,6 +118,9 @@ func New(opts Options) *Reader {
 	if opts.GrokSessions != "" {
 		chats[domain.AgentGrok] = grokSource{sessions: opts.GrokSessions}
 	}
+	if opts.QwenProjects != "" {
+		chats[domain.AgentQwen] = qwenSource{projects: opts.QwenProjects}
+	}
 	return &Reader{
 		agents: agents, chats: chats, logger: logger, statusDir: opts.StatusDir, filesDir: opts.FilesDir,
 		openCode: newOpenCodeOwners(), zcodeDB: opts.ZCodeDatabase, hermes: hermesSource{db: opts.HermesState},
@@ -130,10 +136,17 @@ func (r *Reader) ServedConversation(ctx context.Context, session domain.Session)
 	return r.openCode.served(ctx, *session.Launch.Server)
 }
 
-// CurrentConversation implements app.Transcripts: Claude Code's, by the
-// same rule its chat follows (claudeReader.conversation), so the session
-// keeps and resumes the conversation the chat shows.
+// CurrentConversation implements app.Transcripts: Claude Code's and Qwen
+// Code's, by the same rule each one's chat follows (claudeReader.conversation,
+// qwenSource.conversation), so the session keeps and resumes the
+// conversation the chat shows.
 func (r *Reader) CurrentConversation(session domain.Session) string {
+	if qwen, ok := r.chats[domain.AgentQwen].(qwenSource); ok && session.Agent == domain.AgentQwen {
+		if current := qwen.conversation(session); current != "" {
+			return current
+		}
+		return session.Launch.Conversation
+	}
 	claude, ok := r.agents[domain.AgentClaude].(claudeReader)
 	if session.Agent != domain.AgentClaude || !ok {
 		return ""

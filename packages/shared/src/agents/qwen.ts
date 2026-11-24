@@ -15,10 +15,11 @@ export const QWEN_AGENT: CodingAgentDefinition = Object.freeze({
   command: 'qwen',
   input: Object.freeze({
     ...TYPED_INPUT,
-    // Qwen's prompt can hold text nobody typed for this message, two ways,
-    // both watched: an Up arrow into an empty prompt recalls the last prompt
-    // with the cursor at its start, and Esc mid-turn cancels the turn and
-    // puts its message back, with the cursor at its end. Ctrl+K kills to the
+    // Qwen's prompt can hold text nobody typed for this message, three ways,
+    // all watched: an Up arrow into an empty prompt recalls the last prompt
+    // with the cursor at its start, Esc mid-turn cancels the turn and puts
+    // its message back, with the cursor at its end, and a rewind puts the
+    // turn it went back to there for editing. Ctrl+K kills to the
     // end of the line and Ctrl+U to its start, each joining a line to the
     // next or the one before at its edge, so pairs of them empty a prompt of
     // any shape and do nothing to an empty one; 16 pairs emptied a recalled

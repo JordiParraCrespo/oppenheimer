@@ -3,7 +3,7 @@
   "agent": "qwen",
   "version": "2026.11.24.1",
   "minEngine": 1,
-  "notes": "Watched on Qwen Code 0.28.4 (its default Ink renderer, `en` locale) in tmux at 120x40, against a scripted OpenAI-compatible server on loopback: a shell call, a write it asked to apply, a slow turn stopped with Esc, Esc twice at an empty prompt, and every approval mode's idle footer; the sign-in screens on a home with no provider. Ink draws the UI under the scrollback, not at the pane's foot, so the rows below it are blank, which `bottom:N` skips. The window title is a constant `Qwen - <folder>` and is not a signal. A `How is Qwen doing this session? (optional)` survey can sit above the prompt between turns; it takes a typed digit but not a pasted message. Not yet watched: the OpenTUI renderer (opt-in, with Bun), an ask_user_question dialog, a shell or MCP approval (a plain `echo` ran without asking under `default`), and a turn past a minute.",
+  "notes": "Watched on Qwen Code 0.28.4 (its default Ink renderer, `en` locale) in tmux at 120x40, against a scripted OpenAI-compatible server on loopback: a shell call, a write and a command it asked to approve, a slow turn stopped with Esc, a rewind, Esc twice at an empty prompt, and every approval mode's idle footer; the sign-in screens on a home with no provider. Ink draws the UI under the scrollback, not at the pane's foot, so the rows below it are blank, which `bottom:N` skips. The window title is a constant `Qwen - <folder>` and is not a signal. A `How is Qwen doing this session? (optional)` survey can sit above the prompt between turns; it takes a typed digit but not a pasted message. Not yet watched: the OpenTUI renderer (opt-in, with Bun), an ask_user_question dialog, an MCP approval, and a turn past a minute.",
   "rules": [
     {
       "id": "sign-in",
@@ -27,7 +27,7 @@
         "(?m)^\\W*1\\. Yes, allow once\\s*$",
         "(?m)^\\W*Waiting for user confirmation\\.\\.\\.\\s*$"
       ],
-      "note": "The tool confirmation: `Apply this change?` over `1. Yes, allow once`, `2. Yes, allow always`, `3. No, suggest changes (esc)`, with `Waiting for user confirmation...` where the timer was and no input box (a write_file, watched on 0.28.4). The shell's `Allow execution of: '<command>'?` and `Do you want to proceed?` are the en locale's, not yet watched. Anchored to the start of the line, so a reply quoting them does not count."
+      "note": "The tool confirmation: `Apply this change?` over `1. Yes, allow once`, `2. Yes, allow always`, `3. No, suggest changes (esc)`, with `Waiting for user confirmation...` where the timer was and no input box (a write_file), and `Allow execution of: 'rm'?` over `1. Yes, allow once`, `2. Always allow run 'rm *' commands in this project` (a command; a plain `echo` ran without asking), both watched on 0.28.4. `Do you want to proceed?` is the en locale's, not yet watched. Anchored to the start of the line, so a reply quoting them does not count."
     },
     {
       "id": "question",
@@ -42,8 +42,8 @@
       "state": "blocked",
       "priority": 990,
       "region": "screen",
-      "any": ["(?m)^\\W*Rewind Conversation \\(\\d+ turns?\\)"],
-      "note": "Esc twice at an empty prompt (two Stops at an idle session) opens `Rewind Conversation (<n> turns)` over the whole pane, with `↑↓ to navigate · Enter to select · Esc to cancel` (watched, 0.28.4): Qwen waits on a choice there, and an Enter typed into it picks a turn to rewind to."
+      "any": ["(?m)^\\W*Rewind Conversation(?: \\(\\d+ turns?\\))?\\W*$"],
+      "note": "Esc twice at an empty prompt (two Stops at an idle session) opens `Rewind Conversation (<n> turns)` over the whole pane, with `↑↓ to navigate · Enter to select · Esc to cancel`, then, a turn picked, `Rewind Conversation` over `Restore conversation only` / `Never mind` (both watched, 0.28.4): Qwen waits on a choice there, and an Enter typed into it picks a turn to rewind to."
     },
     {
       "id": "working",

@@ -494,7 +494,7 @@ func TestQwenStatesReadOffItsScreen(t *testing.T) {
 		want domain.State
 	}{
 		{"after a turn", "  ◆︎ Done: the tool said hello.\n" + box(">   Type your message or @path/to/file", "⏸ Ask permissions (shift + tab to cycle)"), domain.StateIdle},
-		{"a message put back by Esc", box("> a slow plain one ​", "⏸ Ask permissions (shift + tab to cycle)"), domain.StateIdle},
+		{"a message put back by Esc", box("> a slow plain one \u200b", "⏸ Ask permissions (shift + tab to cycle)"), domain.StateIdle},
 		{"full access", box("*   Type your message or @path/to/file", "YOLO mode (shift + tab to cycle)"), domain.StateIdle},
 		{"one Esc", box(">   Type your message or @path/to/file", "Press Esc again to rewind conversation."), domain.StateIdle},
 		{"mid-turn", "  > a slow plain one\n\n  .. Communing with the machine spirit... (2s · esc to cancel)\n" +
@@ -505,6 +505,10 @@ func TestQwenStatesReadOffItsScreen(t *testing.T) {
 			"   › 1. Yes, allow once\n     2. Yes, allow always\n     3. No, suggest changes (esc)\n\n\n  ⠏ Waiting for user confirmation...\n", domain.StateBlocked},
 		{"rewind", "  ╭" + rule + "╮\n  │ Rewind Conversation (12 turns)  │\n  │ ↑ #6 plain gap 0.05  │\n" +
 			"  │ ↑↓ to navigate · Enter to select · Esc to cancel │\n  ╰" + rule + "╯\n", domain.StateBlocked},
+		{"rewind, a turn picked", "  │ Rewind Conversation                  │\n  │ Rewind to: now write it again │\n  │ › Restore conversation only │\n  │   Never mind │\n" +
+			"  │ ↑↓ to navigate · Enter to select · Esc to go back │\n", domain.StateBlocked},
+		{"a shell command to approve", "  ? Shell rm -f notes.txt (tidy up) ←\n     rm -f notes.txt\n   Allow execution of: 'rm'?\n   › 1. Yes, allow once\n" +
+			"     2. Always allow run 'rm *' commands in this project\n     4. No, suggest changes (esc)\n  ⠏ Waiting for user confirmation...\n", domain.StateBlocked},
 		{"no provider", "  │ Connect a Provider                     │\n  │                                        │\n" +
 			"  │ › Qwen Account with Subscription New   │\n  │   Custom Provider                      │\n", domain.StateBlocked},
 		{"signing in", "  │ Qwen Subscription │\n  │ If the browser didn't open, visit: │\n" +
