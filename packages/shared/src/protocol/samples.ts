@@ -176,6 +176,14 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
   'desktop.open': { type: 'desktop.open', commandId, attachmentId: 13, control: false },
   'desktop.opened': { type: 'desktop.opened', attachmentId: 13 },
   'desktop.control': { type: 'desktop.control', attachmentId: 13, control: true },
+  'desktop.pointer': {
+    type: 'desktop.pointer',
+    attachmentId: 13,
+    x: 812.5,
+    y: 431,
+    width: 1920,
+    height: 1080,
+  },
   'desktop.close': { type: 'desktop.close', attachmentId: 13 },
   'cloud.reply': {
     type: 'cloud.reply',
@@ -249,6 +257,14 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     mimetype: 'audio/ogg; codecs=opus',
     data: 'T2dnUwACAAAAAAAAAAA=',
     seconds: 4,
+  },
+  'whatsapp.react': {
+    type: 'whatsapp.react',
+    commandId,
+    chatId: '34600333444@s.whatsapp.net',
+    messageId: '3EB0C7A1F2',
+    senderId: '34600333444@s.whatsapp.net',
+    emoji: '👍',
   },
   'whatsapp.sent': { type: 'whatsapp.sent', commandId, id: '3EB0C7A1F3', sentAt: occurredAt },
   'whatsapp.media.get': {
@@ -342,6 +358,21 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     stderr: '',
     cwd: '/home/jordi/oppenheimer/bots/juno-3f2a',
     durationMs: 842,
+  },
+  'host.settings.set': {
+    type: 'host.settings.set',
+    commandId,
+    browser: 'on',
+    execMode: 'allowlist',
+    execAllow: ['python3', '/home/jordi/scripts/*'],
+  },
+  'host.settings': {
+    type: 'host.settings',
+    commandId,
+    browser: 'on',
+    computer: 'off',
+    execMode: 'allowlist',
+    execAllow: ['python3', '/home/jordi/scripts/*'],
   },
   'terminal.drive': {
     type: 'terminal.drive',

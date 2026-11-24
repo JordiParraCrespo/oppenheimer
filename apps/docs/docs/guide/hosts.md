@@ -72,7 +72,7 @@ The host's owner decides whether its screen is shared, on the host itself:
 - The runner does not start a screen: it uses the screen-sharing server the machine already runs on its loopback, `127.0.0.1:5900` unless `--port` names another. On a Mac that is **Screen Sharing** (System Settings → General → Sharing); on Linux a VNC server such as TigerVNC or x11vnc listening on `127.0.0.1`.
 - If the server asks for a password, give the runner a file holding it, readable by that account only: `runner desktop on --password-file <file>`. macOS Screen Sharing signs in a macOS account: add `--username <account>`. The password stays on the host; the browser is never asked for one.
 
-The desktop opens **watching**: you see the screen, and your clicks and keys reach nothing. **Take control** lets them through, until **Stop controlling**; the host itself drops your input while you only watch. Your session on the screen is shared, so watching never disconnects anyone else using it. **Full screen** gives the desktop the whole window; Escape leaves it.
+The desktop opens **watching**: you see the screen, and your clicks and keys reach nothing. **Take control** lets them through, until **Stop controlling**; the host itself drops your input while you only watch. Your session on the screen is shared, so watching never disconnects anyone else using it. **Full screen** gives the desktop the whole window; Escape leaves it. While you watch a Mac with one display, its own pointer is drawn where it is on the screen, so you can follow what the agent or the person at the machine points at; once you take control, your pointer is the host's. A Linux host's screen-sharing server shows its own pointer, or none.
 
 In the console you open a desktop as yourself. An [API token](./cli-and-mcp.md) needs the **Host desktops** permission (`host-desktops:write`), which no other permission includes: a token that manages hosts (`hosts:write`) cannot open their screens.
 
@@ -87,9 +87,9 @@ From the host you can install more later: `oppenheimer-runner agents install cla
 
 ## Letting bots use the screen
 
-A bot can look at a host's screen and use its mouse and keyboard, only after you run `runner computer on` on that host. What it needs on a Mac and on Linux, and how a bot uses it, is [Bots using a computer](./computer-use.md).
+A bot can look at a host's screen and use its mouse and keyboard once it is turned on: ask the bot to turn it on, or run `runner computer on` on that host. The same goes for what a bot may run there (`runner exec`): ask the bot, and it changes it for you. What it needs on a Mac and on Linux, and how a bot uses it, is [Bots using a computer](./computer-use.md).
 
-A bot can also drive a browser of its own on a host, only after `runner browser on` there: [Bots using a browser](./browser-use.md).
+A bot can also drive a browser of its own on a host, once you ask it to turn that on or run `runner browser on` there: [Bots using a browser](./browser-use.md).
 
 ## Updates
 
@@ -103,7 +103,7 @@ A host is **Offline** when its runner is not connected: the machine is off or as
 
 - Sessions already running keep running in tmux on the host if only the connection is lost. The terminal shows "Host offline" and reconnects on its own, catching up on output.
 - A session you start on an offline host waits as **Queued** and starts when the runner reconnects.
-- After a **reboot**, sessions come back stopped, with a **Restart** button that reopens the agent in the same worktree. A session marked kept (`runner sessions keep`, run from inside it) restarts on its own.
+- After a **reboot**, sessions come back stopped; opening one restarts it in the same worktree, and its **Restart** button does the same. A session marked kept (`runner sessions keep`, run from inside it) restarts on its own.
 - Automations defer runs aimed at an offline host; bots check that a host is online before starting work.
 
 When a terminal says the host is offline, **How to fix** gives the commands to run on the host (`oppenheimer-runner status`, the log, a reinstall) and a troubleshooting prompt you can hand to an agent there.

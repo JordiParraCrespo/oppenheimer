@@ -28,6 +28,7 @@ import { BotGithubToolsFactory } from './bot-github-tools.factory';
 import { BotGoalToolsFactory } from './bot-goal-tools.factory';
 import { BotGuideToolsFactory } from './bot-guide-tools.factory';
 import { BotHostCommandToolsFactory } from './bot-host-command-tools.factory';
+import { BotHostSettingsToolsFactory } from './bot-host-settings-tools.factory';
 import { BotHostToolsFactory } from './bot-host-tools.factory';
 import { BotIssueToolsFactory } from './bot-issue-tools.factory';
 import { BotLoopToolsFactory } from './bot-loop-tools.factory';
@@ -80,6 +81,7 @@ export class BotToolboxFactory {
     hosts: BotHostToolsFactory,
     sessions: BotSessionToolsFactory,
     hostCommands: BotHostCommandToolsFactory,
+    hostSettings: BotHostSettingsToolsFactory,
     terminals: BotTerminalToolsFactory,
     computers: BotComputerToolsFactory,
     browsers: BotBrowserToolsFactory,
@@ -124,6 +126,7 @@ export class BotToolboxFactory {
       hosts,
       sessions,
       hostCommands,
+      hostSettings,
       terminals,
       computers,
       browsers,

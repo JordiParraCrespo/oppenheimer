@@ -1288,8 +1288,9 @@ agent's, in a session, where Claude Code ships them.
 | `stop_session` / `close_session` | Stop it, or close and clean up. `close_session` is the sessions' own close (`CloseSessionCommand`: push each branch, remove the worktree; unpushed work kept unless `accept_unpushed_work`) and only for a session whose origin is `bot`; any other is refused before a card, the person's to close. The `failed` wake offers it once the person is told, so a failed start does not stay in the sidebar (built 2026-11-09) | ask |
 | `list_folders` | Browse a host's folders | auto |
 | `run_command` | Run one program on a host and read its exit code, stdout and stderr in the same turn, only what that host's own policy allows (below; built 2026-11-07) | ask |
-| `use_browser` | Do one thing in a browser of the bot's own on a host (open, read, click or type by an element's ref, keys, scroll, back) and read the page that comes back, with a picture for a model that reads one; only on a host where the person ran `runner browser on` (below; built 2026-11-11) | ask |
-| `use_computer` | Do one thing on a host's screen (look, click, type, press keys, scroll, drag) and read a picture of the screen after it; only on a host where the person ran `runner computer on` (below; built 2026-11-09) | ask |
+| `set_host_settings` | Turn a host's browser or screen for bots on or off, set its exec mode or add programs to its allowlist, when the person asks in their own chat: the same files `runner browser`, `runner computer` and `runner exec` write (below, "The host's switches"; built 2026-11-24) | ask, each call on its own card |
+| `use_browser` | Do one thing in a browser of the bot's own on a host (open, read, click or type by an element's ref, keys, scroll, back) and read the page that comes back, with a picture for a model that reads one; only on a host whose browser switch is on, by `runner browser on` or `set_host_settings` (below; built 2026-11-11) | ask |
+| `use_computer` | Do one thing on a host's screen (look, click, type, press keys, scroll, drag) and read a picture of the screen after it; only on a host whose screen switch is on, by `runner computer on` or `set_host_settings` (below; built 2026-11-09) | ask |
 | `open_terminal` / `type_in_terminal` / `read_terminal` | Open a blank terminal (agent `shell`) on a host, type into it (text, then named keys such as Enter or C-c) and read its screen back after waiting for a pattern; only on a host whose `runner exec` mode is `full` (below; built 2026-11-08) | ask / ask / auto |
 
 Built 2026-10-27 (issue #493), so a bot that manages sessions can see them
@@ -1354,7 +1355,9 @@ more (`10-sleep-wake-and-pricing.md` §7 prices the sandbox services).
   folder cannot dress the bot's own file as an allowed script, while a
   virtualenv's python or a Homebrew link still runs under its own name. Off
   refuses before anything on disk is looked at. The control plane never reads or writes the policy, so a
-  compromised control plane runs nothing the person did not allow.
+  compromised control plane runs nothing the person did not allow. (Changed
+  2026-11-24: a bot writes it when the person asks, below, "The host's
+  switches".)
 - **The bot's own folder.** A call starts in `<workspaces>/bots/<bot id>`,
   made on first use and kept, unless it names an absolute `cwd`. That is
   the bot's machine without a VM: its scripts, data and virtualenvs.
@@ -1423,7 +1426,8 @@ on a host: its real desktop, on a Mac and on Linux.
   (`cmd+shift+4`, `ctrl+c`, `enter`), the same on both systems.
 - **The host decides, with a switch of its own.** `runner computer on`, off
   by default, in `~/.oppenheimer/computer.json`, which the control plane
-  never writes (`COMPUTER_001` when off). No tool of ours changes it, but
+  never writes (`COMPUTER_001` when off; changed 2026-11-24, "The host's
+  switches"). No tool of ours changes it, but
   a host that lets bots run any program (`runner exec mode full`, or
   `runner` on its allowlist) lets a bot run `runner computer on` too: the
   two are the host owner's to decide together. It is not the exec policy: a host
@@ -1485,7 +1489,8 @@ use as well, and said Claude Code is the better of the agents he uses at it.
 - **From the host.** It reaches what the host reaches, `localhost` and the
   local network included, which is what a dev server needs and why the
   switch is the host's: `runner browser on`, off by default, in
-  `~/.oppenheimer/browser.json`, never written by the control plane
+  `~/.oppenheimer/browser.json`, never written by the control plane (changed 2026-11-24, "The host's
+  switches")
   (`BROWSER_001` when off). It opens `http` and `https` only.
 - **Driven over the DevTools protocol** by the runner itself (Chrome,
   Chromium or Edge already on the host; no Node, no Python, no cgo), over
@@ -1510,6 +1515,46 @@ page's picture in the chat.
 
 On the wire it is `browser.act` and `browser.page`, gated on the
 `browser.use` capability (`01-protocol.md`).
+
+#### The host's switches
+
+Added 2026-11-24. A bot asked to read a chat in WhatsApp Web answered
+that the browser was off and that only the owner could turn it on, with
+`runner browser on` on the host. The owner said "do it yourself" and got
+the same answer, and said they do not want guardrails like that: when the
+person says to do something, it is done. Until then the three switches
+(`runner exec`, `runner computer`, `runner browser`) were the host's alone,
+never written by the control plane.
+
+- **`set_host_settings` writes them for the person.** `browser` and
+  `computer` take `on` or `off`, `exec_mode` takes `off`, `allowlist` or
+  `full`, and `exec_allow` adds programs to the allowlist (it never removes
+  one). Only the fields given change. The runner writes the same files the
+  `runner` commands do and answers with what the host now allows. A bad
+  allowlist entry (`EXEC_008`), an allowlist that would outgrow its file
+  (`EXEC_009`) or an exec policy that cannot be read changes nothing: all is
+  checked before any file is written.
+- **Only on the person's word.** The tool is offered only on the owner's
+  own turns in their chat (the console, and their own WhatsApp, Telegram
+  or Slack chat): never a contact's or a group's turn, a routine, a wake or
+  another bot's message, so a page, a mail or someone else cannot switch a
+  host open. The prompt says to turn on only what the work needs.
+- **One card per call** under Approve for me (`perCallOnly`): no standing
+  grant, since a change opens more than the call itself. Under Full access
+  it runs at once. Review pointed out that a page or mail the bot reads on
+  the owner's own turn could then prompt it to open a host; asked whether
+  turning a switch on should ask even under Full access, the owner said no.
+- **The refusals point at it.** `BROWSER_001`, `COMPUTER_001`, `EXEC_001`,
+  `EXEC_002` and `EXEC_006` tell the bot to turn the switch on with this tool
+  when the person asked for the work, and run the action again, rather than
+  to send the person to the host.
+
+What it gives up: a compromised control plane can now open a host's
+switches. It could already start a coding agent on that host, which runs
+anything, so the switches were never the only line.
+
+On the wire it is `host.settings.set` and `host.settings`, gated on the
+`host.settings` capability (`01-protocol.md`).
 
 **Searching every session** (2026-11-09, from Hermes Agent's session
 search). A bot could list sessions and read one it had the id of, but not
@@ -2594,3 +2639,9 @@ The decisions it produced:
   way their message arrived, and no capabilities, machinery or limits unless
   asked. A new bot's `SOUL.md` says the same in one line under Vibe; an
   existing bot's soul is its own and is left as it is.
+- 2026-11-24: **a bot turns a host's switches on when asked** (§4.2, "The
+  host's switches"). The owner said "do it yourself" to a bot that told them
+  to run `runner browser on`, and did not want that guardrail.
+  `set_host_settings` writes the browser, screen and exec switches the
+  `runner` commands write, on the owner's own turns only, one card per call
+  under Approve for me.

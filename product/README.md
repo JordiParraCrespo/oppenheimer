@@ -1742,6 +1742,13 @@ earlier note:
   side pane (`versions/mvp/32-side-pane.md`), where the previews are three
   of the things the launcher opens, each a tab beside a shell, another
   session or a bot's chat.
+- `versions/mvp/32-side-pane.md` §1 listed Terminal, Agent, Session, Bot
+  and the previews as the launcher's rows, and the session's bar held its
+  name, its state and the worded Terminal / Chat switch. On 2026-11-24 the
+  owner asked for tabs and a calmer layout (`versions/mvp/33-session-tabs.md`):
+  open sessions and bots are tabs in a one-line bar, the state moves to the
+  tab's dot and tooltip, and the launcher is large rows with Agent, Session
+  and Bot folded under Side chats.
 - `versions/mvp/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
   a job over four tiles (next-step pills once it had instructions), over the
   stacked composer. On 2026-11-16 the owner found it loud in the side pane
@@ -2020,3 +2027,41 @@ earlier note:
   2026-11-24 the owner, filtering to their Mac Studio, wanted a second
   machine beside it: the Host facet takes several hosts, as Repository
   does, a chip each, and lists a session on any of them.
+- `versions/mvp/29-inbox.md`, "Bulk actions" (2026-11-11), showed a row's
+  checkbox only on hover, and the owner did not find it. On 2026-11-24
+  Select in the list's head shows every checkbox, and X checks the item on
+  the deck ("Selecting, found at a glance").
+- `versions/mvp/29-inbox.md`, "As built: the console" (2026-10-26), had
+  Show done on by default, so a done item stayed in the list struck
+  through. On 2026-11-24 the owner asked that it leave: Show done is off
+  unless turned on in the filter menu ("Done leaves the list").
+- A bot's `react` tool worked in its console chat only, refusing on a
+  channel's conversation ("answer in words"). On 2026-11-24 the owner asked
+  for the bot to decide its reactions on the channels too, keeping Slack's
+  automatic 👀: it reacts on Slack as its app and on WhatsApp as the number,
+  without asking, in a chat it answers (`next-steps/slack-for-bots.md` §4,
+  `next-steps/answering-on-telegram-and-whatsapp.md` §4). Telegram still
+  takes none.
+- `research/device-streaming.md` ("A host's desktop") left the pointer to
+  the screen-sharing server, and a watched Mac showed none: Apple's Screen
+  Sharing sends the cursor's shape but never where it is. On 2026-11-24 the
+  runner took that over: it reads the pointer with CoreGraphics and sends
+  `desktop.pointer` while the reader watches (`versions/mvp/01-protocol.md`),
+  and the console draws the host's cursor there.
+- `versions/mvp/05-screens.md` drew a stopped session as a pane with a
+  Restart button, and `02-runner.md` §5 kept every session running until
+  someone stopped it. On 2026-11-24, after reading how Orca hibernates
+  agents (`research/session-resume/README.md`), opening a stopped session
+  as its owner restarts it, and the button is the fallback for a restart
+  that fails. The runner also stops, never closes, a session left `done`
+  or `idle` and unwatched for two hours (`RUNNER_IDLE_STOP`).
+- `versions/mvp/29-inbox.md` ("You're all caught up", 2026-11-14) kept the
+  list's empty state as one muted "Nothing needs you." row. On 2026-11-24
+  the owner asked for more: the list shows "Inbox zero" over a check in a
+  green disc, and "No matches" when filters match nothing ("Inbox zero").
+- `versions/mvp/25-bots.md` §4.2 kept a host's switches for bots
+  (`runner exec`, `runner computer`, `runner browser`) on the host alone,
+  never written by the control plane. On 2026-11-24 the owner, told by a
+  bot to run `runner browser on` after saying "do it yourself", did not want
+  that guardrail: a bot changes them with `set_host_settings` when the
+  person asks in their own chat ("The host's switches").

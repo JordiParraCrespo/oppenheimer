@@ -51,7 +51,7 @@
         },
         "capabilities": {
           "default": [],
-          "maxItems": 32,
+          "maxItems": 256,
           "type": "array",
           "items": {
             "type": "string",
@@ -1433,6 +1433,105 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "host.settings.set"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "browser": {
+          "type": "string",
+          "enum": [
+            "on",
+            "off"
+          ]
+        },
+        "computer": {
+          "type": "string",
+          "enum": [
+            "on",
+            "off"
+          ]
+        },
+        "execMode": {
+          "type": "string",
+          "enum": [
+            "off",
+            "allowlist",
+            "full"
+          ]
+        },
+        "execAllow": {
+          "minItems": 1,
+          "maxItems": 32,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "pattern": "^\\S+$"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "commandId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "host.settings"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "browser": {
+          "type": "string",
+          "enum": [
+            "on",
+            "off"
+          ]
+        },
+        "computer": {
+          "type": "string",
+          "enum": [
+            "on",
+            "off"
+          ]
+        },
+        "execMode": {
+          "type": "string",
+          "enum": [
+            "off",
+            "allowlist",
+            "full"
+          ]
+        },
+        "execAllow": {
+          "maxItems": 65536,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 65536
+          }
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "browser",
+        "computer",
+        "execMode",
+        "execAllow"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "terminal.drive"
         },
         "commandId": {
@@ -2407,6 +2506,40 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "desktop.pointer"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "x",
+        "y",
+        "width",
+        "height"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "desktop.close"
         },
         "attachmentId": {
@@ -2810,6 +2943,45 @@
         "mimetype",
         "data",
         "seconds"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.react"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "chatId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "messageId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "senderId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "emoji": {
+          "type": "string",
+          "maxLength": 32
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "chatId",
+        "messageId",
+        "senderId",
+        "emoji"
       ]
     },
     {
@@ -3691,6 +3863,7 @@
       "whatsapp",
       "whatsapp.voice",
       "whatsapp.voice.send",
+      "whatsapp.react",
       "whatsapp.image",
       "telegram",
       "shared.preview",
@@ -3700,8 +3873,10 @@
       "computer.use",
       "browser.use",
       "session.windows.list",
-      "session.window.agent"
+      "session.window.agent",
+      "host.settings"
     ],
+    "helloCapabilitiesMax": 256,
     "maxEventPayloadBytes": 8192,
     "chatEntryMaxBytes": 65536,
     "chatBatchMaxEntries": 256,

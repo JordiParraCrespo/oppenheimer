@@ -53,6 +53,10 @@ const CreditWindow = 262144
 // runner reads no bigger one and never sends one.
 const MaxFrameBytes = 524288
 
+// HelloCapabilitiesMax is the most capabilities one `hello` may name: the
+// control plane refuses a hello naming more, and the host never links.
+const HelloCapabilitiesMax = 256
+
 // MaxEventPayloadBytes caps an event's JSON payload string, because an event
 // never carries pane text.
 const MaxEventPayloadBytes = 8192
@@ -109,6 +113,7 @@ const (
 	CapabilityWhatsapp                 = "whatsapp"
 	CapabilityWhatsappVoice            = "whatsapp.voice"
 	CapabilityWhatsappVoiceSend        = "whatsapp.voice.send"
+	CapabilityWhatsappReact            = "whatsapp.react"
 	CapabilityWhatsappImage            = "whatsapp.image"
 	CapabilityTelegram                 = "telegram"
 	CapabilitySharedPreview            = "shared.preview"
@@ -119,6 +124,7 @@ const (
 	CapabilityBrowserUse               = "browser.use"
 	CapabilitySessionWindowsList       = "session.windows.list"
 	CapabilitySessionWindowAgent       = "session.window.agent"
+	CapabilityHostSettings             = "host.settings"
 )
 
 // The `type` of every message on the link.
@@ -159,6 +165,8 @@ const (
 	TypeFsFound                 = "fs.found"
 	TypeHostExec                = "host.exec"
 	TypeHostExecResult          = "host.exec.result"
+	TypeHostSettingsSet         = "host.settings.set"
+	TypeHostSettings            = "host.settings"
 	TypeTerminalDrive           = "terminal.drive"
 	TypeTerminalScreen          = "terminal.screen"
 	TypeComputerAct             = "computer.act"
@@ -184,6 +192,7 @@ const (
 	TypeDesktopOpen             = "desktop.open"
 	TypeDesktopOpened           = "desktop.opened"
 	TypeDesktopControl          = "desktop.control"
+	TypeDesktopPointer          = "desktop.pointer"
 	TypeDesktopClose            = "desktop.close"
 	TypeCloudReply              = "cloud.reply"
 	TypeCloudReplied            = "cloud.replied"
@@ -195,6 +204,7 @@ const (
 	TypeWhatsappAck             = "whatsapp.ack"
 	TypeWhatsappSend            = "whatsapp.send"
 	TypeWhatsappSendVoice       = "whatsapp.send.voice"
+	TypeWhatsappReact           = "whatsapp.react"
 	TypeWhatsappSent            = "whatsapp.sent"
 	TypeWhatsappMediaGet        = "whatsapp.media.get"
 	TypeWhatsappMedia           = "whatsapp.media"
@@ -249,6 +259,8 @@ var MessageTypes = []string{
 	TypeFsFound,
 	TypeHostExec,
 	TypeHostExecResult,
+	TypeHostSettingsSet,
+	TypeHostSettings,
 	TypeTerminalDrive,
 	TypeTerminalScreen,
 	TypeComputerAct,
@@ -274,6 +286,7 @@ var MessageTypes = []string{
 	TypeDesktopOpen,
 	TypeDesktopOpened,
 	TypeDesktopControl,
+	TypeDesktopPointer,
 	TypeDesktopClose,
 	TypeCloudReply,
 	TypeCloudReplied,
@@ -285,6 +298,7 @@ var MessageTypes = []string{
 	TypeWhatsappAck,
 	TypeWhatsappSend,
 	TypeWhatsappSendVoice,
+	TypeWhatsappReact,
 	TypeWhatsappSent,
 	TypeWhatsappMediaGet,
 	TypeWhatsappMedia,
@@ -377,6 +391,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(HostExec), true
 	case TypeHostExecResult:
 		return new(HostExecResult), true
+	case TypeHostSettingsSet:
+		return new(HostSettingsSet), true
+	case TypeHostSettings:
+		return new(HostSettings), true
 	case TypeTerminalDrive:
 		return new(TerminalDrive), true
 	case TypeTerminalScreen:
@@ -427,6 +445,8 @@ func NewMessage(messageType string) (any, bool) {
 		return new(DesktopOpened), true
 	case TypeDesktopControl:
 		return new(DesktopControl), true
+	case TypeDesktopPointer:
+		return new(DesktopPointer), true
 	case TypeDesktopClose:
 		return new(DesktopClose), true
 	case TypeCloudReply:
@@ -449,6 +469,8 @@ func NewMessage(messageType string) (any, bool) {
 		return new(WhatsappSend), true
 	case TypeWhatsappSendVoice:
 		return new(WhatsappSendVoice), true
+	case TypeWhatsappReact:
+		return new(WhatsappReact), true
 	case TypeWhatsappSent:
 		return new(WhatsappSent), true
 	case TypeWhatsappMediaGet:
@@ -886,6 +908,26 @@ type HostExecResult struct {
 	DurationMs      int64  `json:"durationMs"`
 }
 
+// HostSettingsSet is the `host.settings.set` message.
+type HostSettingsSet struct {
+	Type      string   `json:"type"`
+	CommandID string   `json:"commandId"`
+	Browser   string   `json:"browser,omitempty"`
+	Computer  string   `json:"computer,omitempty"`
+	ExecMode  string   `json:"execMode,omitempty"`
+	ExecAllow []string `json:"execAllow,omitempty"`
+}
+
+// HostSettings is the `host.settings` message.
+type HostSettings struct {
+	Type      string   `json:"type"`
+	CommandID string   `json:"commandId"`
+	Browser   string   `json:"browser"`
+	Computer  string   `json:"computer"`
+	ExecMode  string   `json:"execMode"`
+	ExecAllow []string `json:"execAllow"`
+}
+
 // TerminalDrive is the `terminal.drive` message.
 type TerminalDrive struct {
 	Type        string   `json:"type"`
@@ -1147,6 +1189,16 @@ type DesktopControl struct {
 	Control      bool   `json:"control"`
 }
 
+// DesktopPointer is the `desktop.pointer` message.
+type DesktopPointer struct {
+	Type         string  `json:"type"`
+	AttachmentID uint32  `json:"attachmentId"`
+	X            float64 `json:"x"`
+	Y            float64 `json:"y"`
+	Width        float64 `json:"width"`
+	Height       float64 `json:"height"`
+}
+
 // DesktopClose is the `desktop.close` message.
 type DesktopClose struct {
 	Type         string `json:"type"`
@@ -1257,6 +1309,16 @@ type WhatsappSendVoice struct {
 	Mimetype  string `json:"mimetype"`
 	Data      string `json:"data"`
 	Seconds   int    `json:"seconds"`
+}
+
+// WhatsappReact is the `whatsapp.react` message.
+type WhatsappReact struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	ChatID    string `json:"chatId"`
+	MessageID string `json:"messageId"`
+	SenderID  string `json:"senderId"`
+	Emoji     string `json:"emoji"`
 }
 
 // WhatsappSent is the `whatsapp.sent` message.

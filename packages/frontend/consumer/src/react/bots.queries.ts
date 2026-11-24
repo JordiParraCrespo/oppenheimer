@@ -100,6 +100,18 @@ export function useSuspenseSectionBots(section: BotSection) {
   });
 }
 
+/**
+ * One bot where its read draws no loading or failure of its own: the tab of
+ * the bot on screen, sharing the chat's read.
+ */
+export function useBot(id: string) {
+  const app = useConsumerApp();
+  return useQuery<BotEntity, Error>({
+    queryKey: botsKeys.detail(id),
+    queryFn: () => app.bots.findById(id),
+  });
+}
+
 /** One bot under a Suspense `QueryState`; `data` is always the bot. */
 export function useSuspenseBot(id: string) {
   const app = useConsumerApp();

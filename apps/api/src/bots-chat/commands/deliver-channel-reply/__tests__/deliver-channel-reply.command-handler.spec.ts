@@ -4,9 +4,11 @@ import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { BotPermission } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import { MarkSlackWorkingCommand } from '../../../../slack/commands/mark-slack-working/mark-slack-working.command';
+import { ReactOnSlackCommand } from '../../../../slack/commands/react-on-slack/react-on-slack.command';
 import { ReplyOnSlackCommand } from '../../../../slack/commands/reply-on-slack/reply-on-slack.command';
 import { ReplyOnTelegramCommand } from '../../../../telegram/commands/reply-on-telegram/reply-on-telegram.command';
 import type { SpokenAudio } from '../../../../voice/commands/synthesize-speech/synthesize-speech.command';
+import { ReactOnWhatsappCommand } from '../../../../whatsapp/commands/react-on-whatsapp/react-on-whatsapp.command';
 import { ReplyOnWhatsappCommand } from '../../../../whatsapp/commands/reply-on-whatsapp/reply-on-whatsapp.command';
 import { BotChannelReplyResolver } from '../../../application/bot-channel-reply.resolver';
 import type { BotModelAccessResolver } from '../../../application/bot-model-access.resolver';
@@ -588,5 +590,56 @@ describe('DeliverChannelReplyCommandHandler', () => {
       expect(speech.execute).not.toHaveBeenCalled();
       expect(sent(bus)[0]).toMatchObject({ text: '[voice] Hello.', voice: undefined });
     });
+  });
+});
+
+describe('BotChannelReplyResolver.react', () => {
+  function resolverFor(chat: BotChannelChat | null, answer: unknown = 'reacted') {
+    const bus = { execute: vi.fn(async () => answer) };
+    const resolver = new BotChannelReplyResolver(
+      { findChannelChat: vi.fn(async () => chat) } as unknown as BotConversationRepositoryPort,
+      bus as unknown as CommandBus,
+    );
+    return { bus, resolver };
+  }
+
+  // Breaks if the reaction lands on another message than the one the turn
+  // opened on, or goes through another channel than the conversation's.
+  it('reacts on the Slack message or the stored WhatsApp row the turn opened on', async () => {
+    const onSlack = resolverFor(slackChat);
+    await expect(onSlack.resolver.react(slack(), '🎉', '👍')).resolves.toBe('reacted');
+    const [toSlack] = onSlack.bus.execute.mock.calls[0] as unknown as [ReactOnSlackCommand];
+    expect(toSlack).toBeInstanceOf(ReactOnSlackCommand);
+    expect(toSlack).toMatchObject({
+      accountId: slackAccountId,
+      chatId: 'C1:1700000000.000100',
+      ts: '1700000500.000001',
+      emoji: '🎉',
+      previous: '👍',
+    });
+
+    const onWhatsapp = resolverFor(whatsappChat, true);
+    await expect(onWhatsapp.resolver.react(whatsapp(), null, '👍')).resolves.toBe('reacted');
+    const [toWhatsapp] = onWhatsapp.bus.execute.mock.calls[0] as unknown as [
+      ReactOnWhatsappCommand,
+    ];
+    expect(toWhatsapp).toBeInstanceOf(ReactOnWhatsappCommand);
+    expect(toWhatsapp).toMatchObject({ accountId: whatsappAccountId, messageRowId, emoji: '' });
+  });
+
+  // Breaks if a reaction the channel refused, or one it cannot carry, reads as sent.
+  it('says why nothing went: not sent, no key, a channel without reactions, no channel', async () => {
+    await expect(
+      resolverFor(whatsappChat, false).resolver.react(whatsapp(), '👍', null),
+    ).resolves.toBe('not_sent');
+    const keyless = resolverFor(slackChat);
+    await expect(
+      keyless.resolver.react({ ...slack(), sourceKey: null } as BotTurnEntity, '👍', null),
+    ).resolves.toBe('unreachable');
+    expect(keyless.bus.execute).not.toHaveBeenCalled();
+    await expect(resolverFor(telegramChat).resolver.react(telegram(), '👍', null)).resolves.toBe(
+      'unsupported',
+    );
+    await expect(resolverFor(null).resolver.react(slack(), '👍', null)).resolves.toBe('no_channel');
   });
 });

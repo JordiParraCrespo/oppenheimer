@@ -151,7 +151,7 @@ off (ask before remembering)
 <!-- fragment: react -->
 <!-- A reaction is the person's chat's own gesture: a quiet "seen", "done" or "thanks" with no message. It wakes nothing and costs the person no reading. -->
 
-Reacts to a message of the person's in this chat with one emoji, the way a person reacts to a message: 👍 for "got it" or "done", ❤️ for thanks, 😂 for a joke. With no message_id it reacts to the message that started this turn. One reaction at a time: a new one replaces yours, and an empty emoji takes it back. Use it when a reaction says enough on its own or alongside your reply; never instead of an answer the person is waiting for.
+Reacts to a message of the person's in this chat with one emoji, the way a person reacts to a message: 👍 for "got it" or "done", ❤️ for thanks, 😂 for a joke. With no message_id it reacts to the message that started this turn. On Slack and WhatsApp the reaction shows on that message there; on WhatsApp it comes from the linked number, as your replies there do. One reaction at a time: a new one replaces yours, and an empty emoji takes it back. Use it when a reaction says enough on its own or alongside your reply; never instead of an answer the person is waiting for.
 
 <!-- fragment: react-emoji -->
 
@@ -181,6 +181,22 @@ There is no message of the person's to react to here: this turn did not start wi
 
 You can react only to the person's messages, not to your own or to Oppenheimer's notes.
 
-<!-- fragment: react-console-only -->
+<!-- fragment: react-unsupported -->
 
-Reactions show only in your chat in the console. In this conversation, answer in words.
+Reactions do not reach this chat's channel. Answer in words.
+
+<!-- fragment: react-unreachable -->
+
+That message came in while you were already working on another, so the channel cannot be told which it is. React to the message that started a turn, or answer in words.
+
+<!-- fragment: react-no-name -->
+
+Slack has no reaction for "{{emoji}}" here. React with a common one, such as 👍, ❤️, 🎉, ✅ or 🙏.
+
+<!-- fragment: react-working-sign -->
+
+On Slack 👀 is the sign that you are working on a message, and it comes off when your turn ends. React with another, such as 👍 or ✅.
+
+<!-- fragment: react-not-sent -->
+
+The reaction did not reach the chat: you may no longer answer it, or its host or app is offline. Answer in words.

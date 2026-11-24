@@ -67,6 +67,10 @@ type Options struct {
 	// so an agent that ignores its hangup does not outlive its session; nil
 	// leaves it to tmux's hangup alone.
 	Wrappers Wrappers
+	// Clients counts who is attached to each tmux session, the host's own
+	// clients included, which keeps a session someone watches from stopping
+	// as idle; nil counts only the attaches this service made.
+	Clients TerminalClients
 	// Rebooted says the host started after the session map was last
 	// saved: every session it holds as live was lost to that reboot, and a
 	// kept one is brought back (RecoverKept).
@@ -118,6 +122,9 @@ type Service struct {
 	// observer says what an agent is doing: its own word, or its screen
 	// (observer.go).
 	observer observer
+	// presence is who is looking at each session, for the idle stop
+	// (idle.go).
+	presence *presence
 	// watches is each session's terminal watches (watches.go).
 	watches     *watchBook
 	terminals   Terminals
@@ -136,6 +143,7 @@ type Service struct {
 	own         OwnInstructions
 	freePort    func() (int, error)
 	wrappers    Wrappers
+	clients     TerminalClients
 	now         func() time.Time
 }
 
@@ -157,11 +165,11 @@ func New(opts Options) (*Service, error) {
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
 		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, blockedSince: map[string]time.Time{}, decisions: map[string]string{},
 		keeper: newKeeper(), observer: observer{classifier: opts.Classifier, program: opts.ProgramStatus},
-		watches:   newWatchBook(),
+		watches: newWatchBook(), presence: newPresence(),
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
-		transcripts: opts.Transcripts, statusLines: opts.StatusLine, tools: opts.Tools, own: opts.OwnInstructions, freePort: opts.FreePort, wrappers: opts.Wrappers, now: now,
+		transcripts: opts.Transcripts, statusLines: opts.StatusLine, tools: opts.Tools, own: opts.OwnInstructions, freePort: opts.FreePort, wrappers: opts.Wrappers, clients: opts.Clients, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -416,7 +424,12 @@ func (s *Service) Attach(ctx context.Context, id string, window int, size Size, 
 	if _, ok := session.Window(window); !ok {
 		return nil, domain.ErrNotFound.WithDetail("%v: %d", domain.ErrNoSuchWindow, window)
 	}
-	return s.terminals.Attach(ctx, session.Target(window), size, readOnly)
+	pty, err := s.terminals.Attach(ctx, session.Target(window), size, readOnly)
+	if err != nil {
+		return nil, err
+	}
+	// Someone watching keeps the session from stopping as idle (idle.go).
+	return &watchedAttachment{Attachment: pty, release: s.presence.attach(id, s.now)}, nil
 }
 
 // agentServer is where the session's agent serves its conversation from
@@ -476,6 +489,7 @@ func (s *Service) Send(ctx context.Context, id string, window int, keys string) 
 	if !session.State.Live() {
 		return domain.ErrNotRunning.WithDetail("session %s is %s", id, session.State)
 	}
+	s.presence.touch(id, s.now())
 	return s.terminals.SendKeys(ctx, session.Target(window), keys)
 }
 
@@ -1149,6 +1163,7 @@ func (s *Service) Listen(l Listener) {
 func (s *Service) announced(next domain.Session, stateChanged bool) {
 	if !next.State.Live() {
 		s.observer.forget(next.ID)
+		s.presence.forget(next.ID)
 	}
 	s.mu.Lock()
 	listeners := slices.Clone(s.listeners)

@@ -470,6 +470,28 @@ runner that starts on a host booted after it last saved the session map
 restarts each kept session that was running, reopening its conversation,
 and retries a failure from 1.5 s doubling to a minute.
 
+**An idle session stops on its own** (2026-11-24,
+`research/session-resume/README.md`). Stopping costs nothing to undo:
+the agent's processes go, and its checkouts, branch and conversation stay.
+So the daemon stops, every 5 minutes, each session that has been idle
+past the window (2 h by default; `RUNNER_IDLE_STOP` sets another duration,
+or `off`). Idle means the agent is `done` or `idle`, and nobody has been
+attached to it or typed into it for that long. The window runs from the
+later of the state's last change and the last look, so a session someone
+just read or typed into is not stopped. Before each stop it looks at the
+agent afresh (the poll loop's state can be 10 s old). It never stops a
+session that is `working` or `blocked`, runs a second agent in another
+window (only window 0's is read, and a stop ends every window), has a
+terminal attached now (from the console, or
+a tmux client on the host, counted with `list-clients`), is kept, or is a
+child whose parent is live. A parent stops only when every session that
+would stop with it (its children, theirs, and on down) is idle too, so an
+idle family stops parent first. It
+never closes one. Each stop takes the stop path (the wrapper hung up, then killed, as
+above), is announced like any other stop, and is logged with slog
+("stopped an idle session"). Opening the session in the console restarts
+it (05, "A stopped session comes back when it is opened").
+
 **Caps.** 20 sessions per host by default, 2 MB ring buffer each, 32 KB
 PTY read buffer. Resize is coalesced once, by the console, over 50 ms;
 the runner applies each size as it arrives.
@@ -777,6 +799,7 @@ offline. Logs never contain PTY bytes or tokens.
 | Control plane says the runner is too old | Update within the urgent delay, ignoring the safe window (09 §5) |
 | Runner killed or updated | tmux untouched; adopt on boot, rehydrate buffers, resume streams |
 | Host rebooted | Sessions stopped, worktrees intact, Restart recreates window 0; a kept session is restarted on its own (§5) |
+| A session left finished and unwatched | Stopped after `RUNNER_IDLE_STOP` (2 h), never closed; opening it restarts it (§5) |
 | `tmux` missing | Sessions refuse to start with `TMUX_001`; the UI shows the fix |
 | `claude` missing | Session starts; the terminal shows the install hint |
 | Disk nearly full | Status event and a banner before the failure, refuse new sessions under the floor |

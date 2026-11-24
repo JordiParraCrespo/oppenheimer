@@ -1,7 +1,9 @@
 {
   "title": "Inbox",
   "list": {
+    "emptyTitle": "Inbox zero",
     "empty": "Nothing needs you.",
+    "noneMatchingTitle": "No matches",
     "noneMatching": "Nothing matching these filters or words needs you.",
     "low": "Low",
     "snoozed": "Snoozed",
@@ -25,7 +27,8 @@
     "low": "Deprioritize",
     "restore": "Restore priority",
     "snooze": "Snooze",
-    "delete": "Delete"
+    "delete": "Delete",
+    "start": "Select"
   },
   "filter": {
     "label": "Filter the Inbox",

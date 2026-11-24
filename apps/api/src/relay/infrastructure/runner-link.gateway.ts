@@ -435,6 +435,7 @@ export class RunnerLinkGateway {
       case 'shared.preview':
       case 'transcript.page':
       case 'host.exec.result':
+      case 'host.settings':
       case 'terminal.screen':
       case 'computer.screen':
       case 'browser.page':
@@ -476,6 +477,10 @@ export class RunnerLinkGateway {
       case 'desktop.opened':
         // A port's or a desktop's connection is up; its bytes may flow (28).
         link.attachment(message.attachmentId)?.opened?.();
+        return;
+      case 'desktop.pointer':
+        // Where the host's pointer is, for the desktop's browser to draw.
+        link.attachment(message.attachmentId)?.pointer?.(message);
         return;
       case 'attachment.credit':
         // The runner's credit for a port attachment's bytes it wrote to the

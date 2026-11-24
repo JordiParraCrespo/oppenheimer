@@ -443,6 +443,11 @@ for it to look like a mail inbox. What changed from §5 and Decided 1:
 - **You're all caught up** (2026-11-14) replaces "Nothing needs you" as the
   clear pane's heading, centred under a small line drawing of an empty
   tray; the line under it and the list's own "Nothing needs you." stay.
+- **Inbox zero** (2026-11-24) heads the list's own empty state: a check in
+  a green disc, the title, and "Nothing needs you." under it, in place of
+  the one muted row. Filters or words that match nothing show "No matches"
+  over a search-x disc. The owner asked for it; it is the icon tier in a
+  column the design system would otherwise give an inline row.
 
 ## Reports: a problem with its pictures, answered here (2026-11-09)
 
@@ -773,4 +778,21 @@ tab open at all.
 
 Not yet: the popup does not list the runner sessions, only counts and
 tells them.
+
+### Selecting, found at a glance (2026-11-24)
+
+The owner looked for bulk actions and did not find them: a row's checkbox
+showed only on hover. **Select** in the list's head now opens the selection
+bar with every row's checkbox shown and its actions waiting until a row is
+checked; **X** checks or unchecks the item on the deck, as in a mail
+client; Escape or the cross leaves selecting. Hover, Shift-click and the
+row menu's Select are unchanged ("Bulk actions").
+
+### Done leaves the list (2026-11-24)
+
+"As built: the console" (2026-10-26) had Show done on by default, so what
+was marked done stayed in the list for the visit, struck through. The
+owner asked that a done item leave the list: Show done is off unless the
+filter menu turns it on (`?done`, replacing `?hideDone`), and then lists
+what was marked done on this visit, as before.
 

@@ -1,9 +1,10 @@
-import { Button, ChipSelectItem, ChipSelectList, EmptyState } from '@oppenheimer/design-system-web';
+import { Button, Launcher, LauncherItem } from '@oppenheimer/design-system-web';
 import {
   BotIcon,
   ChevronLeftIcon,
   GlobeIcon,
   type LucideIcon,
+  MessageSquarePlusIcon,
   MonitorIcon,
   PanelsTopLeftIcon,
   SmartphoneIcon,
@@ -19,24 +20,22 @@ import { SideAgentPicker } from './side-agent-picker';
 import { SideBotPicker } from './side-bot-picker';
 import { SideSessionPicker } from './side-session-picker';
 
-type Choice = 'terminal' | 'agent' | 'session' | 'bot' | PreviewTab;
+type Preview = Exclude<PreviewTab, 'browser'>;
+type Pane = 'root' | 'chats' | 'agent' | 'session' | 'bot';
 
-const ICONS: Record<Choice, LucideIcon> = {
-  terminal: SquareTerminalIcon,
-  agent: SparklesIcon,
-  session: PanelsTopLeftIcon,
-  bot: BotIcon,
-  browser: GlobeIcon,
+const PREVIEW_ICONS: Record<Preview, LucideIcon> = {
   simulator: SmartphoneIcon,
   desktop: MonitorIcon,
 };
 
 /**
- * What the side pane offers when nothing in it is shown: the list of what can
- * open beside the session. A terminal opens at once; Agent, Session and Bot
- * slide to a pick, with Back; the previews are the ones this console and
- * deployment can show. The pane shows it while it is empty, and again from
- * the tab strip's plus.
+ * What the side pane offers when nothing in it is shown: large rows centred
+ * in the pane. Terminal opens a shell at once; Browser opens the session's
+ * dev server; Side chats slides to a second list (another agent in this
+ * worktree, another session, a bot), each of which slides to its pick, with
+ * Back. The Simulator and the host's Desktop follow when this console and
+ * deployment can show them. The pane shows it while it is empty, and again
+ * from the tab strip's plus.
  */
 export function SidePaneLauncher({
   sessionId,
@@ -64,82 +63,103 @@ export function SidePaneLauncher({
   opening: CodingAgentId | null;
 }) {
   const { t } = useTranslation();
-  const [pane, setPane] = useState<'root' | 'agent' | 'session' | 'bot'>('root');
-  const choices: Choice[] = [
-    ...(terminals ? (['terminal', 'agent'] as const) : []),
-    'session',
-    ...(bots ? (['bot'] as const) : []),
-    ...previews,
-  ];
-  const label = (choice: Choice) =>
-    choice === 'terminal' || choice === 'agent' || choice === 'session' || choice === 'bot'
-      ? t(`sessions.side.launcher.${choice}`)
-      : t(`sessions.preview.${choice}`);
-  const choose = (choice: Choice) => {
-    if (choice === 'terminal') onNewTerminal();
-    else if (choice === 'agent' || choice === 'session' || choice === 'bot') setPane(choice);
-    else onOpen({ kind: 'preview', tab: choice });
-  };
+  const [pane, setPane] = useState<Pane>('root');
+  const others = previews.filter((tab): tab is Preview => tab !== 'browser');
+
+  if (pane === 'root') {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto py-6">
+        <Launcher aria-label={t('sessions.side.launcher.title')}>
+          {terminals ? (
+            <LauncherItem
+              icon={<SquareTerminalIcon />}
+              busy={opening === 'shell'}
+              disabled={opening !== null}
+              onClick={onNewTerminal}
+            >
+              {opening === 'shell'
+                ? t('sessions.side.terminal.opening')
+                : t('sessions.side.launcher.terminal')}
+            </LauncherItem>
+          ) : null}
+          {previews.includes('browser') ? (
+            <LauncherItem
+              icon={<GlobeIcon />}
+              onClick={() => onOpen({ kind: 'preview', tab: 'browser' })}
+            >
+              {t('sessions.preview.browser')}
+            </LauncherItem>
+          ) : null}
+          <LauncherItem icon={<MessageSquarePlusIcon />} onClick={() => setPane('chats')}>
+            {t('sessions.side.launcher.sideChats')}
+          </LauncherItem>
+          {others.map((tab) => {
+            const Icon = PREVIEW_ICONS[tab];
+            return (
+              <LauncherItem
+                key={tab}
+                icon={<Icon />}
+                onClick={() => onOpen({ kind: 'preview', tab })}
+              >
+                {t(`sessions.preview.${tab}`)}
+              </LauncherItem>
+            );
+          })}
+        </Launcher>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
-      {pane === 'root' ? (
-        <EmptyState>
-          <EmptyState.Header>
-            <EmptyState.Title>{t('sessions.side.launcher.title')}</EmptyState.Title>
-            <EmptyState.Description>
-              {t('sessions.side.launcher.description')}
-            </EmptyState.Description>
-          </EmptyState.Header>
-          <EmptyState.Content className="w-full text-left">
-            <ChipSelectList
-              density="menu"
-              className="w-full"
-              role="listbox"
-              aria-label={t('sessions.side.launcher.title')}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="self-start"
+        onClick={() => setPane(pane === 'chats' ? 'root' : 'chats')}
+      >
+        <ChevronLeftIcon />
+        {t('sessions.side.launcher.back')}
+      </Button>
+      {pane === 'chats' ? (
+        <div className="flex flex-1 flex-col justify-center pb-12">
+          <Launcher aria-label={t('sessions.side.launcher.sideChats')}>
+            {terminals ? (
+              <LauncherItem
+                icon={<SparklesIcon />}
+                detail={t('sessions.side.launcher.agentDetail')}
+                onClick={() => setPane('agent')}
+              >
+                {t('sessions.side.launcher.agent')}
+              </LauncherItem>
+            ) : null}
+            <LauncherItem
+              icon={<PanelsTopLeftIcon />}
+              detail={t('sessions.side.launcher.sessionDetail')}
+              onClick={() => setPane('session')}
             >
-              {choices.map((choice) => {
-                const Icon = ICONS[choice];
-                return (
-                  <ChipSelectItem
-                    key={choice}
-                    density="menu"
-                    leading={<Icon className="size-4" />}
-                    description={t(`sessions.side.launcher.${choice}Detail`)}
-                    disabled={choice === 'terminal' && opening !== null}
-                    aria-busy={choice === 'terminal' && opening === 'shell' ? true : undefined}
-                    onClick={() => choose(choice)}
-                  >
-                    {choice === 'terminal' && opening === 'shell'
-                      ? t('sessions.side.terminal.opening')
-                      : label(choice)}
-                  </ChipSelectItem>
-                );
-              })}
-            </ChipSelectList>
-          </EmptyState.Content>
-        </EmptyState>
+              {t('sessions.side.launcher.session')}
+            </LauncherItem>
+            {bots ? (
+              <LauncherItem icon={<BotIcon />} onClick={() => setPane('bot')}>
+                {t('sessions.side.launcher.bot')}
+              </LauncherItem>
+            ) : null}
+          </Launcher>
+        </div>
+      ) : pane === 'agent' ? (
+        <SideAgentPicker
+          session={session}
+          onStart={onStartAgent}
+          opening={opening === 'shell' ? null : opening}
+        />
+      ) : pane === 'session' ? (
+        <SideSessionPicker
+          currentSessionId={sessionId}
+          onPick={(id) => onOpen({ kind: 'session', sessionId: id })}
+        />
       ) : (
-        <>
-          <Button variant="ghost" size="sm" className="self-start" onClick={() => setPane('root')}>
-            <ChevronLeftIcon />
-            {t('sessions.side.launcher.back')}
-          </Button>
-          {pane === 'agent' ? (
-            <SideAgentPicker
-              session={session}
-              onStart={onStartAgent}
-              opening={opening === 'shell' ? null : opening}
-            />
-          ) : pane === 'session' ? (
-            <SideSessionPicker
-              currentSessionId={sessionId}
-              onPick={(id) => onOpen({ kind: 'session', sessionId: id })}
-            />
-          ) : (
-            <SideBotPicker onPick={(id) => onOpen({ kind: 'bot', botId: id })} />
-          )}
-        </>
+        <SideBotPicker onPick={(id) => onOpen({ kind: 'bot', botId: id })} />
       )}
     </div>
   );

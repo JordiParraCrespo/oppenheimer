@@ -116,6 +116,7 @@ export {
   type UpdateBotFactVariables,
   type UpdateBotVariables,
   useAddBotFact,
+  useBot,
   useBotDocuments,
   useBotGroups,
   useBots,
@@ -208,6 +209,7 @@ export {
   useRepositoryBranchesFor,
   useStartInstallation,
 } from './installations.queries';
+export { RESTART_WATCH_MS } from './live-poll';
 export {
   useCancelScheduledMail,
   useConnectGmail,
@@ -310,6 +312,7 @@ export {
   useRenameSession,
   useRestartSession,
   useRetrySession,
+  useSession,
   useSessionOpening,
   useSessionShare,
   useSessionStartProgress,

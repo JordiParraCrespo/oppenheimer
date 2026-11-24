@@ -21,7 +21,13 @@ conversation, then killed with its process group, and the daemon ends
 any agent still running for a closed or stopped session every 5 minutes. An
 agent in a session can start, tell and wait on other agents as child
 sessions (`runner --skill`), and a session marked kept comes back on its own
-after a reboot (`product/research/lessons-from-herdr.md` §4).
+after a reboot (`product/research/lessons-from-herdr.md` §4). A session whose
+agent has been `done` or `idle` for 2 hours, with nothing attached and nothing
+typed into it, is stopped (never closed) to free its processes. Working,
+blocked, attached (from the console or a tmux client on the host) and kept
+sessions are never stopped this way, nor a child whose parent is live, nor a
+parent with a child that is not idle too. `RUNNER_IDLE_STOP` sets the window (`90m`, `4h`)
+or turns it `off` (`product/versions/mvp/02-runner.md` §5).
 
 `runner run` holds one outbound WebSocket to the control plane: sessions are
 driven from the console over it, and the git credential helper answers with
@@ -31,15 +37,17 @@ the same lifecycle from the host itself.
 A bot can run one program on the host over the link (`host.exec`,
 `product/versions/mvp/25-bots.md` §4.2, "Commands on a host"), but only what
 `runner exec` allows here: off by default, an allowlist of programs, or
-everything. The policy lives in `~/.oppenheimer/exec.json`, is read on every
-call, and is never written by the control plane. On a host set to `full` a
+everything. The policy lives in `~/.oppenheimer/exec.json` and is read on every
+call. It is written here, or by a bot over the link when the person asked it
+to (`host.settings.set`, which writes the browser and computer switches below
+too). On a host set to `full` a
 bot can also drive a blank-terminal session (`terminal.drive`): type into
 it and read its screen back.
 
 A bot can use the host's screen, mouse and keyboard over the link too
 (`computer.act`, `25-bots.md` §4.2, "Using a computer"), only after `runner
 computer on` here: a second switch, in `~/.oppenheimer/computer.json`, off by
-default and never written by the control plane. On a Mac it drives the main
+default. On a Mac it drives the main
 screen through `screencapture` and `osascript` (the runner needs Screen
 Recording and Accessibility); on Linux an X display through `xdotool` and
 ImageMagick's `import`, starting a virtual one (Xvfb, locked with an `xauth`
@@ -71,7 +79,9 @@ runner signs in to the screen-sharing server already on the host's loopback
 with a VNC password or a macOS account it keeps on the host, and hands the
 browser an RFB stream that asks for none. The browser watches until it takes
 control; until then the runner drops its keys, pointer, clipboard and
-resizes. The choice lives in `~/.oppenheimer/desktop.json`, is read on every
+resizes, and on a Mac tells it where the host's pointer is
+(`desktop.pointer`, read with CoreGraphics), which Screen Sharing never
+does. The choice lives in `~/.oppenheimer/desktop.json`, is read on every
 open, and is never written by the control plane
 (`product/research/device-streaming.md`, "A host's desktop").
 

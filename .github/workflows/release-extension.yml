@@ -1,0 +1,105 @@
+# Publish the Chrome extension (apps/extension) to its Chrome Web Store item
+# whenever main carries a version the store has not had yet.
+#
+# The version is `apps/extension/package.json`'s: bump it in a pull request
+# (by hand or through a changeset), merge, and this builds, zips and uploads
+# that version and submits it for review. Once Google approves it, Chrome
+# updates every install on its own. A version already released (it has an
+# `extension-v<version>` tag) is skipped, so a run is safe to repeat.
+#
+# Off until the store item exists: set the repository variable
+# EXTENSION_PUBLISH_ENABLED=true and the CWS_* secrets once it does
+# (apps/extension/README.md, "Publish it").
+name: Release extension
+
+on:
+  push:
+    branches: [main]
+    paths: [apps/extension/package.json]
+  workflow_dispatch:
+
+concurrency: ${{ github.workflow }}
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish to the Chrome Web Store
+    if: vars.EXTENSION_PUBLISH_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    runs-on: gha-vm
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Read the version
+        id: release
+        run: |
+          version=$(node -p "require('./apps/extension/package.json').version")
+          tag="extension-v$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+            echo "Extension $version is already released ($tag): nothing to do." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        if: steps.release.outputs.released != 'true'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: steps.release.outputs.released != 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Build and test
+        if: steps.release.outputs.released != 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm turbo run build --filter=@oppenheimer/extension...
+          pnpm --filter @oppenheimer/extension test
+
+      - name: Package
+        if: steps.release.outputs.released != 'true'
+        run: pnpm --filter @oppenheimer/extension package
+
+      - name: Upload and submit for review
+        if: steps.release.outputs.released != 'true'
+        env:
+          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          ZIP: apps/extension/release/oppenheimer-extension-${{ steps.release.outputs.version }}.zip
+        # `shell: bash` adds pipefail; without it the step takes tee's exit
+        # code, and a refused upload would still be tagged as released.
+        shell: bash
+        run: node apps/extension/scripts/publish.mjs "$ZIP" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # The tag is what marks the version released, so it is pushed only
+      # after the store took it. The gha-vm runners ship without the GitHub
+      # CLI, so this fetches a pinned release and checks its digest.
+      - name: Install the GitHub CLI
+        if: steps.release.outputs.released != 'true'
+        env:
+          GH_VERSION: 2.62.0
+          GH_SHA256: 41c8b0698ad3003cb5c44bde672a1ffd5f818595abd80162fbf8cc999418446a
+        run: |
+          dir="$RUNNER_TEMP/gh"
+          mkdir -p "$dir"
+          tgz="gh_${GH_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/$tgz" -o "$dir/$tgz"
+          echo "$GH_SHA256  $dir/$tgz" | sha256sum -c -
+          tar -xzf "$dir/$tgz" -C "$dir" --strip-components=1
+          echo "$dir/bin" >> "$GITHUB_PATH"
+
+      - name: Tag the release and attach the package
+        if: steps.release.outputs.released != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "extension $VERSION" \
+            --notes "Submitted to the Chrome Web Store for review; Chrome updates installs once it is approved." \
+            "apps/extension/release/oppenheimer-extension-$VERSION.zip"

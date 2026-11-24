@@ -357,6 +357,14 @@
     "attachmentId": 13,
     "control": true
   },
+  "desktop.pointer": {
+    "type": "desktop.pointer",
+    "attachmentId": 13,
+    "x": 812.5,
+    "y": 431,
+    "width": 1920,
+    "height": 1080
+  },
   "desktop.close": {
     "type": "desktop.close",
     "attachmentId": 13
@@ -461,6 +469,14 @@
     "mimetype": "audio/ogg; codecs=opus",
     "data": "T2dnUwACAAAAAAAAAAA=",
     "seconds": 4
+  },
+  "whatsapp.react": {
+    "type": "whatsapp.react",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "chatId": "34600333444@s.whatsapp.net",
+    "messageId": "3EB0C7A1F2",
+    "senderId": "34600333444@s.whatsapp.net",
+    "emoji": "👍"
   },
   "whatsapp.sent": {
     "type": "whatsapp.sent",
@@ -577,6 +593,27 @@
     "stderr": "",
     "cwd": "/home/jordi/oppenheimer/bots/juno-3f2a",
     "durationMs": 842
+  },
+  "host.settings.set": {
+    "type": "host.settings.set",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "browser": "on",
+    "execMode": "allowlist",
+    "execAllow": [
+      "python3",
+      "/home/jordi/scripts/*"
+    ]
+  },
+  "host.settings": {
+    "type": "host.settings",
+    "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+    "browser": "on",
+    "computer": "off",
+    "execMode": "allowlist",
+    "execAllow": [
+      "python3",
+      "/home/jordi/scripts/*"
+    ]
   },
   "terminal.drive": {
     "type": "terminal.drive",

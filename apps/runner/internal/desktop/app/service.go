@@ -19,6 +19,9 @@ const signInTimeout = 10 * time.Second
 type Options struct {
 	Settings SettingsStore
 	Secrets  Secrets
+	// Pointer reads the host's pointer; nil is a host that cannot, whose
+	// desktop streams without one.
+	Pointer PointerReader
 	// Dialer defaults to a net.Dialer; Random to crypto/rand.
 	Dialer Dialer
 	Random io.Reader
@@ -28,13 +31,17 @@ type Options struct {
 type Service struct {
 	settings SettingsStore
 	secrets  Secrets
+	pointer  PointerReader
 	dialer   Dialer
 	random   io.Reader
 }
 
 // New builds the service.
 func New(opts Options) *Service {
-	s := &Service{settings: opts.Settings, secrets: opts.Secrets, dialer: opts.Dialer, random: opts.Random}
+	s := &Service{
+		settings: opts.Settings, secrets: opts.Secrets, pointer: opts.Pointer,
+		dialer: opts.Dialer, random: opts.Random,
+	}
 	if s.dialer == nil {
 		s.dialer = &net.Dialer{Timeout: signInTimeout}
 	}
@@ -51,6 +58,18 @@ func (s *Service) Settings() (domain.Settings, error) {
 		return domain.Settings{}, domain.ErrSettings.WithDetail("%v", err).WithCause(err)
 	}
 	return settings, nil
+}
+
+// TracksPointer is whether this host can say where its pointer is.
+func (s *Service) TracksPointer() bool { return s.pointer != nil }
+
+// Pointer is where the host's pointer is now; false is a host that cannot
+// say, this time or ever.
+func (s *Service) Pointer() (domain.Pointer, bool) {
+	if s.pointer == nil {
+		return domain.Pointer{}, false
+	}
+	return s.pointer.Pointer()
 }
 
 // SetSettings saves what the host's owner chose, for `runner desktop`.

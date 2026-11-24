@@ -23,7 +23,7 @@ export function TopBar({ onSearch }: { onSearch: () => void }) {
         variant="ghost"
         aria-label={t('nav.toggleSidebar')}
         onClick={toggleSidebar}
-        className="size-8.5 text-ink-600"
+        className="text-ink-600"
       >
         <Menu className="size-4.5" />
       </IconButton>
@@ -32,7 +32,7 @@ export function TopBar({ onSearch }: { onSearch: () => void }) {
         <button
           type="button"
           onClick={onSearch}
-          className="inline-flex h-9 w-95 max-w-[44vw] items-center gap-2.5 rounded-full border border-border-default bg-card px-3 transition-colors hover:border-border-strong hover:bg-surface-hover"
+          className="inline-flex h-(--control-h-md) w-95 max-w-[44vw] items-center gap-2.5 rounded-full border border-border-default bg-card px-3 transition-colors hover:border-border-strong hover:bg-surface-hover"
         >
           <Search className="size-3.75 text-ink-400" />
           <span className="flex-1 text-left text-base text-ink-400">{t('nav.search')}</span>
@@ -45,7 +45,7 @@ export function TopBar({ onSearch }: { onSearch: () => void }) {
           variant="ghost"
           aria-label={t('theme.toggle')}
           onClick={() => setTheme(isDark ? 'light' : 'dark')}
-          className="size-8.5 cursor-pointer text-ink-600"
+          className="cursor-pointer text-ink-600"
         >
           {isDark ? <Sun /> : <Moon />}
         </IconButton>

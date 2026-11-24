@@ -111,6 +111,29 @@ describe('AttachDesktopConnection', () => {
     expect(states.at(-1)?.control).toBe(true);
   });
 
+  it('hands where the host’s pointer is to its listeners, never to the viewer as bytes, and the last one to a late listener', async () => {
+    const { connection, socket, received } = await connect();
+    socket.text({ type: 'desktop', control: false });
+    const early: unknown[] = [];
+    connection.onPointer((pointer) => early.push(pointer));
+    socket.text({ type: 'pointer', x: 812.5, y: 431, width: 1920, height: 1080 });
+    socket.text({ type: 'pointer', x: 10, y: 20, width: 1920, height: 1080 });
+    expect(early).toEqual([
+      { x: 812.5, y: 431, width: 1920, height: 1080 },
+      { x: 10, y: 20, width: 1920, height: 1080 },
+    ]);
+    expect(received).toEqual([]);
+
+    // A viewer that dials in mid-stream draws the pointer where it rests,
+    // rather than nowhere until the host's owner moves it.
+    const late: unknown[] = [];
+    const off = connection.onPointer((pointer) => late.push(pointer));
+    expect(late).toEqual([{ x: 10, y: 20, width: 1920, height: 1080 }]);
+    off();
+    socket.text({ type: 'pointer', x: 11, y: 20, width: 1920, height: 1080 });
+    expect(late).toHaveLength(1);
+  });
+
   it('keeps a refusal and ends there: a host that does not share its desktop is not redialled', async () => {
     const { socket, states, closed, received } = await connect();
     socket.text({ type: 'refused', code: 'DESKTOP_001', detail: 'runner desktop on' });

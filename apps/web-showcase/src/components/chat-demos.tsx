@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import { AgentMark } from '@oppenheimer/design-system-web/agent-mark';
 import { Button } from '@oppenheimer/design-system-web/button';
 import {
   AnsweredQuestions,
@@ -1076,12 +1077,16 @@ function ChatChromeBody() {
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="overflow-hidden rounded-lg border border-border-subtle">
-        <ChatTabStrip onNew={() => {}}>
-          <ChatTab active dot="success" onClose={() => {}}>
-            Wire run cancel…
+        <ChatTabStrip onNew={() => {}} label="Open sessions" className="px-1.5">
+          <ChatTab active icon={<AgentMark agent="claude-code" />} attention="needs-you" onClose={() => {}}>
+            Wire run cancel through the agent gateway
           </ChatTab>
-          <ChatTab>Quota warning at 90%</ChatTab>
-          <ChatTab dot="warning">Retry policy</ChatTab>
+          <ChatTab icon={<AgentMark agent="claude-code" />} working onClose={() => {}}>
+            Quota warning at 90%
+          </ChatTab>
+          <ChatTab icon={<AgentMark agent="codex" />} attention="unread" onClose={() => {}}>
+            Retry policy
+          </ChatTab>
         </ChatTabStrip>
         <ChatHeader
           title="Wire run cancel through the agent gateway"
@@ -1299,7 +1304,7 @@ export function ChatSection() {
         id="chatchrome"
         title="Header, find, empty"
         meta="chat-header.tsx"
-        desc="ChatHeader is the chat's 48px bar: the title and its branch, the run state, the tabs and the panels. Open threads sit over it as ChatTabs, the current one on the canvas with its close. ThreadFindBar floats top-right on ⌘F, its results row appearing with the first keystroke. ChatEmptyState is an empty thread: a statement at 34px, the composer, and the tray of what the run will use. Centred, it opens a new bot's chat over the TemplateTiles it can start from."
+        desc="ChatHeader is the chat's 48px bar: the title and its branch, the run state, the tabs and the panels. Open things sit over it as ChatTabs, each with its mark and the dot of what it needs; the shown one on the canvas inside a hairline, the rest flat with their close on hover. ThreadFindBar floats top-right on ⌘F, its results row appearing with the first keystroke. ChatEmptyState is an empty thread: a statement at 34px, the composer, and the tray of what the run will use. Centred, it opens a new bot's chat over the TemplateTiles it can start from."
         code={`<ChatHeader title="Wire run cancel" meta={<ChatHeaderTag icon={<GitBranchIcon />}>acme/cancel-path</ChatHeaderTag>} status={<StatusDot state="running" pulse density="compact">Running</StatusDot>} actions={…} />`}
       >
         <ChatChromeDemo />

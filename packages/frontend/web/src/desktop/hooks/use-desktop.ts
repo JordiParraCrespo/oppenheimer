@@ -1,3 +1,5 @@
+/// <reference path="../lib/novnc.d.ts" />
+import type { CursorImage } from '@novnc/novnc';
 import { useEffect, useRef, useState } from 'react';
 import {
   type DesktopChannel,
@@ -5,6 +7,7 @@ import {
   desktopRetryDelay,
   isFinalDesktopStatus,
 } from '../lib/desktop-channel';
+import { HostPointerOverlay } from '../lib/host-pointer';
 import { loadRfb } from '../lib/load-novnc';
 
 const CONNECTING: DesktopViewState = { status: 'connecting', control: false, refusal: null };
@@ -13,12 +16,16 @@ const CONNECTING: DesktopViewState = { status: 'connecting', control: false, ref
  * A desktop on screen: noVNC drawing into `screenRef`'s element over a
  * channel from `connect`, dialled again with a growing wait while the host is
  * away or the dial dropped, and never after a final answer until `retry`.
+ * While the reader watches, the host's pointer is drawn into `pointerRef`'s
+ * canvas, over the screen (`HostPointerOverlay`).
  *
  * Its effect syncs with noVNC and the channel's socket: both are built in it
- * and torn down in its cleanup. noVNC loads with the first desktop shown.
+ * and torn down in its cleanup. noVNC loads with the
+ * first desktop shown.
  */
 export function useDesktop(connect: () => Promise<DesktopChannel>) {
   const screenRef = useRef<HTMLDivElement>(null);
+  const pointerRef = useRef<HTMLCanvasElement>(null);
   const channelRef = useRef<DesktopChannel | null>(null);
   const [state, setState] = useState<DesktopViewState>(CONNECTING);
   const [generation, setGeneration] = useState(0);
@@ -56,17 +63,26 @@ export function useDesktop(connect: () => Promise<DesktopChannel>) {
         return;
       }
       const target = screenRef.current;
-      if (disposed || !target) {
+      const pointerCanvas = pointerRef.current;
+      if (disposed || !target || !pointerCanvas) {
         channel.close();
         return;
       }
       let rfb: InstanceType<typeof RFB> | null = null;
-      const off = channel.onState((next) => {
+      const pointer = new HostPointerOverlay(pointerCanvas, target);
+      const offState = channel.onState((next) => {
         latest = next;
         setState(next);
         if (rfb) rfb.viewOnly = !next.control;
+        pointer.setWatching(next.status === 'live' && !next.control);
         if (next.status === 'live') attempt = 0;
       });
+      const offPointer = channel.onPointer((at) => pointer.setPointer(at));
+      const off = () => {
+        offState();
+        offPointer();
+        pointer.dispose();
+      };
       // A dial that already ended (refused, no ticket, the host away) is
       // answered by its state; noVNC refuses a closed channel.
       if (channel.readyState === 'closed') {
@@ -90,7 +106,11 @@ export function useDesktop(connect: () => Promise<DesktopChannel>) {
       rfb.viewOnly = !latest.control;
       rfb.background = 'transparent';
       const live = rfb;
+      const onCursor = (event: Event) =>
+        pointer.setShape((event as CustomEvent<CursorImage>).detail);
+      live.addEventListener('cursorimage', onCursor);
       const onDisconnect = () => {
+        live.removeEventListener('cursorimage', onCursor);
         off();
         teardown = null;
         if (channelRef.current === channel) channelRef.current = null;
@@ -99,6 +119,7 @@ export function useDesktop(connect: () => Promise<DesktopChannel>) {
       live.addEventListener('disconnect', onDisconnect);
       teardown = () => {
         live.removeEventListener('disconnect', onDisconnect);
+        live.removeEventListener('cursorimage', onCursor);
         off();
         live.disconnect();
         channel.close();
@@ -116,6 +137,7 @@ export function useDesktop(connect: () => Promise<DesktopChannel>) {
 
   return {
     screenRef,
+    pointerRef,
     state,
     /** Take control of the desktop, or go back to watching it. */
     setControl: (control: boolean) => channelRef.current?.setControl(control),
