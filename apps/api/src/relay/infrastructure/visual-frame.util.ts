@@ -12,11 +12,13 @@ import { visualFrameOrigin } from '@oppenheimer/shared';
  * may frame it. What the page may ask of the console is three messages:
  * its size, an error, and a link to open, which the console asks about.
  *
- * What stays open: a fragment that navigates its own frame is refused and
- * ended, but the browser looks the target's host up in DNS first, so a host
- * name can carry a few bytes out and the viewer's address is seen by that
- * name's DNS. Frames, refreshes and prefetches, which would do the same, are
- * stripped or refused. An agent that writes such a page can already reach the
+ * What stays open: a fragment's script that navigates its frame, or inserts
+ * a frame as markup (`innerHTML`, `document.write`), is refused and the visual
+ * ended, but the browser starts the connection first, looking the host up in
+ * DNS, so a host name can carry a few bytes out and that name's DNS sees the
+ * viewer's address. Frames, objects, refreshes and prefetch hints written in
+ * the fragment's markup are stripped before it runs, and a frame made with
+ * `createElement` is refused, so those open nothing. An agent that writes such a page can already reach the
  * network (a bot through `web_fetch`, a session's agent from its host), so
  * this adds no reach it lacks; `visual_html` turns HTML off where it matters.
  */

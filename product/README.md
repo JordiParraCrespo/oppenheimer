@@ -1916,9 +1916,9 @@ earlier note:
   each asked: no chart library, the frame's network closed, a visual placed
   where it was called, and a link in a visual opening only once the reader
   says so. The owner kept HTML visuals on (2026-11-24) knowing one residue a
-  page cannot close: a fragment that navigates its own frame is refused, but
-  the browser looks the target's host up in DNS first; `visual_html` turns
-  HTML off.
+  page cannot close: a fragment's script that navigates its frame or inserts
+  a frame is refused and the visual ended, but the browser looks the target's
+  host up in DNS first; `visual_html` turns HTML off.
 - `versions/mvp/29-inbox.md`, "As built: the Inbox in Plan" (2026-10-29),
   made the Inbox Plan's first section at `/plan/inbox`, with no rail item.
   On 2026-11-24 the owner asked for it to be one of the platform's core
