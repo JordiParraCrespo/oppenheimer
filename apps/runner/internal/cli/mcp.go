@@ -324,7 +324,9 @@ var mcpTools = []mcpTool{
 			"ranking {title?, items: [{label, value, detail?}]}; table {title?, columns: [{label, align?}], rows: " +
 			"[[cell, …]]}; checklist {title?, items: [{text, done, note?}]}; progress {title?, items: [{label, " +
 			"value, target?}]}; record {title?, status?: {label, tone?}, fields: [{label, value}]}; callout {tone?: " +
-			"neutral|info|success|warning|danger, title?, text}; links {title?, items: [{label, url, description?}]}. " +
+			"neutral|info|success|warning|danger, title?, text}; links {title?, items: [{label, url, description?}]}; " +
+			"html {title?, html}, a fragment with inline style and script for what no other block draws, run sandboxed " +
+			"with the network closed. " +
 			"Numeric blocks take format {prefix?, suffix?, decimals?, compact?}. Up to 24 blocks; `runner --skill` " +
 			"has an example.",
 		properties: map[string]any{

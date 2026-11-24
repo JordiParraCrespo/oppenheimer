@@ -5727,6 +5727,10 @@ export type CapabilitiesResponseDto = {
      * Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug.
      */
     github_app_install_url: string | null;
+    /**
+     * The page a visual's HTML runs in, on an origin of its own under the preview domain; the console frames it. `null` when no preview domain is configured.
+     */
+    visual_frame_url: string | null;
 };
 
 export type DependencyStatusDto = {

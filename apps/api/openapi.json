@@ -44007,6 +44007,12 @@
             "nullable": true,
             "example": "https://github.com/apps/oppenheimer/installations/new",
             "description": "Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug."
+          },
+          "visual_frame_url": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://visuals.previews.example.com/",
+            "description": "The page a visual's HTML runs in, on an origin of its own under the preview domain; the console frames it. `null` when no preview domain is configured."
           }
         },
         "required": [
@@ -44018,7 +44024,8 @@
           "hosts",
           "bot_providers",
           "session_previews",
-          "github_app_install_url"
+          "github_app_install_url",
+          "visual_frame_url"
         ]
       },
       "DependencyStatusDto": {

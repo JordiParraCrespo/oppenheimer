@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { parseVisual, VISUAL_BLOCKS_MAX, VISUAL_SERIES_MAX } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
+import type { FlagEvaluatorPort } from '../../feature-flags/application/flag-evaluator.port';
+import { FLAG_EVALUATOR } from '../../feature-flags/feature-flags.di-tokens';
 import { promptText } from '../domain/bot-prompt-text.policy';
 import { VISUALS_PER_TURN } from '../domain/bot-visual.policy';
 import {
@@ -33,7 +35,9 @@ const showVisualInput = z.object({
 /**
  * `show_visual`: a bot draws a visual in its chat, a title and typed blocks
  * the console draws with its own charts, so no code of the model's runs. It
- * reaches nothing outside Oppenheimer and never asks first. On a channel
+ * reaches nothing outside Oppenheimer and never asks first. An `html` block
+ * runs the model's own page in a sandboxed frame; the `visual_html` flag
+ * refuses it. On a channel
  * that draws no visuals (Telegram, WhatsApp) the person reads the reply's
  * words, which the description asks to carry the meaning.
  */
@@ -41,6 +45,8 @@ const showVisualInput = z.object({
 export class BotVisualToolsFactory implements BotToolArea {
   /** Where Settings → Permissions lists these tools. */
   readonly group = 'self' as const;
+
+  constructor(@Inject(FLAG_EVALUATOR) private readonly flags: FlagEvaluatorPort) {}
 
   definitions(): readonly BotToolDefinition[] {
     return [
@@ -70,6 +76,13 @@ export class BotVisualToolsFactory implements BotToolArea {
             );
           }
           const { visual } = parsed;
+          // HTML runs the model's code in the person's console: a workspace can turn it off.
+          if (
+            visual.blocks.some((block) => block.type === 'html') &&
+            !this.flags.isEnabled('visual_html', { organizationId: context.organizationId })
+          ) {
+            throw new BotToolRefusal(promptText('tools/visual.html-off'));
+          }
           return {
             content: promptText('tools/visual.shown', {
               title: visual.title,

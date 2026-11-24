@@ -22,6 +22,7 @@ import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Markdown } from '../../markdown';
 import { VisualChart } from './visual-chart';
+import { VisualHtml } from './visual-html';
 import { VisualCallout, VisualChecklist, VisualLinks, VisualRecord } from './visual-lists';
 import { VisualMetrics } from './visual-metrics';
 import { VisualProgress, VisualRanking, VisualRing } from './visual-shares';
@@ -57,6 +58,8 @@ function Block({ block }: { block: VisualBlock }): ReactNode {
       return <VisualCallout block={block} />;
     case 'links':
       return <VisualLinks block={block} />;
+    case 'html':
+      return <VisualHtml block={block} />;
   }
 }
 

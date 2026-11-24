@@ -47,6 +47,7 @@ import {
   verifyPreviewCookie,
 } from './preview-http.util';
 import { refuseUpgrade } from './upgrade.util';
+import { isVisualFrameHost, serveVisualFrame } from './visual-frame.page';
 
 /** Readers whose last judgement is remembered, so a page's hundred requests are judged once a minute. */
 const MAX_JUDGED = 1_000;
@@ -77,6 +78,8 @@ type Judged = { at: number; verdict: Promise<{ allowed: boolean; hostId?: string
  *   alive across requests by an agent per session's port; an upgrade is a
  *   stream of its own, piped raw.
  * - **As what:** the app sees `localhost:<port>` (`preview-http.util.ts`).
+ * - **And:** `visuals.<domain>` is not a preview but the static page an
+ *   agent's visual HTML runs in (`visual-frame.page.ts`).
  *
  * Off (no `PREVIEW_BASE_URL`), it listens on nothing.
  */
@@ -118,6 +121,11 @@ export class PreviewProxyGateway implements OnApplicationBootstrap, OnApplicatio
   /** The previews' server: every preview origin's requests and upgrades, and a 404 for any other host. */
   createServer(): Server {
     const server = createServer((req, res) => {
+      // The visuals origin is a static page, the same for everyone: no reader to judge.
+      if (this.base && isVisualFrameHost(this.base, req.headers.host)) {
+        serveVisualFrame(req, res, this.consoleOrigin);
+        return;
+      }
       const address = this.addressOf(req);
       if (!address) {
         page(res, 404, 'Not a preview of this deployment.');

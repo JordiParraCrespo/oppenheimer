@@ -98,8 +98,12 @@ value}]}; `ranking` {title?, items: [{label, value, detail?}]}; `table`
 [{text, done, note?}]}; `progress` {title?, items: [{label, value,
 target?}]}; `record` {title?, status?, fields: [{label, value}]}; `callout`
 {tone?, title?, text}; `links` {title?, items: [{label, url,
-description?}]}. Numeric blocks take `format` {prefix?, suffix?,
-decimals?, compact?}. Up to 24 blocks. A spec it cannot draw is refused
+description?}]}; `html` {title?, html, height?}, a fragment with inline
+`<style>` and `<script>` for what no other block draws (a simulation, a
+custom diagram), run in a sandbox with the network closed: no fetch and
+nothing loaded from a URL, the console's colours in CSS variables (`--fg`,
+`--card`, `--border`, `--chart-1` to `--chart-5`). Numeric blocks take
+`format` {prefix?, suffix?, decimals?, compact?}. Up to 24 blocks. A spec it cannot draw is refused
 with each fault by its path: fix those and run it again.
 
 Use it only when a visual reads faster than words: numbers to compare, a

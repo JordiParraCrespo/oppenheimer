@@ -5,6 +5,7 @@
  * to the stored step, or a turn that draws without end.
  */
 import { emptyScope } from '@oppenheimer/backend-authz';
+import type { FlagEvaluatorPort } from '../../../feature-flags/application/flag-evaluator.port';
 import { toVisual } from '../../bot-message.mapper';
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
@@ -27,9 +28,12 @@ function setup() {
     budget: new BotTurnBudget(),
     credentialScopes: null,
   };
-  const [showVisual] = new BotVisualToolsFactory().definitions();
+  const flags = { htmlOn: true };
+  const evaluator = { isEnabled: vi.fn(() => flags.htmlOn) } as unknown as FlagEvaluatorPort;
+  const [showVisual] = new BotVisualToolsFactory(evaluator).definitions();
   const bound = showVisual.bind(context);
-  return (input: unknown) => bound.run(input, { signal: new AbortController().signal });
+  const call = (input: unknown) => bound.run(input, { signal: new AbortController().signal });
+  return Object.assign(call, { flags });
 }
 
 const deploys = {
@@ -61,6 +65,18 @@ describe('BotVisualToolsFactory', () => {
     expect(result.isError).toBe(true);
     expect(result.content).toContain('blocks[0].series[0].values: has 2 values for 3 labels');
     expect(result.data?.[VISUAL_DATA_KEY]).toBeUndefined();
+  });
+
+  // Off is how a workspace keeps the model's own code out of its console.
+  it('refuses an html block when the workspace turned HTML in visuals off', async () => {
+    const call = setup();
+    const page = { title: 'Sim', blocks: [{ type: 'html', html: '<canvas></canvas>' }] };
+    expect((await call(page)).isError).toBe(false);
+    call.flags.htmlOn = false;
+    const refused = await call(page);
+    expect(refused.isError).toBe(true);
+    expect(refused.content).toContain('HTML in visuals turned off');
+    expect((await call(deploys)).isError).toBe(false);
   });
 
   it(`stops a turn at ${VISUALS_PER_TURN} visuals`, async () => {

@@ -213,6 +213,25 @@ const httpsUrl = z
   .url()
   .refine((value) => /^https?:\/\//i.test(value), { params: { visual: 'https' } });
 
+/** The most characters of HTML one `html` block carries. */
+export const VISUAL_HTML_MAX = 50_000;
+
+/**
+ * HTML the agent wrote, for what blocks cannot say (a simulation, a custom
+ * diagram, a small calculator). The console runs it in a sandboxed frame on
+ * an origin of its own, with the network closed; where the deployment has no
+ * such origin, or the `visual_html` flag is off, the block shows as a note.
+ */
+const htmlBlock = z
+  .object({
+    type: z.literal('html'),
+    title: z.string().max(120).optional(),
+    html: text(VISUAL_HTML_MAX),
+    /** A first height, in pixels, until the page reports its own. */
+    height: z.number().int().min(80).max(1200).optional(),
+  })
+  .strict();
+
 const linksBlock = z
   .object({
     type: z.literal('links'),
@@ -240,6 +259,7 @@ const blockSchema = z.discriminatedUnion('type', [
   recordBlock,
   calloutBlock,
   linksBlock,
+  htmlBlock,
 ]);
 
 export type VisualBlock = z.infer<typeof blockSchema>;
@@ -261,6 +281,7 @@ export const visualBlockTypes = [
   'record',
   'callout',
   'links',
+  'html',
 ] as const satisfies readonly VisualBlockType[];
 
 export const visualSchema = z
@@ -353,4 +374,18 @@ export function parseVisual(input: unknown): VisualParse {
   return parsed.success
     ? { ok: true, visual: parsed.data }
     : { ok: false, errors: visualErrors(parsed.error) };
+}
+
+/** The label of the origin a visual's HTML runs on, under the deployment's preview domain. */
+export const VISUAL_FRAME_LABEL = 'visuals';
+
+/**
+ * Where a visual's HTML runs: `visuals.<preview domain>`, an origin apart
+ * from the console's and from every session's preview, so the page reaches
+ * no cookie or storage of either. `previewBase` is `PREVIEW_BASE_URL`.
+ */
+export function visualFrameOrigin(previewBase: string): string {
+  const match = /^(https?:)\/\/([^/?#]+)/i.exec(previewBase.trim());
+  if (!match) throw new Error(`not an origin: ${previewBase}`);
+  return `${(match[1] as string).toLowerCase()}//${VISUAL_FRAME_LABEL}.${(match[2] as string).toLowerCase()}`;
 }

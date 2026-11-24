@@ -2,7 +2,7 @@ import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CapabilitiesService } from '@oppenheimer/backend-core';
-import { CLIENT_CAPABILITIES, type DeploymentCapability } from '@oppenheimer/shared';
+import { CLIENT_CAPABILITIES, type DeploymentCapability, visualFrameOrigin } from '@oppenheimer/shared';
 import type { Response } from 'express';
 import { NoPolicy } from '../../auth/decorators/check-policies.decorator';
 import { AllowAnyScope } from '../../auth/decorators/require-scopes.decorator';
@@ -61,6 +61,7 @@ export class HealthProbeController {
   deploymentCapabilities(): CapabilitiesResponseDto {
     const flags = this.capabilities.pick(CLIENT_CAPABILITIES);
     const slug = this.configService.get<string>('githubApp.slug');
+    const previewBase = this.configService.get<string>('relay.previewBaseUrl');
 
     return {
       ...flags,
@@ -69,6 +70,7 @@ export class HealthProbeController {
       // them fails after the reader has left for GitHub.
       github_app_install_url:
         flags.github_app && slug ? `https://github.com/apps/${slug}/installations/new` : null,
+      visual_frame_url: flags.session_previews ? `${visualFrameOrigin(previewBase as string)}/` : null,
     };
   }
 

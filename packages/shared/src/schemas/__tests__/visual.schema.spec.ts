@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseVisual, VISUAL_BYTES_MAX } from '../visual.schema.js';
+import { parseVisual, VISUAL_BYTES_MAX, visualFrameOrigin } from '../visual.schema.js';
 
 const chart = (values: number[]) => ({
   title: 'Deploys',
@@ -64,5 +64,13 @@ describe('parseVisual', () => {
     const result = parseVisual({ title: 'x'.repeat(VISUAL_BYTES_MAX), blocks: [] });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.errors[0]).toMatch(/bytes; keep it under/);
+  });
+});
+
+describe('visualFrameOrigin', () => {
+  // The frame must never share an origin with the console or a session's preview.
+  it('is a label of its own under the preview domain, port kept', () => {
+    expect(visualFrameOrigin('http://preview.localhost:3011')).toBe('http://visuals.preview.localhost:3011');
+    expect(visualFrameOrigin('https://previews.example.com')).toBe('https://visuals.previews.example.com');
   });
 });

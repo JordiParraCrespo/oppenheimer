@@ -200,6 +200,16 @@
         "bar": "bar",
         "line": "line",
         "area": "area"
+      },
+      "html": {
+        "notRun": "Part of this visual is HTML, which this console does not run",
+        "showSource": "Show source",
+        "didNotLoad": "This visual's HTML did not load",
+        "frameTitle": "A visual the agent drew",
+        "failedInside": "Something in this visual failed: {{message}}",
+        "openLinkTitle": "Open this link?",
+        "openLinkBody": "The visual asks to open a page on {{host}}, in a new tab.",
+        "openLink": "Open link"
       }
     }
   },

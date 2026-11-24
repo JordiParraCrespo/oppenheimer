@@ -202,6 +202,16 @@
       "bar": "barras",
       "line": "líneas",
       "area": "áreas"
+    },
+    "html": {
+      "notRun": "Parte de este visual es HTML, que esta consola no ejecuta",
+      "showSource": "Ver código",
+      "didNotLoad": "El HTML de este visual no se ha cargado",
+      "frameTitle": "Un visual que dibujó el agente",
+      "failedInside": "Algo ha fallado dentro de este visual: {{message}}",
+      "openLinkTitle": "¿Abrir este enlace?",
+      "openLinkBody": "El visual quiere abrir una página de {{host}} en una pestaña nueva.",
+      "openLink": "Abrir enlace"
     }
   }
 }

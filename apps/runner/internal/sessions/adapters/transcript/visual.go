@@ -38,7 +38,7 @@ type VisualEntry struct {
 // visualBlockTypes are the block types the console draws.
 var visualBlockTypes = []string{
 	"markdown", "metrics", "bar", "line", "area", "ring", "ranking",
-	"table", "checklist", "progress", "record", "callout", "links",
+	"table", "checklist", "progress", "record", "callout", "links", "html",
 }
 
 // visualRequired names, for each block type, the fields it cannot draw without.
@@ -47,6 +47,7 @@ var visualRequired = map[string][]string{
 	"line": {"labels", "series"}, "area": {"labels", "series"}, "ring": {"segments"},
 	"ranking": {"items"}, "table": {"columns", "rows"}, "checklist": {"items"},
 	"progress": {"items"}, "record": {"fields"}, "callout": {"text"}, "links": {"items"},
+	"html": {"html"},
 }
 
 type visualSpec struct {

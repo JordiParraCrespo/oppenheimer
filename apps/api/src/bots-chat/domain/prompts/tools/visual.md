@@ -17,6 +17,7 @@ Give a `title`, an optional `subtitle` (the period or the source) and up to {{bl
 - `record`: `title?`, `status?` `{label, tone?}`, `fields` (1–16) of `{label, value}`: one thing's details.
 - `callout`: `tone?` (neutral, info, success, warning, danger), `title?`, `text`.
 - `links`: `title?`, `items` (1–12) of `{label, url, description?}`, http or https only.
+- `html`: `title?`, `html` (up to 50,000 characters), `height?`: a fragment of HTML (no `<html>`, `<head>` or `<body>`) with inline `<style>` and `<script>`, for what the other blocks cannot draw: a simulation, a custom diagram, a small calculator. It runs in a sandbox with the network closed: no fetch, no script, style, image or font from a URL; use inline SVG or canvas. The app's theme is in CSS variables (`--fg`, `--fg-muted`, `--background`, `--card`, `--border`, `--primary`, `--chart-1` to `--chart-5`), and classes `card`, `btn`, `btn-primary`, `muted`, `mono` match it. Use it last, when no other block says it.
 
 Numeric blocks take `format`: `{prefix?, suffix?, decimals?, compact?}` ("$", "%", " ms"; compact writes 1.2k). Up to {{visualsPerTurn}} visuals a turn. The visual shows where you called it, before the rest of your reply: do not repeat its numbers in words, say what they mean.
 
@@ -40,6 +41,10 @@ Shown to the person: "{{title}}", {{blocks}}. Do not repeat its numbers; say wha
 
 Not shown: the visual is not valid. Fix these and call again:
 {{errors}}
+
+<!-- fragment: html-off -->
+
+Not shown: this workspace has HTML in visuals turned off. Use the other block types, or answer in words.
 
 <!-- fragment: visuals-spent -->
 
