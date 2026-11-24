@@ -2,4 +2,4 @@
 "@oppenheimer/runner": patch
 ---
 
-`runner sessions run --agent` and the MCP `start_session` tool no longer offer Muse or ZCode for a child: neither takes a first task, so a child started on one was refused. The MCP tool now names Oh My Pi, which it accepted but did not list.
+The runner's `--agent` help and the MCP `start_session` tool list agents from the runner's own table rather than by hand, so a command that starts an agent with a task no longer offers Muse or ZCode, which take none and were refused. The MCP tool now also names Oh My Pi, which it accepted but did not list.

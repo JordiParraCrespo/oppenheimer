@@ -147,6 +147,18 @@ func (s *mcpServer) reply(id json.RawMessage, result any, failure *mcpError) {
 // by `runner sessions run` and by start_session alike.
 const DefaultChildAgent = "claude"
 
+// AgentChoices is the agents an --agent flag or tool argument takes, as
+// "a, b or c", from the runner's own table so a usage line cannot offer an
+// agent the runner would refuse. withTask leaves out an agent no first task
+// reaches.
+func AgentChoices(withTask bool) string {
+	names := sessionsdomain.AgentNames(withTask)
+	if len(names) < 2 {
+		return strings.Join(names, "")
+	}
+	return strings.Join(names[:len(names)-1], ", ") + " or " + names[len(names)-1]
+}
+
 // mcpArgs is every tool's arguments; each tool reads its own.
 type mcpArgs struct {
 	Task           string   `json:"task"`
@@ -225,7 +237,7 @@ var mcpTools = []mcpTool{
 			"Answers the child's id.",
 		properties: map[string]any{
 			"task":           mcpString("The child's first message."),
-			"agent":          mcpString(DefaultChildAgent + " (default), codex, opencode, grok, pi, omp, antigravity, fx, hermes or shell."),
+			"agent":          mcpString("One of " + AgentChoices(true) + "; " + DefaultChildAgent + " by default."),
 			"name":           mcpString("A name for the child."),
 			"repo":           mcpString("owner/name: give the child a checkout of its own, cut from a pushed branch."),
 			"base":           mcpString("With repo, the branch to cut it from."),
