@@ -17,6 +17,7 @@ import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
 import { SlackOwnerLinkResponseDto } from '../../dtos/slack-owner-link.response.dto';
+import { SlackAccountMapper } from '../../slack-account.mapper';
 import {
   type OpenedSlackOwnerLink,
   OpenSlackOwnerLinkCommand,
@@ -29,7 +30,10 @@ import {
 @UseInterceptors(AccessScopeInterceptor)
 @Controller('slack')
 export class OpenSlackOwnerLinkHttpController {
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly mapper: SlackAccountMapper,
+  ) {}
 
   @Post('accounts/:id/owner-link')
   @Version('1')
@@ -51,10 +55,6 @@ export class OpenSlackOwnerLinkHttpController {
     const link = await this.commandBus.execute<OpenSlackOwnerLinkCommand, OpenedSlackOwnerLink>(
       new OpenSlackOwnerLinkCommand({ scope, accountId: id }),
     );
-    const dto = new SlackOwnerLinkResponseDto();
-    dto.message = link.message;
-    dto.url = link.url;
-    dto.expiresAt = link.expiresAt.toISOString();
-    return dto;
+    return this.mapper.toOwnerLinkResponse(link);
   }
 }
