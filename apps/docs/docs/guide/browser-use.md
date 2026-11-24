@@ -1,6 +1,6 @@
 ---
 title: Bots using a browser
-description: How a bot drives a browser of its own on one of your hosts (use_browser), turning it on with runner browser on, what the host needs, how the bot reads a page and acts on it, the permission card, and its limits.
+description: How a bot drives a browser of its own on one of your hosts (use_browser), turning it on (ask the bot, or runner browser on), what the host needs, how the bot reads a page and acts on it, the permission card, and its limits.
 sidebar_position: 5.6
 ---
 
@@ -10,12 +10,14 @@ For anything that is not a web page (an app, a simulator), see [Bots using a com
 
 ## Turning it on
 
-On the host itself, in a terminal:
+Ask the bot: "turn the browser on and do it". It turns it on with `set_host_settings`, on a card of its own under Approve for me, and carries on. It does so only when you ask in your own chat with it (the console, or your own WhatsApp, Telegram or Slack chat), never because a page, a mail or someone else's message says so.
+
+Or, on the host itself, in a terminal:
 
 - `runner browser on` lets your bots open a browser on this host. `runner browser off` stops them at once; nothing restarts.
 - `runner browser` shows whether it is on and which browser a bot would get, or why there is none.
 
-The setting lives in a file on the host (`~/.oppenheimer/browser.json`). Nothing in the console changes it, and Oppenheimer gives a bot no tool for it. One caveat: a host where you let bots run any program (`runner exec mode full`, or `runner` on its allowlist) lets a bot run this command too.
+The setting lives in a file on the host (`~/.oppenheimer/browser.json`), which both ways write.
 
 ## What the host needs
 

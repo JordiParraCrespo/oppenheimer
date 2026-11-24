@@ -159,6 +159,10 @@ const CONSTANT_DOCS = {
     'The hello capabilities: commands a runner takes beyond its protocol',
     "version's baseline.",
   ],
+  helloCapabilitiesMax: [
+    'HelloCapabilitiesMax is the most capabilities one `hello` may name: the',
+    'control plane refuses a hello naming more, and the host never links.',
+  ],
   maxEventPayloadBytes: [
     "MaxEventPayloadBytes caps an event's JSON payload string, because an event",
     'never carries pane text.',
@@ -429,6 +433,9 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     '',
     ...comment(CONSTANT_DOCS.maxFrameBytes),
     `const MaxFrameBytes = ${constants.maxFrameBytes}`,
+    '',
+    ...comment(CONSTANT_DOCS.helloCapabilitiesMax),
+    `const HelloCapabilitiesMax = ${constants.helloCapabilitiesMax}`,
     '',
     ...comment(CONSTANT_DOCS.maxEventPayloadBytes),
     `const MaxEventPayloadBytes = ${constants.maxEventPayloadBytes}`,

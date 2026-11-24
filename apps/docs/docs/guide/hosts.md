@@ -87,9 +87,9 @@ From the host you can install more later: `oppenheimer-runner agents install cla
 
 ## Letting bots use the screen
 
-A bot can look at a host's screen and use its mouse and keyboard, only after you run `runner computer on` on that host. What it needs on a Mac and on Linux, and how a bot uses it, is [Bots using a computer](./computer-use.md).
+A bot can look at a host's screen and use its mouse and keyboard once it is turned on: ask the bot to turn it on, or run `runner computer on` on that host. The same goes for what a bot may run there (`runner exec`): ask the bot, and it changes it for you. What it needs on a Mac and on Linux, and how a bot uses it, is [Bots using a computer](./computer-use.md).
 
-A bot can also drive a browser of its own on a host, only after `runner browser on` there: [Bots using a browser](./browser-use.md).
+A bot can also drive a browser of its own on a host, once you ask it to turn that on or run `runner browser on` there: [Bots using a browser](./browser-use.md).
 
 ## Updates
 

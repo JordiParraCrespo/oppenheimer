@@ -37,15 +37,17 @@ the same lifecycle from the host itself.
 A bot can run one program on the host over the link (`host.exec`,
 `product/versions/mvp/25-bots.md` §4.2, "Commands on a host"), but only what
 `runner exec` allows here: off by default, an allowlist of programs, or
-everything. The policy lives in `~/.oppenheimer/exec.json`, is read on every
-call, and is never written by the control plane. On a host set to `full` a
+everything. The policy lives in `~/.oppenheimer/exec.json` and is read on every
+call. It is written here, or by a bot over the link when the person asked it
+to (`host.settings.set`, which writes the browser and computer switches below
+too). On a host set to `full` a
 bot can also drive a blank-terminal session (`terminal.drive`): type into
 it and read its screen back.
 
 A bot can use the host's screen, mouse and keyboard over the link too
 (`computer.act`, `25-bots.md` §4.2, "Using a computer"), only after `runner
 computer on` here: a second switch, in `~/.oppenheimer/computer.json`, off by
-default and never written by the control plane. On a Mac it drives the main
+default. On a Mac it drives the main
 screen through `screencapture` and `osascript` (the runner needs Screen
 Recording and Accessibility); on Linux an X display through `xdotool` and
 ImageMagick's `import`, starting a virtual one (Xvfb, locked with an `xauth`

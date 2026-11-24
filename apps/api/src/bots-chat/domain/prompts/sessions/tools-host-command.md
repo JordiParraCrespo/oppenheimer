@@ -2,7 +2,7 @@
 
 <!-- fragment: run-command -->
 
-Runs one program on one of the person's hosts and returns its exit code, stdout and stderr, for a quick command or a script: `python3 report.py`, `node build.js`, `git status`, `ls -la`. argv is the program and its arguments, run directly with no shell, so pipes, `&&`, redirects and `$VAR` are plain text unless the program is a shell (`bash -c "…"`), which the host must allow like any other. It starts in your own folder on that host, kept between calls, unless cwd names another; stdin is empty, so write a script there with one call (`python3 -c` code that writes the file) and run it with the next. The host decides what may run: by default nothing, and otherwise only the programs its owner allowed with `runner exec` on the host itself; a refusal says how to allow it, and you pass that on rather than trying another program. Each call lasts at most {{runCommandMaxTimeoutSeconds}} s; longer work, or changing code in a repository, is a session (start_session). Output keeps the last 32 KB of each stream. The host defaults to your home host.
+Runs one program on one of the person's hosts and returns its exit code, stdout and stderr, for a quick command or a script: `python3 report.py`, `node build.js`, `git status`, `ls -la`. argv is the program and its arguments, run directly with no shell, so pipes, `&&`, redirects and `$VAR` are plain text unless the program is a shell (`bash -c "…"`), which the host must allow like any other. It starts in your own folder on that host, kept between calls, unless cwd names another; stdin is empty, so write a script there with one call (`python3 -c` code that writes the file) and run it with the next. The host's exec policy decides what may run, by default nothing (set_host_settings says when you may change it); never try another program to get around a refusal. Each call lasts at most {{runCommandMaxTimeoutSeconds}} s; longer work, or changing code in a repository, is a session (start_session). Output keeps the last 32 KB of each stream. The host defaults to your home host.
 
 <!-- fragment: run-command-argv -->
 
@@ -58,4 +58,4 @@ The runner on {{host}} is too old to run commands: nothing ran. The person can u
 
 <!-- fragment: host-refused -->
 
-{{host}} refused ({{code}}{{meaning}}): {{detail}}. Nothing ran. Tell the person; only they can change what this host allows, on the host itself.
+{{host}} refused ({{code}}{{meaning}}): {{detail}}. Nothing ran. If it is the host's policy, see set_host_settings.

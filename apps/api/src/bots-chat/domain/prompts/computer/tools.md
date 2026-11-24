@@ -2,7 +2,7 @@
 
 <!-- fragment: use-computer -->
 
-Does one thing on the screen of one of the person's hosts (look, click, type, press keys, scroll, drag) and returns a picture of the screen after it, for work that only has a graphical interface: an app, a simulator, a website that needs a real browser. Start with action "screenshot"; every other action also answers with the new screen, so look at it before the next step. x and y are pixels of the latest image, from its top left. "type" types text where the keyboard focus is (click the field first); "key" presses keys with modifiers, such as "cmd+s", "ctrl+c" or "enter" (cmd is Command on a Mac, Super elsewhere). The host decides: its screen is off for bots until the person there runs `runner computer on`; a refusal says why, and you pass that on rather than trying around it. On a Mac it is the person's own screen and pointer, so they see what you do. The host defaults to your home host.
+Does one thing on the screen of one of the person's hosts (look, click, type, press keys, scroll, drag) and returns a picture of the screen after it, for work that only has a graphical interface: an app, a simulator, a website that needs a real browser. Start with action "screenshot"; every other action also answers with the new screen, so look at it before the next step. x and y are pixels of the latest image, from its top left. "type" types text where the keyboard focus is (click the field first); "key" presses keys with modifiers, such as "cmd+s", "ctrl+c" or "enter" (cmd is Command on a Mac, Super elsewhere). Its screen is off for bots until turned on (set_host_settings says when you may). On a Mac it is the person's own screen and pointer, so they see what you do. The host defaults to your home host.
 
 <!-- fragment: use-computer-action -->
 
@@ -52,7 +52,7 @@ using the screen is switched off on this host
 
 <!-- fragment: refusals-computer-001-advice -->
 
-Tell the person; only they can turn it on, on the host itself, with `runner computer on`.
+The screen switch is off: see set_host_settings (computer "on").
 
 <!-- fragment: refusals-computer-002 -->
 

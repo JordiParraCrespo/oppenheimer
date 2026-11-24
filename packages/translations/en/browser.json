@@ -1400,7 +1400,7 @@
       "composer": {
         "placeholder": "Message {{agent}}",
         "placeholderAnyAgent": "Message the agent",
-        "suggestion": "{{suggestion}}  ·  Tab to use it",
+        "suggestion": "Tab to use it  ·  {{suggestion}}",
         "send": "Send",
         "stop": "Stop",
         "attach": "Attach files",
