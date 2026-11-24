@@ -31,6 +31,12 @@ export function whatsappImageSightOf(data: Buffer, mimetype: string): WhatsappIm
   return { seen: true, data, mimeType: mimeType as BotImageMimeType };
 }
 
+/**
+ * Why an image went unseen on a bot whose model reads no images: it is not
+ * fetched at all, since the model could not be sent it.
+ */
+export const WHATSAPP_IMAGE_BLIND_MODEL_REASON = "this bot's model reads no images";
+
 /** An image as a bot reads it when it could not see it: `[image, could not be seen: …]`. */
 export function whatsappUnseenImageText(reason: string): string {
   return `[image, could not be seen: ${reason}]`;

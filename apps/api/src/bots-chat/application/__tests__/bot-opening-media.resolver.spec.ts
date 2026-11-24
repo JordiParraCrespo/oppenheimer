@@ -218,4 +218,31 @@ describe('BotWhatsappImageResolver', () => {
       words: 'Look\n\n[image, could not be seen: it is no longer kept]',
     });
   });
+
+  // What breaks this: an image sent to a bot on a text-only model (GLM) as an
+  // image block, which that model's API refuses, failing the turn instead of
+  // telling the person it could not be seen.
+  it('fetches nothing for a bot whose model reads no images, and says so after the caption', async () => {
+    const { commands, reader } = seeing({
+      seen: true,
+      data: Buffer.from('x'),
+      mimeType: 'image/jpeg',
+    });
+    const { turn, opening } = whatsappTurn(
+      { ...props(), provider: 'glm', model: 'glm-model' },
+      {
+        conversationId: randomUUID(),
+        whatsappAccountId,
+        messageRowId,
+        text: 'Look',
+        voiceNote: false,
+        image: true,
+      },
+    );
+
+    await expect(reader.read(turn, opening)).resolves.toEqual({
+      words: "Look\n\n[image, could not be seen: this bot's model reads no images]",
+    });
+    expect(commands.execute).not.toHaveBeenCalled();
+  });
 });
