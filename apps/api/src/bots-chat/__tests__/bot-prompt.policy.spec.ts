@@ -50,7 +50,9 @@ describe('composeBotSystemPrompt', () => {
       ...base,
       tools: [tool('list_gmail_accounts'), tool('update_routine'), tool('use_skill')],
     });
-    expect(both).toContain('- `watch-inbox`: Use it every time the person asks about their email');
+    expect(both).toContain(
+      '- `watch-inbox`: Read it before you answer every time the person asks about their email',
+    );
     expect(both).not.toContain('calls nothing_to_report and writes nothing');
     for (const tools of [[tool('list_gmail_accounts')], [tool('update_routine')]]) {
       const prompt = composeBotSystemPrompt({ ...base, tools: [...tools, tool('use_skill')] });

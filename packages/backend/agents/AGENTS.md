@@ -60,7 +60,8 @@ src/
   `claudecode/toolUseId` in the MCP call's `_meta`.
 - **A tool may wait.** `BotEngineTool.deferrable` marks a tool the engine
   may leave out of the request until the model looks for it. The Claude
-  engine then offers `ToolSearch` and sets `ENABLE_TOOL_SEARCH=auto`
+  engine defers them when they pass `DEFER_TOOLS_ABOVE_CHARS` together,
+  offering `ToolSearch` and setting `ENABLE_TOOL_SEARCH=true`
   (`claudeToolSearch`), on Anthropic's own API only; every other tool keeps
   `anthropic/alwaysLoad`. The OpenAI engines send every tool as before.
 - **Model pinning has one owner.** `pinAllModels` sets every variable

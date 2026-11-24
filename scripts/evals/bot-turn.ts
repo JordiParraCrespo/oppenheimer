@@ -22,6 +22,7 @@ import { BotNoticeToolsFactory } from '../../apps/api/src/bots-chat/application/
 import { BotQuestionToolsFactory } from '../../apps/api/src/bots-chat/application/bot-question-tools.factory';
 import { BotSelfToolsFactory } from '../../apps/api/src/bots-chat/application/bot-self-tools.factory';
 import { BotSkillToolsFactory } from '../../apps/api/src/bots-chat/application/bot-skill-tools.factory';
+import { DEFER_TOOLS_ABOVE_CHARS } from '../../packages/backend/agents/src/claude/claude-options';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -161,16 +162,17 @@ function messagesApi(apiKey: string, model: string): Transport['turn'] {
 }
 
 /**
- * Claude Code's tool search for the eval's turns: `auto` as the engine sets
- * it on Anthropic (`claudeToolSearch`), `true` to defer every tool that may
- * wait whatever their size (the hardest case), `false` to load them all, as
- * before 2026-11-23. Set by `BOT_EVAL_TOOL_SEARCH`.
+ * Claude Code's tool search for the eval's turns, from `BOT_EVAL_TOOL_SEARCH`:
+ * `engine` (the default) defers the tools that may wait when the engine
+ * would (`claudeToolSearch`: past `DEFER_TOOLS_ABOVE_CHARS` together),
+ * `true` defers them whatever their size (the hardest case), `false` loads
+ * them all, as before 2026-11-23.
  */
-function toolSearchMode(): 'auto' | 'true' | 'false' {
+function toolSearchMode(): 'engine' | 'true' | 'false' {
   // biome-ignore lint/suspicious/noUndeclaredEnvVars: a root script, not a Turborepo task — nothing caches its output.
-  const mode = process.env.BOT_EVAL_TOOL_SEARCH ?? 'auto';
-  if (mode !== 'auto' && mode !== 'true' && mode !== 'false') {
-    throw new Error(`BOT_EVAL_TOOL_SEARCH is auto, true or false, not "${mode}".`);
+  const mode = process.env.BOT_EVAL_TOOL_SEARCH ?? 'engine';
+  if (mode !== 'engine' && mode !== 'true' && mode !== 'false') {
+    throw new Error(`BOT_EVAL_TOOL_SEARCH is engine, true or false, not "${mode}".`);
   }
   return mode;
 }
@@ -214,7 +216,15 @@ function claudeCode(model: string): Transport['turn'] {
     // always loaded, a capability's may wait behind Claude Code's tool search.
     const own = ownToolNames();
     const search = toolSearchMode();
-    const deferring = search !== 'false' && request.tools.some((tool) => !own.has(tool.name));
+    const waiting = request.tools.filter((tool) => !own.has(tool.name));
+    const size = waiting.reduce(
+      (sum, tool) =>
+        sum + tool.name.length + tool.description.length + JSON.stringify(tool.inputSchema).length,
+      0,
+    );
+    const deferring =
+      waiting.length > 0 &&
+      (search === 'true' || (search === 'engine' && size > DEFER_TOOLS_ABOVE_CHARS));
     mcp.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: request.tools.map((tool) => ({
         name: tool.name,
@@ -247,7 +257,7 @@ function claudeCode(model: string): Transport['turn'] {
             ...request.tools.map((tool) => `mcp__oppenheimer__${tool.name}`),
             ...(deferring ? ['ToolSearch'] : []),
           ],
-          env: { ...process.env, ENABLE_TOOL_SEARCH: deferring ? search : 'false' },
+          env: { ...process.env, ENABLE_TOOL_SEARCH: deferring ? 'true' : 'false' },
           permissionMode: 'dontAsk',
           mcpServers: { oppenheimer: { type: 'sdk', name: 'oppenheimer', instance: mcp } },
           strictMcpConfig: true,

@@ -2,10 +2,10 @@
 
 ---
 name: watch-inbox
-description: Use it every time the person asks about their email, in any language: whether someone wrote, what came in, a message they got, or connecting Gmail. After you answer, it has you offer once to keep an eye on their inbox and tell them only what needs them, and set that up when they say yes.
+description: Read it before you answer every time the person asks about their email, in any language: whether someone wrote, what came in, a message they got, or connecting Gmail. It says what to add to your answer.
 ---
 
-1. Check with `update_routine` (list) whether one of your routines already watches their Gmail. If one does, this skill is done.
+1. Before you offer anything, check whether one of your routines already watches their Gmail: call `update_routine` with action list (search for the tool first if it is not loaded). If one does, offer nothing and this skill is done.
 2. Otherwise, after you have answered what they asked, offer once, in one line at the end of your answer, to keep an eye on their inbox for them: you would read each new mail as it arrives and tell them only what needs them. Do not save anything until they say yes.
 3. When they say yes, create one routine with a Gmail trigger for each of their connected accounts (`list_gmail_accounts`). Write its prompt to yourself so that each run:
    - reads the new mail and decides whether it needs the person: a deadline, a bill, a charge or a payment, a limit or quota about to run out, a security alert, a subscription or document about to expire, an appointment, booking or event they signed up for, a delivery, or anything about their work and projects that asks something of them;

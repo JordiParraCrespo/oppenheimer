@@ -205,25 +205,39 @@ export function claudeMessageParts(
 }
 
 /**
- * Whether Claude Code may defer our tools behind its tool search
- * (2026-11-23): only on Anthropic's own API, where `defer_loading` and the
- * search are served (z.ai's endpoint is not known to serve them), and only
- * when some tool may wait. Then `ToolSearch` is offered beside the built-ins,
- * since without it Claude Code loads every tool up front, and the search is
- * `auto`: the tools that may wait are deferred once their definitions pass
- * Claude Code's share of the context window (a tenth, in 2.1.300), so a bot
- * with few tools keeps them all loaded. A deferred tool is found and
- * appended in the conversation, so the prompt's cached prefix stays as it was.
+ * The size of definitions, in characters, past which the tools that may wait
+ * are deferred: about 5,000 tokens. Below it a search costs a round trip for
+ * little; above it, a bot with every area on sent about 78,000 tokens a
+ * request with every tool loaded and about 20,000 with them deferred
+ * (measured 2026-11-24).
+ */
+export const DEFER_TOOLS_ABOVE_CHARS = 20_000;
+
+/**
+ * Whether Claude Code defers our tools behind its tool search (2026-11-23):
+ * only on Anthropic's own API, where `defer_loading` and the search are
+ * served (z.ai's endpoint is not known to serve them), and only when the
+ * tools that may wait are big enough to be worth a search
+ * (`DEFER_TOOLS_ABOVE_CHARS`). The rule is ours rather than Claude Code's
+ * `auto`, which defers past a tenth of the model's window: with a large
+ * window it never did. Then `ToolSearch` is offered beside the built-ins,
+ * since without it Claude Code loads every tool up front. A deferred tool is
+ * found and appended in the conversation, so the cached prefix stays as it was.
  */
 export function claudeToolSearch(
   request: Pick<BotTurnRequest, 'provider' | 'baseUrl' | 'engineTools' | 'tools'>,
 ): boolean {
-  return (
-    request.provider === 'anthropic' &&
-    !request.baseUrl &&
-    request.engineTools !== false &&
-    request.tools.some((tool) => tool.deferrable)
-  );
+  if (request.provider !== 'anthropic' || request.baseUrl || request.engineTools === false) {
+    return false;
+  }
+  const waiting = request.tools
+    .filter((tool) => tool.deferrable)
+    .reduce(
+      (size, tool) =>
+        size + tool.name.length + tool.description.length + JSON.stringify(tool.inputSchema).length,
+      0,
+    );
+  return waiting > DEFER_TOOLS_ABOVE_CHARS;
 }
 
 export function claudeOptions(
@@ -240,7 +254,7 @@ export function claudeOptions(
     model: request.model,
     systemPrompt: request.systemPrompt,
     cwd: dirs.cwd,
-    env: { ...claudeEnv(request, dirs), ENABLE_TOOL_SEARCH: search ? 'auto' : 'false' },
+    env: { ...claudeEnv(request, dirs), ENABLE_TOOL_SEARCH: search ? 'true' : 'false' },
     tools: builtIns,
     allowedTools: [...builtIns, ...ourTools],
     disallowedTools: DISALLOWED_TOOLS,

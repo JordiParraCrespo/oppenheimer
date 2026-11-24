@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { type BotTurnRequest, compactionThreshold } from '../../bot-engine';
 import {
   BUILT_IN_TOOLS,
+  DEFER_TOOLS_ABOVE_CHARS,
   claudeEnv,
   claudeOptions,
   DISALLOWED_TOOLS,
@@ -97,9 +98,10 @@ describe('claudeOptions', () => {
   // deferred with no `ToolSearch` to find them (Claude Code then loads them
   // all), or tool search asked of an endpoint not known to serve it.
   it('lets Claude Code defer the tools that may wait, on Anthropic only, with its tool search', () => {
+    // Big enough together to be worth a search (`DEFER_TOOLS_ABOVE_CHARS`).
     const tool = (name: string, deferrable?: boolean) => ({
       name,
-      description: name,
+      description: 'x'.repeat(DEFER_TOOLS_ABOVE_CHARS),
       inputSchema: {},
       run: async () => ({ content: '' }),
       ...(deferrable === undefined ? {} : { deferrable }),
@@ -107,7 +109,9 @@ describe('claudeOptions', () => {
     const anthropic = { ...base, provider: 'anthropic' as const };
     const mixed = options({ ...anthropic, tools: [tool('remember'), tool('search_mail', true)] });
     expect(mixed.tools).toEqual([...BUILT_IN_TOOLS, 'ToolSearch']);
-    expect(mixed.env?.ENABLE_TOOL_SEARCH).toBe('auto');
+    expect(mixed.env?.ENABLE_TOOL_SEARCH).toBe('true');
+    const small = { ...tool('search_mail', true), description: 'Searches mail.' };
+    expect(options({ ...anthropic, tools: [small] }).env?.ENABLE_TOOL_SEARCH).toBe('false');
     for (const none of [
       { ...anthropic, tools: [tool('remember')] },
       { ...base, tools: [tool('search_mail', true)] },

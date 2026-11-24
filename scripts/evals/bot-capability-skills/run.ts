@@ -9,7 +9,7 @@
 // the reply says; the calls are read as they were made.
 //
 //   pnpm eval:bot-capability-skills [--case <id>] [--runs <n>]
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BotBrowserToolsFactory } from '../../../apps/api/src/bots-chat/application/bot-browser-tools.factory';
@@ -18,6 +18,7 @@ import { BotMailToolsFactory } from '../../../apps/api/src/bots-chat/application
 import { BotRoutineToolsFactory } from '../../../apps/api/src/bots-chat/application/bot-routine-tools.factory';
 import { BotSelfToolsFactory } from '../../../apps/api/src/bots-chat/application/bot-self-tools.factory';
 import { BotSkillToolsFactory } from '../../../apps/api/src/bots-chat/application/bot-skill-tools.factory';
+import type { BotToolDefinition } from '../../../apps/api/src/bots-chat/application/bot-tool.factory';
 import { composeBotSystemPrompt } from '../../../apps/api/src/bots-chat/domain/bot-prompt.policy';
 import {
   describeSkillUse,
@@ -37,7 +38,8 @@ const MAX_TURNS = 8;
 
 interface Case {
   id: string;
-  toolset: 'mail' | 'computer' | 'browser';
+  /** `all` is every area's tools, as a bot with every area on has them. */
+  toolset: 'mail' | 'computer' | 'browser' | 'all';
   message: string;
   /** What each tool answers, by name; any other call answers "Done." */
   answers: Record<string, string>;
@@ -83,7 +85,22 @@ const AREAS = {
   ],
   computer: () => [new BotComputerToolsFactory(none), new BotSkillToolsFactory(none, none)],
   browser: () => [new BotBrowserToolsFactory(none), new BotSkillToolsFactory(none, none)],
+  all: () => everyArea,
 };
+
+/** Every tool area of the bots, each `bot-*-tools.factory.ts`, as the toolbox holds them. */
+const everyArea: { group: string; definitions(): BotToolDefinition[] }[] = [];
+async function loadEveryArea() {
+  const dir = join(HERE, '../../../apps/api/src/bots-chat/application');
+  for (const file of readdirSync(dir).filter((name) => /^bot-.*-tools\.factory\.ts$/.test(name))) {
+    const exported = Object.values(await import(join(dir, file)));
+    const Area = exported.find(
+      (value): value is new (...deps: never[]) => (typeof everyArea)[number] =>
+        typeof value === 'function' && value.name.endsWith('ToolsFactory'),
+    );
+    if (Area) everyArea.push(new Area());
+  }
+}
 
 /** The read-and-routine tools a mail case offers, and the rest of an area as it comes. */
 const MAIL_TOOLS = new Set([
@@ -103,6 +120,9 @@ function toolsOf(c: Case, accounts: readonly Account[]) {
   const offered = listed.filter(
     ({ definition }) => c.toolset !== 'mail' || MAIL_TOOLS.has(definition.name),
   );
+  if (c.toolset === 'all' && offered.length < 100) {
+    throw new Error(`Only ${offered.length} tools in every area: a factory was not found.`);
+  }
   const answer = (name: string, input: unknown): string => {
     if (name === 'use_skill') {
       const wanted = (input as { name?: string }).name;
@@ -208,6 +228,7 @@ async function main() {
   const runs = Number(arg('runs') ?? 2);
   const chosen = file.cases.filter((c) => !only || c.id === only);
   if (chosen.length === 0) throw new Error(`No case "${only}".`);
+  if (chosen.some((c) => c.toolset === 'all')) await loadEveryArea();
   const via = transport(MODEL);
   const jobs = chosen.flatMap((c) => Array.from({ length: runs }, () => c));
   const results = await pool(jobs, 4, async (c) => ({
@@ -224,8 +245,12 @@ async function main() {
       `${ok === mine.length ? 'pass' : 'FAIL'}  ${c.id.padEnd(22)} ${ok}/${mine.length}  skills read: ${read}${mine.some((r) => r.misses.length) ? `  missed: ${[...new Set(mine.flatMap((r) => r.misses))].join(', ')}` : ''}`,
     );
   }
-  const readFirst = results.filter((r) => r.c.toolset !== 'mail' && r.readFirst).length;
-  const usedCapability = results.filter((r) => r.c.toolset !== 'mail').length;
+  const readFirst = results.filter(
+    (r) => (r.c.toolset === 'computer' || r.c.toolset === 'browser') && r.readFirst,
+  ).length;
+  const usedCapability = results.filter(
+    (r) => r.c.toolset === 'computer' || r.c.toolset === 'browser',
+  ).length;
   console.log(
     `\n${via.model} (${via.engine}): ${right}/${results.length} runs right; read the capability's skill before using it in ${readFirst}/${usedCapability}; searched for a deferred tool ${results.reduce((n, r) => n + r.searches, 0)} times.`,
   );
