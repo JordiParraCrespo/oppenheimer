@@ -1742,6 +1742,13 @@ earlier note:
   side pane (`versions/mvp/32-side-pane.md`), where the previews are three
   of the things the launcher opens, each a tab beside a shell, another
   session or a bot's chat.
+- `versions/mvp/32-side-pane.md` §1 listed Terminal, Agent, Session, Bot
+  and the previews as the launcher's rows, and the session's bar held its
+  name, its state and the worded Terminal / Chat switch. On 2026-11-24 the
+  owner asked for tabs and a calmer layout (`versions/mvp/33-session-tabs.md`):
+  open sessions and bots are tabs in a one-line bar, the state moves to the
+  tab's dot and tooltip, and the launcher is large rows with Agent, Session
+  and Bot folded under Side chats.
 - `versions/mvp/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
   a job over four tiles (next-step pills once it had instructions), over the
   stacked composer. On 2026-11-16 the owner found it loud in the side pane
