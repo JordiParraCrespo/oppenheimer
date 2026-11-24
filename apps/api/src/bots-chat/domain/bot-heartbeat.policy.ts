@@ -17,13 +17,15 @@ const HEARTBEAT_NAME = 'Heartbeat';
 
 /**
  * The turns that are not news to a heartbeat: another schedule's (a
- * routine's, a loop's), its own included. Every other origin (a message, an
+ * routine's, a loop's, a look the bot set itself with `check_back`), its own
+ * included. Every other origin (a message, an
  * approval, an answer, another bot's ask, a wake, a goal) is activity. One
  * list, read by the repository's query and by nothing else.
  */
 export const HEARTBEAT_QUIET_ORIGINS = [
   'routine',
   'loop',
+  'check_back',
 ] as const satisfies readonly BotTurnOrigin[];
 
 /** What a scheduled beat is decided on, read once from the bot's turns. */
