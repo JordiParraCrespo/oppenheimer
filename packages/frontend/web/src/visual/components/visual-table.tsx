@@ -32,10 +32,10 @@ export function VisualTable({ block }: { block: Table }) {
   return (
     <div className="flex min-w-0 flex-col gap-2">
       {block.title ? <VisualBlockTitle>{block.title}</VisualBlockTitle> : null}
-      <div className="overflow-x-auto rounded-xl border border-border-subtle">
-        <table className="w-full border-collapse text-[13px]">
+      <div className="overflow-x-auto">
+        <table className="w-full border-separate border-spacing-0 rounded-sm border border-border-subtle text-[14px] leading-normal tabular-nums">
           <thead>
-            <tr className="bg-hover-surface/50">
+            <tr>
               {columns.map(({ item: column, key }, c) => {
                 const active = sort?.column === c ? sort.direction : null;
                 const Icon =
@@ -48,7 +48,7 @@ export function VisualTable({ block }: { block: Table }) {
                       active === 'asc' ? 'ascending' : active === 'desc' ? 'descending' : undefined
                     }
                     className={cn(
-                      'p-0 font-medium text-fg-muted',
+                      'border-b border-border-subtle bg-chat-wash p-0 font-semibold text-fg first:rounded-ss-[9px] last:rounded-se-[9px] [&:not(:last-child)]:border-e',
                       align(c) === 'right' && 'text-right',
                       align(c) === 'center' && 'text-center',
                     )}
@@ -58,10 +58,9 @@ export function VisualTable({ block }: { block: Table }) {
                       onClick={() => setSort(nextVisualSort(sort, c, numeric[c] ?? false))}
                       title={t('common.visual.sortBy', { column: column.label })}
                       className={cn(
-                        'group/sort inline-flex w-full items-center gap-1 px-3 py-2 text-xs whitespace-nowrap transition-colors duration-fast hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        'group/sort inline-flex w-full items-center gap-1 px-3 py-2 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
                         align(c) === 'right' && 'flex-row-reverse',
                         align(c) === 'center' && 'justify-center',
-                        active && 'text-fg',
                       )}
                     >
                       {column.label}
@@ -83,7 +82,7 @@ export function VisualTable({ block }: { block: Table }) {
               <tr
                 // biome-ignore lint/suspicious/noArrayIndexKey: rows have no identity of their own, and sorting re-keys by content.
                 key={`${row.join('\u0000')}-${r}`}
-                className="border-t border-border-subtle transition-colors duration-fast hover:bg-hover-surface/50"
+                className="group/row"
               >
                 {columns.map(({ item: column, key }, c) => {
                   const cell = row[c] ?? null;
@@ -91,7 +90,7 @@ export function VisualTable({ block }: { block: Table }) {
                     <td
                       key={key}
                       className={cn(
-                        'px-3 py-2 align-top text-fg',
+                        'border-b border-border-subtle px-3 py-2.5 align-top text-fg transition-colors duration-fast group-last/row:border-b-0 group-hover/row:bg-hover-surface/40 [&:not(:last-child)]:border-e',
                         align(c) === 'right' && 'text-right',
                         align(c) === 'center' && 'text-center',
                         typeof cell === 'number' && 'figures',
