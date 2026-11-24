@@ -101,7 +101,7 @@ function CodeBlock({
                     data-slot="code-block-tab"
                     onClick={() => onTabChange?.(option.value)}
                     className={cn(
-                      'rounded-pill px-2.5 py-1 text-xs leading-tight transition-colors duration-fast ease-standard outline-none focus-visible:outline-2 focus-visible:outline-primary',
+                      'inline-flex h-(--control-h-sm) items-center rounded-pill px-2.5 text-xs leading-tight transition-colors duration-fast ease-standard outline-none focus-visible:outline-2 focus-visible:outline-primary',
                       selected ? 'bg-card text-fg' : 'text-fg-muted hover:text-fg',
                     )}
                   >

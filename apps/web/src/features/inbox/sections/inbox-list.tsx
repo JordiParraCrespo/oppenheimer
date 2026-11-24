@@ -131,7 +131,7 @@ export function InboxList() {
           count={unread.length ? t('inbox.list.unread', { count: unread.length }) : undefined}
         >
           <IconButton
-            size="xs"
+            size="sm"
             variant="quiet"
             aria-label={t('inbox.list.refresh')}
             title={t('inbox.list.refresh')}

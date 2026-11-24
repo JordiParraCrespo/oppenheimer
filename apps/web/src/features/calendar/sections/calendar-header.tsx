@@ -88,18 +88,16 @@ export function CalendarHeader() {
                 </PillTab>
               ))}
             </PillTabs>
-            <Button variant="secondary" size="sm" onClick={() => at({ view })}>
+            <Button variant="secondary" onClick={() => at({ view })}>
               {t('calendar.header.today')}
             </Button>
             <IconButton
-              size="sm"
               aria-label={t('calendar.header.previous')}
               onClick={() => at({ view, ...step(view, { anchor, month }, -1) })}
             >
               <ChevronLeft />
             </IconButton>
             <IconButton
-              size="sm"
               aria-label={t('calendar.header.next')}
               onClick={() => at({ view, ...step(view, { anchor, month }, 1) })}
             >

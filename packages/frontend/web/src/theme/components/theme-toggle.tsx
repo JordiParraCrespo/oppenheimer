@@ -27,7 +27,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       aria-pressed={isDark}
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       className={cn(
-        'inline-flex h-[30px] w-15 items-stretch rounded-full border border-border-default p-0.5',
+        'inline-flex h-(--control-h-sm) w-15 items-stretch rounded-full border border-border-default p-0.5',
         className,
       )}
     >

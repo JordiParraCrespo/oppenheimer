@@ -35,12 +35,13 @@ const STATIC = [
   '/settings/telegram',
   '/settings/whatsapp',
   '/settings/about',
+  '/about',
 ];
 
 const BOT_TABS = ['profile', 'instructions', 'permissions', 'skills', 'routines', 'gateways', 'memory', 'runs-on', 'home-host'];
 
-async function measure(page: Page) {
-  return page.evaluate(() => {
+async function measure(page: Page, within?: string) {
+  return page.evaluate((scope) => {
     const SELECTOR =
       'button, input:not([type=hidden]):not([type=checkbox]):not([type=radio]), select, [role=combobox], [role=tab], [data-slot=input], [data-slot=facet-select], [data-slot=chip-select], [data-slot=pill-tab], [data-slot=segmented-control], [data-slot=date-picker], [data-slot=date-range-picker], a[data-slot=button]';
     const seen = new Set<Element>();
@@ -58,7 +59,8 @@ async function measure(page: Page) {
       const style = getComputedStyle(unit);
       if (r.width < 12 || r.height < 12 || style.visibility === 'hidden' || r.bottom < 0) continue;
       if (unit.closest('[aria-hidden=true], [inert]')) continue;
-      if (unit.closest('[data-slot=sidebar], nav, [role=menu], [role=listbox], [role=dialog]')) continue;
+      if (scope ? !unit.closest(scope) : unit.closest('[data-slot=sidebar], nav, [role=menu], [role=listbox], [role=dialog]'))
+        continue;
       items.push({ el: unit, r });
     }
     const describe = (el: Element) => {
@@ -109,7 +111,7 @@ async function measure(page: Page) {
       census[key] = (census[key] ?? 0) + 1;
     }
     return { rows: out, census };
-  });
+  }, within ?? null);
 }
 
 test('control heights, row by row', async ({ page }) => {
@@ -124,6 +126,14 @@ test('control heights, row by row', async ({ page }) => {
   await page.waitForURL(/\/bots\/[0-9a-f-]{36}$/);
   const botId = page.url().split('/').pop() as string;
 
+  // A plan with rows in it: a task due soon and one on today's TODO.
+  const day = (offset: number) => {
+    const date = new Date(Date.now() + offset * 86_400_000);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+  await owner.api.post('/api/v1/tasks', { data: { title: 'Draft the launch post', dueDate: day(2) } });
+  await owner.api.post('/api/v1/tasks', { data: { title: 'Migrate the queue', focusDate: day(0) } });
+
   const routes = [
     ...STATIC,
     `/bots/${botId}`,
@@ -136,5 +146,12 @@ test('control heights, row by row', async ({ page }) => {
     await page.waitForTimeout(800);
     report[route.replace(botId, ':botId')] = await measure(page);
   }
+  // The routine editor's dialog: its step tabs and its trigger sentence.
+  await page.goto('/automations');
+  await page.getByRole('button', { name: 'New automation' }).click();
+  await page.getByRole('dialog').waitFor();
+  await page.waitForTimeout(600);
+  report['/automations (New automation dialog)'] = await measure(page, '[role=dialog]');
+
   writeFileSync(OUT, JSON.stringify(report, null, 2));
 });
