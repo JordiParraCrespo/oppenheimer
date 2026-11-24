@@ -669,6 +669,35 @@ Not yet: bot approvals, pull requests and failed runs are not told this
 way (they are not on the session list); the Chrome extension telling about
 runner sessions is next, and a phone push is the backend's, later.
 
+## A finished turn, a long wait, and a mute (2026-11-24)
+
+The owner asked on 2026-11-24 for the console to notify also when a
+session's dot goes blue, again once a session has been left for thirty
+minutes, and for a way to turn a session's notifications off from its row,
+the way Mark as unread is set. On top of "A notification in this browser":
+
+- **A turn that ends is told.** A session that moves into
+  `ready-for-review` (its row's blue dot) raises one notification, "<name>
+  finished its turn". Each move is one notification; a session already blue
+  when the console opened is not announced. The reader's own Mark as unread
+  is blue too but is theirs, so it is never told.
+- **A long wait is told once more.** A session still amber or blue thirty
+  minutes after it got there (by the host's `observedSince` when it moves
+  while the tab looks, else when the tab saw it; a session already waiting
+  when the console opens is reminded thirty minutes after that) raises one
+  reminder, "<name> has waited 30 minutes".
+  Once per stay: a session that moves on and comes back starts a new clock.
+  An idle or working session is never "stale". The console looks once a
+  minute, so the reminder lands within a minute of the thirty.
+- **Mute, per session, per browser.** Mute notifications in a row's menu,
+  beside Mark as unread, kept on the device like it (and followed by the
+  browser's other tabs); a muted row shows a crossed-out bell where it has
+  no dot. A muted session raises none of the four notifications (a wait, a
+  notice, a finished turn, a long wait); the Inbox and the sidebar still
+  show it.
+
+Still from the console only: with no console tab open, nothing is told.
+
 ## Its own page, and a deck (2026-11-24)
 
 The owner asked on 2026-11-24 for the Inbox to leave Plan and have a page of

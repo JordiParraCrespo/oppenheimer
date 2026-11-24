@@ -1204,6 +1204,9 @@
       "markUnread": "Mark as unread",
       "markRead": "Mark as read",
       "unreadLabel": "Unread",
+      "mute": "Mute notifications",
+      "unmute": "Unmute notifications",
+      "mutedLabel": "Notifications muted",
       "hide": "Hide",
       "show": "Show",
       "hidden": "Hidden",
@@ -4168,6 +4171,12 @@
       "previous": "Previous",
       "next": "Next",
       "done": "Done"
+    },
+    "alert": {
+      "doneTitle": "{{name}} finished its turn",
+      "doneBody": "Open the session to see what it did.",
+      "staleTitle": "{{name}} has waited 30 minutes",
+      "staleBody": "It still needs you. Open the session to pick it up."
     }
   },
   "settings": {
