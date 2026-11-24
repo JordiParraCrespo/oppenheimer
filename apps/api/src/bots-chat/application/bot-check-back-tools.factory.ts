@@ -114,7 +114,10 @@ export class BotCheckBackToolsFactory implements BotToolArea {
           context.budget.release('check_back');
           throw error;
         }
-        return promptText('core/tools-check-back.check-back-set', { at, look: String(look.step + 1) });
+        return promptText('core/tools-check-back.check-back-set', {
+          at,
+          look: String(look.step + 1),
+        });
       },
     });
   }
