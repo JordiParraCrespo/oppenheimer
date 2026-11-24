@@ -1519,7 +1519,9 @@ never written by the control plane.
   host open. The prompt says to turn on only what the work needs.
 - **One card per call** under Approve for me (`perCallOnly`): no standing
   grant, since a change opens more than the call itself. Under Full access
-  it runs at once.
+  it runs at once. Review pointed out that a page or mail the bot reads on
+  the owner's own turn could then prompt it to open a host; asked whether
+  turning a switch on should ask even under Full access, the owner said no.
 - **The refusals point at it.** `BROWSER_001`, `COMPUTER_001`, `EXEC_001`,
   `EXEC_002` and `EXEC_006` tell the bot to turn the switch on with this tool
   when the person asked for the work, and run the action again, rather than
