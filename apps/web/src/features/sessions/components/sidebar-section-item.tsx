@@ -52,7 +52,7 @@ export function SidebarSectionItem({
         type="button"
         aria-label={moveLabel}
         {...handleProps}
-        className="absolute top-0 left-px z-10 flex h-6 w-2.5 cursor-grab items-center justify-center rounded-sm text-fg-subtle opacity-0 outline-none transition-opacity duration-fast group-hover/section:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-ring"
+        className="absolute top-0 left-px z-10 flex h-(--control-h-sm) w-2.5 cursor-grab items-center justify-center rounded-sm text-fg-subtle opacity-0 outline-none transition-opacity duration-fast group-hover/section:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-ring"
       >
         <GripVertical aria-hidden className="size-3" />
       </button>
