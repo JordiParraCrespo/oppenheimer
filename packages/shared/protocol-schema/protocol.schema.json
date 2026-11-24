@@ -2851,6 +2851,45 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "whatsapp.react"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "chatId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "messageId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "senderId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "emoji": {
+          "type": "string",
+          "maxLength": 32
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "chatId",
+        "messageId",
+        "senderId",
+        "emoji"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "whatsapp.sent"
         },
         "commandId": {
@@ -3725,6 +3764,7 @@
       "whatsapp",
       "whatsapp.voice",
       "whatsapp.voice.send",
+      "whatsapp.react",
       "whatsapp.image",
       "telegram",
       "shared.preview",

@@ -71,6 +71,7 @@ import {
   whatsappMediaGetSchema,
   whatsappMediaSchema,
   whatsappMessagesSchema,
+  whatsappReactSchema,
   whatsappSendSchema,
   whatsappSendVoiceSchema,
   whatsappSentSchema,
@@ -214,6 +215,11 @@ export const RUNNER_CAPABILITIES = [
    * spoke, sent as a playable push-to-talk message.
    */
   'whatsapp.voice.send',
+  /**
+   * Answers `whatsapp.react` with `whatsapp.sent`: a reaction a bot leaves on
+   * a message in a chat it answers.
+   */
+  'whatsapp.react',
   /**
    * Hands over an image its WhatsApp device received: it answers
    * `whatsapp.media.get` with `kind: 'image'` with `whatsapp.media`, a JPEG
@@ -1773,6 +1779,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   whatsappAckSchema,
   whatsappSendSchema,
   whatsappSendVoiceSchema,
+  whatsappReactSchema,
   whatsappSentSchema,
   whatsappMediaGetSchema,
   whatsappMediaSchema,

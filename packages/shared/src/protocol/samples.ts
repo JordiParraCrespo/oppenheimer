@@ -258,6 +258,14 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     data: 'T2dnUwACAAAAAAAAAAA=',
     seconds: 4,
   },
+  'whatsapp.react': {
+    type: 'whatsapp.react',
+    commandId,
+    chatId: '34600333444@s.whatsapp.net',
+    messageId: '3EB0C7A1F2',
+    senderId: '34600333444@s.whatsapp.net',
+    emoji: '👍',
+  },
   'whatsapp.sent': { type: 'whatsapp.sent', commandId, id: '3EB0C7A1F3', sentAt: occurredAt },
   'whatsapp.media.get': {
     type: 'whatsapp.media.get',
