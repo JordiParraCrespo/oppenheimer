@@ -51,10 +51,14 @@ Later that day, after using it, the owner took the grey band back: "I liked
 that the tabs have the gray color", and "I do not want to change the top bg
 header when creating a new session". The tab bar is the grey band
 (`canvas-recessed`) on a session, a bot's chat and New session alike, so
-it stays the same colour when a session is created; its 45px, its medium
-rung, its hairline and New session's image under the content alone stay.
-A shared session's guest, with no tabs, keeps its bar on the terminal's
-ground.
+it stays the same colour when a session is created; its 45px, its
+hairline and New session's image under the content alone stay. The owner
+also found the bar's other controls too big ("this right icons should be
+smaller", the Terminal / Chat switch "adapted to the height of the
+header"): only the tabs stand on the medium rung, and the toggles, the +,
+Share and the menus go back to the small one with its small glyph, the
+Terminal / Chat pill as tall as they are. A shared session's guest, with no
+tabs, keeps its bar on the terminal's ground.
 
 ## 2. What a tab shows
 

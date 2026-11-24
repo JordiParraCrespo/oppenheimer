@@ -31,14 +31,13 @@ export function SidebarToggle() {
  * A bar of tabs (`tone="chrome"`): 45px (`--tab-bar-h`), on the grey band
  * (`canvas-recessed`) wherever it is drawn, a session or New session, with a
  * hairline at its foot, so it reads the same on every page that has tabs and
- * the shown tab's card stands out on it. Every control in it stands
- * on the medium rung: the small one is pointed there inside the bar, so a
- * tab, a toggle or Share grows with the bar without its caller saying so,
- * and the icon of every button in it (a menu's trigger too, whose slot is
- * the menu's) takes the medium glyph, but a tab's own close.
+ * the shown tab's card stands out on it. A tab stands on the medium rung
+ * (the small one is pointed there on each tab, so its caller says nothing);
+ * every other control in the bar, the toggles, +, Share and the menus, stays
+ * on the small rung with its small glyph, quieter than the tabs.
  */
 const TAB_BAR =
-  'h-(--tab-bar-h) border-b border-border-subtle bg-canvas-recessed [--chat-tab-ground:var(--canvas-recessed)] [--control-h-sm:var(--control-h-md)] [&_button:not([data-slot=chat-tab]_*)_svg:not([class*=size-])]:size-4';
+  'h-(--tab-bar-h) border-b border-border-subtle bg-canvas-recessed [--chat-tab-ground:var(--canvas-recessed)] [&_[data-slot=chat-tab]]:[--control-h-sm:var(--control-h-md)]';
 
 /**
  * The page bar with something in its slots, for a route that declares

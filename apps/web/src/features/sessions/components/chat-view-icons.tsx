@@ -6,7 +6,8 @@ import type { SessionView } from '../lib/chat-blocks';
 /**
  * Terminal / Chat in the session's bar: two square icons on one soft pill,
  * so they read as one switch apart from the bar's other buttons, the view on
- * screen lit, each named by its tooltip. A terminal's status line, with no
+ * screen lit, each named by its tooltip. The pill stands on the small rung,
+ * as tall as the buttons beside it, so its icons are the next size down. A terminal's status line, with no
  * room for a tooltip to explain a glyph, keeps the worded `ChatViewToggle`.
  */
 export function ChatViewIcons({
@@ -29,7 +30,7 @@ export function ChatViewIcons({
       {views.map(({ value, Icon }) => (
         <IconButton
           key={value}
-          size="sm"
+          size="xs"
           shape="square"
           aria-label={t(`sessions.chat.view.${value}`)}
           title={t(`sessions.chat.view.${value}`)}
@@ -38,7 +39,7 @@ export function ChatViewIcons({
           className="data-dirty:bg-card"
           onClick={() => onViewChange(value)}
         >
-          <Icon />
+          <Icon className="size-3.5" />
         </IconButton>
       ))}
     </fieldset>

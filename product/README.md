@@ -1776,7 +1776,9 @@ earlier note:
   page's own ground (the terminal's colour on a session, black on New
   session). Later on 2026-11-24 the owner took the grey band back ("I liked
   that the tabs have the gray color"), the same on a session and on New
-  session, so the bar does not change when a session is created.
+  session, so the bar does not change when a session is created. Only the
+  tabs stay on the medium rung; the bar's other controls go back to the
+  small one.
 - `versions/mvp/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
   a job over four tiles (next-step pills once it had instructions), over the
   stacked composer. On 2026-11-16 the owner found it loud in the side pane
