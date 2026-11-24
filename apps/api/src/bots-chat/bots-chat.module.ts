@@ -450,6 +450,7 @@ const queryHandlers: Provider[] = [
     BotTurnOpeningResolver,
     BotOpeningMediaResolver,
     BotWhatsappVoiceNoteResolver,
+    BotWhatsappImageResolver,
     // The readers of what a turn's opening still has to read, one per kind of
     // `BOT_PENDING_MEDIA_KINDS`. A new kind is a reader and a place here.
     {
