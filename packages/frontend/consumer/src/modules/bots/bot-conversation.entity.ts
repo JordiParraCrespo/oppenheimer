@@ -3,6 +3,8 @@ import type {
   BotApprovalReach,
   BotApprovalStatus,
   BotAttachment,
+  BotFormSpec,
+  BotFormStatus,
   BotMessageEvent,
   BotMessageRole,
   BotProvider,
@@ -377,6 +379,26 @@ export class BotQuestionCardEntity {
     public readonly status: BotQuestionStatus,
     public readonly createdAt: Date,
   ) {}
+}
+
+/**
+ * A form a bot asked its owner to fill (`ask_form`): submitted or dismissed,
+ * never approved, and nothing runs on it. A card of its own beside approvals
+ * and questions; a bot has one card up at a time of any kind.
+ */
+export class BotFormCardEntity {
+  constructor(
+    public readonly id: string,
+    public readonly turnId: string,
+    public readonly spec: BotFormSpec,
+    public readonly status: BotFormStatus,
+    public readonly createdAt: Date,
+  ) {}
+
+  /** The form's line in the chat: its title. */
+  get title(): string {
+    return this.spec.title;
+  }
 }
 
 /**

@@ -532,6 +532,9 @@ export function useBotLive(id: string): BotLive {
         case 'question':
           void queryClient.invalidateQueries({ queryKey: botsKeys.pendingQuestion(id) });
           return;
+        case 'form':
+          void queryClient.invalidateQueries({ queryKey: botsKeys.pendingForm(id) });
+          return;
         case 'message':
         case 'turn': {
           retry((retries) => clearBotRetry(retries, event.turnId));

@@ -84,4 +84,6 @@ export const BotsErrors = {
     code: 'BOTS_CLIENT_058',
     message: 'Failed to revoke the routine’s webhook URL',
   },
+  FETCH_FORM_FAILED: { code: 'BOTS_CLIENT_059', message: 'Failed to load the form' },
+  SUBMIT_FORM_FAILED: { code: 'BOTS_CLIENT_060', message: 'Failed to send the form' },
 } as const satisfies Record<string, ErrorDefinition>;

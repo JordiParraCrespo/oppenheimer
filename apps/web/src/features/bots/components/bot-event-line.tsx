@@ -4,6 +4,7 @@ import type { BotMessageEvent } from '@oppenheimer/shared/schemas/bot';
 import type { ReactNode } from 'react';
 import { ApprovalEventLine } from '@/features/bots/components/approval-event-line';
 import { DreamEventLine } from '@/features/bots/components/dream-event-line';
+import { FormEventLine } from '@/features/bots/components/form-event-line';
 import { GithubAskEventLine } from '@/features/bots/components/github-ask-event-line';
 import { GoalEventLine } from '@/features/bots/components/goal-event-line';
 import { LoopEventLine } from '@/features/bots/components/loop-event-line';
@@ -31,6 +32,7 @@ const EVENT_LINES: {
 } = {
   approval: ({ event }) => <ApprovalEventLine event={event} />,
   question: ({ event }) => <QuestionEventLine event={event} />,
+  form: ({ event }) => <FormEventLine event={event} />,
   routine: ({ event, action }) => <RoutineEventLine event={event} action={action} />,
   bot_message: ({ event, message }) => (
     <PeerEventCard event={event} messageId={message.id} content={message.content} />
