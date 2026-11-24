@@ -1625,6 +1625,8 @@
       "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
       "offline": "The host is offline",
       "offlineDetail": "The device comes back when the host reconnects.",
+      "reconnecting": "Reconnecting to the device…",
+      "reconnectingDetail": "Taps from the next few seconds are sent once it’s back.",
       "ended": "The session has ended",
       "browser": "Browser",
       "address": "localhost:{{port}}",

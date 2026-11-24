@@ -59,6 +59,10 @@ host gives it, through Argent (`product/research/device-streaming.md`). A
 host with Argent installed needs no setup: each new session takes one of the
 simulators and emulators running at the time, and keeps it for its life.
 `RUNNER_DEVICES` names them instead, or turns it `off` (`.env.example`).
+A simulator streams every frame at its full resolution, larger than the
+link carries, so the runner scales the frame it is about to send to 720
+pixels wide (`RUNNER_DEVICE_SCREEN_WIDTH`), and logs any frame that still
+does not fit rather than dropping it unseen.
 
 The host's own desktop streams to the console (Settings → Hosts → Desktop,
 and a session's Desktop tab) once its owner runs `runner desktop on`: the
