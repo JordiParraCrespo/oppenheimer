@@ -19,7 +19,7 @@ const visit = (patch: Partial<InboxVisit> = {}): InboxVisit => ({
   later: [],
   done: [],
   cleared: [],
-  next: null,
+  following: {},
   ...patch,
 });
 
@@ -99,9 +99,23 @@ describe('currentItem', () => {
   it('moves on to the item that followed the answered one, else the first', () => {
     const stack = [item('a', 'run'), item('c', 'run'), item('d', 'run')];
     const answered = { answered: new Set(['b']), done: [] };
-    expect(currentItem(stack, 'b', { ...answered, next: 'c' })?.key).toBe('c');
-    expect(currentItem(stack, 'b', { ...answered, next: 'gone' })?.key).toBe('a');
-    expect(currentItem(stack, 'b', { ...answered, next: null })?.key).toBe('a');
+    expect(currentItem(stack, 'b', { ...answered, following: { b: 'c' } })?.key).toBe('c');
+    expect(currentItem(stack, 'b', { ...answered, following: { b: 'gone' } })?.key).toBe('a');
+    expect(currentItem(stack, 'b', { ...answered, following: {} })?.key).toBe('a');
+  });
+
+  // Opened B in A/B/C/D, answered B, then answered C on its card: the address
+  // still names B, and the deck goes on to D, not back to A.
+  it('follows the chain past items that left one after another', () => {
+    const left = [item('a', 'run'), item('d', 'run')];
+    const settled = {
+      answered: new Set(['b', 'c']),
+      done: [],
+      following: { a: 'b', b: 'c', c: 'd' },
+    };
+    expect(currentItem(left, 'b', settled)?.key).toBe('d');
+    const loop = { ...settled, following: { b: 'c', c: 'b' } };
+    expect(currentItem(left, 'b', loop)?.key).toBe('a');
   });
 });
 

@@ -42,7 +42,7 @@ import { InboxItemMessage } from '@/features/inbox/sections/inbox-item-message';
  *
  * Putting a card away (its toolbar, E and S, a swipe, Later) sends it off
  * and moves on to the item after it; answering it on the card does too, once
- * the answer lands (`currentItem` follows `next`). J and K, or the arrows,
+ * the answer lands (`currentItem` follows `following`). J and K, or the arrows,
  * go through the stack without putting anything away, and 1–9 press the
  * card's numbered answers.
  */
@@ -60,9 +60,7 @@ export function InboxCurrent() {
   const index = item ? open.indexOf(item) : -1;
   const next = index >= 0 ? (open[index + 1]?.key ?? null) : null;
   const previous = index > 0 ? (open[index - 1]?.key ?? null) : null;
-  // Only for the item the address names (or the first, when it names none):
-  // a stand-in for one that left was picked by `next` itself.
-  useFollowNext(item && (search.item === null || search.item === item.key) ? next : undefined);
+  useFollowNext(item?.key ?? null, next);
 
   const copy = item ? inboxCopy(item, t) : null;
   useMarkRead(item?.key ?? null, search.item !== null);
@@ -187,9 +185,11 @@ export function InboxCurrent() {
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
         {errors}
         {/* Keyed by the item: the next card starts with no drag, tilt or stamp
-            left on it, whether or not the last one left with an animation. */}
+            left on it, whether or not the last one left with an animation. A
+            session by the session, so a refused answer's error stays over the
+            decision it now waits on (`InboxItemMessage`). */}
         <InboxDeck
-          key={item.key}
+          key={item.kind === 'session' ? `session:${item.session.id}` : item.key}
           ref={deck}
           behind={open.length - 1}
           leaving={leaving}

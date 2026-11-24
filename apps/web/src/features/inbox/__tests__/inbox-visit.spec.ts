@@ -24,8 +24,8 @@ describe('inboxVisit.cleared', () => {
 
   it('starts again on the next visit', () => {
     inboxVisit.done('approval:1');
-    inboxVisit.follow('run:2');
+    inboxVisit.follow('approval:1', 'run:2');
     inboxVisit.clear();
-    expect(inboxVisit.get()).toEqual({ later: [], done: [], cleared: [], next: null });
+    expect(inboxVisit.get()).toEqual({ later: [], done: [], cleared: [], following: {} });
   });
 });

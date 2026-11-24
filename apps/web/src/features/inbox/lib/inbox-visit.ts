@@ -3,8 +3,8 @@ import { inboxAnswered } from '@oppenheimer/frontend-consumer/react';
 /**
  * What happened in the Inbox on this visit: the items sent to the end with
  * Later, what was marked done (for Show done), how many were cleared (the
- * deck's progress), and which item follows the one in hand (where the deck
- * goes once that one leaves). The marks behind it are
+ * deck's progress), and which item followed each one the deck showed
+ * (where it goes once that one leaves). The marks behind it are
  * stored; this is the page's memory only, kept outside React so the list and
  * the pane, which share no parent below the shell, read one visit. It is
  * cleared when the reader leaves the Inbox. What was answered and waits for
@@ -18,11 +18,15 @@ export interface InboxVisit {
   done: readonly string[];
   /** Keys put away this visit, by any means: done, answered, snoozed or deleted. */
   cleared: readonly string[];
-  /** The key after the item in hand, as the deck last drew it; null at the end. */
-  next: string | null;
+  /**
+   * The key the deck drew after each item it showed (null at the end), so
+   * once an item leaves the deck goes on to the one that followed it, and
+   * from there along the chain while those have left too.
+   */
+  following: Readonly<Record<string, string | null>>;
 }
 
-const EMPTY: InboxVisit = { later: [], done: [], cleared: [], next: null };
+const EMPTY: InboxVisit = { later: [], done: [], cleared: [], following: {} };
 
 const add = (keys: readonly string[], key: string) => [...keys.filter((k) => k !== key), key];
 
@@ -67,9 +71,11 @@ export const inboxVisit = {
     inboxAnswered.add(key, ...alsoSettles);
     write({ ...visit, cleared: add(visit.cleared, key) });
   },
-  /** The deck's next item, kept only when it changes, so drawing it is no write. */
-  follow(key: string | null) {
-    if (visit.next !== key) write({ ...visit, next: key });
+  /** What the deck drew after `key`, kept only when it changes, so drawing it is no write. */
+  follow(key: string, next: string | null) {
+    if (visit.following[key] !== next) {
+      write({ ...visit, following: { ...visit.following, [key]: next } });
+    }
   },
   clear() {
     inboxAnswered.clear();

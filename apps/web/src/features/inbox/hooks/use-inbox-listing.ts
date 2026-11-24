@@ -25,7 +25,7 @@ export function useInboxListing(now: number) {
   const current = currentItem(open, search.item, {
     answered: inbox.answered,
     done: visit.done,
-    next: visit.next,
+    following: visit.following,
   });
   return { inbox, search, open, done, current, visit };
 }

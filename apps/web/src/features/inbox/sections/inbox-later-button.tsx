@@ -18,7 +18,7 @@ export function InboxLaterButton({ itemKey }: { itemKey: string }) {
       variant="ghost"
       onClick={() =>
         putAway(itemKey, 'left', () => {
-          const { next } = inboxVisit.get();
+          const next = inboxVisit.get().following[itemKey] ?? null;
           inboxVisit.later(itemKey);
           search.advance(next);
         })

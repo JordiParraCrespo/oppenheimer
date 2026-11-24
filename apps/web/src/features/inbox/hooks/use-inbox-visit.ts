@@ -15,14 +15,12 @@ export function useForgetVisitOnLeave(): void {
 }
 
 /**
- * Tells the visit which item follows the one in hand, so the deck goes on to
- * it once that one leaves, however it leaves. `undefined` writes nothing:
- * while the deck draws a stand-in for an item that left, the stand-in was
- * chosen by `next`, and following it would chase the stack to its end.
- * Syncs with the visit store outside React.
+ * Tells the visit which item follows the one in hand (`key`), so the deck
+ * goes on to it once that one leaves, however it leaves. Syncs with the
+ * visit store outside React.
  */
-export function useFollowNext(next: string | null | undefined): void {
+export function useFollowNext(key: string | null, next: string | null): void {
   useEffect(() => {
-    if (next !== undefined) inboxVisit.follow(next);
-  }, [next]);
+    if (key) inboxVisit.follow(key, next);
+  }, [key, next]);
 }
