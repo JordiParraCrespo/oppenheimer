@@ -2,7 +2,7 @@
 export type SidebarSection = 'bots' | 'sessions';
 
 /** The order a reader who never moved a section sees: the bots above the sessions. */
-export const SIDEBAR_SECTIONS: readonly SidebarSection[] = ['bots', 'sessions'];
+const SIDEBAR_SECTIONS: readonly SidebarSection[] = ['bots', 'sessions'];
 
 /**
  * The sections in the stored order. An id it no longer knows is dropped and
