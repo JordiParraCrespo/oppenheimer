@@ -490,7 +490,9 @@ idle family stops parent first. It
 never closes one. Each stop takes the stop path (the wrapper hung up, then killed, as
 above), is announced like any other stop, and is logged with slog
 ("stopped an idle session"). Opening the session in the console restarts
-it (05, "A stopped session comes back when it is opened").
+it (05, "A stopped session comes back when it is opened"), and a bot,
+`opp sessions restart` or the MCP server's `restart_session` restart it
+without anyone opening it (2026-11-24, note 25).
 
 **Caps.** 20 sessions per host by default, 2 MB ring buffer each, 32 KB
 PTY read buffer. Resize is coalesced once, by the console, over 50 ms;

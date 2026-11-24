@@ -239,7 +239,11 @@ How long to wait for the session's link at its vendor before answering without i
 
 <!-- fragment: send-to-session -->
 
-Types a follow-up prompt into a running session's agent, as a person would at its prompt: more instructions, a correction, the next step. Only while the agent waits at its prompt (get_session's group idle or ready-for-review); while it works the prompt is refused, so end your turn and let your watch wake you when it is back at its prompt; when it asks a question or a permission, use answer_session. Nothing is queued: a refused prompt is not sent later. A closed session takes no prompt, ever. A Cursor cloud session takes it as a new run once its last run ended; a Claude Code or Codex cloud session takes none (it is answered at its vendor). The session's log records the prompt as yours, and the answer gives the entry it was sent at: read_session with that after_seq shows what followed, and read_session_transcript shows the agent's own words. You are subscribed to the task it starts unless watch is false.
+Types a follow-up prompt into a running session's agent, as a person would at its prompt: more instructions, a correction, the next step. Only while the agent waits at its prompt (get_session's group idle or ready-for-review); while it works the prompt is refused, so end your turn and let your watch wake you when it is back at its prompt; when it asks a question or a permission, use answer_session. Nothing is queued: a refused prompt is not sent later. A closed session takes no prompt, ever; a stopped one (stopped idle after hours unwatched, or by a host reboot) takes none until restart_session brings it back. A Cursor cloud session takes it as a new run once its last run ended; a Claude Code or Codex cloud session takes none (it is answered at its vendor). The session's log records the prompt as yours, and the answer gives the entry it was sent at: read_session with that after_seq shows what followed, and read_session_transcript shows the agent's own words. You are subscribed to the task it starts unless watch is false.
+
+<!-- fragment: send-to-session-stopped -->
+
+Session {{id}} is stopped (left idle, or its host restarted), so it takes no prompt. Call restart_session to bring it back, check with get_session that it is no longer stopped, then send this again.
 
 <!-- fragment: send-to-session-session-id -->
 
@@ -309,6 +313,26 @@ Stops a running session's agent. The worktree and its changes are kept. Use it w
 
 The session to stop (from list_sessions).
 
+<!-- fragment: restart-session -->
+
+Brings a stopped session back: its agent starts again in the worktree it already has, with its branch and changes, and resumes its conversation where the agent can. A session stops on its own after hours left idle and unwatched, and every session stops when its host reboots; such a session takes no prompt until it is restarted. Use it when you need a stopped session to carry on (send_to_session, answer_session); do not ask the person to open it. Only a stopped session on a host restarts: a running, closed or cloud one is refused. It is back once its host brings the terminal up, usually within a minute: get_session shows it no longer stopped, then send your prompt.
+
+<!-- fragment: restart-session-session-id -->
+
+The stopped session to restart (from list_sessions).
+
+<!-- fragment: restart-session-not-stopped -->
+
+Session {{id}} is not stopped, so there is nothing to restart: send_to_session reaches it as it is.
+
+<!-- fragment: restart-session-closed -->
+
+Session {{id}} is closed: nothing is left to restart. Start a new session instead.
+
+<!-- fragment: restart-session-cloud -->
+
+Session {{id}} runs in its vendor's cloud, not on a host: there is nothing here to restart.
+
 <!-- fragment: close-session -->
 
 Closes a session you started (a bot's session), most often one that failed or that you no longer need, so it leaves the person's sidebar: its agent ends, each branch is pushed and the worktree is removed. A session the person, an automation or a review started is refused: tell the person instead. Work never pushed is kept, and the close refused by the host, unless accept_unpushed_work is true; only set it when the person said the work can go. A failed session that never started has nothing to lose. It closes once its host hears it: get_session shows when it has.
@@ -376,6 +400,14 @@ Asked session {{id}} to stop. It stops once its host hears it; get_session shows
 <!-- fragment: session-action-answers-stop-offline -->
 
 Session {{id}}'s host is offline, so the stop did not reach it and is not sent again: once the host is back, check with get_session and stop it again if its agent still runs.
+
+<!-- fragment: session-action-answers-restart-sent -->
+
+Asked session {{id}} to restart. It is back once its host brings the terminal up, usually within a minute: get_session shows it no longer stopped; send your prompt then, not before.
+
+<!-- fragment: session-action-answers-restart-offline -->
+
+Session {{id}}'s host is offline, so the restart did not reach it and is not sent again: once the host is back (list_hosts), call restart_session again.
 
 <!-- fragment: session-action-answers-close-sent -->
 

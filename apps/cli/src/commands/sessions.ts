@@ -37,6 +37,7 @@ export function sessionsCommand(): Command {
   sessions.addCommand(sendCommand());
   sessions.addCommand(waitCommand());
   sessions.addCommand(stopCommand());
+  sessions.addCommand(restartCommand());
   sessions.addCommand(closeCommand());
   sessions.addCommand(visibilityCommand('hide'));
   sessions.addCommand(visibilityCommand('show'));
@@ -243,6 +244,24 @@ function stopCommand(): Command {
       const context = contextFor(this);
       const session = await context.client.post<Session>(`/sessions/${id}/stop`);
       render(context.json, session, () => `${style.green('✓')} Stopped ${session.name}.`);
+    });
+}
+
+function restartCommand(): Command {
+  return new Command('restart')
+    .description(
+      'Bring a stopped session back in the worktree it has; its agent picks up its conversation',
+    )
+    .argument('<id>', 'Session id')
+    .action(async function (this: Command, id: string) {
+      const context = contextFor(this);
+      const session = await context.client.post<Session>(`/sessions/${id}/restart`);
+      render(
+        context.json,
+        session,
+        () =>
+          `${style.green('✓')} Asked ${session.name} to restart; \`opp sessions get ${id}\` shows when it is back.`,
+      );
     });
 }
 
