@@ -166,6 +166,60 @@ function compareInboxItems(a: InboxItem, b: InboxItem): number {
   return since !== 0 ? since : a.key.localeCompare(b.key);
 }
 
+/** An item a session list alone produces: a session waiting on you, or a session's notice. */
+export type SessionInboxItem = Extract<InboxItem, { kind: 'session' | 'notice' }>;
+
+/**
+ * The items a session list alone says need you: each session waiting on you,
+ * and each session's notice. `projectOf` files them; with none they carry no
+ * project, which is all a reader that only alerts needs.
+ */
+export function sessionItems(
+  sessions: readonly SessionEntity[],
+  projectOf: (id: string | null | undefined) => string[] = () => [],
+): SessionInboxItem[] {
+  const items: SessionInboxItem[] = [];
+  for (const session of sessions) {
+    if (session.state !== 'waiting-on-you') continue;
+    items.push({
+      kind: 'session',
+      session,
+      key: sessionItemKey(session),
+      since: sessionSince(session),
+      projectIds: projectOf(session.projectId),
+      low: false,
+    });
+  }
+  for (const session of sessions) {
+    if (!session.notice) continue;
+    items.push({
+      kind: 'notice',
+      session,
+      notice: session.notice,
+      key: noticeItemKey(session, session.notice),
+      since: session.notice.at,
+      projectIds: projectOf(session.projectId),
+      low: false,
+    });
+  }
+  return items;
+}
+
+/**
+ * The items in `items` whose occurrence `seen` has not had yet, and `seen`
+ * with all of them added: what to tell a person about since the last look.
+ * A first look (`seen` null) tells nothing and only remembers, so opening the
+ * console does not announce everything already waiting.
+ */
+export function newSessionItems<T extends InboxItem>(
+  seen: ReadonlySet<string> | null,
+  items: readonly T[],
+): { fresh: T[]; seen: Set<string> } {
+  const keys = new Set(items.map((item) => item.key));
+  if (seen === null) return { fresh: [], seen: keys };
+  return { fresh: items.filter((item) => !seen.has(item.key)), seen: keys };
+}
+
 /**
  * Every item the sources say needs you, before any mark: one per occurrence,
  * each with its projects.
@@ -189,30 +243,7 @@ function inboxItems(sources: InboxSources): InboxItem[] {
       )
       .map((project) => project.id);
 
-  const items: InboxItem[] = [];
-  for (const session of sources.sessions) {
-    if (session.state !== 'waiting-on-you') continue;
-    items.push({
-      kind: 'session',
-      session,
-      key: sessionItemKey(session),
-      since: sessionSince(session),
-      projectIds: projectOf(session.projectId),
-      low: false,
-    });
-  }
-  for (const session of sources.sessions) {
-    if (!session.notice) continue;
-    items.push({
-      kind: 'notice',
-      session,
-      notice: session.notice,
-      key: noticeItemKey(session, session.notice),
-      since: session.notice.at,
-      projectIds: projectOf(session.projectId),
-      low: false,
-    });
-  }
+  const items: InboxItem[] = sessionItems(sources.sessions, projectOf);
   for (const notice of sources.botNotices) {
     items.push({
       kind: 'botNotice',

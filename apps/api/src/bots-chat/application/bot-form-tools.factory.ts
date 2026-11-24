@@ -30,31 +30,31 @@ import { type BotToolArea, type BotToolDefinition, defineBotTool } from './bot-t
  * schema then reads it by its kind, keeping only what the kind takes.
  */
 const askFormField = z.object({
-  id: z.string().min(1).max(32).describe(promptText('tools/forms.field-id')),
-  kind: z.enum(BOT_FORM_FIELD_KINDS).describe(promptText('tools/forms.field-kind')),
+  id: z.string().min(1).max(32).describe(promptText('core/tools-forms.field-id')),
+  kind: z.enum(BOT_FORM_FIELD_KINDS).describe(promptText('core/tools-forms.field-kind')),
   label: z
     .string()
     .min(1)
     .max(BOT_FORM_FIELD_LABEL_MAX)
-    .describe(promptText('tools/forms.field-label')),
+    .describe(promptText('core/tools-forms.field-label')),
   placeholder: z
     .string()
     .max(BOT_FORM_FIELD_PLACEHOLDER_MAX)
     .optional()
-    .describe(promptText('tools/forms.field-placeholder')),
-  required: z.boolean().optional().describe(promptText('tools/forms.field-required')),
+    .describe(promptText('core/tools-forms.field-placeholder')),
+  required: z.boolean().optional().describe(promptText('core/tools-forms.field-required')),
   default: z
     .union([z.string().max(BOT_FORM_TEXTAREA_MAX), z.number()])
     .optional()
-    .describe(promptText('tools/forms.field-default')),
-  min: z.number().optional().describe(promptText('tools/forms.field-min')),
-  max: z.number().optional().describe(promptText('tools/forms.field-max')),
+    .describe(promptText('core/tools-forms.field-default')),
+  min: z.number().optional().describe(promptText('core/tools-forms.field-min')),
+  max: z.number().optional().describe(promptText('core/tools-forms.field-max')),
   options: z
     .array(z.string().min(1).max(BOT_FORM_SELECT_OPTION_MAX))
     .max(BOT_FORM_SELECT_OPTIONS_MAX)
     .optional()
     .describe(
-      promptText('tools/forms.field-options', {
+      promptText('core/tools-forms.field-options', {
         optionsMin: String(BOT_FORM_SELECT_OPTIONS_MIN),
         optionsMax: String(BOT_FORM_SELECT_OPTIONS_MAX),
       }),
@@ -63,22 +63,22 @@ const askFormField = z.object({
 
 /** The form `ask_form` puts to the person. */
 const askFormInput = z.object({
-  title: z.string().min(1).max(BOT_FORM_TITLE_MAX).describe(promptText('tools/forms.title')),
+  title: z.string().min(1).max(BOT_FORM_TITLE_MAX).describe(promptText('core/tools-forms.title')),
   description: z
     .string()
     .max(BOT_FORM_DESCRIPTION_MAX)
     .optional()
-    .describe(promptText('tools/forms.description')),
+    .describe(promptText('core/tools-forms.description')),
   fields: z
     .array(askFormField)
     .min(BOT_FORM_FIELDS_MIN)
     .max(BOT_FORM_FIELDS_MAX)
-    .describe(promptText('tools/forms.fields')),
+    .describe(promptText('core/tools-forms.fields')),
   submitLabel: z
     .string()
     .max(BOT_FORM_SUBMIT_LABEL_MAX)
     .optional()
-    .describe(promptText('tools/forms.submit-label')),
+    .describe(promptText('core/tools-forms.submit-label')),
 });
 type AskFormInput = z.infer<typeof askFormInput>;
 
@@ -117,7 +117,7 @@ export class BotFormToolsFactory implements BotToolArea {
         name: 'ask_form',
         scope: 'bots:write',
         attendedOnly: true,
-        description: promptText('tools/forms.ask-form', {
+        description: promptText('core/tools-forms.ask-form', {
           fieldsMin: String(BOT_FORM_FIELDS_MIN),
           fieldsMax: String(BOT_FORM_FIELDS_MAX),
         }),

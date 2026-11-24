@@ -5,9 +5,12 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { DomainEvent } from '@oppenheimer/backend-ddd';
 import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
-import { SlackLineResolver } from '../application/slack-line.resolver';
+import { SlackBotAppResolver } from '../application/slack-bot-app.resolver';
+import { SLACK_NAMES_DEADLINE_MS, SlackLineResolver } from '../application/slack-line.resolver';
 import { ConnectSlackCommand } from '../commands/connect-slack/connect-slack.command';
 import { ConnectSlackCommandHandler } from '../commands/connect-slack/connect-slack.command-handler';
+import { MarkSlackWorkingCommand } from '../commands/mark-slack-working/mark-slack-working.command';
+import { MarkSlackWorkingCommandHandler } from '../commands/mark-slack-working/mark-slack-working.command-handler';
 import { ReceiveSlackEventCommand } from '../commands/receive-slack-event/receive-slack-event.command';
 import { ReceiveSlackEventCommandHandler } from '../commands/receive-slack-event/receive-slack-event.command-handler';
 import { ReplyOnSlackCommand } from '../commands/reply-on-slack/reply-on-slack.command';
@@ -18,6 +21,8 @@ import { SlackErrors } from '../domain/slack.errors';
 import { SlackAccountEntity } from '../domain/slack-account.entity';
 import type { SlackSealerPort } from '../infrastructure/slack-sealer.port';
 import type { SlackWebApiPort } from '../infrastructure/slack-web-api.port';
+import { FindSlackImagesQuery } from '../queries/find-slack-images/find-slack-images.query';
+import { FindSlackImagesQueryHandler } from '../queries/find-slack-images/find-slack-images.query-handler';
 
 /**
  * What stands between Slack and a bot: only a request signed with the app's
@@ -107,6 +112,9 @@ function fakeSlack(overrides: Partial<SlackWebApiPort> = {}): SlackWebApiPort {
       botName: 'juno',
     })),
     post: vi.fn(async (_access, message) => ({ channel: message.channel, ts: '1.000001' })),
+    userName: vi.fn(async (_access, userId: string) => (userId === 'U0MAYA' ? 'Maya' : null)),
+    react: vi.fn(async () => {}),
+    download: vi.fn(async () => Buffer.from('image')),
     ...overrides,
   };
 }
@@ -203,6 +211,100 @@ describe('a request to a bot’s Slack events address', () => {
       ),
     );
     expect(published[0]).toMatchObject({ chatId: 'D1:1700000000.000100', text: 'and today?' });
+  });
+
+  // What breaks this: the bot reads "@U0MAYA" and cannot tell who the owner means.
+  it('reads the people the owner mentions by name, and by id when Slack will not say', async () => {
+    const { handler, published, slack } = receiver([app()]);
+    await handler.execute(
+      signed(
+        eventOf({
+          type: 'app_mention',
+          user: OWNER,
+          text: `<@${APP_USER}> ask <@U0MAYA> and <@U0GONE> about it`,
+          ts: '1700000000.000100',
+          channel: 'C1',
+        }),
+      ),
+    );
+    expect(published[0]).toMatchObject({ text: 'ask @Maya and @U0GONE about it' });
+    expect(slack.userName).not.toHaveBeenCalledWith(expect.anything(), APP_USER);
+  });
+
+  // What breaks this: an app made before it asked for users:read stops answering mentions.
+  it('still wakes the bot when Slack refuses to name anyone', async () => {
+    const slack = fakeSlack({
+      userName: vi.fn(async () => {
+        throw new AppError(SlackErrors.TOKEN_REFUSED, { detail: 'missing_scope' });
+      }),
+    });
+    const { handler, published } = receiver([app()], slack);
+    await handler.execute(
+      signed(
+        eventOf({
+          type: 'app_mention',
+          user: OWNER,
+          text: `<@${APP_USER}> ping <@U0MAYA>`,
+          ts: '1700000000.000100',
+          channel: 'C1',
+        }),
+      ),
+    );
+    expect(published[0]).toMatchObject({ text: 'ping @U0MAYA' });
+  });
+
+  // What breaks this: a message folded into a running turn keeps its eyes forever.
+  it('puts no reaction on a message as it arrives: the turn does when it starts', async () => {
+    const { handler, slack } = receiver([app()]);
+    await handler.execute(
+      signed(
+        eventOf({
+          type: 'app_mention',
+          user: OWNER,
+          text: `<@${APP_USER}> what failed?`,
+          ts: '1700000000.000100',
+          channel: 'C1',
+        }),
+      ),
+    );
+    expect(slack.react).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a screenshot the owner shares never reaches the bot,
+  // or the app sends its token to a host Slack does not own.
+  it('carries the images the owner shares from Slack’s file host only, and counts the rest', async () => {
+    const { handler, published } = receiver([app()]);
+    const file = (id: string, mimetype: string, url: string, size = 1_000) => ({
+      id,
+      name: `${id}.png`,
+      mimetype,
+      size,
+      url_private_download: url,
+    });
+    await handler.execute(
+      signed(
+        eventOf({
+          type: 'app_mention',
+          subtype: 'file_share',
+          user: OWNER,
+          text: `<@${APP_USER}>`,
+          ts: '1700000000.000100',
+          channel: 'C1',
+          files: [
+            file('F1', 'image/png', 'https://files.slack.com/files-pri/T0-F1/a.png'),
+            file('F2', 'image/png', 'https://files.slack.com.evil.example/a.png'),
+            file('F3', 'application/pdf', 'https://files.slack.com/files-pri/T0-F3/a.pdf'),
+            file('F4', 'image/jpeg', 'https://files.slack.com/files-pri/T0-F4/a.jpg', 9e9),
+          ],
+        }),
+      ),
+    );
+    expect(published[0]).toMatchObject({
+      command: 'message',
+      text: '',
+      images: [{ id: 'F1', name: 'F1.png', url: 'https://files.slack.com/files-pri/T0-F1/a.png' }],
+      skippedFiles: 3,
+    });
   });
 
   it('ignores anyone but the owner, in a channel or in the DM, and says nothing back', async () => {
@@ -338,6 +440,7 @@ describe('a bot’s answer in Slack', () => {
     const slack = fakeSlack();
     const handler = new ReplyOnSlackCommandHandler(
       fakeAccounts([account]).repository,
+      new SlackBotAppResolver(fakeAccounts([account]).repository),
       new SlackLineResolver(sealer, slack),
     );
     const command = new ReplyOnSlackCommand({
@@ -352,6 +455,39 @@ describe('a bot’s answer in Slack', () => {
     });
   });
 
+  // What breaks this: a pasted token in an answer is read by everyone in the channel.
+  it('sends a secret in the words as [redacted]', async () => {
+    const account = app();
+    const slack = fakeSlack();
+    const handler = new ReplyOnSlackCommandHandler(
+      fakeAccounts([account]).repository,
+      new SlackBotAppResolver(fakeAccounts([account]).repository),
+      new SlackLineResolver(sealer, slack),
+    );
+    const token = `ghp_${'a1B2c3D4'.repeat(5)}`;
+    await handler.execute(
+      new ReplyOnSlackCommand({ ...reply(`Use ${token} for the push`), accountId: account.id }),
+    );
+    const sent = vi.mocked(slack.post).mock.calls[0][1].text;
+    expect(sent).not.toContain(token);
+    expect(sent).toContain('[redacted]');
+  });
+
+  // What breaks this: a long answer arrives cut into pieces.
+  it('sends a long answer whole, in one message', async () => {
+    const account = app();
+    const slack = fakeSlack();
+    const handler = new ReplyOnSlackCommandHandler(
+      fakeAccounts([account]).repository,
+      new SlackBotAppResolver(fakeAccounts([account]).repository),
+      new SlackLineResolver(sealer, slack),
+    );
+    const long = `${'word '.repeat(500).trim()}\n\n`.repeat(6).trim();
+    await expect(
+      handler.execute(new ReplyOnSlackCommand({ ...reply(long), accountId: account.id })),
+    ).resolves.toBe(1);
+  });
+
   it('marks the app revoked when Slack refuses its token, so its settings say why the bot went quiet', async () => {
     const account = app();
     const slack = fakeSlack({
@@ -364,6 +500,7 @@ describe('a bot’s answer in Slack', () => {
     const accounts = fakeAccounts([account]);
     const handler = new ReplyOnSlackCommandHandler(
       accounts.repository,
+      new SlackBotAppResolver(accounts.repository),
       new SlackLineResolver(sealer, slack),
     );
     await expect(
@@ -371,6 +508,88 @@ describe('a bot’s answer in Slack', () => {
     ).rejects.toThrow();
     expect(account.status).toBe('revoked');
     expect(accounts.repository.saveStatus).toHaveBeenCalledWith(account);
+  });
+});
+
+describe('a bot’s turn starting on a Slack message', () => {
+  const mark = (accountId: string, botId = BOT) =>
+    new MarkSlackWorkingCommand({
+      organizationId: ORG,
+      accountId,
+      chatId: 'C1:1700000000.000100',
+      ts: '1700000500.000001',
+      botId,
+      working: true,
+    });
+
+  // What breaks this: the owner cannot tell from Slack that the bot is on it,
+  // or another bot's app reacts for a turn that is not its own.
+  it('marks that message as being worked on, while the app is still this bot’s', async () => {
+    const account = app();
+    const slack = fakeSlack();
+    const handler = new MarkSlackWorkingCommandHandler(
+      new SlackBotAppResolver(fakeAccounts([account]).repository),
+      new SlackLineResolver(sealer, slack),
+    );
+    await handler.execute(mark(account.id, '0b3e2a1c-9999-4c5d-8e6f-70819203b4c5'));
+    await handler.execute(mark(account.id));
+    expect(slack.react).toHaveBeenCalledTimes(1);
+    expect(slack.react).toHaveBeenCalledWith(
+      expect.anything(),
+      { channel: 'C1', ts: '1700000500.000001', name: 'eyes' },
+      true,
+    );
+  });
+
+  // What breaks this: Slack's three seconds pass while names are looked up, and Slack retries.
+  it('stops waiting for names past the deadline, reading the late ones by id', async () => {
+    vi.useFakeTimers();
+    try {
+      const slack = fakeSlack({ userName: vi.fn(() => new Promise<string | null>(() => {})) });
+      const names = new SlackLineResolver(sealer, slack).namesOf(app(), ['U0MAYA']);
+      await vi.advanceTimersByTimeAsync(SLACK_NAMES_DEADLINE_MS);
+      await expect(names).resolves.toEqual(new Map());
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('the images the owner shared, fetched for the bot’s turn', () => {
+  const images = [
+    { id: 'F1', name: 'a.png', url: 'https://files.slack.com/files-pri/T0-F1/a.png' },
+    { id: 'F2', name: 'b.png', url: 'https://files.slack.com/files-pri/T0-F2/b.png' },
+  ];
+  const query = (accountId: string, botId = BOT) =>
+    new FindSlackImagesQuery({ organizationId: ORG, accountId, botId, images, maxBytes: 100 });
+
+  // What breaks this: one image Slack will not hand over loses the owner's whole message,
+  // or another bot's app fetches files for a turn that is not its own.
+  it('answers the ones that came, as this bot’s app only', async () => {
+    const account = app();
+    const slack = fakeSlack({
+      download: vi.fn(async (_access, url: string) => {
+        if (url.includes('F2')) throw new AppError(SlackErrors.UNAVAILABLE);
+        return Buffer.from('png');
+      }),
+    });
+    const handler = new FindSlackImagesQueryHandler(
+      new SlackBotAppResolver(fakeAccounts([account]).repository),
+      new SlackLineResolver(sealer, slack),
+    );
+    await expect(handler.execute(query(account.id))).resolves.toEqual([
+      { name: 'a.png', bytes: Buffer.from('png') },
+    ]);
+    expect(slack.download).toHaveBeenCalledWith(
+      { botToken: 'xoxb-token', bucket: 'app:T0ACME:U0JUNO' },
+      images[0].url,
+      100,
+    );
+    vi.mocked(slack.download).mockClear();
+    await expect(
+      handler.execute(query(account.id, '0b3e2a1c-9999-4c5d-8e6f-70819203b4c5')),
+    ).resolves.toEqual([]);
+    expect(slack.download).not.toHaveBeenCalled();
   });
 });
 

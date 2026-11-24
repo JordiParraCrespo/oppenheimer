@@ -38,13 +38,13 @@ export function MilestonesHeader({
         title={t('tasks.milestones.title')}
         actions={
           <div className="flex items-center gap-1.5">
-            <Button variant="secondary" size="sm" onClick={onToday}>
+            <Button variant="secondary" onClick={onToday}>
               {t('tasks.milestones.today')}
             </Button>
-            <IconButton size="sm" aria-label={t('tasks.milestones.earlier')} onClick={onEarlier}>
+            <IconButton aria-label={t('tasks.milestones.earlier')} onClick={onEarlier}>
               <ChevronLeft />
             </IconButton>
-            <IconButton size="sm" aria-label={t('tasks.milestones.later')} onClick={onLater}>
+            <IconButton aria-label={t('tasks.milestones.later')} onClick={onLater}>
               <ChevronRight />
             </IconButton>
             <Button className="ml-3" onClick={onNew}>

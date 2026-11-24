@@ -31,6 +31,42 @@ describe('coding agent catalog', () => {
     expect(CODING_AGENTS.grok.command).toBe('grok');
     // Moves `~/.grok`, `auth.json` included, and nothing else.
     expect(CODING_AGENTS.grok.configDirEnv).toBe('GROK_HOME');
+    expect(CODING_AGENTS.qwen.command).toBe('qwen');
+    // Moves `~/.qwen`: settings, `oauth_creds.json` and the conversations.
+    expect(CODING_AGENTS.qwen.configDirEnv).toBe('QWEN_HOME');
+  });
+
+  it('empties Qwen Code’s prompt with keys its Rewind dialog does not read', () => {
+    // Qwen's restore options move up on `k` whatever the modifiers, so a
+    // Ctrl+K in the clear walked them up to "Restore code and conversation";
+    // `up`, `k`, `j`, Ctrl+P and Ctrl+N move its lists. An ESC only as Meta+D:
+    // a lone one twice opens Rewind.
+    const keys = CODING_AGENTS.qwen.input?.clear?.keys ?? '';
+    expect(keys).not.toBe('');
+    for (const moves of ['\u000b', '\u0010', '\u000e', 'k', 'j']) {
+      expect(keys, JSON.stringify(moves)).not.toContain(moves);
+    }
+    expect(keys.split('\u001bd').join('')).not.toContain('\u001b');
+  });
+
+  it('starts Qwen Code interactive with its task in one word, and reopens it by id once saved', () => {
+    // A positional is Qwen's one-shot run, and `--prompt-interactive` with
+    // its value as a word of its own reads a task starting with `-` as a flag
+    // (`-v` printed the version and exited): the `=` form keeps it a value.
+    // `--resume <id>` exits before the first message has been written, so it
+    // is the reopen once the runner sees the file, and `--continue`, which
+    // opens a fresh TUI, the resume before; Ask is `default`, not Qwen's own
+    // `auto`.
+    const { prompt, conversation, permission, effort } = CODING_AGENTS.qwen.launch;
+    expect(prompt).toEqual(['--prompt-interactive=<prompt>']);
+    expect(conversation).toEqual({
+      create: ['--session-id', '<conversation>'],
+      resume: ['--continue'],
+      reopen: ['--resume', '<conversation>'],
+    });
+    expect(permission?.ask.argv).toEqual(['--approval-mode', 'default']);
+    expect(permission?.full.argv).toEqual(['--approval-mode', 'yolo']);
+    expect(effort).toBeUndefined();
   });
 
   it('asks Grok for its levels by their own names, and Ask onto its `default` mode', () => {
@@ -350,12 +386,13 @@ describe('launch mapping', () => {
     for (const id of CODING_AGENT_IDS) {
       const { prompt } = CODING_AGENTS[id].launch;
       if (!prompt) continue;
-      expect(prompt, `${id} takes a first task but names no placeholder`).toContain('<prompt>');
       // The trailing positional is the whole reason this is argv rather than
       // something typed at a running TUI: a placeholder anywhere but the end
       // would put the person's sentence where a flag's value belongs, and every
-      // CLI here documents it as the last argument or its trailing flag's value.
-      expect(prompt.at(-1), `${id} does not end on the task`).toBe('<prompt>');
+      // CLI here documents it as the last argument or its trailing flag's value
+      // (`--prompt-interactive=<prompt>`, one word, for Qwen Code).
+      expect(prompt.at(-1)?.endsWith('<prompt>'), `${id} does not end on the task`).toBe(true);
+      expect(prompt.slice(0, -1).join(' '), `${id} names the task twice`).not.toContain('<prompt>');
     }
   });
 
@@ -424,6 +461,8 @@ describe('agent updates', () => {
     const installed = '/home/j/.local/lib/node_modules/opencode-ai/bin/opencode.exe';
     expect(methods.find((m) => installed.includes(m.pathContains))?.method).toBe('npm');
     expect(AGENT_HOST_SETUP.grok?.update).toEqual(['update']);
+    // `qwen update` on an npm install prints instructions and exits 0.
+    expect(AGENT_HOST_SETUP.qwen?.update).toBeUndefined();
     expect(AGENT_HOST_SETUP.shell?.update).toBeUndefined();
   });
 });

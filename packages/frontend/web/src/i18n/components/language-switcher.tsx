@@ -19,7 +19,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
         render={
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             className={className}
             aria-label={t('language.label')}
           />

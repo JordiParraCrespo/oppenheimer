@@ -847,6 +847,8 @@
     "unavailableDetail": "El host de esta sesión no ofrece simulador ni emulador, o todos los tiene otra sesión.",
     "offline": "El host está desconectado",
     "offlineDetail": "El dispositivo vuelve cuando el host se reconecte.",
+    "reconnecting": "Reconectando con el dispositivo…",
+    "reconnectingDetail": "Los toques de los próximos segundos se enviarán cuando vuelva.",
     "ended": "La sesión ha terminado",
     "browser": "Navegador",
     "address": "localhost:{{port}}",

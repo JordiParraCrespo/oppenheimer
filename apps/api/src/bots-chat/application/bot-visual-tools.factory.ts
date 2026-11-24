@@ -19,17 +19,17 @@ import {
  * is answered with the path of each fault so the model can fix it.
  */
 const showVisualInput = z.object({
-  title: z.string().max(120).describe(promptText('tools/visual.show-visual-title')),
+  title: z.string().max(120).describe(promptText('core/tools-visual.show-visual-title')),
   subtitle: z
     .string()
     .max(240)
     .optional()
-    .describe(promptText('tools/visual.show-visual-subtitle')),
+    .describe(promptText('core/tools-visual.show-visual-subtitle')),
   blocks: z
     .array(z.record(z.string(), z.unknown()))
     .min(1)
     .max(VISUAL_BLOCKS_MAX)
-    .describe(promptText('tools/visual.show-visual-blocks')),
+    .describe(promptText('core/tools-visual.show-visual-blocks')),
 });
 
 /**
@@ -53,7 +53,7 @@ export class BotVisualToolsFactory implements BotToolArea {
       defineBotTool({
         name: 'show_visual',
         scope: 'bots:write',
-        description: promptText('tools/visual.show-visual', {
+        description: promptText('core/tools-visual.show-visual', {
           blocksMax: String(VISUAL_BLOCKS_MAX),
           seriesMax: String(VISUAL_SERIES_MAX),
           visualsPerTurn: String(VISUALS_PER_TURN),
@@ -63,14 +63,14 @@ export class BotVisualToolsFactory implements BotToolArea {
           const parsed = parseVisual(input);
           if (!parsed.ok) {
             throw new BotToolRefusal(
-              promptText('tools/visual.invalid', {
+              promptText('core/tools-visual.invalid', {
                 errors: parsed.errors.map((error) => `- ${error}`).join('\n'),
               }),
             );
           }
           if (!context.budget.take('show_visual', VISUALS_PER_TURN)) {
             throw new BotToolRefusal(
-              promptText('tools/visual.visuals-spent', {
+              promptText('core/tools-visual.visuals-spent', {
                 visualsPerTurn: String(VISUALS_PER_TURN),
               }),
             );
@@ -81,10 +81,10 @@ export class BotVisualToolsFactory implements BotToolArea {
             visual.blocks.some((block) => block.type === 'html') &&
             !this.flags.isEnabled('visual_html', { organizationId: context.organizationId })
           ) {
-            throw new BotToolRefusal(promptText('tools/visual.html-off'));
+            throw new BotToolRefusal(promptText('core/tools-visual.html-off'));
           }
           return {
-            content: promptText('tools/visual.shown', {
+            content: promptText('core/tools-visual.shown', {
               title: visual.title,
               blocks: visual.blocks.map((block) => block.type).join(', '),
             }),

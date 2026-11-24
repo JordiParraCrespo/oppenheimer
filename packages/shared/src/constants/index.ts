@@ -88,6 +88,8 @@ export const QUEUE_NAMES = {
   BOT_DREAMS: 'bot-dreams',
   /** The silent check, a few minutes after a bot hands a session a task, that the task got going. */
   BOT_STALL_CHECKS: 'bot-stall-checks',
+  /** A look a bot asked for with `check_back`, at work it delegated or waits on, due at its time. */
+  BOT_CHECK_BACKS: 'bot-check-backs',
   /**
    * A line typed into a session for its own agent once it is at its prompt: a
    * pull request it watches moved, or a time it set came.

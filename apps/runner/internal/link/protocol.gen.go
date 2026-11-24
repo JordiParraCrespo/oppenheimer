@@ -109,6 +109,7 @@ const (
 	CapabilityWhatsapp                 = "whatsapp"
 	CapabilityWhatsappVoice            = "whatsapp.voice"
 	CapabilityWhatsappVoiceSend        = "whatsapp.voice.send"
+	CapabilityWhatsappImage            = "whatsapp.image"
 	CapabilityTelegram                 = "telegram"
 	CapabilitySharedPreview            = "shared.preview"
 	CapabilityTranscriptRead           = "transcript.read"
@@ -1062,6 +1063,8 @@ type DeviceInput struct {
 	Y            float64 `json:"y,omitempty"`
 	ToX          float64 `json:"toX,omitempty"`
 	ToY          float64 `json:"toY,omitempty"`
+	DurationMs   int     `json:"durationMs,omitempty"`
+	Momentum     bool    `json:"momentum,omitempty"`
 	Text         string  `json:"text,omitempty"`
 	Key          string  `json:"key,omitempty"`
 	Button       string  `json:"button,omitempty"`
@@ -1270,6 +1273,7 @@ type WhatsappMediaGet struct {
 	CommandID string `json:"commandId"`
 	ChatID    string `json:"chatId"`
 	MessageID string `json:"messageId"`
+	Kind      string `json:"kind,omitempty"`
 }
 
 // WhatsappMedia is the `whatsapp.media` message.

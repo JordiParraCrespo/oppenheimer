@@ -22,8 +22,8 @@ export function describeWatchStarted(
   const follows =
     subscription.until === 'task'
       ? `task #${subscription.watchedTurn}${latest && subscription.watchedTurn !== latest.seq ? ' (its next one)' : ''}, until it ends`
-      : promptText('tools/watch.watch-session-answer-every-task');
-  return promptText('tools/watch.watch-session-answer', {
+      : promptText('sessions/tools-watch.watch-session-answer-every-task');
+  return promptText('sessions/tools-watch.watch-session-answer', {
     sessionId: session.id,
     sessionName: session.name,
     follows,
@@ -33,15 +33,15 @@ export function describeWatchStarted(
 
 /** What `watch_session` adds when it also watches the terminal, and what the host could not take. */
 export function describePatternWatch(pattern: string, hints: readonly string[]): string {
-  const watching = promptText('tools/watch.watch-session-pattern-answer', { pattern });
+  const watching = promptText('sessions/tools-watch.watch-session-pattern-answer', { pattern });
   if (hints.includes('not_supported')) {
-    return promptText('tools/watch.watch-session-pattern-runner-too-old', {
+    return promptText('sessions/tools-watch.watch-session-pattern-runner-too-old', {
       watching,
       advice: RUNNER_TOO_OLD_ADVICE,
     });
   }
   if (hints.includes('host_offline')) {
-    return promptText('tools/watch.watch-session-pattern-host-offline', { watching });
+    return promptText('sessions/tools-watch.watch-session-pattern-host-offline', { watching });
   }
   return watching;
 }
@@ -55,7 +55,7 @@ export function describeWatch(subscription: BotSubscriptionEntity, timeZone: str
   const purpose = subscription.purpose ? ` — ${subscription.purpose}` : '';
   const pull = subscription.pullRequest;
   if (pull) {
-    return promptText('tools/watch.list-watches-pull-request-line', {
+    return promptText('sessions/tools-watch.list-watches-pull-request-line', {
       number: String(pull.number),
       repository: pull.repository,
       githubRepoId: pull.githubRepoId,
@@ -75,7 +75,7 @@ export function describeWatch(subscription: BotSubscriptionEntity, timeZone: str
       : null,
     since,
   ].filter(Boolean);
-  return promptText('tools/watch.list-watches-session-line', {
+  return promptText('sessions/tools-watch.list-watches-session-line', {
     sessionId: String(subscription.resourceId),
     parts: parts.join('; '),
     purpose,

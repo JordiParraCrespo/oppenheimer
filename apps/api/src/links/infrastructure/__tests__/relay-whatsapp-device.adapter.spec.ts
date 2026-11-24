@@ -1,6 +1,7 @@
 /**
- * Asking a host's runner for a voice note over its link: the frame goes only
- * to a runner that names `whatsapp.voice`, its `whatsapp.media` answer comes
+ * Asking a host's runner for a voice note or an image over its link: the
+ * frame goes only to a runner that names `whatsapp.voice` (an image, only to
+ * one that names `whatsapp.image`), its `whatsapp.media` answer comes
  * back as the note's bytes, and a refusal, a host that is gone or a runner
  * that never answers each come back as what happened, never a throw. The
  * runner's side is `link_whatsapp.go`; hearing the bytes is the
@@ -111,6 +112,50 @@ describe('RelayWhatsappDeviceAdapter.voiceNote', () => {
  * its length, and the host's `whatsapp.sent` or refusal comes back as what
  * happened.
  */
+describe('RelayWhatsappDeviceAdapter.image', () => {
+  // What breaks this: an image asked without its kind, which a runner reads as a
+  // voice note (WA_005), or asked of a runner that cannot hand one over.
+  it('asks a runner that names whatsapp.image for the image, by kind, and answers its bytes', async () => {
+    const jpeg = Buffer.from('jpeg bytes');
+    const { adapter, sent } = setup({
+      capabilities: ['whatsapp', 'whatsapp.voice', 'whatsapp.image'],
+      reply: {
+        type: 'whatsapp.media',
+        commandId: 'c',
+        mimetype: 'image/jpeg',
+        data: jpeg.toString('base64'),
+      },
+    });
+
+    const outcome = await adapter.image(HOST, CHAT, '3EB0I');
+
+    expect(sent).toEqual([
+      expect.objectContaining({
+        type: 'whatsapp.media.get',
+        chatId: CHAT,
+        messageId: '3EB0I',
+        kind: 'image',
+      }),
+    ]);
+    expect(outcome).toEqual({ kind: 'fetched', data: jpeg, mimetype: 'image/jpeg' });
+
+    const old = setup({ capabilities: ['whatsapp', 'whatsapp.voice'] });
+    await expect(old.adapter.image(HOST, CHAT, '3EB0I')).resolves.toEqual({
+      kind: 'not_supported',
+    });
+    expect(old.sent).toEqual([]);
+  });
+
+  // What breaks this: a voice note asked with a kind an older runner does not read.
+  it('asks for a voice note without a kind, as a runner from before images reads it', async () => {
+    const { adapter, sent } = setup({
+      capabilities: ['whatsapp', 'whatsapp.voice', 'whatsapp.image'],
+    });
+    await adapter.voiceNote(HOST, CHAT, '3EB0V');
+    expect(sent[0]).not.toHaveProperty('kind');
+  });
+});
+
 describe('RelayWhatsappDeviceAdapter.sendVoice', () => {
   const VOICE: RunnerCapability[] = ['whatsapp', 'whatsapp.voice', 'whatsapp.voice.send'];
   const audio = Buffer.from('OggS spoken reply');

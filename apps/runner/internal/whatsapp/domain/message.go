@@ -48,7 +48,8 @@ const (
 )
 
 // Media kinds, as `whatsapp.messages` names them. Only the kind travels: the
-// media itself stays on the phone.
+// media itself stays on the phone, but for a voice note or an image the
+// control plane asks for (`whatsapp.media.get`).
 const (
 	MediaImage    = "image"
 	MediaVideo    = "video"
@@ -63,25 +64,14 @@ const (
 // (`WHATSAPP_VOICE_NOTE_MAX_BYTES`): one link frame, base64 and all.
 const VoiceNoteMaxBytes = 352 * 1024
 
-// VoiceNoteKept is how long a voice note can still be fetched after it
-// arrived (`WHATSAPP_VOICE_NOTE_KEPT_HOURS`): what is kept is its media key
-// and path, never the audio, and an owner's bot asks for it within seconds.
-const VoiceNoteKept = 48 * time.Hour
+// MediaKept is how long a voice note or an image can still be fetched after
+// it arrived (`WHATSAPP_VOICE_NOTE_KEPT_HOURS`): what is kept is its media key
+// and path, never the bytes, and an owner's bot asks for it within seconds.
+const MediaKept = 48 * time.Hour
 
-// VoiceNotesKeptMax bounds how many voice notes are kept at once; past it the
+// MediaKeptMax bounds how many of each kind are kept at once; past it the
 // oldest go.
-const VoiceNotesKeptMax = 2000
-
-// Voice is what fetching a voice note takes: the adapter's own reference to
-// it (opaque here), how long it runs and how large WhatsApp says it is.
-type Voice struct {
-	Ref     []byte
-	Seconds int
-	Size    uint64
-}
-
-// TooLarge reports whether the voice note is past what one frame carries.
-func (v Voice) TooLarge() bool { return v.Size > VoiceNoteMaxBytes }
+const MediaKeptMax = 2000
 
 // IDMaxBytes is the longest WhatsApp id or JID the link carries (`max(128)`
 // on the wire). Counted in bytes, never fewer than the schema's UTF-16 units,
@@ -113,8 +103,9 @@ type Received struct {
 	// Mentions are the JIDs the message @-mentions, phone numbers when known.
 	Mentions []string
 	SentAt   time.Time
-	// Voice is set on a voice note (or any audio) the adapter can fetch later.
-	Voice *Voice
+	// Kept is set on a voice note (any audio) or an image the adapter can
+	// fetch later.
+	Kept *Kept
 }
 
 // Inbound is a message the control plane is handed and keeps.
@@ -179,8 +170,8 @@ func Admit(r Received, now, pairedAt time.Time) (Inbound, bool) {
 	}
 	in.QuotedID, in.QuotedSenderID = fitQuoted(r.QuotedID, r.QuotedSenderID)
 	in.Mentions = boundedIDs(r.Mentions, MentionsMax)
-	if r.Voice != nil {
-		in.VoiceSeconds = r.Voice.Seconds
+	if r.Kept != nil && r.Kept.Kind == KeptVoice {
+		in.VoiceSeconds = r.Kept.Seconds
 	}
 	return in, true
 }

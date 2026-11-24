@@ -1916,3 +1916,82 @@ earlier note:
   each asked: no chart library, the frame's network closed, a visual placed
   where it was called, and a link in a visual opening only once the reader
   says so.
+- `versions/mvp/29-inbox.md`, "As built: the Inbox in Plan" (2026-10-29),
+  made the Inbox Plan's first section at `/plan/inbox`, with no rail item.
+  On 2026-11-24 the owner asked for it to be one of the platform's core
+  features, with its own page, and as easy to answer and move on from as a
+  swipe: it is the rail's first item again at `/inbox` (the Plan address
+  redirects), with a dot and a count, and no sidebar, Plan opens on its board, and the reading pane is a deck of cards
+  answered by number keys or a swipe ("Its own page, and a deck").
+- `27-bot-subscriptions.md` §4.2 had a bot's look at a task it handed off
+  stay quiet (`nothing_to_report`) while the task was on track, so the chat
+  showed only "Checked on session". On 2026-11-23, after the owner had to
+  ask a bot whether the release it delegated had finished while it still
+  ran, each look that finds the task moved says in one line where it stands; `notify` stays for
+  what is off.
+- `27-bot-subscriptions.md` §4.2 said nothing but a subscription or the
+  hourly heartbeat brings a bot back, so a bot was told never to promise to
+  come back to anything else. On 2026-11-23, after a bot said it would
+  verify a release before calling it done and went silent, a bot checks
+  back on anything it delegated or waits on with `check_back` (§7.3): a look
+  at a time it names, or on a backoff, for a day.
+- The bots' prompt files were sorted by where their words are sent
+  (`system/`, `turn/`, `wake/`, `jobs/`, `tools/`, 2026-11-18). On
+  2026-11-23 they were sorted by capability instead, one folder each
+  (`core/`, `mail/`, `sessions/`, `github/`…), the kind becoming the file's
+  first word (`mail/tools-write.md`), so everything a bot is told about one
+  area is in one place and a new area is a new folder
+  (`apps/api/AGENTS.md`, "What a model is told is prose").
+- A bot's how-to for a capability was a section of every turn's system
+  prompt that offered the capability's tools. On 2026-11-23 the parts only
+  some turns need became built-in skills, listed by one line and read with
+  `use_skill` when the work comes up, as Codex and OpenClaw keep theirs:
+  `watch-inbox` (mail), `use-a-computer` and `use-a-browser`. What must hold
+  on every turn (ask before sending or buying, never type a password) stayed
+  in the system prompt (`next-steps/mail.md`, Decided;
+  `research/lessons-from-codex-and-openclaw-on-context.md`).
+- Every bot tool went to Claude on every turn (`alwaysLoad`, "a bot's tools
+  are few"); with every area on that is about 39,000 tokens of definitions,
+  five times the system prompt. On 2026-11-23 a capability's tools became
+  deferrable: on Anthropic's own API Claude Code's tool search defers them
+  once their definitions pass about 5,000 tokens together
+  (`DEFER_TOOLS_ABOVE_CHARS`; Claude Code's own `auto`, a tenth of the
+  window, never deferred with a large window) and the model finds what it
+  needs, while the bot's own tools (memory, skills, questions, notices)
+  and the tools a built-in skill calls always load. GLM and the OpenAI engines send every tool as before.
+- `next-steps/whatsapp.md` §3 kept an image on the phone, the bot told
+  "[image]" and the caption, after voice notes became the one exception
+  (2026-11-18). On 2026-11-24 the owner reported that the WhatsApp bots
+  cannot see images: the runner keeps each image's media key and path for
+  48 hours as it does a voice note's, and when the turn the image woke
+  starts the API asks for it (`whatsapp.media.get`, `kind: "image"`), the
+  runner scaling one past a link frame to a JPEG that fits; the bot's chat
+  keeps the copy as an image of the message and the bot sees it.
+- `29-inbox.md` counted a session as waiting on you once its agent had been
+  blocked 30 s, measured from the runner's second report 15 s in, so a
+  question reached the Inbox about a minute after it was asked. On
+  2026-11-23 the 30 s went: a block a second report confirms is waiting on
+  you at once, and the runner sends that report 3 s after the first
+  ("A question reaches you in seconds"). Codex's and OpenCode's detection
+  rules were rewritten from their real screens the same day.
+- `next-steps/slack-for-bots.md` §4 cut a bot's Slack answer at 3,900
+  characters, into several messages. On 2026-11-24, copying Orca's Slack
+  fixes, an answer goes in one message up to 39,000 (Slack folds it behind
+  "Show more"), the owner's message carries a 👀 reaction while the bot
+  works, mentions arrive by name, secrets are redacted in what goes to
+  Slack, and images the owner shares reach the bot (§1 said the bot reads
+  only words); the manifest asks for `reactions:write`, `users:read` and
+  `files:read` too.
+- `next-steps/agent-tools.md` §2 left a browser notification for later. On
+  2026-11-24 the console raised one, opt-in per browser from the Inbox's
+  filter menu, for each session that comes to wait on the reader and each
+  agent notice, in a tab they are not looking at (`29-inbox.md`, "A
+  notification in this browser").
+- `versions/mvp/29-inbox.md`, "Its own page, and a deck" (2026-11-24),
+  put Done, Snooze, Deprioritize and Delete over the card and Later on it,
+  with E, S, L and a swipe left for Later. The same day the owner asked for
+  fewer choices: the card shows only its answers, a dock under it has
+  Previous, Done and Next, a card that waits on an answer (a blocked
+  session, a bot's approval) has no Done, a questionnaire goes one question
+  at a time, and Mark as done takes up a task an agent made, as Dismiss did
+  ("The card's actions, reshaped").

@@ -51,7 +51,7 @@ export class BotHostCommandToolsFactory implements BotToolArea {
       name: 'run_command',
       scope: 'sessions:write',
       asks: true,
-      description: promptText('tools/host-command.run-command', {
+      description: promptText('sessions/tools-host-command.run-command', {
         runCommandMaxTimeoutSeconds: String(RUN_COMMAND_MAX_TIMEOUT_SECONDS),
       }),
       input: z.object({
@@ -59,14 +59,17 @@ export class BotHostCommandToolsFactory implements BotToolArea {
           .array(z.string().min(1).max(HOST_EXEC_MAX_ARG_LENGTH))
           .min(1)
           .max(HOST_EXEC_MAX_ARGS)
-          .describe(promptText('tools/host-command.run-command-argv')),
-        host_id: z.uuid().optional().describe(promptText('tools/host-command.run-command-host-id')),
+          .describe(promptText('sessions/tools-host-command.run-command-argv')),
+        host_id: z
+          .uuid()
+          .optional()
+          .describe(promptText('sessions/tools-host-command.run-command-host-id')),
         cwd: z
           .string()
           .regex(/^\/[^\0]*$/)
           .max(1_024)
           .optional()
-          .describe(promptText('tools/host-command.run-command-cwd')),
+          .describe(promptText('sessions/tools-host-command.run-command-cwd')),
         timeout_seconds: z
           .number()
           .int()
@@ -74,7 +77,7 @@ export class BotHostCommandToolsFactory implements BotToolArea {
           .max(RUN_COMMAND_MAX_TIMEOUT_SECONDS)
           .optional()
           .describe(
-            promptText('tools/host-command.run-command-timeout-seconds', {
+            promptText('sessions/tools-host-command.run-command-timeout-seconds', {
               hostExecDefaultTimeoutSeconds: String(HOST_EXEC_DEFAULT_TIMEOUT_SECONDS),
             }),
           ),

@@ -9795,6 +9795,7 @@
                 "fx",
                 "hermes",
                 "muse",
+                "qwen",
                 "shell"
               ],
               "type": "string"
@@ -32456,6 +32457,7 @@
               "fx",
               "hermes",
               "muse",
+              "qwen",
               "shell",
               null
             ],
@@ -32546,6 +32548,7 @@
               "fx",
               "hermes",
               "muse",
+              "qwen",
               "shell",
               null
             ],
@@ -32616,6 +32619,7 @@
               "fx",
               "hermes",
               "muse",
+              "qwen",
               "shell",
               null
             ],
@@ -33158,6 +33162,7 @@
               "fx",
               "hermes",
               "muse",
+              "qwen",
               "shell",
               "cursor"
             ],
@@ -33430,6 +33435,7 @@
               "fx",
               "hermes",
               "muse",
+              "qwen",
               "shell"
             ]
           },
@@ -34787,7 +34793,8 @@
               "zcode",
               "fx",
               "hermes",
-              "muse"
+              "muse",
+              "qwen"
             ]
           },
           "prompt": {
@@ -35786,6 +35793,7 @@
                   "fx",
                   "hermes",
                   "muse",
+                  "qwen",
                   "shell"
                 ]
               },
@@ -36301,6 +36309,7 @@
                   "fx",
                   "hermes",
                   "muse",
+                  "qwen",
                   "shell"
                 ]
               },
@@ -37284,6 +37293,7 @@
                   "fx",
                   "hermes",
                   "muse",
+                  "qwen",
                   "shell"
                 ]
               },
@@ -42028,6 +42038,43 @@
           "reason"
         ]
       },
+      "BotCheckBackEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "check_back"
+            ]
+          },
+          "chainId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The looks at one thing: the id of the turn that set the chain's first look."
+          },
+          "step": {
+            "type": "number",
+            "description": "Which look of the chain this is, from 0."
+          },
+          "chainStartedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the chain's first look was set; a chain stops 24 hours later."
+          },
+          "about": {
+            "type": "string",
+            "description": "What the bot is waiting on and what to look at, in its own words.",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "kind",
+          "chainId",
+          "step",
+          "chainStartedAt",
+          "about"
+        ]
+      },
       "BotDreamEventResponseDto": {
         "type": "object",
         "properties": {
@@ -42344,6 +42391,9 @@
               },
               {
                 "$ref": "#/components/schemas/BotLoopEventResponseDto"
+              },
+              {
+                "$ref": "#/components/schemas/BotCheckBackEventResponseDto"
               },
               {
                 "$ref": "#/components/schemas/BotDreamEventResponseDto"

@@ -1,10 +1,7 @@
 import {
   InlineToken,
-  PillTab,
-  PillTabs,
   RunRowSkeleton,
   RunsList,
-  RunsListFilters,
   RunsListFoot,
   RunsListHead,
   Skeleton,
@@ -13,6 +10,7 @@ import { LoadingStatus } from '@oppenheimer/frontend-web';
 import type { RunWindow } from '@oppenheimer/shared/automations';
 import { useTranslation } from 'react-i18next';
 import { RUN_STATUS_TABS, type RunStatusTab } from '../lib/runs-search';
+import { FilterRow } from './filter-row';
 
 /** As many rows as a page of runs usually shows: enough to stand for it, not a full page to collapse. */
 const ROWS = 5;
@@ -37,26 +35,23 @@ export function RunsSkeleton({
   return (
     <RunsList aria-busy>
       <LoadingStatus />
-      <RunsListFilters>
-        <PillTabs size="sm" value={status} onValueChange={() => {}} disabled>
-          {RUN_STATUS_TABS.map((tab) => (
-            <PillTab key={tab} value={tab} count={<Skeleton shape="sm" className="h-2 w-3" />}>
-              {t(`automations.runs.${tab}`)}
-            </PillTab>
-          ))}
-        </PillTabs>
-        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
-          {facets ? (
-            <>
-              <Skeleton shape="pill" className="h-7 w-32" />
-              <Skeleton shape="pill" className="h-7 w-28" />
-            </>
-          ) : null}
-          <InlineToken size="sm" dirty={window !== '30d'} disabled>
-            {t(`automations.runs.window.${window}`)}
-          </InlineToken>
-        </div>
-      </RunsListFilters>
+      <FilterRow
+        tabs={RUN_STATUS_TABS}
+        value={status}
+        label={(tab) => t(`automations.runs.${tab}`)}
+        count={() => <Skeleton shape="sm" className="h-2 w-3" />}
+        disabled
+      >
+        {facets ? (
+          <>
+            <Skeleton shape="pill" className="h-7 w-32" />
+            <Skeleton shape="pill" className="h-7 w-28" />
+          </>
+        ) : null}
+        <InlineToken size="sm" dirty={window !== '30d'} disabled>
+          {t(`automations.runs.window.${window}`)}
+        </InlineToken>
+      </FilterRow>
       <RunsListHead
         aria-hidden
         columns={[

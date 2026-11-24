@@ -25,9 +25,9 @@ import { cut, fenceUntrusted, formatToolTime } from './domain/bot-tool-text.poli
  * inside `<email>`, marked as data.
  */
 
-export const NO_GMAIL = promptText('tools/mail.no-gmail');
+export const NO_GMAIL = promptText('mail/tools.no-gmail');
 
-export const MAIL_UNTRUSTED_NOTE = promptText('tools/mail.mail-untrusted-note');
+export const MAIL_UNTRUSTED_NOTE = promptText('mail/tools.mail-untrusted-note');
 
 const SNIPPET_MAX = 160;
 
@@ -50,7 +50,7 @@ export function draftCardOf(
 
 /** One account, as `list_gmail_accounts` and every answer's header name it. */
 export function describeAccount(connection: GmailConnectionEntity): string {
-  const state = connection.isActive ? 'connected' : promptText('tools/mail.describe-account');
+  const state = connection.isActive ? 'connected' : promptText('mail/tools.describe-account');
   return `"${connection.label}" <${connection.accountEmail}> (account id ${connection.id}, ${state})`;
 }
 
@@ -167,7 +167,7 @@ export function sendSummary(plan: MailPlan): string {
 export function describePlan(plan: MailPlan): string {
   return [
     `from: ${plan.from.name ? `${plan.from.name} <${plan.from.email}>` : plan.from.email}`,
-    `to: ${plan.to.join(', ') || 'nobody'}${plan.recipientsFromMail ? ` ${promptText('tools/mail.describe-plan')}` : ''}`,
+    `to: ${plan.to.join(', ') || 'nobody'}${plan.recipientsFromMail ? ` ${promptText('mail/tools.describe-plan')}` : ''}`,
     ...(plan.cc.length ? [`cc: ${plan.cc.join(', ')}`] : []),
     ...(plan.bcc.length ? [`bcc: ${plan.bcc.join(', ')}`] : []),
     `subject: ${plan.subject}`,
@@ -253,7 +253,7 @@ export function targetCount(call: { thread_ids: string[]; message_ids?: string[]
 export function organizeAnswer(outcome: GmailBulkOutcome, now: Date): string {
   const done = `${outcome.changed.length} changed`;
   const line = outcome.missing.length
-    ? promptText('tools/mail.organize-answer', { done, missing: outcome.missing.join(', ') })
+    ? promptText('mail/tools.organize-answer', { done, missing: outcome.missing.join(', ') })
     : `${done}.`;
   if (!outcome.limited) return line;
   return `${line} ${rateLimitedPartwayLine(outcome.limited, outcome.notReached.length, now)} Not reached: ${outcome.notReached.join(', ')}.`;

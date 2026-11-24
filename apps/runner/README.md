@@ -59,6 +59,10 @@ host gives it, through Argent (`product/research/device-streaming.md`). A
 host with Argent installed needs no setup: each new session takes one of the
 simulators and emulators running at the time, and keeps it for its life.
 `RUNNER_DEVICES` names them instead, or turns it `off` (`.env.example`).
+A simulator streams every frame at its full resolution, larger than the
+link carries, so the runner scales the frame it is about to send to 720
+pixels wide (`RUNNER_DEVICE_SCREEN_WIDTH`), and logs any frame that still
+does not fit rather than dropping it unseen.
 
 The host's own desktop streams to the console (Settings → Hosts → Desktop,
 and a session's Desktop tab) once its owner runs `runner desktop on`: the
@@ -149,7 +153,7 @@ mark and colours wherever a person meets it.
 | `runner status` | platform, pairing, key fingerprint, service, tools, disk. Exits 0 whenever it can print the table, ready or not: read the lines, not the exit code |
 | `runner update [--check\|--force\|--pin V\|--unpin\|--rollback]` | the update policy, by hand |
 | `runner agents update` | runs every installed agent CLI's unattended updater now, the round `run` does on its own unless `RUNNER_AGENT_UPDATES=off`. Exits `HOST_009` when one fails |
-| `runner agents install <name>` | installs an agent CLI (`claude`, `codex`, `opencode`, `grok`, `pi`, `omp`, `fx`, `muse`) as you, with the catalog's installer and no sudo; a no-op when it is already on `PATH`. `HOST_010` for a name it does not install, `HOST_011` when the installer fails |
+| `runner agents install <name>` | installs an agent CLI (`claude`, `codex`, `opencode`, `grok`, `pi`, `omp`, `fx`, `muse`, `qwen`) as you, with the catalog's installer and no sudo; a no-op when it is already on `PATH`. `HOST_010` for a name it does not install, `HOST_011` when the installer fails |
 | `runner tools [ls]` | every probed tool with its version and path, and for a missing one the line that installs it |
 | `runner tools install gh` | GitHub's CLI into `~/.local/bin` (Homebrew on macOS). For `git` and `tmux` it prints the package manager's command and runs nothing |
 | `runner selfcheck` | what a staged binary must pass before it is allowed to become the service |
@@ -188,6 +192,14 @@ host: remove it under Settings → Hosts).
     sessions.noindex/<slug>/.oppenheimer/meta.json  {"kind":"session","id":…}
     sessions.noindex/<slug>/<directory>          the checkout the agent works in
 ```
+
+Every level above (the root, each account, workspace, `repos.noindex/`,
+`sessions.noindex/` and session folder) also carries a `README.md`, which
+names what the id-named folder is and lists what it holds (workspaces by
+slug; sessions by name, repositories, branch and agent), and an `AGENTS.md`
+telling an agent where its checkout is and what not to touch. The runner
+rewrites both on every create and close and when it starts; a file at that
+path it did not write is left alone.
 
 The layout is `product/versions/mvp/24-session-places.md` §2. The two
 directories that hold checkouts end in `.noindex`, which Spotlight skips:

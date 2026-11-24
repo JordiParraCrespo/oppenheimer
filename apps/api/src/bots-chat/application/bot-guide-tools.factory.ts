@@ -28,14 +28,14 @@ export class BotGuideToolsFactory implements BotToolArea {
       name: 'read_oppenheimer_docs',
       readOnly: true,
       scope: 'bots:read',
-      description: promptText('tools/guide.read-oppenheimer-docs'),
+      description: promptText('core/tools-guide.read-oppenheimer-docs'),
       input: z.strictObject({
         page: z
           .string()
           .trim()
           .max(80)
           .optional()
-          .describe(promptText('tools/guide.read-oppenheimer-docs-page')),
+          .describe(promptText('core/tools-guide.read-oppenheimer-docs-page')),
       }),
       run: async (input) =>
         input.page ? guidePageText(input.page, this.docsUrl) : guideIndexText(this.docsUrl),

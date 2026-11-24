@@ -294,9 +294,13 @@
   "device.input": {
     "type": "device.input",
     "attachmentId": 9,
-    "kind": "tap",
+    "kind": "swipe",
     "x": 0.5,
-    "y": 0.42
+    "y": 0.8,
+    "toX": 0.5,
+    "toY": 0.2,
+    "durationMs": 120,
+    "momentum": true
   },
   "device.detach": {
     "type": "device.detach",
@@ -468,7 +472,8 @@
     "type": "whatsapp.media.get",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
     "chatId": "34600333444@s.whatsapp.net",
-    "messageId": "3EB0C7A1F4"
+    "messageId": "3EB0C7A1F4",
+    "kind": "image"
   },
   "whatsapp.media": {
     "type": "whatsapp.media",

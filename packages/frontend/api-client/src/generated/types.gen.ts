@@ -1424,7 +1424,7 @@ export type ProjectResponseDto = {
     /**
      * The agent a new session is offered, from the coding-agent catalog.
      */
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | null;
     /**
      * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived.
      */
@@ -1442,7 +1442,7 @@ export type CreateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | null;
 };
 
 export type UpdateProjectRequest = {
@@ -1454,7 +1454,7 @@ export type UpdateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | null;
 };
 
 export type FindSharedSessionRequest = {
@@ -1698,7 +1698,7 @@ export type SessionResponseDto = {
     /**
      * The coding agent this session runs: one a host launches, or a vendor’s own in the cloud (`cursor`).
      */
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | 'cursor';
     /**
      * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).
      */
@@ -1805,7 +1805,7 @@ export type PaginatedSessionsResponseDto = {
 
 export type CreateSessionRequest = {
     hostId: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'shell';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell';
     projectId?: string;
     name?: string;
     checkouts?: Array<{
@@ -2308,7 +2308,7 @@ export type OpenSessionWindowRequest = {
     model?: string;
     permission?: 'ask' | 'auto' | 'full';
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen';
     prompt?: string;
 };
 
@@ -2628,7 +2628,7 @@ export type CreateAutomationRequest = {
         event?: 'webhook_received';
     }>;
     prompt: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2712,7 +2712,7 @@ export type UpdateAutomationRequest = {
         event?: 'webhook_received';
     }>;
     prompt?: string;
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'shell' | 'cursor';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -3013,7 +3013,7 @@ export type MoveTaskRequest = {
 export type StartTaskSessionRequest = {
     session: {
         hostId: string;
-        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'shell';
+        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell';
         projectId?: string;
         name?: string;
         checkouts?: Array<{
@@ -4818,6 +4818,26 @@ export type BotLoopEventResponseDto = {
     reason: string | null;
 };
 
+export type BotCheckBackEventResponseDto = {
+    kind: 'check_back';
+    /**
+     * The looks at one thing: the id of the turn that set the chain's first look.
+     */
+    chainId: string;
+    /**
+     * Which look of the chain this is, from 0.
+     */
+    step: number;
+    /**
+     * When the chain's first look was set; a chain stops 24 hours later.
+     */
+    chainStartedAt: string;
+    /**
+     * What the bot is waiting on and what to look at, in its own words.
+     */
+    about: string;
+};
+
 export type BotDreamEventResponseDto = {
     kind: 'dream';
     /**
@@ -4963,7 +4983,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotFormEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGithubAskEventResponseDto | BotTaskEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotFormEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGithubAskEventResponseDto | BotTaskEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotCheckBackEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
@@ -10543,7 +10563,7 @@ export type FindSessionsData = {
          * Default `recent`
          */
         sort?: 'recent' | 'oldest' | 'name';
-        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'shell';
+        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell';
         /**
          * `false` leaves resolved sessions out (the console’s list, which draws only the open ones), `true` keeps only them. Absent, both.
          */

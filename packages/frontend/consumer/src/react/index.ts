@@ -188,6 +188,7 @@ export {
   type PutInboxMarkVariables,
   useAnswerInboxReport,
   useDeleteInboxMark,
+  useInboxAlertsOn,
   useInboxCount,
   useInboxPullsShown,
   useInboxReportImages,

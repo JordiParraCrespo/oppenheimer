@@ -13,7 +13,6 @@ import { useTranslation } from 'react-i18next';
 import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
 import { type InboxCopy, isAnswerableRun } from '@/features/inbox/lib/inbox-copy';
 import { inboxVisit } from '@/features/inbox/lib/inbox-visit';
-import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 
 /**
  * A failed run in the pane: its failure line, its exit code when the turn
@@ -66,34 +65,8 @@ export function InboxRunCard({
           onDismiss={runAgain.reset}
         />
       ) : null}
-      <InboxMessageActions
-        leading={
-          <>
-            <InboxLaterButton itemKey={item.key} />
-            {isAutomation ? (
-              <Button
-                variant="secondary"
-                render={
-                  run.sessionId ? (
-                    <Link
-                      to="/automations/$automationId/sessions/$sessionId"
-                      params={{ automationId: run.automationId, sessionId: run.sessionId }}
-                    />
-                  ) : (
-                    <Link
-                      to="/automations/$automationId"
-                      params={{ automationId: run.automationId }}
-                    />
-                  )
-                }
-              >
-                {t('inbox.run.open')}
-              </Button>
-            ) : null}
-          </>
-        }
-      >
-        {isAutomation ? (
+      {isAutomation ? (
+        <InboxMessageActions>
           <Button
             pending={runAgain.isPending}
             pendingLabel={t('inbox.run.starting')}
@@ -111,8 +84,23 @@ export function InboxRunCard({
           >
             {t('inbox.run.again')}
           </Button>
-        ) : null}
-      </InboxMessageActions>
+          <Button
+            variant="secondary"
+            render={
+              run.sessionId ? (
+                <Link
+                  to="/automations/$automationId/sessions/$sessionId"
+                  params={{ automationId: run.automationId, sessionId: run.sessionId }}
+                />
+              ) : (
+                <Link to="/automations/$automationId" params={{ automationId: run.automationId }} />
+              )
+            }
+          >
+            {t('inbox.run.open')}
+          </Button>
+        </InboxMessageActions>
+      ) : null}
     </InboxMessage>
   );
 }

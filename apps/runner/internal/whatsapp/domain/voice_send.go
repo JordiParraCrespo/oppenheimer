@@ -25,7 +25,7 @@ var ErrNotVoiceNote = problem.New("WA_008", http.StatusUnsupportedMediaType, "Th
 // plays nothing. Nil when it can go.
 func CheckVoiceOut(audio []byte, seconds int) error {
 	if len(audio) > VoiceNoteMaxBytes {
-		return ErrVoiceTooLarge.WithDetail("%d bytes, at most %d", len(audio), VoiceNoteMaxBytes)
+		return ErrMediaTooLarge.WithDetail("%d bytes, at most %d", len(audio), VoiceNoteMaxBytes)
 	}
 	if !isOggOpus(audio) {
 		return ErrNotVoiceNote.WithDetail("it is not Ogg/Opus audio")

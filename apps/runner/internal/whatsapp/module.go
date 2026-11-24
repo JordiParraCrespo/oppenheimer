@@ -14,5 +14,5 @@ import (
 // until the service starts.
 func New(dir string, logger *slog.Logger) *app.Service {
 	device := whatsmeow.New(whatsmeow.Options{Dir: dir, Logger: logger})
-	return app.New(app.Options{Device: device, Outbox: device, VoiceNotes: device, Logger: logger})
+	return app.New(app.Options{Device: device, Outbox: device, Kept: device, Logger: logger})
 }

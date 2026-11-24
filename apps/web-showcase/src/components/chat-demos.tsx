@@ -107,6 +107,7 @@ import {
   CheckCircleIcon,
   CheckIcon,
   ChevronDownIcon,
+  AlarmClockIcon,
   ClockIcon,
   CopyIcon,
   CpuIcon,
@@ -134,7 +135,6 @@ import {
   TerminalIcon,
   WorkflowIcon,
   XIcon,
-  ZapIcon,
 } from '@oppenheimer/design-system-web/icons';
 import { JsonTree } from '@oppenheimer/design-system-web/json-tree';
 import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
@@ -608,7 +608,7 @@ function ChatCardsBody() {
           }
         />
         <ContextCard
-          icon={<ZapIcon />}
+          icon={<AlarmClockIcon />}
           title="Automation created"
           meta={
             <>

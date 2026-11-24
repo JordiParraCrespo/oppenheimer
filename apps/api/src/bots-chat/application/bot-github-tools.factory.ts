@@ -66,21 +66,21 @@ export class BotGithubToolsFactory implements BotToolArea {
       name: 'list_repositories',
       readOnly: true,
       scope: 'repositories:read',
-      description: promptText('tools/github.list-repositories', {
+      description: promptText('github/tools.list-repositories', {
         repositoriesLimitMax: String(REPOSITORIES_LIMIT_MAX),
       }),
       input: z.object({
         installation_id: z
           .uuid()
           .optional()
-          .describe(promptText('tools/github.list-repositories-installation-id')),
+          .describe(promptText('github/tools.list-repositories-installation-id')),
         name_contains: z
           .string()
           .trim()
           .min(1)
           .max(100)
           .optional()
-          .describe(promptText('tools/github.list-repositories-name-contains')),
+          .describe(promptText('github/tools.list-repositories-name-contains')),
         limit: z.number().int().min(1).max(REPOSITORIES_LIMIT_MAX).default(30),
       }),
       run: async (input, context) => {
@@ -90,7 +90,7 @@ export class BotGithubToolsFactory implements BotToolArea {
           ? installations.filter((installation) => installation.id === input.installation_id)
           : installations;
         if (chosen.length === 0) {
-          return promptText('tools/github.repositories-no-such-installation', {
+          return promptText('github/tools.repositories-no-such-installation', {
             installationId: String(input.installation_id),
           });
         }
@@ -101,7 +101,7 @@ export class BotGithubToolsFactory implements BotToolArea {
         const notes = chosen
           .filter((installation) => !installation.isUsable)
           .map((installation) =>
-            promptText('tools/github.repositories-installation-suspended', {
+            promptText('github/tools.repositories-installation-suspended', {
               id: installation.id,
               accountLogin: installation.accountLogin,
             }),
@@ -124,7 +124,7 @@ export class BotGithubToolsFactory implements BotToolArea {
             }
           } catch (error) {
             notes.push(
-              promptText('tools/github.repositories-installation-unlisted', {
+              promptText('github/tools.repositories-installation-unlisted', {
                 id: installation.id,
                 accountLogin: installation.accountLogin,
                 describeToolFailure: describeToolFailure(error),
@@ -137,14 +137,14 @@ export class BotGithubToolsFactory implements BotToolArea {
           'Repositories',
           shown,
           needle
-            ? promptText('tools/github.repositories-none-match', {
+            ? promptText('github/tools.repositories-none-match', {
                 nameContains: String(input.name_contains),
               })
             : 'No repositories.',
           {
             shown: shown.length,
             total: lines.length,
-            hint: promptText('tools/github.list-repositories-hint'),
+            hint: promptText('github/tools.list-repositories-hint'),
           },
         );
         return [listing, ...notes].join('\n');
@@ -157,20 +157,20 @@ export class BotGithubToolsFactory implements BotToolArea {
       name: 'list_pull_requests',
       readOnly: true,
       scope: 'pulls:read',
-      description: promptText('tools/github.list-pull-requests', {
+      description: promptText('github/tools.list-pull-requests', {
         pullRequestsLimitMax: String(PULL_REQUESTS_LIMIT_MAX),
       }),
       input: z.object({
         queue: z
           .enum(PULL_REQUEST_QUEUES)
           .default('mine')
-          .describe(promptText('tools/github.list-pull-requests-queue')),
+          .describe(promptText('github/tools.list-pull-requests-queue')),
         github_repo_id: z
           .number()
           .int()
           .positive()
           .optional()
-          .describe(promptText('tools/github.list-pull-requests-github-repo-id')),
+          .describe(promptText('github/tools.list-pull-requests-github-repo-id')),
         limit: z.number().int().min(1).max(PULL_REQUESTS_LIMIT_MAX).default(15),
       }),
       run: async (input, context) => {
@@ -186,41 +186,41 @@ export class BotGithubToolsFactory implements BotToolArea {
         );
         const shown = matching.slice(0, input.limit);
         const listing = formatToolList(
-          promptText('tools/github.list-pull-requests-open-pull-requests', {
+          promptText('github/tools.list-pull-requests-open-pull-requests', {
             queue: input.queue,
             untrustedNote: UNTRUSTED_NOTE,
           }),
           shown.map(describePullRequestRow),
-          promptText('tools/github.pull-requests-none-in-queue', {
+          promptText('github/tools.pull-requests-none-in-queue', {
             queue: input.queue,
             githubRepoId: input.github_repo_id ? ' for that repository' : '',
           }),
           {
             shown: shown.length,
             total: matching.length,
-            hint: promptText('tools/github.list-pull-requests-hint'),
+            hint: promptText('github/tools.list-pull-requests-hint'),
           },
         );
         const lines = [
           listing,
-          promptText('tools/github.list-pull-requests-queue-sizes-mine', {
+          promptText('github/tools.list-pull-requests-queue-sizes-mine', {
             mine: String(queue.scopes.mine),
             requested: String(queue.scopes.requested),
             watching: String(queue.scopes.watching),
           }),
         ];
         if (!queue.viewerLogin) {
-          lines.push(promptText('tools/github.list-pull-requests-persons-own-github'));
+          lines.push(promptText('github/tools.list-pull-requests-persons-own-github'));
         }
         if (queue.unreadable.length) {
           lines.push(
-            promptText('tools/github.list-pull-requests-github-did-answer', {
+            promptText('github/tools.list-pull-requests-github-did-answer', {
               unreadable: queue.unreadable.map((gap) => `${gap.what} (${gap.refusal})`).join(', '),
             }),
           );
         }
         if (queue.filling) {
-          lines.push(promptText('tools/github.list-pull-requests-some-pull-requests'));
+          lines.push(promptText('github/tools.list-pull-requests-some-pull-requests'));
         }
         return lines.join('\n');
       },
@@ -232,7 +232,7 @@ export class BotGithubToolsFactory implements BotToolArea {
       name: 'get_pull_request',
       readOnly: true,
       scope: 'pulls:read',
-      description: promptText('tools/github.get-pull-request', {
+      description: promptText('github/tools.get-pull-request', {
         filesShown: String(FILES_SHOWN),
         activityShown: String(ACTIVITY_SHOWN),
         lineCommentsShown: String(LINE_COMMENTS_SHOWN),
@@ -240,12 +240,12 @@ export class BotGithubToolsFactory implements BotToolArea {
       input: z.object({
         installation_id: z
           .uuid()
-          .describe(promptText('tools/github.get-pull-request-installation-id')),
+          .describe(promptText('github/tools.get-pull-request-installation-id')),
         github_repo_id: z
           .number()
           .int()
           .positive()
-          .describe(promptText('tools/github.get-pull-request-github-repo-id')),
+          .describe(promptText('github/tools.get-pull-request-github-repo-id')),
         number: z.number().int().positive().describe('The pull request number.'),
       }),
       run: async (input, context) => {

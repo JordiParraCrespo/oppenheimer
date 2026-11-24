@@ -27,7 +27,8 @@ import { DeliverChannelReplyCommand } from './deliver-channel-reply.command';
  * before its last tool calls), or what happened to it, as a reply to the
  * message that opened it (`BotChannelReplyResolver`). A turn that ended on
  * an approval card adds the bot's address in the console, where the card is
- * answered. The job is not retried, so an answer is not sent twice.
+ * answered. The job is not retried, so an answer is not sent twice. Either
+ * way the chat stops showing the turn as being worked on.
  */
 @CommandHandler(DeliverChannelReplyCommand)
 export class DeliverChannelReplyCommandHandler
@@ -46,14 +47,19 @@ export class DeliverChannelReplyCommandHandler
     if (found.isNone()) return;
     const turn = found.unwrap();
     if (!isChannelOrigin(turn.origin) || !turn.ended) return;
-    const lines = await this.messages.findTurnLines(turn.organizationId, turn.id);
-    const texts = unsentTexts(lines, sendsAsItGoes(turn));
-    // A contact is told no failure's reason, and nothing when the bot said nothing;
-    // a contact's turn has nothing to approve, so only the owner's points at a card.
-    const text = turn.contact
-      ? contactReplyOf(turn, texts)
-      : channelReplyOf(turn, texts, await this.approvalNotice(turn));
-    if (text) await this.channel.send(turn, text, metadata.correlationId);
+    try {
+      const lines = await this.messages.findTurnLines(turn.organizationId, turn.id);
+      const texts = unsentTexts(lines, sendsAsItGoes(turn));
+      // A contact is told no failure's reason, and nothing when the bot said nothing;
+      // a contact's turn has nothing to approve, so only the owner's points at a card.
+      const text = turn.contact
+        ? contactReplyOf(turn, texts)
+        : channelReplyOf(turn, texts, await this.approvalNotice(turn));
+      if (text) await this.channel.send(turn, text, metadata.correlationId);
+    } finally {
+      // The turn is over whether its answer went or not.
+      await this.channel.ended(turn).catch(() => undefined);
+    }
   }
 
   private async approvalNotice(turn: BotTurnEntity): Promise<string | null> {

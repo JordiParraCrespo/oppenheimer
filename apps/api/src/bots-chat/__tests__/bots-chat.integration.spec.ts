@@ -1338,6 +1338,42 @@ describe('bots chat (integration)', () => {
     });
   });
 
+  // What breaks this: a WhatsApp image the turn fetched that the chat cannot
+  // show afterwards (unclaimed, then swept), or the message saved without it.
+  it('keeps the image a turn read from a WhatsApp image, claimed by the message', async () => {
+    const bot = await create('Image Bot');
+    const photo = sent(bot, '[image]');
+    const pending = BotMessageEntity.create({
+      id: photo.message.id,
+      props: { ...photo.message.getProps(), pendingMedia: { kind: 'whatsapp_image' } },
+    });
+    await turns.enqueue(photo.turn, pending, null);
+    const opening = (await messages.findOpening(organizationId, photo.turn.id)) as BotMessageEntity;
+    const image = BotAttachmentEntity.upload(
+      {
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        uploadedByUserId: null,
+        mimeType: 'image/jpeg',
+        sizeBytes: 4096,
+        name: 'whatsapp-image.jpg',
+      },
+      'jpg',
+    );
+    await attachments.insert(image);
+
+    opening.read('', [image.toMessageAttachment()]);
+    await messages.saveReading(opening);
+
+    expect(await messages.findOpening(organizationId, photo.turn.id)).toMatchObject({
+      content: '',
+      pendingMedia: null,
+      attachments: [image.toMessageAttachment()],
+    });
+    const claimed = await attachments.findForMessage(organizationId, opening.id);
+    expect(claimed.map((stored) => stored.id)).toEqual([image.id]);
+  });
+
   // What breaks this: a voice note's words read but lost, so the next turn's history reads
   // "[voice note]"; the note read again on a retry; or the words written onto another
   // workspace's message.
@@ -1353,7 +1389,7 @@ describe('bots chat (integration)', () => {
     expect(opening.pendingMedia).toEqual({ kind: 'whatsapp_voice_note' });
 
     opening.read('[voice note, 0:12] Call the bank');
-    await messages.saveContent(opening);
+    await messages.saveReading(opening);
 
     expect(await messages.findOpening(organizationId, note.turn.id)).toMatchObject({
       content: '[voice note, 0:12] Call the bank',
@@ -1364,7 +1400,7 @@ describe('bots chat (integration)', () => {
       id: opening.id,
       props: { ...opening.getProps(), organizationId: other, content: 'not theirs' },
     });
-    await messages.saveContent(stranger);
+    await messages.saveReading(stranger);
     expect(await messages.findOpening(organizationId, note.turn.id)).toMatchObject({
       content: '[voice note, 0:12] Call the bank',
     });
@@ -1701,6 +1737,11 @@ describe('bots chat (integration)', () => {
     const chatgpt = {} as ChatgptCredentialResolver;
     // An owner who is no longer a member: the turn still runs, reading no hosts.
     const owners = { resolve: async () => null } as unknown as BotOwnerScopeResolver;
+    const files = {
+      store: async () => undefined,
+      read: async (key: string) => Buffer.from(key),
+      remove: async () => undefined,
+    };
     const hosts: OwnerHostsPort = { hostsOf: vi.fn(async () => []) };
     // The owner wrote nothing about themselves: the prompt has no such section.
     const people: PersonMemoryRepositoryPort = {
@@ -1734,13 +1775,9 @@ describe('bots chat (integration)', () => {
       new BotTurnOpeningResolver(
         messages,
         attachments,
-        {
-          store: async () => undefined,
-          read: async (key) => Buffer.from(key),
-          remove: async () => undefined,
-        },
+        files,
         new BotAttachmentMapper(),
-        new BotOpeningMediaResolver(messages, []),
+        new BotOpeningMediaResolver(messages, attachments, files, []),
       ),
       { create: () => ({ run: async () => [] }) } as unknown as BotSubagentRunnerFactory,
       { forBot: async () => NO_PERMISSIONS } as unknown as BotPermissionsResolver,

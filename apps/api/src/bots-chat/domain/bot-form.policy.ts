@@ -15,19 +15,19 @@ import { BotTurnEntity } from './bot-turn.entity';
 
 /** What the model reads when its form went up: its turn should end. */
 export function askedForm(fields: number): string {
-  return promptText('tools/forms.asked-form', {
+  return promptText('core/tools-forms.asked-form', {
     fields: fields === 1 ? '1 field' : `${fields} fields`,
   });
 }
 
 /** What the model reads when a card of its own still waits: one at a time. */
 export function waitingForForm(pendingSummary: string): string {
-  return promptText('tools/forms.waiting-for-answer', { pendingSummary });
+  return promptText('core/tools-forms.waiting-for-answer', { pendingSummary });
 }
 
 /** What the model reads when its form cannot be asked as it stands. */
 export function formNotAsked(problem: string): string {
-  return promptText('tools/forms.form-invalid', { problem });
+  return promptText('core/tools-forms.form-invalid', { problem });
 }
 
 /**
@@ -41,7 +41,7 @@ export function formEvent(form: BotFormEntity, by: string): string {
     return [
       `${who} dismissed your form: ${form.summary}`,
       form.note ? `Their note: ${form.note}` : null,
-      promptText('wake/forms.dismissed-do-not-ask-again'),
+      promptText('core/wake-forms.dismissed-do-not-ask-again'),
     ]
       .filter(Boolean)
       .join('\n');
@@ -51,7 +51,7 @@ export function formEvent(form: BotFormEntity, by: string): string {
     .join('\n');
   return [
     `${who} submitted your form: ${form.summary}`,
-    promptText('wake/forms.values-are-data'),
+    promptText('core/wake-forms.values-are-data'),
     fenceUntrusted('values', lines),
   ].join('\n');
 }

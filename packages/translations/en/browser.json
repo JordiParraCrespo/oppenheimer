@@ -1700,6 +1700,8 @@
       "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
       "offline": "The host is offline",
       "offlineDetail": "The device comes back when the host reconnects.",
+      "reconnecting": "Reconnecting to the device…",
+      "reconnectingDetail": "Taps from the next few seconds are sent once it’s back.",
       "ended": "The session has ended",
       "browser": "Browser",
       "address": "localhost:{{port}}",
@@ -2138,6 +2140,7 @@
           "stopped": "Loop “{{prompt}}” stopped: a run of it failed or was stopped",
           "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
         },
+        "checkBack": "Checked back on: {{about}}",
         "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
@@ -2759,7 +2762,8 @@
       "runsEmpty": "No runs yet. Each run appears here with the session it started.",
       "loadFailed": "Automations could not be loaded.",
       "actionFailed": "That did not go through.",
-      "actionFailedFor": "“{{name}}” was not updated"
+      "actionFailedFor": "“{{name}}” was not updated",
+      "filterNoMatch": "No automations match these filters."
     },
     "status": {
       "active": "Active",
@@ -3112,7 +3116,24 @@
       "runsOn": "Runs on {{bot}}",
       "loadFailed": "Bot routines could not be loaded.",
       "empty": "A bot's routines are made in its chat, with /schedule.",
-      "emptyTitle": "No bot routines yet"
+      "emptyTitle": "No bot routines yet",
+      "filter": {
+        "allBots": "All bots",
+        "searchBots": "Search bots",
+        "noMatch": "No bot routines match these filters."
+      }
+    },
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "paused": "Paused",
+      "trigger": {
+        "any": "Any trigger",
+        "schedule": "Schedule",
+        "gmail": "Gmail",
+        "github": "GitHub",
+        "webhook": "Webhook"
+      }
     }
   },
   "pullRequests": {
@@ -3447,7 +3468,6 @@
     "backToTask": "Back to task",
     "nav": {
       "label": "Plan",
-      "inbox": "Inbox",
       "tasks": "Tasks",
       "calendar": "Calendar",
       "milestones": "Milestones",
@@ -3977,6 +3997,8 @@
       "any": "Any",
       "showDone": "Show done",
       "showPulls": "Show pull requests",
+      "alerts": "Notify me in this browser",
+      "alertsBlocked": "Notifications are blocked in this browser",
       "clear": "Clear filters",
       "remove": "Clear filter",
       "typeChip": "Type: {{value}}",
@@ -4074,7 +4096,6 @@
       "open": "Open run"
     },
     "card": {
-      "later": "Later",
       "answerFailed": "Could not do that. Try again."
     },
     "pane": {
@@ -4086,16 +4107,16 @@
       "clearTitle": "You're all caught up",
       "clear": "New items land here when one needs a decision.",
       "clearRunning_one": "{{count}} session is still running. New items land here when one needs a decision.",
-      "clearRunning_other": "{{count}} sessions are still running. New items land here when one needs a decision."
+      "clearRunning_other": "{{count}} sessions are still running. New items land here when one needs a decision.",
+      "cleared_one": "You cleared {{count}} item on this visit.",
+      "cleared_other": "You cleared {{count}} items on this visit."
     },
     "notice": {
-      "title": "{{name}} has news for you",
-      "done": "Done"
+      "title": "{{name}} has news for you"
     },
     "botNotice": {
       "title": "{{bot}} has news for you",
-      "openChat": "Open chat",
-      "done": "Done"
+      "openChat": "Open chat"
     },
     "report": {
       "sender": "An agent",
@@ -4106,20 +4127,30 @@
       "answerPlaceholder": "What should it do?",
       "send": "Send answer",
       "sending": "Sending…",
-      "done": "Done",
       "answerFailed": "Could not send the answer. Try again."
     },
     "task": {
       "sender": "An agent",
       "short": "New task: {{title}}",
-      "body": "An agent added this task to your board. Put it on today, start a session on it, or dismiss it to keep it on the board as it is.",
+      "body": "An agent added this task to your board. Put it on today or start a session on it; Done keeps it on the board as it is.",
       "due": "Due {{date}}",
-      "open": "Open task",
       "start": "Start session",
       "today": "Put on today",
-      "planning": "Putting on today…",
-      "dismiss": "Dismiss",
-      "dismissing": "Dismissing…"
+      "planning": "Putting on today…"
+    },
+    "question": {
+      "step": "Question {{n}} of {{total}}",
+      "ready": "Ready to send",
+      "back": "Back",
+      "next": "Next question",
+      "edit": "Change the answer to: {{question}}",
+      "label": "Question {{n}}"
+    },
+    "dock": {
+      "label": "Move through the Inbox",
+      "previous": "Previous",
+      "next": "Next",
+      "done": "Done"
     }
   },
   "settings": {
@@ -4670,7 +4701,8 @@
     "logOutFailed": "Could not log you out. Try again.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Employees"
+    "employees": "Employees",
+    "inbox": "Inbox"
   },
   "language": {
     "label": "Language",

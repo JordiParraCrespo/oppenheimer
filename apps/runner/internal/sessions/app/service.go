@@ -104,6 +104,10 @@ type Service struct {
 	// confirmed, under mu, holds the sessions whose blocked agent has been
 	// announced a second time (see observe).
 	confirmed map[string]bool
+	// blockedSince, under mu, is when observe saw each blocked agent that is
+	// not confirmed yet start to wait: the confirmation's own clock, which a
+	// window opened meanwhile does not move (it writes `Updated`).
+	blockedSince map[string]time.Time
 	// decisions, under mu, is the id of the decision last reported for each
 	// session whose agent waits on one (reportDecision).
 	decisions map[string]string
@@ -151,7 +155,7 @@ func New(opts Options) (*Service, error) {
 	}
 	s := &Service{
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
-		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, decisions: map[string]string{},
+		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, blockedSince: map[string]time.Time{}, decisions: map[string]string{},
 		keeper: newKeeper(), observer: observer{classifier: opts.Classifier, program: opts.ProgramStatus},
 		watches:   newWatchBook(),
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
@@ -732,6 +736,9 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	}
 	launch := session.Launch
 	launch.Resume = true
+	if s.transcripts != nil {
+		launch.Saved = s.transcripts.SavedConversation(session)
+	}
 	launch.StatusLine = s.statusLine(session.ID)
 	launch.Wrap = s.observer.wrap(session.ID)
 	s.brief(&launch, session.Agent, session)
@@ -1021,12 +1028,58 @@ func (s *Service) decide(session domain.Session, state domain.State, loginURL st
 	return next
 }
 
-// blockedConfirmAfter is how long an agent stays blocked before observe
+// BlockedConfirmAfter is how long an agent stays blocked before observe
 // announces it once more. A state is announced when it changes, but the
-// control plane counts how long one has lasted only from its second report
-// (`session-state.policy.ts`), so that one report cannot claim a duration: a
-// blocked agent announced once would never come to wait on anyone.
-const blockedConfirmAfter = 15 * time.Second
+// control plane takes a block as waiting on the person only from its second
+// report (`session-group.policy.ts`), so that one screen cannot claim it: a
+// blocked agent announced once would never come to wait on anyone. It is
+// short because that second report is when the person is told; the session
+// loop looks again this soon after it sees an agent block.
+const BlockedConfirmAfter = 3 * time.Second
+
+// confirmDueLocked reports whether a session seen in the same state again is
+// a block to announce a second time now, and records it as confirmed. A
+// block first seen in this process with no start recorded (one the runner
+// restarted under) starts its clock here. Callers hold mu.
+func (s *Service) confirmDueLocked(id string, state domain.State) bool {
+	if state != domain.StateBlocked || s.confirmed[id] {
+		return false
+	}
+	since, ok := s.blockedSince[id]
+	if !ok {
+		s.blockedSince[id] = s.now()
+		return false
+	}
+	if s.now().Sub(since) < BlockedConfirmAfter {
+		return false
+	}
+	s.confirmed[id] = true
+	delete(s.blockedSince, id)
+	return true
+}
+
+// NextConfirmation is how long until the earliest block still waiting to be
+// announced a second time is due, and false when none is: when a loop that
+// refreshes sessions should look again so a block is confirmed on time.
+func (s *Service) NextConfirmation() (time.Duration, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var next time.Duration
+	found := false
+	for id, since := range s.blockedSince {
+		// A session closed or stopped by a command while blocked is never
+		// looked at again, so its entry ends here.
+		if cur, ok := s.sessions[id]; !ok || cur.State != domain.StateBlocked {
+			delete(s.blockedSince, id)
+			continue
+		}
+		due := max(BlockedConfirmAfter-s.now().Sub(since), 0)
+		if !found || due < next {
+			next, found = due, true
+		}
+	}
+	return next, found
+}
 
 // observe applies what a refresh saw, as a compare-and-set against the record
 // it read at revision seen. It writes nothing (no store, no revision, no
@@ -1044,14 +1097,14 @@ func (s *Service) observe(session domain.Session, seen uint64, obs observation) 
 		case !cur.State.Live(), s.revs[session.ID] != seen, s.busy[session.ID] > 0:
 			return cur, false
 		case cur.State == state && (loginURL == "" || cur.LoginURL == loginURL) && sameWord(cur.Program, obs.program):
-			confirm = state == domain.StateBlocked && !s.confirmed[session.ID] &&
-				s.now().Sub(cur.Updated) >= blockedConfirmAfter
-			if confirm {
-				s.confirmed[session.ID] = true
-			}
+			confirm = s.confirmDueLocked(session.ID, state)
 			return cur, false
 		}
 		delete(s.confirmed, session.ID)
+		delete(s.blockedSince, session.ID)
+		if state == domain.StateBlocked {
+			s.blockedSince[session.ID] = s.now()
+		}
 		stateChanged = cur.State != state
 		cur.State = state
 		if loginURL != "" {

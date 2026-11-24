@@ -225,6 +225,7 @@ func New(version string) (*App, error) {
 		FilesDir:       paths.Files(),
 		CodexSessions:  agentSessionsPath(paths, "CODEX_HOME", ".codex"),
 		GrokSessions:   agentSessionsPath(paths, "GROK_HOME", ".grok"),
+		QwenProjects:   agentHomeFile(paths, "QWEN_HOME", ".qwen", "projects"),
 		ZCodeDatabase:  zcodeDatabase(paths),
 		HermesState:    agentHomeFile(paths, "HERMES_HOME", ".hermes", "state.db"),
 	})
@@ -406,7 +407,7 @@ func unit(paths Paths) svcdomain.Unit {
 		env[EnvTelegram] = telegram
 	}
 	// The devices and the Argent the installer was told about.
-	for _, key := range []string{EnvDevices, EnvArgentSimulatorServer, EnvArgentToolsURL, EnvArgentToken, "ANDROID_HOME"} {
+	for _, key := range []string{EnvDevices, EnvArgentSimulatorServer, EnvArgentToolsURL, EnvArgentToken, EnvDeviceScreenWidth, "ANDROID_HOME"} {
 		if value := os.Getenv(key); value != "" {
 			env[key] = value
 		}

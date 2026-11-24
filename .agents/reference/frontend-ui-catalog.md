@@ -16,7 +16,7 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | Need                                  | Use                           | Not                                                   |
 | ------------------------------------- | ----------------------------- | ----------------------------------------------------- |
 | A command with two ways to read it (Command / Agent prompt) | `CodeBlock layout="panel"` with `tabs` | two `CodeBlock`s, a `SegmentedControl` beside a label |
-| Two views of one pane | `SegmentedControl` | a tab strip, two `Button`s |
+| Two ways to read one pane (Unified / Split, a range) | `SegmentedControl` | a tab strip, two `Button`s |
 | An address checked as you type | `SlugInput` + `FieldDescription tone` | an `Input` with hand-rolled glyphs |
 | Label / value facts before moving on | `SummaryCard` | a `Card` of `div`s |
 | An onboarding step's opening | `StepHeader` | a hand-built eyebrow row |
@@ -32,7 +32,7 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | Pairing a host: the copy buttons, the token line, the instruction, the status | the kit's `PairingChrome`, or its parts with `PairingInstruction` in its `panel` layout | two `CodeBlock`s, a `CodeBlock` alone, a second status row |
 | A menu row that opens a pane in place (Appearance, Move to project…) | `DropdownMenuPaneItem` + `DropdownMenuBack` | `DropdownMenuSub` for a two-level pick |
 | A note under a form, in any tone | `Callout` | `Alert`, a tinted `div` |
-| Views inside one page (Routines / Runs, categories, run status) | `PillTabs` with `count` | a tab strip, `SegmentedControl` |
+| Views inside one page or pane (Routines / Runs, the queue's scopes, a pull request's Description / Changes, categories, run status) | `PillTabs` with `count` | a tab strip, `SegmentedControl` |
 | How a routine page opens | `PageHeader` parts | a hand-built title row |
 | A labelled picker in the routine editor | `FieldSelect` | `ChipSelect`, a `<select>` |
 | Several labelled picks read as one card (the automation editor's Where it runs is one) | `FieldSelectGroup` + `FieldSelectRow` around a `FieldSelect variant="quiet"` | a stack of labelled `FieldSelect`s |
@@ -87,7 +87,7 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | A bot's photo | `AvatarPicker` (`compact` in a popover, `wide` on Profile); `BotAvatar` to draw one | a grid of `Avatar` buttons |
 | A bot's colour, and its drawn face | `AvatarColorPicker`; `BotAvatar` / `BotItem` with `face` (its colour, id and picked parts) | a row of coloured `div`s, a hex from the database |
 | A bot's face, picked part by part | `BotFacePicker` | a grid of hand-drawn faces, a free-text seed |
-| A file edited in place (a bot's SOUL.md, INSTRUCTIONS.md) | `Textarea variant="code"`; `SegmentedControlItem mono` to switch files | a `Textarea` restyled to mono |
+| A file edited in place (a bot's SOUL.md, INSTRUCTIONS.md) | `Textarea variant="code"`; `PillTab mono` to switch files | a `Textarea` restyled to mono |
 | A bot's own routine | `RoutineCard` | a `RoutineItem`, a `Card` of `div`s |
 | Records in a settings card (revisions, facts, connectors) and adding one | `SettingsListRow` + `SettingsAddRow` | a `SettingsRow` per record, an `Input` and a `Button` |
 | The bar over one thing's own settings | `SettingsTopBar` | a `PageHeader`, a hand-built header |

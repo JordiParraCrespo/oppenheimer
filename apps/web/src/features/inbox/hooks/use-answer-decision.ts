@@ -20,8 +20,7 @@ export function useAnswerDecision(item: Extract<InboxItem, { kind: 'session' }>)
       { sessionId: session.id, answer },
       {
         onSuccess: (answered) => {
-          inboxVisit.answered(item.key);
-          inboxVisit.answered(sessionItemKey(answered));
+          inboxVisit.answered(item.key, sessionItemKey(answered));
         },
       },
     );

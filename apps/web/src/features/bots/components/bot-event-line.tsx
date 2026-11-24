@@ -3,6 +3,7 @@ import type { BotMessageEntity } from '@oppenheimer/frontend-consumer';
 import type { BotMessageEvent } from '@oppenheimer/shared/schemas/bot';
 import type { ReactNode } from 'react';
 import { ApprovalEventLine } from '@/features/bots/components/approval-event-line';
+import { CheckBackEventLine } from '@/features/bots/components/check-back-event-line';
 import { DreamEventLine } from '@/features/bots/components/dream-event-line';
 import { FormEventLine } from '@/features/bots/components/form-event-line';
 import { GithubAskEventLine } from '@/features/bots/components/github-ask-event-line';
@@ -46,6 +47,7 @@ const EVENT_LINES: {
   task: ({ event }) => <TaskEventLine event={event} />,
   goal: ({ event }) => <GoalEventLine event={event} />,
   loop: ({ event }) => <LoopEventLine event={event} />,
+  check_back: ({ event }) => <CheckBackEventLine event={event} />,
   dream: ({ event }) => <DreamEventLine event={event} />,
 };
 
@@ -54,7 +56,8 @@ const EVENT_LINES: {
  * (`EVENT_LINES`): a decided approval or card of questions, a routine's activity that needs you, another bot's
  * message or answer, a followed session, pull request or project's task that woke it, your ask of it on
  * GitHub, the bot's own goal
- * going on or ending, a run of its loop or how the loop ended, a dream of its memory.
+ * going on or ending, a run of its loop or how the loop ended, a look it asked
+ * for with `check_back`, a dream of its memory.
  * Read from the event's
  * own fields, never its words, which are the bot's. Never a bubble from you:
  * you did not write it. An event this client cannot read is its first line.

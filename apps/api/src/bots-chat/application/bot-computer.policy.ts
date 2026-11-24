@@ -24,17 +24,17 @@ export interface ComputerCall {
  */
 const REFUSALS: Readonly<Record<string, { meaning: string; advice?: string }>> = {
   COMPUTER_001: {
-    meaning: promptText('tools/computer.refusals-computer-001'),
-    advice: promptText('tools/computer.refusals-computer-001-advice'),
+    meaning: promptText('computer/tools.refusals-computer-001'),
+    advice: promptText('computer/tools.refusals-computer-001-advice'),
   },
   COMPUTER_002: {
-    meaning: promptText('tools/computer.refusals-computer-002'),
-    advice: promptText('tools/computer.refusals-computer-002-advice'),
+    meaning: promptText('computer/tools.refusals-computer-002'),
+    advice: promptText('computer/tools.refusals-computer-002-advice'),
   },
-  COMPUTER_003: { meaning: promptText('tools/computer.refusals-computer-003') },
+  COMPUTER_003: { meaning: promptText('computer/tools.refusals-computer-003') },
   COMPUTER_005: {
-    meaning: promptText('tools/computer.refusals-computer-005'),
-    advice: promptText('tools/computer.refusals-computer-005-advice'),
+    meaning: promptText('computer/tools.refusals-computer-005'),
+    advice: promptText('computer/tools.refusals-computer-005-advice'),
   },
 };
 
@@ -42,7 +42,7 @@ const REFUSALS: Readonly<Record<string, { meaning: string; advice?: string }>> =
  * Any other failure may come after the action (the capture failed), so it is
  * never told as nothing done.
  */
-const MAYBE_DONE = promptText('tools/computer.may-have-happened');
+const MAYBE_DONE = promptText('computer/tools.may-have-happened');
 
 type Field = keyof Omit<ComputerCall, 'action'>;
 
@@ -86,13 +86,13 @@ export const COMPUTER_ACTION_SPECS: Readonly<Record<ComputerAction, ComputerActi
   middle_click: { ...pointed('Middle-click at'), missing: 'middle_click needs x and y.' },
   drag: {
     needs: ['x', 'y', 'to_x', 'to_y'],
-    missing: promptText('tools/computer.drag-needs'),
+    missing: promptText('computer/tools.drag-needs'),
     says: (call) => `Drag from ${at(call)} to (${call.to_x}, ${call.to_y}) on`,
   },
   scroll: {
     needs: ['x', 'y'],
     needsOneOf: ['scroll_y', 'scroll_x'],
-    missing: promptText('tools/computer.scroll-needs'),
+    missing: promptText('computer/tools.scroll-needs'),
     says: (call) => `Scroll at ${at(call)} on`,
   },
   type: {
@@ -144,19 +144,19 @@ export function describeComputer(
       const { screen } = outcome;
       const display = screen.display ? ` (display ${screen.display})` : '';
       const values = { host, display };
-      if (!shown) return promptText('tools/computer.done-not-shown', values);
-      return promptText('tools/computer.done', {
+      if (!shown) return promptText('computer/tools.done-not-shown', values);
+      return promptText('computer/tools.done', {
         ...values,
         width: String(screen.width),
         height: String(screen.height),
       });
     }
     case 'host_offline':
-      return promptText('tools/computer.host-offline', { host });
+      return promptText('computer/tools.host-offline', { host });
     case 'not_supported':
-      return promptText('tools/computer.runner-too-old', { host });
+      return promptText('computer/tools.runner-too-old', { host });
     case 'timed_out':
-      return promptText('tools/computer.timed-out', { host });
+      return promptText('computer/tools.timed-out', { host });
     case 'failed': {
       const known = REFUSALS[outcome.code];
       const code = known ? `${outcome.code}: ${known.meaning}` : outcome.code;

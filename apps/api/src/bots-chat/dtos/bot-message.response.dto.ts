@@ -1,6 +1,7 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   BOT_APPROVAL_EVENT_STAGES,
+  BOT_CHECK_BACK_ABOUT_MAX,
   BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
   BOT_FORM_OUTCOMES,
@@ -551,6 +552,33 @@ export class BotLoopEventResponseDto {
   reason!: string | null;
 }
 
+/** A look the bot asked for with `check_back`, at something it delegated or waits on. */
+export class BotCheckBackEventResponseDto {
+  @ApiProperty({ enum: ['check_back'] })
+  kind!: 'check_back';
+
+  @ApiProperty({
+    format: 'uuid',
+    description: "The looks at one thing: the id of the turn that set the chain's first look.",
+  })
+  chainId!: string;
+
+  @ApiProperty({ description: 'Which look of the chain this is, from 0.' })
+  step!: number;
+
+  @ApiProperty({
+    format: 'date-time',
+    description: "When the chain's first look was set; a chain stops 24 hours later.",
+  })
+  chainStartedAt!: string;
+
+  @ApiProperty({
+    description: 'What the bot is waiting on and what to look at, in its own words.',
+    maxLength: BOT_CHECK_BACK_ABOUT_MAX,
+  })
+  about!: string;
+}
+
 /** A turn folded what it had read into a summary. */
 export class BotCompactionEventResponseDto {
   @ApiProperty({ enum: ['compaction'] })
@@ -599,6 +627,7 @@ export type BotMessageEventResponseDto =
   | BotTaskEventResponseDto
   | BotGoalEventResponseDto
   | BotLoopEventResponseDto
+  | BotCheckBackEventResponseDto
   | BotDreamEventResponseDto
   | BotCompactionEventResponseDto;
 
@@ -616,6 +645,7 @@ export type BotMessageEventResponseDto =
   BotTaskEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
+  BotCheckBackEventResponseDto,
   BotDreamEventResponseDto,
   BotCompactionEventResponseDto,
 )
@@ -655,6 +685,7 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotTaskEventResponseDto) },
       { $ref: getSchemaPath(BotGoalEventResponseDto) },
       { $ref: getSchemaPath(BotLoopEventResponseDto) },
+      { $ref: getSchemaPath(BotCheckBackEventResponseDto) },
       { $ref: getSchemaPath(BotDreamEventResponseDto) },
       { $ref: getSchemaPath(BotCompactionEventResponseDto) },
     ],

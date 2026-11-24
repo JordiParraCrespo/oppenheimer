@@ -93,7 +93,8 @@ command is taught to every agent by `runner --skill`
 - **Not yet.** A push to a phone: the Inbox is where a notice lands, and
   the phone is 0.5's (`0.5-mobile.md`, its question 3). A browser
   notification while the console is open in another tab is the cheap step
-  before that.
+  before that; built 2026-11-24 (`../versions/mvp/29-inbox.md`, "A
+  notification in this browser").
 
 ## 3. Wake on a pull request (built 2026-11-02)
 
