@@ -1021,12 +1021,14 @@ func (s *Service) decide(session domain.Session, state domain.State, loginURL st
 	return next
 }
 
-// blockedConfirmAfter is how long an agent stays blocked before observe
+// BlockedConfirmAfter is how long an agent stays blocked before observe
 // announces it once more. A state is announced when it changes, but the
-// control plane counts how long one has lasted only from its second report
-// (`session-state.policy.ts`), so that one report cannot claim a duration: a
-// blocked agent announced once would never come to wait on anyone.
-const blockedConfirmAfter = 15 * time.Second
+// control plane takes a block as waiting on the person only from its second
+// report (`session-group.policy.ts`), so that one screen cannot claim it: a
+// blocked agent announced once would never come to wait on anyone. It is
+// short because that second report is when the person is told; the session
+// loop looks again this soon after it sees an agent block.
+const BlockedConfirmAfter = 3 * time.Second
 
 // observe applies what a refresh saw, as a compare-and-set against the record
 // it read at revision seen. It writes nothing (no store, no revision, no
@@ -1045,7 +1047,7 @@ func (s *Service) observe(session domain.Session, seen uint64, obs observation) 
 			return cur, false
 		case cur.State == state && (loginURL == "" || cur.LoginURL == loginURL) && sameWord(cur.Program, obs.program):
 			confirm = state == domain.StateBlocked && !s.confirmed[session.ID] &&
-				s.now().Sub(cur.Updated) >= blockedConfirmAfter
+				s.now().Sub(cur.Updated) >= BlockedConfirmAfter
 			if confirm {
 				s.confirmed[session.ID] = true
 			}

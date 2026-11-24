@@ -77,16 +77,16 @@ func TestAnAgentStillBlockedIsAnnouncedOnceMore(t *testing.T) {
 		t.Fatalf("blocked announced %d times on the change, want 1", got)
 	}
 
-	clock.Advance(10 * time.Second)
+	clock.Advance(time.Second)
 	refresh()
 	if got := countBlocked(h.events.states); got != 1 {
-		t.Fatalf("blocked announced %d times after 10 s, want 1: too early to confirm", got)
+		t.Fatalf("blocked announced %d times after 1 s, want 1: too early to confirm", got)
 	}
 
-	clock.Advance(10 * time.Second)
+	clock.Advance(app.BlockedConfirmAfter)
 	refresh()
 	if got := countBlocked(h.events.states); got != 2 {
-		t.Fatalf("blocked announced %d times after 20 s, want 2", got)
+		t.Fatalf("blocked announced %d times after %s, want 2", got, app.BlockedConfirmAfter+time.Second)
 	}
 
 	clock.Advance(time.Minute)

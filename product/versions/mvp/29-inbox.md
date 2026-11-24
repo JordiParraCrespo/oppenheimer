@@ -24,7 +24,7 @@ workspace has one member today (`08-auth.md`), so "workspace-wide" is
 
 | Item | Source | Needs you when | Answer in the Inbox |
 |------|--------|----------------|---------------------|
-| **A session waiting on you** | `GET /v1/sessions`, derived group `waiting-on-you` | the agent has been `blocked` 30 s or more, the session `failed`, or it has been `starting` 60 s or more (`sessions/domain/session-group.policy.ts`) | **Open** the session. A Claude Code question is answered in its chat view (`#462`); the Inbox cannot show the question, see §3 |
+| **A session waiting on you** | `GET /v1/sessions`, derived group `waiting-on-you` | the agent has been `blocked` 30 s or more (since 2026-11-23: is `blocked` and a second report confirmed it, see "A question reaches you in seconds"), the session `failed`, or it has been `starting` 60 s or more (`sessions/domain/session-group.policy.ts`) | **Open** the session. A Claude Code question is answered in its chat view (`#462`); the Inbox cannot show the question, see §3 |
 | **A bot's approval** | `bot_approval` with `status = 'pending'`, at most one per bot | a bot stopped its turn on a tool the owner set to *ask* (`25-bots.md`) | **Approve / Deny** through the existing `POST /v1/bots/:id/approvals/:approvalId/decision` |
 | **A pull request for you** (only once shown, see "Pull requests are opt-in") | `GET /v1/pulls?scope=requested`, and `scope=mine` with `blocker = null` | a review is requested of you, or your pull request can merge | **Merge** through the existing `POST /v1/pulls/:installationId/:githubRepoId/:number/merge` for a mergeable one; **Open** opens it in Pull requests, **View on GitHub** in a new tab |
 | **An automation that failed** | `GET /v1/automation-runs?status=failed&window=24h` | a run failed in the last day | **Run again** (`POST /v1/automations/:id/run`); **Open run** |
@@ -588,3 +588,50 @@ Decided by the agent that built it, for the owner to accept or change:
    held back from them until it is taken up.
 4. The name for the state is "waiting in the Inbox"; "Unassigned" stays the
    project for tasks with no project.
+
+## A question reaches you in seconds (2026-11-23)
+
+The owner asked that every time an agent needs them, a question or a
+permission, they are told. Measured before the change, a blocked session
+reached the Inbox about 55 s after its screen was drawn (the stress test's
+number above): the runner looks every 10 s, confirms a block 15 s later,
+and the control plane then waited 30 s more. Nothing announced the
+session when that wait ran out, so it showed only at the console's next
+refetch. And for two of the three agents a session can be given the
+runner's tools, it never showed at all:
+
+- **Codex** was never seen blocked. Its manifest was written from the
+  published behaviour; watched against Codex 0.171 in tmux, its approval
+  (`Would you like to run the following command?`) matched none of its
+  phrases, and its Plan-mode question also says `esc to interrupt`, so it
+  read as working.
+- **OpenCode** had no rule that said blocked. Its `Permission required`
+  dialog read as unknown.
+
+What changed:
+
+- **The manifests come from the real screens.** Codex's rules read the
+  `Action Required` it writes into the terminal title while it waits, and
+  the approval's and question's own words; OpenCode's read its
+  permission dialog and its footer. The captured screens are
+  `apps/runner/internal/sessions/adapters/manifest/testdata/screens/`, and
+  every one is classified in a test.
+- **The control plane adds no wait.** A block confirmed by a second report
+  is `waiting-on-you` at once (`session-group.policy.ts`). The debounce's
+  rule stands: one report claims nothing, and a duration is measured only
+  from a recorded transition.
+- **The runner confirms in 3 s.** The session loop looks again 3 s after it
+  sees an agent block, instead of a whole 10 s tick on and a 15 s
+  confirmation (`02-runner.md` §9).
+- **The flip is an event.** Because the group now changes on the second
+  report, a write, `session.changed` reaches the console when it happens;
+  before, crossing 30 s changed nothing anyone was told about.
+
+So a question shows 3–13 s after it is drawn: up to 10 s for the loop to
+see it, 3 s to confirm.
+
+Not yet: a browser notification and the Chrome extension telling you
+about a runner session come next, as their own changes; a phone push
+is the backend's, later. OpenCode's `question` tool and Codex's
+older-release prompts were not watched.
+

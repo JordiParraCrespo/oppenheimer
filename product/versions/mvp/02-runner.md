@@ -641,7 +641,11 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
   was announced is announced once more: the control plane counts a
   state's duration only from its second report, so a question asked once
   would otherwise never make the session wait on anyone (found on
-  2026-10-26 by the Inbox's fleet spec).
+  2026-10-26 by the Inbox's fleet spec). Since 2026-11-23 that second
+  report comes 3 s after the first, not 15 s: the session loop looks again
+  that soon after it sees an agent block, and the second report is now
+  what tells the person (`29-inbox.md`, "A question reaches you in
+  seconds").
 
 ### 10. Host facts and health
 

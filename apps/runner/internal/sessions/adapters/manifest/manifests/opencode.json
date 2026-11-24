@@ -1,9 +1,9 @@
 {
   "schema": "oppenheimer.manifest/v1",
   "agent": "opencode",
-  "version": "2026.09.24.2",
+  "version": "2026.11.23.1",
   "minEngine": 1,
-  "notes": "One rule, from the one signal with a known shape: OpenCode's terminal title is `OC | <session>`, with a braille spinner glyph in front while a turn runs (the shape Orca matches). Nothing on the screen body is trusted yet — no rule has been watched against a live session, and borrowing Claude's bottom-of-screen patterns is how a spinner under a question reads as work. Everything the title does not say is `unknown`, which the sidebar shows honestly, until a soak produces patterns of OpenCode's own.",
+  "notes": "Watched against OpenCode 1.19.6 in tmux on 2026-11-23: a permission for a folder outside the project and one for a shell command, a turn running and the prompt after it; the screens are `testdata/screens/opencode-*`. That release titles the terminal only `OpenCode`, so the screen's footer carries the state; the older `OC |` title with a spinner is kept for the releases that set it.",
   "rules": [
     {
       "id": "title-working",
@@ -11,7 +11,32 @@
       "priority": 1100,
       "region": "title",
       "any": ["^\\s*[\\x{2800}-\\x{28FF}] OC \\|"],
-      "note": "OpenCode puts one spinner glyph before its `OC |` title while a turn runs; nothing typed into the composer reaches the title."
+      "note": "Older releases put one spinner glyph before their `OC |` title while a turn runs; nothing typed into the composer reaches the title."
+    },
+    {
+      "id": "permission",
+      "state": "blocked",
+      "priority": 1000,
+      "region": "bottom:14",
+      "any": ["(?i)\\bpermission required\\b", "(?i)\\ballow once\\s+allow always\\s+reject\\b"],
+      "note": "`△ Permission required` over `Allow once   Allow always   Reject`, for a shell command and for a folder outside the project alike."
+    },
+    {
+      "id": "working",
+      "state": "working",
+      "priority": 970,
+      "region": "bottom:2",
+      "any": ["(?i)\\besc interrupt\\b"],
+      "note": "The footer reads `esc interrupt` beside its progress bar only while a turn runs; a permission replaces the footer, and outranks this anyway."
+    },
+    {
+      "id": "prompt",
+      "state": "idle",
+      "priority": 800,
+      "region": "bottom:3",
+      "any": ["(?i)\\bctrl\\+p\\b"],
+      "not": ["esc interrupt"],
+      "note": "The idle footer (`tab agents  ctrl+p commands`) with no `esc interrupt` in it."
     }
   ]
 }

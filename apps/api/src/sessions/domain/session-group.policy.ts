@@ -12,7 +12,7 @@ import type { SessionFold } from './session-state.policy';
  *     `observedSince` is null until the log records a *second* report of the same
  *     state, and null means zero seconds, so a caller with no history cannot
  *     fabricate "blocked for five minutes" into `waiting-on-you`.
- *  2. **Precedence is not display order.** "Blocked for thirty seconds beats an
+ *  2. **Precedence is not display order.** "A confirmed block beats an
  *     approved pull request" is a correctness rule and is {@link sessionGroup};
  *     display order is a UI rule, not decided here (no client orders by group yet).
  *
@@ -23,8 +23,6 @@ import type { SessionFold } from './session-state.policy';
  * sessions. An input nothing can set would be this function pretending.
  */
 
-/** The agent has been stuck asking for something for this long. */
-const BLOCKED_SECONDS = 30;
 /** A launch that has sat in a non-ready state this long is not starting, it is stuck. */
 const LAUNCH_SECONDS = 60;
 
@@ -35,11 +33,10 @@ export function sessionGroup(fold: SessionFold, now: Date = new Date()): Session
   // else: nothing about the session matters until somebody looks.
   if (fold.state === 'failed') return 'waiting-on-you';
 
-  // The second: an agent that has been asking for something for half a minute.
-  if (
-    fold.lastObservedState === 'blocked' &&
-    secondsSince(fold.observedSince, now) >= BLOCKED_SECONDS
-  ) {
+  // The second: an agent asking for something, once a second report has
+  // confirmed it. The runner sends that report seconds after the first, and it
+  // is the moment the person is told, so no further wait is added on top.
+  if (fold.lastObservedState === 'blocked' && fold.observedSince !== null) {
     return 'waiting-on-you';
   }
 
