@@ -47,6 +47,15 @@ the quiet bar it had before the tabs: the sidebar toggle and the image's
 button on frosted chips, over an image that runs to the top. The shown
 tab stands out by its card and hairline (§2), not by the band around it.
 
+Later that day, after using it, the owner took the grey band back: "I liked
+that the tabs have the gray color", and "I do not want to change the top bg
+header when creating a new session". The tab bar is the grey band
+(`canvas-recessed`) on a session, a bot's chat and New session alike, so
+it stays the same colour when a session is created; its 45px, its medium
+rung, its hairline and New session's image under the content alone stay.
+A shared session's guest, with no tabs, keeps its bar on the terminal's
+ground.
+
 ## 2. What a tab shows
 
 The shown tab stands on the canvas inside a hairline; the rest are flat,

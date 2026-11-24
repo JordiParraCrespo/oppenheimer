@@ -81,11 +81,11 @@ export function SessionBar({
           </>
         )
       }
-      // On the terminal's ground with a hairline under it, whichever view is
-      // on screen: the chat stands on the same ground, so bar, grid and chat
-      // read as one surface and switching views changes no colour.
+      // With tabs, the tab bar's grey band; a guest's bar, with none, stands
+      // on the terminal's ground with a hairline under it, whichever view is
+      // on screen, so switching views changes no colour.
       tone={open ? 'chrome' : 'page'}
-      className="border-b border-border-subtle bg-term-bg [--chat-tab-ground:var(--term-bg)]"
+      className={open ? undefined : 'border-b border-border-subtle bg-term-bg'}
     />
   );
 }
