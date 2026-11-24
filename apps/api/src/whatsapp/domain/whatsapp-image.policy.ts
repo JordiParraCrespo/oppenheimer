@@ -31,34 +31,6 @@ export function whatsappImageSightOf(data: Buffer, mimetype: string): WhatsappIm
   return { seen: true, data, mimeType: mimeType as BotImageMimeType };
 }
 
-/** How asking the host for an image ended, when it did not hand it over. */
-export type WhatsappImageMiss =
-  | { kind: 'host_offline' }
-  | { kind: 'not_supported' }
-  | { kind: 'timed_out' }
-  | { kind: 'failed'; code: string };
-
-/** Why an image the host did not hand over went unseen. */
-export function whatsappImageMissReason(miss: WhatsappImageMiss): string {
-  switch (miss.kind) {
-    case 'host_offline':
-      return 'the host that holds the WhatsApp number is offline';
-    case 'not_supported':
-      return "the host's runner is too old to hand images over; updating it fixes this";
-    case 'timed_out':
-      return 'the host did not hand the image over in time';
-    case 'failed':
-      return FAILED[miss.code] ?? `the host refused (${miss.code})`;
-  }
-}
-
-const FAILED: Readonly<Record<string, string>> = {
-  WA_002: 'the WhatsApp number is not connected on its host',
-  WA_005: 'the host no longer has it (images can be fetched for 48 hours)',
-  WA_006: 'it is too large to hand over',
-  WA_007: "WhatsApp's media server would not hand it over",
-};
-
 /** An image as a bot reads it when it could not see it: `[image, could not be seen: …]`. */
 export function whatsappUnseenImageText(reason: string): string {
   return `[image, could not be seen: ${reason}]`;

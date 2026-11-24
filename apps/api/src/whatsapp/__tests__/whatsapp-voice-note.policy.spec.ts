@@ -3,9 +3,9 @@
  * could not be heard, in words the bot can pass on. The hearing itself is the
  * `transcribe-whatsapp-voice-note` handler's spec.
  */
+import { whatsappMediaMissReason } from '../domain/whatsapp-media.policy';
 import { describe, expect, it } from 'vitest';
 import {
-  whatsappVoiceNoteMissReason,
   whatsappVoiceNoteText,
 } from '../domain/whatsapp-voice-note.policy';
 
@@ -29,13 +29,29 @@ describe('whatsappVoiceNoteText', () => {
   });
 });
 
-describe('whatsappVoiceNoteMissReason', () => {
-  // What breaks this: a runner code reaching the owner as "WA_006" instead of a reason.
-  it('names each way the host can fail to hand a note over', () => {
-    expect(whatsappVoiceNoteMissReason({ kind: 'not_supported' })).toMatch(/runner is too old/);
-    expect(whatsappVoiceNoteMissReason({ kind: 'failed', code: 'WA_006' })).toMatch(/too long/);
-    expect(whatsappVoiceNoteMissReason({ kind: 'failed', code: 'WA_005' })).toMatch(/48 hours/);
-    expect(whatsappVoiceNoteMissReason({ kind: 'failed', code: 'WA_099' })).toBe(
+describe('whatsappMediaMissReason', () => {
+  // What breaks this: a runner code reaching the owner as "WA_006" instead of a
+  // reason, or an image's miss worded as a voice note's.
+  it('names each way the host can fail to hand a note or an image over, in the kind’s words', () => {
+    expect(whatsappMediaMissReason('voice_note', { kind: 'not_supported' })).toMatch(
+      /too old to hand voice notes over/,
+    );
+    expect(whatsappMediaMissReason('voice_note', { kind: 'failed', code: 'WA_006' })).toMatch(
+      /too long/,
+    );
+    expect(whatsappMediaMissReason('voice_note', { kind: 'failed', code: 'WA_005' })).toMatch(
+      /voice notes can be fetched for 48 hours/,
+    );
+    expect(whatsappMediaMissReason('image', { kind: 'not_supported' })).toMatch(
+      /too old to hand images over/,
+    );
+    expect(whatsappMediaMissReason('image', { kind: 'failed', code: 'WA_006' })).toBe(
+      'it is too large to hand over',
+    );
+    expect(whatsappMediaMissReason('image', { kind: 'timed_out' })).toBe(
+      'the host did not hand the image over in time',
+    );
+    expect(whatsappMediaMissReason('image', { kind: 'failed', code: 'WA_099' })).toBe(
       'the host refused (WA_099)',
     );
   });

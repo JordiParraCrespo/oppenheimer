@@ -89,8 +89,7 @@ type Device struct {
 	client    *whatsmeow.Client
 	events    app.Events
 	outbox    *Outbox
-	voices    *Voices
-	images    *Images
+	kept      *Kept
 	handler   uint32
 
 	groups sync.Map // types.JID → groupName
@@ -106,10 +105,9 @@ type groupName struct {
 }
 
 var (
-	_ app.Device     = (*Device)(nil)
-	_ app.Outbox     = (*Device)(nil)
-	_ app.VoiceNotes = (*Device)(nil)
-	_ app.Images     = (*Device)(nil)
+	_ app.Device    = (*Device)(nil)
+	_ app.Outbox    = (*Device)(nil)
+	_ app.KeptMedia = (*Device)(nil)
 )
 
 // New builds the device; nothing is opened until Open.
@@ -151,12 +149,7 @@ func (d *Device) Open(ctx context.Context, listener app.Events) (app.Paired, err
 		_ = db.Close()
 		return app.Paired{}, err
 	}
-	voices, err := newVoices(ctx, db)
-	if err != nil {
-		_ = db.Close()
-		return app.Paired{}, err
-	}
-	images, err := newImages(ctx, db)
+	kept, err := newKeptMedia(ctx, db)
 	if err != nil {
 		_ = db.Close()
 		return app.Paired{}, err
@@ -167,7 +160,7 @@ func (d *Device) Open(ctx context.Context, listener app.Events) (app.Paired, err
 		return app.Paired{}, fmt.Errorf("whatsapp store: %w", err)
 	}
 	d.mu.Lock()
-	d.db, d.container, d.events, d.outbox, d.voices, d.images = db, container, listener, outbox, voices, images
+	d.db, d.container, d.events, d.outbox, d.kept = db, container, listener, outbox, kept
 	d.useClientLocked(device)
 	d.mu.Unlock()
 	if device.ID == nil {
@@ -366,44 +359,26 @@ func rateLimited(err error) error {
 	return err
 }
 
-// Download fetches a voice note from WhatsApp's media servers and decrypts
-// it, from the serialized AudioMessage ref holds.
-func (d *Device) Download(ctx context.Context, ref []byte) ([]byte, string, error) {
+// Download fetches a voice note or an image from WhatsApp's media servers
+// and decrypts it, from the serialized message ref holds. One WhatsApp says
+// is past max is refused before anything is downloaded.
+func (d *Device) Download(ctx context.Context, kind domain.KeptKind, ref []byte, max int) ([]byte, string, error) {
 	client, _ := d.current()
 	if client == nil || !client.IsLoggedIn() {
 		return nil, "", domain.ErrNotConnected
 	}
-	audio, err := audioOf(ref)
+	media, mimetype, length, err := downloadableOf(kind, ref)
 	if err != nil {
 		return nil, "", err
 	}
-	data, err := client.Download(ctx, audio)
+	if length > uint64(max) { //nolint:gosec // max is a positive constant
+		return nil, "", fmt.Errorf("%d bytes, at most %d", length, max)
+	}
+	data, err := client.Download(ctx, media)
 	if err != nil {
 		return nil, "", err
 	}
-	return data, audio.GetMimetype(), nil
-}
-
-// DownloadImage fetches an image from WhatsApp's media servers and decrypts
-// it, from the serialized ImageMessage ref holds. One WhatsApp says is past
-// max is refused before anything is downloaded.
-func (d *Device) DownloadImage(ctx context.Context, ref []byte, max int) ([]byte, string, error) {
-	client, _ := d.current()
-	if client == nil || !client.IsLoggedIn() {
-		return nil, "", domain.ErrNotConnected
-	}
-	img, err := imageMessageOf(ref)
-	if err != nil {
-		return nil, "", err
-	}
-	if img.GetFileLength() > uint64(max) { //nolint:gosec // max is a positive constant
-		return nil, "", fmt.Errorf("%d bytes, at most %d", img.GetFileLength(), max)
-	}
-	data, err := client.Download(ctx, img)
-	if err != nil {
-		return nil, "", err
-	}
-	return data, img.GetMimetype(), nil
+	return data, mimetype, nil
 }
 
 // Close disconnects and closes the file.
@@ -465,80 +440,42 @@ func (d *Device) Clear(ctx context.Context) error {
 	return box.Clear(ctx)
 }
 
-/* ---------------------------------------------------------------- voice notes, on the same file */
+/* ---------------------------------------------------------------- kept media, on the same file */
 
-func (d *Device) voiceStore() (*Voices, error) {
+func (d *Device) keptStore() (*Kept, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	if d.voices == nil {
+	if d.kept == nil {
 		return nil, errors.New("whatsapp store not open")
 	}
-	return d.voices, nil
+	return d.kept, nil
 }
 
-// Keep keeps what fetching a voice note takes.
-func (d *Device) Keep(ctx context.Context, chatID, id string, voice domain.Voice) error {
-	voices, err := d.voiceStore()
+// Keep keeps what fetching a voice note or an image takes.
+func (d *Device) Keep(ctx context.Context, chatID, id string, media domain.Kept) error {
+	kept, err := d.keptStore()
 	if err != nil {
 		return err
 	}
-	return voices.Keep(ctx, chatID, id, voice)
+	return kept.Keep(ctx, chatID, id, media)
 }
 
-// Find is a kept voice note.
-func (d *Device) Find(ctx context.Context, chatID, id string) (domain.Voice, bool, error) {
-	voices, err := d.voiceStore()
+// Find is a kept voice note or image.
+func (d *Device) Find(ctx context.Context, kind domain.KeptKind, chatID, id string) (domain.Kept, bool, error) {
+	kept, err := d.keptStore()
 	if err != nil {
-		return domain.Voice{}, false, err
+		return domain.Kept{}, false, err
 	}
-	return voices.Find(ctx, chatID, id)
+	return kept.Find(ctx, kind, chatID, id)
 }
 
-// ClearVoiceNotes forgets every kept voice note.
-func (d *Device) ClearVoiceNotes(ctx context.Context) error {
-	voices, err := d.voiceStore()
-	if err != nil {
-		return err
-	}
-	return voices.ClearVoiceNotes(ctx)
-}
-
-/* ---------------------------------------------------------------- images, on the same file */
-
-func (d *Device) imageStore() (*Images, error) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	if d.images == nil {
-		return nil, errors.New("whatsapp store not open")
-	}
-	return d.images, nil
-}
-
-// KeepImage keeps what fetching an image takes.
-func (d *Device) KeepImage(ctx context.Context, chatID, id string, image domain.Image) error {
-	images, err := d.imageStore()
+// ClearKept forgets every kept voice note and image.
+func (d *Device) ClearKept(ctx context.Context) error {
+	kept, err := d.keptStore()
 	if err != nil {
 		return err
 	}
-	return images.KeepImage(ctx, chatID, id, image)
-}
-
-// FindImage is a kept image.
-func (d *Device) FindImage(ctx context.Context, chatID, id string) (domain.Image, bool, error) {
-	images, err := d.imageStore()
-	if err != nil {
-		return domain.Image{}, false, err
-	}
-	return images.FindImage(ctx, chatID, id)
-}
-
-// ClearImages forgets every kept image.
-func (d *Device) ClearImages(ctx context.Context) error {
-	images, err := d.imageStore()
-	if err != nil {
-		return err
-	}
-	return images.ClearImages(ctx)
+	return kept.ClearKept(ctx)
 }
 
 /* ---------------------------------------------------------------- events */

@@ -9,9 +9,9 @@ import type { WhatsappMessageRepositoryPort } from '../../database/whatsapp-mess
 import {
   isWhatsappVoiceNote,
   type WhatsappVoiceNoteHearing,
-  whatsappVoiceNoteMissReason,
   whatsappVoiceNoteText,
 } from '../../domain/whatsapp-voice-note.policy';
+import { whatsappMediaMissReason } from '../../domain/whatsapp-media.policy';
 import type { VoiceNoteDecoderPort } from '../../infrastructure/voice-note-decoder.port';
 import {
   VOICE_NOTE_DECODER,
@@ -70,7 +70,7 @@ export class TranscribeWhatsappVoiceNoteCommandHandler
     if (note.kind !== 'fetched') {
       return whatsappVoiceNoteText(seconds, {
         heard: false,
-        reason: whatsappVoiceNoteMissReason(note),
+        reason: whatsappMediaMissReason('voice_note', note),
       });
     }
     const wav = await this.decoder.toWav(note.data);

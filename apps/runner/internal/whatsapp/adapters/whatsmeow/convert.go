@@ -97,63 +97,55 @@ func (rd reader) received(ctx context.Context, evt *events.Message) domain.Recei
 			r.Mentions = append(r.Mentions, id)
 		}
 	}
-	r.Voice = voiceOf(evt.Message, rd.logger)
-	r.Image = imageOf(evt.Message, rd.logger)
+	r.Kept = keptOf(evt.Message, rd.logger)
 	return r
 }
 
-// imageOf is what fetching a message's image later takes, when it carries
-// one: the ImageMessage itself, serialized, which holds its media key and
-// path.
-func imageOf(m *waE2E.Message, logger *slog.Logger) *domain.Image {
-	img := m.GetImageMessage()
-	if img == nil {
+// keptOf is what fetching a message's audio (a voice note or an audio file)
+// or image later takes, when it carries one: the AudioMessage or
+// ImageMessage itself, serialized, which holds its media key and path.
+func keptOf(m *waE2E.Message, logger *slog.Logger) *domain.Kept {
+	var media proto.Message
+	kept := domain.Kept{}
+	switch {
+	case m.GetAudioMessage() != nil:
+		audio := m.GetAudioMessage()
+		media, kept.Kind, kept.Seconds, kept.Size = audio, domain.KeptVoice, int(audio.GetSeconds()), audio.GetFileLength()
+	case m.GetImageMessage() != nil:
+		img := m.GetImageMessage()
+		media, kept.Kind, kept.Size = img, domain.KeptImage, img.GetFileLength()
+	default:
 		return nil
 	}
-	ref, err := proto.Marshal(img)
+	ref, err := proto.Marshal(media)
 	if err != nil {
 		if logger != nil {
-			logger.Warn("whatsapp: an image could not be kept for fetching", slog.Any("error", err))
+			logger.Warn("whatsapp: media could not be kept for fetching", slog.String("kind", string(kept.Kind)), slog.Any("error", err))
 		}
 		return nil
 	}
-	return &domain.Image{Ref: ref, Size: img.GetFileLength()}
+	kept.Ref = ref
+	return &kept
 }
 
-// imageMessageOf reads back the ImageMessage imageOf kept.
-func imageMessageOf(ref []byte) (*waE2E.ImageMessage, error) {
-	var img waE2E.ImageMessage
-	if err := proto.Unmarshal(ref, &img); err != nil {
-		return nil, fmt.Errorf("a kept image is unreadable: %w", err)
-	}
-	return &img, nil
-}
-
-// voiceOf is what fetching a message's audio later takes, when it carries
-// some: the AudioMessage itself, serialized, which holds its media key and
-// path. A voice note and an audio file alike.
-func voiceOf(m *waE2E.Message, logger *slog.Logger) *domain.Voice {
-	audio := m.GetAudioMessage()
-	if audio == nil {
-		return nil
-	}
-	ref, err := proto.Marshal(audio)
-	if err != nil {
-		if logger != nil {
-			logger.Warn("whatsapp: a voice note could not be kept for fetching", slog.Any("error", err))
+// downloadableOf reads back the message keptOf kept for kind, and what
+// WhatsApp says of it: its MIME type and length.
+func downloadableOf(kind domain.KeptKind, ref []byte) (whatsmeow.DownloadableMessage, string, uint64, error) {
+	switch kind {
+	case domain.KeptVoice:
+		var audio waE2E.AudioMessage
+		if err := proto.Unmarshal(ref, &audio); err != nil {
+			return nil, "", 0, fmt.Errorf("a kept voice note is unreadable: %w", err)
 		}
-		return nil
+		return &audio, audio.GetMimetype(), audio.GetFileLength(), nil
+	case domain.KeptImage:
+		var img waE2E.ImageMessage
+		if err := proto.Unmarshal(ref, &img); err != nil {
+			return nil, "", 0, fmt.Errorf("a kept image is unreadable: %w", err)
+		}
+		return &img, img.GetMimetype(), img.GetFileLength(), nil
 	}
-	return &domain.Voice{Ref: ref, Seconds: int(audio.GetSeconds()), Size: audio.GetFileLength()}
-}
-
-// audioOf reads back the AudioMessage voiceOf kept.
-func audioOf(ref []byte) (*waE2E.AudioMessage, error) {
-	var audio waE2E.AudioMessage
-	if err := proto.Unmarshal(ref, &audio); err != nil {
-		return nil, fmt.Errorf("a kept voice note is unreadable: %w", err)
-	}
-	return &audio, nil
+	return nil, "", 0, fmt.Errorf("no kept media of kind %q", kind)
 }
 
 // idOf reads a JID WhatsApp wrote as text (a mention, a quoted message's

@@ -5,9 +5,9 @@ import type { WhatsappAccountRepositoryPort } from '../../database/whatsapp-acco
 import type { WhatsappMessageRepositoryPort } from '../../database/whatsapp-message.repository.port';
 import {
   type WhatsappImageSight,
-  whatsappImageMissReason,
   whatsappImageSightOf,
 } from '../../domain/whatsapp-image.policy';
+import { whatsappMediaMissReason } from '../../domain/whatsapp-media.policy';
 import {
   WHATSAPP_ACCOUNT_REPOSITORY,
   WHATSAPP_DEVICE,
@@ -43,7 +43,7 @@ export class SeeWhatsappImageCommandHandler
     const message = await this.messages.findById(ref, command.messageRowId);
     if (message?.media !== 'image') return { seen: false, reason: 'it is no longer kept' };
     const image = await this.device.image(account.hostId, message.chatId, message.externalId);
-    if (image.kind !== 'fetched') return { seen: false, reason: whatsappImageMissReason(image) };
+    if (image.kind !== 'fetched') return { seen: false, reason: whatsappMediaMissReason('image', image) };
     return whatsappImageSightOf(image.data, image.mimetype);
   }
 }

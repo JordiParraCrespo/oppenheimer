@@ -35,16 +35,6 @@ const imageQuality = 82
 // compresses a thousandfold), which decoded would take gigabytes.
 const ImageMaxPixels = 40_000_000
 
-// Image is what fetching an image later takes: the adapter's own reference
-// to it (opaque here) and how large WhatsApp says it is.
-type Image struct {
-	Ref  []byte
-	Size uint64
-}
-
-// TooLarge reports whether the image is past what is downloaded at all.
-func (i Image) TooLarge() bool { return i.Size > ImageDownloadMaxBytes }
-
 // ErrImageUnreadable is an image too large for a frame that cannot be
 // decoded to be scaled.
 var ErrImageUnreadable = errors.New("the image is neither a JPEG nor a PNG that can be scaled")

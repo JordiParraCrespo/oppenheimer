@@ -119,17 +119,18 @@ func (h *linkHandler) whatsAppMedia(m link.WhatsappMediaGet) {
 	}
 	ctx, cancel := context.WithTimeout(h.life, whatsAppMediaTimeout)
 	defer cancel()
-	fetch, fallback := h.whatsapp.VoiceNote, "audio/ogg; codecs=opus"
-	if m.Kind == "image" {
-		fetch, fallback = h.whatsapp.Image, wadomain.ImageMimetype
+	// A control plane from before images sends no kind: a voice note.
+	kind := wadomain.KeptVoice
+	if m.Kind == string(wadomain.KeptImage) {
+		kind = wadomain.KeptImage
 	}
-	data, mimetype, err := fetch(ctx, m.ChatID, m.MessageID)
+	data, mimetype, err := h.whatsapp.Media(ctx, kind, m.ChatID, m.MessageID)
 	if err != nil {
 		h.fail(m.CommandID, err)
 		return
 	}
 	if mimetype == "" {
-		mimetype = fallback
+		mimetype = kind.DefaultMimetype()
 	}
 	_ = h.client.Send(link.WhatsappMedia{
 		Type: link.TypeWhatsappMedia, CommandID: m.CommandID,

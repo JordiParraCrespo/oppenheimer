@@ -58,25 +58,25 @@ func newKept(ctx context.Context, db *sql.DB, table string) (kept, error) {
 }
 
 // keep keeps a ref once per chat and id, then forgets those past
-// domain.VoiceNoteKept and the oldest beyond domain.VoiceNotesKeptMax.
+// domain.MediaKept and the oldest beyond domain.MediaKeptMax.
 func (k *kept) keep(ctx context.Context, chatID, id string, ref []byte, seconds int, size uint64) error {
 	now := k.now()
 	if _, err := k.db.ExecContext(ctx, k.sql.insert,
 		domain.KeyOf(chatID, id), ref, seconds, int64(size), now.UnixMilli()); err != nil { //nolint:gosec // a WhatsApp file length, far below int64's range
 		return err
 	}
-	if _, err := k.db.ExecContext(ctx, k.sql.expire, now.Add(-domain.VoiceNoteKept).UnixMilli()); err != nil {
+	if _, err := k.db.ExecContext(ctx, k.sql.expire, now.Add(-domain.MediaKept).UnixMilli()); err != nil {
 		return err
 	}
-	_, err := k.db.ExecContext(ctx, k.sql.trim, domain.VoiceNotesKeptMax)
+	_, err := k.db.ExecContext(ctx, k.sql.trim, domain.MediaKeptMax)
 	return err
 }
 
-// find is the ref under chat and id, unless it is past domain.VoiceNoteKept.
+// find is the ref under chat and id, unless it is past domain.MediaKept.
 func (k *kept) find(ctx context.Context, chatID, id string) (ref []byte, seconds int, size uint64, ok bool, err error) {
 	var stored int64
 	err = k.db.QueryRowContext(ctx, k.sql.find,
-		domain.KeyOf(chatID, id), k.now().Add(-domain.VoiceNoteKept).UnixMilli(),
+		domain.KeyOf(chatID, id), k.now().Add(-domain.MediaKept).UnixMilli(),
 	).Scan(&ref, &seconds, &stored)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, 0, 0, false, nil
@@ -92,62 +92,61 @@ func (k *kept) clear(ctx context.Context) error {
 	return err
 }
 
-// Voices is app.VoiceNotes over a table of the store's file.
-type Voices struct{ kept }
+// Kept is app.KeptMedia over the store's file: a table per kind, so a ref
+// is always read back as the message it was written from.
+type Kept struct {
+	tables map[domain.KeptKind]*kept
+}
 
-var _ app.VoiceNotes = (*Voices)(nil)
+var _ app.KeptMedia = (*Kept)(nil)
 
-func newVoices(ctx context.Context, db *sql.DB) (*Voices, error) {
-	k, err := newKept(ctx, db, voiceTable)
+func newKeptMedia(ctx context.Context, db *sql.DB) (*Kept, error) {
+	store := &Kept{tables: map[domain.KeptKind]*kept{}}
+	for kind, table := range map[domain.KeptKind]string{domain.KeptVoice: voiceTable, domain.KeptImage: imageTable} {
+		k, err := newKept(ctx, db, table)
+		if err != nil {
+			return nil, err
+		}
+		store.tables[kind] = &k
+	}
+	return store, nil
+}
+
+func (s *Kept) table(kind domain.KeptKind) (*kept, error) {
+	t, ok := s.tables[kind]
+	if !ok {
+		return nil, fmt.Errorf("whatsapp: no kept media of kind %q", kind)
+	}
+	return t, nil
+}
+
+// Keep keeps media once per chat and id, in its kind's table.
+func (s *Kept) Keep(ctx context.Context, chatID, id string, media domain.Kept) error {
+	t, err := s.table(media.Kind)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &Voices{k}, nil
+	return t.keep(ctx, chatID, id, media.Ref, media.Seconds, media.Size)
 }
 
-// Keep keeps a voice note once per chat and id.
-func (v *Voices) Keep(ctx context.Context, chatID, id string, voice domain.Voice) error {
-	return v.keep(ctx, chatID, id, voice.Ref, voice.Seconds, voice.Size)
-}
-
-// Find is the voice note under chat and id, unless it is past domain.VoiceNoteKept.
-func (v *Voices) Find(ctx context.Context, chatID, id string) (domain.Voice, bool, error) {
-	ref, seconds, size, ok, err := v.find(ctx, chatID, id)
-	if !ok || err != nil {
-		return domain.Voice{}, false, err
-	}
-	return domain.Voice{Ref: ref, Seconds: seconds, Size: size}, true, nil
-}
-
-// ClearVoiceNotes forgets every voice note.
-func (v *Voices) ClearVoiceNotes(ctx context.Context) error { return v.clear(ctx) }
-
-// Images is app.Images over a table of the store's file.
-type Images struct{ kept }
-
-var _ app.Images = (*Images)(nil)
-
-func newImages(ctx context.Context, db *sql.DB) (*Images, error) {
-	k, err := newKept(ctx, db, imageTable)
+// Find is the media of kind under chat and id, unless it is past domain.MediaKept.
+func (s *Kept) Find(ctx context.Context, kind domain.KeptKind, chatID, id string) (domain.Kept, bool, error) {
+	t, err := s.table(kind)
 	if err != nil {
-		return nil, err
+		return domain.Kept{}, false, err
 	}
-	return &Images{k}, nil
-}
-
-// KeepImage keeps an image once per chat and id.
-func (i *Images) KeepImage(ctx context.Context, chatID, id string, image domain.Image) error {
-	return i.keep(ctx, chatID, id, image.Ref, 0, image.Size)
-}
-
-// FindImage is the image under chat and id, unless it is past domain.VoiceNoteKept.
-func (i *Images) FindImage(ctx context.Context, chatID, id string) (domain.Image, bool, error) {
-	ref, _, size, ok, err := i.find(ctx, chatID, id)
+	ref, seconds, size, ok, err := t.find(ctx, chatID, id)
 	if !ok || err != nil {
-		return domain.Image{}, false, err
+		return domain.Kept{}, false, err
 	}
-	return domain.Image{Ref: ref, Size: size}, true, nil
+	return domain.Kept{Kind: kind, Ref: ref, Seconds: seconds, Size: size}, true, nil
 }
 
-// ClearImages forgets every image.
-func (i *Images) ClearImages(ctx context.Context) error { return i.clear(ctx) }
+// ClearKept forgets every kept voice note and image.
+func (s *Kept) ClearKept(ctx context.Context) error {
+	var errs []error
+	for _, t := range s.tables {
+		errs = append(errs, t.clear(ctx))
+	}
+	return errors.Join(errs...)
+}
