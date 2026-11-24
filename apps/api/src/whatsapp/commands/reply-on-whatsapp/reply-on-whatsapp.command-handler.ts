@@ -19,7 +19,8 @@ import { ReplyOnWhatsappCommand } from './reply-on-whatsapp.command';
  * name, else the number's default; in a chat the number allows, the bot
  * chosen for it, else the default. Otherwise nothing goes: the owner
  * switched, changed a bot, stopped allowing the chat, named another number or
- * unlinked it while the turn ran. Answers how many messages went.
+ * unlinked it while the turn ran. With `voice` the answer goes as one voice
+ * note (`WhatsappReplyResolver.sendVoice`). Answers how many messages went.
  */
 @CommandHandler(ReplyOnWhatsappCommand)
 export class ReplyOnWhatsappCommandHandler
@@ -52,16 +53,15 @@ export class ReplyOnWhatsappCommandHandler
     const quoted = command.replyToRowId
       ? await this.messages.findById(ref, command.replyToRowId)
       : null;
-    return this.replies.send(
-      account,
-      {
-        chatId: command.chatId,
-        quote: quoted ? { id: quoted.externalId, senderId: quoted.senderId } : null,
-        ...(chat.kind && { chat: chat.kind }),
-      },
-      command.text,
-      command.botId,
-    );
+    const target = {
+      chatId: command.chatId,
+      quote: quoted ? { id: quoted.externalId, senderId: quoted.senderId } : null,
+      ...(chat.kind && { chat: chat.kind }),
+    };
+    if (command.voice) {
+      return this.replies.sendVoice(account, target, command.text, command.voice, command.botId);
+    }
+    return this.replies.send(account, target, command.text, command.botId);
   }
 
   /**

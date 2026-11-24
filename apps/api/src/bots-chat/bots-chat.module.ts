@@ -85,6 +85,7 @@ import { BotTurnFailureReportPolicy } from './application/bot-turn-failure-repor
 import { BotTurnHoldPolicy } from './application/bot-turn-hold.policy';
 import { BotTurnOpeningResolver } from './application/bot-turn-opening.resolver';
 import { BotVisualToolsFactory } from './application/bot-visual-tools.factory';
+import { BotVoiceReplyResolver } from './application/bot-voice-reply.resolver';
 import { BotWaitingCardResolver } from './application/bot-waiting-card.resolver';
 import { BotWatchToolsFactory } from './application/bot-watch-tools.factory';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
@@ -478,6 +479,7 @@ const queryHandlers: Provider[] = [
     BotLoopMapper,
     BotUsageMapper,
     BotTurnContextResolver,
+    BotVoiceReplyResolver,
     BotTurnOpeningResolver,
     BotOpeningMediaResolver,
     BotSlackImagesResolver,
