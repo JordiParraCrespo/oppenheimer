@@ -18,34 +18,33 @@ import { NewSessionForm } from '../sections/new-session-form';
  * task's files, and the pane draws the outline on its own edge.
  *
  * The reader may lay an image of their own under the pane, from the button
- * in its top-right corner; it is kept on this device and shown on this
+ * on its bar's right; it is kept on this device and shown on this
  * screen only (`lib/new-session-background.ts`).
  *
- * With `tabs` (inside Sessions, from the route) the screen draws its bar:
- * the open tabs, kept as they were, and that button on its right. Over an
- * image the bar is frosted, so the image runs under it.
+ * The screen draws its bar: the open tabs (`tabs`, from the route), kept as
+ * they were, and that button on its right. Over an image the bar is
+ * frosted, so the image runs under it.
  */
-export function NewSessionScreen({ tabs }: { tabs?: ReactNode }) {
+export function NewSessionScreen({ tabs }: { tabs: ReactNode }) {
   const { t } = useTranslation();
   const drop = useNewSessionDrop();
   usePaneDrop(drop.deliver);
   const background = useNewSessionBackground();
-  const menu = (
-    <NewSessionBackgroundMenu
-      hasImage={background.image !== null}
-      onChoose={background.choose}
-      onRemove={background.remove}
-    />
-  );
 
   return (
     <NewSessionDropContext value={drop}>
       {background.image ? <NewSessionBackdrop image={background.image} /> : null}
-      {tabs ? (
-        <PageBar title={tabs} tone="chrome" actions={menu} />
-      ) : (
-        <div className="absolute top-2 right-3.5">{menu}</div>
-      )}
+      <PageBar
+        title={tabs}
+        tone="chrome"
+        actions={
+          <NewSessionBackgroundMenu
+            hasImage={background.image !== null}
+            onChoose={background.choose}
+            onRemove={background.remove}
+          />
+        }
+      />
       <div className="flex flex-col gap-2.5">
         {background.failure ? (
           <ErrorAlert

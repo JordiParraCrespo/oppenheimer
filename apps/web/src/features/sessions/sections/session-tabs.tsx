@@ -92,7 +92,7 @@ export function SessionTabs({
         ),
       )}
       {shown ? null : (
-        <ChatTab active icon={<PlusIcon />} render={<Link to="/sessions/new" />}>
+        <ChatTab active icon={<PlusIcon />} render={<Link to="/sessions/new" search={true} />}>
           {t('sessions.tabs.new')}
         </ChatTab>
       )}

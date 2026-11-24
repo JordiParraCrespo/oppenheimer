@@ -5,9 +5,9 @@
  * its stacking context (`AppShell`), so it stays put while the page scrolls
  * and sits under everything else the pane draws.
  *
- * `data-pane-backdrop` tells the pane an image is under it, so the page bar's
- * quiet icons stand on a frosted chip of their own (`AppShell`, and the image
- * button beside it) rather than straight on the photo.
+ * `data-pane-backdrop` tells the pane an image is under it, so the bar over
+ * it, the tabs and the image's button, stands frosted (`PageBar`'s chrome
+ * tone) rather than straight on the photo.
  */
 export function NewSessionBackdrop({ image }: { image: string }) {
   return (

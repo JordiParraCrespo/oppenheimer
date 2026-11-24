@@ -165,8 +165,15 @@ function ChatTab({
   const ref = React.useRef<HTMLSpanElement>(null);
   // The shown tab scrolls itself into a strip that overflows: a strip drawn
   // afresh (a new page) starts at its left edge, past which it may stand.
+  // Only the strip scrolls, never the page around it.
   React.useEffect(() => {
-    if (active) ref.current?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    const tab = ref.current;
+    const strip = tab?.closest<HTMLElement>('[data-slot="chat-tab-strip"]');
+    if (!active || !tab || !strip) return;
+    const tabBox = tab.getBoundingClientRect();
+    const stripBox = strip.getBoundingClientRect();
+    if (tabBox.right > stripBox.right) strip.scrollLeft += tabBox.right - stripBox.right;
+    else if (tabBox.left < stripBox.left) strip.scrollLeft -= stripBox.left - tabBox.left;
   }, [active]);
   return (
     <span
@@ -178,7 +185,7 @@ function ChatTab({
         'group/tab relative flex h-(--control-h-sm) max-w-56 min-w-24 shrink items-center gap-2 rounded-sm border border-transparent pr-0.5 pl-2.5 text-sm text-fg-muted transition-colors duration-fast',
         'hover:bg-hover-surface hover:text-fg data-active:border-border-subtle data-active:bg-card data-active:font-medium data-active:text-fg',
         // A hairline between two tabs that are not shown.
-        "not-first:before:absolute not-first:before:top-2.5 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
+        "not-first:before:absolute not-first:before:top-1/2 not-first:before:-translate-y-1/2 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
         'data-active:before:hidden hover:before:hidden [[data-active]+&]:before:hidden [:hover+&]:before:hidden',
         className,
       )}
