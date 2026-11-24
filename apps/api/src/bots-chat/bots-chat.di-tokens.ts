@@ -20,6 +20,8 @@ export const BOT_ATTACHMENT_FILES = Symbol('BOT_ATTACHMENT_FILES');
 export const BOT_SUBSCRIPTION_REPOSITORY = Symbol('BOT_SUBSCRIPTION_REPOSITORY');
 /** Where a bot's hand-off is owed its stall check. */
 export const BOT_STALL_CHECKS = Symbol('BOT_STALL_CHECKS');
+/** Where a bot's `check_back` looks are owed their turn. */
+export const BOT_CHECK_BACKS = Symbol('BOT_CHECK_BACKS');
 export const BOT_GOAL_REPOSITORY = Symbol('BOT_GOAL_REPOSITORY');
 export const BOT_LOOP_REPOSITORY = Symbol('BOT_LOOP_REPOSITORY');
 export const BOT_USAGE_REPOSITORY = Symbol('BOT_USAGE_REPOSITORY');

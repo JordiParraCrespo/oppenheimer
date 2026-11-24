@@ -937,6 +937,27 @@ export interface BotLoopEvent {
   reason: string | null;
 }
 
+/** The longest `about` a `check_back` call takes: what it waits on, in a sentence or two. */
+export const BOT_CHECK_BACK_ABOUT_MAX = 300;
+
+/**
+ * A bot checking back on something it delegated or waits on, from its own
+ * `check_back` call (`27-bot-subscriptions.md` §7.3): one line opening the
+ * turn of each look. A chain is the looks at one thing, step 0 first, each
+ * look's call setting the next while the thing is still pending.
+ */
+export interface BotCheckBackEvent {
+  kind: 'check_back';
+  /** The looks at one thing: the id of the first look's call. */
+  chainId: string;
+  /** Which look of the chain this is, from 0. */
+  step: number;
+  /** When the chain's first look was set (ISO 8601): it stops 24 hours later. */
+  chainStartedAt: string;
+  /** What the bot is waiting on and what to look at, in its own words. */
+  about: string;
+}
+
 /** A bot's loop as the console reads it: `GET /bots/:id/loop`. */
 export interface BotLoop {
   id: string;
@@ -1022,7 +1043,8 @@ export interface BotGoal {
  * session the bot is subscribed to, a goal it set itself, a loop's run, a
  * message of yours to the bot on a channel (your Telegram bot, or your spare
  * WhatsApp number), or your ask of it on GitHub: a mention in a comment, or a
- * `bot:<name>` label.
+ * `bot:<name>` label; or a look the bot asked for with `check_back`, at work
+ * it delegated or waits on.
  */
 export const BOT_TURN_ORIGINS = [
   'message',
@@ -1036,6 +1058,7 @@ export const BOT_TURN_ORIGINS = [
   'whatsapp',
   'slack',
   'github',
+  'check_back',
 ] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
@@ -1195,6 +1218,7 @@ export type BotMessageEvent =
   | BotTaskEvent
   | BotGoalEvent
   | BotLoopEvent
+  | BotCheckBackEvent
   | BotDreamEvent
   | BotCompactionEvent;
 
@@ -1211,6 +1235,7 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'task',
   'goal',
   'loop',
+  'check_back',
   'dream',
   'compaction',
 ] as const;
