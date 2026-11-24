@@ -433,10 +433,10 @@
     --control-h-sm: 28px;
     --control-h-md: 34px;
     --control-h-lg: 42px;
-    /* A bar that holds one row of small controls (a strip of tabs): their
-       height and a control gap around them, so the bar is no taller than
-       what it holds. */
-    --bar-h-compact: calc(var(--control-h-sm) + var(--control-gap));
+    /* The bar a strip of tabs stands in (a session's, New session's): 45px,
+       the owner's call on 2026-11-24, a calm band around the 28px tabs and
+       controls it holds rather than the 48px page bar. */
+    --tab-bar-h: 45px;
     --control-pad-sm: 12px;
     --control-pad-md: 16px;
     --control-pad-lg: 22px;

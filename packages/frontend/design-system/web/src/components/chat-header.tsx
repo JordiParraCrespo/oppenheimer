@@ -83,7 +83,8 @@ function ChatTabStrip({
   navigation = false,
   className,
   children,
-}: {
+  ...props
+}: Omit<React.ComponentProps<'nav'>, 'ref' | 'role'> & {
   onNew?: () => void;
   newLabel?: string;
   /**
@@ -129,6 +130,7 @@ function ChatTabStrip({
       role={navigation ? undefined : 'tablist'}
       aria-label={label}
       className={cn('flex min-w-0 items-center gap-0.5 overflow-x-auto [scrollbar-width:none]', className)}
+      {...props}
     >
       {children}
       {onNew ? (

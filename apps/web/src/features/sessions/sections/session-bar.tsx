@@ -93,7 +93,7 @@ export function SessionBar({
       // on screen: the chat stands on the same ground, so bar, grid and chat
       // read as one surface and switching views changes no colour.
       tone={open ? 'chrome' : 'page'}
-      className="border-b border-border-subtle bg-term-bg"
+      className="border-b border-border-subtle bg-term-bg [--chat-tab-ground:var(--term-bg)]"
     />
   );
 }

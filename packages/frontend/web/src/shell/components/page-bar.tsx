@@ -17,6 +17,8 @@ export function SidebarToggle() {
     <IconButton
       variant="quiet"
       size="sm"
+      // Over an image the pane lays under itself it stands on a frosted chip.
+      data-pane-chrome
       aria-label={t('nav.toggleSidebar')}
       onClick={toggleSidebar}
     >
@@ -35,6 +37,18 @@ export function SidebarToggle() {
  * It renders into the shell's slot above the page (`PaneBar`), so it stays put
  * while the page scrolls, at the pane's full width.
  */
+/**
+ * A bar of tabs (`tone="chrome"`): 45px (`--tab-bar-h`), with no ground of
+ * its own, so it is the colour of the page under it (a session's terminal,
+ * which names it in `className`, the pane, New session's image) and a
+ * hairline marks its foot, gone over an image. Every control in it stands
+ * on the medium rung: the small one is pointed there inside the bar, so a
+ * tab, a toggle or Share grows with the bar without its caller saying so,
+ * and an icon at a button's own size takes the medium glyph.
+ */
+const TAB_BAR =
+  'h-(--tab-bar-h) border-b border-border-subtle bg-transparent [--chat-tab-ground:var(--canvas-recessed)] [--control-h-sm:var(--control-h-md)] [&_[data-slot=icon-button]_svg:not([class*=size-])]:size-4 group-has-data-pane-backdrop/pane:border-transparent';
+
 export function PageBar({
   leading,
   title,
@@ -53,11 +67,8 @@ export function PageBar({
   tabs?: ReactNode;
   actions?: ReactNode;
   /**
-   * `chrome`: the bar is a strip of open tabs (`ChatTabStrip`), as tall as
-   * one row of small controls (`--bar-h-compact`), and stands on
-   * the recessed ground, so the shown tab, lit on the card, reads as part of
-   * the page under it. Over an image the pane lays under itself (New
-   * session's backdrop) that ground is frosted, so the image shows through.
+   * `chrome`: the bar is a strip of open tabs (`ChatTabStrip`) at the tab
+   * bar's height (`--tab-bar-h`), on the page's own ground (`TAB_BAR`).
    */
   tone?: 'page' | 'chrome';
   /** The bar's ground and edge, when the page under it is not the shell's (a session's terminal). */
@@ -77,11 +88,7 @@ export function PageBar({
         status={status}
         tabs={tabs}
         actions={actions}
-        className={cn(
-          className,
-          tone === 'chrome' &&
-            'h-(--bar-h-compact) border-b border-border-subtle bg-canvas-recessed [--chat-tab-ground:var(--canvas-recessed)] group-has-data-pane-backdrop/pane:border-transparent group-has-data-pane-backdrop/pane:bg-canvas-recessed/60 group-has-data-pane-backdrop/pane:backdrop-blur-md',
-        )}
+        className={cn(tone === 'chrome' && TAB_BAR, className)}
       />
     </PaneBar>
   );

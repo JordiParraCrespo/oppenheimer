@@ -78,6 +78,8 @@ export function SessionTabs({
   return (
     <ChatTabStrip
       navigation
+      // Over New session's image the strip stands on the pane's frosted chip.
+      data-pane-chrome
       label={t('sessions.tabs.label')}
       onNew={shown ? () => void navigate({ to: '/sessions/new' }) : undefined}
       newLabel={t('sessions.tabs.new')}
