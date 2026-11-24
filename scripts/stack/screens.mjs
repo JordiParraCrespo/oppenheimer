@@ -11,7 +11,8 @@
  * Each route is taken light and dark into `.screenshots/` by the e2e
  * `screens` project (`e2e/tests/screens/screens.spec.ts`), against the stack
  * `stack.mjs up --web` started. `--phone` adds a 390px width to the 1440px
- * one; `--github` connects a stub GitHub installation first. `spec:<name>`
+ * one, `--widths 1440,900,500,390` takes exactly the widths named;
+ * `--github` connects a stub GitHub installation first. `spec:<name>`
  * runs `e2e/tests/screens/local/<name>.spec.ts` beside the routes: a
  * throwaway spec, git-ignored, that reaches a state an empty account cannot
  * (a dialog open, a host online) and screenshots it there. It empties
@@ -51,6 +52,7 @@ for (let i = 0; i < argv.length; i += 1) {
   const arg = argv[i];
   if (arg === '--not-visual') notVisual = argv[++i] ?? '';
   else if (arg === '--phone') env.SCREENS_WIDTHS = '1440,390';
+  else if (arg === '--widths') env.SCREENS_WIDTHS = argv[++i] ?? '';
   else if (arg === '--github') env.SCREENS_GITHUB = '1';
   else if (arg.startsWith('-')) {
     console.error(`screens: unknown option ${arg}`);

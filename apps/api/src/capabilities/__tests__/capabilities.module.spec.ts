@@ -21,6 +21,7 @@ describe('resolveCapabilities', () => {
       gmail: false,
       bot_providers: false,
       cloud_agents: false,
+      slack: false,
       voice_transcription: false,
       voice_synthesis: false,
       session_previews: false,

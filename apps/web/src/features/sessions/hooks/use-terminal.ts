@@ -1,3 +1,4 @@
+import type { CodingAgentClear } from '@oppenheimer/shared/agents';
 import '@xterm/xterm/css/xterm.css';
 import type {
   SessionChat,
@@ -65,6 +66,8 @@ export function useTerminal(
     snapshotKey?: string;
     /** The chat view this stream feeds and types for (0.7). */
     chat?: SessionChat;
+    /** How the agent's prompt is emptied before the chat types into it (`clearOf`). */
+    chatClear?: CodingAgentClear;
     /** Where the echo readout is published (`SessionTerminalOptions.latencyKey`). */
     latencyKey?: string;
   } = {},
@@ -102,6 +105,7 @@ export function useTerminal(
   const readOnly = options.readOnly ?? false;
   const snapshotKey = options.snapshotKey;
   const chat = options.chat;
+  const chatClear = options.chatClear;
   const latencyKey = options.latencyKey;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: generation is the re-run key
@@ -156,6 +160,7 @@ export function useTerminal(
     const releaseChat = chat?.connect(
       (data) => stream.send(data),
       stream.askOlderChat ? (before) => stream.askOlderChat?.(before) : undefined,
+      { clear: chatClear },
     );
     const offEnd = stream.onEnd((reason) => {
       setEnded(reason);
@@ -178,7 +183,7 @@ export function useTerminal(
       stream.dispose();
       if (streamRef.current === stream) streamRef.current = null;
     };
-  }, [createStream, agentWindow, readOnly, snapshotKey, generation, chat, latencyKey]);
+  }, [createStream, agentWindow, readOnly, snapshotKey, generation, chat, chatClear, latencyKey]);
 
   const hostId = options.hostId;
   // No host, no list to watch: a shared pane's holder may not be signed in,

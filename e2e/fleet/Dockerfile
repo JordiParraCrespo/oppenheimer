@@ -7,13 +7,14 @@
 # every host in a run is the same binary and an image rebuild costs seconds.
 FROM debian:12-slim
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates git tmux socat procps \
+ && apt-get install -y --no-install-recommends ca-certificates git tmux socat procps python3 \
  && rm -rf /var/lib/apt/lists/*
 RUN useradd --create-home --shell /bin/bash dev
 COPY --from=runner runner /usr/local/bin/runner
 COPY claude /usr/local/bin/claude
 COPY grok /usr/local/bin/grok
 COPY codex /usr/local/bin/codex
+COPY hermes /usr/local/bin/hermes
 COPY entrypoint.sh /usr/local/bin/fleet-host
 COPY git-server.sh /usr/local/bin/fleet-git-server
 USER dev

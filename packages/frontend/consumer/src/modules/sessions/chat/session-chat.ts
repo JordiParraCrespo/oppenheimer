@@ -12,6 +12,7 @@
  * a line this does not recognise is skipped, never an error.
  */
 
+import type { CodingAgentClear } from '@oppenheimer/shared/agents';
 import type { ChatCommand } from '@oppenheimer/shared/protocol';
 import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
 import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
@@ -575,6 +576,8 @@ export class SessionChat {
   /** A first load's history, held until it has all come (`ChatState.loading`). */
   private readonly firstLoad = new FirstLoad();
   private type: ((data: string) => void) | null = null;
+  /** How the agent's prompt is emptied before a message; null for an agent that needs nothing. */
+  private clear: CodingAgentClear | null = null;
   /** Asks the host for the turns before an offset, lent with the input (`connect`). */
   private askOlder: ((before: number) => void) | null = null;
   /** Where in the transcript the lines held start: 0 for its first line. */
@@ -880,13 +883,16 @@ export class SessionChat {
    * Lends the chat a way to type into the session's PTY, and to ask its host
    * for older turns; the function returned takes them back. `interruptible:
    * false` says the source cannot stop a turn (`ChatState.interruptible`).
+   * `clear` empties the agent's prompt before a message (`clearOf`, ZCode's
+   * Ctrl+U).
    */
   connect(
     type: (data: string) => void,
     askOlder?: (before: number) => void,
-    { interruptible = true }: { interruptible?: boolean } = {},
+    { interruptible = true, clear }: { interruptible?: boolean; clear?: CodingAgentClear } = {},
   ): () => void {
     this.type = type;
+    this.clear = clear ?? null;
     this.askOlder = askOlder ?? null;
     if (this.state.interruptible !== interruptible) this.publish({ ...this.state, interruptible });
     return () => {
@@ -912,8 +918,21 @@ export class SessionChat {
     const type = this.type;
     const empty = message.trim() === '';
     if (!type || (empty && !withFiles)) return;
-    if (!empty) type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
-    setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
+    const typeMessage = () => {
+      if (!empty) type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
+      setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
+    };
+    // A prompt can hold text nobody left there (ZCode recalls its last one on
+    // an Up arrow), which the message would be sent joined to: the clear keys
+    // go first, and the words once the agent has acted on them, since words
+    // in the same burst land in the prompt it has not emptied yet. Not with
+    // files: their paths are already in the prompt, pasted for this message.
+    if (!empty && !withFiles && this.clear) {
+      type(this.clear.keys);
+      setTimeout(typeMessage, this.clear.settleMs);
+    } else {
+      typeMessage();
+    }
     // A source that cannot stop the turn says itself what waits with it, and
     // one taken into the turn under way opens no prompt to replace it.
     if (!empty && this.state.interruptible && !this.busy()) this.startSending(message);

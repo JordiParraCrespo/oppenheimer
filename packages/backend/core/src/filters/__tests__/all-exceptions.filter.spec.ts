@@ -11,6 +11,7 @@ import {
   PROBLEM_JSON_CONTENT_TYPE,
   type ProblemDetails,
 } from '../../errors/problem-details';
+import { buildPinoHttpOptions } from '../../logging/pino-http-options';
 import { AllExceptionsFilter } from '../all-exceptions.filter';
 
 const USER_NOT_FOUND: ErrorDefinition = {
@@ -25,9 +26,10 @@ function capture() {
   const contentType = vi.fn().mockReturnValue({ json });
   const status = vi.fn().mockReturnValue({ contentType });
   const setHeader = vi.fn();
+  const response = { status, setHeader };
   const host = {
     switchToHttp: () => ({
-      getResponse: () => ({ status, setHeader }),
+      getResponse: () => response,
       getRequest: () => ({ originalUrl: '/api/v1/users/42' }),
     }),
   } as unknown as ArgumentsHost;
@@ -37,6 +39,7 @@ function capture() {
     status,
     contentType,
     setHeader,
+    response,
     problem: () => json.mock.calls[0][0] as ProblemDetails,
   };
 }
@@ -48,6 +51,20 @@ function handle(exception: unknown) {
 }
 
 describe('AllExceptionsFilter', () => {
+  // Without it a 404 for a route that does not exist and one for a row that
+  // does not exist read alike in the request log.
+  it("puts the problem's code on the request's log line", () => {
+    const lineProps = buildPinoHttpOptions().customProps as unknown as (
+      req: object,
+      res: object,
+    ) => Record<string, unknown>;
+
+    expect(lineProps({}, handle(new AppError(USER_NOT_FOUND)).response)).toEqual({
+      errorCode: 'USER_001',
+    });
+    expect(lineProps({}, handle(new Error('boom')).response)).toEqual({});
+  });
+
   it('tells the client when an upstream rate limit lifts, as Retry-After', () => {
     const limited: ErrorDefinition = { code: 'GITHUB_015', message: 'Slow down', httpStatus: 429 };
     const { status, setHeader, problem } = handle(

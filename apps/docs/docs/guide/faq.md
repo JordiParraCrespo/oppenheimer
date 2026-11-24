@@ -34,7 +34,7 @@ No. Sessions live in tmux, apart from the runner. The runner waits for a quiet m
 
 ## Which agents can a session run?
 
-Claude Code, Codex, OpenCode, Grok, Pi and Oh My Pi, or a blank terminal. Each uses the host's own installation and sign-in; you sign in once per host in the terminal. Claude Code, Codex and Cursor can also run in their vendors' clouds.
+Claude Code, Codex, OpenCode, Grok, Pi, Oh My Pi, Antigravity, ZCode, fx, Hermes and Muse (Meta's Muse Code), or a blank terminal. Each uses the host's own installation and sign-in; you sign in once per host in the terminal. Claude Code, Codex and Cursor can also run in their vendors' clouds.
 
 ## Which models can bots use?
 
@@ -66,4 +66,4 @@ Use `opp` or the MCP server with a scoped API token. See [CLI and MCP](./cli-and
 
 ## What is not available yet?
 
-Virtual machines and containers as hosts; teams; Slack; people writing to a bot over mail, WhatsApp, Telegram or Slack; bot templates and group chats; the `/plan` and `/grill-me` commands; automation templates and headless runs; push guardrails; extra terminal windows in the console; pull requests from forks in review sessions.
+Virtual machines and containers as hosts; teams; starting or following sessions from Slack (bots answer there: see [Slack](./slack.md)); people writing to a bot over mail, WhatsApp or Telegram; bot templates and group chats; the `/plan` and `/grill-me` commands; automation templates and headless runs; push guardrails; extra terminal windows in the console; pull requests from forks in review sessions.

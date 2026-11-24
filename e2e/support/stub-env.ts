@@ -14,6 +14,7 @@ import { readFileSync } from 'node:fs';
 const GITHUB_STUB = process.env.GITHUB_STUB_URL ?? 'http://127.0.0.1:4319';
 const NAMER_STUB = process.env.NAMER_STUB_URL ?? 'http://127.0.0.1:4320';
 const CURSOR_STUB = process.env.CURSOR_STUB_URL ?? 'http://127.0.0.1:4321';
+const SLACK_STUB = process.env.SLACK_STUB_URL ?? 'http://127.0.0.1:4322';
 /** The App's slug, shared with the specs that assert on the install URL. */
 const { slug: GITHUB_APP_SLUG } = JSON.parse(
   readFileSync(new URL('./github-app.json', import.meta.url), 'utf8'),
@@ -78,6 +79,10 @@ const lines = [
   '# key starting `crsr_stub_` and plays each run out on its own clock.',
   `CLOUD_AGENTS_KEY=${randomBytes(32).toString('base64')}`,
   `CLOUD_AGENTS_CURSOR_API_URL=${CURSOR_STUB}`,
+  "# Bots' Slack apps, on a stand-in for Slack's Web API that takes any bot token",
+  '# starting `xoxb-stub-` and keeps what the bots post (`GET /_posts`).',
+  `SLACK_TOKEN_KEY=${randomBytes(32).toString('base64')}`,
+  `SLACK_API_URL=${SLACK_STUB}`,
   "# Sessions' previews, so the Browser tab is offered. `*.localhost` resolves",
   '# to the loopback in every browser, so the API serves them with no DNS.',
   `PREVIEW_BASE_URL=${process.env.PREVIEW_BASE_URL ?? 'http://preview.localhost:3011'}`,

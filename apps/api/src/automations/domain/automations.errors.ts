@@ -48,4 +48,40 @@ export const AutomationErrors = {
     message: 'That Gmail account cannot start a routine',
     httpStatus: 422,
   },
+  /** No routine's webhook has this URL: never issued, rotated, revoked, or its trigger removed. */
+  WEBHOOK_NOT_FOUND: {
+    code: 'AUTOMATIONS_010',
+    message: 'Webhook not found',
+    httpStatus: 404,
+  },
+  /** A signed webhook's request with no signature, a stale one, or one that does not match. */
+  WEBHOOK_SIGNATURE_INVALID: {
+    code: 'AUTOMATIONS_011',
+    message: 'The webhook signature is missing, stale or wrong',
+    httpStatus: 401,
+  },
+  /** A body over `WEBHOOK_BODY_MAX_BYTES`. */
+  WEBHOOK_BODY_TOO_LARGE: {
+    code: 'AUTOMATIONS_012',
+    message: 'The webhook body is too large',
+    httpStatus: 413,
+  },
+  /** The routine is paused: nothing posted to it runs until it is turned back on. */
+  WEBHOOK_ROUTINE_PAUSED: {
+    code: 'AUTOMATIONS_013',
+    message: 'The routine is paused',
+    httpStatus: 409,
+  },
+  /** A URL asked for a routine that has no webhook trigger. */
+  WEBHOOK_TRIGGER_MISSING: {
+    code: 'AUTOMATIONS_014',
+    message: 'The routine has no webhook trigger',
+    httpStatus: 422,
+  },
+  /** A signing secret asked for while `BOTS_PROVIDER_KEY` is unset, so it could not be kept. */
+  WEBHOOK_SIGNING_UNAVAILABLE: {
+    code: 'AUTOMATIONS_015',
+    message: 'Webhook signing is not configured on this deployment',
+    httpStatus: 503,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

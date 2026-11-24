@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircleIcon, LayersIcon } from 'lucide-react';
+import { AlertCircleIcon, LayersIcon, PlusIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { FoldChevron } from '../internal/fold';
@@ -13,7 +13,7 @@ import { cn } from '../lib/utils';
  *
  * - `ChatTranscript`: the column; turns 20px apart.
  * - `ChatUserMessage`: the person's turn, a bubble at 80% of the column with
- *   the 18px radius at 15px, its line breaks kept (Bots); attachments sit
+ *   the 14px radius at 15px, its line breaks kept (Bots); attachments sit
  *   above it, the time and its actions (copy, edit) under it, on hover.
  * - `ChatAttachment`: a file on a turn, a 44px card with the type's glyph
  *   on a 32px tile, the name over its size in mono; `icon` alone is the
@@ -26,6 +26,10 @@ import { cn } from '../lib/utils';
  * - `MessageTrail`: under a settled reply, its actions, then the time it
  *   ended or the tokens it took.
  * - `StreamingCaret`: the write head while a reply streams in.
+ * - `ChatReaction`: your reaction to a turn, one emoji on a small pill; on a
+ *   `ChatUserMessage` it sits on the bubble's lower edge (`reaction`).
+ * - `ChatReactionBar`: the reactions offered in one tap, a pill of emoji
+ *   that pop in one after another, the one you gave on a wash, then "+".
  */
 function ChatTranscript({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -41,6 +45,7 @@ function ChatUserMessage({
   time,
   actions,
   attachments,
+  reaction,
   tone = 'card',
   className,
   children,
@@ -59,6 +64,8 @@ function ChatUserMessage({
    * vanish; `accent` is the selected blue wash.
    */
   tone?: 'card' | 'wash' | 'accent';
+  /** A `ChatReaction`, on the bubble's lower edge, the way a reaction sits on a message. */
+  reaction?: React.ReactNode;
 }) {
   return (
     <div data-slot="chat-user-message" className={cn('group/turn flex flex-col items-end gap-1 pt-2', className)} {...props}>
@@ -66,12 +73,22 @@ function ChatUserMessage({
       {children != null && children !== false ? (
         <div
           className={cn(
-            'max-w-[80%] rounded-sm px-3.5 py-2 text-[15px] leading-[1.6] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg',
+            'relative max-w-[80%] rounded-md px-4.5 py-2.5 text-[15px] leading-[1.6] tracking-[-0.011em] whitespace-pre-wrap wrap-anywhere text-pretty text-fg',
             tone === 'accent' ? 'bg-selected-surface' : tone === 'wash' ? 'bg-chat-wash' : 'bg-card',
+            reaction ? 'mb-3.5' : null,
           )}
         >
           {children}
+          {reaction ? (
+            <span data-slot="chat-user-message-reaction" className="absolute -bottom-4 left-3 whitespace-normal">
+              {reaction}
+            </span>
+          ) : null}
         </div>
+      ) : reaction ? (
+        <span data-slot="chat-user-message-reaction" className="-mt-2.5 mr-3 flex justify-end">
+          {reaction}
+        </span>
       ) : null}
       {time || actions ? (
         <div data-slot="chat-user-message-trail" className="flex items-center gap-0.5 text-fg-subtle opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100">
@@ -385,6 +402,109 @@ function MessageTrail({
   );
 }
 
+/**
+ * Your reaction to a turn: one emoji on a pill with a hairline, lifted off
+ * the ground it overlaps. With `onClick` it is a button (taking it back,
+ * opening the picker); its `aria-label` says what it does.
+ */
+function ChatReaction({
+  emoji,
+  className,
+  onClick,
+  ...props
+}: Omit<React.ComponentProps<'button'>, 'children'> & { emoji: string }) {
+  const classes = cn(
+    'inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-border-subtle bg-card px-1.5 text-[15px] leading-none shadow-sm motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:fade-in-0 motion-safe:duration-200',
+    onClick ? 'cursor-pointer transition-transform duration-fast ease-standard hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring' : null,
+    className,
+  );
+  if (!onClick) {
+    return (
+      <span data-slot="chat-reaction" className={classes} aria-label={props['aria-label']} title={props.title}>
+        {emoji}
+      </span>
+    );
+  }
+  return (
+    <button data-slot="chat-reaction" type="button" className={classes} onClick={onClick} {...props}>
+      {emoji}
+    </button>
+  );
+}
+
+/** What `ChatReactionBar` says to a screen reader. */
+type ChatReactionBarLabels = {
+  /** "React with 👍". */
+  react: (emoji: string) => string;
+  /** "Remove reaction 👍", on the one you gave. */
+  remove: (emoji: string) => string;
+  /** "More emoji", the "+" that opens the whole picker. */
+  more: string;
+};
+
+/**
+ * The reactions offered in one tap: a pill of emoji that pop in one after
+ * another and grow under the pointer, the one you gave (`selected`) on the
+ * selected wash, so a second tap takes it back; then "+" for the rest
+ * (`onMore`). What a tap means is the caller's: `onPick` gets the emoji.
+ */
+function ChatReactionBar({
+  emoji,
+  selected,
+  onPick,
+  onMore,
+  labels,
+  className,
+}: {
+  emoji: readonly string[];
+  selected?: string | null;
+  onPick: (emoji: string) => void;
+  onMore?: () => void;
+  labels: ChatReactionBarLabels;
+  className?: string;
+}) {
+  return (
+    <div
+      data-slot="chat-reaction-bar"
+      role="group"
+      className={cn('flex items-center gap-0.5 rounded-full border border-border-subtle bg-popover p-1 shadow-popover', className)}
+    >
+      {emoji.map((item, index) => {
+        const chosen = item === selected;
+        return (
+          <button
+            key={item}
+            type="button"
+            aria-pressed={chosen}
+            aria-label={chosen ? labels.remove(item) : labels.react(item)}
+            title={chosen ? labels.remove(item) : labels.react(item)}
+            onClick={() => onPick(item)}
+            // The pop-in runs one after another, 25ms apart: a delay no class holds.
+            style={{ animationDelay: `${index * 25}ms` }}
+            className={cn(
+              'flex size-9 items-center justify-center rounded-full text-[22px] leading-none transition-transform duration-fast ease-standard hover:scale-125 focus-visible:outline-2 focus-visible:outline-ring motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:fade-in-0 motion-safe:[animation-fill-mode:both] motion-safe:duration-200',
+              chosen ? 'bg-selected-surface' : 'hover:bg-hover-surface',
+            )}
+          >
+            {item}
+          </button>
+        );
+      })}
+      {onMore ? (
+        <button
+          type="button"
+          aria-label={labels.more}
+          title={labels.more}
+          onClick={onMore}
+          className="ml-0.5 flex size-9 items-center justify-center rounded-full bg-hover-surface text-fg-muted transition-colors duration-fast hover:text-fg focus-visible:outline-2 focus-visible:outline-ring"
+        >
+          <PlusIcon aria-hidden className="size-4.5" />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 function StreamingCaret({ className }: { className?: string }) {
   return (
     <span
@@ -395,5 +515,5 @@ function StreamingCaret({ className }: { className?: string }) {
   );
 }
 
-export { ChatAttachment, ChatCommand, ChatCommandText, ChatMention, ChatReply, ChatTranscript, ChatUserMessage, MessageTrail, StreamingCaret, TurnHeader };
-export type { TurnHeaderLabels, TurnState };
+export { ChatAttachment, ChatCommand, ChatCommandText, ChatMention, ChatReaction, ChatReactionBar, ChatReply, ChatTranscript, ChatUserMessage, MessageTrail, StreamingCaret, TurnHeader };
+export type { ChatReactionBarLabels, TurnHeaderLabels, TurnState };

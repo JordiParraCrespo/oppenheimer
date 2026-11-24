@@ -3,7 +3,9 @@ import {
   CLOUD_UNCONFIRMED_HOLD_SECONDS,
   cloudPromptRefusal,
   PROMPT_SETTLE_SECONDS,
+  PROMPT_SUBMIT_GAP_MS,
   promptRefusal,
+  promptTyping,
 } from '../domain/session-prompt.policy';
 
 /**
@@ -71,5 +73,24 @@ describe('cloudPromptRefusal', () => {
     expect(
       cloudPromptRefusal(run, fold(ago(5)), { origin: 'follow_up', state: 'completed' }, now),
     ).toBeNull();
+  });
+});
+
+// What breaks this: a bot's follow-up typed after the prompt ZCode recalled
+// into its input (an Up arrow on an empty prompt), and sent joined to it.
+describe('promptTyping', () => {
+  it("empties ZCode's prompt before the words and spaces the writes by its wait, and types the words alone for any other agent", () => {
+    expect(promptTyping('run the tests', 'zcode')).toEqual({
+      keys: ['\u0015', 'run the tests', '\r'],
+      gapMs: 100,
+    });
+    expect(promptTyping('run the tests', 'claude-code')).toEqual({
+      keys: ['run the tests', '\r'],
+      gapMs: PROMPT_SUBMIT_GAP_MS,
+    });
+    expect(promptTyping('two\nlines', 'claude-code').keys).toEqual([
+      '\u001b[200~two\nlines\u001b[201~',
+      '\r',
+    ]);
   });
 });

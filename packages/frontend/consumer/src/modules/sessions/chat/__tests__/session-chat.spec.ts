@@ -891,6 +891,28 @@ describe('typing into the session', () => {
     expect(typed).toEqual(['\r', 'What is in these?', '\r']);
     vi.useRealTimers();
   });
+
+  // What breaks this: a message typed after the prompt ZCode recalled into its
+  // input on an Up arrow, sent joined to it ("<last prompt><this message>").
+  it('empties the agent’s prompt first when it has keys for that, but not over files already pasted', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data), undefined, {
+      clear: { keys: '\u0015', settleMs: 100 },
+    });
+    chat.send('Now ship it');
+    // The words wait for the agent to act on the clear: in the same burst
+    // they would land in the prompt it has not emptied yet.
+    expect(typed).toEqual(['\u0015']);
+    vi.advanceTimersByTime(99);
+    expect(typed).toEqual(['\u0015']);
+    vi.runAllTimers();
+    chat.send('What is in these?', { withFiles: true });
+    vi.runAllTimers();
+    expect(typed).toEqual(['\u0015', 'Now ship it', '\r', 'What is in these?', '\r']);
+    vi.useRealTimers();
+  });
 });
 
 describe('what the context holds', () => {

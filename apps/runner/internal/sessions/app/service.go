@@ -49,6 +49,13 @@ type Options struct {
 	// in another window, which reports none. Nil, or an empty command,
 	// leaves the CLI's own.
 	StatusLine func(session string) string
+	// Tools is the command of the runner's MCP server for a session's agent,
+	// registered with each agent that takes one at launch
+	// (`domain.Launch.Tools`); nil, or an empty command, registers none.
+	Tools func(session string) []string
+	// OwnInstructions keeps what the person told an agent that a launch
+	// would replace; nil keeps nothing.
+	OwnInstructions OwnInstructions
 	// FreePort finds a loopback port nothing listens on, for the local API
 	// of an agent that keeps its conversation behind one (OpenCode); nil
 	// launches it without one, and its session has no chat view.
@@ -121,6 +128,8 @@ type Service struct {
 	trust       Trust
 	transcripts Transcripts
 	statusLines func(session string) string
+	tools       func(session string) []string
+	own         OwnInstructions
 	freePort    func() (int, error)
 	wrappers    Wrappers
 	now         func() time.Time
@@ -148,7 +157,7 @@ func New(opts Options) (*Service, error) {
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
-		transcripts: opts.Transcripts, statusLines: opts.StatusLine, freePort: opts.FreePort, wrappers: opts.Wrappers, now: now,
+		transcripts: opts.Transcripts, statusLines: opts.StatusLine, tools: opts.Tools, own: opts.OwnInstructions, freePort: opts.FreePort, wrappers: opts.Wrappers, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -301,6 +310,7 @@ func (s *Service) launchInWindow(ctx context.Context, session domain.Session, in
 	// session's chat, which reads window 0's conversation; and it names no
 	// session, so this agent's conversation never becomes the session's.
 	launch.StatusLine = s.statusLine("")
+	s.brief(&launch, agent, session)
 	s.trustFolder(agent, session.Cwd())
 	defer s.holdLaunch(ctx, agent)()
 	return s.terminals.Launch(ctx, session.Target(index), session.Cwd(), launch.CommandLine(agent))
@@ -641,6 +651,20 @@ func (s *Service) ReportFirstPrompts() {
 	}
 }
 
+// brief hands agent's launch in session the session note, the runner's MCP
+// server for the session, and what the person already told the agent where
+// a launch would replace it; each agent takes them its own way
+// (domain/briefing.go).
+func (s *Service) brief(launch *domain.Launch, agent domain.Agent, session domain.Session) {
+	launch.Note = session.Note()
+	if s.tools != nil {
+		launch.Tools = s.tools(session.ID)
+	}
+	if s.own != nil {
+		launch.OwnInstructions = s.own.OwnInstructions(agent, session.Cwd())
+	}
+}
+
 // statusLine is the status line command for window 0's agent of session,
 // or for another window's with "", or "" when the runner draws none.
 func (s *Service) statusLine(session string) string {
@@ -710,6 +734,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	launch.Resume = true
 	launch.StatusLine = s.statusLine(session.ID)
 	launch.Wrap = s.observer.wrap(session.ID)
+	s.brief(&launch, session.Agent, session)
 	s.trustFolder(session.Agent, session.Cwd())
 	release := s.holdLaunch(ctx, session.Agent)
 	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.sessionEnv(session))

@@ -55,12 +55,6 @@ func hostDevices(discover bool) (*devapp.Service, error) {
 	}), nil
 }
 
-// sessionNote is the file the session's agent reads how its session is set
-// up from. Claude Code reads CLAUDE.md from every folder above the one it
-// runs in, and the session's own folder holds the checkout without being
-// part of it, so the note reaches the agent and can never be committed.
-const sessionNote = "CLAUDE.md"
-
 // pinDevice gives the session its device, when the host offers one: the
 // serial in its environment (adb reads ANDROID_SERIAL). A host whose devices
 // are all held gives the session none, and the console says so when it asks
@@ -85,7 +79,8 @@ func pinDevice(service *devapp.Service, session sessionsdomain.Session) (map[str
 // them, and its device, when it has one. A folder session gets none: the
 // folder is the person's own, and nothing is written into it.
 func writeSessionNote(session sessionsdomain.Session, previews bool, device *devdomain.Device) {
-	if session.Place == sessionsdomain.PlaceFolder || session.Dir == "" {
+	path := session.Note()
+	if path == "" {
 		return
 	}
 	note := "# This session\n" + helpersNote + recallNote
@@ -97,7 +92,7 @@ func writeSessionNote(session sessionsdomain.Session, previews bool, device *dev
 	}
 	// Best effort: the session works either way, and the environment still
 	// names its device.
-	_ = os.WriteFile(filepath.Join(session.Dir, sessionNote), []byte(note), 0o600)
+	_ = os.WriteFile(path, []byte(note), 0o600)
 }
 
 // helpersNote points the agent at the manual for working with other agents

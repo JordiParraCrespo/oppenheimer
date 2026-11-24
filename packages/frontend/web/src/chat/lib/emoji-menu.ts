@@ -83,3 +83,17 @@ export function loadEmoji(): Promise<EmojiRow[]> {
   });
   return loading;
 }
+
+/**
+ * The text with `emoji` in place of the selection `at` (or at the caret, when
+ * nothing is selected), and where the caret goes: right after it.
+ */
+export function insertAtCaret(
+  text: string,
+  at: { start: number; end: number },
+  emoji: string,
+): { text: string; caret: number } {
+  const start = Math.max(0, Math.min(at.start, text.length));
+  const end = Math.max(start, Math.min(at.end, text.length));
+  return { text: `${text.slice(0, start)}${emoji}${text.slice(end)}`, caret: start + emoji.length };
+}

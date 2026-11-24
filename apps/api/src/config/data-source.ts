@@ -15,6 +15,7 @@ import { AutomationRunOrmEntity } from '../automations/database/automation-run.o
 import { AutomationSettingsOrmEntity } from '../automations/database/automation-settings.orm-entity';
 import { AutomationTriggerOrmEntity } from '../automations/database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../automations/database/automation-trigger-subject.orm-entity';
+import { AutomationWebhookOrmEntity } from '../automations/database/automation-webhook.orm-entity';
 import { BotOrmEntity } from '../bots/database/bot.orm-entity';
 import { BotDocumentOrmEntity } from '../bots/database/bot-document.orm-entity';
 import { BotDocumentRevisionOrmEntity } from '../bots/database/bot-document-revision.orm-entity';
@@ -84,6 +85,7 @@ import { SessionTerminalWatchOrmEntity } from '../sessions/database/session-term
 import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
 import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
+import { SlackAccountOrmEntity } from '../slack/database/slack-account.orm-entity';
 import { MilestoneOrmEntity } from '../tasks/database/milestone.orm-entity';
 import { PlanEventOrmEntity } from '../tasks/database/plan-event.orm-entity';
 import { TaskOrmEntity } from '../tasks/database/task.orm-entity';
@@ -148,6 +150,7 @@ export default new DataSource({
     AutomationTriggerSubjectOrmEntity,
     AutomationRunOrmEntity,
     AutomationSettingsOrmEntity,
+    AutomationWebhookOrmEntity,
     VoiceSettingsOrmEntity,
     TaskOrmEntity,
     MilestoneOrmEntity,
@@ -162,6 +165,7 @@ export default new DataSource({
     WhatsappChatGrantOrmEntity,
     WhatsappKnownChatOrmEntity,
     TelegramAccountOrmEntity,
+    SlackAccountOrmEntity,
     TelegramMessageOrmEntity,
     SessionCloudRunOrmEntity,
     CloudAgentCredentialOrmEntity,

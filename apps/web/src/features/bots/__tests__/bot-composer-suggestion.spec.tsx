@@ -127,6 +127,6 @@ describe('BotComposer’s suggested next message', () => {
     state.active = { id: 't1', status: 'running' };
     const field = composer();
     expect(state.asked.every((enabled) => !enabled)).toBe(true);
-    expect(field.placeholder).toBe('bots.chat.placeholderRunning');
+    expect(field.placeholder).toMatch(/^bots\.chat\.placeholdersRunning\./);
   });
 });

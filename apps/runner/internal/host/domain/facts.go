@@ -101,13 +101,18 @@ const (
 	ToolGrok     = "grok"
 	ToolPi       = "pi"
 	ToolOmp      = "omp"
+	ToolAgy      = "agy"
+	ToolZCode    = "zcode"
+	ToolFx       = "fx"
+	ToolHermes   = "hermes"
+	ToolMuse     = "muse"
 	// ToolGH is GitHub's CLI: not an agent and not required, reported so the
 	// console can show which hosts can open a pull request from a session.
 	ToolGH = "gh"
 )
 
 // ProbedTools are the tools every inventory reports, required or not.
-var ProbedTools = []string{ToolGit, ToolTmux, ToolClaude, ToolCodex, ToolOpenCode, ToolGrok, ToolPi, ToolOmp, ToolGH}
+var ProbedTools = []string{ToolGit, ToolTmux, ToolClaude, ToolCodex, ToolOpenCode, ToolGrok, ToolPi, ToolOmp, ToolAgy, ToolZCode, ToolFx, ToolHermes, ToolMuse, ToolGH}
 
 // RequiredTools are the ones whose absence stops sessions.
 var RequiredTools = []string{ToolGit, ToolTmux}

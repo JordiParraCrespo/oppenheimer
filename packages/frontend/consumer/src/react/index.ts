@@ -70,12 +70,16 @@ export {
   useBotPendingQuestion,
   useDismissBotQuestion,
 } from './bot-questions.queries';
+export { type ReactToBotMessageVariables, useReactToBotMessage } from './bot-reactions.queries';
 export {
   type BotRoutineVariables,
+  type IssueBotRoutineWebhookVariables,
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,
   type UpdateBotRoutineVariables,
   useDeleteBotRoutine,
+  useIssueBotRoutineWebhook,
+  useRevokeBotRoutineWebhook,
   useRunBotRoutine,
   useSetBotRoutineEnabled,
   useSuspenseAllBotRoutines,
@@ -321,6 +325,13 @@ export {
   useSessionStream,
   useSharedSessionStream,
 } from './sessions.stream';
+export {
+  useConnectSlack,
+  useDisconnectSlack,
+  useOpenSlackOwnerLink,
+  useRefreshSlack,
+  useSuspenseBotSlack,
+} from './slack.queries';
 export {
   HOST_HOME,
   type HostHomeSessionInput,

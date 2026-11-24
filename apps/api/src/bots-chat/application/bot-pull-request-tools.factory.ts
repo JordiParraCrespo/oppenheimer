@@ -28,6 +28,7 @@ import { SubmitPullRequestReviewCommand } from '../../pull-requests/commands/sub
 import { FindPullRequestQuery } from '../../pull-requests/queries/find-pull-request/find-pull-request.query';
 import type { SessionCommandResult } from '../../sessions/domain/session-command.types';
 import { describeTarget, type PullRequestDetailView } from '../bot-github-tool.mapper';
+import { NOT_ON_A_GITHUB_ASK } from '../domain/bot-github-ask.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
 import { idempotencyKeyOf } from '../domain/bot-tool-idempotency.policy';
 import type { BotToolSubject } from '../domain/bot-tool-permission.entity';
@@ -178,6 +179,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'comment_on_pull_request',
       scope: 'pulls:write',
+      notOn: NOT_ON_A_GITHUB_ASK,
       asks: true,
       sharesOutside: true,
       subject: (input, context) => this.repositorySubject(context, input),
@@ -256,6 +258,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'review_pull_request',
       scope: 'pulls:write',
+      notOn: NOT_ON_A_GITHUB_ASK,
       asks: true,
       sharesOutside: true,
       subject: (input, context) => this.repositorySubject(context, input),

@@ -1,6 +1,6 @@
 ---
 title: Routines and watches
-description: How a bot works when nobody writes to it, routines on a schedule or on a GitHub or Gmail event, its heartbeat, quiet runs, loops and goals, watches on sessions and pull requests, the stall check, the regular look at work in progress, and the full list of what wakes a bot.
+description: How a bot works when nobody writes to it, routines on a schedule, on a GitHub or Gmail event or on a webhook, its heartbeat, quiet runs, loops and goals, watches on sessions and pull requests, the stall check, the regular look at work in progress, and the full list of what wakes a bot.
 sidebar_position: 6
 ---
 
@@ -14,9 +14,10 @@ Triggers a routine can have:
 
 | Trigger | Examples |
 | --- | --- |
-| Schedule | Once on a date, hourly, daily, weekdays, weekly on chosen days, monthly, in your time zone |
+| Schedule | Once on a date, hourly, daily, weekdays, weekly on chosen days, monthly, in your time zone; or a custom schedule the bot writes from your words, for what those cannot say: several times a day, every 15 minutes during work hours, the last weekday of the month, the second Tuesday. A custom schedule fires at most every five minutes, and the Routines tab says it in words |
 | GitHub event | Pull request opened, pushed or merged, check failed, checks passed, review submitted, comment, issue opened, label added, mention, push, release (on repositories the GitHub App covers) |
 | Gmail | Mail received in a connected Gmail account, optionally matching a search |
+| Webhook | Anything posted to the routine's own URL: a deploy pipeline, Sentry, a form, a home-automation hub |
 
 **Making one**: ask the bot in chat ("every weekday at 9, check open PRs and tell me which need me"), or type `/schedule` followed by the request. The bot saves it with its routine tool. A save asks you first with a card, except a create from your own `/schedule` command, which is the consent. Changing, deleting or running a routine from the chat asks too.
 
@@ -31,6 +32,32 @@ A routine is skipped and paused when it cannot run, with the reason in the chat:
 **While you're away.** Routines keep running on their schedule whether or not you read what they say; nothing pauses them because you have not opened the chat. To stop one, pause it on the Routines tab or ask the bot.
 
 Mail older than two days, spam, trash and chats never wake a Gmail routine; email and event text reach the bot marked as outside data, never as instructions.
+
+## Webhooks
+
+A routine with a **webhook** trigger runs whenever something is posted to its URL. Ask the bot for one in chat ("when our deploy pipeline posts here, tell me if it failed"); it adds the trigger, and you make the URL yourself: the bot never sees it.
+
+**Making the URL.** On the bot's **Routines** tab, the routine shows a Webhook row under its card. **Create URL** makes it. Tick **Require a signature** to also get a signing secret. The URL and the secret are shown once, so copy them then; afterwards the row shows only the start of the URL, whether it is signed, and when something was last posted. **New URL** replaces it (the old one stops working at once), and **Revoke** turns it off while keeping the trigger. Removing the webhook trigger in chat removes the URL too.
+
+**Posting.** Send a `POST` with any body and content type. The answer is `202` with the run's id (`runId`) and `status`: `queued`, `skipped` (an hourly cap turned it away; the run says so) or `duplicate`. It never waits for the bot. Send an `Idempotency-Key` header and a retried request with the same key is the same run.
+
+```bash
+curl -X POST "https://…/api/v1/routine-webhooks/owh_…" \
+  -H "Content-Type: application/json" \
+  -d '{"deploy":"web","status":"failed"}'
+```
+
+**Signing.** A signed URL takes only requests with an `x-oppenheimer-signature` header of the form `t=<unix seconds>,v1=<signature>`, where the signature is the hex HMAC-SHA256 of `<t>.<body>` (the timestamp, a dot, then the exact body) with the signing secret. A request more than five minutes old or new is refused, so a captured request cannot be replayed later.
+
+```bash
+t=$(date +%s); body='{"status":"failed"}'
+sig=$(printf '%s.%s' "$t" "$body" | openssl dgst -sha256 -hmac "$SECRET" -hex | sed 's/^.* //')
+curl -X POST "$URL" -H "x-oppenheimer-signature: t=$t,v1=$sig" -d "$body"
+```
+
+**What the bot gets.** The first 16 KiB of the body (up to 256 KiB is accepted) and its content type, kept with the run and handed to the bot as outside data, never as instructions. The routine's own prompt says what to do with it.
+
+**When it is refused.** An unknown, replaced or revoked URL is `404`; a missing, stale or wrong signature `401`; a body over 256 KiB `413`; a paused routine `409`. The hourly limits, a run still going and a provider with no key apply as for any routine.
 
 ## Loops
 
@@ -74,7 +101,7 @@ Ask a bot "what are you watching?" and it lists its watches. There is no list of
 | --- | --- |
 | Your message, or a decision on its approval or question card | you |
 | Another bot's message or ask, or the answer to its own ask | that bot |
-| A routine's schedule, GitHub event or Gmail mail, or Run now | the routine |
+| A routine's schedule, GitHub event, Gmail mail or webhook, or Run now | the routine |
 | A loop's run, a goal's continuation | the loop or goal |
 | A watched session or pull request, a session's notice, the stall check, the regular look at a running task | the watch |
 
@@ -82,5 +109,5 @@ Turns run one at a time per bot: your messages first, then other bots', then bac
 
 ## Not available yet
 
-Spreading the run times of routines other than the heartbeat, routines triggered by a session ending or by a webhook, and WhatsApp or Telegram messages as a trigger.
+Spreading the run times of routines other than the heartbeat, routines triggered by a session ending, webhooks on plain automations (sessions), and WhatsApp or Telegram messages as a trigger.
 

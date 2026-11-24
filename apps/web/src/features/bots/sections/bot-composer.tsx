@@ -13,6 +13,7 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import {
   ComposerEmojiBox,
+  ComposerEmojiButton,
   dictateInto,
   dictationSlots,
   ErrorAlert,
@@ -49,7 +50,7 @@ import {
 } from '@/features/bots/lib/bot-drafts';
 import { BOT_IMAGE_ACCEPT, type HeldImage, heldImagesBlock } from '@/features/bots/lib/bot-images';
 import { composerTopOf } from '@/features/bots/lib/composer-top';
-import { idlePlaceholder, placeholderKey } from '@/features/bots/lib/idle-placeholder';
+import { placeholderKey } from '@/features/bots/lib/idle-placeholder';
 import { leadingCommand } from '@/features/bots/lib/slash-menu';
 import { BotComposerTop } from '@/features/bots/sections/bot-composer-top';
 
@@ -126,7 +127,7 @@ export function BotComposer({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [draft, setDraft] = useBotDraft(botId);
-  const [idle] = useState(() => idlePlaceholder(Math.random()));
+  const [roll] = useState(Math.random);
   const field = useComposerFocus(botId);
   const slash = useSlashMenu(botId, draft, (next) => fillBotDraft(botId, next));
   const recall = useSentHistory(botId, draft, setDraft);
@@ -304,6 +305,7 @@ export function BotComposer({
             sendBlockedReason={blocked}
             allowEmpty={images.images.length > 0}
             onAttach={() => picker.current?.click()}
+            emoji={<ComposerEmojiButton draft={draft} setDraft={setDraft} />}
             onPaste={onPaste}
             attachments={
               images.images.length > 0
@@ -316,7 +318,7 @@ export function BotComposer({
                   ))
                 : undefined
             }
-            placeholder={suggested.suggestion ?? t(placeholderKey(running, idle), { name })}
+            placeholder={suggested.suggestion ?? t(placeholderKey(running, roll), { name })}
             tools={tools}
             engine={engine}
             above={

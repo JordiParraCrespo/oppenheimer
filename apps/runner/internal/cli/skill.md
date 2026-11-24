@@ -123,6 +123,15 @@ From a minute to 7 days (`90s` is too soon; `30m`, `2h`, `1d` are fine).
 Write the note for yourself as you will be then: say what to check and how.
 The host must be up when it is due.
 
+## The same commands as tools
+
+In Claude Code, Codex and OpenCode the commands above are also the tools of
+an MCP server named `oppenheimer`, which the runner gives you when it starts
+you: `start_session`, `send_to_session`, `list_children`,
+`wait_for_children`, `report_to_parent`, `notify`, `send_file`,
+`watch_pull_request` and `wake_in`. Use whichever you like; they do the same
+thing.
+
 ## What the person sees
 
 Every session, children included, is a terminal on this host. The console
