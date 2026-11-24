@@ -23,7 +23,7 @@ type PillGroupProps = PillGroupBase &
  * PillGroup — a form value picked from a short row of pills (`.op-pill`):
  * For how long on Share (1 hour · 1 day · 7 days · Never), the projects and
  * repositories a bot may touch, the groups a bot may message. Each pill is
- * 30px on the hover wash at 13.5px; a picked one takes the selected wash and
+ * 28px (the ramp's `sm`) on the hover wash at 13.5px; a picked one takes the selected wash and
  * the selected ink; pressing scales it to .975. The row wraps at 6px.
  *
  * `multiple` makes it a set (a bot's projects); without it exactly one pill
@@ -85,7 +85,7 @@ function PillGroupItem({
     <TogglePrimitive
       data-slot="pill-group-item"
       className={cn(
-        'group/pill inline-flex h-7.5 items-center gap-1.75 rounded-pill bg-hover-surface px-3 text-[13.5px] whitespace-nowrap text-fg outline-none transition-[background-color,color,transform] duration-instant ease-standard select-none hover:bg-control-hover active:scale-[0.975] focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-disabled:opacity-40 data-pressed:bg-selected-surface data-pressed:text-selected-fg [&_svg]:shrink-0',
+        'group/pill inline-flex h-(--control-h-sm) items-center gap-1.75 rounded-pill bg-hover-surface px-3 text-[13.5px] whitespace-nowrap text-fg outline-none transition-[background-color,color,transform] duration-instant ease-standard select-none hover:bg-control-hover active:scale-[0.975] focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-disabled:opacity-40 data-pressed:bg-selected-surface data-pressed:text-selected-fg [&_svg]:shrink-0',
         mono && 'font-mono text-[12.5px]',
         check && 'pl-2',
         leading !== undefined && 'pl-1.5',

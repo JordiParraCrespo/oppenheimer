@@ -95,31 +95,35 @@ export function pullRequestWakeText(wake: PullRequestWake): string {
   const happened = pullEventPhrase(wake.type, wake.attributes, wake.actorLogin);
   const lines = [
     repository
-      ? promptText('wake/pull-request.headline-in-repository', {
+      ? promptText('github/wake-pull-request.headline-in-repository', {
           number,
           repository,
           repoId,
           happened,
         })
-      : promptText('wake/pull-request.headline', { number, repoId, happened }),
+      : promptText('github/wake-pull-request.headline', { number, repoId, happened }),
   ];
   if (wake.purpose) {
-    lines.push(promptText('wake/pull-request.followed-to', { purpose: wake.purpose }));
+    lines.push(promptText('github/wake-pull-request.followed-to', { purpose: wake.purpose }));
   }
   lines.push(
-    promptText(wake.ends ? 'wake/pull-request.unsubscribed' : 'wake/pull-request.still-subscribed'),
+    promptText(
+      wake.ends
+        ? 'github/wake-pull-request.unsubscribed'
+        : 'github/wake-pull-request.still-subscribed',
+    ),
   );
-  lines.push(promptText('wake/pull-request.read-it', { repoId, number }));
+  lines.push(promptText('github/wake-pull-request.read-it', { repoId, number }));
   return lines.join('\n');
 }
 
 /** What the turn a pull request's wake opens is asked, by what happened. */
 const PULL_REQUEST_ASKS: Readonly<Record<PullRequestWakeEvent, string>> = {
-  check_failed: promptText('wake/pull-request.ask-check-failed'),
-  check_passed: promptText('wake/pull-request.ask-check-passed'),
-  review: promptText('wake/pull-request.ask-review'),
-  comment: promptText('wake/pull-request.ask-comment'),
-  pr_merged: promptText('wake/pull-request.ask-merged'),
+  check_failed: promptText('github/wake-pull-request.ask-check-failed'),
+  check_passed: promptText('github/wake-pull-request.ask-check-passed'),
+  review: promptText('github/wake-pull-request.ask-review'),
+  comment: promptText('github/wake-pull-request.ask-comment'),
+  pr_merged: promptText('github/wake-pull-request.ask-merged'),
 };
 
 /**
@@ -131,7 +135,7 @@ export function pullRequestWakePrompt(event: BotPullRequestEvent, content: strin
 
 ${PULL_REQUEST_ASKS[event.event]}
 
-${promptText('wake/pull-request.closing')}`;
+${promptText('github/wake-pull-request.closing')}`;
 }
 
 /**

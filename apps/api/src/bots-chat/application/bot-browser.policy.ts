@@ -54,7 +54,7 @@ export const BROWSER_ACTION_SPECS: Readonly<Record<BrowserAction, BrowserActionS
   click: {
     whole: (call) => Boolean(call.ref) || (call.x !== undefined && call.y !== undefined),
     carries: ['ref', 'x', 'y'],
-    missing: promptText('tools/browser.click-needs'),
+    missing: promptText('browser/tools.click-needs'),
     says: (call) => `Click ${target(call)} in`,
   },
   type: {
@@ -81,7 +81,7 @@ export const BROWSER_ACTION_SPECS: Readonly<Record<BrowserAction, BrowserActionS
     whole: always,
     carries: ['seconds'],
     missing: '',
-    says: (call) => promptText('tools/browser.card-wait', { seconds: String(call.seconds ?? 0) }),
+    says: (call) => promptText('browser/tools.card-wait', { seconds: String(call.seconds ?? 0) }),
   },
   close: { whole: always, carries: [], missing: '', says: () => 'Close' },
 };
@@ -108,17 +108,17 @@ export function browserSummary(call: BrowserCall, host: string): string {
  */
 const REFUSALS: Readonly<Record<string, { meaning: string; advice?: string }>> = {
   BROWSER_001: {
-    meaning: promptText('tools/browser.refusals-browser-001'),
-    advice: promptText('tools/browser.refusals-browser-001-advice'),
+    meaning: promptText('browser/tools.refusals-browser-001'),
+    advice: promptText('browser/tools.refusals-browser-001-advice'),
   },
   BROWSER_002: {
-    meaning: promptText('tools/browser.refusals-browser-002'),
-    advice: promptText('tools/browser.refusals-browser-002-advice'),
+    meaning: promptText('browser/tools.refusals-browser-002'),
+    advice: promptText('browser/tools.refusals-browser-002-advice'),
   },
-  BROWSER_003: { meaning: promptText('tools/browser.refusals-browser-003') },
+  BROWSER_003: { meaning: promptText('browser/tools.refusals-browser-003') },
   BROWSER_005: {
-    meaning: promptText('tools/browser.refusals-browser-005'),
-    advice: promptText('tools/browser.refusals-browser-005-advice'),
+    meaning: promptText('browser/tools.refusals-browser-005'),
+    advice: promptText('browser/tools.refusals-browser-005-advice'),
   },
 };
 
@@ -127,14 +127,14 @@ function pageText(page: HostBrowserPage): string {
   const lines = [`Page: ${page.title || '(no title)'}`, `Address: ${page.url}`];
   const elements = page.elements ?? [];
   if (elements.length > 0) {
-    lines.push('', promptText('tools/browser.page-elements'));
+    lines.push('', promptText('browser/tools.page-elements'));
     for (const element of elements) {
       const value = element.value ? ` = ${JSON.stringify(element.value)}` : '';
       lines.push(`${element.ref} ${element.role} ${JSON.stringify(element.name)}${value}`);
     }
-    if (page.moreElements) lines.push(promptText('tools/browser.page-more-elements'));
+    if (page.moreElements) lines.push(promptText('browser/tools.page-more-elements'));
   } else {
-    lines.push('', promptText('tools/browser.page-no-elements'));
+    lines.push('', promptText('browser/tools.page-no-elements'));
   }
   if (page.text) {
     lines.push('', `Text of the page${page.textTruncated ? ' (its first part)' : ''}:`, page.text);
@@ -155,22 +155,22 @@ export function describeBrowser(
   switch (outcome.kind) {
     case 'page': {
       if (outcome.page.closed) return `Closed your browser on ${host}.`;
-      const picture = pictured ? ` ${promptText('tools/browser.pictured')}` : '';
-      const done = promptText('tools/browser.done', { host, picture });
+      const picture = pictured ? ` ${promptText('browser/tools.pictured')}` : '';
+      const done = promptText('browser/tools.done', { host, picture });
       return `${done}\n${fenceUntrusted('browser_page', pageText(outcome.page))}`;
     }
     case 'host_offline':
-      return promptText('tools/browser.host-offline', { host });
+      return promptText('browser/tools.host-offline', { host });
     case 'not_supported':
-      return promptText('tools/browser.runner-too-old', { host });
+      return promptText('browser/tools.runner-too-old', { host });
     case 'timed_out':
-      return promptText('tools/browser.timed-out', { host });
+      return promptText('browser/tools.timed-out', { host });
     case 'failed': {
       const known = REFUSALS[outcome.code];
       const code = known ? `${outcome.code}: ${known.meaning}` : outcome.code;
       return [
         `${host} refused (${code}): ${outcome.detail ?? 'no reason given'}.`,
-        known ? 'Nothing was done.' : promptText('tools/browser.may-have-happened'),
+        known ? 'Nothing was done.' : promptText('browser/tools.may-have-happened'),
         known?.advice,
       ]
         .filter(Boolean)

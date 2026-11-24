@@ -187,7 +187,7 @@ function costOf(message: HistoryMessage): number {
  * conversation it reads is data. Run with the bot's own provider, model and
  * key, and no tools.
  */
-export const BOT_SUMMARIZER_PROMPT = promptText('jobs/summary.system');
+export const BOT_SUMMARIZER_PROMPT = promptText('core/job-summary.system');
 
 /** What the summarizer is asked: the summary so far, then the messages to fold into it. */
 export function composeSummaryRequest(
@@ -200,7 +200,7 @@ export function composeSummaryRequest(
       return `<${speaker}>\n${escapeTags(historyEntry(message).text)}\n</${speaker}>`;
     })
     .join('\n');
-  return promptText('jobs/summary.request', {
+  return promptText('core/job-summary.request', {
     previous: previous?.trim() ? escapeTags(previous.trim()) : '(none yet)',
     messages,
   });

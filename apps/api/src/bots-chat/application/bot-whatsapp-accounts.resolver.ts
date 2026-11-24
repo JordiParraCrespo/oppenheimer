@@ -16,7 +16,7 @@ export const whatsappAccountInput = z
   .trim()
   .min(1)
   .max(100)
-  .describe(promptText('tools/whatsapp.account'));
+  .describe(promptText('whatsapp/tools.account'));
 
 /** The chat a WhatsApp tool's call means, as the model names it. */
 export const whatsappChatInput = z
@@ -24,7 +24,7 @@ export const whatsappChatInput = z
   .trim()
   .min(1)
   .max(200)
-  .describe(promptText('tools/whatsapp.chat'));
+  .describe(promptText('whatsapp/tools.chat'));
 
 /**
  * Which of the owner's linked WhatsApp numbers a tool's call means: by its id
@@ -50,7 +50,7 @@ export class BotWhatsappAccountsResolver {
     if (!wanted) {
       if (views.length === 1 && views[0]) return views[0];
       throw new BotToolRefusal(
-        promptText('tools/whatsapp.one-several-numbers-linked', { listed: listed() }),
+        promptText('whatsapp/tools.one-several-numbers-linked', { listed: listed() }),
       );
     }
     const needle = wanted.trim().toLowerCase();
@@ -59,7 +59,7 @@ export class BotWhatsappAccountsResolver {
       views.find((view) => view.account.label.toLowerCase() === needle);
     if (!found)
       throw new BotToolRefusal(
-        promptText('tools/whatsapp.one-linked-number-numbers', { wanted, listed: listed() }),
+        promptText('whatsapp/tools.one-linked-number-numbers', { wanted, listed: listed() }),
       );
     return found;
   }

@@ -19,7 +19,7 @@ const TRIGGER_CLASSES =
   'inline-flex shrink-0 items-center rounded-pill whitespace-nowrap outline-none transition-[background-color,color,transform] duration-instant ease-standard select-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:shrink-0';
 
 const TRIGGER_VARIANT = {
-  pill: 'h-7.5 gap-1.75 bg-hover-surface px-3 text-[13.5px] text-fg hover:bg-control-hover active:scale-[0.975] data-popup-open:bg-selected-surface data-set:bg-selected-surface data-set:text-selected-fg [&_svg:not([class*=size-])]:size-3.25',
+  pill: 'h-(--control-h-sm) gap-1.75 bg-hover-surface px-3 text-[13.5px] text-fg hover:bg-control-hover active:scale-[0.975] data-popup-open:bg-selected-surface data-set:bg-selected-surface data-set:text-selected-fg [&_svg:not([class*=size-])]:size-3.25',
   labelled:
     'gap-1.5 bg-hover-surface px-3 text-[13px] text-fg hover:bg-selected-surface data-popup-open:bg-selected-surface data-set:bg-selected-surface',
 } as const;
@@ -106,7 +106,7 @@ type FacetOption = {
  * and the check.
  *
  * Two triggers, one per surface:
- * - `pill` (30px, Plan's board): the icon, then the facet's name while unset
+ * - `pill` (28px, the ramp's `sm`; Plan's board): the icon, then the facet's name while unset
  *   or the picked option's label, then the chevron; picked, it takes the
  *   selected ink.
  * - `labelled` (34px, or 28px at `size="sm"` in a row of `sm` controls; the queue's row): the facet's name in muted ink, the

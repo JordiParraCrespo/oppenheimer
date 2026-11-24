@@ -12,7 +12,7 @@ export const BOT_TOOL_OUTPUT_MAX = 12_000;
  * What every answer that met a runner too old for it tells the bot to do,
  * so the tool's name and the retry live in one sentence.
  */
-export const RUNNER_TOO_OLD_ADVICE = promptText('tools/tool-text.runner-too-old-advice');
+export const RUNNER_TOO_OLD_ADVICE = promptText('core/tools-text.runner-too-old-advice');
 
 /** Room kept for the line that says what was cut, so the fitted answer stays within the limit. */
 const CUT_LINE_MAX = 160;
@@ -34,7 +34,7 @@ export function fitToolOutput(text: string): string {
   const head = keepWholePairs(text.slice(0, BOT_TOOL_OUTPUT_HEAD), 'end');
   const tail = keepWholePairs(text.slice(text.length - BOT_TOOL_OUTPUT_TAIL), 'start');
   const elided = text.length - head.length - tail.length;
-  return promptText('tools/tool-text.cut-from-the-middle', { head, elided: String(elided), tail });
+  return promptText('core/tools-text.cut-from-the-middle', { head, elided: String(elided), tail });
 }
 
 /**

@@ -67,16 +67,30 @@ are one class each, a static method per shape the plugin returns.
 
 Text written for a model to read (a system prompt's sections, what a wake
 asks) is Markdown in the module's `domain/prompts/`, never a string in
-a `*.policy.ts`. A folder, one level deep, says where the words are sent:
-`system/` for sections of the system prompt, `turn/` for what a turn
-carries besides its opening (its context, the notes in its history, a
-slash command), `wake/` for what an event says to the bot: what opens the
-turn it starts and the lines it leaves in the chat outside one (a session,
-a pull request, a task, an approval, another bot, a routine, a loop, a
-goal), `jobs/` for a model call that is not a bot's turn (the dream, the
-goal and rule reviews, the summary, a subagent), `tools/` for what a tool
-tells the model (its description, its answers and refusals); it is part of
-the id (`system/rules`). A file is
+a `*.policy.ts`. A folder, one level deep, is a capability: what the bot
+can do in one area, and every word about it (`core/` for the bot itself:
+who it is, how a turn goes, the rules, what every turn carries; then
+`mail/`, `sessions/`, `github/`, `whatsapp/`…). A file's name says where its
+words are sent, by its first word: `system` for a section of the system
+prompt, `turn` for what a turn carries besides its opening (its context,
+the notes in its history, a slash command), `wake` for what an event says
+to the bot (what opens the turn it starts and the lines it leaves in the
+chat outside one), `job` for a model call that is not a bot's turn (the
+dream, the reviews, the summary, a subagent), `tools` for what a tool tells
+the model (its description, its answers and refusals), `skill` for a
+built-in skill: how-to that only some turns need, read with `use_skill`
+when the work comes up instead of sent on every turn, written as a SKILL.md
+(a `name` and `description` frontmatter, then the body; Agent Skills, the
+format Claude Code, Codex and OpenClaw read). The rest of the name
+says which, when a capability has several (`mail/tools-write.md`,
+`sessions/wake-failed.md`). Folder and file are the id
+(`core/system-rules`), so a new capability is a new folder, and everything
+it tells a model is in it, plus one row in `BOT_CAPABILITIES`
+(`bots-chat/domain/bot-capability.policy.ts`): its "What you can do"
+label, what a new bot's hello says of it, the sections that hold on every
+turn offering its tools, and its built-in skills. The prompt's core names
+no capability; it reads that list. A module with few prompts (`src/sessions/`) keeps one
+folder per kind (`system/`, `turn/`, `wake/`). A file is
 one prompt, or several fragments under
 `<!-- fragment: name -->` markers when the code chooses among them;
 `{{name}}` is a slot the code fills; any other HTML comment is a note for

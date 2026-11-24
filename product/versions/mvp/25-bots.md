@@ -2549,7 +2549,7 @@ The decisions it produced:
   Code's prompt suggestions). After a turn ends, with the box empty, the
   bot's own model, with no tools, guesses the person's next message from
   the end of the chat (`GET /bots/:id/suggestion`, the prompt
-  `jobs/suggestion.md`); the composer shows it as the placeholder and Tab
+  `core/job-suggestion.md`); the composer shows it as the placeholder and Tab
   writes it into the box, never sends it. One guess per message of the
   bot's, kept a day in the cache; the model answers NONE when there is no
   clear next step, and a failure shows nothing. It is spend on the owner's
@@ -2562,7 +2562,7 @@ The decisions it produced:
   A bot on a phone read like a help desk: it quoted the owner's words back
   ("I got your 'Hello?'"), said how a voice note reached it, and listed what
   it can and cannot do, down to how many days messages are kept. The turn's
-  channel line (`turn/context.md`) is followed, on WhatsApp and Telegram alike, by one shared fragment, `on-a-phone`, that asks for
+  channel line (`core/turn-context.md`) is followed, on WhatsApp and Telegram alike, by one shared fragment, `on-a-phone`, that asks for
   a friend's texting voice in the owner's language and register, an emoji
   when it fits, an answer to what they meant, never their words echoed or the
   way their message arrived, and no capabilities, machinery or limits unless

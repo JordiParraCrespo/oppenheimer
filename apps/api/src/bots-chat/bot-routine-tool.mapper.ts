@@ -56,7 +56,7 @@ export function routineTriggers(
 ): { triggers: TriggerInputDto[] } | { refusal: string } {
   const triggers: TriggerInputDto[] = [];
   if (inputs.filter((input) => input.source === 'webhook').length > 1) {
-    return { refusal: promptText('tools/routine.webhook-trigger-twice') };
+    return { refusal: promptText('routines/tools.webhook-trigger-twice') };
   }
   for (const [index, input] of inputs.entries()) {
     const candidate =
@@ -91,7 +91,7 @@ export function routineTriggers(
     if (!parsed.success) {
       const fields = parsed.error.issues.map((issue) => issue.path.join('.') || 'trigger');
       return {
-        refusal: promptText('tools/routine.routine-triggers-refusal', {
+        refusal: promptText('routines/tools.routine-triggers-refusal', {
           index: String(index + 1),
           value: [...new Set(fields)].join(', '),
         }),

@@ -145,7 +145,7 @@ export function planCloudSession(
       return {
         refusal: invalidBodyRefusal(
           parsed.error.issues,
-          promptText('tools/sessions.cloud-check-task-name-model'),
+          promptText('sessions/tools.cloud-check-task-name-model'),
         ),
       };
     }
@@ -155,7 +155,7 @@ export function planCloudSession(
   const hostId = sessionHostId(input, project, homeHostId);
   if (!hostId) {
     return {
-      refusal: promptText('tools/sessions.cloud-no-host', {
+      refusal: promptText('sessions/tools.cloud-no-host', {
         label: CLOUD_RULES[agent].label,
         cli: cliOf(agent),
       }),
@@ -173,7 +173,7 @@ export function planCloudSession(
     return {
       refusal: invalidBodyRefusal(
         parsed.error.issues,
-        promptText('tools/sessions.cloud-check-task-name-environment'),
+        promptText('sessions/tools.cloud-check-task-name-environment'),
       ),
     };
   }
@@ -194,7 +194,7 @@ export function cloudFieldRefusal(input: StartCloudSessionInput): string | null 
   const takers = CLOUD_SESSION_AGENTS.filter((each) =>
     CLOUD_RULES[each].fields.includes(misplaced),
   );
-  return promptText('tools/sessions.cloud-field-refusal', {
+  return promptText('sessions/tools.cloud-field-refusal', {
     misplaced,
     takers: takers.join(' and '),
     agent,
@@ -247,7 +247,7 @@ export function cloudStartAnswer(
   const from =
     plan.kind === 'host' ? ` from host ${plan.hostId}` : ` on the owner's ${rule.label} key`;
   if (!session) {
-    return promptText('tools/sessions.cloud-start-answer-created-session-but', {
+    return promptText('sessions/tools.cloud-start-answer-created-session-but', {
       sessionId,
       from,
       label: rule.label,
@@ -258,9 +258,9 @@ export function cloudStartAnswer(
   if (link) {
     const followUps =
       rule.start === 'host'
-        ? promptText('tools/sessions.cloud-start-answer-follow-ups-answers', { site: rule.site })
-        : promptText('tools/sessions.cloud-start-answer-send-session-gives');
-    return promptText('tools/sessions.cloud-started', {
+        ? promptText('sessions/tools.cloud-start-answer-follow-ups-answers', { site: rule.site })
+        : promptText('sessions/tools.cloud-start-answer-send-session-gives');
+    return promptText('sessions/tools.cloud-started', {
       label: rule.label,
       sessionId,
       from,
@@ -272,9 +272,9 @@ export function cloudStartAnswer(
   if (session.state === 'failed' || session.isResolved) {
     const hint =
       rule.start === 'host'
-        ? promptText('tools/sessions.cloud-start-answer-most-often-hosts', { cli: rule.cli })
+        ? promptText('sessions/tools.cloud-start-answer-most-often-hosts', { cli: rule.cli })
         : '';
-    return promptText('tools/sessions.cloud-start-answer-session-could-start', {
+    return promptText('sessions/tools.cloud-start-answer-session-could-start', {
       sessionId,
       from,
       label: rule.label,
@@ -282,7 +282,7 @@ export function cloudStartAnswer(
       hint,
     });
   }
-  return promptText('tools/sessions.cloud-starting', {
+  return promptText('sessions/tools.cloud-starting', {
     sessionId,
     label: rule.label,
     from,

@@ -671,7 +671,7 @@ export function describeToolFailure(error: unknown, now: Date = new Date()): str
     return `${error.code}: ${error.title}.${error.detail ? ` ${error.detail}` : ''}`;
   }
   if (error instanceof ExceptionBase) return `${error.code}: ${error.message}`;
-  return promptText('tools/toolbox.describe-tool-failure');
+  return promptText('core/tools-toolbox.describe-tool-failure');
 }
 
 /**

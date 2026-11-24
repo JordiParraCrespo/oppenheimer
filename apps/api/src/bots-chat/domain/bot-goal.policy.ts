@@ -247,7 +247,7 @@ export function continueOrStop<Props>(
  * the condition as its directive, and says how it will be judged.
  */
 export function goalSetPrompt(condition: string): string {
-  return promptText('turn/slash-command.goal-set', { condition });
+  return promptText('core/turn-slash-command.goal-set', { condition });
 }
 
 /**
@@ -263,12 +263,12 @@ export function continuationCountText(
   const count = { step: String(step) };
   if (goal.limit === null) {
     return promptText(
-      noun === 'continuations' ? 'wake/goal.continuations' : 'wake/goal.continuation',
+      noun === 'continuations' ? 'goals/wake.continuations' : 'goals/wake.continuation',
       count,
     );
   }
   return promptText(
-    noun === 'continuations' ? 'wake/goal.continuations-of' : 'wake/goal.continuation-of',
+    noun === 'continuations' ? 'goals/wake.continuations-of' : 'goals/wake.continuation-of',
     { ...count, limit: String(goal.limit) },
   );
 }
@@ -286,20 +286,22 @@ export function goalContinuationText(
   lastStoppedAtLimit = false,
 ): string {
   return [
-    promptText('wake/goal.continue', {
+    promptText('goals/wake.continue', {
       count: continuationCountText(goal, step),
       objective: goal.objective,
     }),
-    lastStoppedAtLimit ? promptText('wake/goal.last-turn-stopped') : null,
-    reason ? promptText('wake/goal.not-met-yet', { reason }) : promptText('wake/goal.nobody-wrote'),
+    lastStoppedAtLimit ? promptText('goals/wake.last-turn-stopped') : null,
+    reason
+      ? promptText('goals/wake.not-met-yet', { reason })
+      : promptText('goals/wake.nobody-wrote'),
     goal.tokenBudget === null
       ? null
-      : promptText('wake/goal.budget', {
+      : promptText('goals/wake.budget', {
           used: goal.tokensUsed.toLocaleString('en'),
           budget: goal.tokenBudget.toLocaleString('en'),
         }),
-    promptText('wake/goal.take-the-next-step', { idleTurns: String(BOT_GOAL_IDLE_TURNS) }),
-    promptText('wake/goal.how-it-ends'),
+    promptText('goals/wake.take-the-next-step', { idleTurns: String(BOT_GOAL_IDLE_TURNS) }),
+    promptText('goals/wake.how-it-ends'),
   ]
     .filter(Boolean)
     .join('\n');
@@ -345,22 +347,22 @@ export function goalContinuationTurn(
 }
 
 const END_WORDS: Record<GoalEnding['activity'], string> = {
-  met: promptText('wake/goal.ended-met'),
-  cleared: promptText('wake/goal.ended-cleared'),
-  exhausted: promptText('wake/goal.ended-exhausted'),
-  stopped: promptText('wake/goal.ended-stopped'),
+  met: promptText('goals/wake.ended-met'),
+  cleared: promptText('goals/wake.ended-cleared'),
+  exhausted: promptText('goals/wake.ended-exhausted'),
+  stopped: promptText('goals/wake.ended-stopped'),
 };
 
 /** Why a goal paused, as the bot reads it in its history. */
 const PAUSE_WORDS: Record<BotGoalPauseReason, string> = {
-  blocked: promptText('wake/goal.paused-blocked'),
-  usage_limit: promptText('wake/goal.paused-usage-limit'),
-  no_progress: promptText('wake/goal.paused-no-progress', {
+  blocked: promptText('goals/wake.paused-blocked'),
+  usage_limit: promptText('goals/wake.paused-usage-limit'),
+  no_progress: promptText('goals/wake.paused-no-progress', {
     idleTurns: String(BOT_GOAL_IDLE_TURNS),
   }),
-  budget: promptText('wake/goal.paused-budget'),
-  stopped: promptText('wake/goal.paused-stopped'),
-  failed: promptText('wake/goal.paused-failed'),
+  budget: promptText('goals/wake.paused-budget'),
+  stopped: promptText('goals/wake.paused-stopped'),
+  failed: promptText('goals/wake.paused-failed'),
 };
 
 /**
@@ -374,14 +376,14 @@ export function goalPauseLine(
   const paused = goal.paused;
   const content =
     activity === 'resumed'
-      ? promptText('wake/goal.resumed', { objective: goal.objective })
+      ? promptText('goals/wake.resumed', { objective: goal.objective })
       : [
-          promptText('wake/goal.pause-line', {
-            paused: paused ? PAUSE_WORDS[paused.reason] : promptText('wake/goal.paused'),
+          promptText('goals/wake.pause-line', {
+            paused: paused ? PAUSE_WORDS[paused.reason] : promptText('goals/wake.paused'),
             objective: goal.objective,
           }),
-          paused?.note ? promptText('wake/goal.why', { note: paused.note }) : null,
-          promptText('wake/goal.stays-open'),
+          paused?.note ? promptText('goals/wake.why', { note: paused.note }) : null,
+          promptText('goals/wake.stays-open'),
         ]
           .filter(Boolean)
           .join('\n');
@@ -417,12 +419,12 @@ export function goalEndLine(
     turnId: null,
     role: 'event',
     content: [
-      promptText('wake/goal.end-line', {
+      promptText('goals/wake.end-line', {
         ended: END_WORDS[activity],
         count: continuationCountText(goal, goal.continuations, 'continuations'),
         objective: goal.objective,
       }),
-      activity === 'stopped' || !reason ? null : promptText('wake/goal.reason', { reason }),
+      activity === 'stopped' || !reason ? null : promptText('goals/wake.reason', { reason }),
     ]
       .filter(Boolean)
       .join('\n'),

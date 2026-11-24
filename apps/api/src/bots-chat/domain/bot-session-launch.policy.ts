@@ -124,14 +124,14 @@ export function planBotSessionLaunch(
   // blank terminal's, which the bot then drives the terminal under).
   if (!definition.launch.prompt && !definition.launch.taskIsNote) {
     return {
-      refusal: promptText('tools/sessions.launch-no-task', { label: definition.label }),
+      refusal: promptText('sessions/tools.launch-no-task', { label: definition.label }),
     };
   }
   let model: CodingAgentModel | null = null;
   if (input.model !== undefined) {
     if (definition.models.length === 0) {
       return {
-        refusal: promptText('tools/sessions.launch-no-models', {
+        refusal: promptText('sessions/tools.launch-no-models', {
           label: definition.label,
         }),
       };
@@ -139,7 +139,7 @@ export function planBotSessionLaunch(
     model = modelNamed(agent, input.model);
     if (!model) {
       return {
-        refusal: promptText('tools/sessions.launch-unknown-model', {
+        refusal: promptText('sessions/tools.launch-unknown-model', {
           label: definition.label,
           model: input.model,
           modelChoices: modelChoices(agent),
@@ -152,14 +152,14 @@ export function planBotSessionLaunch(
     const which = model?.label ?? `${definition.label}'s default model`;
     if (!offered) {
       return {
-        refusal: promptText('tools/sessions.launch-no-effort', {
+        refusal: promptText('sessions/tools.launch-no-effort', {
           which,
         }),
       };
     }
     if (!offered.levels.includes(input.effort)) {
       return {
-        refusal: promptText('tools/sessions.launch-unknown-effort', {
+        refusal: promptText('sessions/tools.launch-unknown-effort', {
           which,
           effort: input.effort,
           levels: offered.levels.join(', '),
@@ -169,7 +169,7 @@ export function planBotSessionLaunch(
   }
   if (input.permission !== undefined && !definition.launch.permission) {
     return {
-      refusal: promptText('tools/sessions.launch-no-approvals', {
+      refusal: promptText('sessions/tools.launch-no-approvals', {
         label: definition.label,
       }),
     };

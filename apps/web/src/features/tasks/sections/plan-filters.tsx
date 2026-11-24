@@ -17,7 +17,7 @@ const ALL = 'all';
 
 /** A set `pill` facet's frame, for a pick whose name has not answered yet. */
 const PENDING_FACET =
-  'inline-flex h-7.5 shrink-0 items-center gap-1.75 rounded-pill bg-selected-surface px-3 text-selected-fg [&_svg]:size-3.25 [&_svg]:shrink-0';
+  'inline-flex h-(--control-h-sm) shrink-0 items-center gap-1.75 rounded-pill bg-selected-surface px-3 text-selected-fg [&_svg]:size-3.25 [&_svg]:shrink-0';
 
 /**
  * Plan's filter row (the 2026-10-13 `Tasks` frame): Project on the board and

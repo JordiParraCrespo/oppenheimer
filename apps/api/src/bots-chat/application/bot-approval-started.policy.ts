@@ -13,7 +13,7 @@ import { promptText } from '../domain/bot-prompt-text.policy';
 export const APPROVAL_STARTED_MAX_STEPS = 2;
 
 /** What a tool answers in that turn: nothing runs, the report comes next. */
-export const APPROVAL_STARTED_REFUSAL = promptText('tools/toolbox.approval-started-refusal');
+export const APPROVAL_STARTED_REFUSAL = promptText('core/tools-toolbox.approval-started-refusal');
 
 /** What a turn runs with, and whether a message sent meanwhile may steer it. */
 export interface BotTurnShape<Request> {
