@@ -176,6 +176,7 @@ export {
   ChatReaction,
   ChatReactionBar,
   ChatReply,
+  ChatTable,
   ChatTranscript,
   ChatUserMessage,
   MessageTrail,

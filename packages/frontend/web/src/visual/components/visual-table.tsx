@@ -1,4 +1,4 @@
-import { Button, cn } from '@oppenheimer/design-system-web';
+import { Button, ChatTable, cn } from '@oppenheimer/design-system-web';
 import { ArrowDown, ArrowUp, ChevronsUpDown } from '@oppenheimer/design-system-web/icons';
 import type { VisualBlock } from '@oppenheimer/shared/schemas/visual';
 import { useState } from 'react';
@@ -14,9 +14,9 @@ const FOLD = 8;
 
 /**
  * Rows and columns, sortable by a click on a header (numbers largest first,
- * words A to Z), numbers right-aligned in tabular figures, the first rows
- * shown and the rest a click away. It scrolls sideways inside the card, never
- * the page.
+ * words A to Z), framed exactly as the session chat's Markdown tables, the
+ * first rows shown and the rest a click away. It scrolls sideways inside the
+ * card, never the page.
  */
 export function VisualTable({ block }: { block: Table }) {
   const { t } = useTranslation();
@@ -28,12 +28,16 @@ export function VisualTable({ block }: { block: Table }) {
   const rows = sortVisualRows(block.rows, sort);
   const shown = open ? rows : rows.slice(0, FOLD);
   const columns = keyed(block.columns, (column) => column.label);
-  const align = (c: number) => block.columns[c]?.align ?? (numeric[c] ? 'right' : 'left');
+  // A column the agent aligned keeps it, as a Markdown table's `:--:` does; the rest read as the chat's tables, from the start.
+  const alignOf = (c: number) => {
+    const align = block.columns[c]?.align;
+    return align ? { textAlign: align } : undefined;
+  };
   return (
     <div className="flex min-w-0 flex-col gap-2">
       {block.title ? <VisualBlockTitle>{block.title}</VisualBlockTitle> : null}
-      <div className="overflow-x-auto">
-        <table className="w-full border-separate border-spacing-0 rounded-sm border border-border-subtle text-[14px] leading-normal tabular-nums">
+      <ChatTable>
+        <table>
           <thead>
             <tr>
               {columns.map(({ item: column, key }, c) => {
@@ -44,24 +48,16 @@ export function VisualTable({ block }: { block: Table }) {
                   <th
                     key={key}
                     scope="col"
+                    style={alignOf(c)}
                     aria-sort={
                       active === 'asc' ? 'ascending' : active === 'desc' ? 'descending' : undefined
                     }
-                    className={cn(
-                      'border-b border-border-subtle bg-chat-wash p-0 font-semibold text-fg first:rounded-ss-[9px] last:rounded-se-[9px] [&:not(:last-child)]:border-e',
-                      align(c) === 'right' && 'text-right',
-                      align(c) === 'center' && 'text-center',
-                    )}
                   >
                     <button
                       type="button"
                       onClick={() => setSort(nextVisualSort(sort, c, numeric[c] ?? false))}
                       title={t('common.visual.sortBy', { column: column.label })}
-                      className={cn(
-                        'group/sort inline-flex w-full items-center gap-1 px-3 py-2 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-                        align(c) === 'right' && 'flex-row-reverse',
-                        align(c) === 'center' && 'justify-center',
-                      )}
+                      className="group/sort inline-flex items-center gap-1 whitespace-nowrap rounded-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {column.label}
                       <Icon
@@ -82,18 +78,14 @@ export function VisualTable({ block }: { block: Table }) {
               <tr
                 // biome-ignore lint/suspicious/noArrayIndexKey: rows have no identity of their own, and sorting re-keys by content.
                 key={`${row.join('\u0000')}-${r}`}
-                className="group/row"
               >
                 {columns.map(({ item: column, key }, c) => {
                   const cell = row[c] ?? null;
                   return (
                     <td
                       key={key}
+                      style={alignOf(c)}
                       className={cn(
-                        'border-b border-border-subtle px-3 py-2.5 align-top text-fg transition-colors duration-fast group-last/row:border-b-0 group-hover/row:bg-hover-surface/40 [&:not(:last-child)]:border-e',
-                        align(c) === 'right' && 'text-right',
-                        align(c) === 'center' && 'text-center',
-                        typeof cell === 'number' && 'figures',
                         // Short cells keep to one line and the table scrolls; prose wraps at a readable width.
                         typeof cell === 'string' && cell.length > 32
                           ? 'min-w-48'
@@ -113,7 +105,7 @@ export function VisualTable({ block }: { block: Table }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </ChatTable>
       {rows.length > FOLD ? (
         <Button
           variant="ghost"
