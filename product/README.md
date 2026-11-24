@@ -2000,3 +2000,53 @@ earlier note:
   session, a bot's approval) has no Done, a questionnaire goes one question
   at a time, and Mark as done takes up a task an agent made, as Dismiss did
   ("The card's actions, reshaped").
+- `next-steps/answering-on-telegram-and-whatsapp.md` gave a contact's
+  turn, and any turn in a group, no tools, so it could only ever answer in
+  text, and a bot told to answer a group by voice never could. On
+  2026-11-24 such a turn may answer as one voice note where
+  `send_whatsapp_voice_note` would run in that chat without asking (a
+  standing yes for the chat, or the tool allowed outright with no ask
+  rule) and the
+  workspace can speak: it is told so, marks its reply, and the reply goes
+  as the note and never also as text, falling back to text when it cannot
+  be spoken or sent (`next-steps/whatsapp.md`, 2026-11-24). It still gets
+  no tools.
+- The Chrome extension (`apps/extension`) told only about Claude Code cloud
+  sessions, and sent Oppenheimer their states without reading anything
+  back. On 2026-11-24, connected to Oppenheimer, it also reads the
+  workspace's open sessions with the same token and tells, with a Chrome
+  notification and its badge, each session on the person's hosts that comes
+  to wait on them and each agent notice (`29-inbox.md`, "The Chrome
+  extension tells about your hosts too").
+- `versions/mvp/05-screens.md`'s sidebar filter menu took one host. On
+  2026-11-24 the owner, filtering to their Mac Studio, wanted a second
+  machine beside it: the Host facet takes several hosts, as Repository
+  does, a chip each, and lists a session on any of them.
+- `versions/mvp/29-inbox.md`, "Bulk actions" (2026-11-11), showed a row's
+  checkbox only on hover, and the owner did not find it. On 2026-11-24
+  Select in the list's head shows every checkbox, and X checks the item on
+  the deck ("Selecting, found at a glance").
+- `versions/mvp/29-inbox.md`, "As built: the console" (2026-10-26), had
+  Show done on by default, so a done item stayed in the list struck
+  through. On 2026-11-24 the owner asked that it leave: Show done is off
+  unless turned on in the filter menu ("Done leaves the list").
+- A bot's `react` tool worked in its console chat only, refusing on a
+  channel's conversation ("answer in words"). On 2026-11-24 the owner asked
+  for the bot to decide its reactions on the channels too, keeping Slack's
+  automatic 👀: it reacts on Slack as its app and on WhatsApp as the number,
+  without asking, in a chat it answers (`next-steps/slack-for-bots.md` §4,
+  `next-steps/answering-on-telegram-and-whatsapp.md` §4). Telegram still
+  takes none.
+- `research/device-streaming.md` ("A host's desktop") left the pointer to
+  the screen-sharing server, and a watched Mac showed none: Apple's Screen
+  Sharing sends the cursor's shape but never where it is. On 2026-11-24 the
+  runner took that over: it reads the pointer with CoreGraphics and sends
+  `desktop.pointer` while the reader watches (`versions/mvp/01-protocol.md`),
+  and the console draws the host's cursor there.
+- `versions/mvp/05-screens.md` drew a stopped session as a pane with a
+  Restart button, and `02-runner.md` §5 kept every session running until
+  someone stopped it. On 2026-11-24, after reading how Orca hibernates
+  agents (`research/session-resume/README.md`), opening a stopped session
+  as its owner restarts it, and the button is the fallback for a restart
+  that fails. The runner also stops, never closes, a session left `done`
+  or `idle` and unwatched for two hours (`RUNNER_IDLE_STOP`).

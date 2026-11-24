@@ -66,6 +66,15 @@ type Terminals interface {
 	Attach(ctx context.Context, target string, size Size, readOnly bool) (Attachment, error)
 }
 
+// TerminalClients counts the clients attached to each tmux session right now,
+// by session name, whoever attached them: the console's PTYs, and a person on
+// the host (`runner sessions attach`, a bare `tmux attach`), whom the
+// service never sees attach. A view's clients count for the session it
+// watches. No server at all is none.
+type TerminalClients interface {
+	Clients(ctx context.Context) (map[string]int, error)
+}
+
 // Pane is one pane of the tmux server, as the poll loop sees it.
 type Pane struct {
 	// Session is the tmux session name.

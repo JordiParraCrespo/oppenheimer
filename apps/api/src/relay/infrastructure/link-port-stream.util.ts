@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Duplex } from 'node:stream';
-import type { ProtocolMessage } from '@oppenheimer/shared/protocol';
+import type { DesktopPointerMessage, ProtocolMessage } from '@oppenheimer/shared/protocol';
 import type {
   AttachmentClosedReason,
   AttachmentSink,
@@ -21,6 +21,8 @@ const CHUNK_BYTES = 64 * 1024;
 interface LinkStreamTarget {
   open(commandId: string, attachmentId: number): ProtocolMessage;
   close(attachmentId: number): ProtocolMessage;
+  /** A desktop's `desktop.pointer`, for its reader; a port never hears one. */
+  pointer?(message: DesktopPointerMessage): void;
 }
 
 /**
@@ -83,6 +85,7 @@ export class LinkPortStream extends Duplex {
     chat: () => {},
     opened: () => this.onOpened(),
     credit: (bytes) => this.onCredit(bytes),
+    pointer: (message) => this.target.pointer?.(message),
   };
 
   /** A connection to one of a session's ports. */
@@ -99,8 +102,15 @@ export class LinkPortStream extends Duplex {
     });
   }
 
-  /** A connection to the host's desktop, watching or in control. */
-  static toDesktop(link: RunnerLink, control: boolean): LinkPortStream {
+  /**
+   * A connection to the host's desktop, watching or in control; `onPointer`
+   * hears where the host's pointer is.
+   */
+  static toDesktop(
+    link: RunnerLink,
+    control: boolean,
+    onPointer: (message: DesktopPointerMessage) => void,
+  ): LinkPortStream {
     return new LinkPortStream(link, {
       open: (commandId, attachmentId) => ({
         type: 'desktop.open',
@@ -109,6 +119,7 @@ export class LinkPortStream extends Duplex {
         control,
       }),
       close: (attachmentId) => ({ type: 'desktop.close', attachmentId }),
+      pointer: onPointer,
     });
   }
 

@@ -40,9 +40,33 @@ test('an apostrophe in a comment does not pair with a class string', () => {
 
 test('the debt holds each file to its count: up fails, down fails until lowered', () => {
   const one = new Map([['a.tsx', [{ line: 1, token: 'h-8' }]]]);
-  assert.deepEqual(check(one, new Map([['a.tsx', 1]])), []);
-  assert.equal(check(one, new Map()).length, 1);
-  assert.match(check(new Map(), new Map([['a.tsx', 1]]))[0], /lower its count/);
+  const none = new Map();
+  assert.deepEqual(check(one, new Map([['a.tsx', 1]]), none), []);
+  assert.equal(check(one, new Map(), none).length, 1);
+  assert.match(
+    check(new Map(), new Map([['a.tsx', 1]]), none)[0],
+    /lower its count in CONTROL_HEIGHT_DEBT \(/,
+  );
+});
+
+test('what is not a control is held to its count like the debt, and adds to it', () => {
+  const two = new Map([
+    [
+      'a.tsx',
+      [
+        { line: 1, token: 'h-8' },
+        { line: 2, token: 'h-12' },
+      ],
+    ],
+  ]);
+  const row = new Map([['a.tsx', { count: 1, why: 'a list row' }]]);
+  assert.deepEqual(check(two, new Map([['a.tsx', 1]]), row), []);
+  assert.equal(check(two, new Map(), row).length, 1);
+  assert.match(check(new Map(), new Map(), row)[0], /lower its count in NOT_A_CONTROL \(/);
+  assert.match(
+    check(new Map(), new Map([['a.tsx', 1]]), row)[0],
+    /lower its count in CONTROL_HEIGHT_DEBT or NOT_A_CONTROL/,
+  );
 });
 
 test('a bare Button, Input, Select, Toggle or Tab is a control by its tag', () => {

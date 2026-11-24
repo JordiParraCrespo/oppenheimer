@@ -233,6 +233,14 @@ func (s *Service) SendVoice(ctx context.Context, chatID string, audio []byte, se
 	return s.spend(func() (string, time.Time, error) { return s.device.SendVoice(ctx, chatID, audio, seconds) })
 }
 
+// React reacts to a message as the paired number, inside the same budget a
+// text spends: WhatsApp counts a reaction as a message the number sent.
+func (s *Service) React(ctx context.Context, chatID, messageID, senderID, emoji string) (string, time.Time, error) {
+	return s.spend(func() (string, time.Time, error) {
+		return s.device.React(ctx, chatID, messageID, senderID, emoji)
+	})
+}
+
 // spend runs one send inside the host's budget: refused while the device is
 // not connected or the budget is spent, refunded when WhatsApp refuses it,
 // and pausing every send after WhatsApp's 429.

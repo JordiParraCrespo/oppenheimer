@@ -26,8 +26,8 @@ export function useInboxSearch() {
     item: search.item ?? null,
     query: search.q ?? '',
     filter,
-    showDone: !search.hideDone,
-    dirty: filter.type !== 'all' || filter.project !== null || Boolean(search.hideDone),
+    showDone: Boolean(search.done),
+    dirty: filter.type !== 'all' || filter.project !== null || Boolean(search.done),
     /** Names the item in the pane; null leaves it to the first. Pushed, so Back returns to the last one. */
     setItem: (item: string | null) =>
       navigate({ search: (previous) => ({ ...previous, item: item ?? undefined }) }),
@@ -36,7 +36,7 @@ export function useInboxSearch() {
     setQuery: (q: string) => write({ q: q.trim() ? q : undefined }),
     setType: (type: InboxTypeFilter) => write({ type: type === 'all' ? undefined : type }),
     setProject: (project: string | null) => write({ project: project ?? undefined }),
-    setShowDone: (show: boolean) => write({ hideDone: show ? undefined : true }),
-    clear: () => write({ type: undefined, project: undefined, hideDone: undefined }),
+    setShowDone: (show: boolean) => write({ done: show ? true : undefined }),
+    clear: () => write({ type: undefined, project: undefined, done: undefined }),
   };
 }

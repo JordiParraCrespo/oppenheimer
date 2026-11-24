@@ -27,7 +27,9 @@ covered, the debt left, and the open calls.
   control's element or styles a control's state, never by what text is near
   it. A miss or a false hit is fixed in that rule, not with a special case.
   `scripts/control-height-debt.mjs` holds each file to the count it had; a
-  pass lowers counts there as it pays them off, and never raises one.
+  pass lowers counts there as it pays them off, and never raises one. Its
+  `NOT_A_CONTROL` map holds what the scanner lists that is not a control,
+  each file with its count and why, to the same rule.
 - **The measurement** (below) reads real heights off the running console,
   which the scanner cannot: a row mixing a `sm` input with a `md` select
   passes the scanner, since both use the ramp.
@@ -67,8 +69,9 @@ covered, the debt left, and the open calls.
   moves rungs, its placeholder moves with it (`h-(--control-h-*)`).
 - **Not a control, not this campaign**: list rows, table rows, calendar
   cells, a switch's track, a glyph inside a control. When the scanner lists
-  one, record it in the ledger's "Not a control" list with the reason. Do not
-  bend the scanner around it.
+  one, move its count from the debt to `NOT_A_CONTROL` with the reason, and
+  name it in the ledger's "Not a control" list. Do not bend the scanner
+  around it.
 - **Change a control's look only as much as the rung needs.** Padding and
   type stay unless the new height makes them wrong.
 

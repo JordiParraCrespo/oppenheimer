@@ -231,8 +231,17 @@ describe('picking', () => {
     expect(apply(two, ['repository', ALL, true]).repository).toEqual([]);
   });
 
+  it('adds hosts one at a time, so a reader can watch two machines at once', () => {
+    expect(apply(DEFAULT_FILTERS, ['host', 'h1', true], ['host', 'h2', true]).host).toEqual([
+      'h1',
+      'h2',
+    ]);
+  });
+
   it('replaces the pick on a single-value facet rather than adding to it', () => {
-    expect(apply(DEFAULT_FILTERS, ['host', 'h1', true], ['host', 'h2', true]).host).toEqual(['h2']);
+    expect(
+      apply(DEFAULT_FILTERS, ['agent', 'claude', true], ['agent', 'codex', true]).agent,
+    ).toEqual(['codex']);
   });
 
   it('labels a facet by its "all" row, its one pick, or a count', () => {
