@@ -81,7 +81,9 @@ export function SessionBar({
         session.isCloud ? null : (
           <>
             {open ? <LatencyReadout sessionId={session.id} /> : null}
-            {open && tabs ? <span aria-hidden className="mx-1.5 h-4.5 w-px bg-border-subtle" /> : null}
+            {open && tabs ? (
+              <span aria-hidden className="mx-1.5 h-4.5 w-px bg-border-subtle" />
+            ) : null}
             {preview}
             <SessionShareButton sessionId={session.id} />
           </>

@@ -22,7 +22,10 @@ export function ChatViewIcons({
     { value: 'chat', Icon: MessageSquareIcon },
   ] as const;
   return (
-    <fieldset aria-label={t('sessions.chat.view.label')} className="m-0 flex gap-0.5 rounded-sm border-0 bg-hover-surface p-0.5">
+    <fieldset
+      aria-label={t('sessions.chat.view.label')}
+      className="m-0 flex gap-0.5 rounded-sm border-0 bg-hover-surface p-0.5"
+    >
       {views.map(({ value, Icon }) => (
         <IconButton
           key={value}
