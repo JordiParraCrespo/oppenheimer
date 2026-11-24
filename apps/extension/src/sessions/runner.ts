@@ -1,3 +1,5 @@
+import { noticeOccurrenceKey, sessionOccurrenceKey } from '@oppenheimer/shared/sessions';
+import { apiError } from './api-error';
 import type { OppenheimerConnection } from './store';
 
 /**
@@ -32,8 +34,8 @@ export interface RunnerWait {
   text?: string;
 }
 
-/** How many pages one look reads, 100 sessions each. */
-const MAX_PAGES = 5;
+/** How many pages one look reads, 100 sessions each, as the cloud tracking does. */
+const MAX_PAGES = 10;
 
 /** The API's list of the workspace's open sessions, from the origin the person connected. */
 export function runnerSessionsUrl(connection: OppenheimerConnection, cursor: string | null) {
@@ -91,7 +93,7 @@ export function runnerWaits(rows: readonly RunnerSessionRow[]): RunnerWait[] {
     const name = row.name || row.id;
     if (row.state === 'waiting-on-you') {
       waits.push({
-        key: waitKey(row),
+        key: sessionOccurrenceKey(row),
         sessionId: row.id,
         name,
         kind: row.lifecycle === 'failed' ? 'failed' : 'waiting',
@@ -99,7 +101,7 @@ export function runnerWaits(rows: readonly RunnerSessionRow[]): RunnerWait[] {
     }
     if (row.notice) {
       waits.push({
-        key: `notice:${row.id}:${row.notice.id}`,
+        key: noticeOccurrenceKey(row.id, row.notice.id),
         sessionId: row.id,
         name,
         kind: 'notice',
@@ -110,28 +112,23 @@ export function runnerWaits(rows: readonly RunnerSessionRow[]): RunnerWait[] {
   return waits;
 }
 
-/** The Inbox's key for a session's wait (`sessionItemKey`): one per occurrence. */
-function waitKey(row: RunnerSessionRow): string {
-  if (row.decision) return `session:${row.id}:${row.decision.id}`;
-  if (row.lifecycle === 'open' && row.observedSince) {
-    return `session:${row.id}:${new Date(row.observedSince).toISOString()}`;
-  }
-  return `session:${row.id}:s${row.stateSeq}`;
-}
-
 /**
  * The waits `seen` has not had yet, and the keys to remember. The first look
  * (`seen` null) tells nothing, so connecting does not announce everything
- * already waiting.
+ * already waiting. A look cut short by the page cap (`complete` false) adds
+ * to what is remembered instead of replacing it: an occurrence it did not
+ * reach is not forgotten, so it is never told a second time.
  */
 export function newWaits(
   seen: readonly string[] | null,
   waits: readonly RunnerWait[],
+  complete = true,
 ): { fresh: RunnerWait[]; seen: string[] } {
   const keys = waits.map((wait) => wait.key);
-  if (seen === null) return { fresh: [], seen: keys };
+  if (seen === null) return { fresh: [], seen: complete ? keys : [...new Set(keys)] };
   const known = new Set(seen);
-  return { fresh: waits.filter((wait) => !known.has(wait.key)), seen: keys };
+  const fresh = waits.filter((wait) => !known.has(wait.key));
+  return { fresh, seen: complete ? keys : [...new Set([...seen, ...keys])] };
 }
 
 /** How many runner sessions wait on the person: the badge's share of them. */
@@ -140,27 +137,24 @@ export function waitingCount(waits: readonly RunnerWait[]): number {
 }
 
 /**
- * Reads the open sessions, page by page. Throws with what the API said, as
- * the report does.
+ * Reads the open sessions, page by page, and whether it reached the last
+ * one. Throws with what the API said, as the report does.
  */
 export async function fetchRunnerSessions(
   connection: OppenheimerConnection,
-): Promise<RunnerSessionRow[]> {
+): Promise<{ rows: RunnerSessionRow[]; complete: boolean }> {
   const rows: RunnerSessionRow[] = [];
   let cursor: string | null = null;
   for (let page = 0; page < MAX_PAGES; page++) {
     const response = await fetch(runnerSessionsUrl(connection, cursor), {
       headers: { Authorization: `Bearer ${connection.token}` },
     });
-    if (!response.ok) {
-      const problem = (await response.json().catch(() => null)) as { title?: string } | null;
-      throw new Error(`${response.status} ${problem?.title ?? response.statusText}`.trim());
-    }
+    if (!response.ok) throw await apiError(response);
     const parsed = runnerSessionPage(await response.json());
     if (!parsed) throw new Error('not a session list');
     rows.push(...parsed.rows);
     cursor = parsed.nextCursor;
     if (!cursor) break;
   }
-  return rows;
+  return { rows, complete: cursor === null };
 }

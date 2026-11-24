@@ -126,8 +126,11 @@ async function watchRunner() {
   const { oppenheimer, runnerSeen, sessions } = await readState();
   if (!oppenheimer) return;
   let waits: RunnerWait[];
+  let complete: boolean;
   try {
-    waits = runnerWaits(await fetchRunnerSessions(oppenheimer));
+    const read = await fetchRunnerSessions(oppenheimer);
+    waits = runnerWaits(read.rows);
+    complete = read.complete;
   } catch (error) {
     await writeState({
       runnerWaiting: 0,
@@ -136,7 +139,7 @@ async function watchRunner() {
     await drawBadge(needsYouCount(sessions), 0);
     return;
   }
-  const { fresh, seen } = newWaits(runnerSeen ?? null, waits);
+  const { fresh, seen } = newWaits(runnerSeen ?? null, waits, complete);
   const runnerWaiting = waitingCount(waits);
   await writeState({ runnerSeen: seen, runnerWaiting });
   await chrome.storage.local.remove('runnerProblem');

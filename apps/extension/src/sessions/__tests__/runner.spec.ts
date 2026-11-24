@@ -93,6 +93,16 @@ describe('telling each wait once', () => {
     expect(newWaits(second.seen, runnerWaits([waiting('a')])).fresh).toEqual([]);
   });
 
+  it('a look cut short by the page cap forgets nothing, so nothing is told twice', () => {
+    const first = newWaits(null, runnerWaits([waiting('a'), waiting('b')]));
+    // b is past the cap this time: not told, and still remembered.
+    const partial = newWaits(first.seen, runnerWaits([waiting('a')]), false);
+    expect(partial.fresh).toEqual([]);
+    expect(partial.seen).toEqual(expect.arrayContaining(first.seen));
+    // b back inside the read: already told, so not again.
+    expect(newWaits(partial.seen, runnerWaits([waiting('a'), waiting('b')])).fresh).toEqual([]);
+  });
+
   it('tells a new wait on the same session again', () => {
     const before = newWaits(null, runnerWaits([waiting('a', '2026-11-24T09:00:00.000Z')]));
     const after = newWaits(before.seen, runnerWaits([waiting('a', '2026-11-24T09:30:00.000Z')]));
