@@ -9,12 +9,15 @@ import { startLocalHost } from '../../support/fleet-local';
 import {
   browserOn,
   buildNetsim,
+  bytesBetween,
   enter,
   netsimAvailable,
   netsimDown,
   netsimUp,
+  onPath,
   type Placement,
   place,
+  resetLegStats,
 } from '../../support/netsim';
 import {
   appendTranscript,
@@ -72,7 +75,12 @@ test('the chat reads and types over a far, slow link, on the relay and direct', 
     const row = await waitForHost(api, host, true, 120_000);
 
     const chrome = process.env.PLAYWRIGHT_CHROMIUM_PATH ?? chromium.executablePath();
-    browser = await chromium.launch({ executablePath: browserOn('browser', chrome) });
+    // No GPU: the console refuses software WebGL, so the grid stays on the DOM
+    // renderer, whose `.xterm-rows` the specs read.
+    browser = await chromium.launch({
+      executablePath: browserOn('browser', chrome),
+      args: ['--disable-gpu'],
+    });
 
     for (const path of ['relay', 'direct'] as const) {
       const sessionId = await createSession(api, row.id, installationId);
@@ -86,7 +94,6 @@ test('the chat reads and types over a far, slow link, on the relay and direct', 
         viewport: { width: 1280, height: 760 },
       });
       const page = await context.newPage();
-      await page.addInitScript(() => localStorage.setItem('oppenheimer.terminal.latency', '1'));
       if (path === 'relay') {
         await page.addInitScript(() => {
           // No WebRTC in this tab: the console stays on the relay.
@@ -96,7 +103,7 @@ test('the chat reads and types over a far, slow link, on the relay and direct', 
       await signInAs(page, user);
       await page.goto(`/sessions/${sessionId}`);
       await expect(linkLive(page)).toBeVisible({ timeout: 120_000 });
-      await expect(page.getByText(`· ${path}`)).toBeVisible({ timeout: 60_000 });
+      await onPath(path, 'host-far');
       await place('browser', READER);
 
       const toggle = page.getByRole('group', { name: 'How to read this session' });
@@ -113,11 +120,16 @@ test('the chat reads and types over a far, slow link, on the relay and direct', 
       await expectChatOnTop(page);
 
       const composer = await expectComposerClickable(page);
+      await resetLegStats();
       await composer.fill(`echo far-${path}-$((6*7))`);
       await page.keyboard.press('Enter');
       await toggle.getByRole('button', { name: 'Terminal' }).click();
       await expect.poll(() => screenText(page), { timeout: 30_000 }).toContain(`far-${path}-42`);
-      await expect(page.getByText(`· ${path}`)).toBeVisible();
+      // The composer's text reached the PTY over this run's path.
+      const toHost = await bytesBetween('browser', 'host-far');
+      const toRelay = await bytesBetween('browser', 'relay');
+      if (path === 'direct') expect(toHost, 'typed off the direct path').toBeGreaterThan(toRelay);
+      else expect(toHost, 'typed off the relay').toBe(0);
       await page.screenshot({ path: `test-results/netsim-chat-${path}.png` });
       await context.close();
     }

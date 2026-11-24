@@ -2065,3 +2065,14 @@ earlier note:
   bot to run `runner browser on` after saying "do it yourself", did not want
   that guardrail: a bot changes them with `set_host_settings` when the
   person asks in their own chat ("The host's switches").
+- `versions/mvp/22-direct-terminal-path.md` (step 0) drew the keystroke
+  round trip, `echo p50 / p95 ms · path`, in the session's bar when a
+  `localStorage` switch was set, and gated each step on it. On 2026-11-24
+  the owner did not want it in the header: it is gone, and the netsim
+  bench times keydown to echo in the page instead.
+- `versions/mvp/29-inbox.md` ("A notification in this browser",
+  2026-11-24) told only a session that comes to wait on you and an agent's
+  notice. The same day the owner asked for more: a turn that ends (the
+  row's blue dot) is told, a session left amber or blue for thirty minutes
+  is told once more, and Mute notifications in a row's menu silences one
+  session on this browser ("A finished turn, a long wait, and a mute").

@@ -85,6 +85,8 @@ vi.mock('@oppenheimer/design-system-web', async (original) => ({
   useNow: () => useSyncExternalStore(world.subscribe, () => world.get().now),
 }));
 
+const NO_MUTES = [new Set<string>(), () => {}] as const;
+
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   // No project holds these rows, so they all sit under the one unfiled group.
   useSuspenseSessionsSidebar: () => {
@@ -96,6 +98,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useRenameSession: () => ({ mutate: vi.fn(), error: null }),
   useMoveSession: () => ({ mutate: vi.fn(), error: null }),
   useSetSessionHidden: () => ({ mutate: vi.fn(), error: null }),
+  useMutedSessionAlerts: () => NO_MUTES,
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', async (original) => ({

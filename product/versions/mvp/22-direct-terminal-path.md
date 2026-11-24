@@ -45,8 +45,11 @@ predictive echo hides whatever distance is left for what is typed most.
   to the next output on its stream, only when the stream was quiet before
   the key (the next chunk of a printing agent is not the echo), plus every
   prediction the host confirms (`apps/web/src/features/sessions/lib/echo-latency.ts`).
-  `localStorage['oppenheimer.terminal.latency'] = '1'` draws `echo p50 / p95 ms`
-  in the pane's corner. Every later step is judged by this number.
+  It feeds predictive echo only. Every later step is judged by the netsim
+  bench (`e2e/tests/netsim/typing.spec.ts`), which times keydown to echo
+  drawn in the page. (Until 2026-11-24 a `localStorage` switch also drew
+  `echo p50 / p95 ms · path` in the session's bar; the owner did not want
+  it on screen and it was removed.)
 - **Predictive local echo** (`typeahead-model.ts`, `typeahead.ts`), Mosh's
   idea narrowed to the cursor's line: a character typed at the cursor,
   Backspace, Left and Right are drawn at once in an overlay over the grid,
@@ -250,7 +253,6 @@ invite.
 1. **Signalling and the direct path for the reader's own panes**, behind a
    `terminal_direct_path` release flag: the protocol messages, pion in the
    runner, the switch offsets, the browser's channel next to its socket.
-   The latency readout says which path a pane is on (`direct` / `relay`).
    **Built**; STUN is Cloudflare's (open question 1).
 2. **Fallback and recovery**: the channel closing (**built**: back to the
    link, repainted), ICE restarting after a network change (a laptop
@@ -263,7 +265,7 @@ invite.
    people and its signed-in link; 21.)
 4. **Later**: relay fan-out for large read-only audiences.
 
-Each step's gate is the readout's number: a reader on the same LAN as the
+Each step's gate is the bench's number: a reader on the same LAN as the
 host under 10 ms median echo, and no reader slower than the relay path
 would have been.
 
@@ -301,7 +303,7 @@ would have been.
 3. **Mobile networks.** A phone on a carrier's symmetric NAT will usually
    not connect directly and stays on the relay. Whether that is worth a
    TURN server near the reader (not near the relay) is a question for
-   after the readout shows how often it happens.
+   after the bench shows how often it happens.
 4. **Whether the direct path makes predictive echo redundant on a LAN.** The
    30 ms threshold already stops it drawing there; whether to stop
    tracking too is a measurement, not a decision.

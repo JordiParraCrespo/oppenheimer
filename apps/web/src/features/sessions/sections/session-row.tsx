@@ -1,9 +1,16 @@
 import { AgentMark, SortableSessionItem, useRowMenu } from '@oppenheimer/design-system-web';
-import { Cloud, EyeOff, Folder, SquareTerminal } from '@oppenheimer/design-system-web/icons';
+import {
+  BellOff,
+  Cloud,
+  EyeOff,
+  Folder,
+  SquareTerminal,
+} from '@oppenheimer/design-system-web/icons';
 import { cloudProviderLabel, type SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
   useAcknowledgeSessionReport,
   useMoveSession,
+  useMutedSessionAlerts,
   useProjectsSnapshot,
   useRenameSession,
   useSetSessionHidden,
@@ -60,14 +67,20 @@ const GLYPHS: Record<Exclude<SessionGlyph, 'vendor'>, ReactNode> = {
  */
 /**
  * What the row says in its age's place, first match wins: a delete the host
- * refused, a delete under way, then the eye of a hidden session. A deleted
- * row back in the list is never back as it was (`useCloseSession`).
+ * refused, a delete under way, the eye of a hidden session, then the bell of
+ * one whose notifications the reader muted. A deleted row back in the list is
+ * never back as it was (`useCloseSession`).
  */
-function rowStatus(session: SessionEntity, t: TFunction): ReactNode {
+function rowStatus(session: SessionEntity, muted: boolean, t: TFunction): ReactNode {
   if (session.closeRefusal) return t('sessions.sidebar.notDeleted');
   if (session.isClosing) return t('sessions.sidebar.deleting');
   if (session.hidden) {
     return <EyeOff role="img" aria-label={t('sessions.sidebar.hidden')} className="size-3.5" />;
+  }
+  if (muted) {
+    return (
+      <BellOff role="img" aria-label={t('sessions.sidebar.mutedLabel')} className="size-3.5" />
+    );
   }
   return undefined;
 }
@@ -95,6 +108,8 @@ export function SessionRow({
   });
   const pin = useSessionPin(session.id);
   const unread = useSessionUnread(session.id);
+  const [mutedSessions, setSessionMuted] = useMutedSessionAlerts();
+  const muted = mutedSessions.has(session.id);
   const selection = useSessionSelected(session.id);
   const [draft, setDraft] = useState<string | null>(null);
   // The projects are read, not subscribed to: the move pane is the one thing
@@ -133,7 +148,7 @@ export function SessionRow({
   const age = compactAge(session.createdAt, now);
   const attention = rowAttentionFor(session, unread.unread);
   const glyph = sessionGlyph(session);
-  const status = rowStatus(session, t);
+  const status = rowStatus(session, muted, t);
   const cloudUrl = session.cloud?.url ?? null;
   // The row has a menu unless the list is selecting (the bar acts) or its name
   // is being typed; every way of opening the menu reads this.
@@ -218,6 +233,8 @@ export function SessionRow({
             onPinChange={pin.setPinned}
             unread={unread.unread}
             onUnreadChange={unread.setUnread}
+            muted={muted}
+            onMutedChange={(next) => setSessionMuted(session.id, next)}
             hidden={session.hidden}
             onHiddenChange={(hidden) => visibility.mutate({ id: session.id, hidden })}
             onSelect={() => selection.pick('toggle')}

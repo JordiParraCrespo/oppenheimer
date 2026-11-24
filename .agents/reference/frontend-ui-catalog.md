@@ -81,6 +81,7 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | Volume over time (tokens, cost) | `AreaChart` | `LineChart` with a fill of your own, a chart library |
 | Several connected calendar accounts | `CalendarAccountList` + `CalendarAccountRow` + `CalendarAccountAdd` | a `Card` per account |
 | An employee in the sidebar | `BotList` + `BotItem` (`SortableBotItem` to move it; `needsInput` when it waits on the reader) | a `SessionItem` with an avatar |
+| A folded list of bots that keeps them in its heading | `BotFaces` + `BotFaceItem` in `SidebarListHead`'s `summary` (each face a link to its chat, its row's state on the corner) | avatars laid in the label by hand, or hiding the bots while folded |
 | A sidebar's Pinned group above its own groups (sessions, bots) | the kit's `SidebarPinnedGroup`: the order hook's `id`, the pinned `items`, the drag kinds it `accepts`, an `emptyHint`, the rows as children | an eyebrow head, a `SortableGroup` and a drop hint put together in a feature |
 | A sidebar list head that folds its list (a section's Bots) | `SidebarFoldLabel` as the `SidebarListHead`'s `label`, the fold kept with `useStoredList` + `withFold` from the kit | a `button` and chevron of the feature's own, a fold mode on `SidebarListHead` |
 | Employees' group heads, and the list before the first bot | `SidebarProjectHeader tone="eyebrow"` (`marker` for the Built-in lock); `SidebarEmptyCard` | an uppercase `span`, a `Callout` in the sidebar |
