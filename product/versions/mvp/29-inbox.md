@@ -750,6 +750,30 @@ This replaces, in "Its own page, and a deck" above: E, S and L (S and L are
 gone), the swipe left as Later, the keys line under the deck, and Decided 1
 (a swipe still never answers; right is Done, left is Next).
 
+## The Chrome extension tells about your hosts too (2026-11-24)
+
+The third step of the owner's ask. The extension already told about Claude
+Code cloud sessions; connected to Oppenheimer, it now also tells about the
+sessions on the person's own hosts, so a wait reaches them with no console
+tab open at all.
+
+- **The same connection.** After its report it reads the workspace's open
+  sessions with the token the person gave it (`sessions:write`, which
+  includes reading). Nothing new leaves the machine.
+- **The Inbox's occurrences.** A session waiting on you (a question, a
+  permission, a failure) and an agent's notice, keyed as the Inbox keys
+  them, each told once with a Chrome notification; the first read after
+  connecting only remembers. The badge adds the waiting sessions to the
+  cloud ones. A cloud run Oppenheimer launched is left to the claude.ai
+  tracking, so it is told once.
+- **A click opens the console** on that session, at the URL the person
+  gave in the popup or one worked out from the API's.
+- **Every minute**, the extension's own poll; the console's browser
+  notification is the one that tells within seconds.
+
+Not yet: the popup does not list the runner sessions, only counts and
+tells them.
+
 ### Selecting, found at a glance (2026-11-24)
 
 The owner looked for bulk actions and did not find them: a row's checkbox
