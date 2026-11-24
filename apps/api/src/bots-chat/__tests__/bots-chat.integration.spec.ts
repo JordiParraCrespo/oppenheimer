@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
-import type { PlanTaskEventKind } from '@oppenheimer/shared';
+import { botFormSpecSchema, type PlanTaskEventKind } from '@oppenheimer/shared';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import type { ChatgptCredentialResolver } from '../../bots/application/chatgpt-credential.resolver';
@@ -53,6 +53,7 @@ import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import { BotConversationMapper } from '../bot-conversation.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
+import { BotFormMapper } from '../bot-form.mapper';
 import { BotGoalMapper } from '../bot-goal.mapper';
 import { BotLoopMapper } from '../bot-loop.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
@@ -69,6 +70,8 @@ import { BotAttachmentRepository } from '../database/bot-attachment.repository';
 import { BotConversationRepository } from '../database/bot-conversation.repository';
 import { BotConversationSummaryOrmEntity } from '../database/bot-conversation-summary.orm-entity';
 import { BotConversationSummaryRepository } from '../database/bot-conversation-summary.repository';
+import { BotFormOrmEntity } from '../database/bot-form.orm-entity';
+import { BotFormRepository } from '../database/bot-form.repository';
 import { BotGoalOrmEntity } from '../database/bot-goal.orm-entity';
 import { BotGoalRepository } from '../database/bot-goal.repository';
 import { BotLoopOrmEntity } from '../database/bot-loop.orm-entity';
@@ -88,6 +91,7 @@ import { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { stoppedLine } from '../domain/bot-approval.policy';
 import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
 import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';
+import { BotFormEntity } from '../domain/bot-form.entity';
 import { BotGoalEntity } from '../domain/bot-goal.entity';
 import { goalContinuationTurn, goalEndLine, goalPauseLine } from '../domain/bot-goal.policy';
 import { BotLoopEntity } from '../domain/bot-loop.entity';
@@ -147,6 +151,7 @@ describe('bots chat (integration)', () => {
   let messages: BotMessageRepository;
   let approvals: BotApprovalRepository;
   let questions: BotQuestionRepository;
+  let forms: BotFormRepository;
   let summaries: BotConversationSummaryRepository;
   let attachments: BotAttachmentRepository;
   let subscriptions: BotSubscriptionRepository;
@@ -182,6 +187,7 @@ describe('bots chat (integration)', () => {
         BotMessageOrmEntity,
         BotApprovalOrmEntity,
         BotQuestionOrmEntity,
+        BotFormOrmEntity,
         BotConversationSummaryOrmEntity,
         BotAttachmentOrmEntity,
         BotSubscriptionOrmEntity,
@@ -245,6 +251,13 @@ describe('bots chat (integration)', () => {
     questions = new BotQuestionRepository(
       dataSource.getRepository(BotQuestionOrmEntity),
       new BotQuestionMapper(),
+      new OutboxService(dataSource),
+      new BotTurnMapper(),
+      new BotMessageMapper(),
+    );
+    forms = new BotFormRepository(
+      dataSource.getRepository(BotFormOrmEntity),
+      new BotFormMapper(),
       new OutboxService(dataSource),
       new BotTurnMapper(),
       new BotMessageMapper(),
@@ -1930,6 +1943,73 @@ describe('bots chat (integration)', () => {
     expect(
       (await questions.findOne(scopeOf(await insertOrganization()), bot.id, card.id)).isNone(),
     ).toBe(true);
+  });
+
+  /** A form on the bot's turn, waiting for its owner. */
+  async function formed(bot: BotEntity, title = 'Release details') {
+    const { turn, message } = sent(bot, 'Release it');
+    await turns.enqueue(turn, message, null);
+    return BotFormEntity.ask({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: turn.id,
+      spec: botFormSpecSchema.parse({
+        title,
+        fields: [
+          { id: 'version', kind: 'text', label: 'Version', required: true },
+          { id: 'replicas', kind: 'number', label: 'Replicas', min: 1, max: 5 },
+        ],
+      }),
+    });
+  }
+
+  it('stores a form submitted, its spec and values read back whole, and refuses one submitted without values', async () => {
+    const bot = await create('Former');
+    const form = await formed(bot);
+    expect(await forms.insertPending(form)).toBe('inserted');
+    const stored = (await forms.findPending(organizationId, bot.id)).unwrap();
+    expect(stored.spec).toEqual(form.spec);
+    expect(await forms.findPendingBotIds(scope())).toContain(bot.id);
+    stored.submit(userId, new Date(), { version: 'v2.4.0', replicas: '3' });
+    expect(await forms.saveTransition(stored)).toBe(true);
+    expect((await forms.findOne(scope(), bot.id, form.id)).unwrap()).toMatchObject({
+      status: 'submitted',
+      values: { version: 'v2.4.0', replicas: 3 },
+    });
+    expect(await forms.findPendingBotIds(scope())).not.toContain(bot.id);
+    // The loser of a race writes nothing.
+    form.expire(new Date());
+    expect(await forms.saveTransition(form)).toBe(false);
+    await expect(
+      dataSource.query(`UPDATE bot_form SET "values" = NULL WHERE id = $1`, [form.id]),
+    ).rejects.toThrow(/CHK_bot_form_values/);
+    // Another workspace cannot read it.
+    expect(
+      (await forms.findOne(scopeOf(await insertOrganization()), bot.id, form.id)).isNone(),
+    ).toBe(true);
+  });
+
+  it('keeps one card up per bot across all three kinds: a form waits on questions, and questions on a form', async () => {
+    const bot = await create('Three kinds');
+    expect(await questions.insertPending(await questioned(bot, 'Which branch?'))).toBe('inserted');
+    expect(await forms.insertPending(await formed(bot))).toEqual({ waiting: 'Which branch?' });
+    const pending = (await questions.findPending(organizationId, bot.id)).unwrap();
+    pending.expire(new Date());
+    expect(await questions.saveTransition(pending)).toBe(true);
+    expect(await forms.insertPending(await formed(bot, 'Deploy details'))).toBe('inserted');
+    expect(await questions.insertPending(await questioned(bot))).toEqual({
+      waiting: 'Deploy details',
+    });
+    expect(await approvals.insertPending(await asked(bot, 'Merge it'))).toEqual({
+      waiting: 'Deploy details',
+    });
+
+    const racer = await create('Racing forms');
+    const outcomes = await Promise.all([
+      questions.insertPending(await questioned(racer, 'Which one?')),
+      forms.insertPending(await formed(racer)),
+    ]);
+    expect(outcomes.filter((outcome) => outcome === 'inserted')).toHaveLength(1);
   });
 
   it('keeps one card up per bot across both kinds: questions wait on an approval, and the other way round', async () => {
