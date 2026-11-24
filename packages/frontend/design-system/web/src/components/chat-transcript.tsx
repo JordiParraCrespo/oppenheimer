@@ -339,16 +339,6 @@ function TurnHeader({
 }
 
 /**
- * The agent's answer, unboxed: markdown at 15px on 1.7 across the chat's
- * column, its blocks 14px apart. Pass the rendered markdown as children; it
- * styles the elements the way `Prose` does at a chat's scale: headings a step
- * or two over the text, lists with muted markers, links in the link blue,
- * a quote behind a 2px rule, inline code on the chat's wash, and tables full
- * width as a framed card (a hairline round its 10px corners and between its
- * rows and columns, the header row on the same wash), each scrolling
- * sideways in its own box when it is wider than the column. A fenced block is a `ChatCodeBlock` the renderer draws.
- */
-/**
  * How a table reads in the chat: a framed card, its 10px corners on a
  * hairline; the header row on the wash over a hairline, hairlines between
  * rows and columns. One set of rules for a reply's Markdown tables
@@ -379,6 +369,16 @@ function ChatTable({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * The agent's answer, unboxed: markdown at 15px on 1.7 across the chat's
+ * column, its blocks 14px apart. Pass the rendered markdown as children; it
+ * styles the elements the way `Prose` does at a chat's scale: headings a step
+ * or two over the text, lists with muted markers, links in the link blue,
+ * a quote behind a 2px rule, inline code on the chat's wash, and tables full
+ * width as a framed card (a hairline round its 10px corners and between its
+ * rows and columns, the header row on the same wash), each scrolling
+ * sideways in its own box when it is wider than the column. A fenced block is a `ChatCodeBlock` the renderer draws.
+ */
 function ChatReply({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
