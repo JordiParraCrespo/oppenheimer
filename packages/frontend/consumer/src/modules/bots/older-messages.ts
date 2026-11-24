@@ -57,7 +57,7 @@ export function withOlderMessages(
     [...older.turns.filter((turn) => !windowTurns.has(turn.id)), ...window.turns],
     window.messageCount,
     older.hasOlder,
-    laidUnder.length,
+    laidUnder.length + window.windowStart,
   );
 }
 
@@ -151,17 +151,17 @@ export function slideOlder(
 const GAP_PAGES_MAX = 5;
 
 /**
- * The older pages joined again to a `window` that moved past them (the bot
- * wrote a window's worth while the reader was up in its history): the pages
- * between are read, newest first, until one reaches the older pages, so what
- * the reader is looking at stays drawn. `null` when the gap is wider than
- * `GAP_PAGES_MAX` pages, or the older pages are no longer in the chat.
+ * The messages between a `window` that moved past the older pages and those
+ * pages (the bot wrote a window's worth while the reader was up in its
+ * history): read a page at a time, newest first, until one reaches the older
+ * pages. `null` when the gap is wider than `GAP_PAGES_MAX` pages, or the older
+ * pages are no longer in the chat. A read that fails throws.
  */
-export async function fillOlderGap(
+async function readBetween(
   window: BotConversationEntity,
   older: BotOlderMessages,
   readBefore: (messageId: string) => Promise<BotConversationEntity>,
-): Promise<BotOlderMessages | null> {
+): Promise<Lines | null> {
   const first = window.messages[0];
   if (!first) return null;
   let between: Lines = { messages: [], turns: [] };
@@ -169,18 +169,58 @@ export async function fillOlderGap(
   for (let read = 0; read < GAP_PAGES_MAX; read += 1) {
     const page = await readBefore(cursor);
     between = joined(between, linesOf(page));
-    if (joinsWindow(page, older)) {
-      return {
-        ...joined(between, older),
-        hasOlder: older.hasOlder,
-        boundary: { id: first.id, at: first.createdAt },
-      };
-    }
+    if (joinsWindow(page, older)) return between;
     const oldest = page.messages[0];
     if (!page.hasOlder || !oldest) return null;
     cursor = oldest.id;
   }
   return null;
+}
+
+/**
+ * The older pages joined again to a `window` that moved past them, the
+ * messages between read and laid under the window ({@link readBetween}).
+ * `null` when they cannot be joined.
+ */
+export async function fillOlderGap(
+  window: BotConversationEntity,
+  older: BotOlderMessages,
+  readBefore: (messageId: string) => Promise<BotConversationEntity>,
+): Promise<BotOlderMessages | null> {
+  const first = window.messages[0];
+  const between = await readBetween(window, older, readBefore);
+  if (!first || !between) return null;
+  return {
+    ...joined(between, older),
+    hasOlder: older.hasOlder,
+    boundary: { id: first.id, at: first.createdAt },
+  };
+}
+
+/**
+ * A `window` that moved past the older pages, reaching back to them again:
+ * the messages between are read before the window is drawn, so it never
+ * shows with a hole where the reader may be. `null` when they cannot be
+ * joined; the older pages are then let go. A read that fails throws.
+ */
+export async function windowReachingOlder(
+  window: BotConversationEntity,
+  older: BotOlderMessages,
+  readBefore: (messageId: string) => Promise<BotConversationEntity>,
+): Promise<BotConversationEntity | null> {
+  const between = await readBetween(window, older, readBefore);
+  if (!between) return null;
+  const inWindow = new Set(window.messages.map((message) => message.id));
+  const windowTurns = new Set(window.turns.map((turn) => turn.id));
+  const reachedBack = between.messages.filter((message) => !inWindow.has(message.id));
+  // What it reached back over is older history, not the live window.
+  return window.withLines(
+    [...reachedBack, ...window.messages],
+    [...between.turns.filter((turn) => !windowTurns.has(turn.id)), ...window.turns],
+    window.messageCount,
+    window.hasOlder,
+    reachedBack.length,
+  );
 }
 
 /** The older pages with `emoji` as your reaction to message `messageId`, or none. */

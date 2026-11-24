@@ -55,6 +55,7 @@ import {
   fillOlderGap,
   olderCursor,
   slideOlder,
+  windowReachingOlder,
   withOlderMessages,
 } from '../modules/bots/older-messages';
 import { type BotSending, withBotSendings } from '../modules/bots/sending';
@@ -111,12 +112,12 @@ function useBotOlderMessages(id: string): BotOlderMessages | null {
 /**
  * The chat's read, the same for every reader of it: its newest window. When
  * the reader is up in older pages, those stay joined to it as it moves on:
- * what the window let go comes from the read before ({@link slideOlder}),
- * and only a window that moved past all of that reads the messages between
- * ({@link fillOlderGap}), after this read has landed, so the newest messages
- * never wait on it, nor fail with it. The older pages stay drawn meanwhile;
- * if the read between fails, they are let go rather than drawn with a hole,
- * and the next scroll up reads them again.
+ * what the window let go comes from the read before ({@link slideOlder}).
+ * A window that moved past all of that (the bot wrote a window's worth since
+ * the last read) reaches back to the older pages before it is drawn
+ * ({@link windowReachingOlder}), so the chat never shows with a hole where
+ * the reader may be; a read of the messages between that fails fails this
+ * read, and the chat stays as it was until the next.
  */
 function conversationQuery(app: ConsumerApp, queryClient: QueryClient, id: string) {
   const olderKey = botsKeys.olderMessages(id);
@@ -132,20 +133,11 @@ function conversationQuery(app: ConsumerApp, queryClient: QueryClient, id: strin
         if (slid !== older) queryClient.setQueryData(olderKey, slid);
         return window;
       }
-      void fillOlderGap(window, older, (before) => app.bots.findConversation(id, before)).then(
-        (filled) => {
-          // Only over the pages it read from: a page loaded meanwhile keeps its own.
-          if (queryClient.getQueryData(olderKey) === older) {
-            queryClient.setQueryData(olderKey, filled);
-          }
-        },
-        () => {
-          if (queryClient.getQueryData(olderKey) === older) {
-            queryClient.setQueryData(olderKey, null);
-          }
-        },
+      const reached = await windowReachingOlder(window, older, (before) =>
+        app.bots.findConversation(id, before),
       );
-      return window;
+      if (!reached) queryClient.setQueryData(olderKey, null);
+      return reached ?? window;
     },
   };
 }
