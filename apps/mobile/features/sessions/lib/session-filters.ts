@@ -12,6 +12,24 @@ export const FILTER_LABEL = {
   failed: 'sessions.session.state.failed',
 } as const satisfies Record<SessionFilter, string>;
 
+/** What the list draws: skeleton rows, the failure with Try again, or the rows. */
+export type SessionsListState = 'pending' | 'failed' | 'ready';
+
+/**
+ * The list groups sessions by project, so it is drawn once both reads hold
+ * data, as the console's sidebar waits for its own: drawn before the projects
+ * arrive, every row would land under Unfiled. A first read that failed has
+ * nothing to draw and shows the failure; one that fails over data already
+ * held keeps it, since the next poll can bring it back.
+ */
+export function sessionsListState(
+  reads: readonly { data: unknown; isError: boolean }[],
+): SessionsListState {
+  if (reads.every((read) => read.data !== undefined)) return 'ready';
+  if (reads.some((read) => read.isError && read.data === undefined)) return 'failed';
+  return 'pending';
+}
+
 /** Whether an agent is waiting on the person: the group the list leads with. */
 export function needsInput(session: SessionEntity): boolean {
   return session.state === 'waiting-on-you' && session.isLive && !session.isClosing;

@@ -70,7 +70,9 @@
       "paths": [
         "apps/mobile",
         "packages/frontend/mobile",
-        "packages/frontend/design-system/mobile"
+        "packages/frontend/design-system/mobile",
+        "apps/api/src/auth/infrastructure/mobile-app-auth.util.ts",
+        "apps/api/src/auth/__tests__/mobile-app-auth.util.spec.ts"
       ],
       "json": [
         {

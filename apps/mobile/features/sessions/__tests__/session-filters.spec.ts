@@ -7,6 +7,7 @@ import {
   leadKeyOf,
   matchesFilter,
   needsInput,
+  sessionsListState,
 } from '../lib/session-filters';
 
 /**
@@ -60,6 +61,22 @@ describe('the Sessions tab', () => {
   it('leads a refused delete with why it is red, and any other row with its state', () => {
     expect(leadKeyOf(refused)).toBe('sessions.sidebar.notDeleted');
     expect(leadKeyOf(running)).toBe('sessions.session.state.working');
+  });
+
+  it('holds the list until the projects it groups by have loaded, so no row is filed as Unfiled', () => {
+    const loaded = { data: [], isError: false };
+    const loading = { data: undefined, isError: false };
+    expect(sessionsListState([loaded, loading])).toBe('pending');
+    expect(sessionsListState([loaded, loaded])).toBe('ready');
+  });
+
+  it('shows the failure when the projects read fails, rather than every row under Unfiled', () => {
+    const loaded = { data: [], isError: false };
+    const failedRead = { data: undefined, isError: true };
+    expect(sessionsListState([loaded, failedRead])).toBe('failed');
+    expect(sessionsListState([failedRead, loaded])).toBe('failed');
+    // A refetch that fails over data already held keeps the list drawn.
+    expect(sessionsListState([loaded, { data: [], isError: true }])).toBe('ready');
   });
 
   it('says what a waiting session asks: the question, or what a permission is for', () => {

@@ -1,3 +1,4 @@
+import { useStickToBottom } from '@oppenheimer/frontend-mobile';
 import { useRef, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useTerminalSnapshot } from '../hooks/use-terminal-snapshot';
@@ -16,7 +17,8 @@ const GUTTER = 16;
 
 /**
  * The agent's terminal as the phone draws it: its lines in the console's
- * terminal ramp, following the newest output. It measures how many columns
+ * terminal ramp, following the newest output while the reader is at the
+ * foot (scrolled up, they are left where they are). It measures how many columns
  * and rows fit and hands that up (`onSize`), which is what resizes the
  * host's window: only this view does, so reading the chat never reflows the
  * terminal on the computer.
@@ -36,7 +38,7 @@ export function TerminalView({
   onSize: (cols: number, rows: number) => void;
 }) {
   const { lines } = useTerminalSnapshot(screen);
-  const scroller = useRef<ScrollView>(null);
+  const stick = useStickToBottom();
   const box = useRef<{ width: number; height: number } | null>(null);
   const [charWidth, setCharWidth] = useState<number | null>(null);
   const ground = terminalGround(scheme);
@@ -71,9 +73,8 @@ export function TerminalView({
         {RULER}
       </Text>
       <ScrollView
-        ref={scroller}
+        {...stick}
         contentContainerStyle={{ padding: GUTTER, paddingBottom: bottomInset + GUTTER }}
-        onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })}
         accessibilityLabel={label}
       >
         {lines.map((line) => (
