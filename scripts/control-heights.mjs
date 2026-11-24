@@ -43,11 +43,11 @@ const CONTROL_STATE =
   /(?:^|\s)(?:[\w-]+(?:\[[^\]]*\])?(?:\/[\w-]+)?:)*(?:focus-visible|data-popup-open|data-pressed|aria-expanded):/;
 
 const CONTROL_TAG =
-  /<(?:button|input|select|[A-Z]\w*(?:Button|Trigger|Input|Toggle|Tab|Select))\b[^<>]*$/;
+  /<(?:button|input|select|(?:[A-Z]\w*)?(?:Button|Trigger|Input|Toggle|Tab|Select))\b[^<>]*$/;
 
 /** A height or a square size, on any variant chain (`group-data-[size=md]/tabs:h-8`). */
 const HEIGHT =
-  /(?:^|[\s"'`])((?:[\w-]+(?:\[[^\]]*\])?(?:\/[\w-]+)?:)*!?(?:min-h|h|size)-(?:[\d.]+|\[[^\]]+\]|\([^)]*\)))(?=[\s"'`]|$)/g;
+  /(?:^|[\s"'`])((?:[\w-]+(?:\[[^\]]*\])?(?:\/[\w-]+)?:)*!?(?:min-h|h|size)-(?:[\d.]+|\[[^\]]+\]|\([^)]*\))!?)(?=[\s"'`]|$)/g;
 
 const ALLOWED = /-\(--control-h-(?:sm|md|lg)\)$/;
 
@@ -82,7 +82,9 @@ function classStrings(source) {
     if (
       ts.isStringLiteral(node) ||
       ts.isNoSubstitutionTemplateLiteral(node) ||
-      ts.isTemplateLiteralLikeNode?.(node)
+      ts.isTemplateHead(node) ||
+      ts.isTemplateMiddle(node) ||
+      ts.isTemplateTail(node)
     ) {
       strings.push({ text: node.text, index: node.getStart(file) });
     }
@@ -115,7 +117,7 @@ export function findings(source) {
   const out = [];
   const strings = classStrings(source);
   for (const { text, index } of strings) {
-    if (!/(?:^|\s)(?:min-h|h|size)-/.test(text) && !/:(?:min-h|h|size)-/.test(text)) continue;
+    if (!/(?:^|[\s:!])(?:min-h|h|size)-/.test(text)) continue;
     const before = source.slice(Math.max(0, index - 400), index).replaceAll('=>', '');
     const isControl =
       CONTROL_STATE.test(text) ||
@@ -124,7 +126,7 @@ export function findings(source) {
     if (!isControl) continue;
     for (const match of text.matchAll(HEIGHT)) {
       const token = match[1];
-      const bare = token.replace(/^!/, '');
+      const bare = token.replace(/^!|!$/g, '').replace(/:!/, ':');
       if (ON_A_CHILD.test(bare)) continue;
       if (ALLOWED.test(bare)) continue;
       const px = pixels(bare);

@@ -47,7 +47,7 @@ export const CONTROL_HEIGHT_DEBT = new Map([
   ['packages/frontend/design-system/web/src/components/runs-list.tsx', 1],
   ['packages/frontend/design-system/web/src/components/session-item.tsx', 1],
   ['packages/frontend/design-system/web/src/components/settings-nav.tsx', 1],
-  ['packages/frontend/design-system/web/src/components/sidebar.tsx', 3],
+  ['packages/frontend/design-system/web/src/components/sidebar.tsx', 5],
   ['packages/frontend/design-system/web/src/components/switch.tsx', 1],
   ['packages/frontend/design-system/web/src/components/task-board.tsx', 2],
   ['packages/frontend/design-system/web/src/components/time-grid.tsx', 1],

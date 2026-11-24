@@ -44,3 +44,22 @@ test('the debt holds each file to its count: up fails, down fails until lowered'
   assert.equal(check(one, new Map()).length, 1);
   assert.match(check(new Map(), new Map([['a.tsx', 1]]))[0], /lower its count/);
 });
+
+test('a bare Button, Input, Select, Toggle or Tab is a control by its tag', () => {
+  for (const tag of ['Button', 'Input', 'Select', 'Toggle', 'Tab']) {
+    assert.deepEqual(tokens(`<${tag} size="sm" className="h-9" />`), ['h-9'], tag);
+  }
+});
+
+test('a class list with a substitution is read on both sides of it', () => {
+  const at = (source) => tokens(source);
+  assert.deepEqual(at('const a = `inline-flex h-8 ${x} focus-visible:ring-2`;'), ['h-8']);
+  assert.deepEqual(at('const a = `${x} focus-visible:ring-2 h-8`;'), ['h-8']);
+  assert.deepEqual(at('const a = `${x} h-8 ${y} focus-visible:ring-2`;'), ['h-8']);
+});
+
+test('an important height is still a hand-written one', () => {
+  assert.deepEqual(tokens(`const a = '!h-8 focus-visible:ring-2';`), ['!h-8']);
+  assert.deepEqual(tokens(`const a = 'md:!h-8 focus-visible:ring-2';`), ['md:!h-8']);
+  assert.deepEqual(tokens(`const a = 'h-8! focus-visible:ring-2';`), ['h-8!']);
+});

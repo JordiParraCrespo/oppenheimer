@@ -9,7 +9,7 @@ control height it saw; "Debt" is `scripts/control-height-debt.mjs`'s total.
 | Pass | Scope | Rows | Debt | Census (px × controls) |
 | --- | --- | --- | --- | --- |
 | Baseline (2026-11-24) | — | 18 | — | 24×8 · 27×10 · 28×107 · 30×33 · 32×36 · 34×23 · 36×14 · 40×2 |
-| 1 | The design-system primitives onto the ramp; the check; Permissions and Automations rows | 10 | 84 | 24×8 · 27×10 · 28×134 · 30×5 · 32×20 · 34×40 · 36×14 · 42×1 |
+| 1 | The design-system primitives onto the ramp; the check; Permissions and Automations rows | 10 | 86 | 24×8 · 27×10 · 28×134 · 30×5 · 32×20 · 34×40 · 36×14 · 42×1 |
 
 Pass 1 put on the ramp: `SegmentedControl`'s track (sm 28, md 34, lg 42,
 from about 27 / 32 / 40), `PillTabs` md (34, from 32), `PillGroup` and
