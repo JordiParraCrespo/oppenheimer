@@ -12,7 +12,9 @@
 // turn and hands it back as the hook's block decision, so the agent carries
 // on with it. A reply no Stop hook takes (the session is idle) is sent from
 // one of your hosts instead, which wakes the session; the streamer starts
-// again on the resume and carries on from where it stopped.
+// again on the resume and carries on from where it stopped. A session the
+// API keeps refusing (one this workspace did not launch, or one resolved in
+// the console) stops its streamer after a while instead of posting forever.
 //
 // Reads OPPENHEIMER_URL (the API's address) and OPPENHEIMER_CLOUD_KEY (a
 // token with cloud-chat:write, from the session's pane in the console), and
@@ -49,6 +51,12 @@ const TOO_LARGE = JSON.stringify({
 });
 /** A transcript that has not grown for this long, whose agent is gone, is finished. */
 const IDLE_EXIT_MS = 10 * 60_000;
+/**
+ * How long the API may refuse the session's lines before the streamer stops:
+ * well past the two minutes a host takes to start a cloud session and report
+ * its id, so a session the console is still learning of is not given up on.
+ */
+const REFUSED_EXIT_MS = 10 * 60_000;
 
 /**
  * The complete lines at the front of `buffer`, and what is left after them:
@@ -156,7 +164,7 @@ function readFrom(path, offset) {
  * numbers the next batch. `unsent` holds raw lines the server has not taken
  * yet, so a refusal keeps them as they were read and nothing is ever dropped.
  */
-async function followTranscript(job) {
+export async function followTranscript(job) {
   const stateFile = join(STATE_DIR, `${job.session}.sent.json`);
   // Where the server's copy ends: every byte and line before it was accepted.
   let sent = { bytes: 0, lines: 0 };
@@ -168,6 +176,8 @@ async function followTranscript(job) {
   let unsent = [];
   let lastGrowth = Date.now();
   let backoff = POLL_MS;
+  // Since when every answer has been a refusal; null once one was accepted.
+  let refusedSince = null;
 
   for (;;) {
     const read = readFrom(job.transcript, readTo);
@@ -182,7 +192,12 @@ async function followTranscript(job) {
     while (unsent.length > 0) {
       const batch = takeBatch(unsent);
       const lines = batch.filter(Boolean).map(fitLine);
-      if (lines.length > 0 && !(await post(job, sent.lines, lines))) break;
+      if (lines.length > 0) {
+        const outcome = await post(job, sent.lines, lines);
+        if (outcome === 'refused') refusedSince ??= Date.now();
+        if (outcome !== 'sent') break;
+        refusedSince = null;
+      }
       unsent = unsent.slice(batch.length);
       sent = {
         bytes: sent.bytes + batch.reduce((bytes, line) => bytes + Buffer.byteLength(line) + 1, 0),
@@ -191,6 +206,10 @@ async function followTranscript(job) {
       writeFileSync(stateFile, JSON.stringify(sent));
     }
     backoff = unsent.length > 0 ? Math.min(backoff * 2, MAX_BACKOFF_MS) : POLL_MS;
+    // A session this workspace did not launch, or one resolved in the console
+    // while its agent runs on: sending again changes nothing. Stop; the state
+    // file keeps what was accepted, and a resume starts a streamer again.
+    if (refusedSince !== null && Date.now() - refusedSince >= REFUSED_EXIT_MS) return;
 
     const agentGone = job.agentPid ? !alive(job.agentPid) : true;
     if (agentGone && Date.now() - lastGrowth > IDLE_EXIT_MS) return;
@@ -199,10 +218,21 @@ async function followTranscript(job) {
 }
 
 /**
- * Sends lines numbered `from` on; whether the API has them. Anything else is
- * tried again later: no network, a rate limit, a session the console has not
- * learned of yet. The lines stay unsent meanwhile, never dropped.
+ * What an answer to a post means: `sent`, the API has the lines; `retry`, a
+ * failure that passes on its own (a timeout, a rate limit, the API down);
+ * `refused`, an answer the same request gets again (no such session in this
+ * workspace, a key it does not take, a body it rejects). Either way the lines
+ * stay unsent, never dropped; a refusal only ends the streamer once it has
+ * lasted (`REFUSED_EXIT_MS`), since a session just launched is unknown for a
+ * moment.
  */
+export function outcomeOf(status) {
+  if (status >= 200 && status < 300) return 'sent';
+  if (status === 408 || status === 425 || status === 429 || status >= 500) return 'retry';
+  return 'refused';
+}
+
+/** Sends lines numbered `from` on; the outcome, as `outcomeOf` reads it. */
 async function post(job, from, lines) {
   try {
     const response = await fetch(`${job.url}/api/v1/sessions/cloud-transcript`, {
@@ -211,9 +241,10 @@ async function post(job, from, lines) {
       body: JSON.stringify({ cloudSessionId: job.session, from, lines }),
       signal: AbortSignal.timeout(10_000),
     });
-    return response.ok;
+    return outcomeOf(response.status);
   } catch {
-    return false;
+    // No network, or no answer in time.
+    return 'retry';
   }
 }
 
