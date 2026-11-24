@@ -11,6 +11,7 @@ type FrameMessage =
   | { type: 'ready' }
   | { type: 'size'; height: number }
   | { type: 'error'; message: string }
+  | { type: 'navigated' }
   | { type: 'open-link'; href: string };
 
 function frameMessage(data: unknown): FrameMessage | null {
@@ -23,6 +24,8 @@ function frameMessage(data: unknown): FrameMessage | null {
       return typeof message.height === 'number' && Number.isFinite(message.height)
         ? { type: 'size', height: message.height }
         : null;
+    case 'navigated':
+      return { type: 'navigated' };
     case 'error':
       return { type: 'error', message: String(message.message ?? '').slice(0, 300) };
     case 'open-link':
@@ -63,6 +66,8 @@ export function useVisualFrame(html: string, firstHeight: number) {
       }
       if (message?.type === 'error') setError(message.message);
       if (message?.type === 'open-link') setLink(message.href);
+      // The page tried to leave its frame; its shell has already ended it.
+      if (message?.type === 'navigated') setState('failed');
     };
     window.addEventListener('message', onMessage);
     const theme = new MutationObserver(() => post({ type: 'theme', ...visualTheme() }));

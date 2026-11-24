@@ -60,22 +60,13 @@ export function serveVisualFrame(
   res.end(req.method === 'HEAD' ? undefined : VISUAL_FRAME_SHELL);
 }
 
-/**
- * The shell. It takes one `render` message from its parent (the fragment,
- * the theme's variables, light or dark), and a `theme` message whenever the
- * console's theme changes; scripts in the fragment run once it is in place,
- * in order. A base stylesheet sets type, colour and a few classes on the
- * theme's variables, so a fragment looks like the console without styling
- * itself.
- */
-export const VISUAL_FRAME_SHELL = `<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
+/** The base stylesheet a fragment is drawn under: the console's type and colours, from the theme's variables. */
+const FRAGMENT_STYLE = `
 :root { color-scheme: light dark; }
 html, body { margin: 0; padding: 0; background: transparent; }
 body { font: 13.5px/1.55 var(--font-sans, system-ui, sans-serif); color: var(--fg, #111); overflow-x: hidden; }
 * { box-sizing: border-box; }
-a { color: var(--primary, #2563eb); }
+a { color: var(--link, var(--primary, #2563eb)); }
 button, input, select, textarea { font: inherit; color: inherit; }
 .card { background: var(--card, transparent); border: 1px solid var(--border, #e5e5e5); border-radius: 14px; padding: 14px 16px; }
 .btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border, #e5e5e5); background: var(--card, #fff); cursor: pointer; }
@@ -87,10 +78,19 @@ table { border-collapse: collapse; width: 100%; }
 th, td { padding: 6px 10px; border-top: 1px solid var(--border, #e5e5e5); text-align: left; }
 th { color: var(--fg-muted, #666); font-weight: 500; font-size: 12px; }
 input[type=range] { accent-color: var(--chart-1, #2563eb); width: 100%; }
-</style></head>
-<body><div id="root"></div><script>
-(() => {
-  const root = document.getElementById('root');
+`;
+
+/**
+ * What runs in the fragment's frame before the fragment: it takes the theme
+ * from the shell, reports the page's height, its errors and the links clicked
+ * in it to the shell, and takes away WebRTC, the one way out the CSP does not
+ * close (best effort: a fragment that works around it still reaches no
+ * cookie or page of the console's).
+ */
+const FRAGMENT_PRELUDE = `(() => {
+  for (const name of ['RTCPeerConnection', 'webkitRTCPeerConnection', 'RTCDataChannel', 'RTCIceCandidate', 'RTCSessionDescription']) {
+    try { Object.defineProperty(window, name, { value: undefined, configurable: false, writable: false }); } catch {}
+  }
   const post = (message) => parent.postMessage(message, '*');
   const apply = (variables, dark) => {
     for (const [name, value] of Object.entries(variables || {})) {
@@ -99,33 +99,75 @@ input[type=range] { accent-color: var(--chart-1, #2563eb); width: 100%; }
     document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   };
-  let rendered = false;
+  addEventListener('message', (event) => {
+    if (event.source === parent && event.data && event.data.type === 'theme') apply(event.data.variables, event.data.dark);
+  });
   addEventListener('error', (event) => post({ type: 'error', message: String(event.message || 'error').slice(0, 300) }));
   addEventListener('unhandledrejection', (event) => post({ type: 'error', message: String(event.reason).slice(0, 300) }));
   addEventListener('click', (event) => {
     const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
     if (!link) return;
     event.preventDefault();
-    const href = link.href;
-    if (/^https?:/i.test(href)) post({ type: 'open-link', href: href.slice(0, 2048) });
-  });
-  addEventListener('message', (event) => {
-    if (event.source !== parent || !event.data || typeof event.data !== 'object') return;
-    const data = event.data;
-    if (data.type === 'theme') { apply(data.variables, data.dark); return; }
-    if (data.type !== 'render' || rendered || typeof data.html !== 'string') return;
-    rendered = true;
-    apply(data.variables, data.dark);
-    root.innerHTML = data.html;
-    for (const inert of Array.from(root.querySelectorAll('script'))) {
-      const live = document.createElement('script');
-      for (const attr of Array.from(inert.attributes)) if (attr.name !== 'src') live.setAttribute(attr.name, attr.value);
-      live.textContent = inert.textContent;
-      inert.replaceWith(live);
-    }
+    if (/^https?:/i.test(link.href)) post({ type: 'open-link', href: link.href.slice(0, 2048) });
+  }, true);
+  addEventListener('DOMContentLoaded', () => {
     const size = () => post({ type: 'size', height: Math.ceil(document.documentElement.scrollHeight) });
-    new ResizeObserver(size).observe(document.body);
+    new ResizeObserver(size).observe(document.documentElement);
     size();
+  });
+})();`;
+
+/**
+ * The shell. The fragment never runs in it: on a `render` message it builds a
+ * second frame, `srcdoc` and `sandbox="allow-scripts"`, holding the base
+ * stylesheet, the theme, the prelude and the fragment. That frame inherits
+ * this page's CSP, so its network is closed, and its own navigations fall
+ * under this page's `frame-src 'none'`, so it cannot take itself to another
+ * site; a second load of it (a navigation that was refused) ends it and tells
+ * the console. The shell passes on the theme, and passes back only height,
+ * errors and links, from that frame alone.
+ */
+export const VISUAL_FRAME_SHELL = `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; } iframe { display: block; width: 100%; border: 0; background: transparent; }</style>
+</head><body><script>
+(() => {
+  const STYLE = ${JSON.stringify(FRAGMENT_STYLE)};
+  const PRELUDE = ${JSON.stringify(FRAGMENT_PRELUDE).replace(/<\//g, '<\\/')};
+  const post = (message) => parent.postMessage(message, '*');
+  const escape = (value) => String(value).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  let inner = null;
+  let loads = 0;
+  const end = (message) => {
+    if (inner) inner.remove();
+    inner = null;
+    post({ type: 'navigated', message });
+  };
+  addEventListener('message', (event) => {
+    const data = event.data;
+    if (!data || typeof data !== 'object') return;
+    if (inner && event.source === inner.contentWindow) {
+      if (data.type === 'size' && typeof data.height === 'number' && isFinite(data.height)) {
+        const height = Math.max(0, Math.min(4000, Math.ceil(data.height)));
+        inner.style.height = height + 'px';
+        post({ type: 'size', height });
+      } else if (data.type === 'error') post({ type: 'error', message: String(data.message || '').slice(0, 300) });
+      else if (data.type === 'open-link' && typeof data.href === 'string' && /^https?:\\/\\//i.test(data.href)) post({ type: 'open-link', href: data.href.slice(0, 2048) });
+      return;
+    }
+    if (event.source !== parent) return;
+    const vars = Object.entries(data.variables || {})
+      .filter(([name, value]) => /^--[a-z0-9-]+$/i.test(name) && typeof value === 'string' && !/[;{}<]/.test(value))
+      .map(([name, value]) => name + ':' + value + ';').join('');
+    if (data.type === 'theme' && inner) { inner.contentWindow.postMessage({ type: 'theme', variables: data.variables, dark: data.dark }, '*'); return; }
+    if (data.type !== 'render' || inner || typeof data.html !== 'string') return;
+    const scheme = data.dark ? 'dark' : 'light';
+    inner = document.createElement('iframe');
+    inner.setAttribute('sandbox', 'allow-scripts');
+    inner.setAttribute('title', 'visual');
+    inner.addEventListener('load', () => { loads += 1; if (loads > 1) end('the visual tried to leave its frame'); });
+    inner.srcdoc = '<!doctype html><html data-theme="' + scheme + '" style="color-scheme:' + scheme + ';' + escape(vars) + '"><head><meta charset="utf-8"><style>' + STYLE + '</style><script>' + PRELUDE + '<\\/script></head><body>' + data.html + '</body></html>';
+    document.body.appendChild(inner);
   });
   post({ type: 'ready' });
 })();
