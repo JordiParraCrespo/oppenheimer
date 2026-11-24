@@ -79,7 +79,11 @@ export function BotTranscript({
   const again = retryContent(all);
   const newest = newestTurn(all)?.turnId;
   useSentGlide(newestSentId(blocks));
-  const { top, loading, error: olderError } = useOlderOnScrollUp(botId, conversation.hasOlder, conversation.messages[0]?.id);
+  const {
+    top,
+    loading,
+    error: olderError,
+  } = useOlderOnScrollUp(botId, conversation.hasOlder, conversation.messages[0]?.id);
   const day = dateFormatter(locale, { dateStyle: 'medium' });
 
   return (

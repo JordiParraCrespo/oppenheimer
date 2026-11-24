@@ -53,8 +53,8 @@ import {
   addOlderPage,
   type BotOlderMessages,
   fillOlderGap,
-  joinsWindow,
   olderCursor,
+  slideOlder,
   withOlderMessages,
 } from '../modules/bots/older-messages';
 import { type BotSending, withBotSendings } from '../modules/bots/sending';
@@ -109,23 +109,38 @@ function useBotOlderMessages(id: string): BotOlderMessages | null {
 }
 
 /**
- * The chat's read, the same for every reader of it: its newest window, and,
- * when the bot wrote a window's worth while the reader was up in older pages,
- * the pages between read too, so the older pages still join it
- * ({@link fillOlderGap}).
+ * The chat's read, the same for every reader of it: its newest window. When
+ * the reader is up in older pages, those stay joined to it as it moves on:
+ * what the window let go comes from the read before ({@link slideOlder}),
+ * and only a window that moved past all of that reads the messages between
+ * ({@link fillOlderGap}), after this read has landed, so the newest messages
+ * never wait on it, nor fail with it; the older pages are left out until the
+ * gap is read.
  */
 function conversationQuery(app: ConsumerApp, queryClient: QueryClient, id: string) {
+  const olderKey = botsKeys.olderMessages(id);
   return {
     queryKey: botsKeys.conversation(id),
     queryFn: async (): Promise<BotConversationEntity> => {
+      const previous = queryClient.getQueryData<BotConversationEntity>(botsKeys.conversation(id));
       const window = await app.bots.findConversation(id);
-      const older = queryClient.getQueryData<BotOlderMessages | null>(botsKeys.olderMessages(id));
-      if (older && window.hasOlder && !joinsWindow(window, older)) {
-        const filled = await fillOlderGap(window, older, (before) =>
-          app.bots.findConversation(id, before),
-        );
-        queryClient.setQueryData(botsKeys.olderMessages(id), filled);
+      const older = queryClient.getQueryData<BotOlderMessages | null>(olderKey);
+      if (!older || !window.hasOlder) return window;
+      const slid = slideOlder(older, previous, window);
+      if (slid !== 'gap') {
+        if (slid !== older) queryClient.setQueryData(olderKey, slid);
+        return window;
       }
+      void fillOlderGap(window, older, (before) => app.bots.findConversation(id, before)).then(
+        (filled) => {
+          // Only over the pages it read from: a page loaded meanwhile keeps its own.
+          if (queryClient.getQueryData(olderKey) === older) {
+            queryClient.setQueryData(olderKey, filled);
+          }
+        },
+        // Left out until the next read tries the gap again.
+        () => undefined,
+      );
       return window;
     },
   };

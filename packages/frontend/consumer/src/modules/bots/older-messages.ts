@@ -23,14 +23,15 @@ export interface BotOlderMessages {
 
 /**
  * Whether `older` ends where `window` begins: the window still holds the
- * message they end before, or reaches back past it. Once the bot has written
- * a window's worth since, there is a gap between them.
+ * message they end before, or starts earlier than it. A time the same as the
+ * boundary's is not enough: the API orders within a millisecond by more than
+ * this side can see, and the message beside the boundary would be left out.
  */
-export function joinsWindow(window: BotConversationEntity, older: BotOlderMessages): boolean {
+function joinsWindow(window: BotConversationEntity, older: BotOlderMessages): boolean {
   const first = window.messages[0];
   if (!first) return false;
   return (
-    first.createdAt.getTime() <= older.boundary.at.getTime() ||
+    first.createdAt.getTime() < older.boundary.at.getTime() ||
     window.messages.some((message) => message.id === older.boundary.id)
   );
 }
@@ -114,6 +115,32 @@ export function addOlderPage(
   return {
     ...linesOf(page),
     hasOlder: page.hasOlder,
+    boundary: { id: first.id, at: first.createdAt },
+  };
+}
+
+/**
+ * `older` kept joined to `next`, a newer read of the window than `previous`:
+ * the messages the window let go as the bot wrote (they are in `previous`,
+ * before `next`'s first) move into the older pages, with nothing read again.
+ * `'gap'` when `next` moved past all of `previous`, so the messages between
+ * are in neither ({@link fillOlderGap}).
+ */
+export function slideOlder(
+  older: BotOlderMessages,
+  previous: BotConversationEntity | undefined,
+  next: BotConversationEntity,
+): BotOlderMessages | 'gap' {
+  const first = next.messages[0];
+  if (!first || joinsWindow(next, older)) return older;
+  if (!previous) return 'gap';
+  const from = previous.messages.findIndex((message) => message.id === older.boundary.id);
+  const to = previous.messages.findIndex((message) => message.id === first.id);
+  if (from === -1 || to === -1) return 'gap';
+  const slid = previous.withLines(previous.messages.slice(from, to), previous.turns, 0);
+  return {
+    ...joined(linesOf(slid), older),
+    hasOlder: older.hasOlder,
     boundary: { id: first.id, at: first.createdAt },
   };
 }

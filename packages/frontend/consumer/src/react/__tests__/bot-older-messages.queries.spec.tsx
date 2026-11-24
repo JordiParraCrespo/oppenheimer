@@ -5,8 +5,9 @@
  * pages a chat the way `GET /bots/:id/conversation` does (its keyset over a
  * real database is the API's integration suite). What breaks these: older
  * history that cannot be reached, a message drawn twice or out of order,
- * and history that vanishes or leaves a hole when the bot writes a window's
- * worth while the reader is up in it.
+ * history that vanishes or leaves a hole when the bot writes while the
+ * reader is up in it (a message beside the boundary in the same millisecond
+ * included), and new messages held back by a read of older ones.
  */
 import { OppenheimerProvider } from '@oppenheimer/frontend-core/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -24,8 +25,11 @@ import { fakeKernel } from './fake-kernel';
 const PAGE = 3;
 
 /** A chat the spec writes to, read a page at a time as the API reads it. */
-function setup(count: number) {
+function setup(count: number, { sameTime = false } = {}) {
   const chat: BotMessageEntity[] = [];
+  /** The reads of an older page, by the message each ended before. */
+  const before: string[] = [];
+  let olderFails = false;
   const write = (n: number) => {
     for (let i = 0; i < n; i += 1) {
       const index = chat.length;
@@ -36,7 +40,7 @@ function setup(count: number) {
           'user',
           `Message ${index}`,
           [],
-          new Date(Date.UTC(2026, 9, 1, 0, index)),
+          new Date(Date.UTC(2026, 9, 1, 0, sameTime ? 0 : index)),
         ),
       );
     }
@@ -47,8 +51,12 @@ function setup(count: number) {
     return new BotConversationEntity(chat.slice(start, end), [], chat.length, {}, start > 0);
   };
   const repository = {
-    findConversation: async (_id: string, before?: string) =>
-      pageOf(before ? chat.findIndex((message) => message.id === before) : chat.length),
+    findConversation: async (_id: string, cursor?: string) => {
+      if (!cursor) return pageOf(chat.length);
+      before.push(cursor);
+      if (olderFails) throw new Error('older page refused');
+      return pageOf(chat.findIndex((message) => message.id === cursor));
+    },
     react: async () => chat[0],
   };
   const app = fakeKernel({ [TOKENS.BotsRepository]: repository });
@@ -73,6 +81,10 @@ function setup(count: number) {
   return {
     result,
     write,
+    before,
+    failOlder: (fails: boolean) => {
+      olderFails = fails;
+    },
     /** What the chat draws, oldest first. */
     drawn: () => result.current.chat.messages.map((message) => message.content),
     scrollUp: async () => {
@@ -105,22 +117,45 @@ describe('a bot chat scrolled up past its window', () => {
     expect(chat.drawn()).toEqual(messages(0, 8));
   });
 
-  it('keeps the older pages under the window as the bot writes, with nothing lost between', async () => {
+  it('keeps the older pages under the window as the bot writes, reading nothing again', async () => {
+    const chat = setup(8);
+    await waitFor(() => expect(chat.drawn()).toEqual(messages(5, 8)));
+    await chat.scrollUp();
+    expect(chat.before).toEqual(['m5']);
+
+    for (const written of [9, 10, 11, 12]) {
+      chat.write(1);
+      await chat.readAgain();
+      await waitFor(() => expect(chat.drawn()).toEqual(messages(2, written)));
+    }
+    expect(chat.before).toEqual(['m5']);
+    await chat.scrollUp();
+    expect(chat.drawn()).toEqual(messages(0, 12));
+  });
+
+  it('reads the messages between when the window moved past all it held, one beside the boundary in the same millisecond included', async () => {
+    const chat = setup(8, { sameTime: true });
+    await waitFor(() => expect(chat.drawn()).toEqual(messages(5, 8)));
+    await chat.scrollUp();
+
+    chat.write(5);
+    await chat.readAgain();
+    await waitFor(() => expect(chat.drawn()).toEqual(messages(2, 13)));
+  });
+
+  it('draws the newest messages when the read between fails, and the older pages again once it lands', async () => {
     const chat = setup(8);
     await waitFor(() => expect(chat.drawn()).toEqual(messages(5, 8)));
     await chat.scrollUp();
 
-    // Less than a window: the window still meets the older pages.
-    chat.write(2);
-    await chat.readAgain();
-    await waitFor(() => expect(chat.drawn()).toEqual(messages(2, 10)));
-
-    // More than a window: the messages between are read too.
+    chat.failOlder(true);
     chat.write(5);
     await chat.readAgain();
-    await waitFor(() => expect(chat.drawn()).toEqual(messages(2, 15)));
-    await chat.scrollUp();
-    expect(chat.drawn()).toEqual(messages(0, 15));
+    await waitFor(() => expect(chat.drawn()).toEqual(messages(10, 13)));
+
+    chat.failOlder(false);
+    await chat.readAgain();
+    await waitFor(() => expect(chat.drawn()).toEqual(messages(2, 13)));
   });
 
   it('shows your reaction on a message in the older pages', async () => {
