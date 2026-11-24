@@ -48,7 +48,7 @@ async function runInSession(page: Page, screen: () => string, sessionId: string,
 
 /** The session's row in the Inbox, once the API counts it as waiting on you (30 s blocked). */
 async function openInboxItem(page: Page) {
-  await page.goto('/plan/inbox');
+  await page.goto('/inbox');
   const row = page.locator('[data-slot="inbox-row"]', { hasText: 'is waiting on you' });
   await expect(async () => {
     await page.reload();
@@ -241,7 +241,7 @@ test('an agent question is answered from its Inbox card with the keys its picker
       },
     ]),
   ]);
-  await page.goto('/plan/inbox');
+  await page.goto('/inbox');
   const row = page.locator('[data-slot="inbox-row"]', { hasText: 'is waiting on you' });
   await expect(async () => {
     await page.reload();

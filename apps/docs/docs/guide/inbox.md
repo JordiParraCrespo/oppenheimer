@@ -1,12 +1,26 @@
 ---
 title: Inbox
-description: The Inbox in Plan, what lands there (waiting or failed sessions, bot approvals, review requests, mergeable pull requests, failed automation runs, notices from sessions and bots, reports with pictures from any agent, tasks an agent made), what you can do with each item, filters, unread, snooze and done, and how agents and bots post to it.
+description: The Inbox, the console's first rail item, what lands there (waiting or failed sessions, bot approvals, review requests, mergeable pull requests, failed automation runs, notices from sessions and bots, reports with pictures from any agent, tasks an agent made), what you can do with each item, filters, unread, snooze and done, and how agents and bots post to it.
 sidebar_position: 8
 ---
 
-The **Inbox** is one list of what needs you. It is the first item of **Plan** (Plan → Inbox), and the console opens on it unless you dragged another rail item to the top. Plan's sidebar shows its count.
+The **Inbox** is one list of what needs you. It is the first item of the rail, with a dot and a count while anything needs you, and the console opens on it unless you dragged another rail item to the top. Its sidebar holds folders: one per kind of item and one per project, each with its count.
 
-It looks like a mail client: a list column (search, unread rows with the sender, a subject and a line of body) beside a reading pane with a toolbar and the item as a message. On a phone the list fills the screen until you open an item.
+It looks like a mail client: a list column (search, unread rows with the sender, a subject and a line of body) beside a deck, the item in hand as a card on the stack of what is left, with a toolbar over it. On a phone the list fills the screen until you open an item.
+
+## Going through it fast
+
+The deck is made to clear the Inbox one card after another:
+
+| Keys | What they do |
+| --- | --- |
+| **1**–**9** | Press the card's answer with that number (Yes, Approve, Merge, Send answers…). Each answer shows its number. |
+| **E** | Mark as done. The card goes off to the right. |
+| **S** | Snooze until tomorrow. |
+| **L** | Deprioritize, or restore priority. |
+| **J** / **→** and **K** / **←** | The next and the previous item, without acting on either. |
+
+On a phone or tablet, swipe a card **right** to mark it done or **left** to put it off until later in this visit. Once a card is answered or put away, the next one takes its place. A line along the toolbar's bottom edge fills as you clear the visit's items, and the clear deck says how many you cleared.
 
 ## What lands there
 
@@ -34,7 +48,7 @@ The list is newest first across every kind; deprioritized items sort last and re
 
 ## Acting on items
 
-The reading pane's toolbar and each row's menu:
+The deck's toolbar and each row's menu:
 
 | Action | Effect |
 | --- | --- |
@@ -45,11 +59,11 @@ The reading pane's toolbar and each row's menu:
 
 A mark applies to one occurrence: if the same session blocks again later, or new commits land on a pull request, the item comes back.
 
-**Unread** is kept per item in this browser: an item is read once shown in the reading pane. It does not sync between devices.
+**Unread** is kept per item in this browser: an item is read once shown on the deck. It does not sync between devices.
 
-**Filters**: Type (All, Pull requests while they are shown, Bots, Sessions, Automations, Reports, Tasks), Project, Show done, Show pull requests, and a search over sender, subject, body and source.
+**Filters**: the sidebar's folders, Type (Everything, Pull requests while they are shown, Bots, Sessions, Automations, Reports, Tasks) and Project, which the filter menu also sets; Show done and Show pull requests in the filter menu; and a search over sender, subject, body and source.
 
-When nothing needs you, the pane says so and counts the sessions still running.
+When nothing needs you, the deck says so and counts the sessions still running.
 
 ## Posting to the Inbox
 

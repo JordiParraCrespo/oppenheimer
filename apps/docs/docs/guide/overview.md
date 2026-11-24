@@ -32,13 +32,14 @@ The console is a rail of sections on the left, a sidebar for the section you are
 
 | Rail item | What it holds |
 | --- | --- |
+| **Inbox** | What needs you, one card at a time, with folders by kind and by project. |
 | **Employees** | Your bots: a sidebar of bots in groups, a chat with each, and each bot's settings. |
 | **Sessions** | New session, and the sidebar of your sessions grouped by project, with Pinned at the top. |
 | **Pull requests** | The PR queue, Analytics, and review sessions under For review. |
 | **Automations** | The automations list by project, their runs and run history. |
-| **Plan** | Inbox, Tasks (the board), Milestones, Calendar and Projects. |
+| **Plan** | Tasks (the board), TODO, Milestones, Calendar and Projects. |
 
-You can drag the rail items into another order; the order is kept on that device. The console opens on **Plan → Inbox** unless you dragged another item to the top, in which case it opens on that one. Sessions, Automations, Plan and Pull requests can also list bots you place there, under a Bots heading in their sidebar; clicking one opens its chat without leaving the section.
+You can drag the rail items into another order; the order is kept on that device. The console opens on the **Inbox** unless you dragged another item to the top, in which case it opens on that one. Sessions, Automations, Plan and Pull requests can also list bots you place there, under a Bots heading in their sidebar; clicking one opens its chat without leaving the section.
 
 **Settings** opens from the account menu and has these pages:
 

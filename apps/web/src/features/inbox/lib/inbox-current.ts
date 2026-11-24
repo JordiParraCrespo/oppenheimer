@@ -1,9 +1,10 @@
 import { inboxSubject } from '@oppenheimer/frontend-consumer';
 
 /**
- * The item in the pane: the one the address names while it is still in the
+ * The item on the deck: the one the address names while it is still in the
  * list, else the first. Clicking a row names it; answering or marking it
- * moves the pane on to whatever is first.
+ * moves the deck on to the item that followed it (`next`, as the deck last
+ * drew it), else the first, as a stack of cards goes on to the next card.
  *
  * An occurrence can also end without this visit settling it: an answer
  * refused because another tab answered first changes the session's wait, and
@@ -14,7 +15,7 @@ import { inboxSubject } from '@oppenheimer/frontend-consumer';
 export function currentItem<T extends { key: string }>(
   items: readonly T[],
   key: string | null,
-  settled: { answered: ReadonlySet<string>; done: readonly string[] },
+  settled: { answered: ReadonlySet<string>; done: readonly string[]; next?: string | null },
 ): T | null {
   if (!key) return items[0] ?? null;
   const named = items.find((item) => item.key === key);
@@ -24,5 +25,6 @@ export function currentItem<T extends { key: string }>(
     const same = items.find((item) => inboxSubject(item.key) === subject);
     if (same) return same;
   }
-  return items[0] ?? null;
+  const following = settled.next ? items.find((item) => item.key === settled.next) : undefined;
+  return following ?? items[0] ?? null;
 }

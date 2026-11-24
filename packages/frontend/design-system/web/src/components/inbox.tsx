@@ -5,18 +5,20 @@ import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import { Toggle as TogglePrimitive } from '@base-ui/react/toggle';
 import { ToggleGroup as ToggleGroupPrimitive } from '@base-ui/react/toggle-group';
 import { ClockIcon } from 'lucide-react';
-import type * as React from 'react';
+import * as React from 'react';
 
 import { META_GIVES_WAY, ROW_BUTTON_WITH_ACTION, SidebarRow } from '../internal/sidebar-row';
 import { cn } from '../lib/utils';
 import { EmptyState } from './empty-state';
+import { Kbd } from './kbd';
 import { Skeleton } from './skeleton';
 import { variedWidth } from '../internal/varied-width';
 
 /**
- * The Inbox, laid out as a mail client inside Plan: a list column of what needs
- * you, one row per item, and a reading pane with the item in hand as a message,
- * its answers under it and a toolbar over it.
+ * The Inbox, a page of its own laid out as a mail client: a list column of
+ * what needs you, one row per item, and beside it a deck with the item in
+ * hand as a card on the stack of what is left, its answers under it, a
+ * toolbar over it and the keys under it.
  */
 function InboxList({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="inbox-list" role="list" className={cn('flex flex-col', className)} {...props} />;
@@ -306,19 +308,22 @@ function InboxSnoozedRow({
  */
 function InboxToolbar({
   position,
+  progress,
   className,
   children,
   ...props
 }: React.ComponentProps<'div'> & {
   /** "1 of 5". */
   position?: React.ReactNode;
+  /** How much of this visit's Inbox is handled, 0 to 1: a hairline of primary along the bottom edge. */
+  progress?: number;
 }) {
   return (
     <div
       role="toolbar"
       data-slot="inbox-toolbar"
       className={cn(
-        'flex h-12 shrink-0 items-center gap-0.5 border-b border-border-subtle px-4',
+        'relative flex h-12 shrink-0 items-center gap-0.5 border-b border-border-subtle px-4',
         className,
       )}
       {...props}
@@ -327,6 +332,245 @@ function InboxToolbar({
       {position ? (
         <span className="figures ml-auto text-[12px] text-fg-subtle">{position}</span>
       ) : null}
+      {progress !== undefined && progress > 0 ? (
+        <span
+          aria-hidden
+          data-slot="inbox-toolbar-progress"
+          className="absolute bottom-[-1px] left-0 h-0.5 origin-left bg-primary transition-[width] duration-slow ease-out"
+          style={{ width: `${Math.min(1, progress) * 100}%` }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+type InboxSwipe = 'left' | 'right';
+/** Where the card in hand goes when it is put away: right (done), left (later), up (snoozed). */
+type InboxDeckExit = InboxSwipe | 'up';
+
+/** How far a card is dragged before letting go puts it away, in px. */
+const SWIPE_AWAY = 96;
+/** Movement a press may make before it is read as a drag rather than a tap, in px. */
+const SWIPE_SLOP = 8;
+/** What a press on which is never a swipe: the card's own controls. */
+const SWIPE_IGNORES = 'button,a,input,textarea,select,label,[role=button],[contenteditable=true]';
+
+/**
+ * The answers on the card in hand, in reading order: a session's choices, or
+ * the answer row's right side (Approve, Merge, Send answers). The deck's
+ * number badges count the same set (`globals.css`, `inbox-deck`), so the
+ * digit a person presses is the badge they read.
+ */
+const ANSWERS =
+  '[data-slot=inbox-message-choices] > *, [data-slot=inbox-message-actions] > div:last-child > *';
+
+/**
+ * The `n`th answer on the deck's card in hand (from 1), or null when there is
+ * none or it is disabled. For the caller's number keys.
+ */
+function inboxDeckAnswer(deck: HTMLElement | null, n: number): HTMLElement | null {
+  const answer = deck?.querySelectorAll<HTMLElement>(ANSWERS)[n - 1];
+  if (!answer) return null;
+  if (answer.matches(':disabled,[aria-disabled=true],[data-disabled]')) return null;
+  return answer;
+}
+
+/**
+ * InboxDeck — the item in hand as a card on the stack of what is left: up to
+ * two cards peek out under it (`behind`), so the pile shrinks as it is
+ * cleared. On touch, the card follows a sideways drag, tilting as it goes and
+ * stamping what letting go will do (`swipeLabels`); past 96px it is put away
+ * (`onSwipe`), short of it it settles back. A drag that starts on one of the
+ * card's controls, or goes more up than across, is the page's scroll, not a
+ * swipe. `leaving` sends the card off that way (right, left or up) over the
+ * base duration; the caller swaps in the next item once it has gone. The
+ * answers wear their number from 1 where there is a keyboard to press them
+ * with (`inboxDeckAnswer`).
+ */
+function InboxDeck({
+  behind = 0,
+  leaving = null,
+  onSwipe,
+  swipeLabels,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'div'> & {
+  /** How many items wait under this one; at most two are drawn. */
+  behind?: number;
+  leaving?: InboxDeckExit | null;
+  onSwipe?: (direction: InboxSwipe) => void;
+  /** What each way does, stamped on the card while it is dragged: { right: "Done", left: "Later" }. */
+  swipeLabels?: Record<InboxSwipe, React.ReactNode>;
+}) {
+  const card = React.useRef<HTMLDivElement>(null);
+  const stamps = React.useRef<Partial<Record<InboxSwipe, HTMLSpanElement | null>>>({});
+  const press = React.useRef<{ x: number; y: number; id: number; dragging: boolean } | null>(null);
+  const offset = React.useRef(0);
+
+  const paint = React.useCallback((x: number, settle: boolean) => {
+    const node = card.current;
+    if (!node) return;
+    node.style.transition = settle
+      ? 'transform var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out)'
+      : 'none';
+    node.style.transform = x === 0 ? '' : `translateX(${x}px) rotate(${x / 24}deg)`;
+    for (const side of ['left', 'right'] as const) {
+      const stamp = stamps.current[side];
+      if (!stamp) continue;
+      const toward = side === 'right' ? x > 0 : x < 0;
+      stamp.style.opacity = toward ? String(Math.min(1, Math.abs(x) / SWIPE_AWAY)) : '0';
+    }
+  }, []);
+
+  // Sends the card off the way it is leaving, from wherever a drag left it;
+  // the next card comes in with no transform at all.
+  React.useLayoutEffect(() => {
+    const node = card.current;
+    if (!node) return;
+    if (!leaving) {
+      offset.current = 0;
+      paint(0, false);
+      node.style.opacity = '';
+      return;
+    }
+    node.style.transition =
+      'transform var(--dur-base) var(--ease-in), opacity var(--dur-base) var(--ease-in)';
+    node.style.opacity = '0';
+    node.style.transform =
+      leaving === 'up'
+        ? 'translateY(-48px) scale(0.96)'
+        : `translateX(${leaving === 'right' ? 120 : -120}%) rotate(${leaving === 'right' ? 10 : -10}deg)`;
+  }, [leaving, paint]);
+
+  const release = (event: React.PointerEvent<HTMLDivElement>) => {
+    const held = press.current;
+    press.current = null;
+    if (!held?.dragging || event.pointerId !== held.id) return;
+    const x = offset.current;
+    if (event.type === 'pointerup' && Math.abs(x) >= SWIPE_AWAY && onSwipe) {
+      onSwipe(x > 0 ? 'right' : 'left');
+      return;
+    }
+    offset.current = 0;
+    paint(0, true);
+  };
+
+  return (
+    <div
+      data-slot="inbox-deck"
+      className={cn('relative mx-auto w-full max-w-[800px] px-6 pt-6 pb-5 max-sm:px-3 max-sm:pt-3', className)}
+      {...props}
+    >
+      <div className="relative">
+        {behind >= 2 ? (
+          <div
+            aria-hidden
+            className="absolute inset-x-7 top-0 -bottom-5 rounded-lg border border-border-subtle bg-card opacity-60"
+          />
+        ) : null}
+        {behind >= 1 ? (
+          <div
+            aria-hidden
+            className="absolute inset-x-3.5 top-0 -bottom-2.5 rounded-lg border border-border-subtle bg-card"
+          />
+        ) : null}
+        <div
+          ref={card}
+          data-slot="inbox-deck-card"
+          data-leaving={leaving ?? undefined}
+          className="relative touch-pan-y rounded-lg border border-border-subtle bg-card shadow-[0_1px_2px_rgba(16,16,16,0.04),0_12px_32px_-16px_rgba(16,16,16,0.18)] will-change-transform"
+          onPointerDown={(event) => {
+            if (!onSwipe || leaving || event.pointerType === 'mouse') return;
+            if (event.target instanceof Element && event.target.closest(SWIPE_IGNORES)) return;
+            press.current = { x: event.clientX, y: event.clientY, id: event.pointerId, dragging: false };
+          }}
+          onPointerMove={(event) => {
+            const held = press.current;
+            if (!held || event.pointerId !== held.id) return;
+            const x = event.clientX - held.x;
+            const y = event.clientY - held.y;
+            if (!held.dragging) {
+              if (Math.abs(x) < SWIPE_SLOP && Math.abs(y) < SWIPE_SLOP) return;
+              if (Math.abs(y) >= Math.abs(x)) {
+                press.current = null;
+                return;
+              }
+              held.dragging = true;
+              try {
+                event.currentTarget.setPointerCapture(event.pointerId);
+              } catch {
+                // A pointer the browser no longer tracks: the drag goes on uncaptured.
+              }
+            }
+            offset.current = x;
+            paint(x, false);
+          }}
+          onPointerUp={release}
+          onPointerCancel={release}
+        >
+          {swipeLabels ? (
+            <>
+              <span
+                ref={(node) => {
+                  stamps.current.right = node;
+                }}
+                aria-hidden
+                className="pointer-events-none absolute top-5 left-5 z-10 -rotate-12 rounded-sm border-2 border-success bg-card px-2.5 py-0.5 text-[15px] font-semibold tracking-[0.04em] text-success uppercase opacity-0"
+              >
+                {swipeLabels.right}
+              </span>
+              <span
+                ref={(node) => {
+                  stamps.current.left = node;
+                }}
+                aria-hidden
+                className="pointer-events-none absolute top-5 right-5 z-10 rotate-12 rounded-sm border-2 border-fg-muted bg-card px-2.5 py-0.5 text-[15px] font-semibold tracking-[0.04em] text-fg-muted uppercase opacity-0"
+              >
+                {swipeLabels.left}
+              </span>
+            </>
+          ) : null}
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * InboxDeckKeys — under the deck, what the keys do: each entry its keys as
+ * `Kbd` glyphs and what they do, in a quiet wrapping row. Where the pointer
+ * is a finger it gives way to `touch`, the line that says how to swipe.
+ */
+function InboxDeckKeys({
+  keys,
+  touch,
+  className,
+  ...props
+}: React.ComponentProps<'div'> & {
+  keys: readonly { keys: readonly string[]; label: React.ReactNode }[];
+  touch?: React.ReactNode;
+}) {
+  return (
+    <div
+      data-slot="inbox-deck-keys"
+      className={cn('mx-auto w-full max-w-[800px] px-6 pt-4 pb-8 text-[12px] text-fg-subtle max-sm:px-3', className)}
+      {...props}
+    >
+      <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2 [@media(pointer:coarse)]:hidden">
+        {keys.map((entry) => (
+          <li key={entry.keys.join('')} className="flex items-center gap-1.5">
+            <span className="flex items-center gap-0.5">
+              {entry.keys.map((key) => (
+                <Kbd key={key}>{key}</Kbd>
+              ))}
+            </span>
+            {entry.label}
+          </li>
+        ))}
+      </ul>
+      {touch ? <p className="hidden text-center [@media(pointer:coarse)]:block">{touch}</p> : null}
     </div>
   );
 }
@@ -590,6 +834,9 @@ function InboxClear({
 
 export {
   InboxClear,
+  InboxDeck,
+  InboxDeckKeys,
+  inboxDeckAnswer,
   InboxItem,
   InboxItemSkeleton,
   InboxList,
@@ -607,3 +854,4 @@ export {
   InboxSnoozedRow,
   InboxToolbar,
 };
+export type { InboxDeckExit, InboxSwipe };

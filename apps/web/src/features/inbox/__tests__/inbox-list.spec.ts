@@ -18,6 +18,8 @@ const item = (key: string, kind: InboxItem['kind'], projectIds: string[] = []) =
 const visit = (patch: Partial<InboxVisit> = {}): InboxVisit => ({
   later: [],
   done: [],
+  cleared: [],
+  next: null,
   ...patch,
 });
 
@@ -90,6 +92,16 @@ describe('currentItem', () => {
     ]) {
       expect(currentItem(waiting, 'session:s1:perm-abc', settled)?.key).toBe('approval:1');
     }
+  });
+
+  // The deck goes on to the card after the one answered, not back to the top:
+  // a person working down the stack from the middle keeps their place.
+  it('moves on to the item that followed the answered one, else the first', () => {
+    const stack = [item('a', 'run'), item('c', 'run'), item('d', 'run')];
+    const answered = { answered: new Set(['b']), done: [] };
+    expect(currentItem(stack, 'b', { ...answered, next: 'c' })?.key).toBe('c');
+    expect(currentItem(stack, 'b', { ...answered, next: 'gone' })?.key).toBe('a');
+    expect(currentItem(stack, 'b', { ...answered, next: null })?.key).toBe('a');
   });
 });
 

@@ -4,21 +4,19 @@ import { provisionedUser, signInAs } from '../../support/web';
 
 /**
  * The Inbox in a browser, against the real control plane: the console lands on
- * Plan's Inbox, a workspace with nothing waiting reads "You're all caught up",
- * a bot's pending approval comes in as a mail row and as the message in the
- * reading pane, and Mark as done keeps the row under Show done for the visit,
- * stores the mark, and leaves the reader clear again.
+ * the Inbox, the rail's first item, a workspace with nothing waiting reads
+ * "You're all caught up", a bot's pending approval comes in as a mail row and
+ * as the card on the deck, and E marks it done: the row stays under Show done for the visit, the mark is stored, and
+ * the deck is clear again.
  */
 test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }) => {
   const owner = await provisionedUser('inbox');
   await signInAs(page, owner.user);
 
-  await expect(page).toHaveURL(/\/plan\/inbox/);
-  const plan = page.getByRole('navigation', { name: 'Plan' });
-  await expect(plan.locator('[data-slot="routine-item"]', { hasText: 'Inbox' })).toHaveAttribute(
-    'data-active',
-    'true',
-  );
+  await expect(page).toHaveURL(/\/inbox/);
+  await expect(
+    page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Inbox' }),
+  ).toHaveAttribute('aria-current', 'page');
   await expect(page.getByText("You're all caught up", { exact: true })).toBeVisible();
   await expect(page.getByText('Nothing needs you.', { exact: true })).toBeVisible();
 
@@ -43,11 +41,8 @@ test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }
   await expect(message.getByRole('button', { name: 'Deny', exact: true })).toBeVisible();
   await expect(page.getByText('1 of 1', { exact: true })).toBeVisible();
 
-  // The toolbar over the message marks it done.
-  await page
-    .getByRole('toolbar', { name: 'Item actions' })
-    .getByRole('button', { name: 'Mark as done' })
-    .click();
+  // E puts the card in hand away as done.
+  await page.keyboard.press('e');
 
   await expect(page.getByText("You're all caught up", { exact: true })).toBeVisible();
   // Show done keeps it for this visit, struck through.
@@ -67,9 +62,9 @@ test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }
   await expect(page.getByText("You're all caught up", { exact: true })).toBeVisible();
   await expect(page.locator('[data-slot="inbox-item"]')).toHaveCount(0);
 
-  // The address it had before it moved into Plan still opens it.
-  await page.goto('/inbox');
-  await expect(page).toHaveURL(/\/plan\/inbox/);
+  // The address it had while it was Plan's section still opens it.
+  await page.goto('/plan/inbox');
+  await expect(page).toHaveURL(/\/inbox$/);
 
   await owner.api.dispose();
 });
@@ -91,7 +86,7 @@ test('the Inbox: select rows and mark them done at once', async ({ page }) => {
     ).json()) as { id: string };
     ids.push(await insertPendingBotApproval(bot.id, 'start_session', `${name} wants a session.`));
   }
-  await page.goto('/plan/inbox');
+  await page.goto('/inbox');
   const rows = page.locator('[data-slot="inbox-row"]');
   await expect(rows).toHaveCount(3);
 

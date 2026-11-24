@@ -358,6 +358,9 @@ export type { CarouselSlide } from './components/image-carousel';
 export { ImageCarousel } from './components/image-carousel';
 export {
   InboxClear,
+  InboxDeck,
+  type InboxDeckExit,
+  InboxDeckKeys,
   InboxItem,
   InboxItemSkeleton,
   InboxList,
@@ -373,7 +376,9 @@ export {
   InboxQuestions,
   InboxSelectionHead,
   InboxSnoozedRow,
+  type InboxSwipe,
   InboxToolbar,
+  inboxDeckAnswer,
 } from './components/inbox';
 export {
   AddRow,

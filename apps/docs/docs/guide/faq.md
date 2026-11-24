@@ -62,7 +62,7 @@ Use `opp` or the MCP server with a scoped API token. See [CLI and MCP](./cli-and
 
 ## Where do I find things that need me?
 
-**Plan → Inbox**, where the console opens by default. See [Inbox](./inbox.md).
+The **Inbox**, the rail's first item, where the console opens by default. See [Inbox](./inbox.md).
 
 ## What is not available yet?
 

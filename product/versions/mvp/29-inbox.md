@@ -588,3 +588,55 @@ Decided by the agent that built it, for the owner to accept or change:
    held back from them until it is taken up.
 4. The name for the state is "waiting in the Inbox"; "Unassigned" stays the
    project for tasks with no project.
+
+## Its own page, and a deck (2026-11-24)
+
+The owner asked on 2026-11-24 for the Inbox to leave Plan and have a page of
+its own, as one of the platform's core features, keeping the mail look but
+as easy as a swipe to answer a question and move on to the next item. What
+changed from "As built: the Inbox in Plan":
+
+- **Where it is.** `/inbox`, the rail's first item again, with the tray
+  glyph, a dot while anything needs you and the count beside its name (the
+  rail reads the Inbox on every page now, where Plan's sidebar read it only
+  on Plan). `/plan/inbox` redirects there with its search. Plan's sidebar
+  drops it, and Plan opens on the view at its top: the board for a reader
+  who never dragged one. Off flag, the rail drops the item and `/inbox` goes
+  on to New session.
+- **Where the console lands.** The rail's first item: the Inbox, put at the
+  front once for a reader whose stored rail order predates it (as Decided 1
+  had it); one who then drags another item first lands there.
+- **The sidebar is folders**, as a mail client's: Everything and each kind
+  (Sessions, Bots, Tasks, Reports, Automations, Pull requests while shown)
+  with its count, then each project that holds an item, No project last. A
+  folder sets the list's Type or Project facet, so it is a link and Back
+  undoes it; the filter menu still sets both, and keeps Show done and Show
+  pull requests.
+- **The reading pane is a deck.** The item in hand is a card, with up to two
+  cards peeking under it for what is left. Its answers (a session's choices,
+  else the answer row's right side: Approve, Merge, Send answers) wear the
+  digit that presses them where there is a keyboard, and 1–9 press them; the
+  leading controls (Later, Open session) are never numbered. E marks it done
+  and the card goes off to the right, S snoozes it until tomorrow (up), L
+  deprioritizes it, J / → and K / ← go through the stack without acting. On
+  touch the card follows a sideways drag, stamped Done or Later, and past
+  96px it is put away: right is done, left is Later. A drag that starts on a
+  control, or goes more up than across, scrolls. With reduced motion nothing
+  slides.
+- **Next is the next.** Once a card is answered or put away the deck goes on
+  to the item that followed it, not back to the top, so working down from
+  the middle keeps one's place.
+- **Progress.** A hairline of primary along the toolbar's bottom edge fills
+  as the visit is cleared (done, answered, snoozed or deleted, each item
+  once), and the clear deck says how many were cleared on this visit.
+
+Decided by the agent that built it, for the owner to accept or change:
+
+1. A swipe never answers a question or approves a call: right is Mark as
+   done, left is Later. Answers stay a press (a button or its digit), so a
+   stray swipe cannot approve a command.
+2. The rail's dot is the Inbox's count, not its unread count: anything that
+   needs you lights it.
+3. The filter menu keeps Type and Project beside the sidebar's folders,
+   since the sidebar is hidden on a phone and when collapsed.
+

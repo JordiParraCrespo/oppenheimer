@@ -44,14 +44,20 @@ const taskOf = (item: InboxItem): string | null => (item.kind === 'task' ? item.
  * already low. Delete also takes up a task an agent made, as Dismiss does;
  * Mark as done does not, so a task marked done stays under Show done for the
  * visit like every other item (the mark is the person's, on every device).
+ * Every action that takes an item out of the list counts it as cleared for
+ * the deck's progress.
  */
 export const INBOX_MARK_ACTIONS: Record<InboxMarkActionName, InboxMarkAction> = {
   done: { write: () => ({ mark: 'done' }), visit: (key) => inboxVisit.done(key) },
   toggleLow: { write: (items) => ({ mark: items.every((item) => item.low) ? null : 'low' }) },
   snoozeHour: {
     write: (_, now) => ({ mark: 'snoozed', until: new Date(now.getTime() + HOUR) }),
+    visit: (key) => inboxVisit.cleared(key),
   },
-  snoozeTomorrow: { write: (_, now) => ({ mark: 'snoozed', until: tomorrowMorning(now) }) },
+  snoozeTomorrow: {
+    write: (_, now) => ({ mark: 'snoozed', until: tomorrowMorning(now) }),
+    visit: (key) => inboxVisit.cleared(key),
+  },
   remove: {
     write: () => ({ mark: 'deleted' }),
     visit: (key) => inboxVisit.forget(key),

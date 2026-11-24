@@ -153,12 +153,12 @@ async function listedKeys(page: Page): Promise<string[]> {
   );
 }
 
-/** The count on the Inbox's row in Plan's sidebar: what needs you. */
+/** The count on the Inbox's Everything folder in its sidebar: what needs you. */
 async function counts(page: Page) {
   const row =
     (await page
-      .getByRole('navigation', { name: 'Plan' })
-      .locator('[data-slot="routine-item"]', { hasText: 'Inbox' })
+      .getByRole('navigation', { name: 'Inbox folders' })
+      .locator('[data-slot="routine-item"]', { hasText: 'Everything' })
       .textContent()) ?? '';
   return { nav: Number(/(\d+)/.exec(row)?.[1] ?? 0) };
 }
@@ -274,7 +274,7 @@ async function measureLoad(
   await reader.goto('/settings');
   await reader.waitForTimeout(3_000);
   const start = Date.now();
-  await reader.goto('/plan/inbox');
+  await reader.goto('/inbox');
   await expect(
     reader.locator('[data-slot="inbox-message"]').getByRole('button').first(),
   ).toBeEnabled({
@@ -498,7 +498,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
     );
     let sum = 0;
     for (const project of [mobile, webProject, 'none']) {
-      await page.goto(`/plan/inbox?project=${project}`);
+      await page.goto(`/inbox?project=${project}`);
       await expect(page.locator('[data-slot="inbox-item"]').first()).toBeVisible();
       const keys = await listedKeys(page);
       sum += keys.length;
@@ -508,7 +508,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
       }
     }
     expect(sum, 'every item is under exactly one project here').toBe(expected.size);
-    await page.goto('/plan/inbox');
+    await page.goto('/inbox');
   });
 
   await test.step('what loading the full Inbox costs', () =>
@@ -538,7 +538,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
       await expectAnswered(page, plan);
     }
     page.off('request', tally);
-    // Plan's sidebar counts what the list shows the moment an answer lands,
+    // The Inbox's sidebar counts what the list shows the moment an answer lands,
     // not once each runner reports its agent moved on.
     const right = { ...(await counts(page)), list: (await listedKeys(page)).length };
     note(`just after the last answer: sidebar ${right.nav}, list ${right.list}`);
@@ -559,7 +559,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
 
     // A batch from two pages at once, each page its own half.
     const batch = [...permissions.slice(4, permissions.length - 1), ...asked.slice(4)];
-    await second.goto('/plan/inbox');
+    await second.goto('/inbox');
     const halves = [batch.filter((_, i) => i % 2 === 0), batch.filter((_, i) => i % 2 === 1)];
     await Promise.all(
       [page, second].map(async (reader, i) => {
@@ -573,8 +573,8 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
   });
 
   await test.step('two pages answer the same permission at the same moment: one wins', async () => {
-    await page.goto('/plan/inbox');
-    await second.goto('/plan/inbox');
+    await page.goto('/inbox');
+    await second.goto('/inbox');
     const scenario = stale.scenario as PermissionScenario;
     const cards = await Promise.all([openRow(page, stale.id), openRow(second, stale.id)]);
     // Each page's answer is held until both have been sent, so the two reach
@@ -669,7 +669,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
     followUp.round = `${followUp.id}-2`;
     startWaiting(host(followUp), followUp.id, followUp.round, next);
     await expect(async () => {
-      await page.goto('/plan/inbox');
+      await page.goto('/inbox');
       const card = await openRow(page, followUp.id);
       await expect(card.locator('[data-slot="inbox-question"]')).toContainText(
         'open a pull request?',
@@ -684,7 +684,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
   });
 
   await test.step('bot approvals are approved and denied from the Inbox', async () => {
-    await page.goto('/plan/inbox');
+    await page.goto('/inbox');
     for (const [i, bot] of bots.slice(0, 6).entries()) {
       const row = page.locator(`[data-slot="inbox-item"][href*="${bot.approvalId}"]`);
       await row.click();
@@ -717,7 +717,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
         .click();
       await page.getByRole('menuitem', { name: item }).click();
     };
-    await page.goto('/plan/inbox');
+    await page.goto('/inbox');
     await menu(snoozed, 'Snooze 1 hour');
     await menu(low, 'Deprioritize');
     await menu(done, /Mark as done/);
@@ -726,7 +726,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
       .toBe(3);
 
     for (const reader of [page, second]) {
-      await reader.goto('/plan/inbox');
+      await reader.goto('/inbox');
       await expect(rowOf(reader, done.id)).toHaveCount(0);
       await expect(rowOf(reader, snoozed.id)).toHaveCount(0);
       await expect(reader.locator('[data-slot="inbox-snoozed-row"]')).toHaveCount(1);
@@ -742,7 +742,7 @@ test('the Inbox holds under thirty sessions, ten bots and two readers', async ({
     release(host(done), done.id);
     startWaiting(host(done), done.id, done.round, scenario);
     await expect(async () => {
-      await page.goto('/plan/inbox');
+      await page.goto('/inbox');
       await expect(rowOf(page, done.id)).toBeVisible({ timeout: 3_000 });
     }).toPass({ timeout: 150_000, intervals: [5_000] });
     await answer(page, done);

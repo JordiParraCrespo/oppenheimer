@@ -1904,3 +1904,11 @@ earlier note:
   it is told apart from what the owner wrote, and the App's comments wake
   nothing (`loopGuard`), so an answer never asks a bot again. The guide's
   "writing to a bot only in the console" stopped holding the same day.
+- `versions/mvp/29-inbox.md`, "As built: the Inbox in Plan" (2026-10-29),
+  made the Inbox Plan's first section at `/plan/inbox`, with no rail item.
+  On 2026-11-24 the owner asked for it to be one of the platform's core
+  features, with its own page, and as easy to answer and move on from as a
+  swipe: it is the rail's first item again at `/inbox` (the Plan address
+  redirects), with a dot and a count, its sidebar is folders by kind and by
+  project, Plan opens on its board, and the reading pane is a deck of cards
+  answered by number keys or a swipe ("Its own page, and a deck").

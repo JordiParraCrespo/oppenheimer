@@ -35,6 +35,8 @@ import {
   InboxQuestions,
   InboxSelectionHead,
   InboxSnoozedRow,
+  InboxDeck,
+  InboxDeckKeys,
   InboxToolbar,
 } from '@oppenheimer/design-system-web/inbox';
 import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
@@ -176,7 +178,7 @@ function InboxSelectionDemo() {
 function InboxPaneDemo() {
   return (
     <div className="flex w-full max-w-160 flex-col border border-border-subtle">
-      <InboxToolbar position="1 of 3">
+      <InboxToolbar position="1 of 3" progress={0.4}>
         <IconButton aria-label="Mark as done">
           <Check />
         </IconButton>
@@ -190,31 +192,48 @@ function InboxPaneDemo() {
           <X />
         </IconButton>
       </InboxToolbar>
-      <InboxMessage
-        icon={<GitPullRequest />}
-        sender="pau-g"
-        meta="XRP Mobile · acme/xrp-mobile"
-        title="Merge #121 · Port to peersyst?"
-        age="6m ago"
-      >
-        <InboxMessageBody>Nothing is holding it: it can merge now.</InboxMessageBody>
-        <InboxMessageFacts>
-          <span className="flex items-center gap-1.5">
-            <StatusDot state="passing" /> Checks passing
-          </span>
-          <span className="figures">+84 −41</span>
-        </InboxMessageFacts>
-        <InboxMessageActions
-          leading={
-            <>
-              <Button variant="ghost">Later</Button>
-              <Button variant="secondary">Open</Button>
-            </>
-          }
+      <div className="bg-canvas-recessed">
+        <InboxDeck
+          behind={2}
+          onSwipe={() => {}}
+          swipeLabels={{ right: 'Done', left: 'Later' }}
         >
-          <Button>Merge</Button>
-        </InboxMessageActions>
-      </InboxMessage>
+          <InboxMessage
+            icon={<GitPullRequest />}
+            sender="pau-g"
+            meta="XRP Mobile · acme/xrp-mobile"
+            title="Merge #121 · Port to peersyst?"
+            age="6m ago"
+          >
+            <InboxMessageBody>Nothing is holding it: it can merge now.</InboxMessageBody>
+            <InboxMessageFacts>
+              <span className="flex items-center gap-1.5">
+                <StatusDot state="passing" /> Checks passing
+              </span>
+              <span className="figures">+84 −41</span>
+            </InboxMessageFacts>
+            <InboxMessageActions
+              leading={
+                <>
+                  <Button variant="ghost">Later</Button>
+                  <Button variant="secondary">Open</Button>
+                </>
+              }
+            >
+              <Button>Merge</Button>
+            </InboxMessageActions>
+          </InboxMessage>
+        </InboxDeck>
+        <InboxDeckKeys
+          keys={[
+            { keys: ['1–9'], label: 'Answer' },
+            { keys: ['E'], label: 'Done' },
+            { keys: ['S'], label: 'Snooze' },
+            { keys: ['J', 'K'], label: 'Next / previous' },
+          ]}
+          touch="Swipe right when it's done, left for later."
+        />
+      </div>
       <div className="flex min-h-40 border-t border-border-subtle">
         <InboxClear title="You're all caught up">
           3 sessions are still running. New items land here when one needs a decision.
@@ -306,7 +325,7 @@ export function InboxSpec() {
       id="inbox"
       title="Inbox"
       meta="inbox.tsx"
-      desc="One place for what needs you, laid out as a mail client inside Plan (Inbox.dc.html). The list column opens on InboxListHead (the sidebar toggle, the name, the unread count, the filter); InboxItem is a mail row: an unread dot, who it is from with a mono age or Low, the subject and a line of its body, unread rows in semibold, the one in the reading pane on the selected wash, a done row (Show done) struck through at half strength, and the ellipsis over the age on hover. InboxItemSkeleton holds a row's place while the Inbox loads; InboxSnoozedRow lists a snoozed item with when it comes back and Bring back. A row's select is its Checkbox, in the unread dot's place on hover and on every row once the list is selecting; a selected row takes the selected wash, and InboxSelectionHead takes the head's place with select all, the count and the bulk actions. The reading pane opens on InboxToolbar (Mark as done, Snooze, Deprioritize, Delete and the item's place), then InboxMessage: the question as a heading, the sender on a round glyph with where it comes from and how long ago, then InboxMessageBody, InboxMessageFacts and InboxMessageActions with Later and a link on the left and the answers on the right; InboxClear says nothing needs you. A session waiting on a decision answers in the message: a permission's options as InboxMessageChoices in the agent's order (the command in an ApprovalCommand above), a question's as InboxQuestions, each InboxQuestion numbered with its tag, its InboxQuestionOptions pills (one, or several) and a field for an answer of its own."
+      desc="One place for what needs you, a page of its own laid out as a mail client (Inbox.dc.html). The list column opens on InboxListHead (the sidebar toggle, the name, the unread count, the filter); InboxItem is a mail row: an unread dot, who it is from with a mono age or Low, the subject and a line of its body, unread rows in semibold, the one in the reading pane on the selected wash, a done row (Show done) struck through at half strength, and the ellipsis over the age on hover. InboxItemSkeleton holds a row's place while the Inbox loads; InboxSnoozedRow lists a snoozed item with when it comes back and Bring back. A row's select is its Checkbox, in the unread dot's place on hover and on every row once the list is selecting; a selected row takes the selected wash, and InboxSelectionHead takes the head's place with select all, the count and the bulk actions. The reading pane opens on InboxToolbar (Mark as done, Snooze, Deprioritize, Delete, the item's place and a hairline of how much of the visit is cleared), then InboxDeck: the item in hand as a card on the stack of what is left, up to two cards peeking under it, which on touch follows a sideways drag and stamps Done or Later, and whose answers wear the number that presses them where there is a keyboard; InboxDeckKeys under it says what the keys do (or how to swipe, on touch). On the card, InboxMessage: the question as a heading, the sender on a round glyph with where it comes from and how long ago, then InboxMessageBody, InboxMessageFacts and InboxMessageActions with Later and a link on the left and the answers on the right; InboxClear says nothing needs you. A session waiting on a decision answers in the message: a permission's options as InboxMessageChoices in the agent's order (the command in an ApprovalCommand above), a question's as InboxQuestions, each InboxQuestion numbered with its tag, its InboxQuestionOptions pills (one, or several) and a field for an answer of its own."
       code={`<InboxList><InboxItem sender="pau-g" title="Merge #121" preview="It can merge now." meta="6m" unread action={menu} /></InboxList>
 <InboxMessage icon={<Bot />} sender="Ops" meta="Bot approval" title="Approve start_session?" age="14m ago"><InboxMessageBody>…</InboxMessageBody><InboxMessageActions leading={<Button variant="ghost">Later</Button>}><Button>Approve</Button></InboxMessageActions></InboxMessage>`}
     >

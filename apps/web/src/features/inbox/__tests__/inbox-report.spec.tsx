@@ -64,7 +64,7 @@ describe('a report as a row', () => {
     const pick = (type: 'report' | 'bots') =>
       listedItems(
         { open: rows, done: [] },
-        { later: [], done: [] },
+        { later: [], done: [], cleared: [], next: null },
         { type, project: null },
         true,
       ).open.map((row) => row.key);

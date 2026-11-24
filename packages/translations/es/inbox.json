@@ -146,7 +146,10 @@
     "clear": "Lo nuevo llega aquí cuando algo necesita una decisión.",
     "clearRunning_one": "{{count}} sesión sigue en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
     "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
-    "clearRunning_many": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión."
+    "clearRunning_many": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
+    "cleared_one": "Has despejado {{count}} elemento en esta visita.",
+    "cleared_other": "Has despejado {{count}} elementos en esta visita.",
+    "cleared_many": "Has despejado {{count}} elementos en esta visita."
   },
   "notice": {
     "title": "{{name}} tiene novedades para ti",
@@ -180,5 +183,22 @@
     "planning": "Poniéndola para hoy…",
     "dismiss": "Descartar",
     "dismissing": "Descartando…"
+  },
+  "folders": {
+    "label": "Carpetas de la bandeja",
+    "kinds": "Carpetas",
+    "all": "Todo",
+    "projects": "Proyectos"
+  },
+  "deck": {
+    "swipeDone": "Hecho",
+    "swipeLater": "Luego",
+    "touch": "Desliza a la derecha cuando esté hecho, a la izquierda para luego.",
+    "keys": {
+      "answer": "Responder",
+      "done": "Hecho",
+      "snooze": "Posponer",
+      "move": "Siguiente / anterior"
+    }
   }
 }
