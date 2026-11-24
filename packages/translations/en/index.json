@@ -2740,7 +2740,12 @@
       "manage": "Bots in {{section}}",
       "checkedHint": "Checked bots show in {{section}}.",
       "manageAll": "Manage in {{employees}}",
-      "hide": "Hide from {{section}}"
+      "hide": "Hide from {{section}}",
+      "faceWaiting": "{{name}}, needs you",
+      "faceUnread": "{{name}}, unread",
+      "faceWorking": "{{name}}, working",
+      "more_one": "{{count}} more bot: show the list",
+      "more_other": "{{count}} more bots: show the list"
     }
   },
   "automations": {
