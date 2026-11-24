@@ -74,7 +74,7 @@ export function SessionsSidebar({ bots }: { bots?: ReactNode }) {
                   id={id}
                   label={labels.sessions}
                   moveLabel={t('sessions.sidebar.moveSection', { name: labels.sessions })}
-                  grow
+                  grow={list.open}
                 >
                   <QueryState>
                     <QueryState.Pending>
