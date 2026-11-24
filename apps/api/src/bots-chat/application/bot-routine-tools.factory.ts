@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { GITHUB_EVENT_TYPES, SCHEDULE_FREQUENCIES } from '@oppenheimer/shared/automations';
+import {
+  cronToEnglish,
+  GITHUB_EVENT_TYPES,
+  SCHEDULE_FREQUENCIES,
+} from '@oppenheimer/shared/automations';
 import { z } from 'zod/v4';
 import { DeleteBotRoutineCommand } from '../../automations/commands/delete-bot-routine/delete-bot-routine.command';
 import { RunBotRoutineCommand } from '../../automations/commands/run-bot-routine/run-bot-routine.command';
@@ -35,7 +39,7 @@ const scheduleTrigger = z.object({
   source: z.literal('schedule'),
   frequency: z
     .enum(SCHEDULE_FREQUENCIES)
-    .describe(promptText('tools/routine.schedule-trigger-frequency')),
+    .describe(promptText('routines/tools.schedule-trigger-frequency')),
   hour: z.number().int().min(0).max(23).default(9),
   minute: z.number().int().min(0).max(59).default(0),
   days: z
@@ -44,7 +48,8 @@ const scheduleTrigger = z.object({
     .describe('Weekly: 0 = Sunday … 6 = Saturday.'),
   day_of_month: z.number().int().min(1).max(28).optional(),
   date: z.string().optional().describe('Once: YYYY-MM-DD.'),
-  timezone: z.string().optional().describe(promptText('tools/routine.schedule-trigger-timezone')),
+  cron: z.string().optional().describe(promptText('routines/tools.schedule-trigger-cron')),
+  timezone: z.string().optional().describe(promptText('routines/tools.schedule-trigger-timezone')),
 });
 
 const githubTrigger = z.object({
@@ -53,24 +58,28 @@ const githubTrigger = z.object({
   repositories: z
     .array(z.number().int().positive())
     .min(1)
-    .describe(promptText('tools/routine.github-trigger-repositories')),
-  branch: z.string().optional().describe(promptText('tools/routine.github-trigger-branch')),
+    .describe(promptText('routines/tools.github-trigger-repositories')),
+  branch: z.string().optional().describe(promptText('routines/tools.github-trigger-branch')),
 });
 
 const gmailTrigger = z.object({
   source: z.literal('gmail'),
-  account: z.string().min(1).describe(promptText('tools/routine.gmail-trigger-account')),
+  account: z.string().min(1).describe(promptText('routines/tools.gmail-trigger-account')),
   query: z
     .string()
     .trim()
     .max(500)
     .optional()
-    .describe(promptText('tools/routine.gmail-trigger-query')),
+    .describe(promptText('routines/tools.gmail-trigger-query')),
 });
 
+const webhookTrigger = z
+  .object({ source: z.literal('webhook') })
+  .describe(promptText('routines/tools.webhook-trigger'));
+
 const routineInput = z.object({
-  action: z.enum(ROUTINE_ACTIONS).describe(promptText('tools/routine.routine-action')),
-  routine_id: z.uuid().optional().describe(promptText('tools/routine.routine-routine-id')),
+  action: z.enum(ROUTINE_ACTIONS).describe(promptText('routines/tools.routine-action')),
+  routine_id: z.uuid().optional().describe(promptText('routines/tools.routine-routine-id')),
   name: z.string().trim().min(1).max(NAME_MAX).optional(),
   prompt: z
     .string()
@@ -78,22 +87,22 @@ const routineInput = z.object({
     .min(1)
     .max(PROMPT_MAX)
     .optional()
-    .describe(promptText('tools/routine.routine-prompt')),
+    .describe(promptText('routines/tools.routine-prompt')),
   triggers: z
-    .array(z.union([scheduleTrigger, githubTrigger, gmailTrigger]))
+    .array(z.union([scheduleTrigger, githubTrigger, gmailTrigger, webhookTrigger]))
     .min(1)
     .max(TRIGGERS_MAX)
     .optional()
-    .describe(promptText('tools/routine.routine-triggers')),
-  enabled: z.boolean().optional().describe(promptText('tools/routine.routine-enabled')),
+    .describe(promptText('routines/tools.routine-triggers')),
+  enabled: z.boolean().optional().describe(promptText('routines/tools.routine-enabled')),
 });
 
 const input = routineInput
   .refine((call) => call.action !== 'create' || (call.name && call.prompt && call.triggers), {
-    message: promptText('tools/routine.input-message-create-needs-name'),
+    message: promptText('routines/tools.input-message-create-needs-name'),
   })
   .refine((call) => ['list', 'create'].includes(call.action) || call.routine_id, {
-    message: promptText('tools/routine.input-message-action-needs-routine'),
+    message: promptText('routines/tools.input-message-action-needs-routine'),
   });
 
 type RoutineCall = z.output<typeof input>;
@@ -154,7 +163,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
     return {
       name: 'update_routine',
       scope: 'automations:write' as const,
-      description: promptText('tools/routine.update-routine'),
+      description: promptText('routines/tools.update-routine'),
       input,
       normalize: (call: RoutineCall, context: BotToolCallContext) => this.checked(call, context),
       summarize: async (call: RoutineCall, context: BotToolCallContext) => {
@@ -278,7 +287,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
     const routine = automations.find((candidate) => candidate.id === routineId);
     if (!routine) {
       throw new BotToolRefusal(
-        promptText('tools/routine.routine-of', { routineId: routineId ?? '(none)' }),
+        promptText('routines/tools.routine-of', { routineId: routineId ?? '(none)' }),
       );
     }
     return routine;
@@ -291,7 +300,7 @@ export class BotRoutineToolsFactory implements BotToolArea {
   }
 
   private async listing(context: BotToolCallContext): Promise<string> {
-    const { automations, digests } = await this.routines(context);
+    const { automations, digests, webhooks } = await this.routines(context);
     return formatToolList(
       'Your routines',
       automations.map((routine) => {
@@ -299,16 +308,32 @@ export class BotRoutineToolsFactory implements BotToolArea {
         const parts = [
           routine.isPaused ? 'paused' : 'on',
           `when: ${routine.triggers.map((trigger) => describeTrigger(trigger, context)).join(' or ')}`,
+          ...webhookUrlState(routine, webhooks),
           lastRun
             ? `last run ${lastRun.status} ${formatToolTime(lastRun.createdAt, context.timeZone)}`
             : 'no runs yet',
         ];
         return `${routine.id} "${routine.name}" [${parts.join('; ')}]\n  prompt: ${cut(routine.revision.prompt, 300)}`;
       }),
-      promptText('tools/routine.listing'),
+      promptText('routines/tools.listing'),
       { shown: automations.length, total: automations.length, hint: '' },
     );
   }
+}
+
+/** Whether a routine with a webhook trigger has its URL yet; nothing for any other routine. */
+function webhookUrlState(
+  routine: AutomationEntity,
+  webhooks: AutomationListing['webhooks'],
+): string[] {
+  if (!routine.triggers.some((trigger) => trigger.source === 'webhook')) return [];
+  return [
+    promptText(
+      webhooks?.has(routine.id)
+        ? 'routines/tools.describe-webhook-issued'
+        : 'routines/tools.describe-webhook-not-issued',
+    ),
+  ];
 }
 
 /** A trigger as the card states it, before it is saved. */
@@ -322,6 +347,12 @@ function describeCall(
   }
   if (trigger.source === 'github') {
     return `GitHub ${trigger.event}${trigger.branch ? ` on ${trigger.branch}` : ''}`;
+  }
+  if (trigger.source === 'webhook')
+    return promptText('routines/tools-automation.describe-trigger-webhook');
+  if (trigger.frequency === 'cron') {
+    // The owner approves words, never the raw fields.
+    return cronToEnglish(trigger.cron ?? '') ?? 'a custom schedule';
   }
   const at = `${String(trigger.hour).padStart(2, '0')}:${String(trigger.minute).padStart(2, '0')}`;
   return trigger.frequency === 'hourly'

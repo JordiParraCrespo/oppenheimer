@@ -15,7 +15,7 @@ export function BotTranscriptSkeleton() {
   return (
     <ChatTranscript aria-hidden>
       <div className="flex justify-end pt-2 opacity-80">
-        <span className="flex h-12 w-60 items-center rounded-xl bg-card px-5">
+        <span className="flex h-12 w-60 items-center rounded-md bg-card px-5">
           <Skeleton shape="sm" className="h-3 w-full" />
         </span>
       </div>
@@ -28,7 +28,7 @@ export function BotTranscriptSkeleton() {
         ))}
       </div>
       <div className="flex justify-end pt-2 opacity-40">
-        <span className="flex h-12 w-44 items-center rounded-xl bg-card px-5">
+        <span className="flex h-12 w-44 items-center rounded-md bg-card px-5">
           <Skeleton shape="sm" className="h-3 w-full" />
         </span>
       </div>

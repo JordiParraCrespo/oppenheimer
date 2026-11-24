@@ -81,4 +81,4 @@ When a tool asks, the turn ends on a **Needs input** card in the chat and in the
 
 - A turn has no step or time limit: it runs until the bot answers. When it has read about 90,000 tokens it summarises what came before and carries on, and the chat shows a line where it did. It stops if the model sends nothing for 5 minutes while no tool runs, or if it keeps repeating calls that change nothing. Older history is summarised for the model; the chat keeps every message.
 - A bot cannot pair or remove hosts, connect GitHub, Google or Gmail, share sessions, manage API tokens, or delete bots.
-- Not available: calendar tools, files other than images, group chats, bot templates, and writing to a bot from Slack, mail, WhatsApp or Telegram.
+- Not available: calendar tools, files other than images, group chats, bot templates, and writing to a bot from mail.

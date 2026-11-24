@@ -144,7 +144,7 @@ export function BotProfileSkeleton() {
               <Skeleton
                 key={section}
                 shape="pill"
-                className={`h-7.5 ${PILL_WIDTHS[index % PILL_WIDTHS.length]}`}
+                className={`h-(--control-h-sm) ${PILL_WIDTHS[index % PILL_WIDTHS.length]}`}
               />
             ))}
           </div>

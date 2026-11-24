@@ -58,6 +58,11 @@ describe('BotAttachmentEntity', () => {
     expect(attachmentName('/home/ada/shots/screen\u0007.png')).toBe('screen.png');
     expect(attachmentName('C:\\Users\\ada\\a.jpg')).toBe('a.jpg');
     expect(attachmentName('x'.repeat(400))).toHaveLength(255);
+    // What breaks this: a cut inside an emoji leaves a lone surrogate, which jsonb refuses.
+    expect(attachmentName(`${'😀'.repeat(128)}.png`)).toBe(`${'😀'.repeat(128)}.png`);
+    const cut = attachmentName('😀'.repeat(300));
+    expect(Array.from(cut)).toHaveLength(255);
+    expect(cut.endsWith('😀')).toBe(true);
   });
 });
 

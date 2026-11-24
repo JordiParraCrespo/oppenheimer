@@ -87,6 +87,19 @@ type SessionFolder struct {
 	// empty, and it names nothing on disk.
 	WorkspaceSlug string
 	Created       time.Time
+	// Name, Agent, Branch and Checkouts are what the folder's README.md says
+	// about the session, for a person or an agent reading the work folder.
+	Name      string
+	Agent     Agent
+	Branch    string
+	Checkouts []FolderCheckout
+}
+
+// FolderCheckout is one of a session folder's checkouts, as its README.md
+// lists it: the repository and the directory inside the folder it is in.
+type FolderCheckout struct {
+	Repo      string `json:"repo"`
+	Directory string `json:"directory"`
 }
 
 // ErrName is a path element that is not one plain directory name.

@@ -36,5 +36,18 @@ if [ "$1" = "--cloud" ]; then
   printf 'Resume with: claude --teleport %s\r\n' "$id"
   exit 0
 fi
-printf 'CLAUDE-SHIM argv=%s\n' "$*"
+# The runner hands Claude Code JSON as single words (`--settings {…}` with its
+# status line, `--mcp-config={…}` with its MCP server). They are shortened on
+# screen, or their wrapped lines push this marker off the top of the pane a
+# test attaches to; ~/claude-argv.log keeps every word whole.
+printf '%s\n' "$*" >> "$HOME/claude-argv.log"
+shown=''
+for word in "$@"; do
+  case "$word" in
+    '{'*) word='{…}' ;;
+    --mcp-config=*) word='--mcp-config=…' ;;
+  esac
+  shown="$shown${shown:+ }$word"
+done
+printf 'CLAUDE-SHIM argv=%s\n' "$shown"
 exec sh -i

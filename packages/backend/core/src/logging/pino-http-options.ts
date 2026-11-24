@@ -16,6 +16,12 @@ export interface LoggingOptions {
    * is created when missing; the file is appended to, never rotated here.
    */
   file?: string;
+  /**
+   * Paths whose successful requests are not logged: the probes a container
+   * runtime or a load balancer calls every few seconds. A failing one (a
+   * status of 400 or above) is still logged.
+   */
+  quietPaths?: readonly string[];
 }
 
 /**
@@ -48,6 +54,60 @@ const REDACT_PATHS = [
   'res.headers["set-cookie"]',
 ];
 
+const ERROR_CODE = Symbol('oppenheimer.errorCode');
+
+/**
+ * Records the problem code a response answers with (`SESS_014`), for its
+ * request log line. The exception filter calls it; without it a 404 for a
+ * route that does not exist and one for a row that does not exist read alike.
+ */
+export function recordErrorCode(res: object, code: string | undefined): void {
+  if (code) (res as { [ERROR_CODE]?: string })[ERROR_CODE] = code;
+}
+
+function errorCodeOf(res: object): string | undefined {
+  return (res as { [ERROR_CODE]?: string })[ERROR_CODE];
+}
+
+/**
+ * The level of a request's line, by its outcome: a server failure is an
+ * error, a refused request a warning, the rest info. A quiet path's success
+ * is not logged at all.
+ */
+function levelOf(
+  res: { statusCode: number },
+  err: Error | undefined,
+  path: string | undefined,
+  quietPaths: ReadonlySet<string>,
+): 'error' | 'warn' | 'info' | 'silent' {
+  if (err || res.statusCode >= 500) return 'error';
+  if (res.statusCode >= 400) return 'warn';
+  if (path !== undefined && quietPaths.has(path)) return 'silent';
+  return 'info';
+}
+
+/**
+ * One key for a line's message. Nest's loggers pass an object whose text is
+ * `message` (`logger.log({ message, hostId })`), which pino writes as is,
+ * beside lines whose text is pino's `msg`; a query over one key missed the
+ * other half. An object with a string `message` and no separate text has it
+ * moved to `msg`.
+ */
+function messageAsMsg(this: unknown, args: unknown[], method: (...args: unknown[]) => void) {
+  const [first] = args;
+  if (
+    args.length === 1 &&
+    first !== null &&
+    typeof first === 'object' &&
+    !(first instanceof Error) &&
+    typeof (first as { message?: unknown }).message === 'string'
+  ) {
+    const { message, ...rest } = first as { message: string };
+    return method.apply(this, [rest, message]);
+  }
+  return method.apply(this, args);
+}
+
 /** Query strings routinely carry tokens (password reset, OAuth callbacks). */
 function stripQuery(url: string): string {
   const queryStart = url.indexOf('?');
@@ -61,6 +121,7 @@ function stripQuery(url: string): string {
  * only the fields known to be safe.
  */
 export function buildPinoHttpOptions(options: LoggingOptions = {}): Options {
+  const quietPaths = new Set(options.quietPaths ?? []);
   return {
     // The request id is the correlation id: a valid client-sent
     // `x-correlation-id` or a fresh UUID (never pino's default counter), echoed
@@ -71,6 +132,15 @@ export function buildPinoHttpOptions(options: LoggingOptions = {}): Options {
       res.setHeader(CORRELATION_HEADER, id);
       return id;
     },
+    customLogLevel: (req, res, err) =>
+      levelOf(res, err, req.url === undefined ? undefined : stripQuery(req.url), quietPaths),
+    // Read when the line is written, so the code the exception filter
+    // recorded is there; at the request's start there is none yet.
+    customProps: (_req, res) => {
+      const errorCode = errorCodeOf(res);
+      return errorCode ? { errorCode } : {};
+    },
+    hooks: { logMethod: messageAsMsg },
     redact: { paths: REDACT_PATHS, remove: true },
     serializers: {
       // pino-http wraps these, so `req`/`res` arrive already serialized by the

@@ -50,7 +50,7 @@ export class GuardedWebPageAdapter implements WebPagePort {
     if (response.truncated) {
       return {
         kind: 'refused',
-        reason: promptText('tools/web.fetch-image-reason', { maxBytes: String(maxBytes) }),
+        reason: promptText('web/tools.fetch-image-reason', { maxBytes: String(maxBytes) }),
       };
     }
     return { kind: 'image', image: { url: result.url.toString(), bytes: response.body } };
@@ -110,10 +110,10 @@ export class GuardedWebPageAdapter implements WebPagePort {
     try {
       addresses = await lookup(host, { all: true, verbatim: true });
     } catch {
-      return { reason: promptText('tools/web.resolve-reason-name-does-resolve', { host }) };
+      return { reason: promptText('web/tools.resolve-reason-name-does-resolve', { host }) };
     }
     if (addresses.length === 0 || addresses.some(({ address }) => !isPublicAddress(address))) {
-      return { reason: promptText('tools/web.resolve-reason-address-public-internet') };
+      return { reason: promptText('web/tools.resolve-reason-address-public-internet') };
     }
     return addresses[0];
   }
@@ -153,7 +153,7 @@ export class GuardedWebPageAdapter implements WebPagePort {
   private page(url: URL, response: Response): WebPageResult {
     const contentType = (response.contentType ?? 'unknown').split(';')[0].trim();
     if (!TEXT_TYPES.test(contentType)) {
-      return { kind: 'refused', reason: promptText('tools/web.page-reason', { contentType }) };
+      return { kind: 'refused', reason: promptText('web/tools.page-reason', { contentType }) };
     }
     const raw = response.body.toString('utf8');
     const html = /html/i.test(contentType);

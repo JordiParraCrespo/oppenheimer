@@ -296,7 +296,7 @@ export class TurnTranscript {
       conversationId: this.turn.conversationId,
       turnId: this.turn.id,
       role: 'event',
-      content: promptText('turn/transcript.compaction-content', {
+      content: promptText('core/turn-transcript.compaction-content', {
         round: String(Math.round(event.tokensBefore / 1000)),
         round2: String(Math.round(event.tokensAfter / 1000)),
       }),
@@ -411,7 +411,7 @@ export class TurnStorageError extends Error {
 export function failUnstoredCall(line: BotMessageEntity, callId: string, cause: unknown): boolean {
   const step = line.steps.find((candidate) => candidate.callId === callId);
   if (!step) return false;
-  step.output = promptText('turn/transcript.fail-unstored-call', {
+  step.output = promptText('core/turn-transcript.fail-unstored-call', {
     start: startOf(failureReasonOf(cause), 200),
   });
   step.isError = true;

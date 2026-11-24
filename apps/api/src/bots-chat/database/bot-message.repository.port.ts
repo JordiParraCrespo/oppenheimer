@@ -46,8 +46,16 @@ export interface BotMessageRepositoryPort {
    * when Postgres refuses what they hold; any other failure as it came.
    */
   saveSteps(message: BotMessageEntity): Promise<void>;
-  /** Writes what a message says now and what it still has to read (`BotMessageEntity.read`). */
-  saveContent(message: BotMessageEntity): Promise<void>;
+  /** One message of a bot in the caller's workspace, in any of its conversations; null when none is. */
+  findOne(scope: AccessScope, botId: string, messageId: string): Promise<BotMessageEntity | null>;
+  /** Writes the reactions to a message, yours and the bot's (`react`, `reactAsBot`), and nothing else. */
+  saveReaction(message: BotMessageEntity): Promise<void>;
+  /**
+   * Writes what a message says now, the images it carries and what it still
+   * has to read (`BotMessageEntity.read`), claiming the images it gained
+   * (stored by no person, carried by nothing yet) in the same transaction.
+   */
+  saveReading(message: BotMessageEntity): Promise<void>;
   /**
    * A steer the running turn took (`BotTurnRepositoryPort.takeSteers`), put
    * where the turn delivered it: at `position`, as of `at`, which is what

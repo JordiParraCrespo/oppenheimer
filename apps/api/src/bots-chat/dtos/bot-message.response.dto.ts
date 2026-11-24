@@ -1,8 +1,10 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   BOT_APPROVAL_EVENT_STAGES,
+  BOT_CHECK_BACK_ABOUT_MAX,
   BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
+  BOT_GITHUB_ASK_VIAS,
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
   BOT_MESSAGE_ROLES,
@@ -16,6 +18,7 @@ import {
   type BotApprovalEventStage,
   type BotDreamActivity,
   type BotEventOutcome,
+  type BotGithubAskVia,
   type BotGoalActivity,
   type BotLoopActivity,
   type BotMessageRole,
@@ -347,6 +350,48 @@ export class BotPullRequestEventResponseDto {
   event!: PullRequestWakeEvent;
 }
 
+/** The owner asked the bot on GitHub: a mention, or a `bot:` label. */
+export class BotGithubAskEventResponseDto {
+  @ApiProperty({ enum: ['github_ask'] })
+  kind!: 'github_ask';
+
+  @ApiProperty({
+    enum: BOT_GITHUB_ASK_VIAS,
+    description:
+      '`mention` for `@oppenheimer <bot>` in a comment or a review, `label` for `bot:<bot>`.',
+  })
+  via!: BotGithubAskVia;
+
+  @ApiProperty({ format: 'uuid', description: 'The installation the answer is posted through.' })
+  installationId!: string;
+
+  @ApiProperty({ description: "GitHub's repository id, as a string: it is a bigint." })
+  githubRepoId!: string;
+
+  @ApiProperty({ description: '`owner/name`.' })
+  repository!: string;
+
+  @ApiProperty({ description: 'The issue or pull request number.' })
+  number!: number;
+
+  @ApiProperty({
+    type: Boolean,
+    nullable: true,
+    description: 'Whether `number` is a pull request; null when GitHub did not say.',
+  })
+  isPullRequest!: boolean | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The comment, review or issue the ask was made on.',
+  })
+  url!: string | null;
+
+  @ApiProperty({ description: 'The GitHub login that asked: the owner.' })
+  actorLogin!: string;
+}
+
 /** A task on a project or milestone the bot follows changed. */
 export class BotTaskEventResponseDto {
   @ApiProperty({ enum: ['task'] })
@@ -469,6 +514,33 @@ export class BotLoopEventResponseDto {
   reason!: string | null;
 }
 
+/** A look the bot asked for with `check_back`, at something it delegated or waits on. */
+export class BotCheckBackEventResponseDto {
+  @ApiProperty({ enum: ['check_back'] })
+  kind!: 'check_back';
+
+  @ApiProperty({
+    format: 'uuid',
+    description: "The looks at one thing: the id of the turn that set the chain's first look.",
+  })
+  chainId!: string;
+
+  @ApiProperty({ description: 'Which look of the chain this is, from 0.' })
+  step!: number;
+
+  @ApiProperty({
+    format: 'date-time',
+    description: "When the chain's first look was set; a chain stops 24 hours later.",
+  })
+  chainStartedAt!: string;
+
+  @ApiProperty({
+    description: 'What the bot is waiting on and what to look at, in its own words.',
+    maxLength: BOT_CHECK_BACK_ABOUT_MAX,
+  })
+  about!: string;
+}
+
 /** A turn folded what it had read into a summary. */
 export class BotCompactionEventResponseDto {
   @ApiProperty({ enum: ['compaction'] })
@@ -512,9 +584,11 @@ export type BotMessageEventResponseDto =
   | BotPeerReplyEventResponseDto
   | BotSessionEventResponseDto
   | BotPullRequestEventResponseDto
+  | BotGithubAskEventResponseDto
   | BotTaskEventResponseDto
   | BotGoalEventResponseDto
   | BotLoopEventResponseDto
+  | BotCheckBackEventResponseDto
   | BotDreamEventResponseDto
   | BotCompactionEventResponseDto;
 
@@ -527,9 +601,11 @@ export type BotMessageEventResponseDto =
   BotPeerReplyEventResponseDto,
   BotSessionEventResponseDto,
   BotPullRequestEventResponseDto,
+  BotGithubAskEventResponseDto,
   BotTaskEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
+  BotCheckBackEventResponseDto,
   BotDreamEventResponseDto,
   BotCompactionEventResponseDto,
 )
@@ -564,9 +640,11 @@ export class BotMessageResponseDto {
       { $ref: getSchemaPath(BotPeerReplyEventResponseDto) },
       { $ref: getSchemaPath(BotSessionEventResponseDto) },
       { $ref: getSchemaPath(BotPullRequestEventResponseDto) },
+      { $ref: getSchemaPath(BotGithubAskEventResponseDto) },
       { $ref: getSchemaPath(BotTaskEventResponseDto) },
       { $ref: getSchemaPath(BotGoalEventResponseDto) },
       { $ref: getSchemaPath(BotLoopEventResponseDto) },
+      { $ref: getSchemaPath(BotCheckBackEventResponseDto) },
       { $ref: getSchemaPath(BotDreamEventResponseDto) },
       { $ref: getSchemaPath(BotCompactionEventResponseDto) },
     ],
@@ -582,6 +660,24 @@ export class BotMessageResponseDto {
       'The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.',
   })
   attachments!: BotAttachmentResponseDto[];
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '👍',
+    description:
+      'Your reaction to it, one emoji (`PUT /bots/:id/messages/:messageId/reaction`); null for none. Only a message of yours or the bot’s has one.',
+  })
+  reaction!: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '👍',
+    description:
+      'The bot’s reaction to a message of yours, one emoji its `react` tool set; null for none. Only a message of yours has one.',
+  })
+  botReaction!: string | null;
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: string;

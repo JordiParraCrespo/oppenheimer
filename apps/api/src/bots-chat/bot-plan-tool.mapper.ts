@@ -38,13 +38,13 @@ export const calendarDate = z.iso.date();
 /** A time of day, `HH:MM`, 24-hour. */
 export const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'expected HH:MM, 24-hour');
 
-export const statusInput = z.enum(TASK_STATUSES).describe(promptText('tools/plan.status'));
-export const priorityInput = z.enum(TASK_PRIORITIES).describe(promptText('tools/plan.priority'));
+export const statusInput = z.enum(TASK_STATUSES).describe(promptText('plan/tools.status'));
+export const priorityInput = z.enum(TASK_PRIORITIES).describe(promptText('plan/tools.priority'));
 export const expectedVersionInput = z
   .number()
   .int()
   .min(1)
-  .describe(promptText('tools/plan.expected-version'));
+  .describe(promptText('plan/tools.expected-version'));
 
 /** A due time needs its day, as the shared task schemas say. */
 export const dueTimeHasDate = (value: { due_date?: string | null; due_time?: string | null }) =>
@@ -71,7 +71,7 @@ export function describeProject(project: ProjectEntity, context: BotToolCallCont
     `default host ${project.defaultHostId ?? 'none'}`,
     `default agent ${project.defaultAgent ?? 'none'}`,
   ];
-  if (project.isUnassigned) parts.push(promptText('tools/plan.describe-project'));
+  if (project.isUnassigned) parts.push(promptText('plan/tools.describe-project'));
   if (project.archivedAt)
     parts.push(`archived ${formatToolTime(project.archivedAt, context.timeZone)}`);
   return `${project.id} "${project.name}" [${parts.join('; ')}]`;
@@ -88,7 +88,7 @@ export function describeProjectInFull(project: ProjectEntity, context: BotToolCa
       `  - ${repository.repositoryFullName} (base ${repository.baseBranch})${repository.isDefault ? ' default' : ''} [installation_id ${repository.installationId}; github_repo_id ${repository.githubRepoId}]`,
   );
   return [
-    `Project ${project.id} "${project.name}"${project.isUnassigned ? ` ${promptText('tools/plan.describe-project-in-full')}` : ''}`,
+    `Project ${project.id} "${project.name}"${project.isUnassigned ? ` ${promptText('plan/tools.describe-project-in-full')}` : ''}`,
     `- slug: ${project.slug}`,
     `- archived: ${project.archivedAt ? formatToolTime(project.archivedAt, context.timeZone) : 'no'}`,
     `- default host: ${project.defaultHostId ?? 'none'}`,
@@ -143,7 +143,7 @@ export function describeTaskInFull(task: TaskEntity, context: BotToolCallContext
 
 export function describeSummary(summary: ProjectPlanSummary, name: string | undefined): string {
   const lines = [
-    promptText('tools/plan.describe-summary-project-tasks-done', {
+    promptText('plan/tools.describe-summary-project-tasks-done', {
       projectId: summary.projectId,
       name: name ? ` "${name}"` : '',
       replace: summary.status.replace('_', ' '),
@@ -169,7 +169,7 @@ export function describeSummary(summary: ProjectPlanSummary, name: string | unde
   lines.push(
     summary.nextDue
       ? `- next due: ${summary.nextDue.taskId} "${summary.nextDue.title}" on ${summary.nextDue.dueDate}`
-      : promptText('tools/plan.describe-summary-next-due-open'),
+      : promptText('plan/tools.describe-summary-next-due-open'),
   );
   lines.push(
     summary.milestones.length

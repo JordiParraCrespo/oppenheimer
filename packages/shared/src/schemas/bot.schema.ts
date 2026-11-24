@@ -765,6 +765,36 @@ export interface BotPullRequestEvent {
 }
 
 /**
+ * How the owner asked a bot on GitHub: `@oppenheimer <bot>` in a comment or a
+ * review, or the label `bot:<bot>` on an issue or a pull request.
+ */
+export const BOT_GITHUB_ASK_VIAS = ['mention', 'label'] as const;
+export type BotGithubAskVia = (typeof BOT_GITHUB_ASK_VIAS)[number];
+
+/**
+ * The owner asked the bot on GitHub, and its last words are posted back there
+ * by Oppenheimer's GitHub App. Where it was asked, never what was written:
+ * the words reach the bot as outside data, in the turn's prompt alone.
+ */
+export interface BotGithubAskEvent {
+  kind: 'github_ask';
+  via: BotGithubAskVia;
+  /** The installation the answer is posted through, and the bot's tools read with. */
+  installationId: string;
+  /** GitHub's repository id, as a string: it is a bigint. */
+  githubRepoId: string;
+  /** `owner/name`. */
+  repository: string;
+  number: number;
+  /** Whether `number` is a pull request's; null when GitHub did not say. */
+  isPullRequest: boolean | null;
+  /** The comment, review or issue the ask was made on; null when GitHub sent none. */
+  url: string | null;
+  /** The GitHub login that asked: the owner's. */
+  actorLogin: string;
+}
+
+/**
  * What a bot following a project, or one milestone of it, can be woken by: the
  * changes Plan logs for a task. The bot names the ones it wants;
  * `BOT_TASK_WAKE_DEFAULT` is what it follows when it names none, where the task
@@ -907,6 +937,27 @@ export interface BotLoopEvent {
   reason: string | null;
 }
 
+/** The longest `about` a `check_back` call takes: what it waits on, in a sentence or two. */
+export const BOT_CHECK_BACK_ABOUT_MAX = 300;
+
+/**
+ * A bot checking back on something it delegated or waits on, from its own
+ * `check_back` call (`27-bot-subscriptions.md` §7.3): one line opening the
+ * turn of each look. A chain is the looks at one thing, step 0 first, each
+ * look's call setting the next while the thing is still pending.
+ */
+export interface BotCheckBackEvent {
+  kind: 'check_back';
+  /** The looks at one thing: the id of the first look's call. */
+  chainId: string;
+  /** Which look of the chain this is, from 0. */
+  step: number;
+  /** When the chain's first look was set (ISO 8601): it stops 24 hours later. */
+  chainStartedAt: string;
+  /** What the bot is waiting on and what to look at, in its own words. */
+  about: string;
+}
+
 /** A bot's loop as the console reads it: `GET /bots/:id/loop`. */
 export interface BotLoop {
   id: string;
@@ -989,9 +1040,11 @@ export interface BotGoal {
 /**
  * Why a bot turn exists: a message (yours or another bot's), an approval's
  * decision, a card of questions answered or dismissed, a routine's run, a
- * session the bot is subscribed to, a goal it set itself, a loop's run, or a
- * message of yours to the bot on a channel: your Telegram bot, or your spare
- * WhatsApp number.
+ * session the bot is subscribed to, a goal it set itself, a loop's run, a
+ * message of yours to the bot on a channel (your Telegram bot, or your spare
+ * WhatsApp number), or your ask of it on GitHub: a mention in a comment, or a
+ * `bot:<name>` label; or a look the bot asked for with `check_back`, at work
+ * it delegated or waits on.
  */
 export const BOT_TURN_ORIGINS = [
   'message',
@@ -1003,12 +1056,15 @@ export const BOT_TURN_ORIGINS = [
   'loop',
   'telegram',
   'whatsapp',
+  'slack',
+  'github',
+  'check_back',
 ] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /**
  * The turns a person is waiting on: one they started by writing (in the
- * console, on Telegram or on WhatsApp), or by deciding a card. A routine's
+ * console, on Telegram, WhatsApp or Slack), or by deciding a card. A routine's
  * run, a wake and a goal's continuation run with nobody there, so a tool
  * that needs someone to answer is not offered on them.
  */
@@ -1018,6 +1074,7 @@ export const BOT_ATTENDED_ORIGINS = [
   'question',
   'telegram',
   'whatsapp',
+  'slack',
 ] as const satisfies readonly BotTurnOrigin[];
 
 /**
@@ -1028,6 +1085,7 @@ export const BOT_ATTENDED_ORIGINS = [
 export const BOT_CHANNEL_ORIGINS = [
   'telegram',
   'whatsapp',
+  'slack',
 ] as const satisfies readonly BotTurnOrigin[];
 export type BotChannelOrigin = (typeof BOT_CHANNEL_ORIGINS)[number];
 
@@ -1156,9 +1214,11 @@ export type BotMessageEvent =
   | BotPeerReplyEvent
   | BotSessionEvent
   | BotPullRequestEvent
+  | BotGithubAskEvent
   | BotTaskEvent
   | BotGoalEvent
   | BotLoopEvent
+  | BotCheckBackEvent
   | BotDreamEvent
   | BotCompactionEvent;
 
@@ -1171,9 +1231,11 @@ export const BOT_MESSAGE_EVENT_KINDS = [
   'bot_reply',
   'session',
   'pull_request',
+  'github_ask',
   'task',
   'goal',
   'loop',
+  'check_back',
   'dream',
   'compaction',
 ] as const;
@@ -1279,6 +1341,13 @@ export const updateBotRoutineSchema = botRoutineTaskSchema
     { path: ['enabled'], params: { i18nKey: 'validation.required' } },
   );
 export type UpdateBotRoutineDto = z.infer<typeof updateBotRoutineSchema>;
+
+/**
+ * A new URL for a routine's webhook, from its Routines tab: `signed` also
+ * issues a signing secret every request must then be signed with.
+ */
+export const issueRoutineWebhookSchema = z.object({ signed: z.boolean().default(false) });
+export type IssueRoutineWebhookDto = z.infer<typeof issueRoutineWebhookSchema>;
 
 /**
  * A Needs input card: one call of an asking tool, waiting for the owner.
@@ -1631,3 +1700,27 @@ export const updatePersonAboutSchema = z.object({
   about: z.string().trim().max(PERSON_ABOUT_MAX),
 });
 export type UpdatePersonAboutDto = z.infer<typeof updatePersonAboutSchema>;
+
+/** The most UTF-16 code units a reaction holds: the longest family or flag sequence, with room. */
+export const BOT_REACTION_MAX = 32;
+
+/** One pictograph, with what joins and modifies it (skin tones, ZWJ sequences, flags, subdivision flags, keycaps). */
+const SINGLE_EMOJI =
+  /^(?:\p{Regional_Indicator}{2}|[#*0-9]️?⃣|\p{Extended_Pictographic}️?\p{Emoji_Modifier}?(?:[\u{E0020}-\u{E007E}]+\u{E007F})?(?:‍\p{Extended_Pictographic}️?\p{Emoji_Modifier}?)*)$/u;
+
+/**
+ * Whether `text` is one emoji, as a reaction must be: a word, two emoji or
+ * an emoji with text around it is not.
+ */
+export function isReactionEmoji(text: string): boolean {
+  return text.length > 0 && text.length <= BOT_REACTION_MAX && SINGLE_EMOJI.test(text);
+}
+
+/**
+ * `PUT /bots/:id/messages/:messageId/reaction`: your reaction to a message
+ * of yours or of the bot's, one at a time; null takes it back.
+ */
+export const reactToBotMessageSchema = z.object({
+  emoji: z.string().refine(isReactionEmoji, { message: 'A reaction is one emoji' }).nullable(),
+});
+export type ReactToBotMessageDto = z.infer<typeof reactToBotMessageSchema>;

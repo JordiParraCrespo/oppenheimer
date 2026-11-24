@@ -37,11 +37,48 @@ func TestLaunchArgsMirrorTheCatalog(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("omp argv = %q, want %q", got, want)
 	}
+	// agy starts in `auto` where the account has it, so Ask is sent; it takes
+	// no positional prompt, so the task rides on `--prompt-interactive`.
+	got = Launch{Model: "gemini-4-neon", Permission: "ask", Effort: "xhigh", EffortIsLevel: true, Prompt: "fix the picker"}.Args(AgentAntigravity)
+	want = []string{"--model", "gemini-4-neon", "--mode", "default", "--effort", "xhigh", "--prompt-interactive", "fix the picker"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("antigravity argv = %q, want %q", got, want)
+	}
+	// fx's own default is `auto`, and a mode saved in its settings would
+	// otherwise win, so every level is sent; Full access is `full-access`.
+	got = Launch{Model: "spacexai/grok-4.7", Permission: "full", Effort: "xhigh", EffortIsLevel: true, Prompt: "fix the picker"}.Args(AgentFx)
+	want = []string{"--provider", "gateway", "--model", "spacexai/grok-4.7", "--permission-mode", "full-access", "--effort", "xhigh", "fix the picker"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("fx argv = %q, want %q", got, want)
+	}
+	// An open-weight row offers no effort, so none is sent for it.
+	got = Launch{Model: "moonshotai/kimi-k3", Permission: "auto", Effort: "high", EffortIsLevel: true}.Args(AgentFx)
+	want = []string{"--provider", "gateway", "--model", "moonshotai/kimi-k3", "--permission-mode", "auto"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("fx argv = %q, want %q", got, want)
+	}
 }
 
 // Pi has no approvals: a permission level that reaches the runner anyway
 // becomes no flag at all, rather than one pi would refuse to start on. Its
 // thinking levels stop at `xhigh`, so omp's `max` is dropped for it.
+// ZCode's TUI reads a positional as a subcommand and has no `--model`, so a
+// first task or a model that reaches the runner must add nothing to argv, or
+// `zcode` exits on an unknown command. Its permission is `--mode`, and a
+// restart sends no `--continue`, which exits when ZCode saved nothing yet.
+func TestZCodeTakesItsModeAndNeitherATaskNorAModel(t *testing.T) {
+	got := Launch{Model: "glm-5.3", Permission: "ask", Prompt: "fix the picker"}.Args(AgentZCode)
+	want := []string{"--mode", "build"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("zcode argv = %q, want %q", got, want)
+	}
+	got = Launch{Permission: "full", Prompt: "fix the picker", Resume: true}.Args(AgentZCode)
+	want = []string{"--mode", "yolo"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("reopened zcode argv = %q, want %q", got, want)
+	}
+}
+
 func TestPiTakesNoPermissionAndItsOwnThinkingLevels(t *testing.T) {
 	got := Launch{Model: "anthropic/claude-opus-5-5", Permission: "full", Effort: "xhigh", EffortIsLevel: true, Prompt: "go"}.Args(AgentPi)
 	want := []string{"--model", "anthropic/claude-opus-5-5", "--thinking", "xhigh", "go"}
@@ -129,6 +166,71 @@ func TestGrokStartsInteractiveWithTheTaskAsItsPositional(t *testing.T) {
 	}
 	if env := (Launch{Permission: "ask"}).Env(AgentGrok); env != nil {
 		t.Fatalf("grok's approvals are a flag, want no environment, got %v", env)
+	}
+}
+
+func TestQwenStartsInteractiveWithItsTaskInsideItsFlag(t *testing.T) {
+	// A positional is Qwen's one-shot run, so the task is the value of
+	// `--prompt-interactive`, last. Ask is sent, not left to Qwen's own
+	// `auto`; an effort adds nothing, since Qwen takes none on its command
+	// line.
+	id := "8b4c5d6e-0000-4000-8000-000000000001"
+	got := Launch{Model: "qwen3.8-max", Permission: "ask", Effort: "high", EffortIsLevel: true, Conversation: id, Prompt: "fix it"}.Args(AgentQwen)
+	want := []string{"--model", "qwen3.8-max", "--approval-mode", "default", "--session-id", id, "--prompt-interactive=fix it"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("argv = %q, want %q", got, want)
+	}
+	// A restart reopens this folder's newest conversation, with no id (one
+	// with nothing said yet would make `--resume <id>` exit) and no task.
+	got = Launch{Model: "qwen3.8-max", Permission: "full", Conversation: id, Resume: true, Prompt: "fix it"}.Args(AgentQwen)
+	if want := []string{"--model", "qwen3.8-max", "--approval-mode", "yolo", "--continue"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("restart argv = %q, want %q", got, want)
+	}
+}
+
+func TestARestartReopensQwensConversationByIDOnceItIsSaved(t *testing.T) {
+	// Once Qwen has written the session's conversation, a restart names it:
+	// in a folder another Qwen shares, `--continue` may open the other's.
+	// Before that, `--resume <id>` would exit, and `--continue` may open the
+	// other's too, so it is created again under its id; never with the task,
+	// which with chat recording off may have run already.
+	// Regression: a folder session restarted before its first message that
+	// continued another Qwen's conversation.
+	id := "8b4c5d6e-0000-4000-8000-000000000001"
+	saved := Launch{Permission: "ask", Conversation: id, Resume: true, Saved: Saved, Prompt: "fix it"}.Args(AgentQwen)
+	if want := []string{"--approval-mode", "default", "--resume", id}; !reflect.DeepEqual(saved, want) {
+		t.Fatalf("saved restart argv = %q, want %q", saved, want)
+	}
+	fresh := Launch{Permission: "ask", Conversation: id, Resume: true, Saved: NotSaved, Prompt: "fix it"}.Args(AgentQwen)
+	if want := []string{"--approval-mode", "default", "--session-id", id}; !reflect.DeepEqual(fresh, want) {
+		t.Fatalf("unsaved restart argv = %q, want %q", fresh, want)
+	}
+	// Not looked for: the folder's last one, as before the runner looked.
+	unknown := Launch{Permission: "ask", Conversation: id, Resume: true, Prompt: "fix it"}.Args(AgentQwen)
+	if want := []string{"--approval-mode", "default", "--continue"}; !reflect.DeepEqual(unknown, want) {
+		t.Fatalf("unlooked restart argv = %q, want %q", unknown, want)
+	}
+	// A create never reopens, saved or not.
+	created := Launch{Permission: "ask", Conversation: id, Saved: Saved, Prompt: "fix it"}.Args(AgentQwen)
+	if want := []string{"--approval-mode", "default", "--session-id", id, "--prompt-interactive=fix it"}; !reflect.DeepEqual(created, want) {
+		t.Fatalf("create argv = %q, want %q", created, want)
+	}
+}
+
+func TestATaskThatStartsWithADashStaysQwensTask(t *testing.T) {
+	// `qwen --prompt-interactive "-v"` printed Qwen's version and exited: a
+	// value of its own that starts with `-` is a flag to its parser. In the
+	// flag's word, it is the task, whatever it holds.
+	got := Launch{Prompt: "-v run it, then <prompt>"}.Args(AgentQwen)
+	if want := []string{"--prompt-interactive=-v run it, then <prompt>"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("argv = %q, want %q", got, want)
+	}
+	if line := (Launch{Prompt: "-v it's"}).CommandLine(AgentQwen); line != `qwen '--prompt-interactive=-v it'\''s'` {
+		t.Fatalf("command line = %s", line)
+	}
+	// An agent whose task is a word of its own still gets it as one.
+	if got := (Launch{Prompt: "-v"}).Args(AgentGrok); !reflect.DeepEqual(got, []string{"-v"}) {
+		t.Fatalf("grok argv = %q", got)
 	}
 }
 
@@ -416,11 +518,13 @@ func TestAClaudeSessionRunsTheRunnersStatusLineWhichIsNeverSaved(t *testing.T) {
 // conversation over: any other kind; a second copy of its own only when the
 // session is found by its conversation's id. The regression: a second Codex,
 // or a second Claude in a teleported session, becoming the session's chat
-// and what its restart reopens.
+// and what its restart reopens; a second Qwen, whose conversation reads as
+// the one the session's moved to.
 func TestTakesSecond(t *testing.T) {
 	claude := Session{Agent: AgentClaude}
 	teleported := Session{Agent: AgentClaude, Launch: Launch{Teleport: "session_01ABCDEFGHIJKLMNOPQRSTUV"}}
 	codex := Session{Agent: AgentCodex}
+	qwen := Session{Agent: AgentQwen}
 	for _, c := range []struct {
 		session Session
 		agent   Agent
@@ -432,9 +536,31 @@ func TestTakesSecond(t *testing.T) {
 		{teleported, AgentCodex, true},
 		{codex, AgentCodex, false},
 		{codex, AgentClaude, true},
+		{qwen, AgentQwen, false},
+		{qwen, AgentClaude, true},
 	} {
 		if got := c.session.TakesSecond(c.agent); got != c.want {
 			t.Errorf("%s session, %s: TakesSecond = %v, want %v", c.session.Agent, c.agent, got, c.want)
 		}
+	}
+}
+
+// A command that starts an agent with a task offers only the agents it would
+// start: Muse's help once listed it while DropsTask refused it. The blank
+// terminal stays, since its task is a note for the person.
+func TestAgentsOfferedWithATaskAreTheOnesItReaches(t *testing.T) {
+	withTask := AgentNames(true)
+	for _, dropped := range []Agent{AgentZCode, AgentMuse} {
+		if slices.Contains(withTask, string(dropped)) {
+			t.Errorf("AgentNames(true) offers %s, which takes no first task", dropped)
+		}
+	}
+	for _, kept := range []Agent{AgentClaude, AgentHermes, AgentShell} {
+		if !slices.Contains(withTask, string(kept)) {
+			t.Errorf("AgentNames(true) leaves out %s, which takes a task", kept)
+		}
+	}
+	if all := AgentNames(false); len(all) != len(agentCatalogIDs) {
+		t.Errorf("AgentNames(false) has %d agents, the runner knows %d", len(all), len(agentCatalogIDs))
 	}
 }

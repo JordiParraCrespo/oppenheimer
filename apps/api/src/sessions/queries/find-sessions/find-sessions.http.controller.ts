@@ -70,6 +70,13 @@ export class FindSessionsHttpController {
     type: Number,
     description: 'A live checkout of it',
   })
+  @ApiQuery({
+    name: 'resolved',
+    required: false,
+    enum: ['true', 'false'],
+    description:
+      '`false` leaves resolved sessions out (the console’s list, which draws only the open ones), `true` keeps only them. Absent, both.',
+  })
   @ApiQuery({ name: 'agent', required: false, enum: codingAgentSchema.options })
   @ApiQuery({ name: 'sort', required: false, enum: SESSION_SORTS, description: 'Default `recent`' })
   @ApiResponse({ status: 200, type: PaginatedSessionsResponseDto })

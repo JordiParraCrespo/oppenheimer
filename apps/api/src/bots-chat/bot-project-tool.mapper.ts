@@ -79,8 +79,10 @@ function checked<Dto>(
     // The shared schemas carry no messages (their package's rule); a rule of
     // their own is named by the field's description, which the model has.
     return issue.code === 'custom'
-      ? promptText('tools/projects.checked', { field })
+      ? promptText('plan/tools-projects.checked', { field })
       : `${field}${issue.message}`;
   });
-  return { refusal: promptText('tools/projects.checked-refusal', { issues: issues.join('; ') }) };
+  return {
+    refusal: promptText('plan/tools-projects.checked-refusal', { issues: issues.join('; ') }),
+  };
 }

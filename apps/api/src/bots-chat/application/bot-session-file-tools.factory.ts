@@ -46,18 +46,18 @@ export class BotSessionFileToolsFactory implements BotToolArea {
       defineBotTool({
         name: 'show_session_file',
         scope: 'sessions:read',
-        description: promptText('tools/session-file.show-session-file', {
+        description: promptText('sessions/tools-file.show-session-file', {
           shownImagesPerTurn: String(SHOWN_IMAGES_PER_TURN),
         }),
         input: z.object({
           session_id: z
             .uuid()
-            .describe(promptText('tools/session-file.show-session-file-session-id')),
+            .describe(promptText('sessions/tools-file.show-session-file-session-id')),
           file_id: z
             .string()
             .min(1)
             .max(64)
-            .describe(promptText('tools/session-file.show-session-file-file-id')),
+            .describe(promptText('sessions/tools-file.show-session-file-file-id')),
         }),
         run: async (input, context) => {
           const read = await this.queryBus.execute<
@@ -74,13 +74,13 @@ export class BotSessionFileToolsFactory implements BotToolArea {
           if (!isShowableSharedFile(read.file))
             return refusalOf({ kind: 'no_preview', file: read.file }, input.file_id);
           if (!context.budget.take('show_image', SHOWN_IMAGES_PER_TURN)) {
-            return promptText('tools/session-file.show-session-file-refused-turn-has', {
+            return promptText('sessions/tools-file.show-session-file-refused-turn-has', {
               shownImagesPerTurn: String(SHOWN_IMAGES_PER_TURN),
             });
           }
           const shown = await this.store(Buffer.from(read.data, 'base64'), read.file.name, context);
           return {
-            content: promptText('tools/session-file.show-session-file-content', {
+            content: promptText('sessions/tools-file.show-session-file-content', {
               name: shown.name,
               name2: read.file.name,
             }),
@@ -123,26 +123,26 @@ export class BotSessionFileToolsFactory implements BotToolArea {
 function refusalOf(read: Exclude<SessionSharedPreviewRead, { kind: 'preview' }>, fileId: string) {
   switch (read.kind) {
     case 'unknown_file':
-      return promptText('tools/session-file.refusal-of-refused-session-lists', { fileId });
+      return promptText('sessions/tools-file.refusal-of-refused-session-lists', { fileId });
     case 'no_preview':
-      return promptText('tools/session-file.refusal-of-refused-image-host', {
+      return promptText('sessions/tools-file.refusal-of-refused-image-host', {
         name: read.file.name,
         mediaType: read.file.mediaType,
       });
     case 'host_offline':
-      return promptText('tools/session-file.refusal-of-shown-sessions-host', {
+      return promptText('sessions/tools-file.refusal-of-shown-sessions-host', {
         name: read.file.name,
       });
     case 'not_supported':
-      return promptText('tools/session-file.not-shown-runner-too-old', {
+      return promptText('sessions/tools-file.not-shown-runner-too-old', {
         runnerTooOldAdvice: RUNNER_TOO_OLD_ADVICE,
       });
     case 'timed_out':
-      return promptText('tools/session-file.not-shown-timed-out', {
+      return promptText('sessions/tools-file.not-shown-timed-out', {
         name: read.file.name,
       });
     case 'gone':
-      return promptText('tools/session-file.refusal-of-shown-host-longer', {
+      return promptText('sessions/tools-file.refusal-of-shown-host-longer', {
         name: read.file.name,
         code: read.code,
       });

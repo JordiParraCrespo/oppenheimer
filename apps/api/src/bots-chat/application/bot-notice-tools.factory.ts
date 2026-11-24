@@ -25,7 +25,7 @@ const nothingToReportInput = z.object({
     .trim()
     .max(200)
     .optional()
-    .describe(promptText('tools/notice.nothing-to-report-checked')),
+    .describe(promptText('core/tools-notice.nothing-to-report-checked')),
 });
 
 const notifyInput = z.object({
@@ -34,7 +34,7 @@ const notifyInput = z.object({
     .trim()
     .min(1)
     .max(BOT_NOTICE_TEXT_MAX)
-    .describe(promptText('tools/notice.notify-text')),
+    .describe(promptText('core/tools-notice.notify-text')),
 });
 
 /**
@@ -59,7 +59,7 @@ export class BotNoticeToolsFactory implements BotToolArea {
       defineBotTool({
         name: 'notify',
         scope: 'bots:write',
-        description: promptText('tools/notice.notify', {
+        description: promptText('core/tools-notice.notify', {
           worthSaying: WORTH_SAYING,
           noticeTextMax: String(BOT_NOTICE_TEXT_MAX),
           noticesPerTurn: String(BOT_NOTICES_PER_TURN),
@@ -83,7 +83,7 @@ export class BotNoticeToolsFactory implements BotToolArea {
         name: QUIET_TOOL,
         scope: 'bots:read',
         notOn: BOT_ATTENDED_ORIGINS,
-        description: promptText('tools/notice.quiet-tool'),
+        description: promptText('core/tools-notice.quiet-tool'),
         input: nothingToReportInput,
         run: async () => quietTurnAnswer(),
       }),

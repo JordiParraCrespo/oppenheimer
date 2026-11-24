@@ -1,5 +1,6 @@
 import {
   type ChatActivity,
+  type ChatFeedbackDraft,
   createResizeCoalescer,
   type SessionStream,
 } from '@oppenheimer/frontend-consumer';
@@ -11,6 +12,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { type ILinkHandler, Terminal } from '@xterm/xterm';
 import { bindAgentActivity } from './agent-activity';
 import { CursorFrames } from './cursor-frames';
+import { bindFeedbackDraft } from './feedback-draft';
 import { bindPromptSuggestion } from './prompt-suggestion';
 import { createSnapshotHandover } from './snapshot-handover';
 import { bindTerminalEcho } from './terminal-echo';
@@ -81,6 +83,11 @@ export interface SessionTerminalOptions {
    * composer to offer (`bindPromptSuggestion`); none once it is gone.
    */
   onSuggestion?: (suggestion: string | null) => void;
+  /**
+   * The feedback the agent drafted, off the card over its input box, for the
+   * chat to answer (`bindFeedbackDraft`); none once it is gone.
+   */
+  onFeedback?: (feedback: ChatFeedbackDraft | null) => void;
 }
 
 /** How much scrollback a kept picture carries: enough to look like the pane. */
@@ -346,10 +353,14 @@ export function mountSessionTerminal(
   const unbindSuggestion = options.onSuggestion
     ? bindPromptSuggestion(term, options.onSuggestion)
     : undefined;
+  const unbindFeedback = options.onFeedback
+    ? bindFeedbackDraft(term, options.onFeedback)
+    : undefined;
 
   return () => {
     unbindActivity?.();
     unbindSuggestion?.();
+    unbindFeedback?.();
     if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
     unbindFiles();

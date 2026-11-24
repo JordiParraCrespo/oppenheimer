@@ -4,7 +4,10 @@ import { TranscribeWhatsappVoiceNoteCommand } from '../../whatsapp/commands/tran
 import { promptText } from '../domain/bot-prompt-text.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { whatsappMessageOf } from '../domain/bot-whatsapp-turn.policy';
-import type { BotOpeningMediaReaderPort } from './bot-opening-media-reader.port';
+import type {
+  BotOpeningMediaReaderPort,
+  BotOpeningMediaReading,
+} from './bot-opening-media-reader.port';
 
 /**
  * The owner's WhatsApp voice note, read when its turn starts: the whatsapp
@@ -17,15 +20,16 @@ export class BotWhatsappVoiceNoteResolver implements BotOpeningMediaReaderPort {
 
   constructor(private readonly commands: CommandBus) {}
 
-  async read(turn: BotTurnEntity): Promise<string> {
+  async read(turn: BotTurnEntity): Promise<BotOpeningMediaReading> {
     const source = whatsappMessageOf(turn.sourceKey);
-    if (!source) return promptText('turn/voice-note');
-    return this.commands.execute<TranscribeWhatsappVoiceNoteCommand, string>(
+    if (!source) return { words: promptText('core/turn-voice-note') };
+    const words = await this.commands.execute<TranscribeWhatsappVoiceNoteCommand, string>(
       new TranscribeWhatsappVoiceNoteCommand({
         organizationId: turn.organizationId,
         accountId: source.whatsappAccountId,
         messageRowId: source.messageRowId,
       }),
     );
+    return { words };
   }
 }

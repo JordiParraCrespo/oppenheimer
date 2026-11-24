@@ -1,6 +1,6 @@
 # @oppenheimer/go-core
 
-The bottom of the Go toolkit: the two things every other module and every
+The bottom of the Go toolkit: the things every other module and every
 Go service need before anything else exists. `problem` produces RFC 7807
 documents that mirror the NestJS API's field for field, so one client parser
 covers both stacks; `logging` builds the process-wide `slog` logger. Nothing
@@ -30,6 +30,14 @@ only the standard library.
 
 - `New(w, Options)` — JSON or text handler at the given level, stamped with
   `service` and `version`.
+
+`filelock/filelock.go` (darwin, linux)
+
+- A lock other processes on the host see: a flock on a named file, which
+  the kernel drops when its holder dies. `Acquire(ctx, path)` waits for it
+  until ctx ends, `TryAcquire(path)` takes it only when free, `Held(path)`
+  and `Wait(ctx, path)` look without keeping it. The runner's daemon and
+  its CLI share the session map and the git stores through it.
 
 ## How to use it
 

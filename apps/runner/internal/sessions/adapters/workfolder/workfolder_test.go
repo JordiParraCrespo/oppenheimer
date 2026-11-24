@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -43,8 +44,8 @@ func session(layout domain.Layout, id, slug string) domain.SessionFolder {
 
 // Making a session's folder marks every level it makes: the work
 // folder says its layout, the account and workspace folders say what they
-// are, and the session folder names its session before anything else is in
-// it.
+// are, and the session folder names its session. Besides its marker it holds
+// only its guides until the checkout is added.
 func TestMakingASessionFolderMarksEveryLevel(t *testing.T) {
 	f, layout := setup(t)
 	folder := session(layout, "sess-1", "fix-login")
@@ -67,9 +68,13 @@ func TestMakingASessionFolderMarksEveryLevel(t *testing.T) {
 	if m.Kind != "session" || m.ID != "sess-1" || m.CreatedAt == nil || !m.CreatedAt.Equal(folder.Created) {
 		t.Fatalf("session marker = %+v", m)
 	}
+	var names []string
 	entries, _ := os.ReadDir(folder.Dir)
-	if len(entries) != 1 || entries[0].Name() != ".oppenheimer" {
-		t.Fatalf("the session's folder holds %v, want only its marker", entries)
+	for _, entry := range entries {
+		names = append(names, entry.Name())
+	}
+	if strings.Join(names, " ") != ".oppenheimer AGENTS.md README.md" {
+		t.Fatalf("the session's folder holds %v, want only its marker and guides", names)
 	}
 	if info, _ := os.Stat(folder.Dir); info.Mode().Perm() != 0o700 {
 		t.Fatalf("mode = %v, want 0700", info.Mode().Perm())

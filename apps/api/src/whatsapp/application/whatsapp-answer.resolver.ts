@@ -136,6 +136,7 @@ export class WhatsappAnswerResolver {
           action.command,
           action.text,
           action.voiceNote,
+          message.media === 'image',
         );
       },
     };
@@ -233,6 +234,7 @@ function contactEventOf(
     seq: message.seq,
     botId: action.botId,
     text: action.text,
+    image: message.media === 'image',
   });
 }
 
@@ -265,6 +267,7 @@ function eventOf(
   command: 'message' | 'new' | 'stop',
   text: string,
   voiceNote: boolean,
+  image: boolean,
 ): WhatsappOwnerWroteDomainEvent {
   return new WhatsappOwnerWroteDomainEvent({
     aggregateId: account.id,
@@ -281,5 +284,6 @@ function eventOf(
     command,
     text,
     voiceNote,
+    image,
   });
 }

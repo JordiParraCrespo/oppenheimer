@@ -10,7 +10,8 @@
   "badge": {
     "none": "Sesiones de Claude Code",
     "needsYou_one": "{{count}} sesión de Claude Code te necesita",
-    "needsYou_other": "{{count}} sesiones de Claude Code te necesitan"
+    "needsYou_other": "{{count}} sesiones de Claude Code te necesitan",
+    "needsYou_many": "{{count}} sesiones de Claude Code te necesitan"
   },
   "groups": {
     "needsYou": "Te necesitan",
@@ -23,6 +24,7 @@
     "nothingRunning": "No hay nada en curso.",
     "stillRunning_one": "{{count}} sesión sigue en curso.",
     "stillRunning_other": "{{count}} sesiones siguen en curso.",
+    "stillRunning_many": "{{count}} sesiones siguen en curso.",
     "notify": "Recibirás un aviso cuando alguna te necesite."
   },
   "openClaude": "Abrir claude.ai/code",

@@ -52,6 +52,12 @@ idioms.
 - `packages/go/*` is domain-agnostic. If a shared module needs to know about
   sessions or keys, invert it: declare an interface or callback (`ws.Authorizer`,
   `auth.Verifier`) and let the context supply it.
+- A path that comes from a session, a repository or the control plane is
+  resolved with `filepath.EvalSymlinks` and checked against its root after
+  resolving, never before: a symlinked command file pointed outside the
+  session's worktree.
+- A test against a host tool (tmux, git, a shell) states the oldest version
+  it supports and passes on it, or skips with that version named.
 
 ## Dependency injection
 

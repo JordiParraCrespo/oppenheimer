@@ -152,6 +152,19 @@ describe('trigger words', () => {
     expect(text).toMatch(/"time":"09:00 \S+"/);
   });
 
+  it('says a cron schedule in words, never its fields', () => {
+    const cron = (expression: string) =>
+      scheduleText({ frequency: 'cron', hour: 0, minute: 0, expression, timezone: zone }, 'en', t);
+    const text = cron('0 9,13,18 * * 1-5');
+    expect(text).toBe(
+      'automations.cron.sentence{"time":"automations.cron.at{\\"times\\":\\"09:00, 13:00, and 18:00\\"}","day":"automations.trigger.monFri"}',
+    );
+    expect(cron('0 10 * * 2#2')).toContain(
+      'automations.cron.nthWeekday{\\"nth\\":\\"automations.cron.ordinal.2\\",\\"day\\":\\"Tuesday\\"}',
+    );
+    expect(cron('not cron')).toBe('automations.cron.custom');
+  });
+
   it('prints the first trigger and how many more there are', () => {
     const [first] = automation().triggers;
     const two = automation({
@@ -268,12 +281,13 @@ describe('the draft', () => {
     expect(emptyDraft(projects, [host('h-9')], undefined).projectId).toBeNull();
   });
 
-  // The API saves an automation only for an agent with permission levels
-  // (`automationAgentSupported`): offering Pi, which has none, would fail
-  // every save.
+  // The API saves an automation only for an agent with permission levels that
+  // takes its task at launch (`automationAgentSupported`): offering Pi, which
+  // has no levels, or Muse, which takes no task, would fail every save.
   it('offers only the agents the API will save an automation for', () => {
     expect(AUTOMATION_AGENTS).toContain('omp');
     expect(AUTOMATION_AGENTS).not.toContain('pi');
+    expect(AUTOMATION_AGENTS).not.toContain('muse');
     expect(AUTOMATION_AGENTS).not.toContain('shell');
   });
 

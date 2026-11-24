@@ -97,6 +97,9 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 			logger.Warn("could not prepare the work folder",
 				slog.String("dir", a.Paths.Workspaces), slog.Any("error", err))
 		}
+		// Every level's README.md and AGENTS.md, for a folder an older runner
+		// made and for anything that changed while none was running.
+		a.WorkFolder.WriteGuides()
 	}
 
 	// Sessions live in tmux, which outlived this process being replaced.
@@ -113,6 +116,11 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 	go func() {
 		defer loops.Done()
 		a.sessionLoop(ctx, logger)
+	}()
+	loops.Add(1)
+	go func() {
+		defer loops.Done()
+		a.strayWrapperLoop(ctx, logger)
 	}()
 	if AgentUpdatesEnabled() {
 		loops.Add(1)
@@ -281,18 +289,22 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 // busy host is not free. Each tick is one `list-panes` for the whole host plus
 // one `capture-pane` per live session, and writes the session map only when a
 // state changed.
+//
+// An agent seen to block is looked at again when its confirmation is due
+// rather than a whole interval on: that second look is what tells the person.
 func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
+	timer := time.NewTimer(sessionLoopInterval)
+	defer timer.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
+		case <-timer.C:
 		}
 		if _, err := a.Sessions.RefreshAll(ctx); err != nil {
 			logger.Warn("could not refresh every session", slog.Any("error", err))
 		}
+		timer.Reset(nextSessionLook(a.Sessions.NextConfirmation()))
 		// A kept session the host's reboot stopped is brought back.
 		for _, session := range a.Sessions.RecoverKept(ctx) {
 			logger.Info("kept session restarted after a reboot", slog.String("session", session.ID))
@@ -309,6 +321,49 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 		// A session started with no task is named from the first message
 		// typed into its agent, read off the agent's own transcript.
 		a.Sessions.ReportFirstPrompts()
+	}
+}
+
+// sessionLoopInterval is how often every live session is looked at.
+const sessionLoopInterval = 10 * time.Second
+
+// nextSessionLook is when the loop looks again: when the earliest block still
+// to be confirmed is due, if that is sooner than the usual interval. Never
+// sooner than a second, so a session whose screen cannot be read does not
+// spin the loop.
+func nextSessionLook(due time.Duration, pending bool) time.Duration {
+	if !pending {
+		return sessionLoopInterval
+	}
+	return min(max(due, time.Second), sessionLoopInterval)
+}
+
+// strayWrapperInterval is how often the runner looks for agents whose
+// session is over but whose process is still running.
+const strayWrapperInterval = 5 * time.Minute
+
+// strayWrapperLoop ends, at boot and every strayWrapperInterval, the agents
+// still running for a session that is closed, stopped or has no tmux
+// session: what a close that could not end its agent (or a runner from
+// before closes did) left behind. Only wrappers this runner started are
+// ever looked at.
+func (a *App) strayWrapperLoop(ctx context.Context, logger *slog.Logger) {
+	ticker := time.NewTicker(strayWrapperInterval)
+	defer ticker.Stop()
+	for {
+		ended, err := a.Sessions.EndStrayWrappers(ctx)
+		if err != nil {
+			logger.Warn("could not end every stray agent", slog.Any("error", err))
+		}
+		for _, w := range ended {
+			logger.Info("ended an agent that outlived its session",
+				slog.String("session", w.SessionID), slog.Int("pid", w.Pid), slog.Int("group", w.Group))
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
 	}
 }
 

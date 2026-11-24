@@ -58,6 +58,12 @@ src/
   carries only its words, so each adapter records `data` by call id as it
   runs the tool (`ToolCallData`): the OpenAI SDK's `callId`, Claude Code's
   `claudecode/toolUseId` in the MCP call's `_meta`.
+- **A tool may wait.** `BotEngineTool.deferrable` marks a tool the engine
+  may leave out of the request until the model looks for it. The Claude
+  engine defers them when they pass `DEFER_TOOLS_ABOVE_CHARS` together,
+  offering `ToolSearch` and setting `ENABLE_TOOL_SEARCH=true`
+  (`claudeToolSearch`), on Anthropic's own API only; every other tool keeps
+  `anthropic/alwaysLoad`. The OpenAI engines send every tool as before.
 - **Model pinning has one owner.** `pinAllModels` sets every variable
   Claude Code picks a model through (`MODEL_VARIABLES`, read from the
   binary the SDK ships); recheck that list when the SDK is upgraded.

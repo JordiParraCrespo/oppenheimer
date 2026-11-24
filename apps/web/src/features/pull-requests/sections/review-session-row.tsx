@@ -5,19 +5,19 @@ import {
   DropdownMenuTrigger,
   IconButton,
   RoutineItem,
+  useRowMenu,
 } from '@oppenheimer/design-system-web';
 import { Ellipsis, GitPullRequest } from '@oppenheimer/design-system-web/icons';
 import type { ReviewSession } from '@oppenheimer/frontend-consumer';
 import { formatAge } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { pullRequestLink } from '../lib/pull-request-search';
 
 /**
  * One review session under For review: the pull request it reviews, opening
  * its Chat tab, and the ellipsis whose one item deletes it. A section because it reads
- * the route. The row owns its menu; the delete dialog is the list's, since the
+ * the route. The row owns its menu, which a right-click opens too; the delete dialog is the list's, since the
  * row leaves on the click and the dialog must stay to show a failure. `now`
  * is the list's one minute clock.
  */
@@ -32,7 +32,7 @@ export function ReviewSessionRow({
 }) {
   const { t } = useTranslation();
   const matchRoute = useMatchRoute();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const menu = useRowMenu();
   const link = pullRequestLink(session, 'chat');
 
   return (
@@ -42,9 +42,11 @@ export function ReviewSessionRow({
       meta={formatAge(session.createdAt, now, t)}
       active={Boolean(matchRoute({ to: link.to, params: link.params }))}
       render={<Link {...link} />}
-      menuOpen={menuOpen}
+      menuOpen={menu.open}
+      // A right-click opens the row's own menu, not the browser's.
+      onContextMenu={menu.onContextMenu}
       action={
-        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+        <DropdownMenu open={menu.open} onOpenChange={menu.setOpen}>
           <DropdownMenuTrigger
             render={
               <IconButton aria-label={t('sessions.sidebar.actions')} size="xs" variant="quiet" />

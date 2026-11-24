@@ -16,15 +16,18 @@ export type WhatsappSendOutcome =
   /** The runner refused it: `code` is its `WHATSAPP_*` (002 not connected, 003 WhatsApp refused, 004 budget). */
   | { kind: 'failed'; code: string; detail?: string };
 
-/** What asking the host for a voice note came to. */
-export type WhatsappVoiceNoteOutcome =
+/** What asking the host for a voice note or an image came to. */
+export type WhatsappMediaOutcome =
   | { kind: 'fetched'; data: Buffer; mimetype: string }
   | { kind: 'host_offline' }
-  /** The host's runner predates handing voice notes over (`whatsapp.voice`). */
+  /** The host's runner predates handing this kind over (`whatsapp.voice`, `whatsapp.image`). */
   | { kind: 'not_supported' }
   | { kind: 'timed_out' }
   /** The runner refused: `WA_002` not connected, `WA_005` unknown or too old, `WA_006` too large, `WA_007` WhatsApp refused. */
   | { kind: 'failed'; code: string; detail?: string };
+
+/** What asking the host for a voice note came to. */
+export type WhatsappVoiceNoteOutcome = WhatsappMediaOutcome;
 
 /**
  * A host's WhatsApp linked device, over its runner link: the socket and the
@@ -61,4 +64,9 @@ export interface WhatsappDevicePort {
   ): Promise<WhatsappSendOutcome>;
   /** Fetch a voice note the number received, by its chat and WhatsApp id. */
   voiceNote(hostId: string, chatId: string, messageId: string): Promise<WhatsappVoiceNoteOutcome>;
+  /**
+   * Fetch an image the number received, by its chat and WhatsApp id: as
+   * WhatsApp holds it, or a JPEG the host scaled down to fit one frame.
+   */
+  image(hostId: string, chatId: string, messageId: string): Promise<WhatsappMediaOutcome>;
 }

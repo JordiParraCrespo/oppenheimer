@@ -23,7 +23,7 @@ export function AddToDayPickerSkeleton({ date, onCancel }: { date: string; onCan
       <LoadingStatus />
       <DialogDescription>{t('tasks.todo.schedule.for', { date })}</DialogDescription>
       <div className="flex items-center gap-2">
-        <Skeleton shape="pill" className="h-7.5 w-24" />
+        <Skeleton shape="pill" className="h-(--control-h-sm) w-24" />
         <SearchableFacetMultiSelect
           variant="pill"
           label={t('tasks.dialog.status')}

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   WHATSAPP_VOICE_NOTE_MAX_BYTES,
+  type WhatsappMediaGetKind,
   type WhatsappMediaGetMessage,
   type WhatsappSendMessage,
   type WhatsappSendVoiceMessage,
@@ -9,6 +10,7 @@ import {
 import type {
   WhatsappDevicePort,
   WhatsappDeviceReach,
+  WhatsappMediaOutcome,
   WhatsappQuote,
   WhatsappSendOutcome,
   WhatsappVoiceNoteOutcome,
@@ -25,8 +27,9 @@ import { LINK_REGISTRY, LINK_REPLIES } from '../links.di-tokens';
 export const WHATSAPP_SEND_TIMEOUT_MS = 20_000;
 
 /**
- * How long a voice note may take: the runner downloads it from WhatsApp's
- * media servers, and gives up itself at 40 seconds.
+ * How long a voice note or an image may take: the runner downloads it from
+ * WhatsApp's media servers (and scales an image down), and gives up itself at
+ * 40 seconds.
  */
 export const WHATSAPP_VOICE_NOTE_TIMEOUT_MS = 45_000;
 
@@ -132,19 +135,35 @@ export class RelayWhatsappDeviceAdapter implements WhatsappDevicePort {
     return { kind: 'sent', id: reply.id, sentAt: new Date(reply.sentAt) };
   }
 
-  async voiceNote(
+  voiceNote(hostId: string, chatId: string, messageId: string): Promise<WhatsappVoiceNoteOutcome> {
+    return this.media(hostId, chatId, messageId, 'voice');
+  }
+
+  image(hostId: string, chatId: string, messageId: string): Promise<WhatsappMediaOutcome> {
+    return this.media(hostId, chatId, messageId, 'image');
+  }
+
+  /**
+   * One `whatsapp.media.get`, waited for. A voice note is asked without a
+   * `kind`, as a runner from before images reads it; an image only of a
+   * runner that names `whatsapp.image`.
+   */
+  private async media(
     hostId: string,
     chatId: string,
     messageId: string,
-  ): Promise<WhatsappVoiceNoteOutcome> {
+    kind: WhatsappMediaGetKind,
+  ): Promise<WhatsappMediaOutcome> {
     const link = this.links.find(hostId);
     if (!link) return { kind: 'host_offline' };
-    if (!link.capabilities.includes('whatsapp.voice')) return { kind: 'not_supported' };
+    const capability = kind === 'image' ? 'whatsapp.image' : 'whatsapp.voice';
+    if (!link.capabilities.includes(capability)) return { kind: 'not_supported' };
     const message: WhatsappMediaGetMessage = {
       type: 'whatsapp.media.get',
       commandId: randomUUID(),
       chatId,
       messageId,
+      ...(kind === 'image' ? { kind } : {}),
     };
     const pending = this.replies.expect(hostId, message.commandId, WHATSAPP_VOICE_NOTE_TIMEOUT_MS);
     if (!link.send(message)) {

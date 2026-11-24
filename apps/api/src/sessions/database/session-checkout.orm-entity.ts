@@ -18,6 +18,8 @@ import type { CheckoutMode } from '../domain/session-checkout.entity';
  */
 @Entity('session_checkout')
 @Index('IDX_session_checkout_installation', ['organizationId', 'installationId'])
+// A routine asks which bots' sessions are on an event's repository and branch.
+@Index('IDX_session_checkout_repo_branch', ['organizationId', 'githubRepoId', 'branch'])
 @Index('UQ_session_checkout_session_repo', ['sessionId', 'githubRepoId'], {
   unique: true,
   where: '"removedAt" IS NULL',

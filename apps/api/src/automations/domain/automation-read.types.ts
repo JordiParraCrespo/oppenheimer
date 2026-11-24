@@ -7,6 +7,7 @@ import type {
 import type { StoredExternalEvent } from '../../inbound-events/domain/external-event.types';
 import type { AutomationEntity } from './automation.entity';
 import type { RunCauseSummary } from './automation-run.entity';
+import type { RoutineWebhookView } from './routine-webhook.types';
 
 /** A bot routine as its bot's chat names it. */
 export interface BotRoutineRef {
@@ -81,6 +82,8 @@ export interface AutomationRunDigest {
 export interface AutomationListing {
   automations: AutomationEntity[];
   digests: Map<string, AutomationRunDigest>;
+  /** Routines' webhook URLs by routine id, for the lists that show routines; absent elsewhere. */
+  webhooks?: Map<string, RoutineWebhookView>;
 }
 
 export interface AutomationDetail {

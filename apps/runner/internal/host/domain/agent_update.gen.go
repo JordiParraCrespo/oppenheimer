@@ -13,4 +13,6 @@ var agentUpdates = map[string][]string{
 	"grok":     {"update"},
 	"pi":       {"update", "--self"},
 	"omp":      {"update"},
+	"fx":       {"upgrade"},
+	"hermes":   {"update", "--yes"},
 }

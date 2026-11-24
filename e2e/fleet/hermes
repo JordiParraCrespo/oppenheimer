@@ -1,0 +1,32 @@
+#!/bin/sh
+# Stands in for Hermes: prints the argv the runner built, writes the
+# conversation's first row where Hermes keeps its conversations (a session
+# row stamped with the directory it started in, and the `--query` task as its
+# first message, in `$HERMES_HOME/state.db`), then hands the pane to an
+# interactive shell, as the `claude` shim beside it does. A test appends the
+# rest of the conversation to the same database (`support/hermes.ts`).
+printf 'HERMES-SHIM argv=%s\n' "$*"
+python3 - "$PWD" "$@" <<'PY'
+import os, sqlite3, sys, time, uuid
+cwd, args = sys.argv[1], sys.argv[2:]
+query = args[args.index("--query") + 1] if "--query" in args else None
+home = os.environ.get("HERMES_HOME") or os.path.join(os.path.expanduser("~"), ".hermes")
+os.makedirs(home, exist_ok=True)
+db = sqlite3.connect(os.path.join(home, "state.db"))
+db.execute("PRAGMA journal_mode=WAL")
+db.executescript("""
+CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, source TEXT NOT NULL, parent_session_id TEXT,
+  started_at REAL NOT NULL, ended_at REAL, end_reason TEXT, cwd TEXT, transcript_revision INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, session_id TEXT NOT NULL, role TEXT NOT NULL,
+  content TEXT, tool_call_id TEXT, tool_calls TEXT, tool_name TEXT, timestamp REAL NOT NULL, reasoning TEXT,
+  active INTEGER NOT NULL DEFAULT 1, compacted INTEGER NOT NULL DEFAULT 0);
+""")
+if "--continue" not in args:
+    session = time.strftime("%Y%m%d_%H%M%S_") + uuid.uuid4().hex[:6]
+    db.execute("INSERT INTO sessions (id, source, started_at, cwd) VALUES (?, 'cli', ?, ?)", (session, time.time(), cwd))
+    if query:
+        db.execute("INSERT INTO messages (session_id, role, content, timestamp) VALUES (?, 'user', ?, ?)",
+                   (session, query, time.time()))
+db.commit()
+PY
+exec sh -i

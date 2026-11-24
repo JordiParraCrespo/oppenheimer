@@ -6,7 +6,9 @@ import { ConsoleRail } from '../sections/console-rail';
 /**
  * The rail a reader can drag: under the mark, a link home, it draws the
  * lists in the order they left them, and a list's count is still read out beside the drag instructions
- * (the sortable control's own description once replaced the count).
+ * (the sortable control's own description once replaced the count). The
+ * Inbox leads an order stored before it was a rail item, wears the dot while
+ * anything needs the reader, and is gone while its flag is off.
  */
 
 vi.mock('react-i18next', () => ({
@@ -14,13 +16,16 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
-const waiting = vi.hoisted(() => ({ any: false }));
+const waiting = vi.hoisted(() => ({ any: false, inbox: 0 as number | undefined, flag: true }));
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useSessions: () => ({ data: 3 }),
   useTasks: () => ({ data: 2 }),
   useAnyBotNeedsInput: () => waiting.any,
+  useInboxCount: () => waiting.inbox,
 }));
+
+vi.mock('@oppenheimer/frontend-core/react', () => ({ useFeatureFlag: () => waiting.flag }));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ to, children, ...props }: { to: string; children?: ReactNode }) => (
@@ -47,6 +52,8 @@ afterEach(() => {
   cleanup();
   window.localStorage.clear();
   waiting.any = false;
+  waiting.inbox = 0;
+  waiting.flag = true;
 });
 
 const description = (element: HTMLElement) =>
@@ -60,6 +67,7 @@ describe('ConsoleRail', () => {
     render(<ConsoleRail />);
     expect(screen.getAllByRole('link').map((link) => link.getAttribute('aria-label'))).toEqual([
       'nav.home',
+      'nav.inbox',
       'nav.plan',
       'nav.pullRequests',
       'nav.employees',
@@ -75,6 +83,26 @@ describe('ConsoleRail', () => {
     const read = description(sessions);
     expect(read).toContain('3');
     expect(read.some((text) => text.length > 1)).toBe(true);
+  });
+
+  it('puts the dot on the Inbox while anything needs the reader, with how many', () => {
+    const { unmount } = render(<ConsoleRail />);
+    expect(screen.getByRole('link', { name: 'nav.inbox' }).hasAttribute('data-attention')).toBe(
+      false,
+    );
+    unmount();
+
+    waiting.inbox = 4;
+    render(<ConsoleRail />);
+    const inbox = screen.getByRole('link', { name: 'nav.inbox' });
+    expect(inbox.hasAttribute('data-attention')).toBe(true);
+    expect(description(inbox)).toContain('4');
+  });
+
+  it('leaves the Inbox out while its flag is off', () => {
+    waiting.flag = false;
+    render(<ConsoleRail />);
+    expect(screen.queryByRole('link', { name: 'nav.inbox' })).toBeNull();
   });
 
   it('puts the amber dot on Employees, and only there, while a bot waits on the reader', () => {

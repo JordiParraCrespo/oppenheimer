@@ -8,6 +8,7 @@ import type { SessionEntity } from '../../modules/sessions/session.entity';
 import { sessionEntity } from '../../testing';
 import { sessionsKeys } from '../sessions.keys';
 import {
+  useAcknowledgeSessionReport,
   useCloseSession,
   useCloseSessionWindow,
   useCreateSession,
@@ -38,6 +39,7 @@ function setup(
   service: {
     findById?: unknown;
     findAll?: unknown;
+    acknowledgeReport?: unknown;
     close?: unknown;
     startProgress?: unknown;
     create?: unknown;
@@ -171,22 +173,15 @@ describe('useSessions', () => {
  */
 describe('a deleted session', () => {
   const live = { id: 'c-1', isProvisioning: false, isResolved: false } as SessionEntity;
-  const resolved = { id: 'c-1', isProvisioning: false, isResolved: true } as SessionEntity;
 
   function closing(findAll: ReturnType<typeof vi.fn>) {
     const close = vi.fn().mockResolvedValue(live);
-    const { wrapper } = setup({ findAll, close });
+    const { wrapper, queryClient } = setup({ findAll, close });
     const { result } = renderHook(() => ({ list: useSessions(), close: useCloseSession() }), {
       wrapper,
     });
-    return { result, close };
+    return { result, close, queryClient };
   }
-
-  it('is not listed once resolved', async () => {
-    const { wrapper } = setup({ findAll: vi.fn().mockResolvedValue([resolved]) });
-    const { result } = renderHook(() => useSessions(), { wrapper });
-    await waitFor(() => expect(result.current.data).toEqual([]));
-  });
 
   it('leaves the list on the click, before the API or the host has answered', async () => {
     const findAll = vi.fn().mockResolvedValue([live]);
@@ -204,14 +199,20 @@ describe('a deleted session', () => {
     expect(result.current.list.data).toEqual([]);
   }, 10_000);
 
+  /**
+   * The API leaves a resolved session out of the list, so its row going is
+   * what says the host resolved it, and the session's own detail is read again
+   * for a screen that still has it open: no list row writes it any more.
+   */
   it('is read again until its host has resolved it, then the reads stop', async () => {
     const findAll = vi
       .fn()
       .mockResolvedValueOnce([live])
       .mockResolvedValueOnce([live])
       .mockResolvedValueOnce([live])
-      .mockResolvedValue([resolved]);
-    const { result } = closing(findAll);
+      .mockResolvedValue([]);
+    const { result, queryClient } = closing(findAll);
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
     await waitFor(() => expect(result.current.list.data).toHaveLength(1));
 
     result.current.close.mutate({ id: 'c-1' });
@@ -222,6 +223,7 @@ describe('a deleted session', () => {
     await pause(2_500);
     expect(findAll).toHaveBeenCalledTimes(reads);
     expect(result.current.list.data).toEqual([]);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: sessionsKeys.detail('c-1') });
   }, 15_000);
 
   it('comes back, and is not watched, when the close is refused', async () => {
@@ -319,7 +321,7 @@ describe('a deleted session', () => {
       .fn()
       .mockResolvedValueOnce([live])
       .mockResolvedValueOnce([live])
-      .mockResolvedValue([resolved]);
+      .mockResolvedValue([]);
     const close = vi.fn().mockResolvedValue(live);
     const { wrapper } = setup({ findAll, close });
     const { result } = renderHook(
@@ -384,6 +386,53 @@ describe('a deleted session', () => {
       vi.useRealTimers();
     }
   }, 15_000);
+});
+
+/**
+ * Opening a finished session reads its turn, and the sidebar's dot is the
+ * row's `ready-for-review`. It waited on the API's answer and the lists read
+ * after it, so the dot outlived the click by a round trip or two.
+ */
+describe('a session read on open', () => {
+  const finished = sessionEntity({ id: 'r-1', state: 'ready-for-review' });
+
+  function reading(acknowledgeReport: ReturnType<typeof vi.fn>) {
+    const findAll = vi.fn().mockResolvedValue([finished]);
+    const { wrapper } = setup({ findAll, acknowledgeReport });
+    const { result } = renderHook(
+      () => ({ list: useSessions(), read: useAcknowledgeSessionReport() }),
+      { wrapper },
+    );
+    return { result, findAll };
+  }
+
+  it('leaves ready-for-review in the list on the click, before the API answers', async () => {
+    const { result } = reading(vi.fn(() => new Promise(() => {})));
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+
+    result.current.read.mutate('r-1');
+    await waitFor(() => expect(result.current.list.data?.[0]?.state).toBe('idle'));
+  });
+
+  it('is ready for review again when the API refuses the read', async () => {
+    const { result, findAll } = reading(vi.fn().mockRejectedValue(new Error('refused')));
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+    const reads = findAll.mock.calls.length;
+
+    result.current.read.mutate('r-1');
+    await waitFor(() => expect(findAll.mock.calls.length).toBeGreaterThan(reads));
+    await waitFor(() => expect(result.current.list.data?.[0]?.state).toBe('ready-for-review'));
+  });
+
+  it('is ready for review again when the API cannot be reached to read it or the list', async () => {
+    const { result, findAll } = reading(vi.fn().mockRejectedValue(new Error('offline')));
+    await waitFor(() => expect(result.current.list.data).toHaveLength(1));
+    findAll.mockRejectedValue(new Error('offline'));
+
+    result.current.read.mutate('r-1');
+    await waitFor(() => expect(result.current.read.isError).toBe(true));
+    expect(result.current.list.data?.[0]?.state).toBe('ready-for-review');
+  });
 });
 
 /**
