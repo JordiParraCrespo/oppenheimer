@@ -247,7 +247,11 @@ export type PromptId =
   | "core/tools-self.react-not-emoji"
   | "core/tools-self.react-no-message"
   | "core/tools-self.react-not-yours"
-  | "core/tools-self.react-console-only"
+  | "core/tools-self.react-unsupported"
+  | "core/tools-self.react-unreachable"
+  | "core/tools-self.react-no-name"
+  | "core/tools-self.react-working-sign"
+  | "core/tools-self.react-not-sent"
   | "core/tools-text.runner-too-old-advice"
   | "core/tools-text.cut-from-the-middle"
   | "core/tools-toolbox.approval-started-refusal"
@@ -1278,6 +1282,7 @@ export interface PromptSlots {
   "core/tools-self.react-done": { emoji: string; messageId: string };
   "core/tools-self.react-removed": { messageId: string };
   "core/tools-self.react-not-emoji": { emoji: string };
+  "core/tools-self.react-no-name": { emoji: string };
   "core/tools-text.cut-from-the-middle": { head: string; elided: string; tail: string };
   "core/tools-toolbox.run-approved-content-run-longer-tool": { tool: string };
   "core/tools-toolbox.run-approved-content-run-turned-off": { tool: string };
@@ -1891,7 +1896,7 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "core/tools-self.describe-self-home-host-list": "- home host: {{homeHostId}} (list_hosts names it)",
   "core/tools-self.document-header": "{{file}} (revision {{revision}}, {{contentCount}} characters, last saved by {{updatedBy}}):",
   "core/tools-self.describe-document-more-characters-cut": "({{contentCount}} more characters cut; get_self with document \"{{name}}\" shows it in full.)",
-  "core/tools-self.react": "Reacts to a message of the person's in this chat with one emoji, the way a person reacts to a message: 👍 for \"got it\" or \"done\", ❤️ for thanks, 😂 for a joke. With no message_id it reacts to the message that started this turn. One reaction at a time: a new one replaces yours, and an empty emoji takes it back. Use it when a reaction says enough on its own or alongside your reply; never instead of an answer the person is waiting for.",
+  "core/tools-self.react": "Reacts to a message of the person's in this chat with one emoji, the way a person reacts to a message: 👍 for \"got it\" or \"done\", ❤️ for thanks, 😂 for a joke. With no message_id it reacts to the message that started this turn. On Slack and WhatsApp the reaction shows on that message there; on WhatsApp it comes from the linked number, as your replies there do. One reaction at a time: a new one replaces yours, and an empty emoji takes it back. Use it when a reaction says enough on its own or alongside your reply; never instead of an answer the person is waiting for.",
   "core/tools-self.react-emoji": "Exactly one emoji (👍, ❤️, 🎉, 🙏, 👀…), or an empty string to take your reaction back.",
   "core/tools-self.react-message-id": "The id of the person's message to react to, from search_chat. Leave it out for the message that started this turn.",
   "core/tools-self.react-done": "You reacted {{emoji}} to the person's message (id {{messageId}}).",
@@ -1899,7 +1904,11 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "core/tools-self.react-not-emoji": "\"{{emoji}}\" is not one emoji. React with exactly one, such as 👍.",
   "core/tools-self.react-no-message": "There is no message of the person's to react to here: this turn did not start with one, or that id is not in this chat. Name one with message_id.",
   "core/tools-self.react-not-yours": "You can react only to the person's messages, not to your own or to Oppenheimer's notes.",
-  "core/tools-self.react-console-only": "Reactions show only in your chat in the console. In this conversation, answer in words.",
+  "core/tools-self.react-unsupported": "Reactions do not reach this chat's channel. Answer in words.",
+  "core/tools-self.react-unreachable": "That message came in while you were already working on another, so the channel cannot be told which it is. React to the message that started a turn, or answer in words.",
+  "core/tools-self.react-no-name": "Slack has no reaction for \"{{emoji}}\" here. React with a common one, such as 👍, ❤️, 🎉, ✅ or 🙏.",
+  "core/tools-self.react-working-sign": "On Slack 👀 is the sign that you are working on a message, and it comes off when your turn ends. React with another, such as 👍 or ✅.",
+  "core/tools-self.react-not-sent": "The reaction did not reach the chat: you may no longer answer it, or its host or app is offline. Answer in words.",
   "core/tools-text.runner-too-old-advice": "update_host_runner updates it; then try again",
   "core/tools-text.cut-from-the-middle": "{{head}}\n… {{elided}} characters cut from the middle. Ask for less (a filter, a smaller limit) to see them.\n{{tail}}",
   "core/tools-toolbox.approval-started-refusal": "Not in this turn: the call they approved is still running. Say in one sentence that you are on it and end your turn; how it went comes in your next turn.",

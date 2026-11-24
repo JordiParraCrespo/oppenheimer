@@ -199,6 +199,13 @@ apart, as OpenClaw and Hermes do.
   longer for a wait on a session. Telegram's typing action and a line after
   fifteen seconds of silence are not built; WhatsApp shows nothing
   (whatsapp.md §2).
+- **Reactions** (2026-11-24, the owner: "better the agent decide"): the
+  bot's `react` tool reacts on WhatsApp to the message that opened its
+  turn, from the number, as its reply is sent: in a chat the bot answers,
+  asking nothing, and spending the host's send budget as a message does
+  (`whatsapp.react` on the link, for runners that name it). Kept in the
+  console only once WhatsApp took it. Nothing reacts on its own, and
+  Telegram takes none yet: the bot is told to answer in words there.
 - **Replies** are split at Telegram's 4,096 characters and at our own
   8,000 on WhatsApp (whatsapp.md §4). On Telegram the bot's markdown is
   turned into Telegram's HTML by us, and everything else in it escaped, so
@@ -350,3 +357,6 @@ per-chat "Always allow" for sends are unchanged.
   contact's turn; Settings lists them, changes their bot and removes them.
   Each has the number's default bot or one chosen for it. Built before the
   turns that answer them.
+- 2026-11-24: a bot reacts on WhatsApp with its `react` tool, in the chats it
+  answers, without asking, as its reply goes (§4, "Reactions"); until then
+  the tool worked in the console chat only.
