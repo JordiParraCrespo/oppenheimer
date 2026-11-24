@@ -1,7 +1,7 @@
 {
   "schema": "oppenheimer.manifest/v1",
   "agent": "opencode",
-  "version": "2026.11.23.1",
+  "version": "2026.11.24.1",
   "minEngine": 1,
   "notes": "Watched against OpenCode 1.19.6 in tmux on 2026-11-23: a permission for a folder outside the project and one for a shell command, a turn running and the prompt after it; the screens are `testdata/screens/opencode-*`. That release titles the terminal only `OpenCode`, so the screen's footer carries the state; the older `OC |` title with a spinner is kept for the releases that set it.",
   "rules": [
@@ -34,9 +34,9 @@
       "state": "idle",
       "priority": 800,
       "region": "bottom:3",
-      "any": ["(?i)\\bctrl\\+p\\b"],
+      "any": ["(?i)ctrl\\+p\\b"],
       "not": ["esc interrupt"],
-      "note": "The idle footer (`tab agents  ctrl+p commands`) with no `esc interrupt` in it."
+      "note": "The idle footer (`tab agents  ctrl+p commands`) with no `esc interrupt` in it. No word boundary before `ctrl`: a long folder path wraps the footer to `tab agentsctrl+p`."
     }
   ]
 }

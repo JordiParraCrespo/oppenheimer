@@ -11,8 +11,6 @@ import (
 	"time"
 
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
-	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
-	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 	upddomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/updates/domain"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/core/problem"
 	"github.com/jordiparracrespo/oppenheimer/packages/go/httpx"
@@ -289,8 +287,8 @@ func (a *App) localRouter(errorTypeBaseURL string, logger *slog.Logger) http.Han
 // one `capture-pane` per live session, and writes the session map only when a
 // state changed.
 //
-// An agent seen to block is looked at again BlockedConfirmAfter later rather
-// than a whole interval on: that second look is what tells the person.
+// An agent seen to block is looked at again when its confirmation is due
+// rather than a whole interval on: that second look is what tells the person.
 func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 	timer := time.NewTimer(sessionLoopInterval)
 	defer timer.Stop()
@@ -300,11 +298,10 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 			return
 		case <-timer.C:
 		}
-		sessions, err := a.Sessions.RefreshAll(ctx)
-		if err != nil {
+		if _, err := a.Sessions.RefreshAll(ctx); err != nil {
 			logger.Warn("could not refresh every session", slog.Any("error", err))
 		}
-		timer.Reset(nextSessionLook(sessions, time.Now()))
+		timer.Reset(nextSessionLook(a.Sessions.NextConfirmation()))
 		// A kept session the host's reboot stopped is brought back.
 		for _, session := range a.Sessions.RecoverKept(ctx) {
 			logger.Info("kept session restarted after a reboot", slog.String("session", session.ID))
@@ -327,16 +324,15 @@ func (a *App) sessionLoop(ctx context.Context, logger *slog.Logger) {
 // sessionLoopInterval is how often every live session is looked at.
 const sessionLoopInterval = 10 * time.Second
 
-// nextSessionLook is when the loop looks again: soon when an agent blocked
-// since the last look, so its block is confirmed in seconds, else the usual
-// interval.
-func nextSessionLook(sessions []sessionsdomain.Session, now time.Time) time.Duration {
-	for _, session := range sessions {
-		if session.State == sessionsdomain.StateBlocked && now.Sub(session.Updated) < sessionLoopInterval {
-			return sessionsapp.BlockedConfirmAfter
-		}
+// nextSessionLook is when the loop looks again: when the earliest block still
+// to be confirmed is due, if that is sooner than the usual interval. Never
+// sooner than a second, so a session whose screen cannot be read does not
+// spin the loop.
+func nextSessionLook(due time.Duration, pending bool) time.Duration {
+	if !pending {
+		return sessionLoopInterval
 	}
-	return sessionLoopInterval
+	return min(max(due, time.Second), sessionLoopInterval)
 }
 
 // strayWrapperInterval is how often the runner looks for agents whose

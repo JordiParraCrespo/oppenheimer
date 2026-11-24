@@ -628,7 +628,9 @@ What changed:
   before, crossing 30 s changed nothing anyone was told about.
 
 So a question shows 3–13 s after it is drawn: up to 10 s for the loop to
-see it, 3 s to confirm.
+see it, 3 s to confirm (the runner's sessions service keeps that clock, from
+when it saw the block, and tells its loop when to look). Measured on a real
+runner with the console in a second tab, never reloaded: 6–13 s.
 
 Not yet: a browser notification and the Chrome extension telling you
 about a runner session come next, as their own changes; a phone push

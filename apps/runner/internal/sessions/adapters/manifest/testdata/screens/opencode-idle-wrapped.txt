@@ -1,0 +1,39 @@
+  ┃
+  ┃  create the probe file
+  ┃
+
+  ┃
+  ┃  $ touch /tmp/oc-verify3
+  ┃
+  ┃  (no output)
+  ┃
+
+     DONE
+
+     ▣  Build · m · 29.8s
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ┃
+  ┃
+  ┃
+  ┃  Build · m Fake
+  ╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+   /home/dev/oppenheimer/sessions.noindex/quiet-heron-k2x9fq/worktrees/      tab agentsctrl+p
+   acme-mobile                                                                                      commands
+

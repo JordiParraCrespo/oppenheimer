@@ -107,3 +107,41 @@ func TestAnAgentStillBlockedIsAnnouncedOnceMore(t *testing.T) {
 		t.Fatalf("blocked announced %d times over two waits, want 4", got)
 	}
 }
+
+// The second report is when the person is told, so nothing but the agent
+// moving on may delay it: a window opened while the agent waits writes the
+// session, and must not restart the confirmation's clock. The service also
+// says when that confirmation is due, which is when its loop looks again.
+func TestAWindowOpenedWhileBlockedDoesNotDelayTheConfirmation(t *testing.T) {
+	clock := &stepClock{now: time.Date(2026, 11, 24, 9, 0, 0, 0, time.UTC)}
+	h := newClockedHarness(t, clock)
+	session := h.open(t)
+	h.terminals.Screens[session.Target(0)] = blockedScreen
+	refresh := func() {
+		t.Helper()
+		if _, err := h.svc.Refresh(context.Background(), session.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if _, pending := h.svc.NextConfirmation(); pending {
+		t.Fatal("a confirmation is due before any agent blocked")
+	}
+	refresh()
+	if due, pending := h.svc.NextConfirmation(); !pending || due != app.BlockedConfirmAfter {
+		t.Fatalf("next confirmation = %s, %v; want %s, true", due, pending, app.BlockedConfirmAfter)
+	}
+
+	clock.Advance(2 * time.Second)
+	if _, err := h.svc.OpenWindow(context.Background(), session.ID, app.WindowInput{}); err != nil {
+		t.Fatal(err)
+	}
+	clock.Advance(app.BlockedConfirmAfter - 2*time.Second)
+	refresh()
+	if got := countBlocked(h.events.states); got != 2 {
+		t.Fatalf("blocked announced %d times %s after the block, want 2: the window delayed it", got, app.BlockedConfirmAfter)
+	}
+	if _, pending := h.svc.NextConfirmation(); pending {
+		t.Fatal("a confirmation is still due after it was sent")
+	}
+}

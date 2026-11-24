@@ -31,6 +31,7 @@ func TestRealScreensReadAsTheStateTheyShow(t *testing.T) {
 		{"opencode-permission-bash", domain.AgentOpenCode, domain.StateBlocked},
 		{"opencode-working", domain.AgentOpenCode, domain.StateWorking},
 		{"opencode-idle", domain.AgentOpenCode, domain.StateIdle},
+		{"opencode-idle-wrapped", domain.AgentOpenCode, domain.StateIdle},
 	} {
 		t.Run(tc.screen, func(t *testing.T) {
 			screen := app.Screen{Body: read(t, tc.screen+".txt"), Title: strings.TrimSpace(read(t, tc.screen+".title"))}
