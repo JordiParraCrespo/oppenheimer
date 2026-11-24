@@ -39,10 +39,10 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
 function sendButtonClass(layout: 'stacked' | 'inline', busy: boolean): string {
   if (layout === 'inline') {
     return busy
-      ? 'ml-1 bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active'
-      : 'ml-1 bg-fg text-background hover:bg-fg/85 active:bg-fg/85 disabled:bg-chat-wash disabled:text-fg-subtle disabled:opacity-100';
+      ? 'ml-1 size-8 bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-active'
+      : 'ml-1 size-8 bg-fg text-background hover:bg-fg/85 active:bg-fg/85 disabled:bg-chat-wash disabled:text-fg-subtle disabled:opacity-100';
   }
-  return busy ? 'ml-1 bg-fg text-background hover:bg-fg hover:text-background' : 'ml-1';
+  return busy ? 'ml-1 size-8.5 bg-fg text-background hover:bg-fg hover:text-background' : 'ml-1 size-8.5';
 }
 
 /**
@@ -50,8 +50,7 @@ function sendButtonClass(layout: 'stacked' | 'inline', busy: boolean): string {
  * border until it takes focus (the plain border then, no ring), its text at
  * 15px growing from two lines to eight, then a foot row: `tools` (the
  * approval level) on the left, `engine` (model, effort) on the right, and
- * the send: on the box's one line (`inline`) at 34px with the attach, emoji
- * and mic; in the stacked foot row at 28px, level with its tools. While `busy` the send is the stop, a small square on the
+ * the 34px send. While `busy` the send is the stop, a small square on the
  * ink. Enter sends, Shift+Enter makes a new line; `onAltSubmit` gives
  * Alt+Enter a second way to send (a bot's "queue it for after" while
  * Enter steers the turn under way), named for the caller to say, and
@@ -208,7 +207,6 @@ function ChatComposer({
         sendBlockedReason={sendBlockedReason}
         labels={label}
         onClick={submit}
-        size={inline ? 'md' : 'sm'}
         className={sendButtonClass(layout, busy)}
       >
         {busy ? (
@@ -223,11 +221,11 @@ function ChatComposer({
     <IconButton
       aria-label={label.attach}
       title={label.attach}
-      size={inline ? 'md' : 'sm'}
+      size="sm"
       shape={inline ? 'pill' : 'square'}
       onClick={onAttach}
       disabled={disabled}
-      className={inline ? 'text-fg-muted hover:text-fg' : undefined}
+      className={inline ? 'size-8 text-fg-muted hover:text-fg' : 'size-7.5'}
     >
       {inline ? <PlusIcon className="size-4" /> : <PaperclipIcon className="size-3.75" />}
     </IconButton>
@@ -255,11 +253,11 @@ function ChatComposer({
     </div>
   ) : null;
   const recorder = dictation?.recorder ? (
-    // The bar is 18px taller than the 28px foot row it replaces; it takes
+    // The bar is 12px taller than the foot row it replaces; it takes
     // that from the field's bottom padding, so the box keeps its height.
     <ComposerRecorder
       data-slot="chat-composer-recorder"
-      className={inline ? 'w-full' : '-mt-4.5 px-3 pb-3'}
+      className={inline ? 'w-full' : '-mt-3 px-3 pb-3'}
       onEnter={submit}
     >
       {dictation.recorder}
@@ -289,15 +287,13 @@ function ChatComposer({
               {attached}
               <div className="flex items-end">
                 {paperclip || emoji ? (
-                  <span className="flex shrink-0 items-center gap-0.5 px-1.5 py-1.25 pr-0">
+                  <span className="flex shrink-0 items-center gap-0.5 p-1.5 pr-0">
                     {paperclip}
                     {emoji}
                   </span>
                 ) : null}
                 {field}
-                <span className="flex shrink-0 items-center gap-1 px-1.5 py-1.25 [&_[data-slot=dictation-button]]:size-(--control-h-md)">
-                  {send}
-                </span>
+                <span className="flex shrink-0 items-center gap-1 p-1.5">{send}</span>
               </div>
             </>
           ))

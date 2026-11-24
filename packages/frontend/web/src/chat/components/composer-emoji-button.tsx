@@ -58,11 +58,12 @@ export function ComposerEmojiButton({
         render={
           <IconButton
             ref={button}
+            size="sm"
             shape="pill"
             disabled={disabled}
             aria-label={t('common.chat.emoji.open')}
             title={t('common.chat.emoji.open')}
-            className="text-fg-muted hover:text-fg"
+            className="size-8 text-fg-muted hover:text-fg"
           />
         }
       >

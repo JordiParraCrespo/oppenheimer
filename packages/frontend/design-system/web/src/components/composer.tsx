@@ -244,11 +244,11 @@ function Composer({
           className="px-3 pb-2.5"
         />
         {dictation?.recorder ? (
-          // The bar is 18px taller than the 28px foot row it replaces; it takes
+          // The bar is 16px taller than the foot row it replaces; it takes
           // that from the field's bottom padding, so the box keeps its height.
           <ComposerRecorder
             data-slot="composer-recorder"
-            className="-mt-4.5 px-2.5 pb-2.5"
+            className="-mt-4 px-2.5 pb-2.5"
             onEnter={submit}
           >
             {dictation.recorder}
@@ -265,6 +265,7 @@ function Composer({
                   size="sm"
                   shape="square"
                   onClick={onAttach}
+                  className="size-[30px]"
                 >
                   <PaperclipIcon className="size-[15px]" />
                 </IconButton>
@@ -283,6 +284,7 @@ function Composer({
             sendBlockedReason={sendBlockedReason}
             labels={label}
             onClick={submit}
+            className="size-8"
           >
             <ComposerSendGlyph busy={busy} />
           </ComposerSendButton>
@@ -394,13 +396,14 @@ function ComposerPill({
       ) : (
         <div className="flex items-end">
           {onAttach || emoji ? (
-            <span className="flex shrink-0 items-center gap-0.5 px-1.5 py-1.25 pr-0">
+            <span className="flex shrink-0 items-center gap-0.5 p-1.5 pr-0">
               {onAttach ? (
                 <IconButton
                   aria-label={label.attach}
                   title={label.attach}
+                  size="sm"
                   onClick={onAttach}
-                  className="text-fg-muted"
+                  className="size-8 text-fg-muted"
                 >
                   <PlusIcon className="size-4.25" />
                 </IconButton>
@@ -422,7 +425,7 @@ function ComposerPill({
               onAttach || emoji ? 'pl-1' : 'pl-4.5',
             )}
           />
-          <span className="flex shrink-0 items-center gap-1 px-1.5 py-1.25 [&_[data-slot=dictation-button]]:size-(--control-h-md)">
+          <span className="flex shrink-0 items-center gap-1 p-1.5">
             {dictation?.mic}
             <ComposerSendButton
               busy={busy}
@@ -431,8 +434,7 @@ function ComposerPill({
               sendBlockedReason={sendBlockedReason}
               labels={label}
               onClick={submit}
-              size="md"
-              className="ml-1"
+              className="ml-1 size-8"
             >
               <ComposerSendGlyph busy={busy} />
             </ComposerSendButton>
