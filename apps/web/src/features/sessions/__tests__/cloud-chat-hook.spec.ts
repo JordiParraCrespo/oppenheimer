@@ -1,7 +1,7 @@
 // @vitest-environment node
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /** The hook the console hands out, as a cloud session runs it; plain JavaScript, so typed here. */
@@ -22,6 +22,18 @@ const { followTranscript, outcomeOf }: CloudChatHook = await import(
 const MINUTE = 60_000;
 /** Where the streamer keeps its offsets; `session-start` makes it before it spawns one. */
 const STATE_DIR = join(tmpdir(), 'oppenheimer-cloud-chat');
+
+describe('the hook this repository runs', () => {
+  it('is the hook the console hands out, byte for byte', () => {
+    // Breaks if a change lands in one copy only: the tests here read the
+    // served one. Not a symlink, because the hook runs only when the path it
+    // was started by is its own (`isEntry`), and a link's is not.
+    const repo = resolve(__dirname, '../../../../../..');
+    expect(readFileSync(join(repo, '.claude/hooks/oppenheimer-cloud-chat.mjs'), 'utf8')).toBe(
+      readFileSync(join(repo, 'apps/web/public/cloud-chat-hook.mjs'), 'utf8'),
+    );
+  });
+});
 
 describe('outcomeOf', () => {
   it('reads an answer the same request gets again as a refusal, and a passing failure as one to retry', () => {
