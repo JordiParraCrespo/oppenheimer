@@ -184,5 +184,54 @@
     "label": "Project",
     "all": "All projects",
     "none": "No project"
+  },
+  "visual": {
+    "chart": "Chart",
+    "table": "Table",
+    "viewAs": "Show as",
+    "copyData": "Copy data",
+    "copiedData": "Data copied",
+    "expand": "Expand",
+    "showAll": "Show all {{rows}} rows",
+    "showFewer": "Show fewer",
+    "sortBy": "Sort by {{column}}",
+    "checklistDone": "{{done}} of {{total}} done",
+    "progressOf": "of {{target}}",
+    "total": "Total",
+    "empty": "—",
+    "label": "Label",
+    "invalid": "This visual could not be drawn",
+    "chartLabel": "{{title}}, a {{kind}} chart",
+    "kinds": {
+      "bar": "bar",
+      "line": "line",
+      "area": "area"
+    },
+    "html": {
+      "notRun": "Part of this visual is HTML, which this console does not run",
+      "showSource": "Show source",
+      "didNotLoad": "This visual's HTML did not load",
+      "frameTitle": "A visual the agent drew",
+      "failedInside": "Something in this visual failed: {{message}}",
+      "openLinkTitle": "Open this link?",
+      "openLinkBody": "The visual asks to open a page on {{host}}, in a new tab.",
+      "openLink": "Open link"
+    }
+  },
+  "markdown": {
+    "diagram": {
+      "diagram": "Diagram",
+      "source": "Source",
+      "views": "Show the diagram or its source",
+      "title": "Diagram",
+      "copy": "Copy source",
+      "expand": "Open large",
+      "drawing": "Drawing the diagram…",
+      "unreadable": "This diagram couldn’t be drawn, so here is its source.",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fit": "Fit to the window",
+      "zoomHint": "Scroll to zoom, drag to move around, double-click to zoom in or back out."
+    }
   }
 }

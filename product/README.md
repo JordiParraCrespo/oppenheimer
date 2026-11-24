@@ -1759,6 +1759,13 @@ earlier note:
   side pane (`versions/mvp/32-side-pane.md`), where the previews are three
   of the things the launcher opens, each a tab beside a shell, another
   session or a bot's chat.
+- `versions/mvp/32-side-pane.md` §1 listed Terminal, Agent, Session, Bot
+  and the previews as the launcher's rows, and the session's bar held its
+  name, its state and the worded Terminal / Chat switch. On 2026-11-24 the
+  owner asked for tabs and a calmer layout (`versions/mvp/33-session-tabs.md`):
+  open sessions and bots are tabs in a one-line bar, the state moves to the
+  tab's dot and tooltip, and the launcher is large rows with Agent, Session
+  and Bot folded under Side chats.
 - `versions/mvp/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
   a job over four tiles (next-step pills once it had instructions), over the
   stacked composer. On 2026-11-16 the owner found it loud in the side pane
@@ -1921,6 +1928,21 @@ earlier note:
   it is told apart from what the owner wrote, and the App's comments wake
   nothing (`loopGuard`), so an answer never asks a bot again. The guide's
   "writing to a bot only in the console" stopped holding the same day.
+- `research/visuals/README.md` §6 and `research/generative-ui-in-chat.md` §6
+  proposed visuals in the chat and left them unbuilt. On 2026-11-24 the
+  owner asked for all of it: Mermaid and math in every chat's Markdown, one
+  typed visual format (`@oppenheimer/shared/schemas/visual`) drawn by bots
+  (`show_visual`) and sessions (`runner sessions show`, the runner's MCP
+  `show_visual`), an `html` block run in a sandboxed frame on
+  `visuals.<preview domain>` behind the `visual_html` flag, a permission card
+  in the session chat, a form bots can ask the person to fill, a running
+  command's live tail, and the chat's small markers. Picks taken where §8 of
+  each asked: no chart library, the frame's network closed, a visual placed
+  where it was called, and a link in a visual opening only once the reader
+  says so. The owner kept HTML visuals on (2026-11-24) knowing one residue a
+  page cannot close: a fragment's script that navigates its frame or inserts
+  a frame is refused and the visual ended, but the browser looks the target's
+  host up in DNS first; `visual_html` turns HTML off.
 - `versions/mvp/29-inbox.md`, "As built: the Inbox in Plan" (2026-10-29),
   made the Inbox Plan's first section at `/plan/inbox`, with no rail item.
   On 2026-11-24 the owner asked for it to be one of the platform's core
@@ -2050,3 +2072,13 @@ earlier note:
   as its owner restarts it, and the button is the fallback for a restart
   that fails. The runner also stops, never closes, a session left `done`
   or `idle` and unwatched for two hours (`RUNNER_IDLE_STOP`).
+- `versions/mvp/29-inbox.md` ("You're all caught up", 2026-11-14) kept the
+  list's empty state as one muted "Nothing needs you." row. On 2026-11-24
+  the owner asked for more: the list shows "Inbox zero" over a check in a
+  green disc, and "No matches" when filters match nothing ("Inbox zero").
+- `versions/mvp/25-bots.md` §4.2 kept a host's switches for bots
+  (`runner exec`, `runner computer`, `runner browser`) on the host alone,
+  never written by the control plane. On 2026-11-24 the owner, told by a
+  bot to run `runner browser on` after saying "do it yourself", did not want
+  that guardrail: a bot changes them with `set_host_settings` when the
+  person asks in their own chat ("The host's switches").

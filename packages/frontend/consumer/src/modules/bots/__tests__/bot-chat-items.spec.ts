@@ -33,6 +33,7 @@ const step = (
     subagents: null,
     allowedBy: null,
     mailDraft: null,
+    visual: null,
     rateLimit: null,
   }) satisfies BotToolStep;
 

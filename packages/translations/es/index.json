@@ -188,6 +188,55 @@
       "label": "Proyecto",
       "all": "Todos los proyectos",
       "none": "Sin proyecto"
+    },
+    "visual": {
+      "chart": "Gráfico",
+      "table": "Tabla",
+      "viewAs": "Ver como",
+      "copyData": "Copiar datos",
+      "copiedData": "Datos copiados",
+      "expand": "Ampliar",
+      "showAll": "Ver las {{rows}} filas",
+      "showFewer": "Ver menos",
+      "sortBy": "Ordenar por {{column}}",
+      "checklistDone": "{{done}} de {{total}} hechas",
+      "progressOf": "de {{target}}",
+      "total": "Total",
+      "empty": "—",
+      "label": "Etiqueta",
+      "invalid": "No se ha podido dibujar este visual",
+      "chartLabel": "{{title}}, un gráfico de {{kind}}",
+      "kinds": {
+        "bar": "barras",
+        "line": "líneas",
+        "area": "áreas"
+      },
+      "html": {
+        "notRun": "Parte de este visual es HTML, que esta consola no ejecuta",
+        "showSource": "Ver código",
+        "didNotLoad": "El HTML de este visual no se ha cargado",
+        "frameTitle": "Un visual que dibujó el agente",
+        "failedInside": "Algo ha fallado dentro de este visual: {{message}}",
+        "openLinkTitle": "¿Abrir este enlace?",
+        "openLinkBody": "El visual quiere abrir una página de {{host}} en una pestaña nueva.",
+        "openLink": "Abrir enlace"
+      }
+    },
+    "markdown": {
+      "diagram": {
+        "diagram": "Diagrama",
+        "source": "Código",
+        "views": "Ver el diagrama o su código",
+        "title": "Diagrama",
+        "copy": "Copiar el código",
+        "expand": "Abrir en grande",
+        "drawing": "Dibujando el diagrama…",
+        "unreadable": "No se pudo dibujar este diagrama, así que aquí está su código.",
+        "zoomIn": "Acercar",
+        "zoomOut": "Alejar",
+        "fit": "Ajustar a la ventana",
+        "zoomHint": "Desplaza para acercar, arrastra para moverte, doble clic para acercar o volver."
+      }
     }
   },
   "validation": {
@@ -570,7 +619,10 @@
       "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión.",
       "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host.",
       "BOTS_044": "Ese mensaje ya no está en este chat.",
-      "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción."
+      "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción.",
+      "BOTS_046": "Ese formulario ya no está.",
+      "BOTS_047": "Algunos valores no encajan con el formulario.",
+      "BOTS_048": "Ese formulario ya se envió, o el bot siguió adelante."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -1426,7 +1478,7 @@
       "composer": {
         "placeholder": "Escribe a {{agent}}",
         "placeholderAnyAgent": "Escribe al agente",
-        "suggestion": "{{suggestion}}  ·  Tab para usarlo",
+        "suggestion": "Tab para usarlo  ·  {{suggestion}}",
         "send": "Enviar",
         "stop": "Detener",
         "attach": "Adjuntar archivos",
@@ -1480,7 +1532,8 @@
       "tasks_many": "{{done}} de {{count}} tareas hechas",
       "notice": {
         "interrupted": "Detuviste este turno",
-        "compacted": "Contexto compactado"
+        "compacted": "Contexto compactado",
+        "model": "Modelo cambiado a <model>{{model}}</model>"
       },
       "task": {
         "completed": "Tarea en segundo plano terminada",
@@ -1556,6 +1609,28 @@
         "dismissed": "Descartaste las preguntas",
         "noAnswer": "No se pudo leer la respuesta"
       },
+      "permission": {
+        "command": "¿Ejecutar este comando?",
+        "edit": "¿Hacer este cambio?",
+        "write": "¿Crear este archivo?",
+        "web": "¿Abrir esta página?",
+        "tool": "¿Usar esta herramienta?",
+        "allowOnce": "Permitir una vez",
+        "alwaysAllow": "Permitir siempre",
+        "deny": "Denegar",
+        "denyHint": "Detener y decirle a {{agent}} qué hacer en su lugar",
+        "keys": "{{first}}–{{last}} para elegir · Esc para denegar",
+        "withNote": "Denegar con una nota",
+        "note": "¿Qué debería hacer {{agent}} en su lugar?",
+        "noteLabel": "Tu nota para {{agent}}",
+        "noteHint": "Enter para enviar · Esc para volver",
+        "sendNote": "Denegar y enviar",
+        "back": "Volver",
+        "allowed": "Permitido · {{agent}} sigue",
+        "denied": "Denegado · {{agent}} se detiene aquí",
+        "caution": "Revísalo bien: puede borrar o sobrescribir trabajo",
+        "truncated": "El resto de este cambio es más largo de lo que muestra el chat"
+      },
       "explored": {
         "title": "Explorado"
       },
@@ -1618,16 +1693,10 @@
       "closeTab": "Cerrar {{name}}",
       "launcher": {
         "title": "Abrir junto a esta sesión",
-        "description": "Mantén esta sesión a la vista mientras trabajas en otra cosa.",
         "terminal": "Terminal",
-        "terminalDetail": "Una shell en el worktree de esta sesión",
-        "session": "Sesión",
-        "sessionDetail": "Otra sesión, en cualquier host",
-        "bot": "Bot",
-        "botDetail": "Elige uno de tus bots y chatea",
-        "browserDetail": "El servidor de desarrollo de la sesión",
-        "simulatorDetail": "El dispositivo que maneja el agente de la sesión",
-        "desktopDetail": "La pantalla del propio host",
+        "session": "Otra sesión",
+        "sessionDetail": "Cualquier host",
+        "bot": "Un bot",
         "back": "Atrás",
         "sessions": "Elige una sesión",
         "searchSessions": "Buscar sesiones",
@@ -1636,11 +1705,12 @@
         "searchBots": "Buscar bots",
         "noBots": "Aún no hay bots. Crea uno en Empleados.",
         "noMatch": "Nada coincide con «{{query}}».",
-        "agent": "Agente",
-        "agentDetail": "Otro agente en este worktree",
+        "agent": "Otro agente",
+        "agentDetail": "Mismo worktree",
         "agents": "Elige un agente",
         "agentShares": "Trabaja en el worktree de esta sesión, sobre los mismos archivos e índice de git que el agente que ya está allí.",
-        "noAgents": "Ningún agente puede iniciarse junto a esta sesión. Activa uno en Ajustes → Agentes."
+        "noAgents": "Ningún agente puede iniciarse junto a esta sesión. Activa uno en Ajustes → Agentes.",
+        "sideChats": "Chats laterales"
       },
       "terminal": {
         "name": "Terminal {{index}}",
@@ -1795,6 +1865,11 @@
       "steps_other": "{{count}} pasos",
       "steps_many": "{{count}} pasos",
       "loadFailed": "No se pudo cargar esta sesión."
+    },
+    "tabs": {
+      "label": "Sesiones abiertas",
+      "new": "Nueva sesión",
+      "close": "Cerrar {{name}}"
     }
   },
   "bots": {
@@ -2025,6 +2100,22 @@
         "answered": "Respondiste: {{summary}}",
         "dismissed": "Descartaste: {{summary}}",
         "failed": "No se pudieron enviar tus respuestas."
+      },
+      "form": {
+        "label": "Formulario",
+        "submit": "Enviar",
+        "sending": "Enviando…",
+        "sent": "Enviado",
+        "dismiss": "Ahora no",
+        "required": "Obligatorio",
+        "optional": "Opcional",
+        "choose": "Elige una opción",
+        "submitted": "Enviaste: {{title}}",
+        "dismissed": "Descartaste: {{title}}",
+        "blank": "En blanco",
+        "failed": "No se pudo enviar el formulario.",
+        "fixFields": "Revisa los campos marcados.",
+        "loadFailed": "No se ha podido leer el formulario que espera este bot."
       },
       "approval": {
         "needsInput": "Necesita tu respuesta",
@@ -2673,7 +2764,14 @@
         "addCount_other": "Añadir {{count}} chats",
         "addCount_many": "Añadir {{count}} chats",
         "telegramTitle": "Telegram · {{name}}",
-        "telegramMeta": "Te responde allí. Los grupos y otras personas en Telegram llegan después."
+        "telegramMeta": "Te responde allí. Los grupos y otras personas en Telegram llegan después.",
+        "tabs": {
+          "label": "Canal",
+          "whatsapp": "WhatsApp",
+          "telegram": "Telegram",
+          "slack": "Slack"
+        },
+        "noTelegram": "Ningún bot de Telegram responde como este bot todavía. Elígelo para uno en Ajustes → Telegram."
       },
       "slack": {
         "title": "Slack",
@@ -4000,7 +4098,9 @@
   "inbox": {
     "title": "Bandeja",
     "list": {
+      "emptyTitle": "Bandeja vacía",
       "empty": "Nada te necesita.",
+      "noneMatchingTitle": "Sin coincidencias",
       "noneMatching": "Nada que coincida con estos filtros o palabras te necesita.",
       "low": "Baja",
       "snoozed": "Pospuestos",
@@ -4883,11 +4983,11 @@
     "privacy": {
       "changes": {
         "body": "Podemos actualizar esta política cuando cambie el servicio o la normativa. Publicaremos aquí la versión vigente y daremos un aviso adicional cuando un cambio afecte de forma relevante a tus derechos.",
-        "title": "11. Cambios en esta política"
+        "title": "12. Cambios en esta política"
       },
       "children": {
         "body": "El servicio es una herramienta empresarial y no está dirigido a menores de 16 años.",
-        "title": "10. Menores"
+        "title": "11. Menores"
       },
       "contactLabel": "Contacta con el operador del espacio de trabajo para solicitudes de privacidad.",
       "controller": {
@@ -4896,7 +4996,7 @@
       },
       "cookies": {
         "body": "El servicio usa cookies esenciales y almacenamiento del navegador para mantener tu sesión iniciada, proteger el servicio, recordar tus preferencias de idioma y tema y guardar en caché datos de la aplicación para un rendimiento fiable. Estas tecnologías son necesarias para ofrecer el espacio de trabajo. Si se introduce analítica opcional, daremos cualquier aviso u opción que exija la ley antes de usarla.",
-        "title": "7. Cookies y almacenamiento local"
+        "title": "8. Cookies y almacenamiento local"
       },
       "data": {
         "account": "Datos de cuenta e identidad, como nombre, correo de trabajo, foto de perfil, proveedor de autenticación y pertenencia a organizaciones.",
@@ -4907,33 +5007,41 @@
         "title": "2. Datos que tratamos",
         "workspace": "Datos del espacio de trabajo, incluidos roles, permisos, ajustes, eventos de auditoría y actividad necesaria para prestar el servicio."
       },
+      "extension": {
+        "title": "4. La extensión de Chrome",
+        "intro": "La extensión de Oppenheimer para Chrome lista tus sesiones de Claude Code en la nube y te dice cuáles te necesitan. Es su único propósito.",
+        "reads": "Lee tu lista de sesiones de claude.ai con la sesión que ya tienes iniciada en el navegador. Para encontrar esa lista, observa cómo la carga la propia página de claude.ai y anota la dirección a la que se pidió y las cabeceras anthropic-* y x-organization-* de la petición, que indican la organización y la versión de la aplicación. También lee una cookie, lastActiveOrg, que indica de quién son las sesiones que pide. Nunca lee, guarda ni envía tu inicio de sesión de claude.ai, ninguna otra cookie ni ningún token de claude.ai.",
+        "stores": "Guarda, en el almacenamiento de Chrome de tu ordenador: esa lista (el id, el título, el estado, el repositorio y la última actividad de cada sesión y, cuando claude.ai la da, su breve nota de estado, como por qué se detuvo); la dirección y las cabeceras que anotó; y el último error que encontró. Si la conectas a Oppenheimer, guarda también la dirección que escribiste y el token que creaste para ella.",
+        "sends": "Nada sale de tu ordenador salvo que la conectes a un espacio de trabajo de Oppenheimer. Desde entonces, tras cada comprobación envía a ese espacio el id y el estado de cada sesión que sigue; el espacio conserva las que inició y descarta el resto. Nada se vende, se usa para publicidad ni se comparte con nadie más.",
+        "removal": "Desconéctala desde la ventana emergente para borrar la dirección y el token, o elimina la extensión para borrar todo lo que guardó."
+      },
       "eyebrow": "Legal",
       "google": {
         "body": "Si eliges iniciar sesión con Google, Google nos facilita tu nombre, dirección de correo, foto de perfil e identificadores del proveedor. Usamos esta información solo para autenticarte, proteger el acceso y crear o vincular tu perfil. No vendemos estos datos ni los usamos para publicidad.",
         "separateConsent": "El inicio de sesión con Google no da acceso a Gmail, Drive ni a ningún otro servicio de Google. Si tu organización activa más adelante una integración compatible con Google, pedimos los permisos correspondientes mediante una pantalla de consentimiento separada y usamos esos datos solo para ofrecer la integración que elegiste.",
         "title": "3. Acceso con Google y datos de usuario de Google"
       },
-      "lastUpdated": "Última actualización: 27 de agosto de 2026.",
+      "lastUpdated": "Última actualización: 24 de noviembre de 2026.",
       "purposes": {
         "body": "Tratamos datos para prestar y administrar el servicio, autenticar usuarios, facilitar la colaboración, mantener la seguridad, responder solicitudes y cumplir la ley. Según el contexto, la base jurídica es la ejecución de un contrato, nuestro interés legítimo en operar y proteger el servicio, el consentimiento cuando sea necesario o el cumplimiento de una obligación legal.",
-        "title": "4. Finalidades y bases jurídicas"
+        "title": "5. Finalidades y bases jurídicas"
       },
       "retention": {
         "body": "Conservamos los datos de cuenta y del espacio mientras la cuenta u organización correspondiente siga activa y durante el periodo limitado necesario para seguridad, recuperación, resolución de disputas y obligaciones legales. Los datos eliminados pueden permanecer en copias cifradas hasta que expiren en su ciclo normal. Las credenciales de integraciones se eliminan al borrar la conexión, sin perjuicio de copias operativas de corta duración.",
-        "title": "6. Durante cuánto tiempo conservamos los datos"
+        "title": "7. Durante cuánto tiempo conservamos los datos"
       },
       "rights": {
         "authority": "También puedes presentar una reclamación ante la Agencia Española de Protección de Datos (AEPD) o tu autoridad de control local.",
         "body": "Cuando corresponda, puedes solicitar acceso, rectificación, supresión, limitación o portabilidad de tus datos personales, oponerte a determinados tratamientos o retirar tu consentimiento sin afectar al tratamiento lícito anterior. Escríbenos desde el correo asociado a tu cuenta para que podamos verificar y responder a tu solicitud.",
-        "title": "9. Tus derechos de privacidad"
+        "title": "10. Tus derechos de privacidad"
       },
       "security": {
         "body": "Aplicamos medidas técnicas y organizativas diseñadas para proteger los datos, como conexiones cifradas, controles de acceso, infraestructura aislada, gestión de secretos, registros de seguridad y acceso administrativo restringido. Ningún sistema garantiza una seguridad absoluta, pero revisamos y mejoramos estas medidas conforme evoluciona el servicio.",
-        "title": "8. Seguridad"
+        "title": "9. Seguridad"
       },
       "sharing": {
         "body": "Compartimos datos solo cuando es necesario para operar el servicio, cumplir la ley o seguir las instrucciones de tu organización. Los proveedores pueden incluir los de alojamiento, almacenamiento, autenticación, correo e integraciones que tu organización active. Algunos proveedores pueden tratar datos fuera del Espacio Económico Europeo con las garantías aplicables, como decisiones de adecuación o cláusulas contractuales tipo. No vendemos datos personales.",
-        "title": "5. Proveedores y transferencias internacionales"
+        "title": "6. Proveedores y transferencias internacionales"
       },
       "summary": "Esta política explica qué datos personales trata el servicio, por qué los usamos y las opciones y derechos que tienes.",
       "title": "Política de privacidad"

@@ -22,6 +22,7 @@ export {
 export {
   type BotApprovalDetails,
   BotConversationEntity,
+  type BotFormCardEntity,
   BotMessageEntity,
   type BotPlanLimits,
   type BotPlanWindow,

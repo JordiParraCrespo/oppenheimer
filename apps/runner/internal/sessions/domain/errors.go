@@ -73,6 +73,10 @@ var (
 	// (`runner sessions send-file`): not there, not a regular file, or not
 	// readable by the runner.
 	ErrShare = problem.New("SESS_013", http.StatusBadRequest, "The file cannot be shared")
+	// ErrVisual refuses a visual an agent asked to show the person
+	// (`runner sessions show`): not a spec the chat can draw, each fault
+	// named by its path in the detail, so the agent can fix it.
+	ErrVisual = problem.New("SESS_023", http.StatusBadRequest, "The visual cannot be shown")
 	// ErrNotify refuses `runner sessions notify` on a runner with no link to
 	// the control plane: a host that is not paired has nobody to tell.
 	ErrNotify = problem.New("SESS_014", http.StatusServiceUnavailable, "The person cannot be notified from this host")

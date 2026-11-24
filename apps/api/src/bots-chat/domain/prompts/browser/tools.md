@@ -2,7 +2,7 @@
 
 <!-- fragment: use-browser -->
 
-Does one thing in a browser of your own on one of the person's hosts and returns the page: its title and address, and everything on it you can act on (links, buttons, fields), each with a ref such as e7. Use it for a website that needs a real browser: one that runs scripts, a form to fill, a local dev server on that host. Start with action "open" and a url; then "click" or "type" with the ref of what you mean, and read the page that comes back before the next step. "read" also returns the page's text; "screenshot" shows how it looks. Refs hold until the page changes: after a click that loads a new page, use the refs of the new answer. The browser is yours alone, with its own profile: it is not the person's browser and holds none of their logins. For a public page you only need to read, fetching it is cheaper. The host decides: browsers are off for bots until the person there runs `runner browser on`; a refusal says why, and you pass that on. The host defaults to your home host.
+Does one thing in a browser of your own on one of the person's hosts and returns the page: its title and address, and everything on it you can act on (links, buttons, fields), each with a ref such as e7. Use it for a website that needs a real browser: one that runs scripts, a form to fill, a local dev server on that host. Start with action "open" and a url; then "click" or "type" with the ref of what you mean, and read the page that comes back before the next step. "read" also returns the page's text; "screenshot" shows how it looks. Refs hold until the page changes: after a click that loads a new page, use the refs of the new answer. The browser is yours alone, with its own profile: it is not the person's browser and holds none of their logins. For a public page you only need to read, fetching it is cheaper. Browsers are off for bots on a host until turned on (set_host_settings says when you may). The host defaults to your home host.
 
 <!-- fragment: use-browser-action -->
 
@@ -56,7 +56,7 @@ browsers for bots are switched off on this host
 
 <!-- fragment: refusals-browser-001-advice -->
 
-Tell the person; only they can turn it on, on the host itself, with `runner browser on`.
+The browser switch is off: see set_host_settings (browser "on").
 
 <!-- fragment: refusals-browser-002 -->
 
