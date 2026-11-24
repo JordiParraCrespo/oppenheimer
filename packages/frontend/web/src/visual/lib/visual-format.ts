@@ -55,8 +55,8 @@ export function niceTicks(values: readonly number[], count = 4): number[] {
   return ticks;
 }
 
-/** The categorical chart tone for the nth series. */
-export const VISUAL_TONES = ['chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5'] as const;
+/** The categorical chart tones, in order: the nth series takes the nth. */
+const VISUAL_TONES = ['chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5'] as const;
 
 export type VisualSeriesTone = (typeof VISUAL_TONES)[number];
 
