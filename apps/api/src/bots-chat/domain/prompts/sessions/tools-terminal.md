@@ -62,7 +62,7 @@ this host does not let bots drive a terminal: its exec mode is not full
 
 <!-- fragment: refusals-exec-006-advice -->
 
-If the person asked you for this work, set the host's exec mode to "full" with set_host_settings and try again; otherwise tell them a terminal needs it.
+A terminal needs the exec mode "full": see set_host_settings.
 
 <!-- fragment: refusals-exec-007-meaning -->
 
