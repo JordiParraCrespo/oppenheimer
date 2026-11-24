@@ -107,7 +107,7 @@ also toast.
 
 | The options are | Use |
 | --- | --- |
-| Two to four views of one pane | `SegmentedControl` |
+| Two to four views of one page or pane | `PillTabs` |
 | Fixed and short, known at build time, inside a menu | `DropdownMenuRadioGroup` |
 | A scope chip on the console (project, host, branch, agent) | `ChipSelect`, always searchable; `variant="tab"` on New session's `ComposerChoices` row and over its box |
 | A labelled pick in the routine editor | `FieldSelect` |

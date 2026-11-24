@@ -411,6 +411,14 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
     }
     case 'compaction':
       return { kind: 'compaction', tokensBefore: dto.tokensBefore, tokensAfter: dto.tokensAfter };
+    case 'check_back':
+      return {
+        kind: 'check_back',
+        chainId: dto.chainId,
+        step: dto.step,
+        chainStartedAt: dto.chainStartedAt,
+        about: dto.about,
+      };
     case 'loop': {
       const activity = BOT_LOOP_ACTIVITIES.find((candidate) => candidate === dto.activity);
       return activity

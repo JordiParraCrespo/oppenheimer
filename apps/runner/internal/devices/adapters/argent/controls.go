@@ -89,7 +89,7 @@ func toolFor(device domain.Device, in domain.Input) (string, map[string]any) {
 		return "gesture-tap", args
 	case "swipe":
 		args["fromX"], args["fromY"], args["toX"], args["toY"] = in.X, in.Y, in.ToX, in.ToY
-		args["momentum"] = false
+		swipeTiming(args, in)
 		return "gesture-swipe", args
 	case "text":
 		args["text"] = in.Text
@@ -100,5 +100,28 @@ func toolFor(device domain.Device, in domain.Input) (string, map[string]any) {
 	default:
 		args["button"] = in.Button
 		return "button", args
+	}
+}
+
+// minSteadySwipeMs is the shortest swipe Argent plays without momentum: it
+// refuses `momentum: false` below 150 ms, and lands short near it.
+const minSteadySwipeMs = 150
+
+// swipeTiming plays the swipe back the way the reader made it. A flick
+// (Momentum) keeps its own duration, however short, so the content flings as
+// hard as the reader threw it. A deliberate drag stops where the finger
+// lifted, at its own pace, never under what Argent takes without momentum.
+// A console that sends no duration gets Argent's default pace, momentum-free.
+func swipeTiming(args map[string]any, in domain.Input) {
+	if in.Momentum {
+		args["momentum"] = true
+		if in.DurationMs > 0 {
+			args["durationMs"] = in.DurationMs
+		}
+		return
+	}
+	args["momentum"] = false
+	if in.DurationMs > 0 {
+		args["durationMs"] = max(in.DurationMs, minSteadySwipeMs)
 	}
 }

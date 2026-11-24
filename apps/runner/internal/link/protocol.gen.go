@@ -1062,6 +1062,8 @@ type DeviceInput struct {
 	Y            float64 `json:"y,omitempty"`
 	ToX          float64 `json:"toX,omitempty"`
 	ToY          float64 `json:"toY,omitempty"`
+	DurationMs   int     `json:"durationMs,omitempty"`
+	Momentum     bool    `json:"momentum,omitempty"`
 	Text         string  `json:"text,omitempty"`
 	Key          string  `json:"key,omitempty"`
 	Button       string  `json:"button,omitempty"`

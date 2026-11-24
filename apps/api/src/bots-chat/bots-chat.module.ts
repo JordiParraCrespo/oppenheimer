@@ -18,6 +18,7 @@ import { BotBrowserToolsFactory } from './application/bot-browser-tools.factory'
 import { BotChannelAsItGoesFactory } from './application/bot-channel-as-it-goes.factory';
 import { BotChannelReplyResolver } from './application/bot-channel-reply.resolver';
 import { BotChannelWakeResolver } from './application/bot-channel-wake.resolver';
+import { BotCheckBackToolsFactory } from './application/bot-check-back-tools.factory';
 import { BotCompletionResolver } from './application/bot-completion.resolver';
 import { BotComputerToolsFactory } from './application/bot-computer-tools.factory';
 import { BotDreamResolver } from './application/bot-dream.resolver';
@@ -119,6 +120,7 @@ import {
   BOT_APPROVAL_REPOSITORY,
   BOT_ATTACHMENT_FILES,
   BOT_ATTACHMENT_REPOSITORY,
+  BOT_CHECK_BACKS,
   BOT_CONVERSATION_REPOSITORY,
   BOT_CONVERSATION_SUMMARY_REPOSITORY,
   BOT_ENGINE,
@@ -187,6 +189,7 @@ import { UndoBotMemoryDreamHttpController } from './commands/undo-bot-memory-dre
 import { UploadBotAttachmentCommandHandler } from './commands/upload-bot-attachment/upload-bot-attachment.command-handler';
 import { UploadBotAttachmentHttpController } from './commands/upload-bot-attachment/upload-bot-attachment.http.controller';
 import { WakeOnAgentNoticeCommandHandler } from './commands/wake-on-agent-notice/wake-on-agent-notice.command-handler';
+import { WakeOnCheckBackCommandHandler } from './commands/wake-on-check-back/wake-on-check-back.command-handler';
 import { WakeOnGithubAskCommandHandler } from './commands/wake-on-github-ask/wake-on-github-ask.command-handler';
 import { WakeOnPullRequestCommandHandler } from './commands/wake-on-pull-request/wake-on-pull-request.command-handler';
 import { WakeOnSlackCommandHandler } from './commands/wake-on-slack/wake-on-slack.command-handler';
@@ -229,6 +232,7 @@ import { BotUsageRepository } from './database/bot-usage.repository';
 import { BotApprovalsProcessor } from './infrastructure/bot-approvals.processor';
 import { BotAttachmentRetentionProcessor } from './infrastructure/bot-attachment-retention.processor';
 import { BotBackgroundTurnsProcessor } from './infrastructure/bot-background-turns.processor';
+import { BotCheckBacksProcessor } from './infrastructure/bot-check-backs.processor';
 import { BotDreamsProcessor } from './infrastructure/bot-dreams.processor';
 import { BotRoutineTarget } from './infrastructure/bot-routine-target.adapter';
 import { BotStallChecksProcessor } from './infrastructure/bot-stall-checks.processor';
@@ -240,6 +244,7 @@ import {
   INNER_BOT_ENGINE,
   MeteredBotEngine,
 } from './infrastructure/metered-bot-engine.adapter';
+import { OutboxBotCheckBacksAdapter } from './infrastructure/outbox-bot-check-backs.adapter';
 import { OutboxBotStallChecksAdapter } from './infrastructure/outbox-bot-stall-checks.adapter';
 import { QueryBusOwnerHostsAdapter } from './infrastructure/query-bus-owner-hosts.adapter';
 import { RedisBotStreamAdapter } from './infrastructure/redis-bot-stream.adapter';
@@ -337,6 +342,7 @@ const commandHandlers: Provider[] = [
   UndoBotMemoryDreamCommandHandler,
   WakeSubscribedBotCommandHandler,
   CheckStalledSessionCommandHandler,
+  WakeOnCheckBackCommandHandler,
   WakeOnAgentNoticeCommandHandler,
   WakeOnTerminalMatchCommandHandler,
   WakeOnGithubAskCommandHandler,
@@ -389,7 +395,8 @@ const queryHandlers: Provider[] = [
  * owner answers, and the summary that stands in for a long conversation's
  * oldest messages, written by the `bot-summaries` worker; and the sessions
  * a bot follows, whose news wakes it, and the `bot-stall-checks` worker
- * that checks a handed-off task got going. It reads the bot,
+ * that checks a handed-off task got going, and the `bot-check-backs` worker
+ * that wakes a bot for a look it asked for with `check_back`. It reads the bot,
  * its documents, its memory and the workspace's provider key through the
  * ports `BotsModule` exports, and serves routes under `/bots/:id` whose last
  * segment no route of that module has.
@@ -500,6 +507,7 @@ const queryHandlers: Provider[] = [
     BotWatchToolsFactory,
     BotGoalToolsFactory,
     BotLoopToolsFactory,
+    BotCheckBackToolsFactory,
     BotQuestionToolsFactory,
     BotNoticeToolsFactory,
     BotGoalResolver,
@@ -552,6 +560,7 @@ const queryHandlers: Provider[] = [
     BotSummariesProcessor,
     BotDreamsProcessor,
     BotStallChecksProcessor,
+    BotCheckBacksProcessor,
     BotAttachmentRetentionProcessor,
     { provide: BOT_TURN_REPOSITORY, useClass: BotTurnRepository },
     { provide: BOT_MESSAGE_REPOSITORY, useClass: BotMessageRepository },
@@ -565,6 +574,7 @@ const queryHandlers: Provider[] = [
     { provide: BOT_ATTACHMENT_REPOSITORY, useClass: BotAttachmentRepository },
     { provide: BOT_SUBSCRIPTION_REPOSITORY, useClass: BotSubscriptionRepository },
     { provide: BOT_STALL_CHECKS, useClass: OutboxBotStallChecksAdapter },
+    { provide: BOT_CHECK_BACKS, useClass: OutboxBotCheckBacksAdapter },
     { provide: BOT_GOAL_REPOSITORY, useClass: BotGoalRepository },
     { provide: BOT_LOOP_REPOSITORY, useClass: BotLoopRepository },
     { provide: BOT_USAGE_REPOSITORY, useClass: BotUsageRepository },

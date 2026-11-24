@@ -1,4 +1,5 @@
 import {
+  AlarmClock,
   Bot,
   Database,
   FileText,
@@ -6,7 +7,6 @@ import {
   ShieldCheck,
   SquareSlash,
   Terminal,
-  Zap,
 } from '@oppenheimer/design-system-web/icons';
 
 /**
@@ -49,7 +49,7 @@ export const BOT_SETTINGS_TABS = [
     slug: 'routines',
     to: '/bots/$botId/settings/routines',
     labelKey: 'bots.settings.tabs.routines',
-    Icon: Zap,
+    Icon: AlarmClock,
   },
   {
     slug: 'gateways',

@@ -330,6 +330,7 @@
         "stopped": "El bucle «{{prompt}}» se detuvo: una ejecución falló o se detuvo",
         "ended": "El bucle «{{prompt}}» terminó: el bot no dijo cuándo volver a ejecutarlo"
       },
+      "checkBack": "Volví a revisar: {{about}}",
       "compaction": "Resumió el trabajo anterior para mantener su contexto pequeño · {{before}} → {{after}} tokens",
       "dream": {
         "dreamed": "Ordenó su memoria · {{before}} datos → {{after}}",
