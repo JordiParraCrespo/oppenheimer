@@ -147,6 +147,7 @@ function ComposerSendButton({
   sendBlockedReason,
   labels,
   onClick,
+  size = 'sm',
   className,
   children,
 }: {
@@ -156,6 +157,8 @@ function ComposerSendButton({
   sendBlockedReason: string | undefined;
   labels: { send: string; stop: string };
   onClick: () => void;
+  /** The ramp's rung: `md` on a composer's one line, `sm` in a foot row of tool buttons. */
+  size?: 'sm' | 'md';
   className?: string;
   /** The glyph: the send arrow, or the stop square while busy. */
   children: React.ReactNode;
@@ -169,7 +172,7 @@ function ComposerSendButton({
         aria-describedby={blocked ? reasonId : undefined}
         title={blocked ? sendBlockedReason : undefined}
         variant="primary"
-        size="sm"
+        size={size}
         onClick={onClick}
         disabled={!busy && !blocked && !canSend}
         className={cn(

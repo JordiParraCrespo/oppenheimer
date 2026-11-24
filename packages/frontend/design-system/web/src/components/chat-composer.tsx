@@ -50,7 +50,8 @@ function sendButtonClass(layout: 'stacked' | 'inline', busy: boolean): string {
  * border until it takes focus (the plain border then, no ring), its text at
  * 15px growing from two lines to eight, then a foot row: `tools` (the
  * approval level) on the left, `engine` (model, effort) on the right, and
- * the 28px send (the ramp's `sm`, level with the foot's tools). While `busy` the send is the stop, a small square on the
+ * the send: on the box's one line (`inline`) at 34px with the attach, emoji
+ * and mic; in the stacked foot row at 28px, level with its tools. While `busy` the send is the stop, a small square on the
  * ink. Enter sends, Shift+Enter makes a new line; `onAltSubmit` gives
  * Alt+Enter a second way to send (a bot's "queue it for after" while
  * Enter steers the turn under way), named for the caller to say, and
@@ -207,6 +208,7 @@ function ChatComposer({
         sendBlockedReason={sendBlockedReason}
         labels={label}
         onClick={submit}
+        size={inline ? 'md' : 'sm'}
         className={sendButtonClass(layout, busy)}
       >
         {busy ? (
@@ -221,7 +223,7 @@ function ChatComposer({
     <IconButton
       aria-label={label.attach}
       title={label.attach}
-      size="sm"
+      size={inline ? 'md' : 'sm'}
       shape={inline ? 'pill' : 'square'}
       onClick={onAttach}
       disabled={disabled}
@@ -287,13 +289,15 @@ function ChatComposer({
               {attached}
               <div className="flex items-end">
                 {paperclip || emoji ? (
-                  <span className="flex shrink-0 items-center gap-0.5 px-1.5 py-2 pr-0">
+                  <span className="flex shrink-0 items-center gap-0.5 px-1.5 py-1.25 pr-0">
                     {paperclip}
                     {emoji}
                   </span>
                 ) : null}
                 {field}
-                <span className="flex shrink-0 items-center gap-1 px-1.5 py-2">{send}</span>
+                <span className="flex shrink-0 items-center gap-1 px-1.5 py-1.25 [&_[data-slot=dictation-button]]:size-(--control-h-md)">
+                  {send}
+                </span>
               </div>
             </>
           ))

@@ -394,12 +394,11 @@ function ComposerPill({
       ) : (
         <div className="flex items-end">
           {onAttach || emoji ? (
-            <span className="flex shrink-0 items-center gap-0.5 px-1.5 py-2 pr-0">
+            <span className="flex shrink-0 items-center gap-0.5 px-1.5 py-1.25 pr-0">
               {onAttach ? (
                 <IconButton
                   aria-label={label.attach}
                   title={label.attach}
-                  size="sm"
                   onClick={onAttach}
                   className="text-fg-muted"
                 >
@@ -423,7 +422,7 @@ function ComposerPill({
               onAttach || emoji ? 'pl-1' : 'pl-4.5',
             )}
           />
-          <span className="flex shrink-0 items-center gap-1 px-1.5 py-2">
+          <span className="flex shrink-0 items-center gap-1 px-1.5 py-1.25 [&_[data-slot=dictation-button]]:size-(--control-h-md)">
             {dictation?.mic}
             <ComposerSendButton
               busy={busy}
@@ -432,6 +431,7 @@ function ComposerPill({
               sendBlockedReason={sendBlockedReason}
               labels={label}
               onClick={submit}
+              size="md"
               className="ml-1"
             >
               <ComposerSendGlyph busy={busy} />

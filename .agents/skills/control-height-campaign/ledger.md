@@ -37,10 +37,12 @@ trigger card's glyph and its duplicate and remove buttons at 28 (from 30).
 The project page needed nothing: main's PillTabs move put it at 34 beside
 its 34px date range.
 
-Pass 3 put the composers on the 28 rung with their foot's tool buttons:
-`Composer`'s and `ComposerPill`'s attach, emoji, mic and send (from 30 and
-32), `ChatComposer`'s attach and send (from 30, 32 and 34), the context meter
-(the token). The chrome: the top bar's icon buttons lose a redundant
+Pass 3 put each of a composer's rows on its own rung: on the box's one line
+(`ComposerPill`, the inline `ChatComposer`) attach, emoji, mic and send at 34
+(from 28 to 34); in a foot row with the tool buttons (`Composer`, the stacked
+`ChatComposer`) all at 28; the context meter on the token. The user turned
+down 28 for the line's buttons: a 28px send looked lost in its 46px box
+(`.agents/answers.md`). The chrome: the top bar's icon buttons lose a redundant
 `size-8.5` and its search stands at 34 (from 36); `SidebarSearch` and
 `SidebarInput` at 28 (from 30 and 32); `NumberStepper`'s track at 28 with its
 buttons filling it (from 32). The one row the measurement still lists is the
