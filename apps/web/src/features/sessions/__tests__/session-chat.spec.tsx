@@ -1680,4 +1680,47 @@ describe('permissions the agent waits on', () => {
         .closest('[hidden]'),
     ).toBeNull();
   });
+  // What breaks this: the agent runs the same command again, its dialog's words
+  // are the same, and the card shows it as already allowed, so nothing in the
+  // chat can answer it and the agent waits on the terminal.
+  it('asks again when the same command asks again', () => {
+    const { chat, typed } = waiting();
+    fireEvent.click(screen.getByRole('button', { name: /allowOnce/ }));
+    act(() => vi.runAllTimers());
+    act(() => chat.setPermission(null));
+    const result = (uuid: string, id: string) =>
+      entry({
+        type: 'user',
+        uuid,
+        message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: '' }] },
+      });
+    act(() => chat.apply({ entries: [result('r1', 't1')] }));
+    act(() => vi.runAllTimers());
+    const again = entry({
+      type: 'assistant',
+      uuid: 'a2',
+      message: {
+        role: 'assistant',
+        content: [
+          {
+            type: 'tool_use',
+            id: 't2',
+            name: 'Bash',
+            input: { command: 'rm -rf dist', description: 'Remove the build output' },
+          },
+        ],
+      },
+    });
+    act(() => chat.apply({ entries: [again] }));
+    act(() => vi.runAllTimers());
+    act(() =>
+      chat.setPermission(readPermissionPrompt(claude as NonNullable<typeof claude>, dialog)),
+    );
+    act(() => vi.runAllTimers());
+    expect(screen.queryByText(/sessions\.chat\.permission\.allowed/)).toBeNull();
+    typed.length = 0;
+    fireEvent.click(screen.getByRole('button', { name: /allowOnce/ }));
+    act(() => vi.runAllTimers());
+    expect(typed).toEqual(['1']);
+  });
 });

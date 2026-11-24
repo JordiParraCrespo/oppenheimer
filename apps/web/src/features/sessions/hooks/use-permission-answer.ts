@@ -46,8 +46,17 @@ export function usePermissionAnswer(
     const open = pendingPermission(turn, answered.pending.prompt)?.call;
     if (open && open.id === answered.pending.call?.id) permission = answered.pending;
   }
+  // An answer holds for the dialog it answered, never for a later one with the
+  // same words: the agent running the same command again draws a byte-identical
+  // dialog, which is a new question. So it must be the same call, and not let go.
   const picked =
-    permission && answered?.pending.prompt.id === permission.prompt.id ? answered.option : null;
+    permission &&
+    answered &&
+    expired !== answered &&
+    answered.pending.prompt.id === permission.prompt.id &&
+    (answered.pending.call?.id ?? null) === (permission.call?.id ?? null)
+      ? answered.option
+      : null;
 
   return {
     permission,

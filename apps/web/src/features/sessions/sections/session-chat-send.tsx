@@ -157,7 +157,7 @@ export function SessionChatSend({
       ) : null}
       {permission && agent ? (
         <ChatPermissionCard
-          key={permission.prompt.id}
+          key={`${permission.prompt.id}:${permission.call?.id ?? ''}`}
           pending={permission}
           agentName={sessionAgentLabel(agent)}
           picked={answer.picked}

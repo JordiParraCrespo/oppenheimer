@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { storableJson, storableText } from '@oppenheimer/backend-core';
 import type { Mapper } from '@oppenheimer/backend-ddd';
 import {
   BOT_FORM_STATUSES,
@@ -27,11 +28,12 @@ export class BotFormMapper implements Mapper<BotFormEntity, BotFormOrmEntity, Bo
     record.organizationId = entity.organizationId;
     record.botId = entity.botId;
     record.turnId = entity.turnId;
-    record.spec = copySpec(entity.spec);
-    record.summary = entity.summary;
+    // Postgres refuses NUL in jsonb and text: what the model or the person wrote is made storable.
+    record.spec = storableJson(copySpec(entity.spec));
+    record.summary = storableText(entity.summary);
     record.status = entity.status;
-    record.values = entity.values ? { ...entity.values } : null;
-    record.note = entity.note;
+    record.values = entity.values ? storableJson({ ...entity.values }) : null;
+    record.note = entity.note === null ? null : storableText(entity.note);
     record.decidedByUserId = entity.decidedByUserId;
     record.decidedWithScopes = entity.decidedWithScopes ? [...entity.decidedWithScopes] : null;
     record.decidedAt = entity.decidedAt;
