@@ -50,7 +50,7 @@ export class BotLoopToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'schedule_loop',
       scope: 'bots:write',
-      description: promptText('tools/loop.schedule-loop', {
+      description: promptText('routines/tools-loop.schedule-loop', {
         loopSelfPacedMaxMinutes: String(BOT_LOOP_SELF_PACED_MAX_MINUTES),
       }),
       input: z.object({
@@ -59,19 +59,19 @@ export class BotLoopToolsFactory implements BotToolArea {
           .int()
           .min(1)
           .max(BOT_LOOP_SELF_PACED_MAX_MINUTES)
-          .describe(promptText('tools/loop.schedule-loop-minutes')),
+          .describe(promptText('routines/tools-loop.schedule-loop-minutes')),
       }),
       run: async (input, context) => {
         const loop = await this.loopFor(context);
-        if (!loop) return promptText('tools/loop.schedule-loop-have-loop-schedule');
+        if (!loop) return promptText('routines/tools-loop.schedule-loop-have-loop-schedule');
         if (!loop.selfPaced) {
-          return promptText('tools/loop.schedule-loop-loop-runs-every', {
+          return promptText('routines/tools-loop.schedule-loop-loop-runs-every', {
             intervalMinutes: String(loop.intervalMinutes),
           });
         }
         const at = selfPacedRunAt(loop, input.minutes, new Date());
         if (!(await this.loops.schedule(loop, at, null))) {
-          return promptText('tools/loop.schedule-loop-loop-ended-moved');
+          return promptText('routines/tools-loop.schedule-loop-loop-ended-moved');
         }
         return `Your loop runs next at ${at.toISOString()}.`;
       },
@@ -82,7 +82,7 @@ export class BotLoopToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'end_loop',
       scope: 'bots:write',
-      description: promptText('tools/loop.end-loop'),
+      description: promptText('routines/tools-loop.end-loop'),
       input: z.object({}),
       run: async (_input, context) => {
         const loop = await this.loopFor(context);

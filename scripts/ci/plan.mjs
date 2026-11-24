@@ -123,6 +123,9 @@ export function plan(
   // The design-system catalog names only public components, and every
   // component has a row or an `// uncatalogued:` reason (`scripts/ui-catalog.mjs`).
   add('lint', 'UI catalog', 'pnpm', ['check:ui-catalog']);
+  // Every control stands on the 28 / 34 / 42 ramp; a hand-written height
+  // fails beyond the campaign's debt (`scripts/control-heights.mjs`).
+  add('lint', 'Control heights', 'pnpm', ['check:control-heights']);
   // The React Compiler gives up silently on a function it cannot compile (the
   // build prints nothing). The web tier is at zero bail-outs; keep it.
   add('lint', 'React Compiler bail-outs', 'pnpm', ['check:compiler', '--strict']);

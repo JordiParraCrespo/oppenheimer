@@ -50,11 +50,11 @@ export function planBotUpdate(
 ): BotUpdatePlan | { refusal: string } {
   if (!hasUpdate(input)) {
     return {
-      refusal: promptText('tools/bots.plan-bot-update-refusal-name-least-one'),
+      refusal: promptText('bots/tools.plan-bot-update-refusal-name-least-one'),
     };
   }
   if (input.name !== undefined && bots.length > 1) {
-    return { refusal: promptText('tools/bots.plan-bot-update-refusal-name-goes-one') };
+    return { refusal: promptText('bots/tools.plan-bot-update-refusal-name-goes-one') };
   }
   if (input.provider !== undefined) {
     const provider = resolveProvider(
@@ -70,7 +70,7 @@ export function planBotUpdate(
     if ('refused' in level) {
       const ceiling = BOT_PERMISSION_LABELS[level.ceiling];
       return {
-        refusal: promptText('tools/bots.update-looser-than-yours', { ceiling }),
+        refusal: promptText('bots/tools.update-looser-than-yours', { ceiling }),
       };
     }
     permission = level.permission;
@@ -129,7 +129,7 @@ function engineUpdateFor(
     if (effort === null) {
       const levels = botModelOf(provider, model)?.effort?.levels ?? [];
       return {
-        refusal: promptText('tools/bots.engine-update-for-refusal', {
+        refusal: promptText('bots/tools.engine-update-for-refusal', {
           name: bot.name,
           engineLabel: engineLabelOf(provider, model),
           effort: input.effort,
@@ -203,7 +203,7 @@ export function botsUpdatedAnswer(
     ? [
         `Updated ${bots.length === 1 ? '1 bot' : `${bots.length} bots`}:`,
         ...bots.map((bot) =>
-          promptText('tools/bots.bots-updated-answer', {
+          promptText('bots/tools.bots-updated-answer', {
             id: bot.id,
             name: bot.name,
             engineLabel: engineLabelOf(bot.provider, bot.model),

@@ -4797,6 +4797,26 @@ export type BotLoopEventResponseDto = {
     reason: string | null;
 };
 
+export type BotCheckBackEventResponseDto = {
+    kind: 'check_back';
+    /**
+     * The looks at one thing: the id of the turn that set the chain's first look.
+     */
+    chainId: string;
+    /**
+     * Which look of the chain this is, from 0.
+     */
+    step: number;
+    /**
+     * When the chain's first look was set; a chain stops 24 hours later.
+     */
+    chainStartedAt: string;
+    /**
+     * What the bot is waiting on and what to look at, in its own words.
+     */
+    about: string;
+};
+
 export type BotDreamEventResponseDto = {
     kind: 'dream';
     /**
@@ -4936,7 +4956,7 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGithubAskEventResponseDto | BotTaskEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGithubAskEventResponseDto | BotTaskEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotCheckBackEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */

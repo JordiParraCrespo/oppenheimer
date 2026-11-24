@@ -6,8 +6,8 @@ import {
   PageHeaderRow,
   PageHeaderSep,
   PageHeaderStat,
-  SegmentedControl,
-  SegmentedControlItem,
+  PillTab,
+  PillTabs,
 } from '@oppenheimer/design-system-web';
 import { ChevronLeft, ChevronRight, Plus } from '@oppenheimer/design-system-web/icons';
 import { monthOf, useLocale } from '@oppenheimer/frontend-web';
@@ -69,8 +69,7 @@ export function CalendarHeader() {
         title={headerTitle(shown, locale)}
         actions={
           <div className="flex items-center gap-1.5">
-            <SegmentedControl
-              size="md"
+            <PillTabs
               className="mr-2.5"
               aria-label={t('calendar.header.views')}
               value={view}
@@ -84,11 +83,11 @@ export function CalendarHeader() {
               }}
             >
               {CALENDAR_VIEWS.map((name) => (
-                <SegmentedControlItem key={name} value={name}>
+                <PillTab key={name} value={name}>
                   {t(`calendar.header.${name}`)}
-                </SegmentedControlItem>
+                </PillTab>
               ))}
-            </SegmentedControl>
+            </PillTabs>
             <Button variant="secondary" size="sm" onClick={() => at({ view })}>
               {t('calendar.header.today')}
             </Button>

@@ -46,17 +46,17 @@ export function secretIn(text: string): string | null {
 
 /** What the sending bot is told when nothing was sent, by reason, in words it can act on. */
 export const PEER_REFUSALS = {
-  notRunning: promptText('tools/peer-messages.refused-turn-not-running'),
-  noAccount: promptText('tools/peer-messages.refused-no-account'),
-  chainGone: promptText('tools/peer-messages.refused-chain-gone'),
+  notRunning: promptText('bots/tools-peer-messages.refused-turn-not-running'),
+  noAccount: promptText('bots/tools-peer-messages.refused-no-account'),
+  chainGone: promptText('bots/tools-peer-messages.refused-chain-gone'),
   deleted: (name: string) => `${name} was deleted.`,
   noKey: (name: string, provider: string) =>
-    promptText('tools/peer-messages.refused-no-key', { name, provider }),
+    promptText('bots/tools-peer-messages.refused-no-key', { name, provider }),
 } as const;
 
 /** The tool's answer when a message holds a credential: nothing was sent, and why. */
 export function secretRefusal(kind: string): string {
-  return promptText('tools/peer-messages.refused-secret', { kind });
+  return promptText('bots/tools-peer-messages.refused-secret', { kind });
 }
 
 /**
@@ -67,9 +67,9 @@ export function secretRefusal(kind: string): string {
 export function peerMessageNote(event: BotPeerMessageEvent, content: string): string {
   const from = senderOf(event.fromBotName, event.fromBotId);
   const asks = event.expectsReply
-    ? promptText('wake/peer-message.asked-and-waiting', { from })
-    : promptText('wake/peer-message.sent-not-waiting', { from });
-  return `${promptText('wake/peer-message.message-note', { asks })}
+    ? promptText('bots/wake-peer-message.asked-and-waiting', { from })
+    : promptText('bots/wake-peer-message.sent-not-waiting', { from });
+  return `${promptText('bots/wake-peer-message.message-note', { asks })}
 <bot_message from="${attribute(event.fromBotName)}">
 ${enclose(content, 'bot_message')}
 </bot_message>`;
@@ -79,11 +79,11 @@ ${enclose(content, 'bot_message')}
 export function peerReplyNote(event: BotPeerReplyEvent, content: string): string {
   const from = senderOf(event.fromBotName, event.fromBotId);
   const how = {
-    answered: promptText('wake/peer-message.answered', { from }),
-    failed: promptText('wake/peer-message.failed', { from }),
-    cancelled: promptText('wake/peer-message.cancelled', { from }),
+    answered: promptText('bots/wake-peer-message.answered', { from }),
+    failed: promptText('bots/wake-peer-message.failed', { from }),
+    cancelled: promptText('bots/wake-peer-message.cancelled', { from }),
   }[event.outcome];
-  return `${promptText('wake/peer-message.reply-note', { how })}
+  return `${promptText('bots/wake-peer-message.reply-note', { how })}
 <bot_reply from="${attribute(event.fromBotName)}">
 ${enclose(content, 'bot_reply')}
 </bot_reply>`;
@@ -96,18 +96,18 @@ ${enclose(content, 'bot_reply')}
 export function peerMessagePrompt(event: BotPeerMessageEvent, content: string): string {
   const name = event.fromBotName;
   const reply = event.expectsReply
-    ? promptText('wake/peer-message.your-answer-goes-back', { name })
-    : promptText('wake/peer-message.nothing-goes-back', { name });
+    ? promptText('bots/wake-peer-message.your-answer-goes-back', { name })
+    : promptText('bots/wake-peer-message.nothing-goes-back', { name });
   return `${peerMessageNote(event, content)}
 
-${promptText('wake/peer-message.ask', { reply })}`;
+${promptText('bots/wake-peer-message.ask', { reply })}`;
 }
 
 /** What a turn opened by the answer to an ask is asked. */
 export function peerReplyPrompt(event: BotPeerReplyEvent, content: string): string {
   return `${peerReplyNote(event, content)}
 
-${promptText('wake/peer-message.ask-on-reply')}`;
+${promptText('bots/wake-peer-message.ask-on-reply')}`;
 }
 
 /**
@@ -125,20 +125,20 @@ export function peerAnswerOf(
   if (turn.status === 'cancelled') {
     return {
       outcome: 'cancelled',
-      content: last ? fit(last) : promptText('tools/peer-messages.answer-stopped'),
+      content: last ? fit(last) : promptText('bots/tools-peer-messages.answer-stopped'),
     };
   }
   return {
     outcome: 'answered',
-    content: last ? fit(last) : promptText('tools/peer-messages.answer-empty'),
+    content: last ? fit(last) : promptText('bots/tools-peer-messages.answer-empty'),
   };
 }
 
 function senderOf(name: string, id: string | null): string {
   const safe = attribute(name);
   return id
-    ? promptText('wake/peer-message.sender', { name: safe, id })
-    : promptText('wake/peer-message.sender-since-deleted', { name: safe });
+    ? promptText('bots/wake-peer-message.sender', { name: safe, id })
+    : promptText('bots/wake-peer-message.sender-since-deleted', { name: safe });
 }
 
 /**

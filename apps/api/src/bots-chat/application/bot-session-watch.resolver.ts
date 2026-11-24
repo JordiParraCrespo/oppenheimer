@@ -27,10 +27,10 @@ import type { BotStallChecksPort } from '../infrastructure/bot-stall-checks.port
 import { type BotToolCallContext, BotToolRefusal } from './bot-tool.factory';
 
 /** What `start_session`, `send_to_session` and `answer_session` answer once the task they set going is followed. */
-const HANDED_OFF = promptText('tools/watch.handed-off');
+const HANDED_OFF = promptText('sessions/tools-watch.handed-off');
 
 /** What a tool that set a task going answers when the bot said `watch: false`. */
-const NOT_FOLLOWED = promptText('tools/watch.not-followed');
+const NOT_FOLLOWED = promptText('sessions/tools-watch.not-followed');
 
 /** What a watch came to: the subscription as stored, and the session as it stood. */
 export interface SessionWatch {
@@ -91,7 +91,7 @@ export class BotSessionWatchResolver {
       return HANDED_OFF;
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
-      return promptText('tools/watch.follow', { reason });
+      return promptText('sessions/tools-watch.follow', { reason });
     }
   }
 
@@ -163,7 +163,9 @@ export class BotSessionWatchResolver {
       new FindSessionQuery({ scope: context.owner, sessionId }),
     );
     if (session.isResolved) {
-      throw new BotToolRefusal(promptText('tools/watch.store-session-closed-there', { sessionId }));
+      throw new BotToolRefusal(
+        promptText('sessions/tools-watch.store-session-closed-there', { sessionId }),
+      );
     }
     const existing = await this.subscriptions.findForBot(
       context.organizationId,
@@ -173,7 +175,7 @@ export class BotSessionWatchResolver {
     const current = existing.find((subscription) => subscription.resourceId === sessionId);
     if (!current && existing.length >= BOT_SUBSCRIPTIONS_PER_BOT) {
       throw new BotToolRefusal(
-        promptText('tools/watch.store-already-follow-sessions', {
+        promptText('sessions/tools-watch.store-already-follow-sessions', {
           subscriptionsPerBot: String(BOT_SUBSCRIPTIONS_PER_BOT),
         }),
       );
@@ -199,7 +201,7 @@ export class BotSessionWatchResolver {
     pattern: string,
   ): Promise<string[]> {
     const sessionId = subscription.resourceId;
-    if (!sessionId) throw new BotToolRefusal(promptText('tools/watch.watch-terminal'));
+    if (!sessionId) throw new BotToolRefusal(promptText('sessions/tools-watch.watch-terminal'));
     const made = await this.commands.execute<
       WatchSessionTerminalCommand,
       WatchSessionTerminalResult

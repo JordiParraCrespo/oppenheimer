@@ -15,19 +15,27 @@ import { BotTurnEntity } from './bot-turn.entity';
 
 /** "every 5 minutes", "every 2 hours", or "when you choose", for the bot's words. */
 function cadenceOf(intervalMinutes: number | null): string {
-  if (intervalMinutes === null) return promptText('wake/loop.when-you-choose');
+  if (intervalMinutes === null) return promptText('routines/wake-loop.when-you-choose');
   // A loop runs once a day at most (`BOT_LOOP_INTERVAL_MAX_MINUTES`), so days are never counted.
-  if (intervalMinutes === 1_440) return promptText('wake/loop.every-day');
+  if (intervalMinutes === 1_440) return promptText('routines/wake-loop.every-day');
   if (intervalMinutes % 60 === 0) {
-    return every(intervalMinutes / 60, 'wake/loop.every-hour', 'wake/loop.every-hours');
+    return every(
+      intervalMinutes / 60,
+      'routines/wake-loop.every-hour',
+      'routines/wake-loop.every-hours',
+    );
   }
-  return every(intervalMinutes, 'wake/loop.every-minute', 'wake/loop.every-minutes');
+  return every(
+    intervalMinutes,
+    'routines/wake-loop.every-minute',
+    'routines/wake-loop.every-minutes',
+  );
 }
 
 function every(
   count: number,
-  one: 'wake/loop.every-hour' | 'wake/loop.every-minute',
-  many: 'wake/loop.every-hours' | 'wake/loop.every-minutes',
+  one: 'routines/wake-loop.every-hour' | 'routines/wake-loop.every-minute',
+  many: 'routines/wake-loop.every-hours' | 'routines/wake-loop.every-minutes',
 ): string {
   return count === 1 ? promptText(one) : promptText(many, { count: String(count) });
 }
@@ -35,19 +43,21 @@ function every(
 /** What a run asks of the bot beyond its prompt: how it ends, and for a self-paced loop how it goes on. */
 function loopRules(selfPaced: boolean): string[] {
   return [
-    promptText('wake/loop.do-it-now'),
+    promptText('routines/wake-loop.do-it-now'),
     selfPaced
-      ? promptText('wake/loop.schedule-the-next', { max: String(BOT_LOOP_SELF_PACED_MAX_MINUTES) })
+      ? promptText('routines/wake-loop.schedule-the-next', {
+          max: String(BOT_LOOP_SELF_PACED_MAX_MINUTES),
+        })
       : null,
-    repeatedBlockerAsk(promptText('wake/loop.quiet')),
-    promptText('wake/loop.when-it-has-served'),
+    repeatedBlockerAsk(promptText('routines/wake-loop.quiet')),
+    promptText('routines/wake-loop.when-it-has-served'),
   ].filter((line): line is string => line !== null);
 }
 
 /** The setting turn's message when the person runs `/loop`: the loop is set, and this is its first run. */
 export function loopSetPrompt(intervalMinutes: number | null, prompt: string): string {
   return [
-    promptText('turn/slash-command.loop-set', { cadence: cadenceOf(intervalMinutes), prompt }),
+    promptText('core/turn-slash-command.loop-set', { cadence: cadenceOf(intervalMinutes), prompt }),
     ...loopRules(intervalMinutes === null),
   ].join('\n');
 }
@@ -55,12 +65,12 @@ export function loopSetPrompt(intervalMinutes: number | null, prompt: string): s
 /** What a run tells the bot; `shown` counts the setting turn as run 1. */
 export function loopRunText(loop: BotLoopEntity, shown: number): string {
   return [
-    promptText('wake/loop.run', {
+    promptText('routines/wake-loop.run', {
       shown: String(shown),
       cadence: cadenceOf(loop.intervalMinutes),
       prompt: loop.prompt,
     }),
-    promptText('wake/loop.nobody-wrote'),
+    promptText('routines/wake-loop.nobody-wrote'),
     ...loopRules(loop.selfPaced),
   ].join('\n');
 }
@@ -104,10 +114,10 @@ export function loopRunTurn(
 }
 
 const END_WORDS: Record<LoopEnding['activity'], string> = {
-  cleared: promptText('wake/loop.ended-cleared'),
-  expired: promptText('wake/loop.ended-expired'),
-  stopped: promptText('wake/loop.ended-stopped'),
-  ended: promptText('wake/loop.ended-ended'),
+  cleared: promptText('routines/wake-loop.ended-cleared'),
+  expired: promptText('routines/wake-loop.ended-expired'),
+  stopped: promptText('routines/wake-loop.ended-stopped'),
+  ended: promptText('routines/wake-loop.ended-ended'),
 };
 
 /** How a loop ended, as a line outside any turn that the person sees and the bot reads in its history. */
@@ -121,7 +131,7 @@ export function loopEndLine(
     botId: loop.botId,
     turnId: null,
     role: 'event',
-    content: promptText('wake/loop.end-line', {
+    content: promptText('routines/wake-loop.end-line', {
       ended: END_WORDS[activity],
       runs: String(loop.runs + 1),
       prompt: loop.prompt,

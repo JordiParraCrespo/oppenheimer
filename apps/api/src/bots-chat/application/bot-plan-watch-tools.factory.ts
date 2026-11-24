@@ -20,14 +20,14 @@ import {
 } from './bot-tool.factory';
 
 /** What each change a bot can follow means, for the tools' descriptions. */
-const EVENTS_HELP = promptText('tools/plan-watch.events-help');
+const EVENTS_HELP = promptText('plan/tools-watch.events-help');
 
 const eventsInput = z
   .array(z.enum(BOT_TASK_WAKE_EVENTS))
   .min(1)
   .optional()
   .describe(
-    promptText('tools/plan-watch.events', {
+    promptText('plan/tools-watch.events', {
       taskWakeDefault: BOT_TASK_WAKE_DEFAULT.join(', '),
       eventsHelp: EVENTS_HELP,
     }),
@@ -38,7 +38,7 @@ const purposeInput = z
   .min(1)
   .max(BOT_SUBSCRIPTION_PURPOSE_MAX)
   .optional()
-  .describe(promptText('tools/plan-watch.purpose'));
+  .describe(promptText('plan/tools-watch.purpose'));
 
 /**
  * Following the plan: watch a project's tasks, or one milestone's, and stop.
@@ -69,7 +69,7 @@ export class BotPlanWatchToolsFactory implements BotToolArea {
       scope: 'tasks:read',
       description: watchDescription('project', 'every task of a project'),
       input: z.object({
-        project_id: z.uuid().describe(promptText('tools/plan-watch.watch-project-project-id')),
+        project_id: z.uuid().describe(promptText('plan/tools-watch.watch-project-project-id')),
         events: eventsInput,
         purpose: purposeInput,
       }),
@@ -82,7 +82,7 @@ export class BotPlanWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'watch_milestone',
       scope: 'tasks:read',
-      description: watchDescription('milestone', promptText('tools/plan-watch.watch-milestone')),
+      description: watchDescription('milestone', promptText('plan/tools-watch.watch-milestone')),
       input: z.object({
         milestone_id: z.uuid().describe('The milestone to follow.'),
         events: eventsInput,
@@ -99,7 +99,7 @@ export class BotPlanWatchToolsFactory implements BotToolArea {
       scope: 'tasks:read',
       description: unwatchDescription('project'),
       input: z.object({
-        project_id: z.uuid().describe(promptText('tools/plan-watch.unwatch-project-project-id')),
+        project_id: z.uuid().describe(promptText('plan/tools-watch.unwatch-project-project-id')),
       }),
       run: (input, context) => this.stop(context, 'project', input.project_id),
     });
@@ -113,7 +113,7 @@ export class BotPlanWatchToolsFactory implements BotToolArea {
       input: z.object({
         milestone_id: z
           .uuid()
-          .describe(promptText('tools/plan-watch.unwatch-milestone-milestone-id')),
+          .describe(promptText('plan/tools-watch.unwatch-milestone-milestone-id')),
       }),
       run: (input, context) => this.stop(context, 'milestone', input.milestone_id),
     });
@@ -128,7 +128,7 @@ export class BotPlanWatchToolsFactory implements BotToolArea {
   ): Promise<string> {
     const taskEvents = events ?? BOT_TASK_WAKE_DEFAULT;
     const { name } = await this.watches.watch(context, { scope, id, taskEvents }, purpose ?? null);
-    return promptText('tools/plan-watch.follow', {
+    return promptText('plan/tools-watch.follow', {
       scope,
       name,
       id,
@@ -149,7 +149,7 @@ export class BotPlanWatchToolsFactory implements BotToolArea {
 }
 
 function watchDescription(scope: BotPlanWatchScope, what: string): string {
-  return promptText('tools/plan-watch.watch-description', {
+  return promptText('plan/tools-watch.watch-description', {
     what,
     scope,
     subscriptionsPerBot: String(BOT_SUBSCRIPTIONS_PER_BOT),
@@ -157,5 +157,5 @@ function watchDescription(scope: BotPlanWatchScope, what: string): string {
 }
 
 function unwatchDescription(scope: BotPlanWatchScope): string {
-  return promptText('tools/plan-watch.unwatch-description', { scope });
+  return promptText('plan/tools-watch.unwatch-description', { scope });
 }

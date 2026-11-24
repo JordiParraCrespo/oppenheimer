@@ -10,7 +10,7 @@ import { promptText } from './bot-prompt-text.policy';
 
 /** What the model reads when the owner's roles do not cover a tool: nothing ran, and why. */
 export function ownerLacksPermission(tool: string, scope: Scope): string {
-  return promptText('tools/permissions.owner-lacks-permission', {
+  return promptText('core/tools-permissions.owner-lacks-permission', {
     tool,
     permissionName: permissionName(scope),
     scope,

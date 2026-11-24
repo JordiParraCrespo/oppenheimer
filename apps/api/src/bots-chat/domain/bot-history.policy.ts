@@ -168,10 +168,10 @@ export function historyEntry(message: HistoryMessage): HistoryEntry {
 function reactionNotes(message: HistoryMessage): string[] {
   const notes: string[] = [];
   if (message.reaction) {
-    notes.push(promptText('turn/history.reaction-note', { emoji: message.reaction }));
+    notes.push(promptText('core/turn-history.reaction-note', { emoji: message.reaction }));
   }
   if (message.botReaction && message.role === 'user') {
-    notes.push(promptText('turn/history.bot-reaction-note', { emoji: message.botReaction }));
+    notes.push(promptText('core/turn-history.bot-reaction-note', { emoji: message.botReaction }));
   }
   return notes;
 }
@@ -202,16 +202,16 @@ export function activityText(steps: readonly HistoryToolStep[]): string {
       : '';
     return `- ${step.name} ${input} → ${outcome}${answer}`;
   });
-  return `${promptText('turn/history.tool-calls-note')}\n${fenceUntrusted('tool_calls', cut(lines.join('\n'), HISTORY_ACTIVITY_MAX))}`;
+  return `${promptText('core/turn-history.tool-calls-note')}\n${fenceUntrusted('tool_calls', cut(lines.join('\n'), HISTORY_ACTIVITY_MAX))}`;
 }
 
 /** An event Oppenheimer told the bot, as it reads it: on your side, never as your words. */
 export function eventNote(content: string): string {
-  return `${promptText('turn/history.event-note')}\n${content}`;
+  return `${promptText('core/turn-history.event-note')}\n${content}`;
 }
 
 /** The line the history puts before the summary; the fold leaves room for it (`BOT_SUMMARY_TRIGGER_TOKENS`). */
-export const SUMMARY_NOTE_PREFIX = `${promptText('turn/history.summary-note')}\n`;
+export const SUMMARY_NOTE_PREFIX = `${promptText('core/turn-history.summary-note')}\n`;
 
 /** The stored summary, as the first entry of a turn's history. */
 function summaryNote(summary: string): string {

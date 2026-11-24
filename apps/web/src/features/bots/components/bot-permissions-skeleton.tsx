@@ -66,10 +66,9 @@ export function BotPermissionsSkeleton() {
         <div inert className="flex flex-wrap items-center gap-2 px-1">
           <Input
             type="search"
-            size="sm"
             pill
             className="w-60 max-w-full"
-            leading={<Search className="size-3.5" aria-hidden />}
+            leading={<Search aria-hidden />}
             placeholder={t('bots.settings.permissions.search')}
             aria-label={t('bots.settings.permissions.search')}
           />

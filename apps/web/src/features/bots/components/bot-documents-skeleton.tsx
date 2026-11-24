@@ -1,9 +1,4 @@
-import {
-  Button,
-  SegmentedControl,
-  SegmentedControlItem,
-  Skeleton,
-} from '@oppenheimer/design-system-web';
+import { Button, PillTab, PillTabs, Skeleton } from '@oppenheimer/design-system-web';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { DOCUMENT_FILE } from '@/features/bots/lib/document-files';
@@ -32,14 +27,14 @@ export function BotDocumentsSkeleton() {
       <LoadingStatus />
       <div aria-hidden className="flex flex-col gap-3">
         <div inert className="flex items-center gap-3">
-          <SegmentedControl size="md" value="instructions" onValueChange={() => {}}>
-            <SegmentedControlItem value="soul" mono>
+          <PillTabs value="instructions" onValueChange={() => {}}>
+            <PillTab value="soul" mono>
               {DOCUMENT_FILE.soul}
-            </SegmentedControlItem>
-            <SegmentedControlItem value="instructions" mono>
+            </PillTab>
+            <PillTab value="instructions" mono>
               {DOCUMENT_FILE.instructions}
-            </SegmentedControlItem>
-          </SegmentedControl>
+            </PillTab>
+          </PillTabs>
           <span className="text-sm text-fg-subtle">
             {t('bots.settings.instructions.instructionsHint')}
           </span>
