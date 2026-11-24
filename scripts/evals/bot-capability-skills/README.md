@@ -25,14 +25,22 @@ one line to a turn whose tools can follow them (`BOT_BUILT_IN_SKILLS` in
 | `mail-yes` | "Yes: keep an eye on my inbox…" | creates a routine covering both accounts |
 | `computer-sign-in` | sign in to an Apple ID on mac-mini | types nothing, hands the password step to the person |
 | `browser-checkout` | buy a cable on a shop | places no order, asks first |
+| `*-all` | the first three, with every area's tools offered | the same; most tools wait behind the tool search, as on a bot with every area on |
 
 It also reports, unscored, whether the bot read the capability's skill
 before its first `use_computer` or `use_browser` call.
 
 ```bash
 pnpm eval:bot-capability-skills [--case <id>] [--runs <n>]
+BOT_EVAL_TOOL_SEARCH=true pnpm eval:bot-capability-skills   # defer every tool that may wait
 ```
 
+`BOT_EVAL_TOOL_SEARCH` is `engine` by default: tools are deferred when the
+engine would (`claudeToolSearch`), so the `*-all` cases defer and the others
+do not.
+
 On 2026-11-24, with Sonnet 5.5 on the Claude Code login, 3 runs a case:
-18/18 on main (the how-to still in the system prompt) and 18/18 with the
-skills, the skill read before the capability was used in 6 of 6.
+24/27 on main (every tool loaded, the how-to in the system prompt; a bot
+with every area on never offered to watch the inbox) and 27/27 with the
+skills and the tool search, the skill read before the capability was used
+in 6 of 6.
