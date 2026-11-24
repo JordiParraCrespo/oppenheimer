@@ -13,7 +13,7 @@ import type { TranscriptWrite } from './turn-transcript.policy';
  * it is. A send that does not go leaves its words owed for the next one, and
  * never fails the turn: they are still in the console. Wrapping a turn's
  * writer is its run starting, so the chat is shown it is being worked on
- * then (`BotChannelReplyResolver.working`), not waited on.
+ * then (`BotChannelReplyResolver.started`), before the turn goes on.
  */
 @Injectable()
 export class BotChannelAsItGoesFactory {
@@ -21,12 +21,13 @@ export class BotChannelAsItGoesFactory {
 
   constructor(private readonly channel: BotChannelReplyResolver) {}
 
-  wrap(
+  async wrap(
     turn: BotTurnEntity,
     write: (write: TranscriptWrite) => Promise<void>,
-  ): (write: TranscriptWrite) => Promise<void> {
+  ): Promise<(write: TranscriptWrite) => Promise<void>> {
     if (!sendsAsItGoes(turn)) return write;
-    void this.channel.working(turn).catch((error: unknown) =>
+    // Awaited, so the end's removal (`DeliverChannelReplyCommandHandler`) always comes after it.
+    await this.channel.started(turn).catch((error: unknown) =>
       this.logger.warn({
         message: 'Could not show a channel turn as being worked on',
         turnId: turn.id,
@@ -44,7 +45,7 @@ export class BotChannelAsItGoesFactory {
 
   private async send(turn: BotTurnEntity, text: string): Promise<boolean> {
     try {
-      return (await this.channel.send(turn, text, undefined, false)) > 0;
+      return (await this.channel.send(turn, text, undefined)) > 0;
     } catch (error) {
       this.logger.warn({
         message: 'Could not send a channel turn’s words as it went',

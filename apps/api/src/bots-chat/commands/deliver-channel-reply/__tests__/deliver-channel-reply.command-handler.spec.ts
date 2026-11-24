@@ -231,19 +231,28 @@ describe('DeliverChannelReplyCommandHandler', () => {
     });
   });
 
-  // Breaks if the owner's message keeps the working reaction after its answer.
-  it('ends the Slack message it answers with its last words, so its working reaction comes off', async () => {
+  // Breaks if the owner's message keeps the working reaction after its answer,
+  // or the reaction comes off before the answer is in the thread.
+  it('answers in the Slack thread, then takes the working reaction off the message', async () => {
     const { bus, deliver } = setup(ended(slack()), slackChat);
     await deliver();
 
-    const [sent] = bus.execute.mock.calls[0] as unknown as [ReplyOnSlackCommand];
-    expect(sent).toBeInstanceOf(ReplyOnSlackCommand);
-    expect(sent).toMatchObject({
-      accountId: slackAccountId,
-      chatId: 'C1:1700000000.000100',
-      endsTs: '1700000500.000001',
-      text: 'Green since 10:12.',
-    });
+    const [answer, off] = bus.execute.mock.calls.map(([command]) => command) as unknown as [
+      ReplyOnSlackCommand,
+      MarkSlackWorkingCommand,
+    ];
+    expect(answer).toBeInstanceOf(ReplyOnSlackCommand);
+    expect(answer).toMatchObject({ chatId: 'C1:1700000000.000100', text: 'Green since 10:12.' });
+    expect(off).toBeInstanceOf(MarkSlackWorkingCommand);
+    expect(off).toMatchObject({ ts: '1700000500.000001', working: false });
+  });
+
+  // Breaks if an answer Slack refused leaves the eyes on for good.
+  it('takes the working reaction off even when the answer did not go', async () => {
+    const { bus, deliver } = setup(ended(slack()), slackChat);
+    bus.execute.mockRejectedValueOnce(new Error('rate limited'));
+    await expect(deliver()).rejects.toThrow('rate limited');
+    expect(bus.execute.mock.calls[1][0]).toMatchObject({ working: false });
   });
 
   // Breaks if a turn that stopped on a card leaves the chat with no way to it:
@@ -328,7 +337,7 @@ describe('DeliverChannelReplyCommandHandler', () => {
         { findChannelChat: vi.fn(async () => chat) } as unknown as BotConversationRepositoryPort,
         bus as unknown as CommandBus,
       );
-    await resolverFor(slackChat).working(slack());
+    await resolverFor(slackChat).started(slack());
     const [sent] = bus.execute.mock.calls[0] as unknown as [MarkSlackWorkingCommand];
     expect(sent).toBeInstanceOf(MarkSlackWorkingCommand);
     expect(sent).toMatchObject({
@@ -336,8 +345,9 @@ describe('DeliverChannelReplyCommandHandler', () => {
       chatId: 'C1:1700000000.000100',
       ts: '1700000500.000001',
       botId,
+      working: true,
     });
-    await resolverFor(telegramChat).working(telegram());
+    await resolverFor(telegramChat).started(telegram());
     expect(bus.execute).toHaveBeenCalledTimes(1);
   });
 });

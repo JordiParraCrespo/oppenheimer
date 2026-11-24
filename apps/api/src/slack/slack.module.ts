@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { configKeySealer } from '@oppenheimer/backend-core';
 import { slackTokenKeyOf } from '../config/slack.config';
+import { SlackBotAppResolver } from './application/slack-bot-app.resolver';
 import { SlackLineResolver } from './application/slack-line.resolver';
 import { ConnectSlackCommandHandler } from './commands/connect-slack/connect-slack.command-handler';
 import { ConnectSlackHttpController } from './commands/connect-slack/connect-slack.http.controller';
@@ -76,6 +77,7 @@ const queryHandlers: Provider[] = [
     ...queryHandlers,
     SlackAccountMapper,
     SlackLineResolver,
+    SlackBotAppResolver,
     { provide: SLACK_ACCOUNT_REPOSITORY, useClass: SlackAccountRepository },
     configKeySealer(SLACK_SEALER, {
       configKey: 'slack.tokenKey',

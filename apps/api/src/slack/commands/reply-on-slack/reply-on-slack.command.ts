@@ -13,12 +13,6 @@ export class ReplyOnSlackCommand extends CommandBase {
   readonly text: string;
   /** The Oppenheimer bot that wrote it: it must still be the app's. */
   readonly botId: string;
-  /**
-   * The owner's message this text is the turn's last answer to (its Slack
-   * timestamp), whose working reaction comes off once the answer went; null
-   * for words sent as the turn goes.
-   */
-  readonly endsTs: string | null;
 
   constructor(props: CommandProps<ReplyOnSlackCommand>) {
     super(props);
@@ -27,6 +21,5 @@ export class ReplyOnSlackCommand extends CommandBase {
     this.chatId = props.chatId;
     this.text = props.text;
     this.botId = props.botId;
-    this.endsTs = props.endsTs;
   }
 }

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { isSlackFileUrl, slackPlainText, slackTsPosition } from '../domain/slack-inbound.policy';
+import {
+  isSlackFileUrl,
+  slackPlainText,
+  slackTsPosition,
+  slackUserName,
+} from '../domain/slack-inbound.policy';
 import {
   SLACK_MESSAGE_MAX,
   slackMessages,
@@ -90,5 +95,17 @@ describe('Slack text', () => {
     ]) {
       expect(isSlackFileUrl(url)).toBe(false);
     }
+  });
+
+  // What breaks this: a name cut inside an emoji makes the owner's message unstorable.
+  it('reads a person by their display name, cut between characters, never inside one', () => {
+    expect(
+      slackUserName({ name: 'maya', profile: { display_name: ' Maya ', real_name: 'M' } }),
+    ).toBe('Maya');
+    expect(slackUserName({ name: 'maya', profile: { display_name: '' } })).toBe('maya');
+    expect(slackUserName({})).toBeNull();
+    const cut = slackUserName({ profile: { display_name: `${'a'.repeat(79)}😀😀` } }) ?? '';
+    expect(Array.from(cut)).toHaveLength(80);
+    expect(cut.endsWith('😀')).toBe(true);
   });
 });

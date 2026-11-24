@@ -2,9 +2,9 @@ import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 
 /**
  * Put the working reaction on the owner's Slack message a bot's turn has
- * started on, through the bot's own app. It is the turn's own message, so a
- * message folded into a turn already running, or one that never became a
- * turn, gets none. The turn's last answer takes it off (`ReplyOnSlackCommand`).
+ * started on (`working`), or take it off when the turn ended, through the
+ * bot's own app. It is the turn's own message, so a message folded into a
+ * turn already running, or one that never became a turn, gets none.
  */
 export class MarkSlackWorkingCommand extends CommandBase {
   readonly organizationId: string;
@@ -15,6 +15,8 @@ export class MarkSlackWorkingCommand extends CommandBase {
   readonly ts: string;
   /** The Oppenheimer bot whose turn it is: it must still be the app's. */
   readonly botId: string;
+  /** On when the turn starts, off when it ended. */
+  readonly working: boolean;
 
   constructor(props: CommandProps<MarkSlackWorkingCommand>) {
     super(props);
@@ -23,5 +25,6 @@ export class MarkSlackWorkingCommand extends CommandBase {
     this.chatId = props.chatId;
     this.ts = props.ts;
     this.botId = props.botId;
+    this.working = props.working;
   }
 }

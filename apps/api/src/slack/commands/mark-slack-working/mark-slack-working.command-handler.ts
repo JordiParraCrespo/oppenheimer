@@ -1,31 +1,37 @@
-import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import { SlackBotAppResolver } from '../../application/slack-bot-app.resolver';
 import { SlackLineResolver } from '../../application/slack-line.resolver';
-import type { SlackAccountRepositoryPort } from '../../database/slack-account.repository.port';
 import { slackThreadOf } from '../../domain/slack-text.policy';
-import { SLACK_ACCOUNT_REPOSITORY } from '../../slack.di-tokens';
 import { MarkSlackWorkingCommand } from './mark-slack-working.command';
 
 /**
- * Puts the working reaction on the message a turn started on, while the app
- * is connected and still this bot's; otherwise nothing. The reaction is not
- * waited on and never fails the turn.
+ * Puts the working reaction on the message a turn started on, or takes it
+ * off when the turn ended, while the app still answers for this bot
+ * (`SlackBotAppResolver`); otherwise nothing. Answers once Slack did, and
+ * never throws for the reaction: it never fails the turn.
  */
 @CommandHandler(MarkSlackWorkingCommand)
 export class MarkSlackWorkingCommandHandler
   implements ICommandHandler<MarkSlackWorkingCommand, void>
 {
   constructor(
-    @Inject(SLACK_ACCOUNT_REPOSITORY) private readonly accounts: SlackAccountRepositoryPort,
+    private readonly apps: SlackBotAppResolver,
     private readonly lines: SlackLineResolver,
   ) {}
 
   async execute(command: MarkSlackWorkingCommand): Promise<void> {
-    const found = await this.accounts.findByIdForSystem(command.organizationId, command.accountId);
     const thread = slackThreadOf(command.chatId);
-    if (found.isNone() || !thread) return;
-    const account = found.unwrap();
-    if (!account.isConnected || account.botId !== command.botId) return;
-    this.lines.working(account, { channel: thread.channel, ts: command.ts }, true);
+    if (!thread) return;
+    const account = await this.apps.answering(
+      command.organizationId,
+      command.accountId,
+      command.botId,
+    );
+    if (!account) return;
+    await this.lines.setWorking(
+      account,
+      { channel: thread.channel, ts: command.ts },
+      command.working,
+    );
   }
 }

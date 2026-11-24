@@ -4,7 +4,7 @@ import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError, type RefusalReader, UpstreamLimiter } from '@oppenheimer/backend-core';
 import { SlackErrors } from '../domain/slack.errors';
 import type { SlackIdentity } from '../domain/slack-account.entity';
-import { isSlackFileUrl } from '../domain/slack-inbound.policy';
+import { isSlackFileUrl, slackUserName } from '../domain/slack-inbound.policy';
 import type { SlackAppAccess, SlackPosted, SlackWebApiPort } from './slack-web-api.port';
 
 const TIMEOUT_MS = 15_000;
@@ -14,6 +14,8 @@ const NAME_TIMEOUT_MS = 1_500;
 const NAME_TTL_SECONDS = 86_400;
 /** How long an app Slack refused `users.info` for (made before it asked for `users:read`) is not asked again. */
 const UNSCOPED_TTL_SECONDS = 3_600;
+/** A reaction the turn waits on before it runs: short, so a slow Slack holds a turn up little. */
+const REACTION_TIMEOUT_MS = 3_000;
 /** What `reactions.add` and `reactions.remove` answer when the message already is as asked. */
 const REACTION_SETTLED = new Set(['already_reacted', 'no_reaction']);
 /** A bot's answers come a few at a time; a burst past twenty waiting answers `SLACK_007`. */
@@ -136,14 +138,7 @@ export class SlackWebApiGateway implements SlackWebApiPort {
   private async lookUpName(access: SlackAppAccess, userId: string): Promise<string | null> {
     const users = { ...access, bucket: `${access.bucket}:users` };
     const body = await this.call(users, 'users.info', { user: userId }, 1, NAME_TIMEOUT_MS);
-    const user = recordOf(body.user);
-    const profile = recordOf(user.profile);
-    const name =
-      stringOf(profile.display_name)?.trim() ||
-      stringOf(profile.real_name)?.trim() ||
-      stringOf(user.real_name)?.trim() ||
-      stringOf(user.name)?.trim();
-    return name ? name.slice(0, 80) : null;
+    return slackUserName(body.user);
   }
 
   async react(
@@ -153,12 +148,16 @@ export class SlackWebApiGateway implements SlackWebApiPort {
   ): Promise<void> {
     const payload = { channel: message.channel, timestamp: message.ts, name: message.name };
     const reactions = { ...access, bucket: `${access.bucket}:reactions` };
-    await this.call(reactions, on ? 'reactions.add' : 'reactions.remove', payload).catch(
-      (error: unknown) => {
-        const code = error instanceof AppError ? error.extensions.upstreamCode : undefined;
-        if (typeof code !== 'string' || !REACTION_SETTLED.has(code)) throw error;
-      },
-    );
+    await this.call(
+      reactions,
+      on ? 'reactions.add' : 'reactions.remove',
+      payload,
+      1,
+      REACTION_TIMEOUT_MS,
+    ).catch((error: unknown) => {
+      const code = error instanceof AppError ? error.extensions.upstreamCode : undefined;
+      if (typeof code !== 'string' || !REACTION_SETTLED.has(code)) throw error;
+    });
   }
 
   async download(access: SlackAppAccess, url: string, maxBytes: number): Promise<Buffer> {

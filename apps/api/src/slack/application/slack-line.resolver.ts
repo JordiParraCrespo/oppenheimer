@@ -89,17 +89,18 @@ export class SlackLineResolver {
   }
 
   /**
-   * Puts the working reaction on the owner's message (`on`), or takes it off
-   * once its answer went, not waited on. One that does not go (an app made
-   * before it asked for `reactions:write`, the message deleted) changes
-   * nothing else: the answer is what matters.
+   * Puts the working reaction on the owner's message (`on`), or takes it off,
+   * once Slack answered: the turn awaits the one before taking the other, so
+   * a slow add never lands after the removal. One that does not go (an app
+   * made before it asked for `reactions:write`, the message deleted) changes
+   * nothing else and is not thrown: the answer is what matters.
    */
-  working(
+  async setWorking(
     account: SlackAccountEntity,
     message: { channel: string; ts: string },
     on: boolean,
-  ): void {
-    void this.slack
+  ): Promise<void> {
+    await this.slack
       .react(this.access(account), { ...message, name: SLACK_WORKING_REACTION }, on)
       .catch((error: unknown) =>
         this.logger.debug({

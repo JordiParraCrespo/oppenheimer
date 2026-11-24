@@ -108,8 +108,8 @@ owner's only.
   begins. Until 2026-11-24 answers were cut at 3,900 characters, Slack's
   advice, which split a long one into several.
 - **Working.** The owner's message gets the app's 👀 reaction when its turn
-  starts, and loses it when the turn's last answer went, so Slack shows the
-  bot is on it. A message written into a thread while its turn runs is taken
+  starts, before the turn goes on, and loses it when the turn ended, whether
+  its answer went or not, so Slack shows the bot is on it. A message written into a thread while its turn runs is taken
   into that turn and gets none, nor does one that never became a turn.
 - **Secrets stay out of the thread.** Everything sent to Slack, as it goes
   and at the end, has secrets (tokens, keys, passwords, as the session

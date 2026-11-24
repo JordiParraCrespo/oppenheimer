@@ -5,6 +5,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { DomainEvent } from '@oppenheimer/backend-ddd';
 import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
+import { SlackBotAppResolver } from '../application/slack-bot-app.resolver';
 import { SLACK_NAMES_DEADLINE_MS, SlackLineResolver } from '../application/slack-line.resolver';
 import { ConnectSlackCommand } from '../commands/connect-slack/connect-slack.command';
 import { ConnectSlackCommandHandler } from '../commands/connect-slack/connect-slack.command-handler';
@@ -432,7 +433,6 @@ describe('a bot’s answer in Slack', () => {
       chatId: 'C1:1700000000.000100',
       text,
       botId: BOT,
-      endsTs: null,
     });
 
   it('goes in the thread it was asked in, in Slack’s own markdown', async () => {
@@ -440,6 +440,7 @@ describe('a bot’s answer in Slack', () => {
     const slack = fakeSlack();
     const handler = new ReplyOnSlackCommandHandler(
       fakeAccounts([account]).repository,
+      new SlackBotAppResolver(fakeAccounts([account]).repository),
       new SlackLineResolver(sealer, slack),
     );
     const command = new ReplyOnSlackCommand({
@@ -460,6 +461,7 @@ describe('a bot’s answer in Slack', () => {
     const slack = fakeSlack();
     const handler = new ReplyOnSlackCommandHandler(
       fakeAccounts([account]).repository,
+      new SlackBotAppResolver(fakeAccounts([account]).repository),
       new SlackLineResolver(sealer, slack),
     );
     const token = `ghp_${'a1B2c3D4'.repeat(5)}`;
@@ -471,31 +473,19 @@ describe('a bot’s answer in Slack', () => {
     expect(sent).toContain('[redacted]');
   });
 
-  // What breaks this: a long answer arrives cut into pieces, or the eyes stay on after it.
-  it('sends a long last answer whole, then takes the working reaction off', async () => {
+  // What breaks this: a long answer arrives cut into pieces.
+  it('sends a long answer whole, in one message', async () => {
     const account = app();
     const slack = fakeSlack();
     const handler = new ReplyOnSlackCommandHandler(
       fakeAccounts([account]).repository,
+      new SlackBotAppResolver(fakeAccounts([account]).repository),
       new SlackLineResolver(sealer, slack),
     );
     const long = `${'word '.repeat(500).trim()}\n\n`.repeat(6).trim();
     await expect(
-      handler.execute(
-        new ReplyOnSlackCommand({
-          ...reply(long),
-          accountId: account.id,
-          endsTs: '1700000000.000100',
-        }),
-      ),
+      handler.execute(new ReplyOnSlackCommand({ ...reply(long), accountId: account.id })),
     ).resolves.toBe(1);
-    await vi.waitFor(() =>
-      expect(slack.react).toHaveBeenCalledWith(
-        expect.anything(),
-        { channel: 'C1', ts: '1700000000.000100', name: 'eyes' },
-        false,
-      ),
-    );
   });
 
   it('marks the app revoked when Slack refuses its token, so its settings say why the bot went quiet', async () => {
@@ -510,6 +500,7 @@ describe('a bot’s answer in Slack', () => {
     const accounts = fakeAccounts([account]);
     const handler = new ReplyOnSlackCommandHandler(
       accounts.repository,
+      new SlackBotAppResolver(accounts.repository),
       new SlackLineResolver(sealer, slack),
     );
     await expect(
@@ -528,6 +519,7 @@ describe('a bot’s turn starting on a Slack message', () => {
       chatId: 'C1:1700000000.000100',
       ts: '1700000500.000001',
       botId,
+      working: true,
     });
 
   // What breaks this: the owner cannot tell from Slack that the bot is on it,
@@ -536,12 +528,12 @@ describe('a bot’s turn starting on a Slack message', () => {
     const account = app();
     const slack = fakeSlack();
     const handler = new MarkSlackWorkingCommandHandler(
-      fakeAccounts([account]).repository,
+      new SlackBotAppResolver(fakeAccounts([account]).repository),
       new SlackLineResolver(sealer, slack),
     );
     await handler.execute(mark(account.id, '0b3e2a1c-9999-4c5d-8e6f-70819203b4c5'));
     await handler.execute(mark(account.id));
-    await vi.waitFor(() => expect(slack.react).toHaveBeenCalledTimes(1));
+    expect(slack.react).toHaveBeenCalledTimes(1);
     expect(slack.react).toHaveBeenCalledWith(
       expect.anything(),
       { channel: 'C1', ts: '1700000500.000001', name: 'eyes' },
@@ -582,7 +574,7 @@ describe('the images the owner shared, fetched for the bot’s turn', () => {
       }),
     });
     const handler = new FindSlackImagesQueryHandler(
-      fakeAccounts([account]).repository,
+      new SlackBotAppResolver(fakeAccounts([account]).repository),
       new SlackLineResolver(sealer, slack),
     );
     await expect(handler.execute(query(account.id))).resolves.toEqual([

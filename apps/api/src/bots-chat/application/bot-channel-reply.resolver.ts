@@ -20,17 +20,16 @@ type ChannelReply = Omit<
   'accountId' | 'replyToId'
 >;
 
+/** What of a turn its chat is found by. */
+type ChannelTurn = Pick<BotTurnEntity, 'organizationId' | 'conversationId' | 'botId' | 'sourceKey'>;
+
 type ChannelReplyCommand = ReplyOnTelegramCommand | ReplyOnWhatsappCommand | ReplyOnSlackCommand;
 
-/**
- * The reply for a chat's channel, quoting the message the turn's key names;
- * on Slack, the turn's `last` answer also ends that message's working reaction.
- */
+/** The reply for a chat's channel, quoting the message the turn's key names. */
 function replyOn(
   chat: BotChannelChat,
   sourceKey: string | null,
   reply: ChannelReply,
-  last: boolean,
 ): ChannelReplyCommand {
   switch (chat.kind) {
     case 'telegram':
@@ -47,11 +46,7 @@ function replyOn(
       });
     // A Slack chat is the thread itself, so the answer needs nothing to quote.
     case 'slack':
-      return new ReplyOnSlackCommand({
-        ...reply,
-        accountId: chat.slackAccountId,
-        endsTs: last ? slackTsOf(sourceKey) : null,
-      });
+      return new ReplyOnSlackCommand({ ...reply, accountId: chat.slackAccountId });
   }
 }
 
@@ -62,7 +57,8 @@ function replyOn(
  * chat. Answers how many messages went: none for a conversation that is no
  * channel's chat (any more), a chat this bot no longer answers, or a host
  * that did not send. What the turn's end owes and what it sends as it goes
- * are the callers'; `last` says this is the turn's end.
+ * are the callers'. A turn's start and end are shown on the chat where its
+ * channel has a way to (`started`, `ended`).
  */
 @Injectable()
 export class BotChannelReplyResolver {
@@ -72,12 +68,7 @@ export class BotChannelReplyResolver {
     private readonly commands: CommandBus,
   ) {}
 
-  async send(
-    turn: Pick<BotTurnEntity, 'organizationId' | 'conversationId' | 'botId' | 'sourceKey'>,
-    text: string,
-    correlationId: string | undefined,
-    last: boolean,
-  ): Promise<number> {
+  async send(turn: ChannelTurn, text: string, correlationId: string | undefined): Promise<number> {
     const chat = await this.conversations.findChannelChat(turn.organizationId, turn.conversationId);
     if (!chat) return 0;
     const reply: ChannelReply = {
@@ -87,19 +78,25 @@ export class BotChannelReplyResolver {
       botId: turn.botId,
       metadata: { correlationId },
     };
-    return this.commands.execute<ChannelReplyCommand, number>(
-      replyOn(chat, turn.sourceKey, reply, last),
-    );
+    return this.commands.execute<ChannelReplyCommand, number>(replyOn(chat, turn.sourceKey, reply));
+  }
+
+  /** The turn's run started: the chat shows it is being worked on, where its channel can. */
+  started(turn: ChannelTurn): Promise<void> {
+    return this.markWorking(turn, true);
+  }
+
+  /** The turn ended (its answer sent or not): the chat stops showing it is being worked on. */
+  ended(turn: ChannelTurn): Promise<void> {
+    return this.markWorking(turn, false);
   }
 
   /**
-   * Shows on the chat that the turn is being worked on, where the channel has
-   * a way to: on Slack, the working reaction on the message the turn is on.
-   * Nothing for the other channels, or a turn that is no channel's.
+   * The one channel with a working sign is Slack, the reaction on the
+   * message the turn is on (`MarkSlackWorkingCommand`); every other channel,
+   * and a turn that is no channel's, shows nothing.
    */
-  async working(
-    turn: Pick<BotTurnEntity, 'organizationId' | 'conversationId' | 'botId' | 'sourceKey'>,
-  ): Promise<void> {
+  private async markWorking(turn: ChannelTurn, working: boolean): Promise<void> {
     const ts = slackTsOf(turn.sourceKey);
     if (!ts) return;
     const chat = await this.conversations.findChannelChat(turn.organizationId, turn.conversationId);
@@ -111,6 +108,7 @@ export class BotChannelReplyResolver {
         chatId: chat.chatId,
         ts,
         botId: turn.botId,
+        working,
       }),
     );
   }
