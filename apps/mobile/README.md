@@ -26,7 +26,9 @@ console on the computer.
 Configuration comes from the **root `.env`**, loaded in `app.config.ts`. The
 API base is `EXPO_PUBLIC_API_URL` (default `http://localhost:3001`) and the deep
 link scheme is `EXPO_PUBLIC_MOBILE_SCHEME` (default `oppenheimer`), which must match
-`MOBILE_SCHEME` on the API.
+`MOBILE_SCHEME` on the API. The API trusts no app scheme unless `MOBILE_SCHEME`
+is set, so a deployment the app signs in to sets it (the root `.env.example`
+does, for local development).
 
 ```bash
 pnpm docker:dev                          # Postgres + Redis

@@ -36,5 +36,7 @@ Bring back the Expo app for 0.5 as a shell drawn from the version-1 export's
   `onboarding.flow.ready.onComputer` and `open`;
   `auth.forgotPassword.notReceived`, `common.error`, and `nav.account`,
   `nav.pullRequestsShort`; `common.comingToMobile`.
-- `@oppenheimer/api`: Better Auth trusts `${MOBILE_SCHEME}://` and loads the
-  Expo plugin, so the app's sign-in and reset links come back to it.
+- `@oppenheimer/api`: when `MOBILE_SCHEME` is set (opt-in, no default),
+  Better Auth trusts `${MOBILE_SCHEME}://` and loads the Expo plugin, so the
+  app's sign-in and reset links come back to it; a deployment that does not
+  set it trusts no app scheme.

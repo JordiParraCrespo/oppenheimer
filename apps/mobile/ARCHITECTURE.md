@@ -158,7 +158,10 @@ Biome (`overrides` in `biome.json`) — no `useEffect` outside `hooks/`, no
   and the workspace address's host. The scheme comes from
   `EXPO_PUBLIC_MOBILE_SCHEME` (default `oppenheimer`) and must match `app.config.ts`
   and `MOBILE_SCHEME` on the API, or the OAuth and password-reset deep links do
-  not resolve back into the app. `getAuthHeaders` sends the stored cookie, since
+  not resolve back into the app. The API has no default: unset, it trusts no
+  app scheme at all. A sign-out the server does not confirm rejects and puts
+  back the cookie the Expo plugin cleared before sending it, so the person
+  stays signed in and can try again. `getAuthHeaders` sends the stored cookie, since
   there is no browser to do it.
 - **`query.ts`** — `createQueryPersistence({ persistedFeatures:
   CONSUMER_PERSISTED_FEATURES })`. Only the features the consumer product lists
