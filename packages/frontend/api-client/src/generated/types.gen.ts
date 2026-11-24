@@ -5040,6 +5040,10 @@ export type BotConversationResponseDto = {
      */
     messages: Array<BotMessageResponseDto>;
     /**
+     * Whether the chat holds messages older than these: the next page is `before` the first.
+     */
+    hasOlder: boolean;
+    /**
      * The turns those messages belong to, and any still queued or running; oldest first.
      */
     turns: Array<BotTurnResponseDto>;
@@ -17132,7 +17136,16 @@ export type FindBotConversationData = {
     path: {
         id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * A message of this chat, the oldest the reader holds: the page is the messages just older than it.
+         */
+        before?: string;
+        /**
+         * How many messages; 100 when absent.
+         */
+        limit?: number;
+    };
     url: '/api/v1/bots/{id}/conversation';
 };
 
