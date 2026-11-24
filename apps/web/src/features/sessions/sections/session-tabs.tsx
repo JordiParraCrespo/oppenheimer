@@ -1,6 +1,7 @@
-import { ChatTabStrip } from '@oppenheimer/design-system-web';
+import { ChatTab, ChatTabStrip } from '@oppenheimer/design-system-web';
+import { PlusIcon } from '@oppenheimer/design-system-web/icons';
 import { useBots, useSessions } from '@oppenheimer/frontend-consumer/react';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Fragment, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOpenTabs } from '../hooks/use-open-tabs';
@@ -15,6 +16,10 @@ import { ShownSessionTab } from './shown-session-tab';
  * goes to its neighbour, the way a browser does, and closing the last goes
  * to New session.
  *
+ * New session keeps the strip, the tabs open as they were, and ends it with
+ * a lit New session tab of its own, which is not kept: the plus that leads
+ * there steps aside while it shows, and leaving the page leaves no tab.
+ *
  * A tab whose session or bot is gone (deleted here or on another device)
  * is left off once the list it belongs to has answered without it; the page
  * on screen keeps its tab whatever the lists say, drawn from the session
@@ -26,12 +31,13 @@ export function SessionTabs({
   shown,
   bot,
 }: {
-  shown: OpenTab;
+  /** The page on screen; null on New session, which opens no tab. */
+  shown: OpenTab | null;
   bot: (botId: string, tab: { active: boolean; onClose: () => void }) => ReactNode;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const shownKey = openTabKey(shown);
+  const shownKey = shown ? openTabKey(shown) : null;
   const tabs = useOpenTabs(shownKey);
   const { data: sessions } = useSessions({
     select: (list) => new Map(list.map((session) => [session.id, session])),
@@ -73,7 +79,7 @@ export function SessionTabs({
     <ChatTabStrip
       navigation
       label={t('sessions.tabs.label')}
-      onNew={() => void navigate({ to: '/sessions/new' })}
+      onNew={shown ? () => void navigate({ to: '/sessions/new' }) : undefined}
       newLabel={t('sessions.tabs.new')}
     >
       {drawn.map(({ key, tab }) =>
@@ -84,6 +90,11 @@ export function SessionTabs({
             {bot(tab.id, { active: key === shownKey, onClose: () => close(key) })}
           </Fragment>
         ),
+      )}
+      {shown ? null : (
+        <ChatTab active icon={<PlusIcon />} render={<Link to="/sessions/new" />}>
+          {t('sessions.tabs.new')}
+        </ChatTab>
       )}
     </ChatTabStrip>
   );

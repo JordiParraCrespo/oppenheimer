@@ -1,4 +1,5 @@
-import { ErrorAlert, usePaneDrop } from '@oppenheimer/frontend-web';
+import { ErrorAlert, PageBar, usePaneDrop } from '@oppenheimer/frontend-web';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NewSessionBackdrop } from '../components/new-session-backdrop';
 import { NewSessionBackgroundMenu } from '../components/new-session-background-menu';
@@ -19,21 +20,32 @@ import { NewSessionForm } from '../sections/new-session-form';
  * The reader may lay an image of their own under the pane, from the button
  * in its top-right corner; it is kept on this device and shown on this
  * screen only (`lib/new-session-background.ts`).
+ *
+ * With `tabs` (inside Sessions, from the route) the screen draws its bar:
+ * the open tabs, kept as they were, and that button on its right. Over an
+ * image the bar is frosted, so the image runs under it.
  */
-export function NewSessionScreen() {
+export function NewSessionScreen({ tabs }: { tabs?: ReactNode }) {
   const { t } = useTranslation();
   const drop = useNewSessionDrop();
   usePaneDrop(drop.deliver);
   const background = useNewSessionBackground();
+  const menu = (
+    <NewSessionBackgroundMenu
+      hasImage={background.image !== null}
+      onChoose={background.choose}
+      onRemove={background.remove}
+    />
+  );
 
   return (
     <NewSessionDropContext value={drop}>
       {background.image ? <NewSessionBackdrop image={background.image} /> : null}
-      <NewSessionBackgroundMenu
-        hasImage={background.image !== null}
-        onChoose={background.choose}
-        onRemove={background.remove}
-      />
+      {tabs ? (
+        <PageBar title={tabs} tone="chrome" actions={menu} />
+      ) : (
+        <div className="absolute top-2 right-3.5">{menu}</div>
+      )}
       <div className="flex flex-col gap-2.5">
         {background.failure ? (
           <ErrorAlert

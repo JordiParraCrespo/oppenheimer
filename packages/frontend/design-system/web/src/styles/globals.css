@@ -194,6 +194,9 @@
        light mode the terminal is paper, not a dark rectangle in a light app.
        The deep 700s exist because the 500s fall under 4.5:1 as small text. */
     --term-bg: var(--op-white);
+    /* What an open tab's dot is cut out of: the ground its strip stands on. A bar
+       of tabs on another ground (the chrome) points it there. */
+    --chat-tab-ground: var(--canvas);
     --term-fg: var(--op-gray-900);
     --term-dim: var(--op-gray-600);
     --term-border: #e6e6ea;
@@ -1373,6 +1376,14 @@
 
 /* No scrollbar at all, for a list that scrolls but draws its own edges — the
    console's sessions sidebar. The pane still scrolls by wheel, touch and keys. */
+/* A line that may run past its box fades out over its last 16px rather than
+   ending in an ellipsis; the padding it adds is where the fade falls, so a
+   line that fits ends before it (a tab's name). */
+@utility fade-end {
+  padding-inline-end: --spacing(4);
+  mask-image: linear-gradient(90deg, #000 calc(100% - --spacing(4)), transparent);
+}
+
 @utility no-scrollbar {
   scrollbar-width: none;
 

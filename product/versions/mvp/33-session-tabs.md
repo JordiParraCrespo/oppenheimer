@@ -31,6 +31,15 @@ answered one at a time that day, mostly over mockups.
   created is on screen before it is listed. The strip scrolls when full,
   with no limit. A shared session's guest has no strip.
 
+On 2026-11-24, once it shipped, the owner asked for New session to keep the
+tabs: "on the create new I do not want to disappear the previous tabs". New
+session's bar is the strip, the tabs open as they were, ending in a lit New
+session tab of its own that is not kept (leaving the page leaves no tab);
+the plus steps aside while it shows. Over the reader's background image the
+bar is frosted, so the image runs under it, and the image's button sits on
+the bar's right. The same day the tabs became a size smaller: the 28px rung
+and the small type step.
+
 ## 2. What a tab shows
 
 The shown tab stands on the canvas inside a hairline; the rest are flat,

@@ -2,7 +2,7 @@
 
 import { ChevronDownIcon, ChevronUpIcon, PlusIcon, SearchIcon, XIcon } from 'lucide-react';
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
-import type * as React from 'react';
+import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
@@ -15,7 +15,7 @@ import { IconButton } from './icon-button';
  *   pill, a role in muted ink), the run state, the view `tabs` (Chat ·
  *   View · Stats), then the actions (open in, terminal, diff, panels).
  * - `ChatHeaderTag`: the 22px mono pill beside the title (a branch).
- * - `ChatTabStrip` · `ChatTab`: open things as tabs on the 34px rung, each with its
+ * - `ChatTabStrip` · `ChatTab`: open things as tabs on the 28px rung, each with its
  *   mark and the dot of what it needs from the reader; the shown one lit on
  *   the card inside a hairline, the rest flat, a close on each.
  * - `ThreadFindBar`: ⌘F, floating top-right over the header: a 44px pill
@@ -130,8 +130,8 @@ const TAB_ATTENTION = {
  * shown one is lit, on the card inside a hairline, so on a strip that
  * stands on the recessed ground it reads as part of the page under it; the rest are flat on the
  * strip's ground with a hairline between two of them, and the close of a tab
- * not shown appears on hover. A long name fades out over its last 16px
- * rather than ending in an ellipsis; a name that fits ends before the fade. What it needs from the reader is a dot on its mark (amber
+ * not shown appears on hover. A long name fades out (`fade-end`) rather than
+ * ending in an ellipsis; a name that fits ends before the fade. What it needs from the reader is a dot on its mark (amber
  * `needs-you`, blue `done` and `unread`, as a sidebar row draws them), work
  * in flight its name's shimmer. With `render` (a router `Link`) it is a link
  * to a page, in a strip that is `navigation`.
@@ -162,13 +162,20 @@ function ChatTab({
   /** What the tab is: a link (`<Link to=… />`) instead of a button. */
   render?: React.ReactElement;
 }) {
+  const ref = React.useRef<HTMLSpanElement>(null);
+  // The shown tab scrolls itself into a strip that overflows: a strip drawn
+  // afresh (a new page) starts at its left edge, past which it may stand.
+  React.useEffect(() => {
+    if (active) ref.current?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  }, [active]);
   return (
     <span
+      ref={ref}
       data-slot="chat-tab"
       data-active={active || undefined}
       title={title}
       className={cn(
-        'group/tab relative flex h-(--control-h-md) max-w-60 min-w-28 shrink items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-[13.5px] text-fg-muted transition-colors duration-fast',
+        'group/tab relative flex h-(--control-h-sm) max-w-56 min-w-24 shrink items-center gap-2 rounded-sm border border-transparent pr-0.5 pl-2.5 text-sm text-fg-muted transition-colors duration-fast',
         'hover:bg-hover-surface hover:text-fg data-active:border-border-subtle data-active:bg-card data-active:font-medium data-active:text-fg',
         // A hairline between two tabs that are not shown.
         "not-first:before:absolute not-first:before:top-2.5 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
@@ -186,14 +193,14 @@ function ChatTab({
         {...props}
       >
         {icon || attention ? (
-          <span className="relative flex shrink-0 [&_svg]:size-4">
+          <span className="relative flex shrink-0 [&_svg]:size-3.5">
             {icon}
             {attention ? (
               <span
                 role="img"
                 aria-label={attentionLabel ?? TAB_ATTENTION[attention].label}
                 className={cn(
-                  'absolute -top-0.75 -right-0.75 size-2 rounded-pill ring-2 ring-[var(--chat-tab-ground,var(--canvas))] group-data-active/tab:ring-card',
+                  'absolute -top-0.75 -right-0.75 size-1.75 rounded-pill ring-2 ring-(--chat-tab-ground) group-data-active/tab:ring-card',
                   !icon && 'static',
                   TAB_ATTENTION[attention].className,
                 )}
@@ -203,7 +210,7 @@ function ChatTab({
         ) : null}
         <span
           className={cn(
-            'min-w-0 flex-1 overflow-hidden pr-4 text-left whitespace-nowrap [mask-image:linear-gradient(90deg,#000_calc(100%-1rem),transparent)]',
+            'fade-end min-w-0 flex-1 overflow-hidden text-left whitespace-nowrap',
             working && 'motion-safe:animate-shimmer',
           )}
         >

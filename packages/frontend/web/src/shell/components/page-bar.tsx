@@ -55,7 +55,8 @@ export function PageBar({
   /**
    * `chrome`: the bar is a strip of open tabs (`ChatTabStrip`) and stands on
    * the recessed ground, so the shown tab, lit on the card, reads as part of
-   * the page under it.
+   * the page under it. Over an image the pane lays under itself (New
+   * session's backdrop) that ground is frosted, so the image shows through.
    */
   tone?: 'page' | 'chrome';
   /** The bar's ground and edge, when the page under it is not the shell's (a session's terminal). */
@@ -78,7 +79,7 @@ export function PageBar({
         className={cn(
           className,
           tone === 'chrome' &&
-            'border-b border-border-subtle bg-canvas-recessed [--chat-tab-ground:var(--canvas-recessed)]',
+            'border-b border-border-subtle bg-canvas-recessed [--chat-tab-ground:var(--canvas-recessed)] group-has-data-pane-backdrop/pane:border-transparent group-has-data-pane-backdrop/pane:bg-canvas-recessed/60 group-has-data-pane-backdrop/pane:backdrop-blur-md',
         )}
       />
     </PaneBar>
