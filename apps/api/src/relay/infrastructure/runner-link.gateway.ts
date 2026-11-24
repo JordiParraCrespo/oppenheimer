@@ -478,6 +478,10 @@ export class RunnerLinkGateway {
         // A port's or a desktop's connection is up; its bytes may flow (28).
         link.attachment(message.attachmentId)?.opened?.();
         return;
+      case 'desktop.pointer':
+        // Where the host's pointer is, for the desktop's browser to draw.
+        link.attachment(message.attachmentId)?.pointer?.(message);
+        return;
       case 'attachment.credit':
         // The runner's credit for a port attachment's bytes it wrote to the
         // port: the one attachment kind whose bytes flow both ways in bulk.

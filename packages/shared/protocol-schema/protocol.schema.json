@@ -2506,6 +2506,40 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "desktop.pointer"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "x",
+        "y",
+        "width",
+        "height"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "desktop.close"
         },
         "attachmentId": {
@@ -2909,6 +2943,45 @@
         "mimetype",
         "data",
         "seconds"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "whatsapp.react"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "chatId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "messageId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "senderId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128
+        },
+        "emoji": {
+          "type": "string",
+          "maxLength": 32
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "chatId",
+        "messageId",
+        "senderId",
+        "emoji"
       ]
     },
     {
@@ -3790,6 +3863,7 @@
       "whatsapp",
       "whatsapp.voice",
       "whatsapp.voice.send",
+      "whatsapp.react",
       "whatsapp.image",
       "telegram",
       "shared.preview",

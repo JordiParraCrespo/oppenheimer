@@ -2005,6 +2005,26 @@ earlier note:
   2026-11-24 the owner, filtering to their Mac Studio, wanted a second
   machine beside it: the Host facet takes several hosts, as Repository
   does, a chip each, and lists a session on any of them.
+- A bot's `react` tool worked in its console chat only, refusing on a
+  channel's conversation ("answer in words"). On 2026-11-24 the owner asked
+  for the bot to decide its reactions on the channels too, keeping Slack's
+  automatic 👀: it reacts on Slack as its app and on WhatsApp as the number,
+  without asking, in a chat it answers (`next-steps/slack-for-bots.md` §4,
+  `next-steps/answering-on-telegram-and-whatsapp.md` §4). Telegram still
+  takes none.
+- `research/device-streaming.md` ("A host's desktop") left the pointer to
+  the screen-sharing server, and a watched Mac showed none: Apple's Screen
+  Sharing sends the cursor's shape but never where it is. On 2026-11-24 the
+  runner took that over: it reads the pointer with CoreGraphics and sends
+  `desktop.pointer` while the reader watches (`versions/mvp/01-protocol.md`),
+  and the console draws the host's cursor there.
+- `versions/mvp/05-screens.md` drew a stopped session as a pane with a
+  Restart button, and `02-runner.md` §5 kept every session running until
+  someone stopped it. On 2026-11-24, after reading how Orca hibernates
+  agents (`research/session-resume/README.md`), opening a stopped session
+  as its owner restarts it, and the button is the fallback for a restart
+  that fails. The runner also stops, never closes, a session left `done`
+  or `idle` and unwatched for two hours (`RUNNER_IDLE_STOP`).
 - `versions/mvp/25-bots.md` §4.2 kept a host's switches for bots
   (`runner exec`, `runner computer`, `runner browser`) on the host alone,
   never written by the control plane. On 2026-11-24 the owner, told by a

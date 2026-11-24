@@ -20,6 +20,12 @@ type Secrets interface {
 	Password(path string) (string, error)
 }
 
+// PointerReader reads where the host's pointer is. false is a reading the
+// host could not take this time.
+type PointerReader interface {
+	Pointer() (domain.Pointer, bool)
+}
+
 // Dialer connects to an address on this host.
 type Dialer interface {
 	DialContext(ctx context.Context, network, address string) (net.Conn, error)

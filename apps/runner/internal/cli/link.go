@@ -114,6 +114,9 @@ type linkHandler struct {
 	// desktopRecheck is how often an open desktop reads the host owner's
 	// choice again; zero is the default, `desktopRecheck` (link_desktop.go).
 	desktopRecheck time.Duration
+	// desktopPointerEvery is how often a watched desktop reads the host's
+	// pointer; zero is the default, `desktopPointerEvery` (link_desktop.go).
+	desktopPointerEvery time.Duration
 	// whatsapp is the host's WhatsApp linked device (link_whatsapp.go); nil
 	// is a host that offers none, and its hello does not name the capability.
 	whatsapp *waapp.Service
@@ -355,7 +358,8 @@ func (h *linkHandler) capabilities() []string {
 		named = append(named, link.CapabilityDesktopStream)
 	}
 	if h.whatsapp != nil {
-		named = append(named, link.CapabilityWhatsapp, link.CapabilityWhatsappVoice, link.CapabilityWhatsappVoiceSend, link.CapabilityWhatsappImage)
+		named = append(named, link.CapabilityWhatsapp, link.CapabilityWhatsappVoice, link.CapabilityWhatsappVoiceSend,
+			link.CapabilityWhatsappImage, link.CapabilityWhatsappReact)
 	}
 	if h.telegram != nil {
 		named = append(named, link.CapabilityTelegram)
@@ -777,7 +781,7 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			h.lanes.run(laneHostUpdate, func() { h.update(h.life, m) })
 		}
 	case link.TypeWhatsappLink, link.TypeWhatsappUnlink, link.TypeWhatsappSend, link.TypeWhatsappAck,
-		link.TypeWhatsappMediaGet, link.TypeWhatsappSendVoice:
+		link.TypeWhatsappMediaGet, link.TypeWhatsappSendVoice, link.TypeWhatsappReact:
 		h.whatsAppMessage(msg)
 	case link.TypeTelegramLink, link.TypeTelegramUnlink, link.TypeTelegramSend, link.TypeTelegramAck:
 		h.telegramMessage(msg)

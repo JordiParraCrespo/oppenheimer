@@ -4,6 +4,7 @@ import {
   WHATSAPP_VOICE_NOTE_MAX_BYTES,
   type WhatsappMediaGetKind,
   type WhatsappMediaGetMessage,
+  type WhatsappReactMessage,
   type WhatsappSendMessage,
   type WhatsappSendVoiceMessage,
 } from '@oppenheimer/shared/protocol';
@@ -112,11 +113,31 @@ export class RelayWhatsappDeviceAdapter implements WhatsappDevicePort {
     return this.sent(hostId, link, message, WHATSAPP_VOICE_SEND_TIMEOUT_MS);
   }
 
+  async react(
+    hostId: string,
+    chatId: string,
+    message: WhatsappQuote,
+    emoji: string,
+  ): Promise<WhatsappSendOutcome> {
+    const link = this.links.find(hostId);
+    if (!link) return { kind: 'host_offline' };
+    if (!link.capabilities.includes('whatsapp.react')) return { kind: 'not_supported' };
+    const reaction: WhatsappReactMessage = {
+      type: 'whatsapp.react',
+      commandId: randomUUID(),
+      chatId,
+      messageId: message.id,
+      senderId: message.senderId,
+      emoji,
+    };
+    return this.sent(hostId, link, reaction, WHATSAPP_SEND_TIMEOUT_MS);
+  }
+
   /** A send on the link, waited for: the host's `whatsapp.sent`, or why not. */
   private async sent(
     hostId: string,
     link: RunnerLink,
-    message: WhatsappSendMessage | WhatsappSendVoiceMessage,
+    message: WhatsappSendMessage | WhatsappSendVoiceMessage | WhatsappReactMessage,
     timeoutMs: number,
   ): Promise<WhatsappSendOutcome> {
     // Waiting before sending, so an answer faster than this line cannot be missed.

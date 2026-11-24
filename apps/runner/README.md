@@ -21,7 +21,13 @@ conversation, then killed with its process group, and the daemon ends
 any agent still running for a closed or stopped session every 5 minutes. An
 agent in a session can start, tell and wait on other agents as child
 sessions (`runner --skill`), and a session marked kept comes back on its own
-after a reboot (`product/research/lessons-from-herdr.md` §4).
+after a reboot (`product/research/lessons-from-herdr.md` §4). A session whose
+agent has been `done` or `idle` for 2 hours, with nothing attached and nothing
+typed into it, is stopped (never closed) to free its processes. Working,
+blocked, attached (from the console or a tmux client on the host) and kept
+sessions are never stopped this way, nor a child whose parent is live, nor a
+parent with a child that is not idle too. `RUNNER_IDLE_STOP` sets the window (`90m`, `4h`)
+or turns it `off` (`product/versions/mvp/02-runner.md` §5).
 
 `runner run` holds one outbound WebSocket to the control plane: sessions are
 driven from the console over it, and the git credential helper answers with
@@ -73,7 +79,9 @@ runner signs in to the screen-sharing server already on the host's loopback
 with a VNC password or a macOS account it keeps on the host, and hands the
 browser an RFB stream that asks for none. The browser watches until it takes
 control; until then the runner drops its keys, pointer, clipboard and
-resizes. The choice lives in `~/.oppenheimer/desktop.json`, is read on every
+resizes, and on a Mac tells it where the host's pointer is
+(`desktop.pointer`, read with CoreGraphics), which Screen Sharing never
+does. The choice lives in `~/.oppenheimer/desktop.json`, is read on every
 open, and is never written by the control plane
 (`product/research/device-streaming.md`, "A host's desktop").
 

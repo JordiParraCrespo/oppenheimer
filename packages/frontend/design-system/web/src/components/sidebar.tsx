@@ -300,14 +300,15 @@ function SidebarInput({ className, ...props }: React.ComponentProps<typeof Input
     <Input
       data-slot="sidebar-input"
       data-sidebar="input"
-      className={cn('h-8 w-full bg-card shadow-none', className)}
+      size="sm"
+      className={cn('w-full bg-card shadow-none', className)}
       {...props}
     />
   );
 }
 
 /**
- * SidebarSearch — the 30px field under the list header: the hover fill at
+ * SidebarSearch — the 28px field (the ramp's `sm`) under the list header: the hover fill at
  * rest, a 6px radius, the search glyph, and a round clear button once
  * there is a query. Focus lifts it onto the card surface with the ring.
  * Controlled: the list it narrows reads the settled `value`.
@@ -328,7 +329,7 @@ function SidebarSearch({
       data-slot="sidebar-search"
       data-on={value ? '' : undefined}
       className={cn(
-        'mx-3 mb-2 flex h-[30px] items-center gap-2 rounded-nav bg-hover-surface pr-1.5 pl-2.5 text-fg-subtle transition-[background-color,box-shadow] duration-fast ease-standard focus-within:bg-card focus-within:ring-3 focus-within:ring-ring focus-within:outline-1 focus-within:outline-primary',
+        'mx-3 mb-2 flex h-(--control-h-sm) items-center gap-2 rounded-nav bg-hover-surface pr-1.5 pl-2.5 text-fg-subtle transition-[background-color,box-shadow] duration-fast ease-standard focus-within:bg-card focus-within:ring-3 focus-within:ring-ring focus-within:outline-1 focus-within:outline-primary',
         className,
       )}
     >
