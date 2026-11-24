@@ -33,7 +33,8 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
 - **One control ramp**: 28 / 34 / 42px (`--control-h-sm|md|lg`) for every
   control you press or type into: Button, IconButton, Input, the selects
   (FieldSelect, FacetSelect, ChipSelect), PillTabs, PillGroup,
-  SegmentedControl's track, the composer's buttons. **A row of controls
+  SegmentedControl's track. The composer keeps its own sizes, the user's
+  call (`.agents/answers.md`). **A row of controls
   stands on one rung**, which the caller picks through each one's `size`; a
   height written by hand on a control fails `pnpm check:control-heights`,
   and the controls still off the ramp are the `control-height-campaign`
