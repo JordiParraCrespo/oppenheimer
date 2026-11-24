@@ -259,7 +259,7 @@ async function phoneOf(turn: Turn, c: Case): Promise<PhoneLine[]> {
       stored.set(write.message.id, write.message);
     if (write.kind === 'unsay') for (const id of write.messageIds) stored.delete(id);
   };
-  const write = new BotChannelAsItGoesFactory(channel).wrap(entity, store);
+  const write = await new BotChannelAsItGoesFactory(channel).wrap(entity, store);
   const transcript = new TurnTranscript(entity);
   for (const event of eventsOf(turn, c)) {
     if (event.type === 'tool.finished') callsEnded += 1;

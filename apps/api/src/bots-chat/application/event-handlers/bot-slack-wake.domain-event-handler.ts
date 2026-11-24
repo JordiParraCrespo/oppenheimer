@@ -28,7 +28,9 @@ export class BotSlackWakeDomainEventHandler {
       | 'command'
       | 'text'
       | 'metadata'
-    >,
+    > &
+      // An event staged before images were read carries neither.
+      Partial<Pick<SlackOwnerWroteDomainEvent, 'images' | 'skippedFiles'>>,
   ): Promise<void> {
     await this.commands.execute(
       new WakeOnSlackCommand({
@@ -42,6 +44,8 @@ export class BotSlackWakeDomainEventHandler {
         position: event.position,
         command: event.command,
         text: event.text,
+        images: event.images ?? [],
+        skippedFiles: event.skippedFiles ?? 0,
         metadata: { correlationId: event.metadata?.correlationId ?? undefined },
       }),
     );

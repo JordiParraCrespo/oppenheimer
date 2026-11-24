@@ -297,4 +297,22 @@ export const AGENT_HOST_SETUP: Readonly<Partial<Record<CodingAgentId, AgentHostS
       // older than the `--query` this catalog starts it with. So the runner
       // leaves the install to the person, who runs Nous's installer.
     }),
+    qwen: Object.freeze({
+      // No `update`. `qwen update` (0.28.4) replaces only Qwen's standalone
+      // install; on an npm one it prints how to update and exits 0, which
+      // would read as an update that changed nothing. Qwen updates an npm
+      // install itself at launch (`general.enableAutoUpdate`, on by default),
+      // with `npm install -g` and no prefix, which does not reach the
+      // `~/.local` copy below: still to settle.
+      //
+      // `@qwen-code/qwen-code` from npm, the install Qwen's README gives
+      // first; npm checks it against the registry's integrity hash, and links
+      // `qwen` into `~/.local/bin` only once the package is in place. Not the
+      // standalone script, which edits shell profiles.
+      install: Object.freeze({
+        macos: npmUserInstall('@qwen-code/qwen-code'),
+        linux: npmUserInstall('@qwen-code/qwen-code'),
+        bin: '~/.local/bin',
+      }),
+    }),
   });

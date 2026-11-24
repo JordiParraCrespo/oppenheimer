@@ -35,7 +35,11 @@ app per bot too (`../research/orca-bots.md`).
   values once is the smaller thing to keep. It can come later without
   changing anything else.
 - **Scopes:** `app_mentions:read`, `chat:write`, `im:history`, `im:read`,
-  `im:write`. **Events:** `app_mention` and `message.im`. A thread in a
+  `im:write`, and since 2026-11-24 `reactions:write`, `users:read` (§4) and
+  `files:read` (§3). An app made before then keeps working without those
+  three: no reaction, mentions read as ids, and images not seen (the bot is
+  told so), until its scopes are updated and it is reinstalled.
+  **Events:** `app_mention` and `message.im`. A thread in a
   channel is answered when the bot is mentioned in it; the bot does not read
   channels it is not asked in.
 - **One app is one bot** (`UQ_slack_account_app`): the same app pasted for a
@@ -74,8 +78,22 @@ owner's only.
   is held for Allow: there are no contacts on Slack yet.
 - **The app's own messages, other bots', edits and joins** are ignored.
 - **What the owner wrote** reaches the bot as their message, mentions and
-  links made readable, as their Telegram message does. Nothing else from the
-  channel reaches it: the bot reads no thread history.
+  links made readable, as their Telegram message does. A person mentioned
+  arrives by the name their workspace shows (`users.info`, at most ten a
+  message, kept a day, 1.5 seconds for all of them), or by id when Slack will
+  not say in time. Lookups and reactions count apart from the answer's posts,
+  so they never spend its rate budget. Nothing else from the channel reaches
+  it: the bot reads no thread history.
+- **Images the owner shares** (since 2026-11-24) reach the bot as a console
+  message's do. Up to four images a message (PNG, JPEG, GIF, WebP, 5 MB each)
+  are fetched when the turn is queued, never while Slack waits for its
+  answer. They are fetched with the app's token from `files.slack.com` only,
+  following no redirect, judged by their bytes and kept as the owner's
+  uploads. A file the bot cannot see (another type, too large, past four,
+  refused by Slack, or a bot whose model reads no images) is named in the
+  words the turn reads, so the bot does not answer as if nothing was
+  shared. A message with images is a turn of its own: it is never folded
+  into a running one.
 
 ## 4. Answers go in the thread
 
@@ -84,8 +102,19 @@ owner's only.
   continues the same conversation. A new question is a new top-level message,
   so there is no `/new`. `stop` in a thread asks its running turn to stop.
 - **The answer** is the turn's last words in Slack's markdown (bold, links,
-  code), cut to Slack's length; as on Telegram, what the bot writes before a
-  tool call goes out as the call begins.
+  code), in one message up to 39,000 characters (Slack folds a long one behind
+  "Show more" and cuts at 40,000), so a long answer arrives whole; as on
+  Telegram, what the bot writes before a tool call goes out as the call
+  begins. Until 2026-11-24 answers were cut at 3,900 characters, Slack's
+  advice, which split a long one into several.
+- **Working.** The owner's message gets the app's 👀 reaction when its turn
+  starts, before the turn goes on, and loses it when the turn ended, whether
+  its answer went or not, so Slack shows the bot is on it. A message written into a thread while its turn runs is taken
+  into that turn and gets none, nor does one that never became a turn.
+- **Secrets stay out of the thread.** Everything sent to Slack, as it goes
+  and at the end, has secrets (tokens, keys, passwords, as the session
+  transcript finds them) replaced with `[redacted]`; the console keeps the
+  words as written.
 - **In a channel everyone there reads the thread.** The bot is told so, and to
   keep private things (mail, memory, other people's details) out of it unless
   asked there. It is still the owner's turn with the bot's tools: the owner is
@@ -132,3 +161,9 @@ owner's only.
   sent in the app's DM; answers in the thread asked in; approvals stay in the
   console with a link in the thread. Changes Channels §7.2's one app per
   workspace.
+- 2026-11-24: from Orca's November releases' Slack fixes: mentions read by
+  name, the 👀 reaction while working, a long answer in one message instead
+  of cut at 3,900 characters, and secrets redacted in what goes to Slack.
+  Two scopes added (`reactions:write`, `users:read`). Images on a Slack
+  request were added the same day, with `files:read` (§3). Retrying a
+  failed turn from its thread is not built yet.

@@ -275,6 +275,8 @@ export class BotTurnRepository
         message,
         correlationId,
       );
+      // A channel message's images (Slack's) were stored as the owner's uploads just before.
+      if (!(await claimAttachmentsTo(manager, turn, message))) throw new AttachmentsTaken();
       return { outcome, turnId: turn.id };
     });
   }

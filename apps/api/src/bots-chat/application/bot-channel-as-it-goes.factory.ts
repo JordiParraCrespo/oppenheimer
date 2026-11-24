@@ -11,7 +11,9 @@ import type { TranscriptWrite } from './turn-transcript.policy';
  * chat as that run begins (`SaidAsItGoes`), so "On it" reaches the person
  * before the work, not after it. Any other turn's writer is handed back as
  * it is. A send that does not go leaves its words owed for the next one, and
- * never fails the turn: they are still in the console.
+ * never fails the turn: they are still in the console. Wrapping a turn's
+ * writer is its run starting, so the chat is shown it is being worked on
+ * then (`BotChannelReplyResolver.started`), before the turn goes on.
  */
 @Injectable()
 export class BotChannelAsItGoesFactory {
@@ -19,11 +21,19 @@ export class BotChannelAsItGoesFactory {
 
   constructor(private readonly channel: BotChannelReplyResolver) {}
 
-  wrap(
+  async wrap(
     turn: BotTurnEntity,
     write: (write: TranscriptWrite) => Promise<void>,
-  ): (write: TranscriptWrite) => Promise<void> {
+  ): Promise<(write: TranscriptWrite) => Promise<void>> {
     if (!sendsAsItGoes(turn)) return write;
+    // Awaited, so the end's removal (`DeliverChannelReplyCommandHandler`) always comes after it.
+    await this.channel.started(turn).catch((error: unknown) =>
+      this.logger.warn({
+        message: 'Could not show a channel turn as being worked on',
+        turnId: turn.id,
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
     const said = new SaidAsItGoes();
     return async (each) => {
       await write(each);

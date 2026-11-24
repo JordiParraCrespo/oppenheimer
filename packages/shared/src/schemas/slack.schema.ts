@@ -18,13 +18,22 @@ export const SLACK_SIGNING_SECRET_PATTERN = /^[a-f0-9]{32}$/;
 export const SLACK_ACCOUNT_STATUSES = ['connected', 'revoked'] as const;
 export type SlackAccountStatus = (typeof SLACK_ACCOUNT_STATUSES)[number];
 
-/** The bot scopes the manifest asks for: read a mention or a DM, answer in its thread. */
+/**
+ * The bot scopes the manifest asks for: read a mention or a DM, answer in its
+ * thread, mark the message it is working on (`reactions:write`), read the
+ * people a message mentions by name (`users:read`) and the images it shares
+ * (`files:read`). An app made before the last three works without them: no
+ * reaction, mentions read as ids, images not seen (the bot is told so).
+ */
 export const SLACK_BOT_SCOPES = [
   'app_mentions:read',
   'chat:write',
+  'files:read',
   'im:history',
   'im:read',
   'im:write',
+  'reactions:write',
+  'users:read',
 ] as const;
 
 /** The events the app subscribes to: a mention in a channel, and a message in its DM. */

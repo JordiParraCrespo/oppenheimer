@@ -1962,3 +1962,11 @@ earlier note:
   you at once, and the runner sends that report 3 s after the first
   ("A question reaches you in seconds"). Codex's and OpenCode's detection
   rules were rewritten from their real screens the same day.
+- `next-steps/slack-for-bots.md` §4 cut a bot's Slack answer at 3,900
+  characters, into several messages. On 2026-11-24, copying Orca's Slack
+  fixes, an answer goes in one message up to 39,000 (Slack folds it behind
+  "Show more"), the owner's message carries a 👀 reaction while the bot
+  works, mentions arrive by name, secrets are redacted in what goes to
+  Slack, and images the owner shares reach the bot (§1 said the bot reads
+  only words); the manifest asks for `reactions:write`, `users:read` and
+  `files:read` too.
