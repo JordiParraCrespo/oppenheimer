@@ -5,7 +5,7 @@ interface BotChannelChatOf<K extends string> {
   kind: K;
   organizationId: string;
   botId: string;
-  /** Telegram's chat id, or the WhatsApp chat's JID. */
+  /** Telegram's chat id, the WhatsApp chat's JID, or a Slack thread (`<channel>:<thread ts>`). */
   chatId: string;
 }
 
@@ -19,8 +19,13 @@ export interface BotWhatsappChat extends BotChannelChatOf<'whatsapp'> {
   whatsappAccountId: string;
 }
 
+/** A Slack thread with a bot: the bot's own app it came through, and the channel and thread there. */
+export interface BotSlackChat extends BotChannelChatOf<'slack'> {
+  slackAccountId: string;
+}
+
 /** A channel's chat with a bot, outside the console. */
-export type BotChannelChat = BotTelegramChat | BotWhatsappChat;
+export type BotChannelChat = BotTelegramChat | BotWhatsappChat | BotSlackChat;
 
 /**
  * A bot's conversations as rows, apart from their turns: what Clear history

@@ -43,6 +43,7 @@ import {
   cloudStartAnswer,
   planCloudSession,
 } from './bot-cloud-session.policy';
+import { BotSessionLinkResolver } from './bot-session-link.resolver';
 import { BotSessionWaitResolver } from './bot-session-wait.resolver';
 import { BotSessionWatchResolver } from './bot-session-watch.resolver';
 import {
@@ -73,7 +74,7 @@ const CLOUD_START_WAIT_MAX_SECONDS = 120;
 const HIDDEN_SESSION_INPUT = z
   .boolean()
   .optional()
-  .describe(promptText('tools/sessions.hidden-session'));
+  .describe(promptText('sessions/tools.hidden-session'));
 
 @Injectable()
 export class BotSessionToolsFactory implements BotToolArea {
@@ -85,6 +86,7 @@ export class BotSessionToolsFactory implements BotToolArea {
     private readonly commandBus: CommandBus,
     private readonly watches: BotSessionWatchResolver,
     private readonly waits: BotSessionWaitResolver,
+    private readonly links: BotSessionLinkResolver,
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
@@ -115,7 +117,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           label: project?.name ?? `project ${input.project_id}`,
         };
       },
-      description: promptText('tools/sessions.start-session'),
+      description: promptText('sessions/tools.start-session'),
       input: z.object({
         // The session's first prompt, held to the same rule here so a task
         // too long is the tool's own error, before any card is raised. Only
@@ -126,34 +128,34 @@ export class BotSessionToolsFactory implements BotToolArea {
           .min(FIELD_BOUNDS.prompt.min)
           .max(FIELD_BOUNDS.prompt.maxBytes)
           .refine(fitsPromptBound, {
-            message: promptText('tools/sessions.start-session-task-message', {
+            message: promptText('sessions/tools.start-session-task-message', {
               maxBytes: String(FIELD_BOUNDS.prompt.maxBytes),
             }),
           })
           .describe(
-            promptText('tools/sessions.start-session-task', {
+            promptText('sessions/tools.start-session-task', {
               maxBytes: String(FIELD_BOUNDS.prompt.maxBytes),
             }),
           ),
         project_id: z
           .uuid()
           .optional()
-          .describe(promptText('tools/sessions.start-session-project-id')),
+          .describe(promptText('sessions/tools.start-session-project-id')),
         repository: z
           .string()
           .max(200)
           .optional()
-          .describe(promptText('tools/sessions.start-session-repository')),
+          .describe(promptText('sessions/tools.start-session-repository')),
         folder: z
           .string()
           .max(1_024)
           .optional()
-          .describe(promptText('tools/sessions.start-session-folder')),
-        host_id: z.uuid().optional().describe(promptText('tools/sessions.start-session-host-id')),
+          .describe(promptText('sessions/tools.start-session-folder')),
+        host_id: z.uuid().optional().describe(promptText('sessions/tools.start-session-host-id')),
         agent: z
           .enum(CODING_AGENT_IDS)
           .optional()
-          .describe(promptText('tools/sessions.start-session-agent')),
+          .describe(promptText('sessions/tools.start-session-agent')),
         model: z
           .string()
           .trim()
@@ -161,33 +163,33 @@ export class BotSessionToolsFactory implements BotToolArea {
           .max(128)
           .optional()
           .describe(
-            promptText('tools/sessions.start-session-model', {
+            promptText('sessions/tools.start-session-model', {
               modelChoicesByAgent: modelChoicesByAgent(),
             }),
           ),
         effort: z
           .enum(SESSION_EFFORTS)
           .optional()
-          .describe(promptText('tools/sessions.start-session-effort')),
+          .describe(promptText('sessions/tools.start-session-effort')),
         permission: z
           .enum(SESSION_PERMISSIONS)
           .optional()
-          .describe(promptText('tools/sessions.start-session-permission')),
+          .describe(promptText('sessions/tools.start-session-permission')),
         base_branch: z
           .string()
           .trim()
           .min(1)
           .max(255)
           .optional()
-          .describe(promptText('tools/sessions.start-session-base-branch')),
+          .describe(promptText('sessions/tools.start-session-base-branch')),
         name: z
           .string()
           .min(1)
           .max(80)
           .optional()
-          .describe(promptText('tools/sessions.start-session-name')),
+          .describe(promptText('sessions/tools.start-session-name')),
         hidden: HIDDEN_SESSION_INPUT,
-        watch: z.boolean().optional().describe(promptText('tools/sessions.start-session-watch')),
+        watch: z.boolean().optional().describe(promptText('sessions/tools.start-session-watch')),
       }),
       summarize: async (input, context) => {
         // A project the owner cannot read still gets a card, naming it by id: the call says why.
@@ -213,10 +215,11 @@ export class BotSessionToolsFactory implements BotToolArea {
             input: body,
             idempotencyKey: idempotencyKeyOf(context.turnId, body, context.approvalId),
             origin: 'bot',
+            botId: context.botId,
           }),
         );
         const offline = result.hints.includes('host_offline')
-          ? ` ${promptText('tools/sessions.start-session-host-offline-session')}`
+          ? ` ${promptText('sessions/tools.start-session-host-offline-session')}`
           : '';
         const watched = await this.watches.follow(
           context,
@@ -224,15 +227,17 @@ export class BotSessionToolsFactory implements BotToolArea {
           'first_task',
           input.watch,
         );
-        return {
-          content: promptText('tools/sessions.start-session-content', {
-            sessionId: result.sessionId,
-            hostId,
-            offline,
-            watched,
-          }),
+        const started = promptText('sessions/tools.start-session-content', {
           sessionId: result.sessionId,
-        };
+          hostId,
+          offline,
+          watched,
+        });
+        const link = this.links.forTurn(context, result.sessionId);
+        const channelLink = link
+          ? ` ${promptText('sessions/tools.start-session-channel-link', { link })}`
+          : '';
+        return { content: `${started}${channelLink}`, sessionId: result.sessionId };
       },
     });
   }
@@ -259,7 +264,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           label: project?.name ?? `project ${input.project_id}`,
         };
       },
-      description: promptText('tools/sessions.start-cloud-session'),
+      description: promptText('sessions/tools.start-cloud-session'),
       input: z.object({
         task: z
           .string()
@@ -267,61 +272,61 @@ export class BotSessionToolsFactory implements BotToolArea {
           .min(FIELD_BOUNDS.prompt.min)
           .max(FIELD_BOUNDS.prompt.maxBytes)
           .refine(fitsPromptBound, {
-            message: promptText('tools/sessions.start-cloud-session-task-message', {
+            message: promptText('sessions/tools.start-cloud-session-task-message', {
               maxBytes: String(FIELD_BOUNDS.prompt.maxBytes),
             }),
           })
           .describe(
-            promptText('tools/sessions.start-cloud-session-task', {
+            promptText('sessions/tools.start-cloud-session-task', {
               maxBytes: String(FIELD_BOUNDS.prompt.maxBytes),
             }),
           ),
-        project_id: z.uuid().describe(promptText('tools/sessions.start-cloud-session-project-id')),
+        project_id: z.uuid().describe(promptText('sessions/tools.start-cloud-session-project-id')),
         repository: z
           .string()
           .max(200)
           .optional()
-          .describe(promptText('tools/sessions.start-session-repository')),
+          .describe(promptText('sessions/tools.start-session-repository')),
         agent: z
           .enum(CLOUD_SESSION_AGENTS)
           .optional()
-          .describe(promptText('tools/sessions.start-cloud-session-agent')),
+          .describe(promptText('sessions/tools.start-cloud-session-agent')),
         host_id: z
           .uuid()
           .optional()
-          .describe(promptText('tools/sessions.start-cloud-session-host-id')),
+          .describe(promptText('sessions/tools.start-cloud-session-host-id')),
         codex_environment: z
           .string()
           .trim()
           .min(1)
           .max(200)
           .optional()
-          .describe(promptText('tools/sessions.start-cloud-session-codex-environment')),
+          .describe(promptText('sessions/tools.start-cloud-session-codex-environment')),
         model: z
           .string()
           .trim()
           .min(1)
           .max(128)
           .optional()
-          .describe(promptText('tools/sessions.start-cloud-session-model')),
+          .describe(promptText('sessions/tools.start-cloud-session-model')),
         name: z
           .string()
           .min(1)
           .max(80)
           .optional()
-          .describe(promptText('tools/sessions.start-session-name')),
+          .describe(promptText('sessions/tools.start-session-name')),
         hidden: HIDDEN_SESSION_INPUT,
         watch: z
           .boolean()
           .optional()
-          .describe(promptText('tools/sessions.start-cloud-session-watch')),
+          .describe(promptText('sessions/tools.start-cloud-session-watch')),
         wait_seconds: z
           .number()
           .int()
           .min(0)
           .max(CLOUD_START_WAIT_MAX_SECONDS)
           .default(60)
-          .describe(promptText('tools/sessions.start-cloud-session-wait-seconds')),
+          .describe(promptText('sessions/tools.start-cloud-session-wait-seconds')),
       }),
       summarize: async (input, context) => {
         const project = await this.project(context, input.project_id).catch(() => null);
@@ -357,25 +362,25 @@ export class BotSessionToolsFactory implements BotToolArea {
       scope: 'sessions:write',
       asks: true,
       subject: (input, context) => this.sessionSubject(context, input.session_id),
-      description: promptText('tools/sessions.send-to-session'),
+      description: promptText('sessions/tools.send-to-session'),
       input: z.object({
-        session_id: z.uuid().describe(promptText('tools/sessions.send-to-session-session-id')),
+        session_id: z.uuid().describe(promptText('sessions/tools.send-to-session-session-id')),
         text: z
           .string()
           .trim()
           .min(FIELD_BOUNDS.prompt.min)
           .max(FIELD_BOUNDS.prompt.maxBytes)
           .refine(fitsPromptBound, {
-            message: promptText('tools/sessions.send-to-session-text-message', {
+            message: promptText('sessions/tools.send-to-session-text-message', {
               maxBytes: String(FIELD_BOUNDS.prompt.maxBytes),
             }),
           })
           .describe(
-            promptText('tools/sessions.send-to-session-text', {
+            promptText('sessions/tools.send-to-session-text', {
               maxBytes: String(FIELD_BOUNDS.prompt.maxBytes),
             }),
           ),
-        watch: z.boolean().optional().describe(promptText('tools/sessions.send-to-session-watch')),
+        watch: z.boolean().optional().describe(promptText('sessions/tools.send-to-session-watch')),
       }),
       summarize: async (input, context) =>
         promptSummary(input, await this.session(context, input.session_id)),
@@ -391,7 +396,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           }),
         );
         const watched = await this.watches.follow(context, input.session_id, { turn }, input.watch);
-        return promptText('tools/sessions.send-to-session-sent-prompt-session', {
+        return promptText('sessions/tools.send-to-session-sent-prompt-session', {
           sessionId: input.session_id,
           watched,
           readAfterHint: readAfterHint(sent.seq),
@@ -414,16 +419,16 @@ export class BotSessionToolsFactory implements BotToolArea {
           context.permission,
         ),
       subject: (input, context) => this.sessionSubject(context, input.session_id),
-      description: promptText('tools/sessions.answer-session', {
+      description: promptText('sessions/tools.answer-session', {
         sessionUnblockRule: SESSION_UNBLOCK_RULE,
       }),
       input: z.object({
-        session_id: z.uuid().describe(promptText('tools/sessions.answer-session-session-id')),
+        session_id: z.uuid().describe(promptText('sessions/tools.answer-session-session-id')),
         decision_id: z
           .string()
           .min(1)
           .max(128)
-          .describe(promptText('tools/sessions.answer-session-decision-id')),
+          .describe(promptText('sessions/tools.answer-session-decision-id')),
         answers: z
           .array(
             z.object({
@@ -431,26 +436,26 @@ export class BotSessionToolsFactory implements BotToolArea {
                 .array(z.number().int().min(0))
                 .max(6)
                 .default([])
-                .describe(promptText('tools/sessions.answer-session-answers-picks')),
+                .describe(promptText('sessions/tools.answer-session-answers-picks')),
               other: z
                 .string()
                 .max(1_000)
                 .optional()
-                .describe(promptText('tools/sessions.answer-session-answers-other')),
+                .describe(promptText('sessions/tools.answer-session-answers-other')),
             }),
           )
           .min(1)
           .max(4)
           .optional()
-          .describe(promptText('tools/sessions.answer-session-answers')),
+          .describe(promptText('sessions/tools.answer-session-answers')),
         option: z
           .number()
           .int()
           .min(0)
           .max(8)
           .optional()
-          .describe(promptText('tools/sessions.answer-session-option')),
-        watch: z.boolean().optional().describe(promptText('tools/sessions.answer-session-watch')),
+          .describe(promptText('sessions/tools.answer-session-option')),
+        watch: z.boolean().optional().describe(promptText('sessions/tools.answer-session-watch')),
       }),
       summarize: async (input, context) => {
         const summary = decisionAnswerSummary(input, await this.session(context, input.session_id));
@@ -460,7 +465,7 @@ export class BotSessionToolsFactory implements BotToolArea {
       run: async (input, context) => {
         if ((input.answers === undefined) === (input.option === undefined)) {
           throw new BotToolRefusal(
-            promptText('tools/sessions.answer-session-give-answers-question'),
+            promptText('sessions/tools.answer-session-give-answers-question'),
           );
         }
         // Read first: the task answered, so its end wakes the bot even if it comes before the watch.
@@ -481,7 +486,7 @@ export class BotSessionToolsFactory implements BotToolArea {
           task ? { answered: task.seq } : 'now',
           input.watch,
         );
-        return promptText('tools/sessions.answer-session-answered-session-agent', {
+        return promptText('sessions/tools.answer-session-answered-session-agent', {
           sessionId: input.session_id,
           watched,
           readAfterHint: readAfterHint(answered.seq),
@@ -494,9 +499,9 @@ export class BotSessionToolsFactory implements BotToolArea {
     return this.sessionAction({
       name: 'stop_session',
       verb: 'stop',
-      description: promptText('tools/sessions.stop-session'),
+      description: promptText('sessions/tools.stop-session'),
       input: z.object({
-        session_id: z.uuid().describe(promptText('tools/sessions.stop-session-session-id')),
+        session_id: z.uuid().describe(promptText('sessions/tools.stop-session-session-id')),
       }),
       summary: (session) => `Stop the session "${session.name}" (${session.id})`,
       command: (input, context) =>
@@ -514,13 +519,13 @@ export class BotSessionToolsFactory implements BotToolArea {
     return this.sessionAction({
       name: 'close_session',
       verb: 'close',
-      description: promptText('tools/sessions.close-session'),
+      description: promptText('sessions/tools.close-session'),
       input: z.object({
-        session_id: z.uuid().describe(promptText('tools/sessions.close-session-session-id')),
+        session_id: z.uuid().describe(promptText('sessions/tools.close-session-session-id')),
         accept_unpushed_work: z
           .boolean()
           .optional()
-          .describe(promptText('tools/sessions.close-session-accept-unpushed-work')),
+          .describe(promptText('sessions/tools.close-session-accept-unpushed-work')),
       }),
       refusal: botSessionRefusal,
       doneHere: (session) => session.closesWithoutItsHost,
@@ -625,6 +630,7 @@ function cloudSessionCommand(
     userId: context.owner.userId,
     idempotencyKey: idempotencyKeyOf(context.turnId, plan.body, context.approvalId),
     origin: 'bot' as const,
+    botId: context.botId,
   };
   return plan.kind === 'host'
     ? new CreateSessionCommand({ ...props, input: plan.body })

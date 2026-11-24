@@ -200,7 +200,9 @@ func (h *linkHandler) repinDevice(sessionID string, device devdomain.Device) {
 }
 
 // pumpScreen reads the device's frames and sends the newest one each time
-// the browser has credit for it.
+// the browser has credit for it, fitted to the width the reader is shown
+// (devices.Fit). Only that frame is decoded and scaled: the ones a newer
+// frame replaced while the browser drew are dropped as they came.
 // It stops when the attachment ends, or quietly when replaced is closed: a
 // device.select streams another screen in its place.
 func (h *linkHandler) pumpScreen(ctx context.Context, att *deviceAttachment, screen devapp.Screen, replaced <-chan struct{}) {
@@ -215,9 +217,6 @@ func (h *linkHandler) pumpScreen(ctx context.Context, att *deviceAttachment, scr
 				ended <- err
 				return
 			}
-			if link.FrameHeader+len(frame) > link.MaxFrameBytes {
-				continue // too large for the link: the next one may fit
-			}
 			select {
 			case <-latest: // an older frame nobody had credit for
 			default:
@@ -226,6 +225,7 @@ func (h *linkHandler) pumpScreen(ctx context.Context, att *deviceAttachment, scr
 		}
 	}()
 
+	unsent := &unsentFrames{logger: h.logger, attachment: att.id}
 	window := link.CreditWindow
 	for {
 		var frame []byte
@@ -254,13 +254,45 @@ func (h *linkHandler) pumpScreen(ctx context.Context, att *deviceAttachment, scr
 				frame = newer
 			}
 		}
-		if err := h.client.SendFrame(ctx, att.id, frame); err != nil {
+		fitted, err := h.devices.Fit(frame)
+		if err != nil {
+			unsent.add(len(frame), err)
+			continue
+		}
+		if link.FrameHeader+len(fitted) > link.MaxFrameBytes {
+			unsent.add(len(fitted), errFrameTooLarge)
+			continue
+		}
+		if err := h.client.SendFrame(ctx, att.id, fitted); err != nil {
 			if ctx.Err() == nil {
 				h.endScreen(att, err)
 			}
 			return
 		}
-		window -= len(frame)
+		window -= len(fitted)
+	}
+}
+
+// errFrameTooLarge is a fitted frame the link cannot carry.
+var errFrameTooLarge = errors.New("larger than the link's frame cap")
+
+// unsentFrames counts the frames one attachment could not send and says so
+// in the log: the first, then every unsentEvery-th, so a screen that never
+// fits is loud without logging each frame.
+type unsentFrames struct {
+	logger     *slog.Logger
+	attachment uint32
+	count      int
+}
+
+const unsentEvery = 100
+
+func (u *unsentFrames) add(bytes int, err error) {
+	u.count++
+	if u.count == 1 || u.count%unsentEvery == 0 {
+		u.logger.Warn("device frame not sent",
+			slog.Uint64("attachment", uint64(u.attachment)), slog.Int("bytes", bytes),
+			slog.Int("limit", link.MaxFrameBytes), slog.Int("unsent", u.count), slog.Any("error", err))
 	}
 }
 
@@ -302,7 +334,9 @@ func (h *linkHandler) deviceInput(m link.DeviceInput) {
 		return
 	}
 	err := h.devices.Input(h.life, att.sessionID, devdomain.Input{
-		Kind: m.Kind, X: m.X, Y: m.Y, ToX: m.ToX, ToY: m.ToY, Text: m.Text, Key: m.Key, Button: m.Button,
+		Kind: m.Kind, X: m.X, Y: m.Y, ToX: m.ToX, ToY: m.ToY,
+		DurationMs: m.DurationMs, Momentum: m.Momentum,
+		Text: m.Text, Key: m.Key, Button: m.Button,
 	})
 	if err != nil {
 		h.logger.Warn("device input failed", slog.String("session", att.sessionID), slog.String("kind", m.Kind), slog.Any("error", err))

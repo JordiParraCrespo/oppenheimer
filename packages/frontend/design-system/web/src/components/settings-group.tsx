@@ -252,7 +252,7 @@ function SettingsAddRow({
           }
         }}
         className={cn(
-          'h-8 min-w-0 flex-1 border-0 bg-transparent text-[14px] text-fg outline-none placeholder:text-field-placeholder',
+          'h-(--control-h-sm) min-w-0 flex-1 border-0 bg-transparent text-[14px] text-fg outline-none placeholder:text-field-placeholder',
           mono && 'font-mono text-[13px]',
         )}
       />

@@ -84,11 +84,21 @@ row per message (chat, its kind and name, sender and name, whether it was
 you, the text or a media message's caption, the media's kind, the message it
 quotes, WhatsApp's time), your own messages from the phone included, and
 what bots sent through it, marked with the bot. Media itself stays on the
-phone: the bot is told "[image]" and the caption. A voice note is the one
-exception (*2026-11-18*): the row also keeps how long it runs and, once a bot
-needed it heard, its transcript; the runner keeps what fetching it takes (the
-media key and path, never the audio) for 48 hours and hands the audio over
-when asked (`whatsapp.media.get`, up to about two minutes of it).
+phone: the bot is told "[video]", "[document]" and the caption. A voice note
+is the first exception (*2026-11-18*): the row also keeps how long it runs
+and, once a bot needed it heard, its transcript; the runner keeps what
+fetching it takes (the media key and path, never the audio) for 48 hours and
+hands the audio over when asked (`whatsapp.media.get`, up to about two
+minutes of it). An image is the second (*2026-11-24*): the runner keeps its
+media key and path the same way, and when a turn the image woke starts
+(the owner's, or a contact's in a chat the number allows) the API asks for
+it (`whatsapp.media.get` with `kind: "image"`, to a runner that names
+`whatsapp.image`); the runner downloads it and, past one link frame
+(352 KB), scales it to a JPEG that fits. The bot's chat keeps that copy as
+an image of the message, as an image you attach in the console, and the
+bot sees it; `whatsapp_message` keeps none. One that cannot be fetched (the
+host offline or too old, past 48 hours, past 16 MB) reaches the bot as
+"[image, could not be seen: …]" with the caption, so it can say so.
 
 Kept for **90 days** and at most **50,000 per number** (the oldest go
 first), deleted by intake in batches as new messages arrive, and with the
@@ -167,7 +177,10 @@ A group of its own in Settings → Permissions, **WhatsApp**:
    short text (600 characters at most) on the deployment's text-to-speech
    server (`VOICE_TTS_*`, any OpenAI-compatible `/audio/speech` answering
    Ogg/Opus) and the runner sends it as a push-to-talk voice note
-   (`whatsapp.send.voice`). Images are next.
+   (`whatsapp.send.voice`). *Images built 2026-11-24:* an image the
+   number receives wakes the chat's bot as before, with its caption, and the
+   turn fetches the image from the host when it starts and is sent it as an
+   image, so the bot sees it (above, "Media itself stays on the phone").
 4. **WhatsApp as a channel** (`channels.md` §7.1): people write *to* a bot,
    with the owner-only rule and held strangers of `channels.md` §5, on the
    same device. *Designed 2026-11-09 in
@@ -218,3 +231,11 @@ A group of its own in Settings → Permissions, **WhatsApp**:
   ChatGPT sign-in does not speak (it has no route we may call). The audio is
   made and checked in the API (Ogg/Opus, its length read from its pages),
   carried in one link frame and held in memory on the host, never on disk.
+  *Fixed 2026-11-22:* the owner's first two bot voice notes (9 and 20
+  seconds, sent as successes) played as silence on the phone. The note now
+  carries its waveform, drawn on the host from its Opus packets (a
+  push-to-talk note without one plays on WhatsApp Web, not on the phones:
+  whatsmeow#517). Audio is decoded in the API before it goes, and audio that
+  decodes to silence counts as that provider failing (`VOICE_009`), so the
+  next one is tried; the host refuses a note silent from end to end
+  (`WA_008`). Which of the two the live notes hit was not established.

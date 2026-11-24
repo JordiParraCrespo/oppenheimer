@@ -34,6 +34,16 @@ export const CONSUMER_CONFIG = {
     /** The delays between reconnect attempts, with jitter on top. */
     reconnectLadderMs: [500, 1_000, 2_000, 5_000, 10_000, 30_000],
   },
+  /** A session's device in the Simulator pane (`device-stream.ts`). */
+  device: {
+    /**
+     * How long a tap or swipe made while the device's socket redials is kept
+     * to send once it is back. The link drops for one to eight seconds at a
+     * time; input older than this would land on a screen the reader no
+     * longer sees, so it is dropped rather than replayed.
+     */
+    heldInputMs: 4_000,
+  },
   /** The workspace event stream (`src/react/workspace-events.ts`). */
   workspaceEvents: {
     /**

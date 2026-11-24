@@ -11,6 +11,7 @@ import {
   BOT_SECTIONS,
   type BotDocumentName,
   botModelOf,
+  isReactionEmoji,
 } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import { CreateBotMemoryFactCommand } from '../../bots/commands/create-bot-memory-fact/create-bot-memory-fact.command';
@@ -25,6 +26,8 @@ import { FindBotDocumentQuery } from '../../bots/queries/find-bot-document/find-
 import { FindBotDocumentsQuery } from '../../bots/queries/find-bot-documents/find-bot-documents.query';
 import { FindBotMemoryQuery } from '../../bots/queries/find-bot-memory/find-bot-memory.query';
 import { FindBotMemoryFactQuery } from '../../bots/queries/find-bot-memory-fact/find-bot-memory-fact.query';
+import { ReactAsBotCommand } from '../commands/react-as-bot/react-as-bot.command';
+import type { ReactAsBotOutcome } from '../commands/react-as-bot/react-as-bot.command-handler';
 import {
   BOT_CHAT_SEARCH_LIMIT_MAX,
   searchWords,
@@ -47,6 +50,7 @@ import {
   type BotToolArea,
   type BotToolCallContext,
   type BotToolDefinition,
+  BotToolRefusal,
   defineBotTool,
 } from './bot-tool.factory';
 
@@ -96,6 +100,7 @@ export class BotSelfToolsFactory implements BotToolArea {
       this.forget(),
       this.recall(),
       this.searchChat(),
+      this.react(),
     ];
   }
 
@@ -104,14 +109,14 @@ export class BotSelfToolsFactory implements BotToolArea {
       name: 'get_self',
       readOnly: true,
       scope: 'bots:read',
-      description: promptText('tools/self.get-self', {
+      description: promptText('core/tools-self.get-self', {
         documentPreviewMax: String(DOCUMENT_PREVIEW_MAX),
       }),
       input: z.strictObject({
         document: z
           .enum(['soul', 'instructions'])
           .optional()
-          .describe(promptText('tools/self.get-self-document')),
+          .describe(promptText('core/tools-self.get-self-document')),
       }),
       run: async (input, context) => {
         const [bot, documents, facts] = await Promise.all([
@@ -123,7 +128,7 @@ export class BotSelfToolsFactory implements BotToolArea {
         ]);
         const lines = describeSelf(bot);
         lines.push(
-          promptText('tools/self.get-self-memory-facts-use', {
+          promptText('core/tools-self.get-self-memory-facts-use', {
             factsCount: String(facts.length),
             memoryFactsMax: String(BOT_MEMORY_FACTS_MAX),
           }),
@@ -143,39 +148,41 @@ export class BotSelfToolsFactory implements BotToolArea {
   private editDocument(name: BotDocumentName): BotToolDefinition {
     const file = DOCUMENT_FILES[name];
     const what =
-      name === 'soul' ? 'your persona and tone' : promptText('tools/self.what-instructions-are');
+      name === 'soul'
+        ? 'your persona and tone'
+        : promptText('core/tools-self.what-instructions-are');
     return defineBotTool({
       name: name === 'soul' ? 'edit_soul' : 'edit_instructions',
       scope: 'bots:write',
       setupStep:
         name === 'instructions'
-          ? promptText('tools/self.write-instructions-setup-step')
+          ? promptText('core/tools-self.write-instructions-setup-step')
           : undefined,
-      description: promptText('tools/self.edit-document', {
+      description: promptText('core/tools-self.edit-document', {
         file,
         what,
         documentMax: String(BOT_DOCUMENT_MAX),
         name:
           name === 'soul'
-            ? promptText('tools/self.rules-go-in-instructions')
-            : promptText('tools/self.persona-goes-in-soul'),
+            ? promptText('core/tools-self.rules-go-in-instructions')
+            : promptText('core/tools-self.persona-goes-in-soul'),
       }),
       input: z.strictObject({
         content: z
           .string()
           .max(BOT_DOCUMENT_MAX)
-          .describe(promptText('tools/self.edit-document-content', { file })),
+          .describe(promptText('core/tools-self.edit-document-content', { file })),
         base_revision: z
           .number()
           .int()
           .min(1)
-          .describe(promptText('tools/self.edit-document-base-revision', { file })),
+          .describe(promptText('core/tools-self.edit-document-base-revision', { file })),
         note: z
           .string()
           .trim()
           .max(NOTE_MAX)
           .optional()
-          .describe(promptText('tools/self.edit-document-note')),
+          .describe(promptText('core/tools-self.edit-document-note')),
       }),
       run: async (input, context) => {
         await this.commandBus.execute(
@@ -194,12 +201,12 @@ export class BotSelfToolsFactory implements BotToolArea {
           new FindBotDocumentQuery({ scope: context.owner, botId: context.botId, name }),
         );
         if (saved.revision === input.base_revision) {
-          return promptText('tools/self.edit-document-unchanged', {
+          return promptText('core/tools-self.edit-document-unchanged', {
             file,
             revision: String(saved.revision),
           });
         }
-        return promptText('tools/self.edit-document-saved', {
+        return promptText('core/tools-self.edit-document-saved', {
           file,
           revision: String(saved.revision),
           contentCount: String(saved.content.length),
@@ -212,8 +219,8 @@ export class BotSelfToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'update_profile',
       scope: 'bots:write',
-      setupStep: promptText('tools/self.update-profile-setup-step'),
-      description: promptText('tools/self.update-profile', {
+      setupStep: promptText('core/tools-self.update-profile-setup-step'),
+      description: promptText('core/tools-self.update-profile', {
         nameMax: String(BOT_NAME_MAX),
         descriptionMax: String(BOT_DESCRIPTION_MAX),
       }),
@@ -225,19 +232,19 @@ export class BotSelfToolsFactory implements BotToolArea {
             .trim()
             .max(BOT_DESCRIPTION_MAX)
             .optional()
-            .describe(promptText('tools/self.update-profile-description')),
+            .describe(promptText('core/tools-self.update-profile-description')),
           sections: z
             .array(z.enum(BOT_SECTIONS))
             .max(BOT_SECTIONS.length)
             .optional()
-            .describe(promptText('tools/self.update-profile-sections')),
+            .describe(promptText('core/tools-self.update-profile-sections')),
         })
         .refine(
           (input) =>
             input.name !== undefined ||
             input.description !== undefined ||
             input.sections !== undefined,
-          { message: promptText('tools/self.update-profile-message') },
+          { message: promptText('core/tools-self.update-profile-message') },
         ),
       run: async (input, context) => {
         const before = await this.bot(context);
@@ -259,7 +266,7 @@ export class BotSelfToolsFactory implements BotToolArea {
             : null,
         ].filter((change): change is string => change !== null);
         if (changes.length === 0) {
-          return promptText('tools/self.update-profile-profile-unchanged-name', {
+          return promptText('core/tools-self.update-profile-profile-unchanged-name', {
             name: after.name,
             description: after.description,
           });
@@ -273,7 +280,7 @@ export class BotSelfToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'remember',
       scope: 'bots:write',
-      setupStep: promptText('tools/self.remember-setup-step'),
+      setupStep: promptText('core/tools-self.remember-setup-step'),
       description: REMEMBER_DESCRIPTION,
       input: z.strictObject({
         fact: z
@@ -281,14 +288,16 @@ export class BotSelfToolsFactory implements BotToolArea {
           .trim()
           .min(1)
           .max(BOT_MEMORY_FACT_MAX)
-          .describe(promptText('tools/self.remember-fact')),
+          .describe(promptText('core/tools-self.remember-fact')),
         tier: z.enum(BOT_MEMORY_TIERS).optional().describe(REMEMBER_TIER_HINT),
         memory: z.enum(REMEMBER_MEMORY).optional().describe(REMEMBER_MEMORY_HINT),
       }),
       run: async (input, context) => {
         const bot = await this.bot(context);
         if (!bot.learnAutomatically) {
-          return promptText('tools/self.remember-saved-learn-automatically', { fact: input.fact });
+          return promptText('core/tools-self.remember-saved-learn-automatically', {
+            fact: input.fact,
+          });
         }
         const factId = await this.commandBus.execute<CreateBotMemoryFactCommand, string>(
           new CreateBotMemoryFactCommand({
@@ -303,7 +312,7 @@ export class BotSelfToolsFactory implements BotToolArea {
         const saved = await this.queryBus.execute<FindBotMemoryFactQuery, BotMemoryFactEntity>(
           new FindBotMemoryFactQuery({ scope: context.owner, botId: context.botId, factId }),
         );
-        return promptText('tools/self.remember-remembered-person-can', {
+        return promptText('core/tools-self.remember-remembered-person-can', {
           id: saved.id,
           describeKept: describeKept(saved),
           content: saved.content,
@@ -316,7 +325,7 @@ export class BotSelfToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'forget',
       scope: 'bots:write',
-      description: promptText('tools/self.forget'),
+      description: promptText('core/tools-self.forget'),
       input: z.strictObject({ fact_id: z.uuid().describe('A fact id from recall.') }),
       run: async (input, context) => {
         const fact = await this.queryBus.execute<FindBotMemoryFactQuery, BotMemoryFactEntity>(
@@ -343,14 +352,16 @@ export class BotSelfToolsFactory implements BotToolArea {
       name: 'recall',
       readOnly: true,
       scope: 'bots:read',
-      description: promptText('tools/self.recall', { recallLimitMax: String(RECALL_LIMIT_MAX) }),
+      description: promptText('core/tools-self.recall', {
+        recallLimitMax: String(RECALL_LIMIT_MAX),
+      }),
       input: z.strictObject({
         query: z
           .string()
           .trim()
           .max(200)
           .optional()
-          .describe(promptText('tools/self.recall-query')),
+          .describe(promptText('core/tools-self.recall-query')),
         limit: z.number().int().min(1).max(RECALL_LIMIT_MAX).default(10),
       }),
       run: async (input, context) => {
@@ -375,13 +386,13 @@ export class BotSelfToolsFactory implements BotToolArea {
           ),
           facts.length === 0
             ? 'Your memory is empty.'
-            : promptText('tools/self.recall-fact-contains-any', {
+            : promptText('core/tools-self.recall-fact-contains-any', {
                 factsCount: String(facts.length),
               }),
           {
             shown: shown.length,
             total: matches.length,
-            hint: promptText('tools/self.recall-hint'),
+            hint: promptText('core/tools-self.recall-hint'),
           },
         );
       },
@@ -399,12 +410,58 @@ export class BotSelfToolsFactory implements BotToolArea {
    * and a summary of the rest, so what fell out of both is found here, in the
    * person's and the bot's own words.
    */
+  /**
+   * A reaction to the person's message, as a person leaves one: shown on
+   * their bubble in the console chat. On a channel conversation it would be
+   * stored where nobody sees it, so the tool says to answer in words there.
+   */
+  private react(): BotToolDefinition {
+    return defineBotTool({
+      name: 'react',
+      scope: 'bots:write',
+      description: promptText('core/tools-self.react'),
+      input: z.strictObject({
+        emoji: z.string().trim().max(32).describe(promptText('core/tools-self.react-emoji')),
+        message_id: z.uuid().optional().describe(promptText('core/tools-self.react-message-id')),
+      }),
+      run: async (input, context) => {
+        if (context.conversationId !== context.botId) {
+          throw new BotToolRefusal(promptText('core/tools-self.react-console-only'));
+        }
+        const emoji = input.emoji === '' ? null : input.emoji;
+        if (emoji !== null && !isReactionEmoji(emoji)) {
+          throw new BotToolRefusal(promptText('core/tools-self.react-not-emoji', { emoji }));
+        }
+        const outcome = await this.commandBus.execute<ReactAsBotCommand, ReactAsBotOutcome>(
+          new ReactAsBotCommand({
+            scope: context.owner,
+            organizationId: context.organizationId,
+            botId: context.botId,
+            conversationId: context.conversationId,
+            turnId: context.turnId,
+            messageId: input.message_id ?? null,
+            emoji,
+          }),
+        );
+        if (outcome.kind === 'no_message') {
+          throw new BotToolRefusal(promptText('core/tools-self.react-no-message'));
+        }
+        if (outcome.kind === 'not_yours') {
+          throw new BotToolRefusal(promptText('core/tools-self.react-not-yours'));
+        }
+        return emoji
+          ? promptText('core/tools-self.react-done', { emoji, messageId: outcome.messageId })
+          : promptText('core/tools-self.react-removed', { messageId: outcome.messageId });
+      },
+    });
+  }
+
   private searchChat(): BotToolDefinition {
     return defineBotTool({
       name: 'search_chat',
       readOnly: true,
       scope: 'bots:read',
-      description: promptText('tools/self.search-chat', {
+      description: promptText('core/tools-self.search-chat', {
         chatSearchLimitMax: String(BOT_CHAT_SEARCH_LIMIT_MAX),
       }),
       input: z.strictObject({
@@ -413,7 +470,7 @@ export class BotSelfToolsFactory implements BotToolArea {
           .trim()
           .min(1)
           .max(200)
-          .describe(promptText('tools/self.search-chat-query')),
+          .describe(promptText('core/tools-self.search-chat-query')),
         limit: z.number().int().min(1).max(BOT_CHAT_SEARCH_LIMIT_MAX).default(10),
       }),
       run: async (input, context) => {
@@ -429,7 +486,9 @@ export class BotSelfToolsFactory implements BotToolArea {
           ),
         );
         if (messages.length === 0) {
-          return promptText('tools/self.search-chat-message-chat-matches', { query: input.query });
+          return promptText('core/tools-self.search-chat-message-chat-matches', {
+            query: input.query,
+          });
         }
         const words = searchWords(input.query);
         const lines = messages.map(
@@ -437,7 +496,7 @@ export class BotSelfToolsFactory implements BotToolArea {
             `- ${message.id} [${formatToolTime(message.createdAt, context.timeZone)}] ${message.role === 'user' ? 'the person' : 'you'}: ${snippetAround(message.content, words)}`,
         );
         return [
-          promptText('tools/self.search-chat-messages-matching-best', {
+          promptText('core/tools-self.search-chat-messages-matching-best', {
             query: input.query,
             messagesCount: String(messages.length),
           }),
@@ -461,8 +520,8 @@ function describeSelf(bot: BotEntity): string[] {
     `- description: ${bot.description || '(none)'}`,
     `- provider: ${bot.provider}; model: ${model?.label ?? bot.model ?? 'default'}${bot.effort ? `; effort: ${bot.effort}` : ''}`,
     `- approval level: ${bot.permission}`,
-    `- learn automatically: ${bot.learnAutomatically ? promptText('tools/self.describe-self-remember-saves-directly') : promptText('tools/self.describe-self-off-ask-before')}`,
-    promptText('tools/self.describe-self-home-host-list', {
+    `- learn automatically: ${bot.learnAutomatically ? promptText('core/tools-self.describe-self-remember-saves-directly') : promptText('core/tools-self.describe-self-off-ask-before')}`,
+    promptText('core/tools-self.describe-self-home-host-list', {
       homeHostId: bot.homeHostId ?? 'none chosen',
     }),
     `- shows in: ${bot.sections.length ? bot.sections.join(', ') : 'Employees only'}`,
@@ -474,7 +533,7 @@ function describeDocument(document: BotDocumentEntity, max: number | null): stri
   const content = document.content;
   const cut = max !== null && content.length > max;
   return [
-    promptText('tools/self.document-header', {
+    promptText('core/tools-self.document-header', {
       file,
       revision: String(document.revision),
       contentCount: String(content.length),
@@ -485,7 +544,7 @@ function describeDocument(document: BotDocumentEntity, max: number | null): stri
     '</document>',
     ...(cut
       ? [
-          promptText('tools/self.describe-document-more-characters-cut', {
+          promptText('core/tools-self.describe-document-more-characters-cut', {
             contentCount: String(content.length - max),
             name: document.name,
           }),

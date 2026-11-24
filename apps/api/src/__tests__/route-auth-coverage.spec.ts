@@ -52,6 +52,10 @@ const PUBLIC: Record<string, string> = {
     'a machine redeeming a registration token, the whole credential, which the handler checks',
   'POST /v1/github/webhook':
     'GitHub cannot send a bearer; the handler verifies the X-Hub-Signature-256 HMAC',
+  'POST /v1/slack/events':
+    'Slack cannot send a bearer; the handler verifies the X-Slack-Signature HMAC with the bot’s app’s signing secret',
+  'POST /v1/routine-webhooks/:token':
+    'any outside system posts here; the unguessable token in the path admits it, and a signed URL also needs its HMAC',
   'GET /v1/feature-flags':
     'OptionalApiAuthGuard: the signed-out console reads its flags before anyone signs in',
   'POST /v1/shared-sessions/lookup':

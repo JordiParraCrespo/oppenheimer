@@ -140,7 +140,29 @@
       },
       "emoji": {
         "menu": "Emoji",
-        "pick": "Insert {{emoji}} :{{name}}:"
+        "pick": "Insert {{emoji}} :{{name}}:",
+        "open": "Emoji",
+        "search": "Search emoji",
+        "noResults": "No emoji match",
+        "results": "Results",
+        "groups": {
+          "recent": "Recently used",
+          "smileys": "Smileys & emotion",
+          "people": "People & body",
+          "nature": "Animals & nature",
+          "food": "Food & drink",
+          "travel": "Travel & places",
+          "activities": "Activities",
+          "objects": "Objects",
+          "symbols": "Symbols",
+          "flags": "Flags"
+        },
+        "react": "React",
+        "reactWith": "React with {{emoji}}",
+        "removeReaction": "Remove reaction {{emoji}}",
+        "more": "More emoji",
+        "yourReaction": "Your reaction: {{emoji}}",
+        "reactFailed": "Could not save the reaction"
       }
     },
     "search": {
@@ -358,6 +380,12 @@
       "AUTOMATIONS_007": "That project can't hold automations.",
       "AUTOMATIONS_008": "That run doesn't exist.",
       "AUTOMATIONS_009": "That Gmail account can't start a routine: it isn't yours, or it needs reconnecting in Settings → Mail.",
+      "AUTOMATIONS_010": "That webhook URL isn't valid any more: issue a new one on the routine's Routines tab.",
+      "AUTOMATIONS_011": "The webhook request's signature is missing, too old or doesn't match.",
+      "AUTOMATIONS_012": "The webhook body is too large.",
+      "AUTOMATIONS_013": "The routine is paused. Turn it back on from the Routines tab.",
+      "AUTOMATIONS_014": "This routine has no webhook trigger. Ask the bot to add one first.",
+      "AUTOMATIONS_015": "Webhook signing isn't set up on this deployment.",
       "TASKS_001": "That task doesn't exist, or it was deleted.",
       "TASKS_002": "That milestone doesn't exist, or it was deleted.",
       "TASKS_004": "That project can't take tasks. It may have been archived.",
@@ -447,6 +475,14 @@
       "TELEGRAM_008": "Telegram didn't take the message. Try again in a moment.",
       "TELEGRAM_009": "That Telegram bot has sent as many bot messages as it may for now. Try again later.",
       "TELEGRAM_010": "There's no such Telegram chat on that bot.",
+      "SLACK_001": "That Slack app isn't connected any more.",
+      "SLACK_002": "Slack belongs to a workspace. Open one and try again.",
+      "SLACK_003": "This server can't keep a Slack token. Ask whoever runs it to set SLACK_TOKEN_KEY.",
+      "SLACK_004": "Slack refused that bot token. Copy the Bot User OAuth Token (xoxb-…) from the app's OAuth & Permissions page, after installing it.",
+      "SLACK_005": "That Slack app already answers as another bot. Create an app for this bot.",
+      "SLACK_006": "Slack didn't answer. Try again in a moment.",
+      "SLACK_007": "Slack asked us to slow down. Try again in a moment.",
+      "SLACK_008": "That request wasn't signed by the Slack app.",
       "CLOUD_AGENTS_003": "This server can't keep a cloud agent key. Ask whoever runs it to set CLOUD_AGENTS_KEY.",
       "CLOUD_AGENTS_004": "Connect the provider with your API key first.",
       "CLOUD_AGENTS_005": "The provider refused that API key. Check it's a user API key and hasn't been revoked.",
@@ -530,7 +566,9 @@
       "SESSIONS_057": "The agent's window can't be closed. Close the session instead.",
       "SESSIONS_058": "That terminal is no longer open.",
       "SESSIONS_059": "The host refused to change the session's terminals.",
-      "SESSIONS_060": "This host's runner can't start a second agent. Update the runner on the host."
+      "SESSIONS_060": "This host's runner can't start a second agent. Update the runner on the host.",
+      "BOTS_044": "That message is no longer in this chat.",
+      "BOTS_045": "Only your messages and the bot's words take a reaction."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -1521,6 +1559,20 @@
         "previous": "Previous match",
         "next": "Next match",
         "close": "Close find"
+      },
+      "feedback": {
+        "label": "Drafted feedback",
+        "review": "Review in terminal",
+        "send": "Send",
+        "dismiss": "Dismiss",
+        "back": "Back",
+        "keep": "Keep",
+        "turnOff": "Turn off",
+        "retry": "Review and retry",
+        "reviewOrDiscard": "Review or discard",
+        "clearPrompt": "Clear the terminal's prompt to answer it.",
+        "more_one": "{{count}} more queued",
+        "more_other": "{{count}} more queued"
       }
     },
     "side": {
@@ -1582,10 +1634,13 @@
       "title": "{{name}} running on this session's host",
       "connecting": "Connecting to the session's device…",
       "connectingDetail": "The screen appears once the host has started streaming it.",
+      "noPicture": "Waiting for the screen…",
       "unavailable": "No device for this session",
       "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
       "offline": "The host is offline",
       "offlineDetail": "The device comes back when the host reconnects.",
+      "reconnecting": "Reconnecting to the device…",
+      "reconnectingDetail": "Taps from the next few seconds are sent once it’s back.",
       "ended": "The session has ended",
       "browser": "Browser",
       "address": "localhost:{{port}}",
@@ -1741,7 +1796,15 @@
       "settings": "Settings",
       "delete": "Delete bot",
       "hello": "Ask {{name}} anything. It can read your sessions and act on them.",
-      "placeholder": "Message {{name}}",
+      "field": "Message {{name}}",
+      "placeholders": {
+        "takeOn": "What should {{name}} take on?",
+        "job": "Hand {{name}} a job…",
+        "problem": "Point {{name}} at a problem…",
+        "session": "Ask {{name}} to check on a session…",
+        "listening": "{{name}} is listening…",
+        "anything": "Ask {{name}} anything"
+      },
       "history": "History {{position}}/{{total}}",
       "pasted": {
         "lines": "[Pasted text #{{n}} +{{lines}} lines]",
@@ -1752,7 +1815,13 @@
         "showLess": "Show less"
       },
       "tooLong": "This message is {{length}} characters long; a bot takes up to {{max}}.",
-      "placeholderRunning": "Steer {{name}}: Enter steers the turn under way, Alt+Enter queues for after, Esc stops",
+      "placeholdersRunning": {
+        "steer": "Steer {{name}} while it works…",
+        "nudge": "Nudge {{name}} another way…",
+        "context": "Tell {{name}} something it should know…",
+        "next": "Line up what {{name}} does next…",
+        "course": "Change {{name}}'s course mid-flight…"
+      },
       "steered": "Steered in while it worked",
       "send": "Send",
       "stop": "Stop",
@@ -1954,6 +2023,10 @@
           "comment": "Pull request #{{number}} of {{repository}}: new comment",
           "pr_merged": "Pull request #{{number}} of {{repository}} was merged"
         },
+        "githubAsk": {
+          "mention": "Asked on GitHub, in a comment on #{{number}} of {{repository}}",
+          "label": "Asked on GitHub, with a label on #{{number}} of {{repository}}"
+        },
         "task": {
           "created": "“{{title}}” was added to {{to}}",
           "status_changed": "“{{title}}” moved from {{from}} to {{to}}",
@@ -1990,6 +2063,7 @@
           "stopped": "Loop “{{prompt}}” stopped: a run of it failed or was stopped",
           "ended": "Loop “{{prompt}}” ended: the bot did not say when to run next"
         },
+        "checkBack": "Checked back on: {{about}}",
         "compaction": "Summarized earlier work to keep its context small · {{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Tidied its memory · {{before}} facts → {{after}}",
@@ -2093,7 +2167,8 @@
         },
         "empty": "Nothing spent in this chat yet.",
         "loadFailed": "Could not load the usage. Try again."
-      }
+      },
+      "botReacted": "The bot reacted {{emoji}}"
     },
     "settings": {
       "back": "Back to the chat",
@@ -2322,6 +2397,7 @@
         "schedule": "Schedule · {{when}}",
         "github": "GitHub · {{when}}",
         "gmail": "Gmail · {{when}}",
+        "webhook": "Webhook · {{when}}",
         "last": "Last",
         "next": "Next",
         "more": "Show more",
@@ -2354,7 +2430,32 @@
         "deleteFailed": "Could not delete the routine.",
         "switchFailed": "Could not change the routine.",
         "runFailed": "Could not run the routine.",
-        "loadFailed": "Could not load the bot's routines."
+        "loadFailed": "Could not load the bot's routines.",
+        "webhookUrl": {
+          "none": "Webhook · no URL yet",
+          "create": "Create URL",
+          "newUrl": "New URL",
+          "creating": "Creating…",
+          "revoke": "Revoke",
+          "revoking": "Revoking…",
+          "revokeTitle": "Revoke the webhook URL of “{{name}}”?",
+          "revokeBody": "Anything posted to it is refused from now on. The routine keeps its webhook trigger: create a new URL to use it again.",
+          "revokeFailed": "Could not revoke the URL.",
+          "isSigned": "Signed",
+          "isUnsigned": "Not signed",
+          "lastReceived": "last received {{when}}",
+          "neverReceived": "nothing received yet",
+          "dialogTitle": "Webhook URL for “{{name}}”",
+          "dialogBody": "Anything that can send a POST (a deploy pipeline, Sentry, a form) runs this routine through this URL. The bot reads what was posted as outside data, never as instructions.",
+          "replaces": "The URL it has now stops working as soon as the new one is made.",
+          "signed": "Require a signature (a signing secret every request is signed with)",
+          "shownOnce": "Copy them now: they’re shown once. Afterwards only the start of the URL is shown.",
+          "url": "URL",
+          "secret": "Signing secret",
+          "signHow": "Send x-oppenheimer-signature: t=<unix seconds>,v1=<hex HMAC-SHA256 of “<t>.<body>” with this secret>. Requests more than five minutes old are refused.",
+          "done": "Done",
+          "failed": "Could not make the URL."
+        }
       },
       "homeHost": {
         "title": "Home host",
@@ -2452,7 +2553,7 @@
       },
       "gateways": {
         "title": "Gateways",
-        "subtitle": "Where people reach this bot: the WhatsApp chats it answers, and the Telegram bots it answers on.",
+        "subtitle": "Where people reach this bot: the WhatsApp chats it answers, the Telegram bots it answers on, and its own Slack app.",
         "whatsappFailed": "Couldn’t load your WhatsApp numbers.",
         "telegramFailed": "Couldn’t load your Telegram bots.",
         "chatsFailed": "Couldn’t load this number’s chats.",
@@ -2485,6 +2586,58 @@
         "addCount_other": "Add {{count}} chats",
         "telegramTitle": "Telegram · {{name}}",
         "telegramMeta": "Answers you there. Groups and other people on Telegram come next."
+      },
+      "slack": {
+        "title": "Slack",
+        "subtitle": "Give this bot its own Slack app, so you can ask it with a mention in a channel or in its direct messages. It answers in the thread you asked in.",
+        "loadFailed": "Couldn't load this bot's Slack app.",
+        "howItWorks": "The bot answers only you: anyone else who mentions it is ignored. Approvals stay in Oppenheimer and your Inbox; the thread gets a link to them. Write stop in a thread to stop what it's doing there.",
+        "stepCreate": "Create the app in Slack",
+        "stepCreateHint": "Slack opens with the bot's name, the permissions it needs and where to send its events already filled in. Pick your workspace and create it.",
+        "createInSlack": "Create in Slack",
+        "copyEventsUrl": "Copy the events address",
+        "stepInstall": "Install it to your workspace",
+        "stepInstallHint": "In the app's settings, open Install App and choose Install to Workspace.",
+        "stepPaste": "Paste its token and signing secret",
+        "stepPasteHint": "Both are kept encrypted and never shown again.",
+        "tokenField": "Bot User OAuth Token",
+        "tokenHint": "Under OAuth & Permissions, once the app is installed. It starts with xoxb-.",
+        "secretField": "Signing secret",
+        "secretHint": "Under Basic Information → App Credentials.",
+        "show": "Show",
+        "hide": "Hide",
+        "connect": "Connect",
+        "connecting": "Connecting…",
+        "connectFailed": "Couldn't connect the Slack app.",
+        "inWorkspace": "In {{team}}",
+        "tokenEnding": "Token ending {{hint}}",
+        "status": {
+          "answering": "Answers you",
+          "notLinked": "Link your Slack user",
+          "revoked": "Token refused"
+        },
+        "replace": "New token",
+        "replaceTitle": "New token for @{{name}}",
+        "replaceDescription": "Paste the token and signing secret again, after reinstalling the app or rotating its token. A different app will need you to link your Slack user again.",
+        "replaceSubmit": "Save",
+        "disconnect": "Disconnect",
+        "disconnecting": "Disconnecting…",
+        "disconnectTitle": "Disconnect @{{name}}?",
+        "disconnectDescription": "Oppenheimer forgets the app's token and the bot stops answering in Slack. Its threads stay in the bot's history. The app stays in Slack; delete it there to remove it.",
+        "disconnectFailed": "Couldn't disconnect the Slack app.",
+        "ownerIntro": "@{{name}} answers only you. Tell it which Slack user is you by sending it a one-time code.",
+        "linkMe": "Link my Slack user",
+        "makingCode": "Making a code…",
+        "ownerLinkFailed": "Couldn't make the code.",
+        "ownerStepOpen": "Open your direct messages with @{{name}}",
+        "openDm": "Open in Slack",
+        "ownerStepSend": "Send it this message within ten minutes",
+        "copyCode": "Copy the message",
+        "ownerStepCheck": "Then check it took",
+        "check": "Check",
+        "newCode": "New code",
+        "copy": "Copy",
+        "copied": "Copied"
       }
     },
     "delete": {
@@ -2532,7 +2685,8 @@
       "runsEmpty": "No runs yet. Each run appears here with the session it started.",
       "loadFailed": "Automations could not be loaded.",
       "actionFailed": "That did not go through.",
-      "actionFailedFor": "“{{name}}” was not updated"
+      "actionFailedFor": "“{{name}}” was not updated",
+      "filterNoMatch": "No automations match these filters."
     },
     "status": {
       "active": "Active",
@@ -2552,6 +2706,7 @@
       "paused": "Skipped: the automation was paused",
       "deleted": "Skipped: the automation was deleted",
       "own_event": "Skipped: the event was our own",
+      "own_session_event": "Skipped: a session this bot started caused it",
       "automation_rate_limited": "Skipped: this automation’s hourly limit",
       "workspace_rate_limited": "Skipped: the workspace’s hourly limit",
       "overlapping": "Skipped: a run was still going",
@@ -2593,6 +2748,10 @@
       "monthly": {
         "label": "Monthly",
         "desc": "On one day of the month"
+      },
+      "cron": {
+        "label": "Custom",
+        "desc": "On a schedule a bot writes for you"
       }
     },
     "event": {
@@ -2659,10 +2818,42 @@
       "event": "On {{event}}",
       "mail": "New mail matching “{{query}}”",
       "anyMail": "Any new mail",
+      "webhook": "Something posted to its URL",
       "more": "{{summary}} +{{count}}",
       "manual": "Manual only",
       "monFri": "Mon–Fri",
       "weekend": "Sat, Sun"
+    },
+    "cron": {
+      "sentence": "{{time}}, {{day}}",
+      "sentenceMonths": "{{time}}, {{day}}, in {{months}}",
+      "zoned": "{{sentence}} ({{zone}})",
+      "custom": "Custom schedule",
+      "at": "At {{times}}",
+      "everyMinutes": "Every {{step}} minutes",
+      "everyMinutesWindow": "Every {{step}} minutes from {{from}} to {{to}}",
+      "everyHour": "Every hour at :{{minute}}",
+      "everyHourAt": "Every hour at {{minutes}}",
+      "everyHourWindow": "Every hour at :{{minute}} from {{from}} to {{to}}",
+      "everyHours": "Every {{step}} hours at :{{minute}}",
+      "everyHoursWindow": "Every {{step}} hours at :{{minute}} from {{from}} to {{to}}",
+      "minutesPast": "At {{minutes}} past {{hours}}",
+      "everyDay": "every day",
+      "monthDays": "on day {{days}} of the month",
+      "lastDay": "on the last day of the month",
+      "lastWeekday": "on the last weekday of the month",
+      "nthWeekday": "on the {{nth}} {{day}} of the month",
+      "lastWeekdayOf": "on the last {{day}} of the month",
+      "either": "{{monthDays}} or {{weekDays}}",
+      "both": "{{monthDays}}, if that falls {{weekDays}}",
+      "bothDays": "{{monthDays}}, if that falls on {{weekDays}}",
+      "ordinal": {
+        "1": "first",
+        "2": "second",
+        "3": "third",
+        "4": "fourth",
+        "5": "fifth"
+      }
     },
     "next": {
       "onEvent": "On next event",
@@ -2848,7 +3039,24 @@
       "runsOn": "Runs on {{bot}}",
       "loadFailed": "Bot routines could not be loaded.",
       "empty": "A bot's routines are made in its chat, with /schedule.",
-      "emptyTitle": "No bot routines yet"
+      "emptyTitle": "No bot routines yet",
+      "filter": {
+        "allBots": "All bots",
+        "searchBots": "Search bots",
+        "noMatch": "No bot routines match these filters."
+      }
+    },
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "paused": "Paused",
+      "trigger": {
+        "any": "Any trigger",
+        "schedule": "Schedule",
+        "gmail": "Gmail",
+        "github": "GitHub",
+        "webhook": "Webhook"
+      }
     }
   },
   "pullRequests": {
@@ -3183,7 +3391,6 @@
     "backToTask": "Back to task",
     "nav": {
       "label": "Plan",
-      "inbox": "Inbox",
       "tasks": "Tasks",
       "calendar": "Calendar",
       "milestones": "Milestones",
@@ -3325,7 +3532,9 @@
       "noRepository": "No repository",
       "noRepositoryDesc": "Opens in the host’s home folder",
       "repositorySearch": "Search repositories",
-      "noRepositories": "This project has no repositories. Add one in its settings.",
+      "noRepositories": "No repositories. Give the GitHub app access to one.",
+      "repositoriesLoading": "Loading the workspace’s repositories…",
+      "repositoriesFailed": "Couldn’t load every repository the workspace reaches.",
       "where": "Where it runs",
       "whereSearch": "Search places",
       "noPlaces": "Nowhere to run it.",
@@ -3711,6 +3920,8 @@
       "any": "Any",
       "showDone": "Show done",
       "showPulls": "Show pull requests",
+      "alerts": "Notify me in this browser",
+      "alertsBlocked": "Notifications are blocked in this browser",
       "clear": "Clear filters",
       "remove": "Clear filter",
       "typeChip": "Type: {{value}}",
@@ -3808,7 +4019,6 @@
       "open": "Open run"
     },
     "card": {
-      "later": "Later",
       "answerFailed": "Could not do that. Try again."
     },
     "pane": {
@@ -3820,16 +4030,16 @@
       "clearTitle": "You're all caught up",
       "clear": "New items land here when one needs a decision.",
       "clearRunning_one": "{{count}} session is still running. New items land here when one needs a decision.",
-      "clearRunning_other": "{{count}} sessions are still running. New items land here when one needs a decision."
+      "clearRunning_other": "{{count}} sessions are still running. New items land here when one needs a decision.",
+      "cleared_one": "You cleared {{count}} item on this visit.",
+      "cleared_other": "You cleared {{count}} items on this visit."
     },
     "notice": {
-      "title": "{{name}} has news for you",
-      "done": "Done"
+      "title": "{{name}} has news for you"
     },
     "botNotice": {
       "title": "{{bot}} has news for you",
-      "openChat": "Open chat",
-      "done": "Done"
+      "openChat": "Open chat"
     },
     "report": {
       "sender": "An agent",
@@ -3840,20 +4050,30 @@
       "answerPlaceholder": "What should it do?",
       "send": "Send answer",
       "sending": "Sending…",
-      "done": "Done",
       "answerFailed": "Could not send the answer. Try again."
     },
     "task": {
       "sender": "An agent",
       "short": "New task: {{title}}",
-      "body": "An agent added this task to your board. Put it on today, start a session on it, or dismiss it to keep it on the board as it is.",
+      "body": "An agent added this task to your board. Put it on today or start a session on it; Done keeps it on the board as it is.",
       "due": "Due {{date}}",
-      "open": "Open task",
       "start": "Start session",
       "today": "Put on today",
-      "planning": "Putting on today…",
-      "dismiss": "Dismiss",
-      "dismissing": "Dismissing…"
+      "planning": "Putting on today…"
+    },
+    "question": {
+      "step": "Question {{n}} of {{total}}",
+      "ready": "Ready to send",
+      "back": "Back",
+      "next": "Next question",
+      "edit": "Change the answer to: {{question}}",
+      "label": "Question {{n}}"
+    },
+    "dock": {
+      "label": "Move through the Inbox",
+      "previous": "Previous",
+      "next": "Next",
+      "done": "Done"
     }
   },
   "settings": {
@@ -4406,7 +4626,8 @@
     "pullRequests": "Pull requests",
     "employees": "Employees",
     "account": "Account",
-    "pullRequestsShort": "PRs"
+    "pullRequestsShort": "PRs",
+    "inbox": "Inbox"
   },
   "language": {
     "label": "Language",

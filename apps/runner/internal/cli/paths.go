@@ -5,8 +5,10 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
@@ -81,6 +83,39 @@ const (
 	// the one Argent has running is read from ~/.argent.
 	EnvArgentToolsURL = "RUNNER_ARGENT_TOOLS_URL"
 	EnvArgentToken    = "RUNNER_ARGENT_TOKEN"
+	// EnvDeviceScreenWidth is the widest, in pixels, a device's screen goes
+	// to the console. Unset is DefaultDeviceScreenWidth; `full` sends the
+	// device's own resolution.
+	EnvDeviceScreenWidth = "RUNNER_DEVICE_SCREEN_WIDTH"
+)
+
+// DefaultDeviceScreenWidth is the width a device's screen goes to the console
+// at: the Simulator pane draws a phone about 420 CSS pixels wide, 840 on a
+// Retina display, and a 720-pixel frame is a fifth of a full iPhone frame's
+// bytes, so several fit the link's credit window.
+const DefaultDeviceScreenWidth = 720
+
+// deviceScreenWidth reads EnvDeviceScreenWidth: 0 is `full`.
+func deviceScreenWidth(spec string) (int, error) {
+	spec = strings.TrimSpace(spec)
+	switch {
+	case spec == "":
+		return DefaultDeviceScreenWidth, nil
+	case strings.EqualFold(spec, "full"):
+		return 0, nil
+	}
+	width, err := strconv.Atoi(spec)
+	if err != nil || width < minDeviceScreenWidth || width > maxDeviceScreenWidth {
+		return 0, fmt.Errorf("%s: %q is not `full` or a width from %d to %d pixels", EnvDeviceScreenWidth, spec, minDeviceScreenWidth, maxDeviceScreenWidth)
+	}
+	return width, nil
+}
+
+// The widths EnvDeviceScreenWidth takes: narrower is unreadable, wider than
+// any phone's screen scales nothing.
+const (
+	minDeviceScreenWidth = 160
+	maxDeviceScreenWidth = 4096
 )
 
 // AgentUpdatesEnabled reports whether `run` keeps the agent CLIs current.
@@ -244,6 +279,17 @@ func (p Paths) Files() string { return filepath.Join(p.Home, DirFiles) }
 // ExecPolicy is what this host lets bots run (`runner exec`): a file in the
 // runner home, never under the workspaces a bot's own folder sits in.
 func (p Paths) ExecPolicy() string { return filepath.Join(p.Home, "exec.json") }
+
+// ComputerPolicy is whether this host lets bots use its screen (`runner
+// computer`): a file in the runner home, beside the exec policy.
+func (p Paths) ComputerPolicy() string { return filepath.Join(p.Home, "computer.json") }
+
+// BrowserPolicy is whether this host lets bots drive a browser of their own
+// (`runner browser`), beside the other settings; Browsers is where each
+// bot's browser keeps its profile.
+func (p Paths) BrowserPolicy() string { return filepath.Join(p.Home, "browser.json") }
+
+func (p Paths) Browsers() string { return filepath.Join(p.State(), "browsers") }
 
 // Desktop is whether and how this host shares its screen (`runner desktop`):
 // a file in the runner home, written on the host and never over the link.

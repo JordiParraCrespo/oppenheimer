@@ -16,7 +16,8 @@ import { WakeOnWhatsappCommand } from './wake-on-whatsapp.command';
  * else's bot. A voice note's turn is queued with the note pending and reads
  * it when it runs: hearing one takes up to minutes, which an outbox listener
  * must not spend, and the turn keeps its place among the owner's messages
- * meanwhile.
+ * meanwhile. An image's turn is queued the same way, and fetches the image
+ * from the host when it runs.
  */
 @CommandHandler(WakeOnWhatsappCommand)
 export class WakeOnWhatsappCommandHandler implements ICommandHandler<WakeOnWhatsappCommand, void> {
@@ -38,6 +39,7 @@ export class WakeOnWhatsappCommandHandler implements ICommandHandler<WakeOnWhats
           messageRowId,
           text: command.text,
           voiceNote: command.command === 'message' && command.voiceNote,
+          image: command.command === 'message' && command.image,
         }),
     });
   }

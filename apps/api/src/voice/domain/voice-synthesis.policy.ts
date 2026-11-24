@@ -8,6 +8,21 @@ export const SPEECH_TEXT_MAX_CHARS = 600;
 /** The longest voice note spoken, in seconds (`WHATSAPP_VOICE_SEND_MAX_SECONDS`). */
 export const SPEECH_MAX_SECONDS = 120;
 
+/**
+ * The loudest sample below which spoken audio holds no speech: -60 dBFS.
+ * Decoded digital silence peaks at 0; speech, even spoken quietly at
+ * -45 dBFS, peaks well above this.
+ */
+export const SPEECH_SILENCE_PEAK = 0.001;
+
+/**
+ * Whether decoded spoken audio says nothing a phone would play: it did not
+ * decode (null), or its loudest sample is below `SPEECH_SILENCE_PEAK`.
+ */
+export function spokeNothing(peak: number | null): boolean {
+  return peak === null || peak < SPEECH_SILENCE_PEAK;
+}
+
 /** Opus always counts its granules at 48 kHz, whatever it was encoded from. */
 const OPUS_GRANULE_RATE = 48_000;
 

@@ -24,6 +24,7 @@ import {
   problemTypeFor,
   titleForStatus,
 } from '../errors/problem-details';
+import { recordErrorCode } from '../logging/pino-http-options';
 import { errorReportOf } from './error-report';
 
 /** What a 5xx tells the client. Anything more would leak internals. */
@@ -84,6 +85,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
         this.reporter.capture(exception, errorReportOf(exception, problem, request));
       }
     }
+
+    recordErrorCode(response, problem.code);
 
     const retryAfter = retryAfterOf(exception);
     if (retryAfter !== null) response.setHeader('Retry-After', String(retryAfter));

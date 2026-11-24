@@ -15,12 +15,17 @@
  * union needs one at every boundary a string arrives at, and the two effort
  * lookups (`effortFor`, `effortLevelFor`), because which levels a session
  * offers depends on its model as well as its agent, and every tier has to ask
- * that the same way. Pi and Oh My Pi are defined in `pi-family.ts`, which this
- * record composes. How the runner installs and updates each CLI is
+ * that the same way, and `clearOf`, which every sender that types into an
+ * agent asks. Pi and Oh My Pi are defined in `pi-family.ts`,
+ * Antigravity in `antigravity.ts`, ZCode in `zcode.ts`, fx in `fx.ts`, Hermes
+ * in `hermes.ts`, Muse in `muse.ts` and Qwen Code in `qwen.ts`, which this
+ * record composes. How the
+ * runner installs and updates each CLI is
  * `host-setup.ts`, kept apart so the console, which never installs anything,
  * does not load those scripts with the catalog.
  */
 
+import { ANTIGRAVITY_AGENT } from './antigravity.js';
 import { CODEX_MODELS } from './codex-models.js';
 import {
   CLAUDE_4_6_LEVELS,
@@ -29,9 +34,14 @@ import {
   GROK_LEVELS,
   levels,
 } from './effort-levels.js';
+import { FX_AGENT } from './fx.js';
+import { HERMES_AGENT } from './hermes.js';
+import { MUSE_AGENT } from './muse.js';
 import { OPENCODE_MODELS } from './opencode-models.js';
 import { OMP_AGENT, PI_AGENT } from './pi-family.js';
+import { QWEN_AGENT } from './qwen.js';
 import { TYPED_INPUT } from './typed-input.js';
+import { ZCODE_AGENT } from './zcode.js';
 
 /**
  * Every agent id, in display order.
@@ -48,6 +58,12 @@ export const CODING_AGENT_IDS = [
   'grok',
   'pi',
   'omp',
+  'antigravity',
+  'zcode',
+  'fx',
+  'hermes',
+  'muse',
+  'qwen',
   'shell',
 ] as const;
 
@@ -186,7 +202,9 @@ export interface CodingAgentLaunchLevel {
  * Every argv is the **argument vector** to append to `command`, so the runner
  * concatenates rather than parses, and a value that would need quoting cannot
  * become a second word by accident. `<model>` and `<prompt>` are the
- * placeholders, each substituted whole.
+ * placeholders, each replaced where it stands in its word: a word of its own
+ * for most, inside one for a CLI whose flag must carry its value
+ * (`--prompt-interactive=<prompt>`).
  *
  * Effort's spelling is here, once per agent; which levels a model offers is
  * its own row's.
@@ -226,10 +244,12 @@ export interface CodingAgentLaunch {
      */
     readonly resumeLeads?: boolean;
     /**
-     * Reopens a conversation the runner learned the name of while the agent
-     * ran, on a restart, in place of `resume`, for an agent whose `resume`
-     * names none: OpenCode, where another OpenCode in the same folder makes
-     * "the last one" someone else's.
+     * Reopens a conversation by its name, on a restart, in place of `resume`,
+     * for an agent whose `resume` names none, since another of the same agent
+     * in the same folder makes "the last one" someone else's: OpenCode's, the
+     * one the runner heard its process work in, and Qwen Code's, the
+     * session's own once Qwen has written it (its by-id resume exits before
+     * that).
      */
     readonly reopen?: readonly string[];
   };
@@ -255,9 +275,12 @@ export interface CodingAgentLaunch {
   /** Absent: no model of this agent takes an effort. */
   readonly effort?: CodingAgentEffortSpelling;
   /**
-   * How the person's first task reaches the agent, with `<prompt>` substituted
-   * whole — always the **last** argv appended: Claude Code, Codex and Grok take
-   * it as a trailing positional, OpenCode as the value of its trailing `--prompt`.
+   * How the person's first task reaches the agent, with `<prompt>` replaced
+   * where it stands — always in the **last** argv word: Claude Code, Codex and
+   * Grok take it as a trailing positional, OpenCode as the value of its
+   * trailing `--prompt`, and Qwen Code inside its last word
+   * (`--prompt-interactive=<prompt>`), since a value of its own that starts
+   * with `-` is read as a flag.
    *
    * A launch option, never a message typed at the running TUI: these CLIs do
    * not take a first task that way, and "the TUI is up" has no moment to race
@@ -268,6 +291,13 @@ export interface CodingAgentLaunch {
    * the first one themselves.
    */
   readonly prompt?: readonly string[];
+  /**
+   * The first task is a note for whoever reads the session, not something the
+   * agent reads: the blank terminal's names the session, and a bot then types
+   * into the terminal itself. An agent with no `prompt` that is not marked so
+   * (ZCode, Muse) would drop a task, so a caller that requires one refuses it.
+   */
+  readonly taskIsNote?: true;
 }
 
 /**
@@ -332,6 +362,32 @@ export interface CodingAgentInput {
   readonly stop: string;
   /** How long to wait between the paste and `submit`, in milliseconds. */
   readonly pasteGapMs: number;
+  /**
+   * How to empty the agent's prompt before a message is typed into it, for a
+   * CLI whose prompt can hold text the person did not leave there: ZCode
+   * recalls its last prompt on an Up arrow into an empty prompt (an approval
+   * dialog's Up, a wheel over the terminal), and a message typed after it
+   * would be sent joined to it. Absent: nothing is sent first. Every sender
+   * reads it through `clearOf`.
+   */
+  readonly clear?: CodingAgentClear;
+  /**
+   * What is typed, each line then `submit`, before the runner ends the
+   * agent's terminal (a stop, a close): for an agent whose work outlives its
+   * terminal, the lines that end that work. Absent: ending the terminal ends
+   * the agent.
+   */
+  readonly quit?: readonly string[];
+}
+
+/**
+ * The keys that empty an agent's prompt, and how long to wait before typing
+ * after them: a TUI that empties its prompt on its next render takes words
+ * sent in the same burst into the prompt it has not emptied yet.
+ */
+export interface CodingAgentClear {
+  readonly keys: string;
+  readonly settleMs: number;
 }
 
 export interface CodingAgentDefinition {
@@ -798,6 +854,12 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
   }),
   pi: PI_AGENT,
   omp: OMP_AGENT,
+  antigravity: ANTIGRAVITY_AGENT,
+  zcode: ZCODE_AGENT,
+  fx: FX_AGENT,
+  hermes: HERMES_AGENT,
+  muse: MUSE_AGENT,
+  qwen: QWEN_AGENT,
   shell: Object.freeze({
     id: 'shell',
     // The design's own name for it.
@@ -808,7 +870,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
     // session, and they type the first command themselves.
     command: '',
     models: Object.freeze([]),
-    launch: Object.freeze({}),
+    launch: Object.freeze({ taskIsNote: true as const }),
   }),
 });
 
@@ -816,6 +878,15 @@ const CODING_AGENT_ID_SET = new Set<string>(CODING_AGENT_IDS);
 
 export function isCodingAgentId(value: unknown): value is CodingAgentId {
   return typeof value === 'string' && CODING_AGENT_ID_SET.has(value);
+}
+
+/**
+ * How to empty `agent`'s prompt before a message is typed into it, or
+ * undefined for an agent that needs nothing (and for any id that is not a
+ * catalog agent: a vendor's cloud agent is not typed into).
+ */
+export function clearOf(agent: string): CodingAgentClear | undefined {
+  return isCodingAgentId(agent) ? CODING_AGENTS[agent].input?.clear : undefined;
 }
 
 /**

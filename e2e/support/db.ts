@@ -223,6 +223,53 @@ export async function insertBotMailRoutine(
   return rows[0].id;
 }
 
+/**
+ * A routine that wakes on its webhook URL, seeded as `insertBotRoutine` seeds
+ * a schedule: a bot adds the trigger through its own tool and a real model.
+ * It has no URL until the Routines tab issues one.
+ */
+export async function insertBotWebhookRoutine(
+  botId: string,
+  name: string,
+  prompt: string,
+): Promise<string> {
+  const rows = await query<{ id: string }>(
+    `WITH bot AS (SELECT "organizationId" FROM bot WHERE id = $1),
+          owner AS (SELECT "userId" FROM member m JOIN bot ON m."organizationId" = bot."organizationId" LIMIT 1),
+          ids AS (SELECT gen_random_uuid() AS automation, gen_random_uuid() AS revision),
+          a AS (
+            INSERT INTO automation (id, "organizationId", "projectId", "runTarget", "botId", "ownerUserId", name, "currentRevisionId")
+            SELECT ids.automation, bot."organizationId", NULL, 'bot', $1, owner."userId", $2, ids.revision
+              FROM bot, owner, ids
+            RETURNING id
+          ),
+          r AS (
+            INSERT INTO automation_revision (id, "organizationId", "automationId", number, permission, prompt, "createdByUserId")
+            SELECT ids.revision, bot."organizationId", ids.automation, 1, 'auto', $3, owner."userId"
+              FROM bot, owner, ids
+          ),
+          t AS (
+            INSERT INTO automation_trigger ("organizationId", "automationId", position, source, "eventType", config)
+            SELECT bot."organizationId", ids.automation, 0, 'webhook', 'webhook_received', '{}'::jsonb
+              FROM bot, ids
+          )
+     SELECT id FROM a`,
+    [botId, name, prompt],
+  );
+  return rows[0].id;
+}
+
+/** A routine run as the webhook stored it, and the bot turn it became once dispatched. */
+export async function webhookRun(
+  runId: string,
+): Promise<{ webhookPayload: Record<string, unknown> | null; botTurnId: string | null } | null> {
+  const rows = await query<{
+    webhookPayload: Record<string, unknown> | null;
+    botTurnId: string | null;
+  }>('SELECT "webhookPayload", "botTurnId" FROM automation_run WHERE id = $1', [runId]);
+  return rows[0] ?? null;
+}
+
 export async function routinePausedAt(routineId: string): Promise<Date | null> {
   const rows = await query<{ pausedAt: Date | null }>(
     'SELECT "pausedAt" FROM automation WHERE id = $1',

@@ -18,19 +18,19 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * The answer to a report, written on its card: one text, which the agent
- * that sent the report reads back. `alert` sits over the answer row,
- * `leading` is that row's left side (Later, the link, Done).
+ * that sent the report reads back. `alert` sits over the answers, and `link`
+ * (Open link) is the answer after Send.
  */
 export function ReportAnswerForm({
   pending,
   onSubmit,
   alert,
-  leading,
+  link,
 }: {
   pending: boolean;
   onSubmit: (values: AnswerInboxReportDto) => void;
   alert: React.ReactNode;
-  leading: React.ReactNode;
+  link: React.ReactNode;
 }) {
   const { t } = useTranslation();
   const {
@@ -58,10 +58,11 @@ export function ReportAnswerForm({
         <FieldError errors={[errors.text]} />
       </Field>
       {alert}
-      <InboxMessageActions leading={leading}>
+      <InboxMessageActions>
         <Button type="submit" pending={pending} pendingLabel={t('inbox.report.sending')}>
           {t('inbox.report.send')}
         </Button>
+        {link}
       </InboxMessageActions>
     </form>
   );

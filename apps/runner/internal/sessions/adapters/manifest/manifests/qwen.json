@@ -1,0 +1,73 @@
+{
+  "schema": "oppenheimer.manifest/v1",
+  "agent": "qwen",
+  "version": "2026.11.24.1",
+  "minEngine": 1,
+  "notes": "Watched on Qwen Code 0.28.4 (its default Ink renderer, `en` locale) in tmux at 120x40, against a scripted OpenAI-compatible server on loopback: a shell call, a write and a command it asked to approve, a slow turn stopped with Esc, a rewind, Esc twice at an empty prompt, and every approval mode's idle footer; the sign-in screens on a home with no provider. Ink draws the UI under the scrollback, not at the pane's foot, so the rows below it are blank, which `bottom:N` skips. The window title is a constant `Qwen - <folder>` and is not a signal. A `How is Qwen doing this session? (optional)` survey can sit above the prompt between turns; it takes a typed digit but not a pasted message. Not yet watched: the OpenTUI renderer (opt-in, with Bun), an ask_user_question dialog, an MCP approval, and a turn past a minute.",
+  "rules": [
+    {
+      "id": "sign-in",
+      "state": "blocked",
+      "priority": 1050,
+      "region": "screen",
+      "any": [
+        "(?m)^\\W*Connect a Provider\\W*$",
+        "(?m)^\\W*\\W?\\s*Waiting for sign-in…",
+        "(?i)you must connect a provider to proceed"
+      ],
+      "note": "A home with no provider opens on the `Connect a Provider` dialog, and the subscription's sign-in shows the `chat.qwen.ai/authorize?user_code=…` link over `Waiting for sign-in…` (both watched, 0.28.4); Ctrl+C there prints the third line (en locale)."
+    },
+    {
+      "id": "approval",
+      "state": "blocked",
+      "priority": 1000,
+      "region": "bottom:15",
+      "any": [
+        "(?m)^\\s*(Apply this change\\?|Do you want to proceed\\?|Allow execution of)",
+        "(?m)^\\W*1\\. Yes, allow once\\s*$",
+        "(?m)^\\W*Waiting for user confirmation\\.\\.\\.\\s*$"
+      ],
+      "note": "The tool confirmation: `Apply this change?` over `1. Yes, allow once`, `2. Yes, allow always`, `3. No, suggest changes (esc)`, with `Waiting for user confirmation...` where the timer was and no input box (a write_file), and `Allow execution of: 'rm'?` over `1. Yes, allow once`, `2. Always allow run 'rm *' commands in this project` (a command; a plain `echo` ran without asking), both watched on 0.28.4. `Do you want to proceed?` is the en locale's, not yet watched. Anchored to the start of the line, so a reply quoting them does not count."
+    },
+    {
+      "id": "question",
+      "state": "blocked",
+      "priority": 1000,
+      "region": "bottom:15",
+      "any": ["(?m)^\\W*(Ready to submit your answers\\?|Submit answers)\\s*$"],
+      "note": "ask_user_question's dialog ends on `Submit answers` and asks `Ready to submit your answers?` (en locale, 0.28.4). Read, not watched."
+    },
+    {
+      "id": "rewind",
+      "state": "blocked",
+      "priority": 990,
+      "region": "screen",
+      "any": ["(?m)^\\W*Rewind Conversation(?: \\(\\d+ turns?\\))?\\W*$"],
+      "note": "Esc twice at an empty prompt (two Stops at an idle session) opens `Rewind Conversation (<n> turns)` over the whole pane, with `↑↓ to navigate · Enter to select · Esc to cancel`, then, a turn picked, `Rewind Conversation` over `Restore conversation only` / `Never mind` (both watched, 0.28.4): Qwen waits on a choice there, and an Enter typed into it picks a turn to rewind to."
+    },
+    {
+      "id": "working",
+      "state": "working",
+      "priority": 970,
+      "region": "bottom:12",
+      "any": [
+        "(?m)\\(\\d[^()]*· esc to cancel\\)\\s*$",
+        "(?m)^\\s*Enter to steer · Ctrl\\+Q to queue\\b"
+      ],
+      "not": ["Waiting for user confirmation"],
+      "note": "The loading line, a random phrase then the timer, `.. Polishing the pixels... (6s · esc to cancel)` (with `· ↑ <n> tokens` once some arrive), anchored to the timer that ends it, and the footer `Enter to steer · Ctrl+Q to queue · <mode>` a turn shows under the input box (both watched, 0.28.4). The sign-in dialog's `Esc to cancel` has no timer, and a reply quoting the words mid-line does not end on them."
+    },
+    {
+      "id": "prompt",
+      "state": "idle",
+      "priority": 800,
+      "region": "bottom:3",
+      "any": [
+        "(?m)\\(shift \\+ tab to cycle\\)\\s*$",
+        "(?m)^\\s*Press Esc again to (clear|rewind conversation)\\.\\s*$"
+      ],
+      "not": ["esc to cancel", "Enter to steer", "Waiting for user confirmation"],
+      "note": "The footer under the input box names the approval mode, `⏸ Ask permissions`, `Auto mode`, `auto-accept edits` or `YOLO mode`, each `(shift + tab to cycle)`, whatever the prompt holds; one Esc swaps it for `Press Esc again to rewind conversation.` (watched, 0.28.4) or `… to clear.` (en locale). Mid-turn the same footer leads with `Enter to steer`, which the guards keep working; the placeholder `Type your message or @path/to/file` is no signal, since it stays during a turn and goes when the prompt holds text."
+    }
+  ]
+}

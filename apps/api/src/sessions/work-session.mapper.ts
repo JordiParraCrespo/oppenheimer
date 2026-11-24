@@ -58,6 +58,7 @@ export class WorkSessionMapper
     record.folderPath = entity.folderPath;
     record.idempotencyKey = entity.idempotencyKey;
     record.origin = entity.origin;
+    record.botId = entity.botId;
     const fold = entity.fold;
     record.state = fold.state;
     record.stateSeq = fold.stateSeq;
@@ -111,6 +112,7 @@ export class WorkSessionMapper
         origin: (SESSION_ORIGINS as readonly string[]).includes(record.origin)
           ? record.origin
           : 'person',
+        botId: record.botId,
         // Loaded by the repository when it folds, under the row lock.
         latestTurn: null,
         ...this.foldOf(record),

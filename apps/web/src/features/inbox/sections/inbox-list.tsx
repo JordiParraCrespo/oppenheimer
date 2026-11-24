@@ -16,7 +16,6 @@ import {
   ErrorAlert,
   formatAge,
   SidebarSearchField,
-  SidebarToggle,
   useLocale,
   useMultiSelection,
 } from '@oppenheimer/frontend-web';
@@ -24,6 +23,7 @@ import { useTranslation } from 'react-i18next';
 import { InboxFilterChips } from '@/features/inbox/components/inbox-filter-chips';
 import { InboxFilterMenu } from '@/features/inbox/components/inbox-filter-menu';
 import { InboxSelectionBar } from '@/features/inbox/components/inbox-selection-bar';
+import { useAlertSwitch } from '@/features/inbox/hooks/use-alert-permission';
 import { useInboxListing } from '@/features/inbox/hooks/use-inbox-listing';
 import { useInboxMarks } from '@/features/inbox/hooks/use-inbox-marks';
 import { useInboxRead } from '@/features/inbox/hooks/use-inbox-read';
@@ -51,6 +51,7 @@ export function InboxList() {
   const marks = useInboxMarks();
   const reload = useRefreshInbox();
   const [pullsShown, setPullsShown] = useInboxPullsShown();
+  const [alerts, setAlerts] = useAlertSwitch();
   const selection = useMultiSelection(open.map((item) => item.key));
   const picked = open.filter((item) => selection.has(item.key));
   const onPicked = (action: InboxMarkActionName) => {
@@ -126,12 +127,11 @@ export function InboxList() {
         />
       ) : (
         <InboxListHead
-          leading={<SidebarToggle />}
           title={t('inbox.title')}
           count={unread.length ? t('inbox.list.unread', { count: unread.length }) : undefined}
         >
           <IconButton
-            size="xs"
+            size="sm"
             variant="quiet"
             aria-label={t('inbox.list.refresh')}
             title={t('inbox.list.refresh')}
@@ -146,11 +146,13 @@ export function InboxList() {
             projects={projectOptions}
             showDone={search.showDone}
             pullsShown={pullsShown}
+            alerts={alerts}
             dirty={search.dirty}
             onTypeChange={search.setType}
             onProjectChange={search.setProject}
             onShowDoneChange={search.setShowDone}
             onPullsShownChange={setPullsShown}
+            onAlertsChange={setAlerts}
             onClear={search.clear}
           />
         </InboxListHead>

@@ -71,7 +71,7 @@ export function InboxRow({
       }
       render={
         done ? undefined : (
-          <Link to="/plan/inbox" search={(previous) => ({ ...previous, item: item.key })} />
+          <Link to="/inbox" search={(previous) => ({ ...previous, item: item.key })} />
         )
       }
       action={

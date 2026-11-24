@@ -1,6 +1,7 @@
 import { ComposerChoices, ComposerPill, FieldError } from '@oppenheimer/design-system-web';
 import {
   ComposerEmojiBox,
+  ComposerEmojiButton,
   dictateInto,
   dictationSlots,
   useDictation,
@@ -121,6 +122,7 @@ export function NewSessionComposer({
           attachments={files.map(({ id, file }) => ({ id, name: file.name }))}
           onRemoveAttachment={(id) => release([id])}
           onAttach={() => picker.current?.click()}
+          emoji={<ComposerEmojiButton draft={draft} setDraft={setNewSessionTask} />}
           onPaste={onPaste}
           dictation={dictationSlots(dictation)}
           onSubmit={(text) => {

@@ -139,6 +139,21 @@ describe('the automation aggregate', () => {
     expect(() => automation([outside])).toThrow(/does not work in/);
   });
 
+  it('refuses a cron schedule on a session automation, whose editor cannot show one', () => {
+    const cron = triggerFromInput(
+      {
+        source: 'schedule',
+        frequency: 'cron',
+        hour: 0,
+        minute: 0,
+        expression: '0 9 * * 1',
+        timezone: 'Europe/Madrid',
+      },
+      0,
+    );
+    expect(() => automation([cron])).toThrow(/bot routine/);
+  });
+
   it('keeps an event with no filter field matching anything, whatever was sent', () => {
     const trigger = triggerFromInput(
       {

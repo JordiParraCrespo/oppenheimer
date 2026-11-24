@@ -31,7 +31,7 @@ export class BotMailAccountsResolver {
     const active = connections.filter((connection) => connection.isActive);
     if (active.length === 0) {
       throw new BotToolRefusal(
-        promptText('tools/mail.choose', {
+        promptText('mail/tools.choose', {
           connections: connections.map(describeAccount).join('; '),
         }),
       );
@@ -50,7 +50,7 @@ export class BotMailAccountsResolver {
       connections.find((connection) => connection.label.toLowerCase() === needle);
     if (!found) {
       throw new BotToolRefusal(
-        promptText('tools/mail.one', {
+        promptText('mail/tools.one', {
           wanted,
           connections: connections.map(describeAccount).join('; '),
         }),

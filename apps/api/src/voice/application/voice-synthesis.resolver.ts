@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import {
   SYNTHESIS_MODELS,
@@ -7,7 +7,9 @@ import {
   voiceModelFor,
 } from '@oppenheimer/shared';
 import { VoiceErrors } from '../domain/voice.errors';
-import { oggOpusSeconds } from '../domain/voice-synthesis.policy';
+import { oggOpusSeconds, spokeNothing } from '../domain/voice-synthesis.policy';
+import type { SpokenAudioPort } from '../infrastructure/spoken-audio.port';
+import { SPOKEN_AUDIO } from '../voice.di-tokens';
 import { firstProviderAnswer } from './provider-fallback.policy';
 import { SynthesisProviderRegistry } from './synthesis-provider.registry';
 
@@ -32,7 +34,9 @@ export interface SpokenText {
  * fallback rule is dictation's (`provider-integrations.md`): a rate limit
  * (`VOICE_010`) is answered at once, the first failure is the answer when all
  * failed, `VOICE_008` when none is available. An answer that is not Ogg/Opus
- * is that provider failing (`VOICE_009`), judged here so the next one is tried.
+ * is that provider failing (`VOICE_009`), judged here so the next one is tried;
+ * so is Ogg/Opus that decodes to silence, which has a length and plays
+ * nothing.
  * The chosen model and voice go to the chosen provider only; any other speaks
  * in its defaults, since a voice id means nothing to another provider.
  */
@@ -40,7 +44,10 @@ export interface SpokenText {
 export class VoiceSynthesisResolver {
   private readonly logger = new Logger(VoiceSynthesisResolver.name);
 
-  constructor(private readonly registry: SynthesisProviderRegistry) {}
+  constructor(
+    private readonly registry: SynthesisProviderRegistry,
+    @Inject(SPOKEN_AUDIO) private readonly spokenAudio: SpokenAudioPort,
+  ) {}
 
   async speak(
     organizationId: string,
@@ -70,6 +77,20 @@ export class VoiceSynthesisResolver {
         if (seconds === null) {
           throw new AppError(VoiceErrors.SYNTHESIS_UNAVAILABLE, {
             detail: `The text-to-speech provider (${provider.id}) did not answer Ogg/Opus audio.`,
+          });
+        }
+        const peak = await this.spokenAudio.peak(audio);
+        // How loud, never what: the one sign in the logs that a note sent had sound.
+        this.logger.log({
+          message: 'Speech synthesized',
+          provider: provider.id,
+          seconds,
+          bytes: audio.length,
+          peak: peak === null ? null : Number(peak.toFixed(4)),
+        });
+        if (spokeNothing(peak)) {
+          throw new AppError(VoiceErrors.SYNTHESIS_UNAVAILABLE, {
+            detail: `The text-to-speech provider (${provider.id}) answered audio that plays no sound.`,
           });
         }
         return { audio, provider: provider.id, seconds };
