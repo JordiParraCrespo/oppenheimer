@@ -60,8 +60,10 @@ func (q qwenSource) conversation(session domain.Session) string {
 //
 // Launched, it is the one named by the session's id (`--session-id`). But
 // Qwen moves to a conversation of its own choosing on a `/clear`, and on a
-// restart before anything was said (`--continue` with nothing saved), and
-// a later `--continue` keeps to that one. In a worktree session, whose
+// `--continue` with nothing saved (a restart the runner could not look for
+// it at), and a later `--continue` keeps to that one; a second Qwen window
+// would read the same way, so a session takes none
+// (domain.Session.TakesSecond). In a worktree session, whose
 // folder is its own and never reused, the newest conversation written
 // there since the session was created is that one. In a folder another
 // Qwen may share, the newest may be the other's, so only the named one is

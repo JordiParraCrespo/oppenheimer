@@ -130,6 +130,11 @@ func (a Agent) NamesConversation() bool {
 	return len(launchCatalog[a.CatalogID()].conversationCreate) > 0
 }
 
+// MovesConversation reports whether the session follows its agent when the
+// agent leaves the conversation the session named for one of its own (Qwen
+// Code on a `/clear`, found by the newest in a worktree session's folder).
+func (a Agent) MovesConversation() bool { return a == AgentQwen }
+
 // DropsTask reports whether a first task given to this agent never reaches
 // it: its CLI takes none on the command line (ZCode) and the task is not a
 // note for the person, as the blank terminal's is. A caller that requires a

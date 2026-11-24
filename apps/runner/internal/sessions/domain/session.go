@@ -341,9 +341,13 @@ func (s Session) TmuxName() string { return Prefix + s.ID }
 // of the session's own agent may only when the session is found by its
 // conversation's id: not when the agent is found by its folder
 // (Agent.NamesConversation), and not when the session continues a cloud
-// one, whose restart continues the newest conversation in the folder.
+// one, whose restart continues the newest conversation in the folder. Nor
+// when the session follows its agent to a conversation the agent moved to
+// (Agent.MovesConversation): a second one starts under an id of its own
+// choosing, which reads as a move.
 func (s Session) TakesSecond(agent Agent) bool {
-	return agent != s.Agent || (agent.NamesConversation() && s.Launch.Teleport == "")
+	return agent != s.Agent ||
+		(agent.NamesConversation() && !agent.MovesConversation() && s.Launch.Teleport == "")
 }
 
 // Target addresses one window for tmux.

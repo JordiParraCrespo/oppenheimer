@@ -19,7 +19,8 @@ has written it, which the runner checks, and before then starts it again
 under the same id (`--session-id <id>`), since `--resume <id>` exits until
 something has been said and `--continue` may open another Qwen's
 conversation in the same folder; where the runner cannot tell, it is
-`--continue`. The chat shows what the person typed, not
+`--continue`. A session takes no second Qwen window: its conversation
+would read as the one the session's Qwen moved to. The chat shows what the person typed, not
 the `@file` contents or hook context Qwen stores with it. Before a message is
 typed, the runner, the API and the console empty Qwen's prompt, which an Up
 arrow, a stopped turn or a rewind can leave holding text, with Ctrl+E,
