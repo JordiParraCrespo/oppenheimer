@@ -144,7 +144,10 @@ func (c *Client) warm(ctx context.Context, store, base string) *spare {
 // registered there is removed first; something the store does not know is
 // left alone, and no spare is made.
 func (c *Client) prepare(ctx context.Context, store, base, path string) error {
-	release := c.lock(store)
+	release, err := c.lock(ctx, store)
+	if err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		release()
 		return domain.ErrWorktree.WithDetail("create %s: %v", filepath.Dir(path), err).WithCause(err)
@@ -161,7 +164,7 @@ func (c *Client) prepare(ctx context.Context, store, base, path string) error {
 		}
 		c.discard(ctx, store, path)
 	}
-	_, err := c.run(ctx, command{timeout: quickTimeout, dir: store},
+	_, err = c.run(ctx, command{timeout: quickTimeout, dir: store},
 		"worktree", "add", "--detach", "--no-checkout", path, startPoint(base))
 	release()
 	if err != nil {

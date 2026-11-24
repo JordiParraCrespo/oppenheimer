@@ -114,7 +114,10 @@ func New(opts Options) *Client {
 	}
 }
 
-func (c *Client) lock(store string) func() {
+// lock serialises the work on store: inside this process, and across every
+// runner process on the host through a file beside the store. It returns the
+// release, or ctx's error when ctx ends while another holds it.
+func (c *Client) lock(ctx context.Context, store string) (func(), error) {
 	c.mu.Lock()
 	m, ok := c.stores[store]
 	if !ok {
@@ -123,7 +126,20 @@ func (c *Client) lock(store string) func() {
 	}
 	c.mu.Unlock()
 	m.Lock()
-	return m.Unlock
+	file, err := openLock(lockPath(store, "store"))
+	if err != nil {
+		m.Unlock()
+		return nil, domain.ErrWorktree.WithDetail("lock %s: %v", store, err).WithCause(err)
+	}
+	if err := file.lock(ctx); err != nil {
+		_ = file.f.Close()
+		m.Unlock()
+		return nil, domain.ErrWorktree.WithDetail("wait for %s: %v", store, err).WithCause(err)
+	}
+	return func() {
+		file.release()
+		m.Unlock()
+	}, nil
 }
 
 // storeOf finds a repository's store. Under its own name first, when that
@@ -247,7 +263,11 @@ func (c *Client) ensure(ctx context.Context, repo domain.Repository, remote, ref
 		}
 	}
 	store := c.storeOf(repo)
-	defer c.lock(store)()
+	release, err := c.lock(ctx, store)
+	if err != nil {
+		return err
+	}
+	defer release()
 	if whole(store) {
 		// The store may have been made under the repository's old name, or
 		// from another remote: what is fetched is what the caller names now.
@@ -264,7 +284,7 @@ func (c *Client) ensure(ctx context.Context, repo domain.Repository, remote, ref
 				return err
 			}
 		}
-		if c.deepeningOf(store) != nil {
+		if c.isDeepening(store) {
 			// A deepen is fetching every branch right now, from a clone made
 			// moments ago: a ref the clone brought is current, and a second
 			// fetch beside the deepen would contend for the same refs.
@@ -374,6 +394,17 @@ func (c *Client) deepen(ctx context.Context, repo, store string) {
 			c.mu.Unlock()
 			close(landed)
 		}()
+		// Another runner process deepening the same store is already doing
+		// this one's work.
+		held, err := openLock(lockPath(store, "deepen"))
+		if err != nil {
+			return
+		}
+		if !held.tryLock() {
+			_ = held.f.Close()
+			return
+		}
+		defer held.release()
 		ctx := context.WithoutCancel(ctx)
 		quick := command{timeout: quickTimeout, dir: store}
 		// Promised objects are what a blobless clone records: the blobs of
@@ -396,20 +427,47 @@ func (c *Client) deepeningOf(store string) chan struct{} {
 	return c.deepening[store]
 }
 
-// awaitDeepen waits for a running deepen of store to land, and returns at
-// once when none is running. The deepen never takes the store lock, so a
-// caller holding it may wait; it returns ctx's error if ctx ends first.
+// isDeepening reports a deepen of store running here or in another runner
+// process, which holds the store's deepen lock while it fetches.
+func (c *Client) isDeepening(store string) bool {
+	return c.deepeningOf(store) != nil || deepenedElsewhere(store)
+}
+
+func deepenedElsewhere(store string) bool {
+	held, err := openLock(lockPath(store, "deepen"))
+	if err != nil {
+		return false
+	}
+	if held.tryLock() {
+		held.release()
+		return false
+	}
+	_ = held.f.Close()
+	return true
+}
+
+// awaitDeepen waits for a running deepen of store to land, here or in
+// another runner process, and returns at once when none is running. The
+// deepen never takes the store lock, so a caller holding it may wait; it
+// returns ctx's error if ctx ends first.
 func (c *Client) awaitDeepen(ctx context.Context, store string) error {
-	landed := c.deepeningOf(store)
-	if landed == nil {
-		return nil
+	if landed := c.deepeningOf(store); landed != nil {
+		select {
+		case <-landed:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
-	select {
-	case <-landed:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
+	held, err := openLock(lockPath(store, "deepen"))
+	if err != nil {
+		return nil //nolint:nilerr // no lock file to wait on is no deepen to wait for
 	}
+	if err := held.lock(ctx); err != nil {
+		_ = held.f.Close()
+		return err
+	}
+	held.release()
+	return nil
 }
 
 // hasRemoteBranch reports origin/<branch> in store.
@@ -563,7 +621,11 @@ func (c *Client) Add(ctx context.Context, repo domain.Repository, path, branch, 
 	if newBranch {
 		c.awaitSpare(ctx, store)
 	}
-	defer c.lock(store)()
+	release, err := c.lock(ctx, store)
+	if err != nil {
+		return err
+	}
+	defer release()
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return domain.ErrWorktree.WithDetail("create %s: %v", filepath.Dir(path), err).WithCause(err)
 	}
@@ -624,11 +686,15 @@ func (c *Client) AddDetached(ctx context.Context, repo domain.Repository, path, 
 		return domain.ErrWorktree.WithDetail("%v", err).WithCause(err)
 	}
 	store := c.storeOf(repo)
-	defer c.lock(store)()
+	release, err := c.lock(ctx, store)
+	if err != nil {
+		return err
+	}
+	defer release()
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return domain.ErrWorktree.WithDetail("create %s: %v", filepath.Dir(path), err).WithCause(err)
 	}
-	_, err := c.run(ctx, command{timeout: fetchTimeout, dir: store}, "worktree", "add", "--detach", path, startPoint(base))
+	_, err = c.run(ctx, command{timeout: fetchTimeout, dir: store}, "worktree", "add", "--detach", path, startPoint(base))
 	return err
 }
 
