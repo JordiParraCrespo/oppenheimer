@@ -38,9 +38,12 @@ var contexts = []string{"apikeys", "desktop", "devices", "host", "pairing", "por
 // WhatsApp client, and keeping it (and the SQLite driver its store needs) in
 // one adapter is what keeps replacing it one package's work. The transcript
 // adapter reads ZCode's and Hermes' conversations out of their SQLite databases.
+// purego calls macOS frameworks from a binary built without cgo; only the
+// CoreGraphics pointer reader needs one.
 var confined = map[string][]string{
-	"go.mau.fi/":         {"whatsapp/adapters/whatsmeow"},
-	"modernc.org/sqlite": {"whatsapp/adapters/whatsmeow", "sessions/adapters/transcript"},
+	"github.com/ebitengine/purego": {"desktop/adapters/coregraphics"},
+	"go.mau.fi/":                   {"whatsapp/adapters/whatsmeow"},
+	"modernc.org/sqlite":           {"whatsapp/adapters/whatsmeow", "sessions/adapters/transcript"},
 }
 
 func TestImportBoundaries(t *testing.T) {

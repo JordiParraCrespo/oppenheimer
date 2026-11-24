@@ -11,6 +11,7 @@ import {
   desktopControlSchema,
   desktopOpenedSchema,
   desktopOpenSchema,
+  desktopPointerSchema,
 } from './desktop.js';
 import {
   deviceAttachSchema,
@@ -1766,6 +1767,7 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   desktopOpenSchema,
   desktopOpenedSchema,
   desktopControlSchema,
+  desktopPointerSchema,
   desktopCloseSchema,
   cloudReplySchema,
   cloudRepliedSchema,

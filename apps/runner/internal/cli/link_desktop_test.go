@@ -200,3 +200,74 @@ func TestADesktopAlreadyOpenClosesWhenTheHostStopsSharingIt(t *testing.T) {
 		t.Fatal("the desktop stayed open after the host stopped sharing it")
 	}
 }
+
+// hostPointer is where the host's pointer is, moved by the test.
+type hostPointer struct {
+	mu sync.Mutex
+	at desktopdomain.Pointer
+}
+
+func (p *hostPointer) Pointer() (desktopdomain.Pointer, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.at, true
+}
+
+func (p *hostPointer) move(x, y float64) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.at = desktopdomain.Pointer{X: x, Y: y, Width: 1920, Height: 1080}
+}
+
+func pointerAt(x, y float64) func(any) bool {
+	return func(m any) bool {
+		p, ok := m.(link.DesktopPointer)
+		return ok && p.AttachmentID == 16 && p.X == x && p.Y == y && p.Width == 1920 && p.Height == 1080
+	}
+}
+
+// Apple's Screen Sharing never says where its pointer is, so a watching
+// browser hears it from the runner as it moves; while the browser drives,
+// its own pointer is the host's and nothing is sent; back to watching, it
+// hears where the pointer went meanwhile. A runner that kept sending while
+// in control would draw a second pointer; one that only sent on a move would
+// leave the drawn one where control began.
+func TestAWatchedDesktopSendsTheHostsPointerAndStopsWhileInControl(t *testing.T) {
+	server := newRFBServer(t)
+	pointer := &hostPointer{}
+	pointer.move(10, 20)
+	h, sent := portsHandler(t, nil)
+	h.desktop = desktopapp.New(desktopapp.Options{
+		Settings: &savedDesktop{settings: desktopdomain.Settings{Enabled: true, Port: server.port}},
+		Pointer:  pointer,
+	})
+	h.desktopPointerEvery = time.Millisecond
+
+	h.Message(context.Background(), message(t, link.TypeDesktopOpen, map[string]any{
+		"commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e", "attachmentId": 16, "control": false,
+	}))
+	sent.waitFor(t, "the pointer where it rests", pointerAt(10, 20))
+	pointer.move(30, 40)
+	sent.waitFor(t, "the pointer once it moved", pointerAt(30, 40))
+
+	h.Message(context.Background(), message(t, link.TypeDesktopControl, map[string]any{
+		"attachmentId": 16, "control": true,
+	}))
+	time.Sleep(20 * time.Millisecond)
+	pointer.move(50, 60)
+	time.Sleep(50 * time.Millisecond)
+	sent.mu.Lock()
+	for _, m := range sent.sent {
+		if pointerAt(50, 60)(m) {
+			sent.mu.Unlock()
+			t.Fatal("the pointer was sent while the browser was in control")
+		}
+	}
+	sent.mu.Unlock()
+
+	h.Message(context.Background(), message(t, link.TypeDesktopControl, map[string]any{
+		"attachmentId": 16, "control": false,
+	}))
+	sent.waitFor(t, "the pointer back to watching", pointerAt(50, 60))
+	h.Message(context.Background(), message(t, link.TypeDesktopClose, map[string]any{"attachmentId": 16}))
+}

@@ -21,6 +21,11 @@ import (
 // streaming within it; a handler's own `desktopRecheck` overrides it.
 const desktopRecheck = 2 * time.Second
 
+// desktopPointerEvery is how often a watched desktop reads the host's
+// pointer: about thirty a second, sent only when it moved; a handler's own
+// `desktopPointerEvery` overrides it.
+const desktopPointerEvery = 33 * time.Millisecond
+
 // desktopOpen signs in to the host's screen-sharing server for the relay,
 // and pumps it.
 func (h *linkHandler) desktopOpen(m link.DesktopOpen, epoch uint64) {
@@ -55,6 +60,45 @@ func (h *linkHandler) desktopOpen(m link.DesktopOpen, epoch uint64) {
 	go h.tunnelUp(ctx, t)
 	go h.tunnelDown(ctx, t)
 	go h.desktopWatch(ctx, t)
+	if h.desktop.TracksPointer() {
+		go h.desktopPointer(ctx, t, viewer.viewer)
+	}
+}
+
+// desktopPointer tells a watching browser where the host's pointer is: the
+// screen-sharing server does not (Apple's sends the pointer's shape, never
+// its position). Nothing is sent while the browser is in control, since its
+// own pointer is the host's then.
+func (h *linkHandler) desktopPointer(ctx context.Context, t *tunnel, viewer *desktopdomain.Viewer) {
+	every := h.desktopPointerEvery
+	if every == 0 {
+		every = desktopPointerEvery
+	}
+	ticker := time.NewTicker(every)
+	defer ticker.Stop()
+	var trail desktopdomain.PointerTrail
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			control := viewer.Control()
+			var at desktopdomain.Pointer
+			if !control {
+				var ok bool
+				if at, ok = h.desktop.Pointer(); !ok {
+					continue
+				}
+			}
+			if !trail.Next(at, control) {
+				continue
+			}
+			_ = h.client.Send(link.DesktopPointer{
+				Type: link.TypeDesktopPointer, AttachmentID: t.id,
+				X: at.X, Y: at.Y, Width: at.Width, Height: at.Height,
+			})
+		}
+	}
 }
 
 // desktopWatch ends a desktop once the host's owner stops sharing it. A

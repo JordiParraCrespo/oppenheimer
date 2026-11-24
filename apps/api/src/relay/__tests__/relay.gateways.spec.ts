@@ -2221,6 +2221,28 @@ describe('desktop socket', () => {
     browser.send(version);
     expect((await answer).bytes).toEqual(linkFrame(1, version));
 
+    // Where the host's pointer is, which the screen-sharing server never
+    // says, reaches the browser as a frame of its own, without the
+    // attachment id the browser never named.
+    const pointer = nextMessage(browser);
+    runner.send(
+      JSON.stringify({
+        type: 'desktop.pointer',
+        attachmentId: 1,
+        x: 812.5,
+        y: 431,
+        width: 1920,
+        height: 1080,
+      }),
+    );
+    expect((await pointer).text).toEqual({
+      type: 'pointer',
+      x: 812.5,
+      y: 431,
+      width: 1920,
+      height: 1080,
+    });
+
     const control = nextMessage(runner);
     const told = nextMessage(browser);
     browser.send(JSON.stringify({ type: 'desktop.control', control: true }));
