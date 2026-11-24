@@ -315,6 +315,8 @@
   "sidebar": {
     "sessions": "Sessions",
     "moveSection": "Move {{name}}",
+    "moveSectionHint": "Up and down arrows move it.",
+    "sectionMoved": "{{name}} moved to place {{position}} of {{total}}.",
     "search": "Search sessions",
     "clearSearch": "Clear search",
     "noMatches": "No sessions match “{{query}}”.",

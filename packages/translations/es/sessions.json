@@ -315,6 +315,8 @@
   "sidebar": {
     "sessions": "Sesiones",
     "moveSection": "Mover {{name}}",
+    "moveSectionHint": "Las flechas arriba y abajo lo mueven.",
+    "sectionMoved": "{{name}} se ha movido al lugar {{position}} de {{total}}.",
     "search": "Buscar sesiones",
     "clearSearch": "Borrar búsqueda",
     "noMatches": "Ninguna sesión coincide con “{{query}}”.",

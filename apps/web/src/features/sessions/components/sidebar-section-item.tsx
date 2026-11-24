@@ -1,6 +1,6 @@
 import { cn, useSortableItem } from '@oppenheimer/design-system-web';
 import { GripVertical } from '@oppenheimer/design-system-web/icons';
-import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
+import { type KeyboardEvent, type PointerEvent, type ReactNode, useId, useRef } from 'react';
 
 /**
  * One of the sessions sidebar's sections (Bots, Sessions) as an item of the
@@ -18,6 +18,7 @@ export function SidebarSectionItem({
   id,
   label,
   moveLabel,
+  moveHint,
   grow = false,
   onStep,
   children,
@@ -27,6 +28,8 @@ export function SidebarSectionItem({
   label: string;
   /** The grip's accessible name. */
   moveLabel: string;
+  /** What the grip's arrow keys do, for a screen reader. */
+  moveHint: string;
   grow?: boolean;
   /** Moves the section one place up (-1) or down (1). */
   onStep: (step: -1 | 1) => void;
@@ -49,11 +52,16 @@ export function SidebarSectionItem({
     }
     listeners?.onPointerDown?.(event);
   };
+  const grip = useRef<HTMLButtonElement>(null);
+  const hintId = useId();
   const onGripKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.nativeEvent.isComposing) return;
     if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
     event.preventDefault();
     onStep(event.key === 'ArrowUp' ? -1 : 1);
+    // Reordering can move this section's node, and a node removed to be
+    // moved loses focus; the grip takes it back once the new order is drawn.
+    requestAnimationFrame(() => grip.current?.focus());
   };
 
   return (
@@ -69,9 +77,14 @@ export function SidebarSectionItem({
         grow ? 'min-h-0 flex-1' : 'shrink-0',
       )}
     >
+      <span id={hintId} hidden>
+        {moveHint}
+      </span>
       <button
+        ref={grip}
         type="button"
         aria-label={moveLabel}
+        aria-describedby={hintId}
         aria-keyshortcuts="ArrowUp ArrowDown"
         onPointerDown={(event) => listeners?.onPointerDown?.(event)}
         onKeyDown={onGripKeyDown}
