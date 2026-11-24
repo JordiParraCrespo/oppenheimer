@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HostPointerOverlay, placeHostPointer } from './host-pointer';
 
 /**
@@ -47,6 +47,18 @@ describe('placeHostPointer', () => {
 });
 
 describe('HostPointerOverlay', () => {
+  // jsdom has no ResizeObserver; the overlay only needs one to exist.
+  beforeEach(() => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
   function overlay() {
     const target = document.createElement('div');
     const framebuffer = document.createElement('canvas');

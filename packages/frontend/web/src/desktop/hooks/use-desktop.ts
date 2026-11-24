@@ -19,8 +19,8 @@ const CONNECTING: DesktopViewState = { status: 'connecting', control: false, ref
  * While the reader watches, the host's pointer is drawn into `pointerRef`'s
  * canvas, over the screen (`HostPointerOverlay`).
  *
- * Its effect syncs with noVNC, the channel's socket and the screen's size:
- * all are built in it and torn down in its cleanup. noVNC loads with the
+ * Its effect syncs with noVNC and the channel's socket: both are built in it
+ * and torn down in its cleanup. noVNC loads with the
  * first desktop shown.
  */
 export function useDesktop(connect: () => Promise<DesktopChannel>) {
@@ -78,18 +78,9 @@ export function useDesktop(connect: () => Promise<DesktopChannel>) {
         if (next.status === 'live') attempt = 0;
       });
       const offPointer = channel.onPointer((at) => pointer.setPointer(at));
-      // noVNC rescales the screen with its element; the pointer follows it.
-      let frame = 0;
-      const resized = new ResizeObserver(() => {
-        cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => pointer.place());
-      });
-      resized.observe(target);
       const off = () => {
         offState();
         offPointer();
-        resized.disconnect();
-        cancelAnimationFrame(frame);
         pointer.dispose();
       };
       // A dial that already ended (refused, no ticket, the host away) is
@@ -115,12 +106,8 @@ export function useDesktop(connect: () => Promise<DesktopChannel>) {
       rfb.viewOnly = !latest.control;
       rfb.background = 'transparent';
       const live = rfb;
-      const onCursor = (event: Event) => {
+      const onCursor = (event: Event) =>
         pointer.setShape((event as CustomEvent<CursorImage>).detail);
-        // The framebuffer may have been drawn at a new size by now, too.
-        const framebuffer = target.querySelector('canvas');
-        if (framebuffer) resized.observe(framebuffer);
-      };
       live.addEventListener('cursorimage', onCursor);
       const onDisconnect = () => {
         live.removeEventListener('cursorimage', onCursor);

@@ -54,18 +54,27 @@ function isVisibleCursor(image: CursorImage): boolean {
  * the reader is in control, since their own pointer is the host's then.
  *
  * It draws into `canvas`, which sits over `target` (noVNC's element) with the
- * same origin, and finds the framebuffer as the canvas noVNC put in `target`.
+ * same origin. It is the one place that knows noVNC's DOM: the framebuffer is
+ * the canvas noVNC put in `target`, and the pointer follows the sizes of both,
+ * which noVNC changes as it rescales the screen, until `dispose`.
  */
 export class HostPointerOverlay {
   private pointer: DesktopPointer | null = null;
   private shape: CursorImage | null = null;
   private watching = false;
+  private observed: HTMLCanvasElement | null = null;
+  private frame = 0;
+  private readonly resized = new ResizeObserver(() => {
+    cancelAnimationFrame(this.frame);
+    this.frame = requestAnimationFrame(() => this.place());
+  });
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
     private readonly target: HTMLElement,
   ) {
     this.drawShape();
+    this.resized.observe(target);
   }
 
   /** The server's cursor shape changed. */
@@ -87,9 +96,12 @@ export class HostPointerOverlay {
     this.place();
   }
 
-  /** Put the pointer where it belongs now: after a move, a shape, or the screen resizing. */
-  place(): void {
+  private place(): void {
     const framebuffer = this.target.querySelector('canvas');
+    if (framebuffer && framebuffer !== this.observed) {
+      this.observed = framebuffer;
+      this.resized.observe(framebuffer);
+    }
     const at =
       this.watching && this.pointer && framebuffer
         ? placeHostPointer(this.pointer, this.drawnScreen(framebuffer))
@@ -108,8 +120,10 @@ export class HostPointerOverlay {
     style.transform = `translate(${at.x - shape.hotx * scale}px, ${at.y - shape.hoty * scale}px)`;
   }
 
-  /** Hide the pointer for good. */
+  /** Hide the pointer for good, and stop following the screen. */
   dispose(): void {
+    this.resized.disconnect();
+    cancelAnimationFrame(this.frame);
     this.canvas.style.display = 'none';
   }
 

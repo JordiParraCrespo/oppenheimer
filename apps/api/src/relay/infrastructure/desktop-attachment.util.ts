@@ -3,7 +3,6 @@ import {
   ATTACH_CLOSE_CODES,
   type AttachServerMessage,
   attachClientMessageSchema,
-  type DesktopPointerMessage,
 } from '@oppenheimer/shared/protocol';
 import type { WebSocket } from 'ws';
 import type { RunnerLink } from '../../links/application/link-registry.port';
@@ -63,7 +62,9 @@ export class DesktopAttachment {
 
   /** `early` is what the browser sent while its ticket was redeemed, in order. */
   start(early: readonly { data: Buffer; isBinary: boolean }[] = []): void {
-    const stream = LinkPortStream.toDesktop(this.link, false);
+    const stream = LinkPortStream.toDesktop(this.link, false, ({ x, y, width, height }) =>
+      this.tell({ type: 'pointer', x, y, width, height }),
+    );
     this.stream = stream;
     stream.whenOpen().then(
       () => {
@@ -73,9 +74,6 @@ export class DesktopAttachment {
       () => {},
     );
     stream.on('data', (chunk: Buffer) => this.toBrowser(chunk));
-    stream.on('pointer', ({ x, y, width, height }: DesktopPointerMessage) =>
-      this.tell({ type: 'pointer', x, y, width, height }),
-    );
     stream.on('error', (error) => this.onStreamError(error));
     stream.on('end', () => this.end(1000, 'desktop closed'));
     this.ws.on('message', (data, isBinary) => this.fromBrowser(data as Buffer, isBinary));
