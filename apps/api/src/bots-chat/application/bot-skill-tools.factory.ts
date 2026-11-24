@@ -16,12 +16,12 @@ import { FindBotSkillQuery } from '../../bots/queries/find-bot-skill/find-bot-sk
 import { FindBotSkillsQuery } from '../../bots/queries/find-bot-skills/find-bot-skills.query';
 import { promptText } from '../domain/bot-prompt-text.policy';
 import {
-  type BotBuiltInSkill,
   describeSkillUse,
   isBuiltInSkill,
   skillBlock,
   withBuiltInSkills,
 } from '../domain/bot-skill.policy';
+import type { BotBuiltInSkill } from '../domain/bot-skill.types';
 import {
   isOppenheimersSkillName,
   oppenheimersSkillRefusal,

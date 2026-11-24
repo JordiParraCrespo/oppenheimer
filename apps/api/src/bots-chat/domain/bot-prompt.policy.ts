@@ -12,12 +12,8 @@ import { peerMessagePrompt, peerReplyPrompt } from './bot-peer-message.policy';
 import { type PlainPromptId, promptText } from './bot-prompt-text.policy';
 import { pullRequestWakePrompt } from './bot-pull-request-wake.policy';
 import { recoveryBullets } from './bot-recovery.policy';
-import {
-  type BotSkillView,
-  canFollowSkill,
-  skillsPromptSection,
-  withBuiltInSkills,
-} from './bot-skill.policy';
+import { canFollowSkill, skillsPromptSection, withBuiltInSkills } from './bot-skill.policy';
+import type { BotSkillView } from './bot-skill.types';
 import { sessionWakePrompt } from './bot-subscription.policy';
 import { taskWakePrompt } from './bot-task-wake.policy';
 import { TURN_CONTEXT_TAG } from './bot-turn-context.policy';

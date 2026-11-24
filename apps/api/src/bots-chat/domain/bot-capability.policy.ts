@@ -1,7 +1,7 @@
 import type { BotToolGroup } from '@oppenheimer/shared';
 import { type PlainPromptId, promptText } from './bot-prompt-text.policy';
 import { hostCases } from './bot-recovery.policy';
-import type { BotBuiltInSkill } from './bot-skill.policy';
+import type { BotBuiltInSkill } from './bot-skill.types';
 
 /**
  * What a capability's sections are decided from: the tools the turn offers,
