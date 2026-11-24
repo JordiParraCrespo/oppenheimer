@@ -146,7 +146,7 @@ test('control heights, row by row', async ({ page }) => {
     await page.waitForTimeout(800);
     report[route.replace(botId, ':botId')] = await measure(page);
   }
-  // The routine editor's dialog: its step tabs and its trigger sentence.
+  // The routine editor's dialog, on its first step: the step tabs.
   await page.goto('/automations');
   await page.getByRole('button', { name: 'New automation' }).click();
   await page.getByRole('dialog').waitFor();

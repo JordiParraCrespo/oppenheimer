@@ -87,8 +87,8 @@ function PairingInstructionSkeleton() {
               key={option}
               className={
                 option === 'command'
-                  ? 'rounded-pill bg-card px-2.5 py-1 text-xs leading-tight text-fg'
-                  : 'rounded-pill px-2.5 py-1 text-xs leading-tight text-fg-muted'
+                  ? 'inline-flex h-(--control-h-sm) items-center rounded-pill bg-card px-2.5 text-xs leading-tight text-fg'
+                  : 'inline-flex h-(--control-h-sm) items-center rounded-pill px-2.5 text-xs leading-tight text-fg-muted'
               }
             >
               {t(`hosts.pairing.${option}` as const)}

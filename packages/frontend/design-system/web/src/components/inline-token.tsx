@@ -126,7 +126,7 @@ function TriggerCard({
         ) : null}
       </div>
       {preview ? (
-        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 pl-10 text-[12.5px] text-fg-muted">{preview}</div>
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 pl-9.5 text-[12.5px] text-fg-muted">{preview}</div>
       ) : null}
     </div>
   );
