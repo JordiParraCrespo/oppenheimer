@@ -64,7 +64,7 @@ export function InboxBotNoticeCard({
           id={`inbox-bot-chat-${item.key}`}
           aria-label={t('inbox.botNotice.chat', { bot: copy.sender })}
           data-swipe-ignore
-          className="flex h-120 max-h-[70dvh] flex-col overflow-hidden rounded-lg border border-border-subtle"
+          className="flex h-120 max-h-[70dvh] flex-col overflow-hidden rounded-lg border border-border-subtle bg-surface-sunken"
         >
           {chat(botId)}
         </section>
