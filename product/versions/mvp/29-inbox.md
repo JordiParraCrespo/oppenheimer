@@ -774,3 +774,20 @@ tab open at all.
 Not yet: the popup does not list the runner sessions, only counts and
 tells them.
 
+### Selecting, found at a glance (2026-11-24)
+
+The owner looked for bulk actions and did not find them: a row's checkbox
+showed only on hover. **Select** in the list's head now opens the selection
+bar with every row's checkbox shown and its actions waiting until a row is
+checked; **X** checks or unchecks the item on the deck, as in a mail
+client; Escape or the cross leaves selecting. Hover, Shift-click and the
+row menu's Select are unchanged ("Bulk actions").
+
+### Done leaves the list (2026-11-24)
+
+"As built: the console" (2026-10-26) had Show done on by default, so what
+was marked done stayed in the list for the visit, struck through. The
+owner asked that a done item leave the list: Show done is off unless the
+filter menu turns it on (`?done`, replacing `?hideDone`), and then lists
+what was marked done on this visit, as before.
+
