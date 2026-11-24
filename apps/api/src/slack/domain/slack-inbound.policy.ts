@@ -156,10 +156,7 @@ export function slackImagesOf(files: readonly SlackEventFile[]): SlackImage[] {
  * inside one, so the event's JSON stays storable.
  */
 export function slackFileName(name: string | undefined): string {
-  const printable = Array.from(name ?? '').filter((char) => {
-    const code = char.codePointAt(0) ?? 0;
-    return code >= 0x20 && code !== 0x7f;
-  });
+  const printable = Array.from(name ?? '').filter(isPrintable);
   return printable.slice(0, SLACK_FILE_NAME_MAX).join('') || 'image';
 }
 
@@ -247,7 +244,7 @@ export const SLACK_FILE_NAME_MAX = 200;
  * A person's name from Slack's `users.info` user: their display name, else
  * their full name, else their handle, cut to `SLACK_USER_NAME_MAX` by
  * characters, never inside one (half an emoji is a lone surrogate, which
- * Postgres's JSON refuses); null when Slack gives none.
+ * Postgres's JSON refuses), without control characters; null when Slack gives none.
  */
 export function slackUserName(user: unknown): string | null {
   const record = recordOf(user);
@@ -255,7 +252,15 @@ export function slackUserName(user: unknown): string | null {
   const name = [profile.display_name, profile.real_name, record.real_name, record.name]
     .map((value) => (typeof value === 'string' ? value.trim() : ''))
     .find(Boolean);
-  return name ? Array.from(name).slice(0, SLACK_USER_NAME_MAX).join('') : null;
+  if (!name) return null;
+  const printable = Array.from(name).filter(isPrintable);
+  return printable.length > 0 ? printable.slice(0, SLACK_USER_NAME_MAX).join('') : null;
+}
+
+/** A character Postgres stores and a reader sees: no NUL or other control character. */
+function isPrintable(char: string): boolean {
+  const code = char.codePointAt(0) ?? 0;
+  return code >= 0x20 && code !== 0x7f;
 }
 
 function recordOf(value: unknown): Record<string, unknown> {

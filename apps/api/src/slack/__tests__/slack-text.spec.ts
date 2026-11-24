@@ -105,6 +105,7 @@ describe('Slack text', () => {
     ).toBe('Maya');
     expect(slackUserName({ name: 'maya', profile: { display_name: '' } })).toBe('maya');
     expect(slackUserName({})).toBeNull();
+    expect(slackUserName({ name: 'ma\u0000ya' })).toBe('maya');
     const cut = slackUserName({ profile: { display_name: `${'a'.repeat(79)}😀😀` } }) ?? '';
     expect(Array.from(cut)).toHaveLength(80);
     expect(cut.endsWith('😀')).toBe(true);

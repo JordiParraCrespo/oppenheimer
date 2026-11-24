@@ -122,7 +122,7 @@ function setup(
   );
   const deliver = () =>
     handler.execute(new DeliverChannelReplyCommand({ turnId: turn?.id ?? randomUUID() }));
-  return { bus, deliver };
+  return { bus, deliver, messages };
 }
 
 const telegramChat: BotChannelChat = {
@@ -253,6 +253,15 @@ describe('DeliverChannelReplyCommandHandler', () => {
     bus.execute.mockRejectedValueOnce(new Error('rate limited'));
     await expect(deliver()).rejects.toThrow('rate limited');
     expect(bus.execute.mock.calls[1][0]).toMatchObject({ working: false });
+  });
+
+  // Breaks if a turn whose lines could not be read leaves the eyes on for good.
+  it('takes the working reaction off when the answer could not even be read', async () => {
+    const { bus, deliver, messages } = setup(ended(slack()), slackChat);
+    messages.findTurnLines.mockRejectedValueOnce(new Error('database down'));
+    await expect(deliver()).rejects.toThrow('database down');
+    expect(bus.execute).toHaveBeenCalledTimes(1);
+    expect(bus.execute.mock.calls[0][0]).toMatchObject({ working: false });
   });
 
   // Breaks if a turn that stopped on a card leaves the chat with no way to it:

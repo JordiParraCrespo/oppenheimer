@@ -47,14 +47,14 @@ export class DeliverChannelReplyCommandHandler
     if (found.isNone()) return;
     const turn = found.unwrap();
     if (!isChannelOrigin(turn.origin) || !turn.ended) return;
-    const lines = await this.messages.findTurnLines(turn.organizationId, turn.id);
-    const texts = unsentTexts(lines, sendsAsItGoes(turn));
-    // A contact is told no failure's reason, and nothing when the bot said nothing;
-    // a contact's turn has nothing to approve, so only the owner's points at a card.
-    const text = turn.contact
-      ? contactReplyOf(turn, texts)
-      : channelReplyOf(turn, texts, await this.approvalNotice(turn));
     try {
+      const lines = await this.messages.findTurnLines(turn.organizationId, turn.id);
+      const texts = unsentTexts(lines, sendsAsItGoes(turn));
+      // A contact is told no failure's reason, and nothing when the bot said nothing;
+      // a contact's turn has nothing to approve, so only the owner's points at a card.
+      const text = turn.contact
+        ? contactReplyOf(turn, texts)
+        : channelReplyOf(turn, texts, await this.approvalNotice(turn));
       if (text) await this.channel.send(turn, text, metadata.correlationId);
     } finally {
       // The turn is over whether its answer went or not.
