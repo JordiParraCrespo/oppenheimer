@@ -3897,7 +3897,8 @@
       "low": "Deprioritize",
       "restore": "Restore priority",
       "snooze": "Snooze",
-      "delete": "Delete"
+      "delete": "Delete",
+      "start": "Select"
     },
     "filter": {
       "label": "Filter the Inbox",

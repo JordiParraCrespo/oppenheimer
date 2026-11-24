@@ -52,3 +52,28 @@ export function useInboxKeys(handlers: InboxKeyHandlers | null): void {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [handlers]);
 }
+
+/**
+ * The list's selecting keys: X checks the item on the deck (or unchecks it),
+ * Escape leaves selecting. Not while the reader is typing or with a modifier.
+ * Syncs with the document's key events; a `null` handler listens for nothing.
+ */
+export function useInboxSelectKeys(handlers: {
+  onToggle: (() => void) | null;
+  onLeave: (() => void) | null;
+}): void {
+  const { onToggle, onLeave } = handlers;
+  useEffect(() => {
+    if (!onToggle && !onLeave) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || typing(event.target)) return;
+      if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
+      if (event.key.toLowerCase() === 'x' && onToggle) onToggle();
+      else if (event.key === 'Escape' && onLeave) onLeave();
+      else return;
+      event.preventDefault();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onToggle, onLeave]);
+}

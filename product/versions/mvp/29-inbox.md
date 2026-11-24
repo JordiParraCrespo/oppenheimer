@@ -750,3 +750,12 @@ This replaces, in "Its own page, and a deck" above: E, S and L (S and L are
 gone), the swipe left as Later, the keys line under the deck, and Decided 1
 (a swipe still never answers; right is Done, left is Next).
 
+### Selecting, found at a glance (2026-11-24)
+
+The owner looked for bulk actions and did not find them: a row's checkbox
+showed only on hover. **Select** in the list's head now opens the selection
+bar with every row's checkbox shown and its actions waiting until a row is
+checked; **X** checks or unchecks the item on the deck, as in a mail
+client; Escape or the cross leaves selecting. Hover, Shift-click and the
+row menu's Select are unchanged ("Bulk actions").
+

@@ -59,6 +59,8 @@ The list is newest first across every kind; deprioritized items sort last and re
 | **Snooze 1 hour** / **Snooze until tomorrow** | Hides it until then, in **Snoozed** with **Bring back**. |
 | **Delete** | Hides this occurrence for good. |
 
+**Several at once**: **Select** in the list's head shows a checkbox on every row (or hover a row and check its box, or press **X** to check the item on the deck); Shift-click checks a run of rows. The bar that takes the list's head then marks every checked row done, deprioritizes, snoozes or deletes them in one go. **Esc** or the cross leaves selecting.
+
 A mark applies to one occurrence: if the same session blocks again later, or new commits land on a pull request, the item comes back.
 
 **Unread** is kept per item in this browser: an item is read once shown on the deck. It does not sync between devices.

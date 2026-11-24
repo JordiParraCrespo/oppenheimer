@@ -1983,3 +1983,7 @@ earlier note:
   session, a bot's approval) has no Done, a questionnaire goes one question
   at a time, and Mark as done takes up a task an agent made, as Dismiss did
   ("The card's actions, reshaped").
+- `versions/mvp/29-inbox.md`, "Bulk actions" (2026-11-11), showed a row's
+  checkbox only on hover, and the owner did not find it. On 2026-11-24
+  Select in the list's head shows every checkbox, and X checks the item on
+  the deck ("Selecting, found at a glance").

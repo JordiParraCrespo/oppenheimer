@@ -83,9 +83,10 @@ test('the Inbox: clear, an approval comes in, and Mark as done', async ({ page }
 });
 
 /**
- * Bulk actions: checking rows swaps the
- * list's head for the selection bar, and Mark as done there marks every
- * checked row in one request, leaving the unchecked one in the list.
+ * Bulk actions: Select in the list's head opens the selection bar with every
+ * row's checkbox shown and nothing done until a row is checked; X checks the
+ * item on the deck; Mark as done there marks every checked row in one
+ * request, leaving the unchecked one in the list.
  */
 test('the Inbox: select rows and mark them done at once', async ({ page }) => {
   const owner = await provisionedUser('inbox-bulk');
@@ -106,10 +107,13 @@ test('the Inbox: select rows and mark them done at once', async ({ page }) => {
   const batch = page.waitForRequest(
     (request) => request.method() === 'POST' && request.url().endsWith('/inbox/marks/batch'),
   );
-  await rows.nth(0).hover();
-  await rows.nth(0).getByRole('checkbox').click();
-  await rows.nth(1).getByRole('checkbox').click();
+  await page.getByRole('button', { name: 'Select', exact: true }).click();
   const bar = page.getByRole('toolbar', { name: 'Selected items' });
+  await expect(bar.getByText('0 selected')).toBeVisible();
+  await expect(bar.getByRole('button', { name: 'Mark as done' })).toBeDisabled();
+  // X checks the item on the deck, the first; a click checks the second.
+  await page.keyboard.press('x');
+  await rows.nth(1).getByRole('checkbox').click();
   await expect(bar.getByText('2 selected')).toBeVisible();
   await bar.getByRole('button', { name: 'Mark as done' }).click();
 

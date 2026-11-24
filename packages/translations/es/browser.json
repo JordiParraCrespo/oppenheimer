@@ -3978,7 +3978,8 @@
       "low": "Bajar prioridad",
       "restore": "Restaurar prioridad",
       "snooze": "Posponer",
-      "delete": "Eliminar"
+      "delete": "Eliminar",
+      "start": "Seleccionar"
     },
     "filter": {
       "label": "Filtrar la bandeja",

@@ -22,7 +22,8 @@ import type { InboxMarkActionName } from '@/features/inbox/lib/inbox-mark-action
  * The list column's head while rows are selected: select all (mixed while
  * some are), how many, and what the row menu does, to every one of them at
  * once: Mark as done, Deprioritize or Restore priority, the two snoozes and
- * Delete. The cross leaves selecting, as Escape does.
+ * Delete, each waiting until a row is checked (Select opens the bar on none).
+ * The cross leaves selecting, as Escape does.
  */
 export function InboxSelectionBar({
   count,
@@ -52,7 +53,7 @@ export function InboxSelectionBar({
         <Checkbox
           className="size-3.5"
           checked={all}
-          indeterminate={!all}
+          indeterminate={count > 0 && !all}
           onCheckedChange={onToggleAll}
           aria-label={t('inbox.selection.selectAll')}
         />
@@ -62,6 +63,7 @@ export function InboxSelectionBar({
         size="xs"
         variant="quiet"
         aria-label={t('inbox.selection.done')}
+        disabled={count === 0}
         title={t('inbox.selection.done')}
         onClick={() => onAction('done')}
       >
@@ -71,6 +73,7 @@ export function InboxSelectionBar({
         size="xs"
         variant="quiet"
         aria-label={lowLabel}
+        disabled={count === 0}
         title={lowLabel}
         onClick={() => onAction('toggleLow')}
       >
@@ -83,6 +86,7 @@ export function InboxSelectionBar({
               size="xs"
               variant="quiet"
               aria-label={t('inbox.selection.snooze')}
+              disabled={count === 0}
               title={t('inbox.selection.snooze')}
             />
           }
@@ -104,6 +108,7 @@ export function InboxSelectionBar({
         size="xs"
         variant="quiet"
         aria-label={t('inbox.selection.delete')}
+        disabled={count === 0}
         title={t('inbox.selection.delete')}
         onClick={() => onAction('remove')}
       >
