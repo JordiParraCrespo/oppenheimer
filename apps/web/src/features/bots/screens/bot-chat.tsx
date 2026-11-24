@@ -28,7 +28,7 @@ export function BotChatScreen({ botId, tabs }: { botId: string; tabs?: ReactNode
         <QueryState.Error>
           {(error, retry) => (
             <>
-              <PageBar title={tabs ?? null} />
+              <PageBar title={tabs ?? null} tone={tabs ? 'chrome' : 'page'} />
               <ErrorAlert
                 error={error}
                 fallback={t('bots.chat.loadFailed')}

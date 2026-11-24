@@ -32,6 +32,7 @@ export function BotChat({ botId, tabs }: { botId: string; tabs?: ReactNode }) {
           tabs ? null : <BotAvatar option={{ initials: bot.initials }} size={26} face={bot.face} />
         }
         title={tabs ?? bot.name}
+        tone={tabs ? 'chrome' : 'page'}
         actions={
           <>
             <ToolCallsToggle shown={toolCalls.shown} onShownChange={toolCalls.setShown} />

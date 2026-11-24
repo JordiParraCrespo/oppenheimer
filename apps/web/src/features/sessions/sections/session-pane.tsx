@@ -197,7 +197,9 @@ export function SessionPane({
   if (session.cloud) {
     return (
       <>
-        {bar ? <PageBar title={bar.open ?? session.name} /> : null}
+        {bar ? (
+          <PageBar title={bar.open ?? session.name} tone={bar.open ? 'chrome' : 'page'} />
+        ) : null}
         <ErrorAlert error={error} fallback={t('sessions.screen.loadFailed')} />
         <CloudSessionAway session={session} />
       </>

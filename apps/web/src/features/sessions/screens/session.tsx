@@ -67,7 +67,8 @@ export function SessionScreen({
           <PageBar
             title={bar.open ?? <Skeleton className="h-4 w-40" />}
             // The session bar's ground and edge, so nothing changes colour when it answers.
-            className="border-b border-border-subtle bg-term-bg [--chat-tab-ground:var(--term-bg)]"
+            tone={bar.open ? 'chrome' : 'page'}
+            className="border-b border-border-subtle bg-term-bg"
           />
         ) : null}
         <SessionSkeleton />
@@ -75,7 +76,7 @@ export function SessionScreen({
       <QueryState.Error>
         {(error, retry) => (
           <>
-            {bar ? <PageBar title={bar.open ?? null} /> : null}
+            {bar ? <PageBar title={bar.open ?? null} tone={bar.open ? 'chrome' : 'page'} /> : null}
             {isSessionNotFound(error) ? (
               <RouteNotFound>
                 <Button variant="secondary" render={<Link to="/sessions/new" />}>

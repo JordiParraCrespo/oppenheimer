@@ -16,8 +16,8 @@ import { IconButton } from './icon-button';
  *   View · Stats), then the actions (open in, terminal, diff, panels).
  * - `ChatHeaderTag`: the 22px mono pill beside the title (a branch).
  * - `ChatTabStrip` · `ChatTab`: open things as tabs on the 34px rung, each with its
- *   mark and the dot of what it needs from the reader; the shown one on the
- *   canvas inside a hairline, the rest flat, a close on each.
+ *   mark and the dot of what it needs from the reader; the shown one lit on
+ *   the card inside a hairline, the rest flat, a close on each.
  * - `ThreadFindBar`: ⌘F, floating top-right over the header: a 44px pill
  *   field with the close, and once there is a query, a row under it with
  *   previous, next and "2 / 7 results".
@@ -127,7 +127,8 @@ const TAB_ATTENTION = {
 
 /**
  * One open thing in a `ChatTabStrip`: its mark, its name, its close. The
- * shown one stands on the canvas inside a hairline, the rest are flat on the
+ * shown one is lit, on the card inside a hairline, so on a strip that
+ * stands on the recessed ground it reads as part of the page under it; the rest are flat on the
  * strip's ground with a hairline between two of them, and the close of a tab
  * not shown appears on hover. A long name fades out rather than ending in an
  * ellipsis. What it needs from the reader is a dot on its mark (amber
@@ -167,8 +168,8 @@ function ChatTab({
       data-active={active || undefined}
       title={title}
       className={cn(
-        'group/tab relative flex h-(--control-h-md) max-w-52 min-w-28 shrink items-center gap-2 rounded-sm border border-transparent pr-1 pl-2.5 text-[13px] text-fg-muted transition-colors duration-fast',
-        'hover:bg-hover-surface hover:text-fg data-active:border-border-subtle data-active:bg-canvas data-active:text-fg',
+        'group/tab relative flex h-(--control-h-md) max-w-60 min-w-28 shrink items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-[13.5px] text-fg-muted transition-colors duration-fast',
+        'hover:bg-hover-surface hover:text-fg data-active:border-border-subtle data-active:bg-card data-active:font-medium data-active:text-fg',
         // A hairline between two tabs that are not shown.
         "not-first:before:absolute not-first:before:top-2.5 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
         'data-active:before:hidden hover:before:hidden [[data-active]+&]:before:hidden [:hover+&]:before:hidden',
@@ -192,7 +193,7 @@ function ChatTab({
                 role="img"
                 aria-label={attentionLabel ?? TAB_ATTENTION[attention].label}
                 className={cn(
-                  'absolute -top-0.75 -right-0.75 size-2 rounded-pill ring-2 ring-[var(--chat-tab-ground,var(--canvas))] group-data-active/tab:ring-canvas',
+                  'absolute -top-0.75 -right-0.75 size-2 rounded-pill ring-2 ring-[var(--chat-tab-ground,var(--canvas))] group-data-active/tab:ring-card',
                   !icon && 'static',
                   TAB_ATTENTION[attention].className,
                 )}
