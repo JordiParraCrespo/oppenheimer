@@ -176,7 +176,7 @@ export async function followTranscript(job) {
   let unsent = [];
   let lastGrowth = Date.now();
   let backoff = POLL_MS;
-  // Since when every answer has been a refusal; null once one was accepted.
+  // Since when every answer has been a refusal; null after any other answer.
   let refusedSince = null;
 
   for (;;) {
@@ -194,9 +194,10 @@ export async function followTranscript(job) {
       const lines = batch.filter(Boolean).map(fitLine);
       if (lines.length > 0) {
         const outcome = await post(job, sent.lines, lines);
-        if (outcome === 'refused') refusedSince ??= Date.now();
+        // Only an unbroken run of refusals counts: a timeout or a 5xx between
+        // two says nothing about the session, so the clock starts again.
+        refusedSince = outcome === 'refused' ? (refusedSince ?? Date.now()) : null;
         if (outcome !== 'sent') break;
-        refusedSince = null;
       }
       unsent = unsent.slice(batch.length);
       sent = {

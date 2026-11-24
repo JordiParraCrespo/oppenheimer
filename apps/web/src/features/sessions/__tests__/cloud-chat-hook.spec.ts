@@ -78,7 +78,7 @@ describe('followTranscript', () => {
   }
 
   function follow(answers: number[]) {
-    statuses = answers;
+    statuses = [...answers];
     const transcript = join(dir, 'transcript.jsonl');
     writeFileSync(transcript, '{"type":"user"}\n{"type":"assistant"}\n');
     let finished = false;
@@ -137,6 +137,21 @@ describe('followTranscript', () => {
       from: 0,
       lines: ['{"type":"user"}', '{"type":"assistant"}'],
     });
+
+    agentAlive = false;
+    await vi.advanceTimersByTimeAsync(11 * MINUTE);
+    await streamer.run;
+  });
+
+  it('does not count an outage after an early refusal toward giving up', async () => {
+    // Breaks if a 404 at launch (the host has not reported the session's id
+    // yet) followed by a long outage ends the streamer before the API is back.
+    const answers = [404, ...Array(120).fill(503), 200];
+    const streamer = follow(answers);
+    await vi.advanceTimersByTimeAsync(25 * MINUTE);
+    expect(streamer.isFinished()).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(answers.length);
+    expect(posted.at(-1)).toMatchObject({ from: 0 });
 
     agentAlive = false;
     await vi.advanceTimersByTimeAsync(11 * MINUTE);
