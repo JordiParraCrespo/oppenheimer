@@ -1,0 +1,26 @@
+#!/bin/sh
+# Stands in for Qwen Code: prints the argv the runner built, writes the
+# conversation's first record where Qwen keeps it (the `--prompt-interactive=`
+# task as a `real_user` record of
+# `$QWEN_HOME/projects/<cwd, non-alphanumerics as dashes>/chats/<--session-id>.jsonl`),
+# then hands the pane to an interactive shell, as the `claude` shim beside it
+# does. A `--continue` writes nothing. A test appends the rest of the
+# conversation to the same file, in Qwen 0.28.4's record shape.
+printf 'QWEN-SHIM argv=%s\n' "$*"
+python3 - "$PWD" "$@" <<'PY'
+import json, os, re, sys, time, uuid
+cwd, args = sys.argv[1], sys.argv[2:]
+session = args[args.index("--session-id") + 1] if "--session-id" in args else None
+task = next((a.split("=", 1)[1] for a in args if a.startswith("--prompt-interactive=")), None)
+if session and task:
+    home = os.environ.get("QWEN_HOME") or os.path.join(os.path.expanduser("~"), ".qwen")
+    chats = os.path.join(home, "projects", re.sub(r"[^a-zA-Z0-9]", "-", cwd), "chats")
+    os.makedirs(chats, exist_ok=True)
+    record = {"uuid": str(uuid.uuid4()), "parentUuid": None, "sessionId": session,
+              "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()), "type": "user",
+              "provenance": "real_user", "cwd": cwd, "version": "0.28.4",
+              "message": {"role": "user", "parts": [{"text": task}]}}
+    with open(os.path.join(chats, session + ".jsonl"), "a") as out:
+        out.write(json.dumps(record) + "\n")
+PY
+exec sh -i

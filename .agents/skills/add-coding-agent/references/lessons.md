@@ -17,6 +17,7 @@ to `SKILL.md`.
 | ZCode | #985, #994 | no first task; a chat from a SQLite database; a prompt clear |
 | Hermes | `af020b8eb`, `37ef2996d`, `3887274fe`, `d19b81759`, `788f60f93` | a client of its own gateway; a chat from its own database |
 | Muse | `d2644b596`, `6dd44e03f`, `ba75005b3` | a self-updating launcher; no first task |
+| Qwen Code | `494d61e0c`, `08e704a62`, `0b173cc15` | a task inside its flag's word; a chat that follows the conversation the CLI moves to; a clear from both ends |
 | OpenCode (chat) | `9b0c57f9f`, `2cc185b6e`, `075bf1e58`, `15c13b76a` | a chat through the agent's local API |
 | Codex, Grok (chat) | `dc675593a`, `c18fdf18d`, `e65405548` | a chat from a transcript file |
 
@@ -58,6 +59,11 @@ to `SKILL.md`.
   change nothing (eval).
 - **A login target is what the person sees.** Qwen's OAuth API base is
   `auth.qwen.ai`; the URL shown is on `chat.qwen.ai` (eval).
+- **A resume of "the newest here" can start a new conversation under a name
+  of the CLI's choosing.** Qwen's `--continue` with nothing saved opened a
+  fresh TUI under a random id, and every later `--continue` kept to it, so
+  the session's own id named nothing; the chat follows it (§5,
+  `494d61e0c`).
 
 ## 2. The catalog entry
 
@@ -84,6 +90,10 @@ to `SKILL.md`.
 - **A half-failed install must not look installed.** Muse's launcher stayed on
   `PATH` without its binary, probed as installed, and nothing retried; the
   script now removes it on failure (`6dd44e03f`).
+- **A placeholder can sit inside a word.** Qwen's task rides as
+  `--prompt-interactive=<prompt>` so a leading `-` stays a value; the runner
+  replaced `<prompt>` only as a whole word until `494d61e0c`
+  (`substituteWithin`, and the catalog spec's "ends on the task").
 - **A new catalog field is three edits.** `clear` (#994) and `quit`
   (`d19b81759`) each took the field in `catalog.ts`, a line in the emitter
   and the Go that reads it; when both landed at once they met in `input.go`
@@ -100,6 +110,18 @@ to `SKILL.md`.
 - **The clear and the words must not share a burst.** ZCode applies the clear
   on its next render, so words in the same write landed in the prompt it had
   not emptied yet. 100 ms between them fixed it, which is `settleMs` (#994).
+- **Look for every way text gets there, and clear from both ends.** Qwen
+  recalls history on Up with the cursor at the start (so Ctrl+U alone did
+  nothing), puts a turn stopped with Esc back with the cursor at the end, and
+  puts a rewound turn back for editing; pairs of Ctrl+K and Ctrl+U emptied
+  all three (`494d61e0c`).
+- **Measure the settle; do not copy it.** Qwen applies each key to its buffer
+  as it reads it, and a message in the same write as the clear was stored
+  whole, so its `settleMs` is a margin; ZCode's 100 ms was a need
+  (`494d61e0c`).
+- **A second Stop is not always harmless.** Qwen's Esc twice at an empty
+  prompt opens "Rewind Conversation", where an Enter picks a turn to go back
+  to; its manifest reads that dialog as blocked (`08e704a62`).
 - **Every sender, from one fact.** The console, the API and the runner each
   type into agents; the first fix hard-coded ZCode's keys in each, and review
   moved them into the catalog (`clearOf`, #994).
@@ -120,7 +142,16 @@ to `SKILL.md`.
   cursor moves; `tmux capture-pane -p` is what a rule sees.
 - **The help line is a contract.** `sessions run --agent` lists agents that
   take a task; Muse was added to it anyway (`d2644b596`), and `DropsTask`
-  refuses it at run time. Still to fix.
+  refuses it at run time. Fixed in #1003: the help lists now come from the
+  runner's own table (`AgentNames`, `Installable`), so a new agent edits no
+  help line.
+- **A TUI may not draw at the pane's foot.** Qwen's Ink UI sits under its
+  scrollback with blank rows below; `bottom:N` counts non-empty lines, so it
+  still works, but check it on the capture (`494d61e0c`).
+- **A placeholder that stays mid-turn is no idle signal.** Qwen's `Type your
+  message` stays up while it works and goes when the prompt holds text; its
+  idle rule is the footer naming the approval mode, guarded by the
+  mid-turn footer (`494d61e0c`).
 
 ## 5. The chat view
 
@@ -142,6 +173,18 @@ to `SKILL.md`.
 - **The CLI writes threads that are not the conversation.** Codex's reviews
   and compactions sat beside the session's own transcript and showed in its
   chat (`e65405548`).
+- **A CLI moves the conversation to a new file.** Qwen's `/clear`, and a
+  `--continue` with nothing saved, write a new `<id>.jsonl`; in a worktree
+  session the reader takes the newest written there since the session was
+  created and reports it as the session's (`CurrentConversation`), in a
+  folder only the named one (`08e704a62`).
+- **Filter by record type, not role.** Qwen hands the model its memory
+  catalog as a `user`-role message inside a `system` record; read by role,
+  it would be drawn as something the person said (`08e704a62`).
+- **A rewind can leave the dropped turns in the file.** Qwen appends a
+  `rewind` record pointing back to the branch point; folding it needs the
+  follower to restart a history mid-read, which it cannot yet, so the chat
+  still shows the dropped turns.
 - **The next version moves fields.** Codex 0.167 moved what the reader read
   (`c18fdf18d`): test on samples a real session wrote, and say in the reader
   when the shape is undocumented.

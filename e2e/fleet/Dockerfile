@@ -15,6 +15,7 @@ COPY claude /usr/local/bin/claude
 COPY grok /usr/local/bin/grok
 COPY codex /usr/local/bin/codex
 COPY hermes /usr/local/bin/hermes
+COPY qwen /usr/local/bin/qwen
 COPY entrypoint.sh /usr/local/bin/fleet-host
 COPY git-server.sh /usr/local/bin/fleet-git-server
 USER dev
