@@ -14,14 +14,14 @@ import { BotTurnEntity } from './bot-turn.entity';
 
 /** What the model reads when its questions became a card: its turn should end. */
 export function askedQuestions(count: number): string {
-  return promptText('tools/questions.asked-questions', {
+  return promptText('core/tools-questions.asked-questions', {
     count: count === 1 ? 'question is' : `${count} questions are`,
   });
 }
 
 /** What the model reads when a card of its own still waits: one at a time. */
 export function waitingForAnswer(pendingSummary: string): string {
-  return promptText('tools/questions.waiting-for-answer', { pendingSummary });
+  return promptText('core/tools-questions.waiting-for-answer', { pendingSummary });
 }
 
 /** The card's line: the first question, and how many follow. */
@@ -56,7 +56,7 @@ export function questionEvent(question: BotQuestionEntity, by: string): string {
     return [
       `${who} dismissed your questions: ${question.summary}`,
       question.note ? `Their note: ${question.note}` : null,
-      promptText('wake/questions.dismissed-do-not-ask-again'),
+      promptText('core/wake-questions.dismissed-do-not-ask-again'),
     ]
       .filter(Boolean)
       .join('\n');
@@ -66,7 +66,7 @@ export function questionEvent(question: BotQuestionEntity, by: string): string {
     .join('\n');
   return [
     `${who} answered your questions.`,
-    promptText('wake/questions.answers-are-data'),
+    promptText('core/wake-questions.answers-are-data'),
     fenceUntrusted('answers', lines),
   ].join('\n');
 }

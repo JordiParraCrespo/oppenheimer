@@ -436,6 +436,26 @@ plane is what refuses the close unless the caller accepts the loss (10).
 Stop is not close: it ends the agent and the tmux session and leaves
 every checkout on disk for Restart.
 
+**The agent goes with its session** (2026-11-21). `kill-session` only
+hangs the pane up, and Claude Code was seen ignoring that hangup: on one
+host ~110 agents of closed sessions idled for ten days, ~8–10 GB, until
+the machine ran out of memory. So ending a terminal is now three steps.
+`runner pty` hangs its program's process group up when it is told to end
+(SIGHUP, SIGTERM, SIGINT, SIGQUIT) or its pane stops taking output, gives
+it 10 s to save its conversation and exit, then kills the group; a
+second SIGTERM, SIGINT or SIGQUIT kills at once (two SIGHUPs do not: a
+closing pane sends tmux's and the kernel's). Stop, close and `uninstall
+--force` then find the session's wrapper in the process table and do the
+same from outside, so `closed` means nothing of the session runs. And
+the daemon looks at boot and every 5 minutes for a wrapper whose session
+has no tmux session (closing and stopping kill it), and ends it the same
+way, logging the session and pid. The tmux session is the witness, not
+the daemon's map: `runner sessions restart` runs in a process of its own,
+and a session it restarts still reads stopped in the daemon for a while. A wrapper is this runner's only when it runs
+as this account and its command line is `pty --report <file> --` with
+the file in this runner's own `state/program-status/`: the user's own
+tmux and their other `claude` processes are never looked at.
+
 **Adoption on boot.** The runner lists tmux sessions on its socket,
 adopts those the control plane's snapshot reconciliation confirms,
 rehydrates each ring buffer from `capture-pane`, and **reports** the
@@ -621,7 +641,11 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
   was announced is announced once more: the control plane counts a
   state's duration only from its second report, so a question asked once
   would otherwise never make the session wait on anyone (found on
-  2026-10-26 by the Inbox's fleet spec).
+  2026-10-26 by the Inbox's fleet spec). Since 2026-11-23 that second
+  report comes 3 s after the first, not 15 s: the session loop looks again
+  that soon after it sees an agent block, and the second report is now
+  what tells the person (`29-inbox.md`, "A question reaches you in
+  seconds").
 
 ### 10. Host facts and health
 

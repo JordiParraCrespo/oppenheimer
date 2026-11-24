@@ -51,7 +51,8 @@ export function isBotImageMimeType(mimeType: string): mimeType is BotImageMimeTy
 
 /**
  * A file's name as it is kept: its last path segment, without control
- * characters, cut to `BOT_ATTACHMENT_NAME_MAX`. A name is only shown.
+ * characters, cut to `BOT_ATTACHMENT_NAME_MAX` characters, never inside one (a
+ * lone surrogate cannot be stored). A name is only shown.
  */
 export function attachmentName(raw: string): string {
   const base = raw.split(/[\\/]/).pop() ?? '';
@@ -59,7 +60,7 @@ export function attachmentName(raw: string): string {
     const code = char.charCodeAt(0);
     return code >= 0x20 && code !== 0x7f;
   });
-  return printable.join('').trim().slice(0, BOT_ATTACHMENT_NAME_MAX);
+  return Array.from(printable.join('').trim()).slice(0, BOT_ATTACHMENT_NAME_MAX).join('');
 }
 
 /**

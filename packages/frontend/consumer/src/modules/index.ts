@@ -13,6 +13,7 @@ export * from './profile';
 export * from './projects';
 export * from './pull-requests';
 export * from './sessions';
+export * from './slack';
 export * from './tasks';
 export * from './telegram';
 export * from './voice';

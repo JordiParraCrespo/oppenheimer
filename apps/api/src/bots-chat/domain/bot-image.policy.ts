@@ -12,21 +12,31 @@ export function withEarlierImages(
   message: HistoryMessage & { attachments: readonly { id?: string; name: string }[] },
 ): HistoryMessage {
   const { role, content, event, steps, attachments } = message;
-  if (attachments.length === 0) return { role, content, event, steps };
+  // The reactions ride along whatever the images say (`reactionNotes`).
+  const reactions = {
+    reaction: message.reaction ?? null,
+    botReaction: message.botReaction ?? null,
+  };
+  if (attachments.length === 0) return { role, content, event, steps, ...reactions };
   const note =
     role === 'user'
       ? imagesNote(attachments)
       : role === 'assistant'
         ? shownNote(attachments.map((attachment) => attachment.name))
         : null;
-  if (!note) return { role, content, event, steps };
-  return { role, content: [content.trim(), note].filter(Boolean).join('\n\n'), event };
+  if (!note) return { role, content, event, steps, ...reactions };
+  return {
+    role,
+    content: [content.trim(), note].filter(Boolean).join('\n\n'),
+    event,
+    ...reactions,
+  };
 }
 
 /** The sentence that stands for the images the bot showed the person here. */
 function shownNote(names: readonly string[]): string {
   const listed = names.map((name) => `"${name}"`).join(', ');
-  return promptText('turn/images.shown', {
+  return promptText('core/turn-images.shown', {
     namesCount: names.length === 1 ? 'an image' : `${names.length} images`,
     listed,
   });
@@ -48,7 +58,7 @@ export const EARLIER_IMAGES_HEADROOM_TOKENS = 1_000;
 export function imagesNote(images: readonly { id?: string; name: string }[]): string {
   const count = images.length;
   const [what, them] = count === 1 ? ['an image', 'it'] : [`${count} images`, 'them'];
-  return promptText('turn/images.came-with', { what, ids: idsOf(images), them });
+  return promptText('core/turn-images.came-with', { what, ids: idsOf(images), them });
 }
 
 /**
@@ -57,7 +67,7 @@ export function imagesNote(images: readonly { id?: string; name: string }[]): st
  */
 export function attachedImagesNote(images: readonly { id: string; name: string }[]): string {
   if (images.length === 0) return '';
-  return promptText('turn/images.attached', { ids: idsOf(images) });
+  return promptText('core/turn-images.attached', { ids: idsOf(images) });
 }
 
 /** `: "a.png" (image id …), …`, or nothing when no image has an id. */

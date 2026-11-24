@@ -76,6 +76,7 @@ export type { ProposedPlanLabels, SubagentState } from './components/chat-cards'
 export {
   AnsweredQuestions,
   BotExchange,
+  BotExchangeFoldTurn,
   BotExchangeTurn,
   ChangedFileRow,
   ChangedFilesCard,
@@ -162,12 +163,18 @@ export {
   TraceOutput,
   TraceStep,
 } from './components/chat-trace';
-export type { TurnHeaderLabels, TurnState } from './components/chat-transcript';
+export type {
+  ChatReactionBarLabels,
+  TurnHeaderLabels,
+  TurnState,
+} from './components/chat-transcript';
 export {
   ChatAttachment,
   ChatCommand,
   ChatCommandText,
   ChatMention,
+  ChatReaction,
+  ChatReactionBar,
   ChatReply,
   ChatTranscript,
   ChatUserMessage,
@@ -209,7 +216,7 @@ export {
   ChipSelectTrigger,
 } from './components/chip-select';
 export type { CodeBlockTab } from './components/code-block';
-export { CodeBlock } from './components/code-block';
+export { CodeBlock, codeBlockTabVariants } from './components/code-block';
 export {
   Command,
   CommandDialog,
@@ -350,7 +357,11 @@ export { IconButton, iconButtonVariants } from './components/icon-button';
 export type { CarouselSlide } from './components/image-carousel';
 export { ImageCarousel } from './components/image-carousel';
 export {
+  InboxAnswerSummary,
   InboxClear,
+  InboxDeck,
+  type InboxDeckExit,
+  InboxDock,
   InboxItem,
   InboxItemSkeleton,
   InboxList,
@@ -363,10 +374,13 @@ export {
   InboxQuestion,
   InboxQuestionOption,
   InboxQuestionOptions,
+  InboxQuestionSteps,
   InboxQuestions,
   InboxSelectionHead,
   InboxSnoozedRow,
+  type InboxSwipe,
   InboxToolbar,
+  inboxDeckAnswer,
 } from './components/inbox';
 export {
   AddRow,
@@ -624,5 +638,6 @@ export { useDebouncedValue } from './hooks/use-debounced-value';
 export { useFileDrag } from './hooks/use-file-drag';
 export { useIsMobile } from './hooks/use-mobile';
 export { useNow } from './hooks/use-now';
+export { useRowMenu } from './hooks/use-row-menu';
 export { useStickToBottom } from './hooks/use-stick-to-bottom';
 export { cn } from './lib/utils';

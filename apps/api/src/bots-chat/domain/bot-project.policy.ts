@@ -43,5 +43,5 @@ export function namesakeRefusal(name: string, namesakes: readonly NamedProject[]
   const listed = namesakes
     .map((project) => `${project.id} "${project.name}"${project.archivedAt ? ' (archived)' : ''}`)
     .join(', ');
-  return promptText('tools/projects.namesake-refusal', { name: name.trim(), listed });
+  return promptText('plan/tools-projects.namesake-refusal', { name: name.trim(), listed });
 }

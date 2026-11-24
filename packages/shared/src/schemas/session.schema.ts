@@ -410,7 +410,7 @@ export type SessionState = z.infer<typeof sessionStateSchema>;
  * shows, organised by what needs you.
  *
  * `waiting-on-you` has four sources — the session failed, the agent has been
- * blocked for ≥ 30 s, a launch has sat in a non-ready state for ≥ 60 s, or the
+ * blocked and a second report confirmed it, a launch has sat in a non-ready state for ≥ 60 s, or the
  * pane is gone with no report. `landing` is the phase after the agent stops:
  * branch pushed, pull request open and approved, not yet merged. The pane-gone
  * source and `landing` have no writer yet (the API's `session-group.policy.ts`).
@@ -566,6 +566,15 @@ export const listSessionsQuerySchema = paginationSchema.extend({
   agent: codingAgentSchema.optional(),
   sort: sessionSortSchema.optional(),
   cursor: z.string().min(1).max(512).optional(),
+  /**
+   * `false` leaves resolved sessions out, `true` keeps only them; absent, both.
+   * The two literals, parsed as themselves: `z.coerce.boolean()` would read
+   * `?resolved=false` as `true`.
+   */
+  resolved: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === 'true')),
 });
 
 export type ListSessionsQueryDto = z.infer<typeof listSessionsQuerySchema>;

@@ -448,7 +448,8 @@ function AnsweredQuestions({
  * card at 13.5px, one `BotExchangeTurn` per message. The first turn is the
  * message (out: "Sent to **Plan Bot**", in: "From **Quota Bot**", with its
  * time in mono); the answer under it is a `BotExchangeTurn reply`, on the
- * hover wash under a hairline. The arrow points the way the words went.
+ * hover wash under a hairline. The arrow points the way the words went. A
+ * `BotExchangeFoldTurn` shows its lead alone until it is opened.
  *
  * ```tsx
  * <BotExchange>
@@ -467,14 +468,7 @@ function BotExchange({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-function BotExchangeTurn({
-  direction,
-  reply = false,
-  lead,
-  time,
-  className,
-  children,
-}: {
+type BotExchangeTurnProps = {
   /** `out`: this bot wrote it; `in`: the other one did. */
   direction: 'out' | 'in';
   /** The answer under the message: on the hover wash, under a hairline. */
@@ -484,26 +478,79 @@ function BotExchangeTurn({
   time?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
-}) {
+};
+
+const TURN_CLASS =
+  'group/turn flex items-start gap-2.5 px-3 py-2.5 data-reply:border-t data-reply:border-border-subtle data-reply:bg-hover-surface';
+const LEAD_CLASS = 'min-w-0 text-fg-muted [&_strong]:font-medium [&_strong]:text-fg';
+const WORDS_CLASS = 'block pt-0.75 leading-normal text-pretty text-fg';
+
+/** A turn's anatomy, whichever root holds it: the arrow, the lead with its time, then the words. */
+function TurnBody({ lead, time, children }: { lead: React.ReactNode; time?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <>
+      <ArrowRightIcon aria-hidden className="mt-0.75 size-3.5 shrink-0 text-fg-muted group-data-[direction=in]/turn:rotate-180" />
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="flex items-baseline gap-2">
+          {lead}
+          {time ? <span className="figures shrink-0 font-mono text-[11px] text-fg-subtle">{time}</span> : null}
+        </span>
+        {children}
+      </span>
+    </>
+  );
+}
+
+function BotExchangeTurn({ direction, reply = false, lead, time, className, children }: BotExchangeTurnProps) {
   return (
     <div
       data-slot="bot-exchange-turn"
       data-direction={direction}
       data-reply={reply || undefined}
-      className={cn(
-        'group/turn flex items-start gap-2.5 px-3 py-2.5 data-reply:border-t data-reply:border-border-subtle data-reply:bg-hover-surface',
-        className,
-      )}
+      className={cn(TURN_CLASS, className)}
     >
-      <ArrowRightIcon aria-hidden className="mt-0.75 size-3.5 shrink-0 text-fg-muted group-data-[direction=in]/turn:rotate-180" />
-      <span className="flex min-w-0 flex-1 flex-col gap-0.75">
-        <span className="flex items-baseline gap-2">
-          <span className="min-w-0 flex-1 text-fg-muted [&_strong]:font-medium [&_strong]:text-fg">{lead}</span>
-          {time ? <span className="figures shrink-0 font-mono text-[11px] text-fg-subtle">{time}</span> : null}
-        </span>
-        <span className="leading-normal text-pretty text-fg">{children}</span>
-      </span>
+      <TurnBody lead={<span className={cn(LEAD_CLASS, 'flex-1')}>{lead}</span>} time={time}>
+        <span className={WORDS_CLASS}>{children}</span>
+      </TurnBody>
     </div>
+  );
+}
+
+/**
+ * BotExchangeFoldTurn — a `BotExchangeTurn` whose lead folds the words under
+ * it, its chevron after the lead: closed until opened (`defaultOpen`), for an
+ * answer that can run long.
+ */
+function BotExchangeFoldTurn({
+  direction,
+  reply = false,
+  lead,
+  time,
+  defaultOpen = false,
+  className,
+  children,
+}: BotExchangeTurnProps & { defaultOpen?: boolean }) {
+  return (
+    <Fold
+      data-slot="bot-exchange-turn"
+      data-direction={direction}
+      data-reply={reply || undefined}
+      defaultOpen={defaultOpen}
+      className={cn(TURN_CLASS, className)}
+    >
+      <TurnBody
+        lead={
+          <FoldTrigger className={cn(LEAD_CLASS, 'inline-flex flex-1 items-center gap-1.5')}>
+            <span className="min-w-0">{lead}</span>
+          </FoldTrigger>
+        }
+        time={time}
+      >
+        <FoldPanel>
+          <span className={WORDS_CLASS}>{children}</span>
+        </FoldPanel>
+      </TurnBody>
+    </Fold>
   );
 }
 
@@ -632,6 +679,7 @@ function ContextCard({
 export {
   AnsweredQuestions,
   BotExchange,
+  BotExchangeFoldTurn,
   BotExchangeTurn,
   ChangedFileRow,
   ChangedFilesCard,

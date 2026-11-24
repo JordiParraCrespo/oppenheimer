@@ -56,7 +56,7 @@ export interface SessionCloudRun {
  *
  * It is organised by what needs you rather than by what the process is doing,
  * which is why it is not the lifecycle below: a session that failed, one whose
- * agent has been blocked for thirty seconds and one whose launch has sat unready
+ * agent is confirmed blocked and one whose launch has sat unready
  * for a minute are all `waiting-on-you`, however differently they got there.
  */
 export type SessionGroup =

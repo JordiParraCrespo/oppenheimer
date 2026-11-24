@@ -27,6 +27,7 @@ export {
   LoggingModule,
   type LoggingModuleAsyncOptions,
 } from './logging/logging.module';
+export { QuietBootLogger } from './logging/quiet-boot.logger';
 export {
   HttpMetricsModule,
   type HttpMetricsOptions,

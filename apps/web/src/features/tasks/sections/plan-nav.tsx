@@ -5,9 +5,8 @@ import {
   SortableGroup,
   SortableRoutineItem,
 } from '@oppenheimer/design-system-web';
-import { Bell, CalendarDays, CircleCheck, Folder, Sun } from '@oppenheimer/design-system-web/icons';
+import { CalendarDays, CircleCheck, Folder, Sun } from '@oppenheimer/design-system-web/icons';
 import { useMilestones, useProjects, useTasks } from '@oppenheimer/frontend-consumer/react';
-import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { useDragLabels } from '@oppenheimer/frontend-web';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
@@ -16,17 +15,14 @@ import { PLAN_NAV_GROUP, usePlanNavOrder } from '../hooks/use-plan-nav-order';
 import { useToday } from '../hooks/use-today';
 import { useTodayEventCount } from '../hooks/use-today-event-count';
 import { useTodoCounts } from '../hooks/use-todo-counts';
-import { isPlanNavId, PLAN_VIEW_PATHS, type PlanNavId, planViewShown } from '../lib/plan-nav-order';
-import { PlanInboxItem } from './plan-inbox-item';
+import { isPlanNavId, PLAN_VIEW_PATHS, type PlanNavId } from '../lib/plan-nav-order';
 
 /**
  * Each view's name and glyph, for its row and the copy a drag lifts, and
- * where each view but the Inbox goes, with whether a route under it keeps it
- * lit. The Inbox is its own row (`PlanInboxItem`), which owns its minute tick.
- * A new view is a row here and its count below.
+ * where it goes, with whether a route under it keeps it lit. A new view is a
+ * row here and its count below.
  */
 const VIEWS = {
-  inbox: { labelKey: 'tasks.nav.inbox', icon: <Bell /> },
   tasks: {
     labelKey: 'tasks.nav.tasks',
     icon: <CircleCheck />,
@@ -54,12 +50,11 @@ const VIEWS = {
   },
 } as const satisfies Record<
   PlanNavId,
-  { labelKey: string; icon: ReactNode; route?: { to: string; fuzzy: boolean } }
+  { labelKey: string; icon: ReactNode; route: { to: string; fuzzy: boolean } }
 >;
 
 /**
- * The head of Plan's sidebar (the `Tasks` frame): the Inbox with what needs
- * you (while the `inbox` flag is on), Tasks with the open count, TODO with
+ * The head of Plan's sidebar (the `Tasks` frame): Tasks with the open count, TODO with
  * what is left on today's list (what is with agents is not), Milestones
  * with how many there are, Calendar with today's events, and Projects with
  * how many the workspace holds. The calendar puts its layers and accounts
@@ -77,11 +72,10 @@ export function PlanNav() {
   const { data: milestones } = useMilestones({ select: (rows) => rows.length });
   const todayEvents = useTodayEventCount();
   const { data: projects } = useProjects({ select: (rows) => rows.length });
-  const inbox = useFeatureFlag('inbox');
   const matchRoute = useMatchRoute();
   const dragLabels = useDragLabels();
-  const { order, handlers } = usePlanNavOrder(planViewShown(inbox));
-  const counts: Record<Exclude<PlanNavId, 'inbox'>, number | undefined> = {
+  const { order, handlers } = usePlanNavOrder();
+  const counts: Record<PlanNavId, number | undefined> = {
     tasks: open,
     todo: dueNow,
     milestones,
@@ -107,7 +101,6 @@ export function PlanNav() {
           className="flex flex-col gap-0.5"
         >
           {order.map((id) => {
-            if (id === 'inbox') return <PlanInboxItem key={id} id={id} />;
             const { labelKey, icon, route } = VIEWS[id];
             const count = counts[id];
             return (

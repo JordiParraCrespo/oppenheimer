@@ -290,7 +290,7 @@ func TestBundledManifestsLoad(t *testing.T) {
 			}
 		}
 	}
-	for _, agent := range []domain.Agent{domain.AgentClaude, domain.AgentCodex, domain.AgentOpenCode, domain.AgentGrok, domain.AgentPi, domain.AgentOmp, domain.AgentShell} {
+	for _, agent := range []domain.Agent{domain.AgentClaude, domain.AgentCodex, domain.AgentOpenCode, domain.AgentGrok, domain.AgentPi, domain.AgentOmp, domain.AgentAntigravity, domain.AgentZCode, domain.AgentFx, domain.AgentHermes, domain.AgentMuse, domain.AgentQwen, domain.AgentShell} {
 		if !agents[agent] {
 			t.Errorf("no bundled manifest for %q, which the runner can start", agent)
 		}
@@ -428,5 +428,95 @@ func TestTheInputBoxUnderASpinnerIsStillWorking(t *testing.T) {
 
 	if state != domain.StateWorking {
 		t.Fatalf("state = %q, want working", state)
+	}
+}
+
+// fx's status line is `Working` or `Thinking` on a line of its own, and its replies say the
+// word too: one that starts a line in prose ("Working tree is clean") must not
+// read as a turn under way, or an idle fx session never shows as needing you.
+func TestFxWorkingIsItsStatusLineNotItsProse(t *testing.T) {
+	c := manifest.New(manifest.Options{})
+
+	for _, status := range []string{"⠹ Working (3s · esc to interrupt)", " Thinking"} {
+		if state, _ := c.Classify(app.Screen{Body: "done\n\n" + status}, domain.AgentFx); state != domain.StateWorking {
+			t.Fatalf("status line %q: state = %q, want working", status, state)
+		}
+	}
+	for _, prose := range []string{"Working tree is clean.", "- Working directory: /src", "• Working as expected now", "Thinking about it, the bug is in the parser."} {
+		if state, _ := c.Classify(app.Screen{Body: "fx\n\n" + prose + "\n\n> "}, domain.AgentFx); state == domain.StateWorking {
+			t.Fatalf("prose %q read as working", prose)
+		}
+	}
+}
+
+// ZCode 0.18.0's input box at rest, mid-turn and under its approval dialog,
+// captured from a real pane. Without a rule for the box at rest a finished
+// turn read `unknown`, which restarts the wait before the session counts as
+// waiting on you.
+func TestZCodeAtItsPromptIsIdleAndMidTurnIsNot(t *testing.T) {
+	c := classifier(t, "")
+	box := func(placeholder string) string {
+		return " ╭─ Build ──────────────────────────────╮\n" +
+			" │ " + placeholder + "\n │\n │\n │ glm-5.3 zai | max\n" +
+			" ╰──────────────────────────────────────╯\n"
+	}
+	cases := []struct {
+		name string
+		body string
+		want domain.State
+	}{
+		{"after a turn", "   c.txt now exists in the working directory.\n" + box("Type a prompt") + "     13.5K (7%)\n", domain.StateIdle},
+		{"a draft typed", box("fix the picker") + "     242 (0%)\n", domain.StateIdle},
+		{"mid-turn", box("Type to queue input") + "  ⠴ esc to interrupt\n", domain.StateWorking},
+		{"approval", " │ Tool has side effects and requires approval\n │   Allow once\n" +
+			" │   Always allow in this project\n │ > Deny\n │ Up/Down choose, Enter confirms, Esc denies\n", domain.StateBlocked},
+	}
+	for _, tc := range cases {
+		if state, _ := c.Classify(app.Screen{Body: tc.body}, domain.AgentZCode); state != tc.want {
+			t.Errorf("%s: state = %q, want %q", tc.name, state, tc.want)
+		}
+	}
+}
+
+// The screens are Qwen Code 0.28.4's in tmux, trimmed to their last rows.
+// Regressions: the placeholder, which stays up mid-turn, reading a working
+// Qwen as idle; a prompt holding text reading as unknown; a reply quoting
+// the timer's words reading as working.
+func TestQwenStatesReadOffItsScreen(t *testing.T) {
+	c := classifier(t, "")
+	rule := strings.Repeat("─", 40)
+	box := func(prompt, footer string) string {
+		return rule + "\n" + prompt + "\n" + rule + "\n  ➜ work · git:(master) · fake-model\n  " + footer + "\n\n\n"
+	}
+	cases := []struct {
+		name string
+		body string
+		want domain.State
+	}{
+		{"after a turn", "  ◆︎ Done: the tool said hello.\n" + box(">   Type your message or @path/to/file", "⏸ Ask permissions (shift + tab to cycle)"), domain.StateIdle},
+		{"a message put back by Esc", box("> a slow plain one \u200b", "⏸ Ask permissions (shift + tab to cycle)"), domain.StateIdle},
+		{"full access", box("*   Type your message or @path/to/file", "YOLO mode (shift + tab to cycle)"), domain.StateIdle},
+		{"one Esc", box(">   Type your message or @path/to/file", "Press Esc again to rewind conversation."), domain.StateIdle},
+		{"mid-turn", "  > a slow plain one\n\n  .. Communing with the machine spirit... (2s · esc to cancel)\n" +
+			box(">   Type your message or @path/to/file", "Enter to steer · Ctrl+Q to queue · ⏸ Ask permissions (shift + tab to cycle)"), domain.StateWorking},
+		{"a reply quoting the timer", "  ◆︎ It shows (2s · esc to cancel) while it works.\n" +
+			box(">   Type your message or @path/to/file", "Auto mode (shift + tab to cycle)"), domain.StateIdle},
+		{"approval", "  ◆︎ Writing it.\n  ? WriteFile Writing to hello.txt ←\n\n   1 hi\n\n   Apply this change?\n\n" +
+			"   › 1. Yes, allow once\n     2. Yes, allow always\n     3. No, suggest changes (esc)\n\n\n  ⠏ Waiting for user confirmation...\n", domain.StateBlocked},
+		{"rewind", "  ╭" + rule + "╮\n  │ Rewind Conversation (12 turns)  │\n  │ ↑ #6 plain gap 0.05  │\n" +
+			"  │ ↑↓ to navigate · Enter to select · Esc to cancel │\n  ╰" + rule + "╯\n", domain.StateBlocked},
+		{"rewind, a turn picked", "  │ Rewind Conversation                  │\n  │ Rewind to: now write it again │\n  │ › Restore conversation only │\n  │   Never mind │\n" +
+			"  │ ↑↓ to navigate · Enter to select · Esc to go back │\n", domain.StateBlocked},
+		{"a shell command to approve", "  ? Shell rm -f notes.txt (tidy up) ←\n     rm -f notes.txt\n   Allow execution of: 'rm'?\n   › 1. Yes, allow once\n" +
+			"     2. Always allow run 'rm *' commands in this project\n     4. No, suggest changes (esc)\n  ⠏ Waiting for user confirmation...\n", domain.StateBlocked},
+		{"no provider", "  │ Connect a Provider                     │\n  │                                        │\n" +
+			"  │ › Qwen Account with Subscription New   │\n  │   Custom Provider                      │\n", domain.StateBlocked},
+		{"signing in", "  │ Qwen Subscription │\n  │ If the browser didn't open, visit: │\n" +
+			"  │ https://chat.qwen.ai/authorize?user_code=HDWX-CPPN&client=cli │\n  │ .  Waiting for sign-in… │\n  │ c to copy link · Esc to cancel │\n", domain.StateBlocked},
+	}
+	for _, tc := range cases {
+		if state, _ := c.Classify(app.Screen{Body: tc.body}, domain.AgentQwen); state != tc.want {
+			t.Errorf("%s: state = %q, want %q", tc.name, state, tc.want)
+		}
 	}
 }

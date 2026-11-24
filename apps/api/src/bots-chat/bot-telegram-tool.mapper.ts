@@ -14,9 +14,9 @@ import { cut, fenceUntrusted, formatToolTime } from './domain/bot-tool-text.poli
  * texts) inside `<telegram>`, marked as data.
  */
 
-export const NO_TELEGRAM = promptText('tools/telegram.no-telegram');
+export const NO_TELEGRAM = promptText('telegram/tools.no-telegram');
 
-export const TELEGRAM_UNTRUSTED_NOTE = promptText('tools/telegram.telegram-untrusted-note');
+export const TELEGRAM_UNTRUSTED_NOTE = promptText('telegram/tools.telegram-untrusted-note');
 
 const SNIPPET_MAX = 160;
 
@@ -31,12 +31,12 @@ export function describeTelegramAccount(
 ): string {
   const handle = account.username ? `@${account.username}` : 'not checked yet';
   const state = !hostOnline
-    ? promptText('tools/telegram.account-host-offline')
+    ? promptText('telegram/tools.account-host-offline')
     : account.isConnected
       ? 'connected'
       : account.status === 'connecting'
         ? 'connecting'
-        : promptText('tools/telegram.account-needs-reconnect', {
+        : promptText('telegram/tools.account-needs-reconnect', {
             status: account.status,
           });
   return `"${account.label}" ${handle} (account id ${account.id}, ${state})`;
@@ -44,7 +44,7 @@ export function describeTelegramAccount(
 
 /** Who wrote a message, as the model reads it. */
 function senderOf(message: TelegramMessage): string {
-  if (message.sentByBotId) return promptText('tools/telegram.sender-of');
+  if (message.sentByBotId) return promptText('telegram/tools.sender-of');
   if (message.fromBot) return 'the Telegram bot';
   const handle = message.senderUsername ? `@${message.senderUsername}` : null;
   return [message.senderName, handle].filter(Boolean).join(' ') || `user ${message.senderId}`;
@@ -61,7 +61,7 @@ export function describeTelegramMessage(message: TelegramMessage, timeZone: stri
 export function describeTelegramChat(chat: TelegramChat, timeZone: string): string {
   const name = chat.chatName ?? chat.chatId;
   const last = { ...chat.last, text: cut(chat.last.text, SNIPPET_MAX) };
-  return promptText('tools/telegram.describe-telegram-chat', {
+  return promptText('telegram/tools.describe-telegram-chat', {
     chatKind: chat.chatKind === 'group' ? 'group' : 'chat',
     name,
     chatId: chat.chatId,

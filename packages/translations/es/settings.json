@@ -103,6 +103,7 @@
     "saveFailed": "No se pudo guardar lo que escribiste.",
     "learnedTitle_one": "Lo que aprendieron tus bots · {{count}}",
     "learnedTitle_other": "Lo que aprendieron tus bots · {{count}}",
+    "learnedTitle_many": "Lo que aprendieron tus bots · {{count}}",
     "learnedHint": "Datos sobre ti que un bot guardó en un chat. Cada uno se queda con el bot que lo aprendió: cámbialo u olvídalo aquí y todos los bots leen el cambio.",
     "learnedEmpty": "Tus bots aún no han aprendido nada sobre ti.",
     "loadFailed": "No se pudo cargar lo que tus bots saben de ti.",
@@ -392,6 +393,7 @@
       "loadFailed": "No se pudieron cargar los chats de este número.",
       "summary_one": "{{answered}} de {{count}} chat con respuesta",
       "summary_other": "{{answered}} de {{count}} chats con respuesta",
+      "summary_many": "{{answered}} de {{count}} chats con respuesta",
       "tabsLabel": "Grupos o personas",
       "tabs": {
         "group": "Grupos",
@@ -418,6 +420,7 @@
       "bulkLabel": "Chats seleccionados",
       "selected_one": "{{count}} chat seleccionado",
       "selected_other": "{{count}} chats seleccionados",
+      "selected_many": "{{count}} chats seleccionados",
       "answerWith": "Responder con",
       "apply": "Aplicar",
       "stop": "Dejar de responder",
@@ -428,6 +431,7 @@
       "noMatch": "Ningún chat coincide",
       "range_one": "{{from}}–{{to}} de {{count}}",
       "range_other": "{{from}}–{{to}} de {{count}}",
+      "range_many": "{{from}}–{{to}} de {{count}}",
       "previous": "Anterior",
       "next": "Siguiente"
     }

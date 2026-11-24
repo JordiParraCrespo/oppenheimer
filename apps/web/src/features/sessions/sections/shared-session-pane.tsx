@@ -84,7 +84,14 @@ export function SharedSessionPane({ slug }: { slug: string }) {
               chat,
               view,
               onViewChange: setView,
-              cover: <SessionChat chat={chat} agent={null} readOnly={!writing} />,
+              cover: (
+                <SessionChat
+                  chat={chat}
+                  agent={null}
+                  readOnly={!writing}
+                  onOpenTerminal={() => setView('terminal')}
+                />
+              ),
             }}
           />
         </div>

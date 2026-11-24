@@ -74,12 +74,15 @@ export function SessionChat({
   agent,
   readOnly,
   attach,
+  onOpenTerminal,
 }: {
   chat: Chat;
   /** Whose conversation it is; none where the reader is not told (a guest on a share). */
   agent: SessionAgent | null;
   readOnly: boolean;
   attach?: ChatAttach;
+  /** Shows the session's terminal, where Claude Code's review of a drafted report opens. */
+  onOpenTerminal?: () => void;
 }) {
   const { t } = useTranslation();
   // The ids alone: each turn subscribes to its own record, so a line the
@@ -212,9 +215,20 @@ export function SessionChat({
       {readOnly ? null : (
         <TerminalColumn className="pb-3">
           {attach ? (
-            <SessionChatAttachingSend chat={chat} agent={agent} attach={attach} onSent={toLatest} />
+            <SessionChatAttachingSend
+              chat={chat}
+              agent={agent}
+              attach={attach}
+              onOpenTerminal={onOpenTerminal}
+              onSent={toLatest}
+            />
           ) : (
-            <SessionChatSend chat={chat} agent={agent} onSent={toLatest} />
+            <SessionChatSend
+              chat={chat}
+              agent={agent}
+              onOpenTerminal={onOpenTerminal}
+              onSent={toLatest}
+            />
           )}
         </TerminalColumn>
       )}

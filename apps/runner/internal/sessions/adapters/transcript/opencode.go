@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/url"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -66,7 +65,7 @@ func followOpenCode(ctx context.Context, owners *openCodeOwners, server domain.A
 	directory := openCodeDirectory(server.Directory)
 	for {
 		f := newOpenCodeFollower(api, server.Since, directory, entryMax, batchMax, emit)
-		f.owners, f.kept = owners, server.Conversation
+		f.owners, f.kept, f.server = owners, server.Conversation, server
 		_ = f.run(ctx)
 		select {
 		case <-ctx.Done():
@@ -93,16 +92,28 @@ func openCodeDirectory(directory string) string {
 	return directory
 }
 
-// openCodeRoots is the root conversations OpenCode has in directory touched
-// since since. OpenCode is asked for the directory's alone, and each answer
+// openCodeStore is where a conversation in OpenCode's shapes is read: OpenCode's
+// own API (openCodeAPI), or ZCode's database (zcodeStore), whose sessions,
+// messages and parts are OpenCode's.
+type openCodeStore interface {
+	// sessions is the conversations kept for directory, or every one when it
+	// is ""; openCodeRoots narrows them.
+	sessions(ctx context.Context, directory string) ([]openCodeSession, error)
+	// messages is a conversation's messages, oldest first: its last limit, or
+	// all of them when limit is 0.
+	messages(ctx context.Context, session string, limit int) ([]openCodeMessage, error)
+	// events calls changed while the conversation may have changed, until ctx
+	// ends or the store stops saying; one that says nothing is read on the
+	// follower's slower poll.
+	events(ctx context.Context, changed func(conversation string)) error
+}
+
+// openCodeRoots is the root conversations the store has in directory touched
+// since since. The store is asked for the directory's alone, and each answer
 // is checked against it too, for a version that lists the whole repository's.
-func openCodeRoots(ctx context.Context, api openCodeAPI, since int64, directory string) ([]openCodeSession, error) {
-	query := url.Values{"roots": {"true"}}
-	if directory != "" {
-		query.Set("directory", directory)
-	}
-	var sessions []openCodeSession
-	if err := api.get(ctx, "/session", query, &sessions); err != nil {
+func openCodeRoots(ctx context.Context, store openCodeStore, since int64, directory string) ([]openCodeSession, error) {
+	sessions, err := store.sessions(ctx, directory)
+	if err != nil {
 		return nil, err
 	}
 	roots := sessions[:0]
@@ -379,7 +390,10 @@ const (
 
 // openCodeFollower is one connection's read of the conversation.
 type openCodeFollower struct {
-	api       openCodeAPI
+	api openCodeStore
+	// server is the OpenCode process the session launched, which owners
+	// knows it by; none for a store with no process behind it (ZCode's).
+	server    domain.AgentServer
 	since     int64
 	directory string
 	entryMax  int
@@ -429,7 +443,7 @@ type openCodeChild struct {
 // comes back.
 const openCodeChildTries = 5
 
-func newOpenCodeFollower(api openCodeAPI, since int64, directory string, entryMax, batchMax int, emit func(app.ChatBatch) error) *openCodeFollower {
+func newOpenCodeFollower(api openCodeStore, since int64, directory string, entryMax, batchMax int, emit func(app.ChatBatch) error) *openCodeFollower {
 	return &openCodeFollower{
 		api: api, since: since, directory: directory, entryMax: entryMax,
 		out:  &follower{entryMax: entryMax, batchMax: batchMax, emit: emit, reset: true},
@@ -601,7 +615,7 @@ func (f *openCodeFollower) conversation(ctx context.Context) (string, error) {
 	if f.owners == nil {
 		return pickConversation(sessions, "", f.kept, f.session, func(string) bool { return false }), nil
 	}
-	server := f.api.server
+	server := f.server
 	mine := f.owners.current(ctx, server)
 	return pickConversation(sessions, mine, f.kept, f.session, func(id string) bool {
 		return f.owners.others(server.Password, id)
@@ -638,10 +652,9 @@ func pickConversation(roots []openCodeSession, mine, kept, shown string, taken f
 // the history is in, the whole of it when the last few do not reach back to
 // what was already read.
 func (f *openCodeFollower) messages(ctx context.Context) ([]openCodeMessage, error) {
-	path := "/session/" + url.PathEscape(f.session) + "/message"
 	if !f.full && f.windowed {
-		var window []openCodeMessage
-		if err := f.api.get(ctx, path, url.Values{"limit": {strconv.Itoa(openCodeWindow)}}, &window); err != nil {
+		window, err := f.api.messages(ctx, f.session, openCodeWindow)
+		if err != nil {
 			return nil, err
 		}
 		switch {
@@ -653,8 +666,8 @@ func (f *openCodeFollower) messages(ctx context.Context) ([]openCodeMessage, err
 			return window, nil
 		}
 	}
-	var all []openCodeMessage
-	if err := f.api.get(ctx, path, nil, &all); err != nil {
+	all, err := f.api.messages(ctx, f.session, 0)
+	if err != nil {
 		return nil, err
 	}
 	f.full = false

@@ -11,6 +11,10 @@ export interface HistoryMessage {
   event?: BotMessageEvent | null;
   /** An activity line's tool calls; absent on every other role. */
   steps?: readonly HistoryToolStep[];
+  /** The person's reaction to it, one emoji; null or absent for none. */
+  reaction?: string | null;
+  /** The bot's own reaction to a message of the person's; null or absent for none. */
+  botReaction?: string | null;
 }
 
 /** What history keeps of one tool call: its name, input and how it ended. */
@@ -148,7 +152,28 @@ export function isReadBack(message: HistoryMessage): boolean {
 export function historyEntry(message: HistoryMessage): HistoryEntry {
   if (message.role === 'event') return { role: 'user', text: eventText(message) };
   if (message.role === 'activity') return { role: 'user', text: activityText(message.steps ?? []) };
-  return { role: message.role === 'user' ? 'user' : 'assistant', text: message.content };
+  return {
+    role: message.role === 'user' ? 'user' : 'assistant',
+    text: [message.content, ...reactionNotes(message)].join('\n\n'),
+  };
+}
+
+/**
+ * The reactions on a message, as notes after its words: the person's, and
+ * the bot's own on the person's message, so a later turn knows a 👍 was
+ * already given. A reaction set after a turn read the message changes that
+ * message's entry, so the provider's cache misses from there on; reactions
+ * land on recent messages, where little of the prefix is left to lose.
+ */
+function reactionNotes(message: HistoryMessage): string[] {
+  const notes: string[] = [];
+  if (message.reaction) {
+    notes.push(promptText('core/turn-history.reaction-note', { emoji: message.reaction }));
+  }
+  if (message.botReaction && message.role === 'user') {
+    notes.push(promptText('core/turn-history.bot-reaction-note', { emoji: message.botReaction }));
+  }
+  return notes;
 }
 
 /**
@@ -177,16 +202,16 @@ export function activityText(steps: readonly HistoryToolStep[]): string {
       : '';
     return `- ${step.name} ${input} → ${outcome}${answer}`;
   });
-  return `${promptText('turn/history.tool-calls-note')}\n${fenceUntrusted('tool_calls', cut(lines.join('\n'), HISTORY_ACTIVITY_MAX))}`;
+  return `${promptText('core/turn-history.tool-calls-note')}\n${fenceUntrusted('tool_calls', cut(lines.join('\n'), HISTORY_ACTIVITY_MAX))}`;
 }
 
 /** An event Oppenheimer told the bot, as it reads it: on your side, never as your words. */
 export function eventNote(content: string): string {
-  return `${promptText('turn/history.event-note')}\n${content}`;
+  return `${promptText('core/turn-history.event-note')}\n${content}`;
 }
 
 /** The line the history puts before the summary; the fold leaves room for it (`BOT_SUMMARY_TRIGGER_TOKENS`). */
-export const SUMMARY_NOTE_PREFIX = `${promptText('turn/history.summary-note')}\n`;
+export const SUMMARY_NOTE_PREFIX = `${promptText('core/turn-history.summary-note')}\n`;
 
 /** The stored summary, as the first entry of a turn's history. */
 function summaryNote(summary: string): string {

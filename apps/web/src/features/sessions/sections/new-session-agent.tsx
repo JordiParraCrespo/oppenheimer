@@ -37,10 +37,10 @@ import {
  * between them switches whose cloud it is; the place chip picks the place
  * with its engine (`engineForPlace`).
  *
- * Only the agents offered on this device are drawn (`agent-choices.ts`: four
- * and the blank terminal by default, the rest switched on in Settings →
- * Agents), in a host's cloud too, plus the one the draft is on; the gear at
- * the end of the popup's strip opens that page.
+ * Only the agents offered on this device are drawn (`agent-choices.ts`: four,
+ * the blank terminal and Cursor by default, each switched in Settings →
+ * Agents), in a host's cloud too, plus the one the draft is on, Cursor's
+ * included; the gear at the end of the popup's strip opens that page.
  */
 export function NewSessionAgent() {
   const { t } = useTranslation();
@@ -79,7 +79,11 @@ export function NewSessionAgent() {
 
   return (
     <AgentSelect
-      agents={withoutHidden(toEngineAgents(atHostCloud, cloudAgent), agentChoices, agent)}
+      agents={withoutHidden(
+        toEngineAgents(atHostCloud, cloudAgent),
+        agentChoices,
+        inCloud ? cloudAgent.id : agent,
+      )}
       value={
         inCloud
           ? { agent: cloudAgent.id, model: cloudModel ?? CLOUD_DEFAULT_MODEL }

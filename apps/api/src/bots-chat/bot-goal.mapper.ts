@@ -85,8 +85,8 @@ export class BotGoalMapper {
     const budget =
       goal.tokenBudget === null
         ? ''
-        : ` ${promptText('tools/goal.to-set-answer-pauses-once-turns', { tokenBudget: String(goal.tokenBudget) })}`;
-    return promptText('tools/goal.to-set-answer-goal-set-after', {
+        : ` ${promptText('goals/tools.to-set-answer-pauses-once-turns', { tokenBudget: String(goal.tokenBudget) })}`;
+    return promptText('goals/tools.to-set-answer-goal-set-after', {
       objective: goal.objective,
       before,
       budget,

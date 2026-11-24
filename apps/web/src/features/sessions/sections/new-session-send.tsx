@@ -11,6 +11,7 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { lastFailure } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
+import { CODING_AGENTS, isCodingAgentId } from '@oppenheimer/shared/agents';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { type ReactNode, useRef, useState } from 'react';
 import { useWatch } from 'react-hook-form';
@@ -63,12 +64,14 @@ export function NewSessionSend({
     name: ['where', 'scope', 'folder'],
     compute: ([where, scope, folder]) => hasPlace({ where, scope, folder }),
   });
-  // The blank terminal has no agent to read a task, so it starts on nothing;
-  // a vendor's agent always does.
+  // An agent that takes no task on its command line (the blank terminal,
+  // ZCode) starts on nothing, and the person types the first one there; a
+  // vendor's cloud agent always takes one.
   const taskOptional = useWatch({
     control,
     name: ['agent', 'where'],
-    compute: ([agent, where]) => agent === 'shell' && where !== 'cloud',
+    compute: ([agent, where]) =>
+      isCodingAgentId(agent) && !CODING_AGENTS[agent].launch.prompt && where !== 'cloud',
   });
   // Whether the picked host is still one this workspace has. A remembered host
   // that was removed since the last visit would otherwise leave send enabled

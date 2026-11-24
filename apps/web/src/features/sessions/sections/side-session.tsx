@@ -27,6 +27,7 @@ export function SideSession({ sessionId }: { sessionId: string }) {
           terminal={(session, reading) => (
             <SessionTerminal
               sessionId={session.id}
+              agent={session.agent}
               hostId={session.hostId ?? ''}
               statusItems={<SideSessionStatus reading={reading} />}
               reading={reading}

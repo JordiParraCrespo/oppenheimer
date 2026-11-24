@@ -1,5 +1,6 @@
 import { AppShell, RouteError } from '@oppenheimer/frontend-web';
 import { createFileRoute, Outlet, redirect, useMatches } from '@tanstack/react-router';
+import { SessionAlerts } from '@/features/inbox/sections/session-alerts';
 import { WorkspaceGate } from '@/features/organizations/sections/workspace-gate';
 import { NotFoundScreen } from '@/features/public/screens/not-found';
 import { ConsoleRail } from '@/features/sessions/sections/console-rail';
@@ -53,6 +54,7 @@ function AuthenticatedShell() {
   if (ownShell) {
     return (
       <WorkspaceGate>
+        <SessionAlerts />
         <Outlet />
       </WorkspaceGate>
     );
@@ -60,6 +62,7 @@ function AuthenticatedShell() {
 
   return (
     <WorkspaceGate>
+      <SessionAlerts />
       <ConsoleDialogProvider>
         <AppShell
           nav={NAV}

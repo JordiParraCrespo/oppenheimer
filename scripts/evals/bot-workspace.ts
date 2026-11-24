@@ -12,6 +12,7 @@ import { randomUUID } from 'node:crypto';
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { BotHostToolsFactory } from '../../apps/api/src/bots-chat/application/bot-host-tools.factory';
 import { BotPlanToolsFactory } from '../../apps/api/src/bots-chat/application/bot-plan-tools.factory';
+import { BotSessionLinkResolver } from '../../apps/api/src/bots-chat/application/bot-session-link.resolver';
 import { BotSessionToolsFactory } from '../../apps/api/src/bots-chat/application/bot-session-tools.factory';
 import type {
   BotToolContext,
@@ -373,6 +374,10 @@ export function workspace(spec: WorkspaceSpec): Workspace {
   };
 
   const queryBus = { execute: async (query: unknown) => answer(query) } as unknown as QueryBus;
+  // A session's console link, as production builds it, over a stand-in config.
+  const links = new BotSessionLinkResolver({
+    getOrThrow: () => 'https://app.oppenheimer.local',
+  } as unknown as ConstructorParameters<typeof BotSessionLinkResolver>[0]);
   // A write reaches nothing: the stand-ins in front of every write tool are the eval's.
   const commandBus = {
     execute: async () => {
@@ -396,9 +401,9 @@ export function workspace(spec: WorkspaceSpec): Workspace {
     approvals: { request: async () => ({ status: 'requested', approvalId: 'approval-1' }) },
   } as BotToolContext;
   const areas = [
-    new BotHostToolsFactory(queryBus, commandBus),
+    new BotHostToolsFactory(queryBus, commandBus, links),
     new BotPlanToolsFactory(queryBus, commandBus),
-    new BotSessionToolsFactory(queryBus, commandBus, {} as never, {} as never),
+    new BotSessionToolsFactory(queryBus, commandBus, {} as never, {} as never, links),
   ];
   const definitions = areas.flatMap((area) =>
     area.definitions().map((definition) => ({ group: area.group, definition })),

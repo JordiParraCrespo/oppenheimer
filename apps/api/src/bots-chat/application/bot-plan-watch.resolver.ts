@@ -45,7 +45,7 @@ export class BotPlanWatchResolver {
     const name = await this.nameOf(context.owner, watch.scope, watch.id);
     if (name === null) {
       throw new BotToolRefusal(
-        promptText('tools/plan-watch.watch', { scope: watch.scope, id: watch.id }),
+        promptText('plan/tools-watch.watch', { scope: watch.scope, id: watch.id }),
       );
     }
     await this.assertRoom(context, watch);
@@ -98,7 +98,7 @@ export class BotPlanWatchResolver {
     );
     if (!already && existing.length >= BOT_SUBSCRIPTIONS_PER_BOT) {
       throw new BotToolRefusal(
-        promptText('tools/plan-watch.assert-room', {
+        promptText('plan/tools-watch.assert-room', {
           subscriptionsPerBot: String(BOT_SUBSCRIPTIONS_PER_BOT),
         }),
       );

@@ -9,11 +9,11 @@ import { cut, fenceUntrusted } from '../domain/bot-tool-text.policy';
  * wrong fix).
  */
 const REFUSALS: Readonly<Record<string, string>> = {
-  EXEC_001: promptText('tools/host-command.refusals-exec-001'),
-  EXEC_002: promptText('tools/host-command.refusals-exec-002'),
-  EXEC_003: promptText('tools/host-command.refusals-exec-003'),
-  EXEC_004: promptText('tools/host-command.refusals-exec-004'),
-  EXEC_005: promptText('tools/host-command.refusals-exec-005'),
+  EXEC_001: promptText('sessions/tools-host-command.refusals-exec-001'),
+  EXEC_002: promptText('sessions/tools-host-command.refusals-exec-002'),
+  EXEC_003: promptText('sessions/tools-host-command.refusals-exec-003'),
+  EXEC_004: promptText('sessions/tools-host-command.refusals-exec-004'),
+  EXEC_005: promptText('sessions/tools-host-command.refusals-exec-005'),
 };
 
 /** How much of the command line a Needs input card shows. */
@@ -41,7 +41,7 @@ export function describeHostCommand(outcome: HostExecOutcome, host: string): str
     case 'ran': {
       const { run } = outcome;
       const ended = run.timedOut
-        ? promptText('tools/host-command.stopped-at-timeout')
+        ? promptText('sessions/tools-host-command.stopped-at-timeout')
         : run.exitCode === null
           ? 'Ended by a signal.'
           : `Exit code ${run.exitCode}.`;
@@ -51,14 +51,18 @@ export function describeHostCommand(outcome: HostExecOutcome, host: string): str
       return lines.join('\n\n');
     }
     case 'host_offline':
-      return promptText('tools/host-command.host-offline', { host });
+      return promptText('sessions/tools-host-command.host-offline', { host });
     case 'not_supported':
-      return promptText('tools/host-command.describe-host-command-runner-too-old', { host });
+      return promptText('sessions/tools-host-command.describe-host-command-runner-too-old', {
+        host,
+      });
     case 'timed_out':
-      return promptText('tools/host-command.describe-host-command-did-answer-time', { host });
+      return promptText('sessions/tools-host-command.describe-host-command-did-answer-time', {
+        host,
+      });
     case 'failed': {
       const meaning = REFUSALS[outcome.code];
-      return promptText('tools/host-command.host-refused', {
+      return promptText('sessions/tools-host-command.host-refused', {
         host,
         code: outcome.code,
         meaning: meaning ? `: ${meaning}` : '',

@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
+import { MarkSlackWorkingCommand } from '../../slack/commands/mark-slack-working/mark-slack-working.command';
+import { ReplyOnSlackCommand } from '../../slack/commands/reply-on-slack/reply-on-slack.command';
 import { ReplyOnTelegramCommand } from '../../telegram/commands/reply-on-telegram/reply-on-telegram.command';
 import { ReplyOnWhatsappCommand } from '../../whatsapp/commands/reply-on-whatsapp/reply-on-whatsapp.command';
 import { BOT_CONVERSATION_REPOSITORY } from '../bots-chat.di-tokens';
@@ -7,6 +9,7 @@ import type {
   BotChannelChat,
   BotConversationRepositoryPort,
 } from '../database/bot-conversation.repository.port';
+import { slackTsOf } from '../domain/bot-slack-turn.policy';
 import { telegramMessageIdOf } from '../domain/bot-telegram-turn.policy';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import { whatsappMessageRowIdOf } from '../domain/bot-whatsapp-turn.policy';
@@ -17,12 +20,17 @@ type ChannelReply = Omit<
   'accountId' | 'replyToId'
 >;
 
+/** What of a turn its chat is found by. */
+type ChannelTurn = Pick<BotTurnEntity, 'organizationId' | 'conversationId' | 'botId' | 'sourceKey'>;
+
+type ChannelReplyCommand = ReplyOnTelegramCommand | ReplyOnWhatsappCommand | ReplyOnSlackCommand;
+
 /** The reply for a chat's channel, quoting the message the turn's key names. */
 function replyOn(
   chat: BotChannelChat,
   sourceKey: string | null,
   reply: ChannelReply,
-): ReplyOnTelegramCommand | ReplyOnWhatsappCommand {
+): ChannelReplyCommand {
   switch (chat.kind) {
     case 'telegram':
       return new ReplyOnTelegramCommand({
@@ -36,17 +44,21 @@ function replyOn(
         accountId: chat.whatsappAccountId,
         replyToRowId: whatsappMessageRowIdOf(sourceKey),
       });
+    // A Slack chat is the thread itself, so the answer needs nothing to quote.
+    case 'slack':
+      return new ReplyOnSlackCommand({ ...reply, accountId: chat.slackAccountId });
   }
 }
 
 /**
  * Sends a channel turn's words to the chat its conversation is, as a reply to
  * the message that opened the turn, through the module of the chat's channel
- * (telegram, whatsapp), which sends only while this bot still answers that
+ * (telegram, whatsapp, slack), which sends only while this bot still answers that
  * chat. Answers how many messages went: none for a conversation that is no
  * channel's chat (any more), a chat this bot no longer answers, or a host
  * that did not send. What the turn's end owes and what it sends as it goes
- * are the callers'.
+ * are the callers'. A turn's start and end are shown on the chat where its
+ * channel has a way to (`started`, `ended`).
  */
 @Injectable()
 export class BotChannelReplyResolver {
@@ -56,11 +68,7 @@ export class BotChannelReplyResolver {
     private readonly commands: CommandBus,
   ) {}
 
-  async send(
-    turn: Pick<BotTurnEntity, 'organizationId' | 'conversationId' | 'botId' | 'sourceKey'>,
-    text: string,
-    correlationId: string | undefined,
-  ): Promise<number> {
+  async send(turn: ChannelTurn, text: string, correlationId: string | undefined): Promise<number> {
     const chat = await this.conversations.findChannelChat(turn.organizationId, turn.conversationId);
     if (!chat) return 0;
     const reply: ChannelReply = {
@@ -70,8 +78,38 @@ export class BotChannelReplyResolver {
       botId: turn.botId,
       metadata: { correlationId },
     };
-    return this.commands.execute<ReplyOnTelegramCommand | ReplyOnWhatsappCommand, number>(
-      replyOn(chat, turn.sourceKey, reply),
+    return this.commands.execute<ChannelReplyCommand, number>(replyOn(chat, turn.sourceKey, reply));
+  }
+
+  /** The turn's run started: the chat shows it is being worked on, where its channel can. */
+  started(turn: ChannelTurn): Promise<void> {
+    return this.markWorking(turn, true);
+  }
+
+  /** The turn ended (its answer sent or not): the chat stops showing it is being worked on. */
+  ended(turn: ChannelTurn): Promise<void> {
+    return this.markWorking(turn, false);
+  }
+
+  /**
+   * The one channel with a working sign is Slack, the reaction on the
+   * message the turn is on (`MarkSlackWorkingCommand`); every other channel,
+   * and a turn that is no channel's, shows nothing.
+   */
+  private async markWorking(turn: ChannelTurn, working: boolean): Promise<void> {
+    const ts = slackTsOf(turn.sourceKey);
+    if (!ts) return;
+    const chat = await this.conversations.findChannelChat(turn.organizationId, turn.conversationId);
+    if (chat?.kind !== 'slack') return;
+    await this.commands.execute(
+      new MarkSlackWorkingCommand({
+        organizationId: turn.organizationId,
+        accountId: chat.slackAccountId,
+        chatId: chat.chatId,
+        ts,
+        botId: turn.botId,
+        working,
+      }),
     );
   }
 }

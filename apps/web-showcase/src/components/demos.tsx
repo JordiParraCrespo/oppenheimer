@@ -183,6 +183,7 @@ import { Textarea } from '@oppenheimer/design-system-web/textarea';
 import {
   ArrowUpRightIcon,
   ChevronDownIcon,
+  AlarmClockIcon,
   ClockIcon,
   CpuIcon,
   EllipsisIcon,
@@ -203,7 +204,6 @@ import {
   TerminalIcon,
   TriangleAlertIcon,
   UserIcon,
-  ZapIcon,
 } from '@oppenheimer/design-system-web/icons';
 import * as React from 'react';
 
@@ -893,7 +893,7 @@ const PROJECTS = ['XRP Mobile', 'Atlas', 'Client sites'];
 const RAIL_ITEMS: Record<string, { label: string; icon: React.ReactNode }> = {
   sessions: { label: 'Sessions', icon: <TerminalIcon /> },
   pulls: { label: 'Pull requests', icon: <GitPullRequestIcon /> },
-  automations: { label: 'Automations', icon: <ZapIcon /> },
+  automations: { label: 'Automations', icon: <AlarmClockIcon /> },
   plan: { label: 'Plan', icon: <CircleCheckIcon /> },
 };
 
@@ -1609,7 +1609,7 @@ export function PageHeaderDemo() {
       </PageHeader>
       <PageHeader>
         <PageHeaderRow
-          icon={<ZapIcon />}
+          icon={<AlarmClockIcon />}
           title={<PageHeaderTitleInput placeholder="Name this routine" aria-label="Routine name" />}
           actions={
             <>

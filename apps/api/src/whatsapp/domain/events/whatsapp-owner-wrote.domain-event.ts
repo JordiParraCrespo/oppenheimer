@@ -38,6 +38,11 @@ export class WhatsappOwnerWroteDomainEvent extends DomainEvent {
    * (`TranscribeWhatsappVoiceNoteCommand`) before the bot reads it.
    */
   readonly voiceNote: boolean;
+  /**
+   * The message is an image (its caption, or `[image]`, is `text`): the turn
+   * fetches it from the host and the bot sees it.
+   */
+  readonly image: boolean;
 
   constructor(props: DomainEventProps<WhatsappOwnerWroteDomainEvent>) {
     super(props);
@@ -52,6 +57,7 @@ export class WhatsappOwnerWroteDomainEvent extends DomainEvent {
     this.startsHere = props.startsHere;
     this.command = props.command;
     this.text = props.text;
+    this.image = props.image;
     this.voiceNote = props.voiceNote;
   }
 }

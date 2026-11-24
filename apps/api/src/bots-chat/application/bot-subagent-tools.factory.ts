@@ -34,7 +34,7 @@ export class BotSubagentToolsFactory implements BotToolArea {
       defineBotTool({
         name: 'delegate',
         scope: 'bots:write',
-        description: promptText('tools/subagents.delegate', {
+        description: promptText('web/tools-subagents.delegate', {
           subagentTasksMax: String(SUBAGENT_TASKS_MAX),
           subagentTimeLimitSeconds: String(SUBAGENT_TIME_LIMIT_MS / 1_000),
           subagentConcurrency: String(SUBAGENT_CONCURRENCY),
@@ -49,12 +49,12 @@ export class BotSubagentToolsFactory implements BotToolArea {
                   .trim()
                   .min(1)
                   .max(SUBAGENT_TASK_MAX)
-                  .describe(promptText('tools/subagents.delegate-tasks-task')),
+                  .describe(promptText('web/tools-subagents.delegate-tasks-task')),
                 context: z
                   .string()
                   .max(SUBAGENT_TASK_MAX)
                   .optional()
-                  .describe(promptText('tools/subagents.delegate-tasks-context')),
+                  .describe(promptText('web/tools-subagents.delegate-tasks-context')),
               }),
             )
             .min(1)
@@ -63,12 +63,12 @@ export class BotSubagentToolsFactory implements BotToolArea {
         run: async (input, context, signal) => {
           if (!context.subagents) {
             throw new BotToolRefusal(
-              promptText('tools/subagents.delegate-refused-subagents-cannot'),
+              promptText('web/tools-subagents.delegate-refused-subagents-cannot'),
             );
           }
           if (!context.budget.take('delegate', SUBAGENT_CALLS_PER_TURN)) {
             throw new BotToolRefusal(
-              promptText('tools/subagents.delegate-refused-turn-has', {
+              promptText('web/tools-subagents.delegate-refused-turn-has', {
                 subagentCallsPerTurn: String(SUBAGENT_CALLS_PER_TURN),
               }),
             );

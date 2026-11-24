@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { ChatFeedbackAction, ChatFeedbackDraft } from '../feedback-draft';
 import { type ChatStep, classify, SessionChat, toTurns } from '../session-chat';
 
 /**
@@ -443,6 +444,7 @@ describe('SessionChat', () => {
       older: 'none',
       activity: null,
       suggestion: null,
+      feedback: null,
       interruptible: true,
       commands: null,
     });
@@ -887,6 +889,28 @@ describe('typing into the session', () => {
     chat.send('What is in these?', { withFiles: true });
     vi.runAllTimers();
     expect(typed).toEqual(['\r', 'What is in these?', '\r']);
+    vi.useRealTimers();
+  });
+
+  // What breaks this: a message typed after the prompt ZCode recalled into its
+  // input on an Up arrow, sent joined to it ("<last prompt><this message>").
+  it('empties the agent’s prompt first when it has keys for that, but not over files already pasted', () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data), undefined, {
+      clear: { keys: '\u0015', settleMs: 100 },
+    });
+    chat.send('Now ship it');
+    // The words wait for the agent to act on the clear: in the same burst
+    // they would land in the prompt it has not emptied yet.
+    expect(typed).toEqual(['\u0015']);
+    vi.advanceTimersByTime(99);
+    expect(typed).toEqual(['\u0015']);
+    vi.runAllTimers();
+    chat.send('What is in these?', { withFiles: true });
+    vi.runAllTimers();
+    expect(typed).toEqual(['\u0015', 'Now ship it', '\r', 'What is in these?', '\r']);
     vi.useRealTimers();
   });
 });
@@ -1403,5 +1427,39 @@ describe('SessionChat.connect', () => {
     // whether the current source can stop a turn.
     releaseFirst();
     expect(chat.snapshot().interruptible).toBe(false);
+  });
+});
+
+describe('the drafted-feedback card', () => {
+  const card = (note: string | null): ChatFeedbackDraft => ({
+    kind: 'Bug report',
+    title: 'Wrote after view only',
+    details: [],
+    note,
+    actions: [{ action: 'send', kind: 'send', key: '2', opensTerminal: false }],
+    promptHoldsText: false,
+    more: 0,
+  });
+
+  // What breaks this: a double click typing the key twice, the second
+  // answering the card's own "send without reviewing?" before anyone saw it.
+  it('types one key per state of the card, so a double click answers one question', () => {
+    const chat = new SessionChat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.setFeedback(card(null));
+    const send: ChatFeedbackAction = {
+      action: 'send',
+      kind: 'send',
+      key: '2',
+      opensTerminal: false,
+    };
+    expect(chat.pressFeedback(send)).toBe(true);
+    expect(chat.pressFeedback(send)).toBe(false);
+    expect(typed).toEqual(['2']);
+
+    chat.setFeedback(card('Send without reviewing (full draft + env, no transcript)?'));
+    expect(chat.pressFeedback(send)).toBe(true);
+    expect(typed).toEqual(['2', '2']);
   });
 });

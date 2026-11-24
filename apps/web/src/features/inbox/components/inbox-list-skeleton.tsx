@@ -5,7 +5,7 @@ import {
   InboxListHead,
 } from '@oppenheimer/design-system-web';
 import { SlidersVertical } from '@oppenheimer/design-system-web/icons';
-import { LoadingStatus, SidebarSearchField, SidebarToggle } from '@oppenheimer/frontend-web';
+import { LoadingStatus, SidebarSearchField } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -19,8 +19,8 @@ export function InboxListSkeleton() {
   return (
     <div aria-busy className="flex min-h-0 flex-1 flex-col">
       <LoadingStatus />
-      <InboxListHead leading={<SidebarToggle />} title={t('inbox.title')}>
-        <IconButton size="xs" variant="quiet" aria-label={t('inbox.filter.label')} disabled>
+      <InboxListHead title={t('inbox.title')}>
+        <IconButton size="sm" variant="quiet" aria-label={t('inbox.filter.label')} disabled>
           <SlidersVertical />
         </IconButton>
       </InboxListHead>

@@ -95,6 +95,18 @@ describe('planBotSessionLaunch', () => {
       refusal: expect.stringContaining('no approvals'),
     });
   });
+
+  // What breaks this: a bot starting ZCode, which takes no task on its command
+  // line, and the required task dropped while the session sits idle.
+  it('refuses an agent that takes no task, and lets the blank terminal through', () => {
+    expect(planBotSessionLaunch('zcode', {})).toEqual({
+      refusal: expect.stringContaining('ZCode takes no task on its command line'),
+    });
+    expect(planBotSessionLaunch('muse', {})).toEqual({
+      refusal: expect.stringContaining('Muse takes no task on its command line'),
+    });
+    expect(planBotSessionLaunch('shell', {})).toHaveProperty('launch');
+  });
 });
 
 describe('modelChoicesByAgent', () => {

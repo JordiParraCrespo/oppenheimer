@@ -67,7 +67,7 @@ export function AnalyticsSkeleton({ rangeWord }: { rangeWord: string }) {
             />
           ))}
           <span className="flex-1" />
-          <Skeleton shape="pill" className="h-8 w-90" />
+          <Skeleton shape="pill" className="h-(--control-h-md) w-90" />
         </div>
         <div aria-hidden className="flex h-70.5 flex-col justify-end gap-3 pt-6">
           <div className="flex min-h-0 flex-1 items-end gap-1.5">

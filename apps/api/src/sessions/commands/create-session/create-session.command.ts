@@ -16,6 +16,8 @@ export class CreateSessionCommand extends CommandBase {
    * caller can forget it and mint a session the runs list cannot join back.
    */
   readonly origin: SessionOrigin;
+  /** The bot that asked, when origin is `bot`: the routines read it back (`ownSessionGuard`). */
+  readonly botId?: string;
 
   constructor(props: CommandProps<CreateSessionCommand>) {
     super(props);
@@ -24,5 +26,6 @@ export class CreateSessionCommand extends CommandBase {
     this.input = props.input;
     this.idempotencyKey = props.idempotencyKey;
     this.origin = props.origin;
+    this.botId = props.botId;
   }
 }
