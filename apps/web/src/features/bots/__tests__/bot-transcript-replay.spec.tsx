@@ -197,6 +197,7 @@ it('draws no line where a turn compacted, and keeps the calls around it', async 
     subagents: null,
     allowedBy: null,
     mailDraft: null,
+    visual: null,
     rateLimit: null,
   });
   const message = (id: string, role: string, content: string, extra: object = {}) => ({

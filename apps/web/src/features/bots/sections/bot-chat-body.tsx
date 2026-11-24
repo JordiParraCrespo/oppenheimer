@@ -14,6 +14,7 @@ import { ToolCallsShownContext } from '@/features/bots/hooks/use-tool-calls-show
 import { BotApprovalCard } from './bot-approval-card';
 import { BotComposer } from './bot-composer';
 import { BotEngine } from './bot-engine';
+import { BotFormCard } from './bot-form-card';
 import { BotQuestionCard } from './bot-question-card';
 import { BotTranscript } from './bot-transcript';
 import { BotUsage } from './bot-usage';
@@ -91,6 +92,7 @@ export function BotChatBody({
           <div className="mx-auto flex w-full max-w-190 flex-col gap-2">
             <BotApprovalCard botId={bot.id} name={bot.name} />
             <BotQuestionCard botId={bot.id} />
+            <BotFormCard botId={bot.id} name={bot.name} />
             <ErrorAlert
               error={update.error}
               fallback={t('bots.chat.saveFailed')}
