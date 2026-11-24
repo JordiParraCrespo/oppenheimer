@@ -230,9 +230,10 @@ test.describe('Session screen', () => {
     await owner.api.patch(`/api/v1/sessions/${secondId}`, { data: { name: 'Second tab' } });
 
     await signInAs(page, owner.user);
-    await page.goto(`/sessions/${firstId}`);
-    await page.goto(`/sessions/${secondId}`);
     const tabs = page.getByRole('navigation', { name: 'Open sessions' });
+    await page.goto(`/sessions/${firstId}`);
+    await expect(tabs.getByRole('link', { name: 'First tab' })).toBeVisible();
+    await page.goto(`/sessions/${secondId}`);
     await expect(tabs.getByRole('link', { name: 'First tab' })).toBeVisible();
     await expect(tabs.getByRole('link', { name: 'Second tab' })).toHaveAttribute(
       'aria-current',
