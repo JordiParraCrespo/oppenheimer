@@ -79,7 +79,9 @@ owner's only.
 - **What the owner wrote** reaches the bot as their message, mentions and
   links made readable, as their Telegram message does. A person mentioned
   arrives by the name their workspace shows (`users.info`, at most ten a
-  message, a short wait each), or by id when Slack will not say. Nothing else from the
+  message, kept a day, 1.5 seconds for all of them), or by id when Slack will
+  not say in time. Lookups and reactions count apart from the answer's posts,
+  so they never spend its rate budget. Nothing else from the
   channel reaches it: the bot reads no thread history.
 
 ## 4. Answers go in the thread
@@ -94,9 +96,10 @@ owner's only.
   Telegram, what the bot writes before a tool call goes out as the call
   begins. Until 2026-11-24 answers were cut at 3,900 characters, Slack's
   advice, which split a long one into several.
-- **Working.** The owner's message gets the app's 👀 reaction when it
-  arrives, and loses it when the turn's last answer went, so Slack shows the
-  bot heard and is on it.
+- **Working.** The owner's message gets the app's 👀 reaction when its turn
+  starts, and loses it when the turn's last answer went, so Slack shows the
+  bot is on it. A message written into a thread while its turn runs is taken
+  into that turn and gets none, nor does one that never became a turn.
 - **Secrets stay out of the thread.** Everything sent to Slack, as it goes
   and at the end, has secrets (tokens, keys, passwords, as the session
   transcript finds them) replaced with `[redacted]`; the console keeps the

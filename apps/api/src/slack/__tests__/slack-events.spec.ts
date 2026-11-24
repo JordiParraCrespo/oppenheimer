@@ -5,9 +5,11 @@ import { AppError } from '@oppenheimer/backend-core';
 import type { DomainEvent } from '@oppenheimer/backend-ddd';
 import { None, Some } from 'oxide.ts';
 import { describe, expect, it, vi } from 'vitest';
-import { SlackLineResolver } from '../application/slack-line.resolver';
+import { SLACK_NAMES_DEADLINE_MS, SlackLineResolver } from '../application/slack-line.resolver';
 import { ConnectSlackCommand } from '../commands/connect-slack/connect-slack.command';
 import { ConnectSlackCommandHandler } from '../commands/connect-slack/connect-slack.command-handler';
+import { MarkSlackWorkingCommand } from '../commands/mark-slack-working/mark-slack-working.command';
+import { MarkSlackWorkingCommandHandler } from '../commands/mark-slack-working/mark-slack-working.command-handler';
 import { ReceiveSlackEventCommand } from '../commands/receive-slack-event/receive-slack-event.command';
 import { ReceiveSlackEventCommandHandler } from '../commands/receive-slack-event/receive-slack-event.command-handler';
 import { ReplyOnSlackCommand } from '../commands/reply-on-slack/reply-on-slack.command';
@@ -247,8 +249,8 @@ describe('a request to a bot’s Slack events address', () => {
     expect(published[0]).toMatchObject({ text: 'ping @U0MAYA' });
   });
 
-  // What breaks this: the owner cannot tell from Slack whether the bot heard them.
-  it('marks the owner’s message as being worked on, and not a stop', async () => {
+  // What breaks this: a message folded into a running turn keeps its eyes forever.
+  it('puts no reaction on a message as it arrives: the turn does when it starts', async () => {
     const { handler, slack } = receiver([app()]);
     await handler.execute(
       signed(
@@ -261,26 +263,7 @@ describe('a request to a bot’s Slack events address', () => {
         }),
       ),
     );
-    await vi.waitFor(() =>
-      expect(slack.react).toHaveBeenCalledWith(
-        expect.anything(),
-        { channel: 'C1', ts: '1700000000.000100', name: 'eyes' },
-        true,
-      ),
-    );
-    await handler.execute(
-      signed(
-        eventOf({
-          type: 'app_mention',
-          user: OWNER,
-          text: `<@${APP_USER}> stop`,
-          ts: '1700000001.000100',
-          thread_ts: '1700000000.000100',
-          channel: 'C1',
-        }),
-      ),
-    );
-    expect(slack.react).toHaveBeenCalledTimes(1);
+    expect(slack.react).not.toHaveBeenCalled();
   });
 
   it('ignores anyone but the owner, in a channel or in the DM, and says nothing back', async () => {
@@ -494,6 +477,49 @@ describe('a bot’s answer in Slack', () => {
     ).rejects.toThrow();
     expect(account.status).toBe('revoked');
     expect(accounts.repository.saveStatus).toHaveBeenCalledWith(account);
+  });
+});
+
+describe('a bot’s turn starting on a Slack message', () => {
+  const mark = (accountId: string, botId = BOT) =>
+    new MarkSlackWorkingCommand({
+      organizationId: ORG,
+      accountId,
+      chatId: 'C1:1700000000.000100',
+      ts: '1700000500.000001',
+      botId,
+    });
+
+  // What breaks this: the owner cannot tell from Slack that the bot is on it,
+  // or another bot's app reacts for a turn that is not its own.
+  it('marks that message as being worked on, while the app is still this bot’s', async () => {
+    const account = app();
+    const slack = fakeSlack();
+    const handler = new MarkSlackWorkingCommandHandler(
+      fakeAccounts([account]).repository,
+      new SlackLineResolver(sealer, slack),
+    );
+    await handler.execute(mark(account.id, '0b3e2a1c-9999-4c5d-8e6f-70819203b4c5'));
+    await handler.execute(mark(account.id));
+    await vi.waitFor(() => expect(slack.react).toHaveBeenCalledTimes(1));
+    expect(slack.react).toHaveBeenCalledWith(
+      expect.anything(),
+      { channel: 'C1', ts: '1700000500.000001', name: 'eyes' },
+      true,
+    );
+  });
+
+  // What breaks this: Slack's three seconds pass while names are looked up, and Slack retries.
+  it('stops waiting for names past the deadline, reading the late ones by id', async () => {
+    vi.useFakeTimers();
+    try {
+      const slack = fakeSlack({ userName: vi.fn(() => new Promise<string | null>(() => {})) });
+      const names = new SlackLineResolver(sealer, slack).namesOf(app(), ['U0MAYA']);
+      await vi.advanceTimersByTimeAsync(SLACK_NAMES_DEADLINE_MS);
+      await expect(names).resolves.toEqual(new Map());
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

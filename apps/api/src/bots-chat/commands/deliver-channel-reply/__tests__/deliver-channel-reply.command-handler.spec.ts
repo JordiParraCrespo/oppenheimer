@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { ConfigService } from '@nestjs/config';
 import type { CommandBus } from '@nestjs/cqrs';
 import { None, Some } from 'oxide.ts';
+import { MarkSlackWorkingCommand } from '../../../../slack/commands/mark-slack-working/mark-slack-working.command';
 import { ReplyOnSlackCommand } from '../../../../slack/commands/reply-on-slack/reply-on-slack.command';
 import { ReplyOnTelegramCommand } from '../../../../telegram/commands/reply-on-telegram/reply-on-telegram.command';
 import { ReplyOnWhatsappCommand } from '../../../../whatsapp/commands/reply-on-whatsapp/reply-on-whatsapp.command';
@@ -316,5 +317,27 @@ describe('DeliverChannelReplyCommandHandler', () => {
     const silent = setup(ended(contactTurn()), whatsappChat, []);
     await silent.deliver();
     expect(silent.bus.execute).not.toHaveBeenCalled();
+  });
+
+  // Breaks if the working reaction goes on another message than the turn's own,
+  // or a Telegram turn is sent a Slack command.
+  it('marks the Slack message a turn is on as being worked on, and nothing on another channel', async () => {
+    const bus = { execute: vi.fn(async () => undefined) };
+    const resolverFor = (chat: BotChannelChat) =>
+      new BotChannelReplyResolver(
+        { findChannelChat: vi.fn(async () => chat) } as unknown as BotConversationRepositoryPort,
+        bus as unknown as CommandBus,
+      );
+    await resolverFor(slackChat).working(slack());
+    const [sent] = bus.execute.mock.calls[0] as unknown as [MarkSlackWorkingCommand];
+    expect(sent).toBeInstanceOf(MarkSlackWorkingCommand);
+    expect(sent).toMatchObject({
+      accountId: slackAccountId,
+      chatId: 'C1:1700000000.000100',
+      ts: '1700000500.000001',
+      botId,
+    });
+    await resolverFor(telegramChat).working(telegram());
+    expect(bus.execute).toHaveBeenCalledTimes(1);
   });
 });

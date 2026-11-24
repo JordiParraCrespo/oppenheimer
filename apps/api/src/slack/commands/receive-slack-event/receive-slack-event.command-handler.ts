@@ -32,10 +32,10 @@ import { type ReceivedSlackEvent, ReceiveSlackEventCommand } from './receive-sla
  *
  * An event from the app's workspace is acted on (`slackInboundAction`): the
  * owner's message wakes the bot through `SlackOwnerWroteDomainEvent`, a `link`
- * code records the owner, and anyone else is ignored. The owner's message
- * gets the working reaction until its answer goes; those it mentions are read
- * by name (a short lookup each). Slack wants an answer within three seconds,
- * so the lines and the reaction the app sends back are not waited on.
+ * code records the owner, and anyone else is ignored. Those the owner's
+ * message mentions are read by name, within a short deadline. Slack wants an
+ * answer within three seconds, so the lines the app sends back are not
+ * waited on.
  */
 @CommandHandler(ReceiveSlackEventCommand)
 export class ReceiveSlackEventCommandHandler
@@ -97,7 +97,6 @@ export class ReceiveSlackEventCommandHandler
     ]);
     if (action.command === 'stop')
       this.lines.say(account, action.channel, action.threadTs, SLACK_STOP_LINE);
-    else this.lines.working(account, { channel: action.channel, ts: action.ts }, true);
   }
 }
 

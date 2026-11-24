@@ -9,6 +9,10 @@ import type { SlackAppAccess, SlackPosted, SlackWebApiPort } from './slack-web-a
 const TIMEOUT_MS = 15_000;
 /** A name looked up while Slack waits for its event's answer: short, or the id stands. */
 const NAME_TIMEOUT_MS = 1_500;
+/** How long a person's name is kept: a renamed person reads by their old name for up to a day. */
+const NAME_TTL_SECONDS = 86_400;
+/** How long an app Slack refused `users.info` for (made before it asked for `users:read`) is not asked again. */
+const UNSCOPED_TTL_SECONDS = 3_600;
 /** What `reactions.add` and `reactions.remove` answer when the message already is as asked. */
 const REACTION_SETTLED = new Set(['already_reacted', 'no_reaction']);
 /** A bot's answers come a few at a time; a burst past twenty waiting answers `SLACK_007`. */
@@ -50,9 +54,13 @@ const REFUSED_TOKEN = new Set([
  *   pauses the bucket and answers `SLACK_007`. Every other refusal is
  *   `200` with `{ ok: false, error }`.
  * - **What one job costs.** A turn posts its answer, and as it goes one post
- *   per run of tool calls: a handful a turn, one turn at a time per bot. The
- *   owner's message adds a reaction when it arrives and takes it off with
- *   the answer, and one `users.info` per person it mentions, at most ten.
+ *   per run of tool calls: a handful a turn, one turn at a time per bot. Its
+ *   start puts a reaction on and its answer takes it off: two calls a turn.
+ *   An owner's message looks up each person it mentions (at most ten) once
+ *   a day, and none for an app refused `users:read`, which is not asked
+ *   again for an hour. Each family counts in its own bucket
+ *   (`<app bucket>:users`, `<app bucket>:reactions`), as Slack counts per
+ *   method, so neither can spend the forty posts a minute an answer needs.
  */
 @Injectable()
 export class SlackWebApiGateway implements SlackWebApiPort {
@@ -60,7 +68,7 @@ export class SlackWebApiGateway implements SlackWebApiPort {
 
   constructor(
     private readonly configService: ConfigService,
-    @Optional() cache?: CacheService,
+    @Optional() private readonly cache?: CacheService,
   ) {
     this.limiter = new UpstreamLimiter('Slack', SlackErrors.RATE_LIMITED, cache, {
       ...LIMITS,
@@ -106,7 +114,25 @@ export class SlackWebApiGateway implements SlackWebApiPort {
   }
 
   async userName(access: SlackAppAccess, userId: string): Promise<string | null> {
-    const body = await this.call(access, 'users.info', { user: userId }, 1, NAME_TIMEOUT_MS);
+    const unscoped = `slack:unscoped-names:${access.bucket}`;
+    if (await this.cache?.get<boolean>(unscoped)) return null;
+    const load = async () => (await this.lookUpName(access, userId)) ?? '';
+    try {
+      const name = this.cache
+        ? await this.cache.getOrSet(`slack:name:${access.bucket}:${userId}`, NAME_TTL_SECONDS, load)
+        : await load();
+      return name || null;
+    } catch (error) {
+      if (error instanceof AppError && error.extensions.upstreamCode === 'missing_scope') {
+        await this.cache?.set(unscoped, true, UNSCOPED_TTL_SECONDS);
+      }
+      throw error;
+    }
+  }
+
+  private async lookUpName(access: SlackAppAccess, userId: string): Promise<string | null> {
+    const users = { ...access, bucket: `${access.bucket}:users` };
+    const body = await this.call(users, 'users.info', { user: userId }, 1, NAME_TIMEOUT_MS);
     const user = recordOf(body.user);
     const profile = recordOf(user.profile);
     const name =
@@ -123,7 +149,8 @@ export class SlackWebApiGateway implements SlackWebApiPort {
     on: boolean,
   ): Promise<void> {
     const payload = { channel: message.channel, timestamp: message.ts, name: message.name };
-    await this.call(access, on ? 'reactions.add' : 'reactions.remove', payload).catch(
+    const reactions = { ...access, bucket: `${access.bucket}:reactions` };
+    await this.call(reactions, on ? 'reactions.add' : 'reactions.remove', payload).catch(
       (error: unknown) => {
         const code = error instanceof AppError ? error.extensions.upstreamCode : undefined;
         if (typeof code !== 'string' || !REACTION_SETTLED.has(code)) throw error;

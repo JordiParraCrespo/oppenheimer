@@ -7,6 +7,9 @@ import { SLACK_SEALER, SLACK_WEB_API } from '../slack.di-tokens';
 /** The reaction on the owner's message while the bot works on it: seen, and on it. */
 export const SLACK_WORKING_REACTION = 'eyes';
 
+/** How long an event waits for the names its mentions are read by, all lookups together. */
+export const SLACK_NAMES_DEADLINE_MS = 1_500;
+
 /**
  * What the app sends as itself: a fixed line (the owner linked, a turn
  * stopping), never a model's words, a bot's answer cut into Slack's
@@ -58,10 +61,11 @@ export class SlackLineResolver {
   }
 
   /**
-   * The names of the people in `userIds`, as far as Slack answers: a lookup
-   * that fails (an app made before it asked for `users:read`, Slack slow)
-   * leaves that person out, so the bot reads their id, and never fails the
-   * event it is for.
+   * The names of the people in `userIds`, as far as Slack answers within
+   * `SLACK_NAMES_DEADLINE_MS` all told: a lookup that fails or is late (an
+   * app made before it asked for `users:read`, Slack slow, the limiter
+   * queueing) leaves that person out, so the bot reads their id, and never
+   * fails or holds up the event it is for past Slack's three seconds.
    */
   async namesOf(
     account: SlackAccountEntity,
@@ -70,13 +74,18 @@ export class SlackLineResolver {
     const names = new Map<string, string>();
     if (userIds.length === 0) return names;
     const access = this.access(account);
-    await Promise.all(
+    const lookups = Promise.all(
       userIds.map(async (userId) => {
         const name = await this.slack.userName(access, userId).catch(() => null);
         if (name) names.set(userId, name);
       }),
     );
-    return names;
+    let timer: NodeJS.Timeout | undefined;
+    const deadline = new Promise<void>((resolve) => {
+      timer = setTimeout(resolve, SLACK_NAMES_DEADLINE_MS);
+    });
+    await Promise.race([lookups, deadline]).finally(() => clearTimeout(timer));
+    return new Map(names);
   }
 
   /**

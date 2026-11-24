@@ -8,6 +8,7 @@ import { slackTokenKeyOf } from '../config/slack.config';
 import { SlackLineResolver } from './application/slack-line.resolver';
 import { ConnectSlackCommandHandler } from './commands/connect-slack/connect-slack.command-handler';
 import { ConnectSlackHttpController } from './commands/connect-slack/connect-slack.http.controller';
+import { MarkSlackWorkingCommandHandler } from './commands/mark-slack-working/mark-slack-working.command-handler';
 import { OpenSlackOwnerLinkCommandHandler } from './commands/open-slack-owner-link/open-slack-owner-link.command-handler';
 import { OpenSlackOwnerLinkHttpController } from './commands/open-slack-owner-link/open-slack-owner-link.http.controller';
 import { ReceiveSlackEventCommandHandler } from './commands/receive-slack-event/receive-slack-event.command-handler';
@@ -40,6 +41,7 @@ const httpControllers = [
 /** The end of a Slack turn dispatches its answer (`ReplyOnSlack`, from `bots-chat`). */
 const commandHandlers: Provider[] = [
   ConnectSlackCommandHandler,
+  MarkSlackWorkingCommandHandler,
   OpenSlackOwnerLinkCommandHandler,
   RemoveSlackAccountCommandHandler,
   ReceiveSlackEventCommandHandler,

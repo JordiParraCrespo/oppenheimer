@@ -35,7 +35,10 @@ function owners(): BotTurnEntity {
 
 function setup(turn: BotTurnEntity) {
   const stored: TranscriptWrite[] = [];
-  const channel = { send: vi.fn().mockResolvedValue(1) };
+  const channel = {
+    send: vi.fn().mockResolvedValue(1),
+    working: vi.fn().mockResolvedValue(undefined),
+  };
   const write = new BotChannelAsItGoesFactory(channel as unknown as BotChannelReplyResolver).wrap(
     turn,
     async (each) => {
@@ -74,6 +77,14 @@ describe('BotChannelAsItGoesFactory', () => {
       false,
     );
     expect(stored.length).toBeGreaterThan(1);
+  });
+
+  // Breaks if the owner's Slack message never shows the bot is on it, or a
+  // message folded into a running turn (whose run never starts) gets marked.
+  it('shows the chat the turn is being worked on as its run starts, and only then', async () => {
+    const turn = owners();
+    const { channel } = setup(turn);
+    expect(channel.working).toHaveBeenCalledExactlyOnceWith(turn);
   });
 
   // Breaks if a console turn's words reach a channel.

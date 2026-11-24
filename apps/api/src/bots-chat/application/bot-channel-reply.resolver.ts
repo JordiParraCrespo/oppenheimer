@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
+import { MarkSlackWorkingCommand } from '../../slack/commands/mark-slack-working/mark-slack-working.command';
 import { ReplyOnSlackCommand } from '../../slack/commands/reply-on-slack/reply-on-slack.command';
 import { ReplyOnTelegramCommand } from '../../telegram/commands/reply-on-telegram/reply-on-telegram.command';
 import { ReplyOnWhatsappCommand } from '../../whatsapp/commands/reply-on-whatsapp/reply-on-whatsapp.command';
@@ -88,6 +89,29 @@ export class BotChannelReplyResolver {
     };
     return this.commands.execute<ChannelReplyCommand, number>(
       replyOn(chat, turn.sourceKey, reply, last),
+    );
+  }
+
+  /**
+   * Shows on the chat that the turn is being worked on, where the channel has
+   * a way to: on Slack, the working reaction on the message the turn is on.
+   * Nothing for the other channels, or a turn that is no channel's.
+   */
+  async working(
+    turn: Pick<BotTurnEntity, 'organizationId' | 'conversationId' | 'botId' | 'sourceKey'>,
+  ): Promise<void> {
+    const ts = slackTsOf(turn.sourceKey);
+    if (!ts) return;
+    const chat = await this.conversations.findChannelChat(turn.organizationId, turn.conversationId);
+    if (chat?.kind !== 'slack') return;
+    await this.commands.execute(
+      new MarkSlackWorkingCommand({
+        organizationId: turn.organizationId,
+        accountId: chat.slackAccountId,
+        chatId: chat.chatId,
+        ts,
+        botId: turn.botId,
+      }),
     );
   }
 }
