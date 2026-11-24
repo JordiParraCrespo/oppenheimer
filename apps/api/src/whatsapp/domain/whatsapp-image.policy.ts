@@ -21,7 +21,9 @@ export type WhatsappImageSight =
 export function whatsappImageSightOf(data: Buffer, mimetype: string): WhatsappImageSight {
   const mimeType = mimetype.split(';')[0]?.trim().toLowerCase() ?? '';
   if (!(BOT_IMAGE_MIME_TYPES as readonly string[]).includes(mimeType)) {
-    return { seen: false, reason: `it is not an image a bot can see (${mimetype})` };
+    // Never the type itself: the sender writes it, and the reason is read
+    // outside the fence a contact's words sit in.
+    return { seen: false, reason: 'it is not a kind of image a bot can see' };
   }
   if (data.length === 0 || data.length > BOT_IMAGE_MAX_BYTES) {
     return { seen: false, reason: `it is ${data.length} bytes, which a bot cannot be sent` };
