@@ -7,26 +7,18 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 )
 
 // VisualEntryType names the chat entry for a visual an agent showed the
 // person (`runner sessions show`, the MCP tool `show_visual`): a title and
-// typed blocks the console draws with its own charts. The spec's full
-// contract is `@oppenheimer/shared/schemas/visual`, which the console checks
-// again; CheckVisual here catches what an agent gets wrong most, so it hears
-// of it at once instead of seeing a folded note in the chat.
+// typed blocks the console draws with its own charts. The spec's contract is
+// `@oppenheimer/shared/schemas/visual`, which the console parses whole;
+// CheckVisual is a thin gate on its shape (the generated visual_contract.gen.go:
+// the block types and their required fields), so the agent hears of a wrong
+// type or a missing field at once.
 const VisualEntryType = "oppenheimer.visual"
-
-const (
-	// VisualSpecMax bounds a visual's spec, in bytes of its JSON: what one
-	// entry may carry under the link's 64 KB with the entry's own fields.
-	VisualSpecMax   = 60 << 10
-	visualBlocksMax = 24
-	visualSeriesMax = 5
-)
 
 // VisualEntry is one visual an agent showed, as the chat entry the console reads.
 type VisualEntry struct {
@@ -36,39 +28,19 @@ type VisualEntry struct {
 	Visual    json.RawMessage `json:"visual"`
 }
 
-// visualBlockTypes are the block types the console draws.
-var visualBlockTypes = []string{
-	"markdown", "metrics", "bar", "line", "area", "ring", "ranking",
-	"table", "checklist", "progress", "record", "callout", "links", "html",
-}
-
-// visualRequired names, for each block type, the fields it cannot draw without.
-var visualRequired = map[string][]string{
-	"markdown": {"text"}, "metrics": {"items"}, "bar": {"labels", "series"},
-	"line": {"labels", "series"}, "area": {"labels", "series"}, "ring": {"segments"},
-	"ranking": {"items"}, "table": {"columns", "rows"}, "checklist": {"items"},
-	"progress": {"items"}, "record": {"fields"}, "callout": {"text"}, "links": {"items"},
-	"html": {"html"},
-}
-
 type visualSpec struct {
 	Title  *string           `json:"title"`
 	Blocks []json.RawMessage `json:"blocks"`
 }
 
 type visualBlock struct {
-	Type   string            `json:"type"`
-	Labels []json.RawMessage `json:"labels"`
-	Series []struct {
-		Values []json.RawMessage `json:"values"`
-	} `json:"series"`
-	Columns []json.RawMessage   `json:"columns"`
-	Rows    [][]json.RawMessage `json:"rows"`
+	Type string `json:"type"`
 }
 
 // CheckVisual is what is wrong with a spec, one line per fault with the
-// path at fault ("blocks[2].series[0].values: …"), at most eight; none when
-// the runner finds nothing. It checks the shape, not every bound.
+// path at fault ("blocks[2].rows: …"), at most eight; none when the
+// runner finds nothing. It checks the shape the contract names, not every
+// bound or the rules between fields, which the console's parse reports.
 func CheckVisual(spec []byte) []string {
 	if len(spec) > VisualSpecMax {
 		return []string{fmt.Sprintf("visual: %d bytes; keep it under %d (fewer rows or points)", len(spec), VisualSpecMax)}
@@ -102,27 +74,6 @@ func CheckVisual(spec []byte) []string {
 		for _, field := range visualRequired[block.Type] {
 			if value, ok := fields[field]; !ok || bytes.Equal(value, []byte("null")) {
 				add("blocks[%d].%s: required for a %s block", i, field, block.Type)
-			}
-		}
-		if len(block.Series) > visualSeriesMax {
-			add("blocks[%d].series: %d series; at most %d", i, len(block.Series), visualSeriesMax)
-		}
-		for s, series := range block.Series {
-			// The console's charts draw from zero: a value under it would be drawn wrong.
-			for v, raw := range series.Values {
-				if value, err := strconv.ParseFloat(string(raw), 64); err == nil && value < 0 {
-					add("blocks[%d].series[%d].values[%d]: %s is under zero; charts draw from zero", i, s, v, raw)
-					break
-				}
-			}
-			if len(block.Labels) > 0 && len(series.Values) != len(block.Labels) {
-				add("blocks[%d].series[%d].values: has %d values for %d labels; give one value per label",
-					i, s, len(series.Values), len(block.Labels))
-			}
-		}
-		for r, row := range block.Rows {
-			if len(block.Columns) > 0 && len(row) != len(block.Columns) {
-				add("blocks[%d].rows[%d]: has %d cells for %d columns", i, r, len(row), len(block.Columns))
 			}
 		}
 	}

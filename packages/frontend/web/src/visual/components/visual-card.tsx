@@ -60,6 +60,11 @@ function Block({ block }: { block: VisualBlock }): ReactNode {
       return <VisualLinks block={block} />;
     case 'html':
       return <VisualHtml block={block} />;
+    default: {
+      // A block type the schema gained without a case here fails the typecheck, not the chat.
+      const unknown: never = block;
+      return unknown;
+    }
   }
 }
 

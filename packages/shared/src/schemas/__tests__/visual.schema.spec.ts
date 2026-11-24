@@ -92,3 +92,15 @@ describe('visualFrameOrigin', () => {
     );
   });
 });
+
+describe('the runner’s visual contract', () => {
+  // The runner checks a spec's block types and required fields before it keeps
+  // it: a list of its own would drift from this schema, so it is generated.
+  it('is the committed generation of this schema', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { createRequire } = await import('node:module');
+    const require = createRequire(import.meta.url);
+    const { outputPath, render } = require('../../../scripts/emit-visual-contract.cjs');
+    expect(readFileSync(outputPath, 'utf8')).toBe(render());
+  });
+});
