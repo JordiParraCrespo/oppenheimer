@@ -11,7 +11,7 @@ import {
   CircleCheckIcon,
   PlusIcon,
   UserIcon,
-  ZapIcon,
+  ClockIcon,
 } from '@oppenheimer/design-system-web/icons';
 import { IconButton } from '@oppenheimer/design-system-web/icon-button';
 import {
@@ -61,7 +61,7 @@ const LAYERS = [
   { id: 'google', label: 'Google Calendar', icon: <CalendarIcon /> },
   { id: 'personal', label: 'Personal', icon: <UserIcon /> },
   { id: 'tasks', label: 'Task due dates', icon: <CircleCheckIcon /> },
-  { id: 'autos', label: 'Automations', icon: <ZapIcon /> },
+  { id: 'autos', label: 'Automations', icon: <ClockIcon /> },
 ] as const;
 
 /**

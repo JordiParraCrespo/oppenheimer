@@ -4,7 +4,7 @@ import {
   SidebarEmptyRow,
   SidebarListHead,
 } from '@oppenheimer/design-system-web';
-import { Zap } from '@oppenheimer/design-system-web/icons';
+import { Clock } from '@oppenheimer/design-system-web/icons';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useSuspenseAutomationsByProject } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, SidebarSearchField } from '@oppenheimer/frontend-web';
@@ -86,7 +86,7 @@ export function AutomationsSidebarList() {
         <div className="px-3 pt-2">
           <RoutineItem
             name={t('automations.sidebar.all')}
-            icon={<Zap />}
+            icon={<Clock />}
             meta={String(automations.length)}
             active={all}
             className="mb-1.5"

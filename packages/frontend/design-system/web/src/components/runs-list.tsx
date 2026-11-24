@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, ChevronRightIcon, CircleAlertIcon, CircleCheckIcon, ZapIcon } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon, CircleAlertIcon, CircleCheckIcon, ClockIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -116,7 +116,7 @@ function RunRow({
         <span className="truncate">{title}</span>
       </span>
       <span role="cell" className={cn(ROUTINE_CELL, 'min-w-0 items-center gap-[7px] text-[13px] text-fg-muted')}>
-        <ZapIcon className="size-3.5 shrink-0" aria-hidden />
+        <ClockIcon className="size-3.5 shrink-0" aria-hidden />
         <span className="truncate">{routine}</span>
       </span>
       <span role="cell" className="flex gap-2 text-[13px] whitespace-nowrap text-fg-muted">

@@ -1,7 +1,7 @@
 'use client';
 
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
-import { CircleCheckIcon, XIcon, ZapIcon } from 'lucide-react';
+import { CircleCheckIcon, ClockIcon, XIcon } from 'lucide-react';
 import type * as React from 'react';
 
 import { KIND_TONE, TONE_WASH, toneClass } from '../internal/calendar-tone';
@@ -69,7 +69,7 @@ function entryOrder(entry: CalendarEntryData): number {
 /**
  * One entry, as the calendar draws it: a chip washed in its colour
  * (`internal/calendar-tone`) with a bar of it down the left edge, a check
- * for a task and a bolt for an automation run in the same colour, the time
+ * for a task and a clock for an automation run in the same colour, the time
  * in mono, the title. An all-day event washes deeper; a free event lighter,
  * its title muted; a done task fades and strikes through. `full` keeps the
  * time even where a cramped day would drop it (the day popover).
@@ -111,7 +111,7 @@ function CalendarEntry({
       {entry.kind === 'task' ? (
         <CircleCheckIcon aria-hidden className={cn('size-3 shrink-0', entry.done ? 'text-success' : 'text-(--tone)')} />
       ) : null}
-      {entry.kind === 'automation' ? <ZapIcon aria-hidden className="size-[11px] shrink-0 text-(--tone)" /> : null}
+      {entry.kind === 'automation' ? <ClockIcon aria-hidden className="size-[11px] shrink-0 text-(--tone)" /> : null}
       {entry.time ? (
         <span className={cn('figures shrink-0 text-micro text-fg-muted', !full && '@max-[110px]/day:hidden')}>
           {entry.time}
