@@ -49,6 +49,7 @@ afterEach(() => {
   cleanup();
   window.localStorage.clear();
   navigate.mockReset();
+  lists.detail = null;
 });
 
 const noBot = () => null;
@@ -110,7 +111,6 @@ describe('the tabs over Sessions', () => {
     expect(screen.getByRole('link', { name: 'Deleted work' }).getAttribute('aria-current')).toBe(
       'page',
     );
-    lists.detail = null;
   });
 
   it('closes a tab not on screen without leaving the page', () => {

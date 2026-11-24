@@ -181,7 +181,7 @@ function ChatTab({
         aria-current={render && active ? 'page' : undefined}
         render={render}
         nativeButton={render === undefined}
-        className="flex h-full min-w-0 flex-1 items-center gap-2 outline-none focus-visible:underline"
+        className="flex h-full min-w-0 flex-1 items-center gap-2 text-current no-underline outline-none focus-visible:underline"
         {...props}
       >
         {icon || attention ? (
