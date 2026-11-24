@@ -216,7 +216,12 @@ test('typing latency: relay vs direct, by place and host connection', async () =
     restoreFlag = await enableDirectPath(api);
 
     const chrome = process.env.PLAYWRIGHT_CHROMIUM_PATH ?? chromium.executablePath();
-    browser = await chromium.launch({ executablePath: browserOn('browser', chrome) });
+    // No GPU: the console refuses software WebGL, so the grid stays on the DOM
+    // renderer, whose `.xterm-rows` the specs read.
+    browser = await chromium.launch({
+      executablePath: browserOn('browser', chrome),
+      args: ['--disable-gpu'],
+    });
 
     const rows: string[] = [];
     for (const scenario of browsers) {
@@ -251,13 +256,15 @@ test('typing latency: relay vs direct, by place and host connection', async () =
             relayBytes: await bytesBetween('browser', 'relay'),
             directBytes: await bytesBetween('browser', host.name),
           };
-          // The direct run's keys went browser to host; the relay run has no WebRTC.
-          if (path === 'direct') {
-            expect(
-              result.direct.directBytes,
-              `${scenario.name} → ${host.name} left the direct path`,
-            ).toBeGreaterThan(0);
-          }
+          // The keys took this run's path: its leg carried more of the typing
+          // than the other one (ICE keepalives alone are a few hundred bytes).
+          const { relayBytes, directBytes } = result[path];
+          const [ours, other] =
+            path === 'direct' ? [directBytes, relayBytes] : [relayBytes, directBytes];
+          expect(
+            ours,
+            `${scenario.name} → ${host.name} typed off the ${path} path`,
+          ).toBeGreaterThan(other);
           await page.screenshot({
             path: join('test-results', `netsim-${scenario.name}-${host.name}-${path}.png`),
           });

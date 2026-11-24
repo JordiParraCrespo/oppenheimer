@@ -141,9 +141,11 @@ export async function bytesBetween(a: string, b: string): Promise<number> {
 }
 
 /**
- * Waits until the terminal's bytes take `path`: a tab without WebRTC stays on
- * the relay, so `relay` needs nothing; `direct` is bytes flowing between the
- * browser and the host's node, which only the direct path carries.
+ * Waits until the browser reaches the host for `path`: a tab without WebRTC
+ * stays on the relay, so `relay` needs nothing; `direct` is any bytes between
+ * the browser and the host's node. That includes ICE setup, so it says the
+ * peer is up, not that typing takes it: the specs prove that by which leg
+ * carried their keys (`bytesBetween` after `resetLegStats`).
  */
 export async function onPath(path: 'relay' | 'direct', host: string): Promise<void> {
   if (path === 'relay') return;

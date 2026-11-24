@@ -17,6 +17,7 @@ import {
   onPath,
   type Placement,
   place,
+  resetLegStats,
 } from '../../support/netsim';
 import {
   appendTranscript,
@@ -74,7 +75,12 @@ test('the chat reads and types over a far, slow link, on the relay and direct', 
     const row = await waitForHost(api, host, true, 120_000);
 
     const chrome = process.env.PLAYWRIGHT_CHROMIUM_PATH ?? chromium.executablePath();
-    browser = await chromium.launch({ executablePath: browserOn('browser', chrome) });
+    // No GPU: the console refuses software WebGL, so the grid stays on the DOM
+    // renderer, whose `.xterm-rows` the specs read.
+    browser = await chromium.launch({
+      executablePath: browserOn('browser', chrome),
+      args: ['--disable-gpu'],
+    });
 
     for (const path of ['relay', 'direct'] as const) {
       const sessionId = await createSession(api, row.id, installationId);
@@ -114,15 +120,16 @@ test('the chat reads and types over a far, slow link, on the relay and direct', 
       await expectChatOnTop(page);
 
       const composer = await expectComposerClickable(page);
-      const directBefore = await bytesBetween('browser', 'host-far');
+      await resetLegStats();
       await composer.fill(`echo far-${path}-$((6*7))`);
       await page.keyboard.press('Enter');
       await toggle.getByRole('button', { name: 'Terminal' }).click();
       await expect.poll(() => screenText(page), { timeout: 30_000 }).toContain(`far-${path}-42`);
-      // Still on its path: the direct run's typing went browser to host.
-      if (path === 'direct') {
-        expect(await bytesBetween('browser', 'host-far')).toBeGreaterThan(directBefore);
-      }
+      // The composer's text reached the PTY over this run's path.
+      const toHost = await bytesBetween('browser', 'host-far');
+      const toRelay = await bytesBetween('browser', 'relay');
+      if (path === 'direct') expect(toHost, 'typed off the direct path').toBeGreaterThan(toRelay);
+      else expect(toHost, 'typed off the relay').toBe(0);
       await page.screenshot({ path: `test-results/netsim-chat-${path}.png` });
       await context.close();
     }
