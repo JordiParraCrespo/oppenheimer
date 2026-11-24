@@ -3907,6 +3907,8 @@
       "any": "Any",
       "showDone": "Show done",
       "showPulls": "Show pull requests",
+      "alerts": "Notify me in this browser",
+      "alertsBlocked": "Notifications are blocked in this browser",
       "clear": "Clear filters",
       "remove": "Clear filter",
       "typeChip": "Type: {{value}}",
