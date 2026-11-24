@@ -84,7 +84,7 @@ export class DeliverChannelReplyCommandHandler
       return;
     }
     const { text, voice } = await this.voiceReplies.prepare(turn, reply);
-    if (voice && (await this.channel.send(turn, text, correlationId, voice)) > 0) return;
+    if (voice && (await this.channel.sendVoice(turn, text, correlationId, voice)) > 0) return;
     if (text) await this.channel.send(turn, text, correlationId);
   }
 

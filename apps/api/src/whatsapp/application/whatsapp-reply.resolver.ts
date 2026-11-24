@@ -7,6 +7,8 @@ import { WHATSAPP_DEVICE, WHATSAPP_MESSAGE_REPOSITORY } from '../whatsapp.di-tok
 import { WhatsappMessageMapper } from '../whatsapp-message.mapper';
 import type { WhatsappDevicePort, WhatsappQuote } from './whatsapp-device.port';
 
+type BotSend = Parameters<WhatsappMessageMapper['fromBotSend']>[0];
+
 /** Where a reply goes: the owner's direct chat with the number, quoting their message. */
 export interface WhatsappReplyTarget {
   chatId: string;
@@ -56,21 +58,9 @@ export class WhatsappReplyResolver {
         });
         return sentParts;
       }
-      await this.messages.recordBotSend(
-        this.mapper.fromBotSend({
-          account,
-          chat: {
-            chatId: target.chatId,
-            chatKind: target.chat?.chatKind ?? 'direct',
-            chatName: target.chat?.chatName ?? null,
-          },
-          text: part,
-          sent: outcome,
-          botId,
-          isReply: true,
-          quotedId: quote?.id ?? null,
-        }),
-      );
+      await this.recordReply(account, target, part, outcome, botId, {
+        quotedId: quote?.id ?? null,
+      });
       sentParts += 1;
     }
     return sentParts;
@@ -105,7 +95,20 @@ export class WhatsappReplyResolver {
       });
       return outcome.kind === 'timed_out' ? 1 : 0;
     }
-    await this.messages.recordBotSend(
+    await this.recordReply(account, target, text, outcome, botId, { voiceSeconds: voice.seconds });
+    return 1;
+  }
+
+  /** Keeps a sent reply beside what the number received, in the chat it went to. */
+  private recordReply(
+    account: WhatsappAccountEntity,
+    target: WhatsappReplyTarget,
+    text: string,
+    sent: BotSend['sent'],
+    botId: string | null,
+    extras: Pick<BotSend, 'quotedId' | 'voiceSeconds'>,
+  ): Promise<void> {
+    return this.messages.recordBotSend(
       this.mapper.fromBotSend({
         account,
         chat: {
@@ -114,12 +117,11 @@ export class WhatsappReplyResolver {
           chatName: target.chat?.chatName ?? null,
         },
         text,
-        sent: outcome,
+        sent,
         botId,
         isReply: true,
-        voiceSeconds: voice.seconds,
+        ...extras,
       }),
     );
-    return 1;
   }
 }
