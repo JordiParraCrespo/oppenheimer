@@ -1,16 +1,14 @@
 import {
-  PillTab,
-  PillTabs,
   RoutineTable,
   RoutineTableHead,
   RoutineTableRowSkeleton,
-  RunsListFilters,
   Skeleton,
 } from '@oppenheimer/design-system-web';
 import { LoadingStatus } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { botRoutineColumns } from '../lib/automation-view';
 import { ROUTINE_STATUS_TABS, type RoutineStatusTab } from '../lib/routines-search';
+import { FilterRow } from './filter-row';
 
 /**
  * The Bot routines tab's place while the routines have not answered, in the
@@ -23,19 +21,16 @@ export function RoutinesSkeleton({ status }: { status: RoutineStatusTab }) {
   return (
     <RoutineTable aria-busy>
       <LoadingStatus />
-      <RunsListFilters>
-        <PillTabs size="sm" value={status} onValueChange={() => {}} disabled>
-          {ROUTINE_STATUS_TABS.map((tab) => (
-            <PillTab key={tab} value={tab} count={<Skeleton shape="sm" className="h-2 w-3" />}>
-              {t(`automations.routines.filter.${tab}`)}
-            </PillTab>
-          ))}
-        </PillTabs>
-        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
-          <Skeleton shape="pill" className="h-7 w-20" />
-          <Skeleton shape="pill" className="h-7 w-24" />
-        </div>
-      </RunsListFilters>
+      <FilterRow
+        tabs={ROUTINE_STATUS_TABS}
+        value={status}
+        label={(tab) => t(`automations.routines.filter.${tab}`)}
+        count={() => <Skeleton shape="sm" className="h-2 w-3" />}
+        disabled
+      >
+        <Skeleton shape="pill" className="h-7 w-20" />
+        <Skeleton shape="pill" className="h-7 w-24" />
+      </FilterRow>
       <RoutineTableHead aria-hidden columns={botRoutineColumns(t)} />
       <RoutineTableRowSkeleton index={0} />
       <RoutineTableRowSkeleton index={1} />

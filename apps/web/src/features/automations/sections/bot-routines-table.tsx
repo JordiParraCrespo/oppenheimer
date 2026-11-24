@@ -1,11 +1,8 @@
 import {
   EmptyState,
-  PillTab,
-  PillTabs,
   RoutineTable,
   RoutineTableHead,
   RunsListEmpty,
-  RunsListFilters,
 } from '@oppenheimer/design-system-web';
 import { useBots, useSuspenseAllBotRoutines } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, triggerListText, useLocale } from '@oppenheimer/frontend-web';
@@ -13,6 +10,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { BotRoutineTableRow } from '../components/bot-routine-table-row';
 import { ChoiceToken } from '../components/choice-token';
+import { FilterClear } from '../components/filter-clear';
+import { FilterRow } from '../components/filter-row';
 import { SearchChoiceToken } from '../components/search-choice-token';
 import { useRoutinesFilters } from '../hooks/use-routines-filters';
 import { botRoutineColumns } from '../lib/automation-view';
@@ -20,7 +19,6 @@ import {
   filterRoutines,
   ROUTINE_STATUS_TABS,
   ROUTINE_TRIGGER_SOURCES,
-  type RoutineStatusTab,
   type RoutineTriggerSource,
 } from '../lib/routines-search';
 
@@ -72,57 +70,44 @@ export function BotRoutinesTable() {
           </EmptyState>
         ) : (
           <>
-            <RunsListFilters>
-              <PillTabs
-                size="sm"
-                value={state.status}
-                onValueChange={(value) => filters.setStatus(value as RoutineStatusTab)}
-              >
-                {ROUTINE_STATUS_TABS.map((tab) => (
-                  <PillTab key={tab} value={tab} count={counts[tab]}>
-                    {t(`automations.routines.filter.${tab}`)}
-                  </PillTab>
-                ))}
-              </PillTabs>
-              <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
-                <SearchChoiceToken
-                  label={botLabel ?? t('automations.routines.filter.allBots')}
-                  value={state.bot ?? ALL}
-                  dirty={state.bot !== null}
-                  searchPlaceholder={t('automations.routines.filter.searchBots')}
-                  emptyText={(query) => t('common.search.noMatch', { query })}
-                  options={[
-                    { value: ALL, label: t('automations.routines.filter.allBots') },
-                    ...botIds.map((id) => ({ value: id, label: botNames.get(id) ?? id })),
-                  ]}
-                  onValueChange={(value) => filters.setBot(value === ALL ? null : value)}
-                />
-                <ChoiceToken
-                  label={t(`automations.routines.filter.trigger.${state.trigger ?? 'any'}`)}
-                  value={state.trigger ?? ALL}
-                  dirty={state.trigger !== null}
-                  options={[
-                    { value: ALL, label: t('automations.routines.filter.trigger.any') },
-                    ...sources.map((source) => ({
-                      value: source,
-                      label: t(`automations.routines.filter.trigger.${source}`),
-                    })),
-                  ]}
-                  onValueChange={(value) =>
-                    filters.setTrigger(value === ALL ? null : (value as RoutineTriggerSource))
-                  }
-                />
-                {filters.dirty ? (
-                  <button
-                    type="button"
-                    onClick={filters.clear}
-                    className="ml-1 text-sm text-fg-muted transition-colors duration-fast hover:text-fg"
-                  >
-                    {t('automations.runs.clear')}
-                  </button>
-                ) : null}
-              </div>
-            </RunsListFilters>
+            <FilterRow
+              tabs={ROUTINE_STATUS_TABS}
+              value={state.status}
+              label={(tab) => t(`automations.routines.filter.${tab}`)}
+              count={(tab) => counts[tab]}
+              onValueChange={filters.setStatus}
+            >
+              <SearchChoiceToken
+                label={botLabel ?? t('automations.routines.filter.allBots')}
+                value={state.bot ?? ALL}
+                dirty={state.bot !== null}
+                searchPlaceholder={t('automations.routines.filter.searchBots')}
+                emptyText={(query) => t('common.search.noMatch', { query })}
+                options={[
+                  { value: ALL, label: t('automations.routines.filter.allBots') },
+                  ...botIds.map((id) => ({ value: id, label: botNames.get(id) ?? id })),
+                ]}
+                onValueChange={(value) => filters.setBot(value === ALL ? null : value)}
+              />
+              <ChoiceToken
+                label={t(`automations.routines.filter.trigger.${state.trigger ?? 'any'}`)}
+                value={state.trigger ?? ALL}
+                dirty={state.trigger !== null}
+                options={[
+                  { value: ALL, label: t('automations.routines.filter.trigger.any') },
+                  ...sources.map((source) => ({
+                    value: source,
+                    label: t(`automations.routines.filter.trigger.${source}`),
+                  })),
+                ]}
+                onValueChange={(value) =>
+                  filters.setTrigger(value === ALL ? null : (value as RoutineTriggerSource))
+                }
+              />
+              {filters.dirty ? (
+                <FilterClear onClick={filters.clear}>{t('automations.runs.clear')}</FilterClear>
+              ) : null}
+            </FilterRow>
             <RoutineTableHead columns={botRoutineColumns(t)} />
             {rows.length === 0 ? (
               <RunsListEmpty>{t('automations.routines.filter.noMatch')}</RunsListEmpty>
