@@ -40,7 +40,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { connect } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { changeFor, record } from '../../.agents/hooks/verification.mjs';
+import { CHECKS, changeFor, record } from '../../.agents/hooks/verification.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const STATE = resolve(process.env.STACK_DIR ?? join(ROOT, '.stack'));
@@ -331,6 +331,35 @@ function codeFingerprint() {
   }
 }
 
+/**
+ * What runs what the branch changes, and so must have been built from it:
+ * the API always; the console too when a package it imports from `dist/`
+ * changed (Vite serves `apps/web` itself from source).
+ */
+const REBUILT_FOR = [
+  { what: 'the API', key: 'apiFingerprint', when: () => true },
+  {
+    what: 'the console',
+    key: 'webFingerprint',
+    when: (file) => file.startsWith('packages/frontend/'),
+  },
+];
+
+/**
+ * Why the stack in `state` is not running `change`, with the restart that
+ * fixes it; null when everything that runs it was built from it.
+ */
+function staleOf(change, state) {
+  const stale = REBUILT_FOR.filter(
+    (part) => change.files.some(part.when) && state[part.key] !== change.fingerprint,
+  ).map((part) => part.what);
+  if (stale.length === 0) return null;
+  const restart = stale.includes('the console')
+    ? 'the stack (`node scripts/stack/stack.mjs down`, then `up --web`)'
+    : 'the API (`node scripts/stack/stack.mjs down --api`, then `up --web`)';
+  return `${stale.join(' and ')} on this stack ${stale.length > 1 ? 'were' : 'was'} not built from the branch as it is now. Restart ${restart}, check the change again, then record it`;
+}
+
 const lockFile = join(STATE, 'up.lock');
 
 /**
@@ -384,9 +413,10 @@ async function up(flags) {
   if (startsWeb) filters.push('--filter=@oppenheimer/web^...');
   // oppenheimer:end web
   // Taken before the build: an edit made while it builds is not in what runs.
-  const built = codeFingerprint();
-  if (filters.length && !flags.has('--no-build'))
-    run('pnpm', ['turbo', 'run', 'build', ...filters], { stdio: 'inherit' });
+  // With `--no-build` the `dist/` it starts is of unknown code: no fingerprint.
+  const builds = filters.length > 0 && !flags.has('--no-build');
+  const built = builds ? codeFingerprint() : undefined;
+  if (builds) run('pnpm', ['turbo', 'run', 'build', ...filters], { stdio: 'inherit' });
   if (startsApi) {
     await startApi();
     writeState({ ...readState(), apiFingerprint: built });
@@ -505,7 +535,8 @@ switch (command) {
       fail(
         `${command} needs ${command === 'skip' ? 'the reason' : 'what you ran and saw'}, in quotes`,
       );
-    if (!changeFor(ROOT, 'stack', { fetch: false })) {
+    const change = changeFor(ROOT, 'stack', { fetch: false });
+    if (!change) {
       log('the branch changes nothing that runs; there is nothing to record');
       break;
     }
@@ -514,28 +545,13 @@ switch (command) {
         fail(
           `nothing answers on ${API_HEALTH}: bring the stack up and check the change on it first`,
         );
-      // What answers must be the code as it is now: `up` leaves a running API
-      // alone, and the console's Vite serves the packages from their `dist/`.
-      const now = codeFingerprint();
-      const state = readState();
-      const frontend = (changeFor(ROOT, 'stack', { fetch: false })?.files ?? []).some((f) =>
-        f.startsWith('packages/frontend/'),
-      );
-      const stale = [
-        state.apiFingerprint !== now && 'the API',
-        frontend && state.webFingerprint !== now && 'the console',
-      ].filter(Boolean);
-      if (stale.length)
-        fail(
-          `${stale.join(' and ')} on this stack ${stale.length > 1 ? 'were' : 'was'} built from older code than the branch has now. Restart ${frontend ? 'the stack (`node scripts/stack/stack.mjs down`, then `up --web`)' : 'the API (`node scripts/stack/stack.mjs down --api`, then `up --web`)'}, check the change again, then record it`,
-        );
+      const stale = staleOf(change, readState());
+      if (stale) fail(stale);
     }
-    const change = record(ROOT, 'stack', { kind: command, note });
-    if (!change) log('the branch changes nothing that runs; there is nothing to record');
-    else
-      log(
-        `recorded (${change.files.length} files, fingerprint ${change.fingerprint}) in ${join(ROOT, '.stack/verified.md')}`,
-      );
+    record(ROOT, 'stack', { kind: command, note }, { change });
+    log(
+      `recorded (${change.files.length} files, fingerprint ${change.fingerprint}) in ${join(ROOT, CHECKS.stack.record)}`,
+    );
     break;
   }
   default:

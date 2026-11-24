@@ -9,7 +9,7 @@
 // - `stack`: code that runs in the product (the API, the runner, the console,
 //   the packages they import). In a cloud session (`CLAUDE_CODE_REMOTE=true`),
 //   where the SessionStart hook brought the local stack up, it is answered by
-//   `.stack/verified.md`: `node scripts/stack/stack.mjs verified "<what you
+//   `.stack/verified.json`: `node scripts/stack/stack.mjs verified "<what you
 //   ran and saw>"` (which needs the API answering), or `… skip "<why>"`.
 // - `evals`: anything agentic, i.e. what a model is shown or can call: the
 //   bots (prompts, tools, policies), the agent engines and the LLM package,
@@ -22,7 +22,7 @@
 // those files say, so an edit to a comment or a reformat keeps it, an edit
 // to the code does not.
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { changeOf } from './visual-change.mjs';
 
@@ -55,7 +55,7 @@ export const CHECKS = {
       /^packages\/frontend\/[^/]+\/src\//,
       /^packages\/frontend\/design-system\/web\/src\//,
     ],
-    record: '.stack/verified.md',
+    record: '.stack/verified.json',
     // A laptop runs what its owner chooses; a cloud session has the stack up.
     applies: () => process.env.CLAUDE_CODE_REMOTE === 'true',
   },
@@ -89,42 +89,37 @@ export function changeFor(root, name, options) {
   return changeOf(root, matcher(CHECKS[name]), options);
 }
 
-/** The fingerprints the record for `name` answers. */
-export function recorded(root, name) {
+/** The record for `name`: its entries, each `{ fingerprint, at, … }`. */
+function entriesOf(root, name) {
   try {
-    const text = readFileSync(join(root, CHECKS[name].record), 'utf8');
-    return [...text.matchAll(/fingerprint[":\s]+([0-9a-f]{16})/g)].map((m) => m[1]);
+    return JSON.parse(readFileSync(join(root, CHECKS[name].record), 'utf8')).entries ?? [];
   } catch {
     return [];
   }
 }
 
-/** Writes the record for `name` as answering the branch's change now; returns it, or null. */
-export function record(root, name, entry, options) {
-  const change = changeFor(root, name, options);
+/** The fingerprints the record for `name` answers. */
+export function recorded(root, name) {
+  return entriesOf(root, name).map((e) => e.fingerprint);
+}
+
+/**
+ * Records `entry` as answering the branch's change to `name`'s paths, the
+ * one in `options.change` when the caller already has it (taken before the
+ * work it vouches for), else the change now. Entries for other fingerprints
+ * are dropped: they answer code that is no longer there. Returns the change,
+ * or null when there is none.
+ */
+export function record(root, name, entry, { change: given, ...options } = {}) {
+  const change = given === undefined ? changeFor(root, name, options) : given;
   if (!change) return null;
   const path = join(root, CHECKS[name].record);
   mkdirSync(dirname(path), { recursive: true });
-  if (path.endsWith('.json')) {
-    let entries = [];
-    try {
-      entries = JSON.parse(readFileSync(path, 'utf8')).entries ?? [];
-    } catch {}
-    entries = [
-      ...entries.filter((e) => e.fingerprint === change.fingerprint),
-      { ...entry, at: new Date().toISOString(), fingerprint: change.fingerprint },
-    ];
-    writeFileSync(path, `${JSON.stringify({ entries }, null, 2)}\n`);
-  } else {
-    const previous =
-      existsSync(path) && recorded(root, name).includes(change.fingerprint)
-        ? readFileSync(path, 'utf8').trimEnd().split('\n\nfingerprint:')[0]
-        : '';
-    const body = [previous, `- ${new Date().toISOString()} ${entry.kind}: ${entry.note}`]
-      .filter(Boolean)
-      .join('\n');
-    writeFileSync(path, `${body}\n\nfingerprint: ${change.fingerprint}\n`);
-  }
+  const entries = [
+    ...entriesOf(root, name).filter((e) => e.fingerprint === change.fingerprint),
+    { ...entry, at: new Date().toISOString(), fingerprint: change.fingerprint },
+  ];
+  writeFileSync(path, `${JSON.stringify({ entries }, null, 2)}\n`);
   return change;
 }
 
@@ -144,21 +139,34 @@ export function owed(root, options) {
 
 let recording = false;
 /**
- * Called by an eval once it has run: when the process then exits 0, the
- * eval is recorded as having checked the branch's agentic change as it is
- * now. `scripts/evals/bot-turn.ts`'s `writeReport` calls it for every bot
- * eval; an eval with a runner of its own calls it itself.
+ * Called by an eval before it loads what it evaluates: the branch's agentic
+ * change is fingerprinted now, and when the process exits 0 with the code
+ * still the same, the eval is recorded as having checked it. An edit made
+ * while the eval ran is not vouched for. `scripts/evals/bot-turn.ts` calls it
+ * as it loads, for every bot eval; an eval with a runner of its own calls it
+ * itself.
  */
-export function recordEvalOnSuccess(root, name) {
+export function startEvalRecording(root, name) {
   if (recording) return;
   recording = true;
+  let before;
+  try {
+    before = changeFor(root, 'evals');
+  } catch {
+    return; // No main to compare against: nothing for the guard to read.
+  }
+  if (!before) return;
   process.on('exit', (code) => {
     if (code !== 0) return;
+    let now = null;
     try {
-      const change = record(root, 'evals', { eval: name, args: process.argv.slice(2).join(' ') });
-      if (change) console.log(`Recorded in .evals/passed.json for ${change.files.length} changed agentic files.`);
-    } catch {
-      // No main to compare against: nothing for the guard to read.
+      now = changeFor(root, 'evals', { fetch: false });
+    } catch {}
+    if (now?.fingerprint !== before.fingerprint) {
+      console.log('Not recorded in .evals/passed.json: the agentic code changed while the eval ran; run it again.');
+      return;
     }
+    record(root, 'evals', { eval: name, args: process.argv.slice(2).join(' ') }, { change: before });
+    console.log(`Recorded in .evals/passed.json for ${before.files.length} changed agentic files.`);
   });
 }

@@ -16,11 +16,10 @@
 // design sets `OPPENHEIMER_VERIFY_GUARD=off`. Cases are in
 // `.agents/hooks/verify-guard.test.mjs`.
 
-import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { publishes } from './screenshot-guard.mjs';
+import { runGuard } from './screenshot-guard.mjs';
 import { owed } from './verification.mjs';
 
 const HOW = {
@@ -39,46 +38,5 @@ export function verdict(root, options) {
   return missing.map(({ name, text }) => `${text} ${HOW[name]}`).join(' ');
 }
 
-function rootOf(directory) {
-  try {
-    return execFileSync('git', ['rev-parse', '--show-toplevel'], {
-      cwd: directory,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-  } catch {
-    return null;
-  }
-}
-
-function main() {
-  let input = {};
-  try {
-    input = JSON.parse(readFileSync(0, 'utf8') || '{}');
-  } catch {}
-  const cwd = input.cwd ?? process.cwd();
-  const targets = publishes(input.tool_name, input.tool_input, cwd);
-  if (targets.length === 0 || process.env.OPPENHEIMER_VERIFY_GUARD === 'off') return;
-  for (const { action, directory } of targets) {
-    const root = rootOf(directory);
-    if (!root) continue;
-    let text = null;
-    try {
-      text = verdict(root);
-    } catch {
-      // No main to compare against (a shallow clone): nothing to check.
-    }
-    if (!text) continue;
-    const output = {
-      hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecision: 'deny',
-        permissionDecisionReason: `This call ${action} from ${root}. ${text}`,
-      },
-    };
-    process.stdout.write(`${JSON.stringify(output)}\n`);
-    return;
-  }
-}
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] === fileURLToPath(import.meta.url))
+  runGuard((root) => verdict(root), 'OPPENHEIMER_VERIFY_GUARD');

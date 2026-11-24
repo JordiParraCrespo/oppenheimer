@@ -25,7 +25,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { recordEvalOnSuccess } from '../../../.agents/hooks/verification.mjs';
+import { startEvalRecording } from '../../../.agents/hooks/verification.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PASS_WER = 0.1;
@@ -127,6 +127,7 @@ function summarise(results) {
 }
 
 async function main() {
+  startEvalRecording(join(HERE, '../../..'), basename(HERE));
   const graded = arg('grade');
   if (graded) {
     const report = JSON.parse(readFileSync(graded, 'utf8'));
@@ -163,7 +164,6 @@ async function main() {
 
   const summary = summarise(results);
   console.log(summary);
-  recordEvalOnSuccess(join(HERE, '../../..'), basename(HERE));
   const dir = join(HERE, 'reports');
   mkdirSync(dir, { recursive: true });
   const file = join(dir, `${new Date().toISOString().replace(/[:.]/g, '-')}.json`);

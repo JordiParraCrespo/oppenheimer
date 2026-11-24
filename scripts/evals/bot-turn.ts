@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type Anthropic from '@anthropic-ai/sdk';
-import { recordEvalOnSuccess } from '../../.agents/hooks/verification.mjs';
+import { startEvalRecording } from '../../.agents/hooks/verification.mjs';
 import { BotCheckBackToolsFactory } from '../../apps/api/src/bots-chat/application/bot-check-back-tools.factory';
 import { BotGoalToolsFactory } from '../../apps/api/src/bots-chat/application/bot-goal-tools.factory';
 import { BotGuideToolsFactory } from '../../apps/api/src/bots-chat/application/bot-guide-tools.factory';
@@ -28,6 +28,11 @@ import { alwaysLoaded } from '../../apps/api/src/bots-chat/application/bot-toolb
 import { DEFER_TOOLS_ABOVE_CHARS } from '../../packages/backend/agents/src/claude/claude-options';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+
+// Every bot eval loads this first: its green exit then records it in
+// `.evals/passed.json` as having checked the agentic code as it was loaded,
+// which answers the verification guard's eval check (`.agents/hooks/verification.mjs`).
+startEvalRecording(join(HERE, '../..'), basename(dirname(process.argv[1] ?? '')));
 
 // The repository root depends on none of these: take each from the
 // workspace package that does, so the versions are the ones the API runs.
@@ -311,14 +316,8 @@ export async function pool<T, R>(
   return results;
 }
 
-/**
- * Writes `data` to `<dir>/reports/<now>.json` and says where. An eval that
- * then exits 0 also records itself in `.evals/passed.json` as having checked
- * the branch as it is now, which answers the verification guard's eval check
- * (`.agents/hooks/verification.mjs`).
- */
+/** Writes `data` to `<dir>/reports/<now>.json` and says where. */
 export function writeReport(dir: string, data: unknown): string {
-  recordEvalOnSuccess(join(HERE, '../..'), basename(dir));
   mkdirSync(join(dir, 'reports'), { recursive: true });
   const report = join(dir, 'reports', `${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
   writeFileSync(report, `${JSON.stringify(data, null, 2)}\n`);
