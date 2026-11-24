@@ -4821,11 +4821,11 @@
     "privacy": {
       "changes": {
         "body": "Podemos actualizar esta política cuando cambie el servicio o la normativa. Publicaremos aquí la versión vigente y daremos un aviso adicional cuando un cambio afecte de forma relevante a tus derechos.",
-        "title": "11. Cambios en esta política"
+        "title": "12. Cambios en esta política"
       },
       "children": {
         "body": "El servicio es una herramienta empresarial y no está dirigido a menores de 16 años.",
-        "title": "10. Menores"
+        "title": "11. Menores"
       },
       "contactLabel": "Contacta con el operador del espacio de trabajo para solicitudes de privacidad.",
       "controller": {
@@ -4834,7 +4834,7 @@
       },
       "cookies": {
         "body": "El servicio usa cookies esenciales y almacenamiento del navegador para mantener tu sesión iniciada, proteger el servicio, recordar tus preferencias de idioma y tema y guardar en caché datos de la aplicación para un rendimiento fiable. Estas tecnologías son necesarias para ofrecer el espacio de trabajo. Si se introduce analítica opcional, daremos cualquier aviso u opción que exija la ley antes de usarla.",
-        "title": "7. Cookies y almacenamiento local"
+        "title": "8. Cookies y almacenamiento local"
       },
       "data": {
         "account": "Datos de cuenta e identidad, como nombre, correo de trabajo, foto de perfil, proveedor de autenticación y pertenencia a organizaciones.",
@@ -4845,33 +4845,41 @@
         "title": "2. Datos que tratamos",
         "workspace": "Datos del espacio de trabajo, incluidos roles, permisos, ajustes, eventos de auditoría y actividad necesaria para prestar el servicio."
       },
+      "extension": {
+        "title": "4. La extensión de Chrome",
+        "intro": "La extensión de Oppenheimer para Chrome lista tus sesiones de Claude Code en la nube y te dice cuáles te necesitan. Es su único propósito.",
+        "reads": "Lee tu lista de sesiones de claude.ai con la sesión que ya tienes iniciada en el navegador, y una cookie, lastActiveOrg, que indica de quién son las sesiones que pide. Nunca lee, guarda ni envía tu inicio de sesión de claude.ai, ninguna otra cookie ni ningún token de claude.ai.",
+        "stores": "Guarda esa lista (el id, el título, el estado, el repositorio y la última actividad de cada sesión) en el almacenamiento de Chrome de tu ordenador. Si la conectas a Oppenheimer, guarda también la dirección que escribiste y el token que creaste para ella.",
+        "sends": "Nada sale de tu ordenador salvo que la conectes a un espacio de trabajo de Oppenheimer. Desde entonces, tras cada comprobación envía a ese espacio el id y el estado de cada sesión que sigue; el espacio conserva las que inició y descarta el resto. Nada se vende, se usa para publicidad ni se comparte con nadie más.",
+        "removal": "Desconéctala desde la ventana emergente para borrar la dirección y el token, o elimina la extensión para borrar todo lo que guardó."
+      },
       "eyebrow": "Legal",
       "google": {
         "body": "Si eliges iniciar sesión con Google, Google nos facilita tu nombre, dirección de correo, foto de perfil e identificadores del proveedor. Usamos esta información solo para autenticarte, proteger el acceso y crear o vincular tu perfil. No vendemos estos datos ni los usamos para publicidad.",
         "separateConsent": "El inicio de sesión con Google no da acceso a Gmail, Drive ni a ningún otro servicio de Google. Si tu organización activa más adelante una integración compatible con Google, pedimos los permisos correspondientes mediante una pantalla de consentimiento separada y usamos esos datos solo para ofrecer la integración que elegiste.",
         "title": "3. Acceso con Google y datos de usuario de Google"
       },
-      "lastUpdated": "Última actualización: 27 de agosto de 2026.",
+      "lastUpdated": "Última actualización: 24 de noviembre de 2026.",
       "purposes": {
         "body": "Tratamos datos para prestar y administrar el servicio, autenticar usuarios, facilitar la colaboración, mantener la seguridad, responder solicitudes y cumplir la ley. Según el contexto, la base jurídica es la ejecución de un contrato, nuestro interés legítimo en operar y proteger el servicio, el consentimiento cuando sea necesario o el cumplimiento de una obligación legal.",
-        "title": "4. Finalidades y bases jurídicas"
+        "title": "5. Finalidades y bases jurídicas"
       },
       "retention": {
         "body": "Conservamos los datos de cuenta y del espacio mientras la cuenta u organización correspondiente siga activa y durante el periodo limitado necesario para seguridad, recuperación, resolución de disputas y obligaciones legales. Los datos eliminados pueden permanecer en copias cifradas hasta que expiren en su ciclo normal. Las credenciales de integraciones se eliminan al borrar la conexión, sin perjuicio de copias operativas de corta duración.",
-        "title": "6. Durante cuánto tiempo conservamos los datos"
+        "title": "7. Durante cuánto tiempo conservamos los datos"
       },
       "rights": {
         "authority": "También puedes presentar una reclamación ante la Agencia Española de Protección de Datos (AEPD) o tu autoridad de control local.",
         "body": "Cuando corresponda, puedes solicitar acceso, rectificación, supresión, limitación o portabilidad de tus datos personales, oponerte a determinados tratamientos o retirar tu consentimiento sin afectar al tratamiento lícito anterior. Escríbenos desde el correo asociado a tu cuenta para que podamos verificar y responder a tu solicitud.",
-        "title": "9. Tus derechos de privacidad"
+        "title": "10. Tus derechos de privacidad"
       },
       "security": {
         "body": "Aplicamos medidas técnicas y organizativas diseñadas para proteger los datos, como conexiones cifradas, controles de acceso, infraestructura aislada, gestión de secretos, registros de seguridad y acceso administrativo restringido. Ningún sistema garantiza una seguridad absoluta, pero revisamos y mejoramos estas medidas conforme evoluciona el servicio.",
-        "title": "8. Seguridad"
+        "title": "9. Seguridad"
       },
       "sharing": {
         "body": "Compartimos datos solo cuando es necesario para operar el servicio, cumplir la ley o seguir las instrucciones de tu organización. Los proveedores pueden incluir los de alojamiento, almacenamiento, autenticación, correo e integraciones que tu organización active. Algunos proveedores pueden tratar datos fuera del Espacio Económico Europeo con las garantías aplicables, como decisiones de adecuación o cláusulas contractuales tipo. No vendemos datos personales.",
-        "title": "5. Proveedores y transferencias internacionales"
+        "title": "6. Proveedores y transferencias internacionales"
       },
       "summary": "Esta política explica qué datos personales trata el servicio, por qué los usamos y las opciones y derechos que tienes.",
       "title": "Política de privacidad"

@@ -67,12 +67,55 @@ claude.ai's own app reads:
 If claude.ai changes its URL, the tap learns the new one on the next visit.
 If it changes the record, `session.ts` and its spec are where to look.
 
+## Publish it
+
+The extension is an unlisted item on the Chrome Web Store: only people with
+its link find it, and Chrome keeps every install on the latest approved
+version by itself. Its privacy policy is the console's
+`/privacy#extension`.
+
+**A new version** is a bump of `version` in this `package.json`, by hand or
+through a changeset, merged to `main`. `.github/workflows/release-extension.yml`
+then builds and tests the extension, zips `dist/`
+(`pnpm --filter @oppenheimer/extension package`, into `release/`), uploads
+the zip and submits it for review (`scripts/publish.mjs`, the Web Store API
+v2), and tags `extension-v<version>` with the zip attached. A version with
+a tag is never sent again. Review takes from hours to a few days; installs
+update within hours of approval. The store refuses a version that is not
+higher than the last one.
+
+**Once, before the first release:**
+
+1. Register a Chrome Web Store developer account (a one-time fee, and
+   2-step verification on the Google account) at
+   https://chrome.google.com/webstore/devconsole.
+2. Build and package this version, then in the dashboard **New item** →
+   upload `release/oppenheimer-extension-<version>.zip`. Fill in the
+   listing (Chrome's own strings are already in the package's
+   `_locales/`), set **Visibility** to *Unlisted*, give the privacy policy
+   URL `https://<console>/privacy#extension`, and on **Privacy practices**
+   state the single purpose and why each permission is needed, from the
+   comment in `manifest.config.ts`. Submit it. The API cannot create an
+   item; every later version goes through it.
+3. In Google Cloud, enable the **Chrome Web Store API**, create an OAuth
+   client (Web application, redirect URI
+   `https://developers.google.com/oauthplayground`), and in the OAuth
+   Playground authorize scope `https://www.googleapis.com/auth/chromewebstore`
+   with that client to get a refresh token.
+4. In the repository's Actions settings, add the secrets
+   `CWS_PUBLISHER_ID` and `CWS_EXTENSION_ID` (both in the dashboard's
+   URLs and **Account** page), `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`,
+   `CWS_REFRESH_TOKEN`, and the variable `EXTENSION_PUBLISH_ENABLED=true`.
+   Tag the version you uploaded by hand (`extension-v<version>`) so the
+   workflow does not send it again.
+
 ## Commands
 
 ```bash
 pnpm --filter @oppenheimer/extension test    # Vitest: sessions, tracker, manifest
 pnpm --filter @oppenheimer/extension e2e     # Playwright: dist/ in Chromium, claude.ai faked
 pnpm --filter @oppenheimer/extension lint
+pnpm --filter @oppenheimer/extension package # dist/ → release/oppenheimer-extension-<version>.zip
 ```
 
 `e2e` needs a build first and a Chromium: the one `PLAYWRIGHT_CHROMIUM_PATH`
@@ -89,6 +132,8 @@ manifest.config.ts     the manifest as code; each permission and why
 popup.html             the popup's page
 public/                icons, theme-init.js
 scripts/build.mjs      four Vite builds into dist/ (vite.config.ts says why four)
+scripts/package.mjs    dist/ zipped for the Web Store
+scripts/publish.mjs    upload and submit a zip to the store item
 src/
 ├── sessions/          what a session is and its state, the tracker, storage, links
 ├── background/        the service worker: poll, badge, notifications

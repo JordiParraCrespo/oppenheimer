@@ -60,7 +60,7 @@
       "title": "Chrome extension",
       "summary": "apps/extension — Manifest V3 extension that tracks your Claude Code cloud sessions and says which need you",
       "identifiers": ["apps/extension", "@oppenheimer/extension"],
-      "paths": ["apps/extension"]
+      "paths": ["apps/extension", ".github/workflows/release-extension.yml"]
     },
     "cli": {
       "title": "Command-line interface",

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node scripts/build.mjs --watch",
     "build": "tsc -b && node scripts/build.mjs",
+    "package": "node scripts/package.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
