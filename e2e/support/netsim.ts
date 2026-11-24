@@ -2,6 +2,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { expect } from '@playwright/test';
 
 /**
  * The machines of a local stack on simulated networks (`e2e/netsim`): the
@@ -130,4 +131,25 @@ export async function legStats(): Promise<LegStats[]> {
 
 export async function resetLegStats(): Promise<void> {
   await control('DELETE', '/stats');
+}
+
+/** Bytes carried between nodes `a` and `b`, both ways, since the last reset. */
+export async function bytesBetween(a: string, b: string): Promise<number> {
+  return (await legStats())
+    .filter((l) => (l.from === a && l.to === b) || (l.from === b && l.to === a))
+    .reduce((sum, l) => sum + l.bytes, 0);
+}
+
+/**
+ * Waits until the browser reaches the host for `path`: a tab without WebRTC
+ * stays on the relay, so `relay` needs nothing; `direct` is any bytes between
+ * the browser and the host's node. That includes ICE setup, so it says the
+ * peer is up, not that typing takes it: the specs prove that by which leg
+ * carried their keys (`bytesBetween` after `resetLegStats`).
+ */
+export async function onPath(path: 'relay' | 'direct', host: string): Promise<void> {
+  if (path === 'relay') return;
+  await expect
+    .poll(() => bytesBetween('browser', host), { timeout: 60_000, intervals: [500] })
+    .toBeGreaterThan(0);
 }

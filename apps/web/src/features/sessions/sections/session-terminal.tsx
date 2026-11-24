@@ -99,7 +99,6 @@ export function SessionTerminal({
     onFiles: upload.send,
     hostId,
     snapshotKey: `${sessionId}:${AGENT_WINDOW}`,
-    latencyKey: sessionId,
   });
   const { containerRef, status, hasOutput, ended, retryNow, awaySince } = terminal;
   const phase = hostLinkPhaseOf({

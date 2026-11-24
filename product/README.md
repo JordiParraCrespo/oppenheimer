@@ -2065,3 +2065,8 @@ earlier note:
   bot to run `runner browser on` after saying "do it yourself", did not want
   that guardrail: a bot changes them with `set_host_settings` when the
   person asks in their own chat ("The host's switches").
+- `versions/mvp/22-direct-terminal-path.md` (step 0) drew the keystroke
+  round trip, `echo p50 / p95 ms · path`, in the session's bar when a
+  `localStorage` switch was set, and gated each step on it. On 2026-11-24
+  the owner did not want it in the header: it is gone, and the netsim
+  bench times keydown to echo in the page instead.
