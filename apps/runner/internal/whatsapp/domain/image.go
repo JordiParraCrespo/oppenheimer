@@ -90,18 +90,19 @@ func FitImage(data []byte, mimetype string, max int) ([]byte, string, error) {
 // scaleToFit is src with its longest side at most side, each pixel the
 // average of the source pixels it covers (a box filter: plain, and sharp
 // enough for a model to read a screenshot's text), laid on white, since a
-// JPEG has no transparency and a transparent PNG would turn black. A
-// smaller src is returned as it is.
+// JPEG has no transparency and a transparent PNG would turn black. A src
+// already within side keeps its size.
 func scaleToFit(src image.Image, side int) image.Image {
 	b := src.Bounds()
 	w, h := b.Dx(), b.Dy()
-	if w <= side && h <= side {
-		return src
-	}
 	nw, nh := side, side
-	if w >= h {
+	switch {
+	case w <= side && h <= side:
+		// No smaller, but still laid on white: a pass at its own size.
+		nw, nh = w, h
+	case w >= h:
 		nh = max(1, h*side/w)
-	} else {
+	default:
 		nw = max(1, w*side/h)
 	}
 	dst := image.NewRGBA(image.Rect(0, 0, nw, nh))

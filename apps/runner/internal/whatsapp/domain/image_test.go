@@ -83,8 +83,13 @@ func TestFitImageRefusesTooManyPixels(t *testing.T) {
 // square.
 func TestScaleToFitLaysTransparencyOnWhite(t *testing.T) {
 	clear := image.NewNRGBA(image.Rect(0, 0, 4, 4))
-	got := scaleToFit(clear, 2)
-	if r, g, b, _ := got.At(0, 0).RGBA(); r != 0xffff || g != 0xffff || b != 0xffff {
-		t.Fatalf("a transparent pixel scaled to %x %x %x", r, g, b)
+	for _, side := range []int{2, 4} { // scaled down, and already small enough
+		got := scaleToFit(clear, side)
+		if r, g, b, _ := got.At(0, 0).RGBA(); r != 0xffff || g != 0xffff || b != 0xffff {
+			t.Fatalf("at side %d a transparent pixel came out %x %x %x", side, r, g, b)
+		}
+		if got.Bounds().Dx() != min(side, 4) {
+			t.Fatalf("at side %d the image is %d wide", side, got.Bounds().Dx())
+		}
 	}
 }
