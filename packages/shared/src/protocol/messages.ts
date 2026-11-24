@@ -1108,7 +1108,12 @@ export const hostSettingsSchema = z.object({
   browser: z.enum(HOST_SWITCH_STATES),
   computer: z.enum(HOST_SWITCH_STATES),
   execMode: z.enum(HOST_EXEC_MODES),
-  execAllow: z.array(z.string().max(1_024)).max(1_024),
+  /**
+   * The whole allowlist, as long as the host's file holds (64 KB): `runner
+   * exec allow` bounds neither the count nor an entry, so neither is bounded
+   * here below what that file can carry, or a saved change would read as lost.
+   */
+  execAllow: z.array(z.string().max(65_536)).max(65_536),
 });
 
 export type HostSettingsMessage = z.infer<typeof hostSettingsSchema>;

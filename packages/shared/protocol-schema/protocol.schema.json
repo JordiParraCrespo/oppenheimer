@@ -1510,11 +1510,11 @@
           ]
         },
         "execAllow": {
-          "maxItems": 1024,
+          "maxItems": 65536,
           "type": "array",
           "items": {
             "type": "string",
-            "maxLength": 1024
+            "maxLength": 65536
           }
         }
       },
