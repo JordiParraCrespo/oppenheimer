@@ -481,8 +481,9 @@ later of the state's last change and the last look, so a session someone
 just read or typed into is not stopped. It never stops a session that is
 `working` or `blocked`, has a terminal attached now (from the console, or
 a tmux client on the host, counted with `list-clients`), is kept, or is a
-child whose parent is live. A parent stops only when every child that
-would stop with it is idle too, so an idle family stops parent first. It
+child whose parent is live. A parent stops only when every session that
+would stop with it (its children, theirs, and on down) is idle too, so an
+idle family stops parent first. It
 never closes one. Each stop takes the stop path (the wrapper hung up, then killed, as
 above), is announced like any other stop, and is logged with slog
 ("stopped an idle session"). Opening the session in the console restarts

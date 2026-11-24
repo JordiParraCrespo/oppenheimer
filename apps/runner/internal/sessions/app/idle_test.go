@@ -202,3 +202,18 @@ func TestAnIdleFamilyStops(t *testing.T) {
 		t.Fatalf("then stopped %v, want the child", again)
 	}
 }
+
+// Stopping a parent stops its children's children too, so a grandchild still
+// working keeps the whole line running, however idle the two above it are.
+func TestTheIdleStopLeavesALineWithAWorkingGrandchild(t *testing.T) {
+	start := time.Date(2026, 11, 24, 9, 0, 0, 0, time.UTC)
+	child := idleSession("child", domain.StateIdle)
+	child.Parent = "parent"
+	grandchild := idleSession("grandchild", domain.StateWorking)
+	grandchild.Parent = "child"
+	h := newIdleHost(t, start, idleSession("parent", domain.StateIdle), child, grandchild)
+	*h.clock = start.Add(10 * idleAfter)
+	if stopped := h.svc.StopIdle(context.Background(), idleAfter); len(stopped) != 0 {
+		t.Fatalf("stopped a line whose grandchild works: %v", stopped)
+	}
+}

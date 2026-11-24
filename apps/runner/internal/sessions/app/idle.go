@@ -180,12 +180,23 @@ func (s *Service) idleLocked(session domain.Session, now time.Time, after time.D
 			return false
 		}
 	}
-	// Stopping a parent stops the children that do not outlive it, so each of
-	// those must be idle too: a working child is not cut off, and a family
-	// idle through and through stops, parent first and the rest with it.
+	return s.descendantsIdleLocked(session.ID, now, after, clients, map[string]bool{session.ID: true})
+}
+
+// descendantsIdleLocked is whether every session that would stop with id is
+// idle too. Stopping a parent stops the children that do not outlive it, and
+// each of those its own (Children.endChildren), so a working, kept or
+// watched session anywhere down that line keeps the whole line running, and
+// a family idle through and through stops, parent first and the rest with
+// it. seen guards against a parent link that loops. s.mu is held.
+func (s *Service) descendantsIdleLocked(id string, now time.Time, after time.Duration, clients map[string]int, seen map[string]bool) bool {
 	for _, child := range s.sessions {
-		if child.Parent == session.ID && child.State.Live() && !child.OutliveParent &&
-			!s.idleSelfLocked(child, now, after, 0, clients) {
+		if child.Parent != id || !child.State.Live() || child.OutliveParent || seen[child.ID] {
+			continue
+		}
+		seen[child.ID] = true
+		if !s.idleSelfLocked(child, now, after, 0, clients) ||
+			!s.descendantsIdleLocked(child.ID, now, after, clients, seen) {
 			return false
 		}
 	}
