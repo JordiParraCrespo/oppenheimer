@@ -5,9 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { configKeySealer } from '@oppenheimer/backend-core';
 import { slackTokenKeyOf } from '../config/slack.config';
+import { SlackBotAppResolver } from './application/slack-bot-app.resolver';
 import { SlackLineResolver } from './application/slack-line.resolver';
 import { ConnectSlackCommandHandler } from './commands/connect-slack/connect-slack.command-handler';
 import { ConnectSlackHttpController } from './commands/connect-slack/connect-slack.http.controller';
+import { MarkSlackWorkingCommandHandler } from './commands/mark-slack-working/mark-slack-working.command-handler';
 import { OpenSlackOwnerLinkCommandHandler } from './commands/open-slack-owner-link/open-slack-owner-link.command-handler';
 import { OpenSlackOwnerLinkHttpController } from './commands/open-slack-owner-link/open-slack-owner-link.http.controller';
 import { ReceiveSlackEventCommandHandler } from './commands/receive-slack-event/receive-slack-event.command-handler';
@@ -24,6 +26,7 @@ import { FindSlackAccountsHttpController } from './queries/find-slack-accounts/f
 import { FindSlackAccountsQueryHandler } from './queries/find-slack-accounts/find-slack-accounts.query-handler';
 import { FindSlackAppSetupHttpController } from './queries/find-slack-app-setup/find-slack-app-setup.http.controller';
 import { FindSlackAppSetupQueryHandler } from './queries/find-slack-app-setup/find-slack-app-setup.query-handler';
+import { FindSlackImagesQueryHandler } from './queries/find-slack-images/find-slack-images.query-handler';
 import { SLACK_ACCOUNT_REPOSITORY, SLACK_SEALER, SLACK_WEB_API } from './slack.di-tokens';
 import { SlackResource } from './slack.resource';
 import { SlackAccountMapper } from './slack-account.mapper';
@@ -40,6 +43,7 @@ const httpControllers = [
 /** The end of a Slack turn dispatches its answer (`ReplyOnSlack`, from `bots-chat`). */
 const commandHandlers: Provider[] = [
   ConnectSlackCommandHandler,
+  MarkSlackWorkingCommandHandler,
   OpenSlackOwnerLinkCommandHandler,
   RemoveSlackAccountCommandHandler,
   ReceiveSlackEventCommandHandler,
@@ -50,6 +54,7 @@ const queryHandlers: Provider[] = [
   FindSlackAccountsQueryHandler,
   FindSlackAccountQueryHandler,
   FindSlackAppSetupQueryHandler,
+  FindSlackImagesQueryHandler,
 ];
 
 /**
@@ -72,6 +77,7 @@ const queryHandlers: Provider[] = [
     ...queryHandlers,
     SlackAccountMapper,
     SlackLineResolver,
+    SlackBotAppResolver,
     { provide: SLACK_ACCOUNT_REPOSITORY, useClass: SlackAccountRepository },
     configKeySealer(SLACK_SEALER, {
       configKey: 'slack.tokenKey',

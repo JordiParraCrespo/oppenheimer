@@ -67,6 +67,7 @@ import { BotSessionWaitResolver } from './application/bot-session-wait.resolver'
 import { BotSessionWakeResolver } from './application/bot-session-wake.resolver';
 import { BotSessionWatchResolver } from './application/bot-session-watch.resolver';
 import { BotSkillToolsFactory } from './application/bot-skill-tools.factory';
+import { BotSlackImagesResolver } from './application/bot-slack-images.resolver';
 import { BotSteeringFactory } from './application/bot-steering.factory';
 import { BotSubagentRunnerFactory } from './application/bot-subagent-runner.factory';
 import { BotSubagentToolsFactory } from './application/bot-subagent-tools.factory';
@@ -456,6 +457,7 @@ const queryHandlers: Provider[] = [
     BotTurnContextResolver,
     BotTurnOpeningResolver,
     BotOpeningMediaResolver,
+    BotSlackImagesResolver,
     BotWhatsappVoiceNoteResolver,
     BotWhatsappImageResolver,
     // The readers of what a turn's opening still has to read, one per kind of

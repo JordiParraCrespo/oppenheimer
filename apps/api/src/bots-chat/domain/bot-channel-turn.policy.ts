@@ -1,4 +1,5 @@
 import {
+  type BotAttachment,
   type BotChannelOrigin,
   type BotTurnLane,
   type BotTurnOrigin,
@@ -25,7 +26,8 @@ export type ChannelTurnProps = Omit<
  * Words alone are sent as a steer: written while the bot works on the chat's
  * last request, they reach it at its next tool call, so it can answer in
  * between and carry on (`takesSteer`), instead of waiting for the work to
- * end. Media waits for a turn of its own, which reads it when it starts.
+ * end. Media and images wait for a turn of their own, which reads them when
+ * it starts.
  */
 export function channelTurn(
   props: ChannelTurnProps,
@@ -35,6 +37,8 @@ export function channelTurn(
     conversationId: string;
     text: string;
     pendingMedia?: BotPendingMedia | null;
+    /** The images it came with, stored already; claimed for it when the turn is queued. */
+    attachments?: readonly BotAttachment[];
     /**
      * A contact's message, in one person's chat or a group's: the turn is a
      * contact's (`turnReach`), and steers nothing.
@@ -43,13 +47,15 @@ export function channelTurn(
   },
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
   const contact = message.contact ?? null;
+  const attachments = message.attachments ?? [];
   const turn = BotTurnEntity.queue({
     ...props,
     conversationId: message.conversationId,
     origin: message.origin,
     lane: 'owner',
     sourceKey: message.sourceKey,
-    steer: contact === null && !message.pendingMedia && maySteer(true, message.text, 0),
+    steer:
+      contact === null && !message.pendingMedia && maySteer(true, message.text, attachments.length),
     contact,
   });
   const opening = BotMessageEntity.createNew({
@@ -62,6 +68,7 @@ export function channelTurn(
     steps: [],
     position: 0,
     pendingMedia: message.pendingMedia ?? null,
+    attachments,
   });
   return { turn, opening };
 }

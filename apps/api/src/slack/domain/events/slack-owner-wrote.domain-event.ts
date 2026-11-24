@@ -1,4 +1,5 @@
 import { DomainEvent, type DomainEventProps } from '@oppenheimer/backend-ddd';
+import type { SlackImage } from '../slack-inbound.policy';
 
 /**
  * The owner of a bot's Slack app asked it something, by a mention in a channel
@@ -23,6 +24,10 @@ export class SlackOwnerWroteDomainEvent extends DomainEvent {
   readonly command: 'message' | 'stop';
   /** What they wrote, as plain words; empty for `stop`. */
   readonly text: string;
+  /** The images the message carries, fetched when the turn is queued. */
+  readonly images: SlackImage[];
+  /** The files it carries that no bot reads (not an image, too large, past the limit). */
+  readonly skippedFiles: number;
 
   constructor(props: DomainEventProps<SlackOwnerWroteDomainEvent>) {
     super(props);
@@ -35,5 +40,7 @@ export class SlackOwnerWroteDomainEvent extends DomainEvent {
     this.position = props.position;
     this.command = props.command;
     this.text = props.text;
+    this.images = props.images;
+    this.skippedFiles = props.skippedFiles;
   }
 }
