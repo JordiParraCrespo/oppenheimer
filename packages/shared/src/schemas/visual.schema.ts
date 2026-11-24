@@ -382,6 +382,13 @@ export function parseVisual(input: unknown): VisualParse {
     : { ok: false, errors: visualErrors(parsed.error) };
 }
 
+/**
+ * The tallest an HTML visual's frame grows, in pixels: the console's frame and
+ * the page's inner one stop at the same height, and a taller page scrolls
+ * inside it rather than being cut.
+ */
+export const VISUAL_FRAME_MAX_HEIGHT = 1600;
+
 /** The label of the origin a visual's HTML runs on, under the deployment's preview domain. */
 export const VISUAL_FRAME_LABEL = 'visuals';
 

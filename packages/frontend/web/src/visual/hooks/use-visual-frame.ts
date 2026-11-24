@@ -1,8 +1,6 @@
+import { VISUAL_FRAME_MAX_HEIGHT } from '@oppenheimer/shared/schemas/visual';
 import { useEffect, useRef, useState } from 'react';
 import { visualTheme } from '../lib/visual-theme';
-
-/** The tallest a frame grows before it scrolls inside itself. */
-const MAX_HEIGHT = 1600;
 
 /** How long the page has to say it is ready before the frame gives up. */
 const LOAD_TIMEOUT_MS = 15_000;
@@ -61,7 +59,7 @@ export function useVisualFrame(html: string, firstHeight: number) {
       const message = frameMessage(event.data);
       if (message?.type === 'ready') post({ type: 'render', html, ...visualTheme() });
       if (message?.type === 'size') {
-        setHeight(Math.max(40, Math.min(MAX_HEIGHT, Math.ceil(message.height))));
+        setHeight(Math.max(40, Math.min(VISUAL_FRAME_MAX_HEIGHT, Math.ceil(message.height))));
         setState('ready');
       }
       if (message?.type === 'error') setError(message.message);

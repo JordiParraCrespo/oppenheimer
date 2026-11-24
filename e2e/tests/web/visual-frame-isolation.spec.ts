@@ -124,3 +124,21 @@ test('a visual can open no frame and no refresh, from markup or from script', as
   expect(hits).toEqual([]);
   expect(connections).toBe(0);
 });
+
+// What breaks this: a visual taller than the console's frame cut off at its
+// bottom (the page's frame grew past the console's cap and nothing scrolled),
+// so controls at its end could not be reached.
+test('a visual taller than its frame scrolls to its end, never cut', async ({ page }) => {
+  const { owner, bot } = await botWithHtml(
+    '<div style="height:2400px">tall</div><button id="end">the end</button>',
+  );
+  await signInAs(page, owner.user);
+  await page.goto(`/bots/${bot.id}`);
+  const outer = page.locator('[data-slot="visual"] iframe');
+  const inner = page.frameLocator('[data-slot="visual"] iframe').frameLocator('iframe');
+  await expect(inner.locator('#end')).toBeAttached({ timeout: 20_000 });
+  await expect.poll(async () => (await outer.boundingBox())?.height ?? 0).toBeGreaterThan(1000);
+  expect((await outer.boundingBox())?.height ?? 0).toBeLessThanOrEqual(1601);
+  await inner.locator('#end').scrollIntoViewIfNeeded();
+  await expect(inner.locator('#end')).toBeInViewport();
+});

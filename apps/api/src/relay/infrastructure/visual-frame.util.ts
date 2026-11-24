@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { visualFrameOrigin } from '@oppenheimer/shared';
+import { VISUAL_FRAME_MAX_HEIGHT, visualFrameOrigin } from '@oppenheimer/shared';
 
 /**
  * The page a visual's HTML runs in: one static shell on the deployment's
@@ -178,7 +178,7 @@ export const VISUAL_FRAME_SHELL = `<!doctype html>
     if (!data || typeof data !== 'object') return;
     if (inner && event.source === inner.contentWindow) {
       if (data.type === 'size' && typeof data.height === 'number' && isFinite(data.height)) {
-        const height = Math.max(0, Math.min(4000, Math.ceil(data.height)));
+        const height = Math.max(0, Math.min(${VISUAL_FRAME_MAX_HEIGHT}, Math.ceil(data.height)));
         inner.style.height = height + 'px';
         post({ type: 'size', height });
       } else if (data.type === 'error') post({ type: 'error', message: String(data.message || '').slice(0, 300) });
