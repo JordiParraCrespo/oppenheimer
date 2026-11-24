@@ -16,7 +16,7 @@ The runner holds one outbound connection to Oppenheimer. It opens no port, and n
 | User | An ordinary user account. The installer refuses to run as root. |
 | Tools | `git` and `tmux`. The installer offers to install them with Homebrew or apt, but only on a typed yes; without them it stops before using the token. |
 | A lasting machine | The runner refuses machines that look temporary (Docker or Podman containers, CI, Codespaces, dev containers, Kubernetes pods). |
-| Agent CLIs | Optional at install: Claude Code, Codex, OpenCode, Grok, Pi, Oh My Pi (`omp`, which needs Bun), Antigravity (`agy`), Vercel's fx, Muse (Meta's Muse Code) and GitHub's `gh`. The default is Claude Code and `gh`. ZCode is not offered: Z.ai publishes no terminal release to install, so install it yourself and the runner finds `zcode` on your PATH. Hermes is not installed for you either: run Nous Research's installer on the host. |
+| Agent CLIs | Optional at install: Claude Code, Codex, OpenCode, Grok, Pi, Oh My Pi (`omp`, which needs Bun), Antigravity (`agy`), Vercel's fx, Muse (Meta's Muse Code), Qwen Code (`qwen`, from npm, which needs Node.js 22) and GitHub's `gh`. The default is Claude Code and `gh`. ZCode is not offered: Z.ai publishes no terminal release to install, so install it yourself and the runner finds `zcode` on your PATH. Hermes is not installed for you either: run Nous Research's installer on the host. |
 
 Sessions are capped at 20 per host by default.
 
@@ -83,7 +83,7 @@ When the desktop cannot open, it says why: the host does not share its desktop (
 
 Each agent runs from the host's own installation and its own login. You sign in once per host by starting a session with that agent and following its sign-in in the terminal; a sign-in link the agent prints becomes a button. Oppenheimer never stores an agent's credentials.
 
-From the host you can install more later: `oppenheimer-runner agents install claude` (or `codex`, `opencode`, `grok`, `pi`, `omp`, `antigravity`, `muse`), and `oppenheimer-runner tools install gh`. These install in your home directory without sudo. `git` and `tmux` stay with your package manager. The runner updates installed agent CLIs on its own about hourly unless `RUNNER_AGENT_UPDATES=off` is set before install. `oppenheimer-runner tools` lists what is installed.
+From the host you can install more later: `oppenheimer-runner agents install claude` (or `codex`, `opencode`, `grok`, `pi`, `omp`, `antigravity`, `muse`, `qwen`), and `oppenheimer-runner tools install gh`. These install in your home directory without sudo. `git` and `tmux` stay with your package manager. The runner updates installed agent CLIs on its own about hourly unless `RUNNER_AGENT_UPDATES=off` is set before install. `oppenheimer-runner tools` lists what is installed.
 
 ## Letting bots use the screen
 

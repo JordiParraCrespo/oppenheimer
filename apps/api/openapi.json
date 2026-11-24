@@ -9795,6 +9795,7 @@
                 "fx",
                 "hermes",
                 "muse",
+                "qwen",
                 "shell"
               ],
               "type": "string"
@@ -32189,6 +32190,7 @@
               "fx",
               "hermes",
               "muse",
+              "qwen",
               "shell",
               null
             ],
@@ -32279,6 +32281,7 @@
               "fx",
               "hermes",
               "muse",
+              "qwen",
               "shell",
               null
             ],
@@ -32349,6 +32352,7 @@
               "fx",
               "hermes",
               "muse",
+              "qwen",
               "shell",
               null
             ],
@@ -32891,6 +32895,7 @@
               "fx",
               "hermes",
               "muse",
+              "qwen",
               "shell",
               "cursor"
             ],
@@ -33163,6 +33168,7 @@
               "fx",
               "hermes",
               "muse",
+              "qwen",
               "shell"
             ]
           },
@@ -34520,7 +34526,8 @@
               "zcode",
               "fx",
               "hermes",
-              "muse"
+              "muse",
+              "qwen"
             ]
           },
           "prompt": {
@@ -35519,6 +35526,7 @@
                   "fx",
                   "hermes",
                   "muse",
+                  "qwen",
                   "shell"
                 ]
               },
@@ -36034,6 +36042,7 @@
                   "fx",
                   "hermes",
                   "muse",
+                  "qwen",
                   "shell"
                 ]
               },
@@ -36653,6 +36662,7 @@
               "paused",
               "deleted",
               "own_event",
+              "own_session_event",
               "automation_rate_limited",
               "workspace_rate_limited",
               "overlapping",
@@ -37016,6 +37026,7 @@
                   "fx",
                   "hermes",
                   "muse",
+                  "qwen",
                   "shell"
                 ]
               },
