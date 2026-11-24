@@ -9,16 +9,15 @@ export type WhatsappMediaMiss =
   | { kind: 'failed'; code: string };
 
 /** The words that differ between the kinds, in the reasons below. */
-const NAMED: Readonly<
-  Record<WhatsappMediaKind, { one: string; many: string; tooLarge: string }>
-> = {
-  voice_note: {
-    one: 'voice note',
-    many: 'voice notes',
-    tooLarge: 'it is too long (about two minutes at most)',
-  },
-  image: { one: 'image', many: 'images', tooLarge: 'it is too large to hand over' },
-};
+const NAMED: Readonly<Record<WhatsappMediaKind, { one: string; many: string; tooLarge: string }>> =
+  {
+    voice_note: {
+      one: 'voice note',
+      many: 'voice notes',
+      tooLarge: 'it is too long (about two minutes at most)',
+    },
+    image: { one: 'image', many: 'images', tooLarge: 'it is too large to hand over' },
+  };
 
 /**
  * Why media the host did not hand over went unheard or unseen, in words a

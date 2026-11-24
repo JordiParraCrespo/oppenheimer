@@ -3,11 +3,10 @@
  * could not be heard, in words the bot can pass on. The hearing itself is the
  * `transcribe-whatsapp-voice-note` handler's spec.
  */
-import { whatsappMediaMissReason } from '../domain/whatsapp-media.policy';
+
 import { describe, expect, it } from 'vitest';
-import {
-  whatsappVoiceNoteText,
-} from '../domain/whatsapp-voice-note.policy';
+import { whatsappMediaMissReason } from '../domain/whatsapp-media.policy';
+import { whatsappVoiceNoteText } from '../domain/whatsapp-voice-note.policy';
 
 describe('whatsappVoiceNoteText', () => {
   // What breaks this: the bot reading "[audio]" and asking the owner to type it out.

@@ -6,12 +6,12 @@ import { TranscribeVoiceCommand } from '../../../voice/commands/transcribe-voice
 import type { WhatsappDevicePort } from '../../application/whatsapp-device.port';
 import type { WhatsappAccountRepositoryPort } from '../../database/whatsapp-account.repository.port';
 import type { WhatsappMessageRepositoryPort } from '../../database/whatsapp-message.repository.port';
+import { whatsappMediaMissReason } from '../../domain/whatsapp-media.policy';
 import {
   isWhatsappVoiceNote,
   type WhatsappVoiceNoteHearing,
   whatsappVoiceNoteText,
 } from '../../domain/whatsapp-voice-note.policy';
-import { whatsappMediaMissReason } from '../../domain/whatsapp-media.policy';
 import type { VoiceNoteDecoderPort } from '../../infrastructure/voice-note-decoder.port';
 import {
   VOICE_NOTE_DECODER,
