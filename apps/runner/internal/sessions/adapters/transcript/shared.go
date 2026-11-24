@@ -89,7 +89,7 @@ func ReadShared(filesDir, sessionID, id string) (Shared, error) {
 			return Shared{}, err
 		}
 		var shared Shared
-		if err := json.Unmarshal(raw, &shared); err != nil || shared.ID != id {
+		if err := json.Unmarshal(raw, &shared); err != nil || shared.Type != SharedEntryType || shared.ID != id {
 			return Shared{}, ErrSharedMissing
 		}
 		return shared, nil

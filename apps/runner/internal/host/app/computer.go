@@ -56,7 +56,7 @@ func (s *Service) Computer(ctx context.Context, req domain.ComputerRequest) (dom
 	}
 	if !policy.Enabled {
 		return domain.Screenshot{}, domain.ErrComputerOff.WithDetail(
-			"the person on this host can turn it on with `runner computer on`")
+			"turn it on with `runner computer on` here, or ask a bot to turn it on")
 	}
 	if s.desktop == nil {
 		return domain.Screenshot{}, domain.ErrComputerNoScreen.WithDetail("the runner drives no screen on this platform")

@@ -10,8 +10,8 @@ import (
 
 // ComputerPolicy is whether this host lets bots see its screen and use its
 // mouse and keyboard (`computer.act`, 25 §4.2). Like ExecPolicy it is the
-// host's own setting, in a file the control plane never reads or writes: a
-// screen shows whatever is open on it, and a mouse can open anything.
+// host's own setting, in a file `runner computer` writes, or a bot when the
+// person asked it to (`host.settings.set`): a screen shows whatever is open on it, and a mouse can open anything.
 type ComputerPolicy struct {
 	Enabled bool `json:"enabled"`
 }

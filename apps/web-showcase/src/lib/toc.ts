@@ -19,6 +19,7 @@ import {
   FileUpIcon,
   FolderIcon,
   HeadingIcon,
+  PanelRightIcon,
   PanelTopIcon,
   ImageIcon,
   KanbanIcon,
@@ -226,6 +227,7 @@ export const TOC: TocGroup[] = [
       { id: 'terminal', label: 'Terminal', icon: TerminalIcon, components: ['terminal'] },
       { id: 'hostlink', label: 'HostLinkChrome · CommandRow', icon: UnplugIcon, components: ['host-link', 'command-row'] },
       { id: 'sessionpane', label: 'SessionPaneHeader', icon: PanelTopIcon, components: ['session-pane-header'] },
+      { id: 'launcher', label: 'Launcher', icon: PanelRightIcon, components: ['launcher'] },
     ],
   },
   {

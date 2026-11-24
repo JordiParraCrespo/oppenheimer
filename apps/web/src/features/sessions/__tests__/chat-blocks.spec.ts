@@ -5,9 +5,11 @@ import {
   answerTextOf,
   blocksOf,
   elapsedOf,
+  foldedBlocks,
   latestTodos,
   modelName,
   summaryOf,
+  tailLinesOf,
 } from '../lib/chat-blocks';
 
 /**
@@ -237,5 +239,57 @@ describe('answerTextOf', () => {
   it('is empty for a turn that closes on work, with nothing said after it', () => {
     const turn = turnOf([{ type: 'text', text: 'Reading the config first.' }, tool('t1', 'Read')]);
     expect(answerTextOf(blocksOf(turn))).toBe('');
+  });
+});
+
+describe('the markers', () => {
+  // A move to another model holds for the turns after it, so a turn folded
+  // to its answer still says it. Breaks if the model block folds away with
+  // the work.
+  it('keeps a model change in a folded turn, before its answer', () => {
+    const chat = new SessionChat();
+    const said = (uuid: string, model: string, text: string) =>
+      JSON.stringify({
+        type: 'assistant',
+        uuid,
+        timestamp: '2026-10-21T09:00:30.000Z',
+        message: { role: 'assistant', model, content: [{ type: 'text', text }] },
+      });
+    const asked = (uuid: string, text: string) =>
+      JSON.stringify({
+        type: 'user',
+        uuid,
+        timestamp: '2026-10-21T09:00:00.000Z',
+        message: { role: 'user', content: text },
+      });
+    chat.apply({
+      reset: true,
+      entries: [
+        asked('u1', 'One'),
+        said('a1', 'claude-opus-5-5', 'Ok'),
+        asked('u2', 'Two'),
+        said('a2', 'claude-haiku-5', 'Reading.'),
+        said('a3', 'claude-haiku-5', 'Done.'),
+      ],
+    });
+    const turn = chat.snapshot().turns[1];
+    if (!turn) throw new Error('no turn');
+    expect(foldedBlocks(blocksOf(turn))).toMatchObject([
+      { kind: 'model', model: 'claude-haiku-5' },
+      { kind: 'reply', text: 'Reading.' },
+      { kind: 'reply', text: 'Done.' },
+    ]);
+  });
+});
+
+describe('tailLinesOf', () => {
+  // The screen's tail belongs to the call the screen draws. Breaks if a
+  // second command running beside it took the first one's lines.
+  it("gives a running command the screen's lines only when the screen names that command", () => {
+    const tail = { command: 'pnpm test --filter', lines: ['✓ 12 passed'] };
+    expect(tailLinesOf(tail, 'cd app && pnpm test   --filter web')).toEqual(['✓ 12 passed']);
+    expect(tailLinesOf(tail, 'pnpm lint')).toBeNull();
+    expect(tailLinesOf({ command: null, lines: ['x'] }, 'make')).toEqual(['x']);
+    expect(tailLinesOf(undefined, 'make')).toBeNull();
   });
 });

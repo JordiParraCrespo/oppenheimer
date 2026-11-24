@@ -123,4 +123,10 @@ export type ClientCapabilities = Record<ClientCapability, boolean>;
  */
 export interface ClientDeployment extends ClientCapabilities {
   github_app_install_url: string | null;
+  /**
+   * The page a visual's HTML runs in (`visuals.<preview domain>/`), framed by
+   * the console; `null` without a preview domain, where an `html` block shows
+   * as a note.
+   */
+  visual_frame_url: string | null;
 }

@@ -122,6 +122,7 @@ function delegated(status: BotTurnStatus): BotConversationEntity {
     subagents: [],
     allowedBy: null,
     mailDraft: null,
+    visual: null,
     rateLimit: null,
   };
   return new BotConversationEntity(

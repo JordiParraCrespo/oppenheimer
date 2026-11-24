@@ -111,7 +111,8 @@ export const chatItemSchema = z.discriminatedUnion('type', [
    * Something that happened in the conversation that nobody said: a stop, a
    * compaction, a task ending, or what a command the agent's CLI answered
    * itself printed (`command_output`, its text plain, `failed` from stderr),
-   * or a file the agent showed the person (`file_shared`, its caption or name).
+   * a file the agent showed the person (`file_shared`, its caption or name),
+   * or a visual it showed (`visual_shown`, its title).
    */
   z.object({
     type: z.literal('event'),
@@ -123,6 +124,7 @@ export const chatItemSchema = z.discriminatedUnion('type', [
       'notice',
       'command_output',
       'file_shared',
+      'visual_shown',
     ]),
     text: z.string().nullable(),
   }),

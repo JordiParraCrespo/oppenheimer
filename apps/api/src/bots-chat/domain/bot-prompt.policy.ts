@@ -394,6 +394,7 @@ function eventPrompt(event: BotMessageEvent, content: string): string {
     case 'approval':
       return approvalPrompt(content, event.stage);
     case 'question':
+    case 'form':
       return `${eventNote(content)}\n\n${promptText('core/wake-question-answered')}`;
     case 'bot_message':
       return peerMessagePrompt(event, content);

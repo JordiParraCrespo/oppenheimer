@@ -326,7 +326,7 @@ describe('composeBotSystemPrompt', () => {
       expect(prompt).toContain('# Commands on a host');
       expect(prompt).not.toContain('You never run commands yourself');
       expect(prompt).not.toContain('You have no shell, no files');
-      expect(prompt).toContain('never try another program to get around it');
+      expect(prompt).toContain('try another program to get around a refusal');
       expect(composeBotSystemPrompt(sessions)).toContain('You never run commands yourself');
       expect(composeBotSystemPrompt(sessions)).not.toContain('# Commands on a host');
     });

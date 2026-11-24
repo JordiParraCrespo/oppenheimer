@@ -5,6 +5,7 @@ import { ErrorAlert, PageBar } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { lazy, type ReactNode, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChatViewIcons } from '../components/chat-view-icons';
 import { ChatViewToggle } from '../components/chat-view-toggle';
 import { CloudSessionAway } from '../components/cloud-session-away';
 import { PreviewFrame } from '../components/preview-frame';
@@ -74,8 +75,11 @@ export function SessionPane({
    * and Share when there is no bar to hold them, else nothing.
    */
   terminal: (session: SessionEntity, reading: PaneReading, status: ReactNode) => ReactNode;
-  /** Present: the pane draws the session's bar, led by `back` ("Back to task"). */
-  bar?: { back?: ReactNode };
+  /**
+   * Present: the pane draws the session's bar, led by `back` ("Back to task"),
+   * with the open tabs (`open`) for its title under Sessions.
+   */
+  bar?: { back?: ReactNode; open?: ReactNode };
   /**
    * What the side pane draws for another session and for a bot's chat, from
    * the screen: the first is this pane, which cannot import itself, the second
@@ -155,14 +159,18 @@ export function SessionPane({
   // The view switch and Share have one home, decided here once: the session's
   // bar when the route lets this pane draw one, else the terminal's status
   // line. Nothing below chooses again; each place takes what it is handed.
-  const viewToggle = chatOffered ? <ChatViewToggle view={view} onViewChange={setView} /> : null;
   const { head, statusItems } = bar
     ? {
         head: (
           <SessionBar
             session={session}
             back={bar.back}
-            tabs={session.isLive ? viewToggle : null}
+            open={bar.open}
+            tabs={
+              session.isLive && chatOffered ? (
+                <ChatViewIcons view={view} onViewChange={setView} />
+              ) : null
+            }
             preview={
               session.isLive && sideOffered ? (
                 <PreviewToggle open={preview.open} onToggle={() => preview.toggle(!preview.open)} />
@@ -177,7 +185,7 @@ export function SessionPane({
         statusItems: (
           <>
             <LatencyReadout sessionId={session.id} />
-            {viewToggle}
+            {chatOffered ? <ChatViewToggle view={view} onViewChange={setView} /> : null}
             <SessionShareButton sessionId={session.id} place="status" />
           </>
         ),
@@ -195,7 +203,9 @@ export function SessionPane({
   if (session.cloud) {
     return (
       <>
-        {bar ? <PageBar title={session.name} /> : null}
+        {bar ? (
+          <PageBar title={bar.open ?? session.name} tone={bar.open ? 'chrome' : 'page'} />
+        ) : null}
         <ErrorAlert error={error} fallback={t('sessions.screen.loadFailed')} />
         <CloudSessionAway session={session} />
       </>

@@ -42,6 +42,7 @@ const ranTools = new BotMessageEntity(
       subagents: null,
       allowedBy: null,
       mailDraft: null,
+      visual: null,
       rateLimit: null,
     },
   ],

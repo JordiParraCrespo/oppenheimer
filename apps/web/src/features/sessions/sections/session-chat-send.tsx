@@ -1,15 +1,19 @@
 import {
   type SessionChat as Chat,
   offeredSuggestion,
+  pendingPermission,
   type SessionAgent,
+  sessionAgentLabel,
 } from '@oppenheimer/frontend-consumer';
 import { useVoiceDictation } from '@oppenheimer/frontend-consumer/react';
 import { ChatQuestionPicker, ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatFeedbackDraftCard } from '../components/chat-feedback-draft';
+import { ChatPermissionCard } from '../components/chat-permission-card';
 import { type ChatSendResult, SessionChatComposer } from '../components/session-chat-composer';
 import type { HeldFile } from '../hooks/use-held-files';
+import { usePermissionAnswer } from '../hooks/use-permission-answer';
 import { useChatState } from '../hooks/use-session-chat';
 import {
   chatVocabulary,
@@ -49,6 +53,14 @@ const FILES_SETTLE_MS = 1500;
  * message: `ChatQuestionPicker` takes the composer's place, and the
  * composer stays mounted under it, keeping a half-written draft and its
  * files for when the agent goes on.
+ *
+ * While it waits on a permission (`pendingPermission`: the dialog on the
+ * terminal, and the call with no result it asks about), `ChatPermissionCard`
+ * takes the composer's place the same way. Once answered it stays, its pick
+ * filled, until the transcript gives that call its result or a moment after
+ * the dialog left the terminal (`usePermissionAnswer`); a dialog
+ * the console does not read leaves the composer and the status line as they
+ * were.
  */
 export function SessionChatSend({
   chat,
@@ -82,6 +94,10 @@ export function SessionChatSend({
   const [failure, setFailure] = useState<Error | null>(null);
   const last = state.turns.at(-1);
   const question = pendingQuestion(last);
+  const live = question || !agent ? null : pendingPermission(last, state.permission);
+  const answer = usePermissionAnswer(last, live);
+  const permission = question || !agent ? null : answer.permission;
+  const blocked = question !== null || permission !== null;
 
   function deliver(text: string, withFiles: boolean): ChatSendResult {
     // Words alone wait their turn while the agent works; with files, they
@@ -139,7 +155,23 @@ export function SessionChatSend({
           onDismiss={() => chat.interrupt()}
         />
       ) : null}
-      <div hidden={question !== null} className={question ? undefined : 'contents'}>
+      {permission && agent ? (
+        <ChatPermissionCard
+          key={`${permission.prompt.id}:${permission.call?.id ?? ''}`}
+          pending={permission}
+          agentName={sessionAgentLabel(agent)}
+          picked={answer.picked}
+          onAnswer={(option, note) => {
+            const went = chat.answerPermission(permission.prompt, option, note);
+            if (went) {
+              answer.took(permission, option);
+              onSent();
+            }
+            return went;
+          }}
+        />
+      ) : null}
+      <div hidden={blocked} className={blocked ? undefined : 'contents'}>
         <SessionChatComposer
           agent={agent}
           // Stop only where the chat's source can stop a turn (a cloud

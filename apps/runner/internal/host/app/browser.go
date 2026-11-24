@@ -58,7 +58,7 @@ func (s *Service) Browser(ctx context.Context, req domain.BrowserRequest) (domai
 			s.browsers.CloseAll()
 		}
 		return domain.BrowserPage{}, domain.ErrBrowserOff.WithDetail(
-			"the person on this host can turn it on with `runner browser on`")
+			"turn it on with `runner browser on` here, or ask a bot to turn it on")
 	}
 	if s.browsers == nil {
 		return domain.BrowserPage{}, domain.ErrBrowserMissing.WithDetail("the runner starts no browser on this platform")
