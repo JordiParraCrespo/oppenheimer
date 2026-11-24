@@ -101,7 +101,10 @@ higher than the last one.
    client (Web application, redirect URI
    `https://developers.google.com/oauthplayground`), and in the OAuth
    Playground authorize scope `https://www.googleapis.com/auth/chromewebstore`
-   with that client to get a refresh token.
+   with that client to get a refresh token. On the OAuth consent screen, set
+   the publishing status to **In production**: Google expires a refresh
+   token from an app left in *Testing* after seven days, and every release
+   after that fails at the token step with `invalid_grant`.
 4. In the repository's Actions settings, add the secrets
    `CWS_PUBLISHER_ID` and `CWS_EXTENSION_ID` (both in the dashboard's
    URLs and **Account** page), `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`,
