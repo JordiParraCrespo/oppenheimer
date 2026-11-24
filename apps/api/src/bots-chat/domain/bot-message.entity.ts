@@ -51,10 +51,11 @@ export const BOT_TOOL_OUTPUT_MAX = 2_000;
 
 /**
  * Media a message of yours carries that is read only when its turn starts:
- * the words the turn is asked replace the message's placeholder then
- * (`BotOpeningMediaResolver`). One reader per kind.
+ * the words the turn is asked replace the message's placeholder then, with
+ * the images it turned out to be (`BotOpeningMediaResolver`). One reader per
+ * kind: a WhatsApp voice note is heard, a WhatsApp image fetched to be seen.
  */
-export const BOT_PENDING_MEDIA_KINDS = ['whatsapp_voice_note'] as const;
+export const BOT_PENDING_MEDIA_KINDS = ['whatsapp_voice_note', 'whatsapp_image'] as const;
 export type BotPendingMediaKind = (typeof BOT_PENDING_MEDIA_KINDS)[number];
 
 export interface BotPendingMedia {
@@ -123,11 +124,13 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
 
   /**
    * What its pending media says, once its turn read it: the message's words
-   * from then on, in the chat and in every later turn's history, with
+   * from then on, in the chat and in every later turn's history, and the
+   * images it carries (a WhatsApp image, stored as the chat's own), with
    * nothing left pending.
    */
-  read(words: string): void {
+  read(words: string, images: readonly BotAttachment[] = []): void {
     this.props.content = words;
+    this.props.attachments = [...this.attachments, ...images];
     this.props.pendingMedia = null;
     this.validate();
   }

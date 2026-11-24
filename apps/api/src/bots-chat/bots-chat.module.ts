@@ -87,6 +87,7 @@ import { BotWatchToolsFactory } from './application/bot-watch-tools.factory';
 import { BotWebToolsFactory } from './application/bot-web-tools.factory';
 import { BotWhatsappAccountsResolver } from './application/bot-whatsapp-accounts.resolver';
 import { BotWhatsappGrantToolsFactory } from './application/bot-whatsapp-grant-tools.factory';
+import { BotWhatsappImageResolver } from './application/bot-whatsapp-image.resolver';
 import { BotWhatsappToolsFactory } from './application/bot-whatsapp-tools.factory';
 import { BotWhatsappVoiceNoteResolver } from './application/bot-whatsapp-voice-note.resolver';
 import { BotGithubAskDomainEventHandler } from './application/event-handlers/bot-github-ask.domain-event-handler';
@@ -458,12 +459,16 @@ const queryHandlers: Provider[] = [
     BotOpeningMediaResolver,
     BotSlackImagesResolver,
     BotWhatsappVoiceNoteResolver,
+    BotWhatsappImageResolver,
     // The readers of what a turn's opening still has to read, one per kind of
     // `BOT_PENDING_MEDIA_KINDS`. A new kind is a reader and a place here.
     {
       provide: BOT_OPENING_MEDIA_READERS,
-      inject: [BotWhatsappVoiceNoteResolver],
-      useFactory: (whatsappVoiceNotes: BotWhatsappVoiceNoteResolver) => [whatsappVoiceNotes],
+      inject: [BotWhatsappVoiceNoteResolver, BotWhatsappImageResolver],
+      useFactory: (
+        whatsappVoiceNotes: BotWhatsappVoiceNoteResolver,
+        whatsappImages: BotWhatsappImageResolver,
+      ) => [whatsappVoiceNotes, whatsappImages],
     },
     BotApprovalStartedPolicy,
     BotMessageAttachmentsResolver,

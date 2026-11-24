@@ -28,7 +28,7 @@ func (noDevice) Send(context.Context, string, string, *wadomain.Quote) (string, 
 func (noDevice) SendVoice(context.Context, string, []byte, int) (string, time.Time, error) {
 	return "", time.Time{}, nil
 }
-func (noDevice) Download(context.Context, []byte) ([]byte, string, error) {
+func (noDevice) Download(context.Context, wadomain.KeptKind, []byte, int) ([]byte, string, error) {
 	return nil, "", nil
 }
 func (noDevice) Close() {}

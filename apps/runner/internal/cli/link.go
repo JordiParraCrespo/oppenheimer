@@ -355,7 +355,7 @@ func (h *linkHandler) capabilities() []string {
 		named = append(named, link.CapabilityDesktopStream)
 	}
 	if h.whatsapp != nil {
-		named = append(named, link.CapabilityWhatsapp, link.CapabilityWhatsappVoice, link.CapabilityWhatsappVoiceSend)
+		named = append(named, link.CapabilityWhatsapp, link.CapabilityWhatsappVoice, link.CapabilityWhatsappVoiceSend, link.CapabilityWhatsappImage)
 	}
 	if h.telegram != nil {
 		named = append(named, link.CapabilityTelegram)
