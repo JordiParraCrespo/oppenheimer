@@ -114,8 +114,8 @@ export function BotDock({
           <TextInput
             value={draft}
             onChangeText={setDraft}
-            placeholder={t('bots.chat.placeholder', { name: botName })}
-            accessibilityLabel={t('bots.chat.placeholder', { name: botName })}
+            placeholder={t('bots.chat.placeholders.anything', { name: botName })}
+            accessibilityLabel={t('bots.chat.field', { name: botName })}
             multiline
             className="max-h-32 min-h-11 flex-1 rounded-[22px] bg-secondary px-4 py-3 text-[15px] text-foreground placeholder:text-ink-400"
           />

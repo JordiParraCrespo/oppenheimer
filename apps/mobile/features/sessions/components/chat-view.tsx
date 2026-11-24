@@ -1,14 +1,14 @@
 import { EmptyState } from '@oppenheimer/design-system-mobile/empty-state';
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import type { SessionChat } from '@oppenheimer/frontend-consumer';
-import { useRef } from 'react';
+import { useStickToBottom } from '@oppenheimer/frontend-mobile';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { useChatState } from '../hooks/use-chat-state';
 import { ChatTurn } from './chat-turn';
 
 /**
  * The session as a conversation: the turns the host reads off the agent's
- * transcript, following the newest. The chat arrives over the same stream as
+ * transcript, following the newest while the reader is at the foot. The chat arrives over the same stream as
  * the terminal; until the host sends a first batch it says it is loading.
  */
 export function ChatView({
@@ -29,7 +29,7 @@ export function ChatView({
   };
 }) {
   const state = useChatState(chat);
-  const scroller = useRef<ScrollView>(null);
+  const stick = useStickToBottom();
 
   if (!state.available || state.loading) {
     return (
@@ -55,11 +55,10 @@ export function ChatView({
 
   return (
     <ScrollView
-      ref={scroller}
+      {...stick}
       className="flex-1"
       contentContainerClassName="gap-6 px-4 pt-4"
       contentContainerStyle={{ paddingBottom: bottomInset + 16 }}
-      onContentSizeChange={() => scroller.current?.scrollToEnd({ animated: false })}
     >
       {state.turns.map((turn) => (
         <ChatTurn key={turn.id} turn={turn} labels={labels} />

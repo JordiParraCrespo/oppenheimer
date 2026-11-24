@@ -32,6 +32,7 @@ import {
   needsInput,
   SESSION_FILTERS,
   type SessionFilter,
+  sessionsListState,
 } from '../lib/session-filters';
 
 const SEARCH_SETTLE_MS = 150;
@@ -46,7 +47,7 @@ const AGE_TICK_MS = 60_000;
 export function SessionsList() {
   const { t } = useTranslation();
   const sessions = useSessions();
-  const { data: projects } = useProjects();
+  const projects = useProjects();
   const { data: hosts } = useHosts();
   const [typed, setTyped] = useState('');
   const query = useDebouncedValue(typed, SEARCH_SETTLE_MS);
@@ -72,7 +73,9 @@ export function SessionsList() {
     </View>
   );
 
-  if (sessions.isPending) {
+  const state = sessionsListState([sessions, projects]);
+
+  if (state === 'pending') {
     return (
       <View aria-busy>
         {search}
@@ -85,9 +88,7 @@ export function SessionsList() {
     );
   }
 
-  // A first read that failed has nothing to draw; a later one keeps the list
-  // on screen, since the next poll can bring it back.
-  if (sessions.isError && !sessions.data) {
+  if (state === 'failed' || !sessions.data || !projects.data) {
     return (
       <View>
         {search}
@@ -95,7 +96,13 @@ export function SessionsList() {
           <Text variant="body" tone="destructive">
             {t('sessions.sidebar.loadFailed')}
           </Text>
-          <Button variant="outline" onPress={() => sessions.refetch()}>
+          <Button
+            variant="outline"
+            onPress={() => {
+              if (sessions.isError) void sessions.refetch();
+              if (projects.isError) void projects.refetch();
+            }}
+          >
             <Text>{t('common.retry')}</Text>
           </Button>
         </View>
@@ -104,16 +111,17 @@ export function SessionsList() {
   }
 
   const all = sessions.data;
+  const groupedBy = projects.data;
   const counts = filterCounts(all);
   const shown = all.filter((s) => matchesFilter(s, filter) && matchesQuery(s, query));
   const waiting = shown.filter(needsInput);
   const groups = groupByProject(
-    projects ?? [],
+    groupedBy,
     shown.filter((s) => !needsInput(s)),
   ).filter((group) => group.sessions.length > 0);
 
   const projectName = (id: string) =>
-    projects?.find((project) => project.id === id)?.name ?? t('sessions.sidebar.unfiled');
+    groupedBy.find((project) => project.id === id)?.name ?? t('sessions.sidebar.unfiled');
   const placeOf = (session: SessionEntity) =>
     session.cloud
       ? cloudProviderLabel(session.cloud.provider)
