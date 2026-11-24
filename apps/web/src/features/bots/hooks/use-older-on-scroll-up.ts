@@ -78,7 +78,9 @@ export function useOlderOnScrollUp(botId: string, hasOlder: boolean, firstId: st
     const box = pane?.scroller.current ?? null;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (!entries.some((entry) => entry.isIntersecting)) return;
+        // A page already out keeps its line: asking again would start a load
+        // that returns at once, and end the one the line is kept for.
+        if (!entries.some((entry) => entry.isIntersecting) || reading.current) return;
         if (box) reading.current = lineInView(box, sentinel.nextElementSibling);
         loadOlder();
       },
