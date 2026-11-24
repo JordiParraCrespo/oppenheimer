@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/whatsapp/app"
@@ -29,43 +30,52 @@ const (
 	imageTable = "opp_whatsapp_image"
 )
 
-// kept is one kind of fetchable media over a table of the store's file.
+// kept is one kind of fetchable media over a table of the store's file. Its
+// statements are written once, for its own table, so no query is put
+// together where it runs.
 type kept struct {
-	db    *sql.DB
-	table string
-	now   func() time.Time
+	db  *sql.DB
+	now func() time.Time
+	sql keptStatements
+}
+
+type keptStatements struct {
+	insert, expire, trim, find, clear string
 }
 
 func newKept(ctx context.Context, db *sql.DB, table string) (kept, error) {
 	if _, err := db.ExecContext(ctx, fmt.Sprintf(keptSchema, table)); err != nil {
 		return kept{}, fmt.Errorf("whatsapp %s: %w", table, err)
 	}
-	return kept{db: db, table: table, now: time.Now}, nil
+	named := strings.NewReplacer("{table}", table).Replace
+	return kept{db: db, now: time.Now, sql: keptStatements{
+		insert: named(`INSERT OR IGNORE INTO {table} (key, ref, seconds, size, created_at) VALUES (?, ?, ?, ?, ?)`),
+		expire: named(`DELETE FROM {table} WHERE created_at < ?`),
+		trim:   named(`DELETE FROM {table} WHERE key IN (SELECT key FROM {table} ORDER BY created_at DESC LIMIT -1 OFFSET ?)`),
+		find:   named(`SELECT ref, seconds, size FROM {table} WHERE key = ? AND created_at >= ?`),
+		clear:  named(`DELETE FROM {table}`),
+	}}, nil
 }
 
 // keep keeps a ref once per chat and id, then forgets those past
 // domain.VoiceNoteKept and the oldest beyond domain.VoiceNotesKeptMax.
 func (k *kept) keep(ctx context.Context, chatID, id string, ref []byte, seconds int, size uint64) error {
 	now := k.now()
-	if _, err := k.db.ExecContext(ctx,
-		`INSERT OR IGNORE INTO `+k.table+` (key, ref, seconds, size, created_at) VALUES (?, ?, ?, ?, ?)`, //nolint:gosec // the table is one of two constants
+	if _, err := k.db.ExecContext(ctx, k.sql.insert,
 		domain.KeyOf(chatID, id), ref, seconds, int64(size), now.UnixMilli()); err != nil { //nolint:gosec // a WhatsApp file length, far below int64's range
 		return err
 	}
-	if _, err := k.db.ExecContext(ctx, `DELETE FROM `+k.table+` WHERE created_at < ?`, //nolint:gosec // the table is one of two constants
-		now.Add(-domain.VoiceNoteKept).UnixMilli()); err != nil {
+	if _, err := k.db.ExecContext(ctx, k.sql.expire, now.Add(-domain.VoiceNoteKept).UnixMilli()); err != nil {
 		return err
 	}
-	_, err := k.db.ExecContext(ctx, `DELETE FROM `+k.table+` WHERE key IN (
-		SELECT key FROM `+k.table+` ORDER BY created_at DESC LIMIT -1 OFFSET ?)`, domain.VoiceNotesKeptMax) //nolint:gosec // the table is one of two constants
+	_, err := k.db.ExecContext(ctx, k.sql.trim, domain.VoiceNotesKeptMax)
 	return err
 }
 
 // find is the ref under chat and id, unless it is past domain.VoiceNoteKept.
 func (k *kept) find(ctx context.Context, chatID, id string) (ref []byte, seconds int, size uint64, ok bool, err error) {
 	var stored int64
-	err = k.db.QueryRowContext(ctx,
-		`SELECT ref, seconds, size FROM `+k.table+` WHERE key = ? AND created_at >= ?`, //nolint:gosec // the table is one of two constants
+	err = k.db.QueryRowContext(ctx, k.sql.find,
 		domain.KeyOf(chatID, id), k.now().Add(-domain.VoiceNoteKept).UnixMilli(),
 	).Scan(&ref, &seconds, &stored)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -78,7 +88,7 @@ func (k *kept) find(ctx context.Context, chatID, id string) (ref []byte, seconds
 }
 
 func (k *kept) clear(ctx context.Context) error {
-	_, err := k.db.ExecContext(ctx, `DELETE FROM `+k.table) //nolint:gosec // the table is one of two constants
+	_, err := k.db.ExecContext(ctx, k.sql.clear)
 	return err
 }
 
