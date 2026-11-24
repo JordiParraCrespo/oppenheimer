@@ -1,5 +1,6 @@
 import { PillTab, PillTabs, SettingsTitle } from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
+import type { ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotGatewaysSkeleton } from '@/features/bots/components/bot-gateways-skeleton';
 import { BotSlackSkeleton } from '@/features/bots/components/bot-slack-skeleton';
@@ -18,6 +19,7 @@ import { BotWhatsappGateways } from '@/features/bots/sections/bot-whatsapp-gatew
 export function BotGatewaysScreen({ botId }: { botId: string }) {
   const { t } = useTranslation();
   const { tab, setTab } = useBotGatewaysTab();
+  const Panel = GATEWAY_PANELS[tab];
 
   return (
     <>
@@ -39,44 +41,67 @@ export function BotGatewaysScreen({ botId }: { botId: string }) {
           ))}
         </PillTabs>
         <div className="flex flex-col gap-6">
-          {tab === 'whatsapp' ? (
-            <QueryState key="whatsapp">
-              <QueryState.Pending>
-                <BotGatewaysSkeleton />
-              </QueryState.Pending>
-              <QueryState.Error fallback={t('bots.settings.gateways.whatsappFailed')} />
-              <QueryState.Data>
-                <BotWhatsappGateways botId={botId} />
-              </QueryState.Data>
-            </QueryState>
-          ) : null}
-          {tab === 'telegram' ? (
-            <QueryState key="telegram">
-              <QueryState.Pending>
-                <BotGatewaysSkeleton />
-              </QueryState.Pending>
-              <QueryState.Error fallback={t('bots.settings.gateways.telegramFailed')} />
-              <QueryState.Data>
-                <BotTelegramGateways botId={botId} />
-              </QueryState.Data>
-            </QueryState>
-          ) : null}
-          {tab === 'slack' ? (
-            <section data-testid="bot-slack-gateway" className="flex flex-col gap-3">
-              <p className="m-0 px-1 text-sm text-fg-muted">{t('bots.settings.slack.subtitle')}</p>
-              <QueryState key="slack">
-                <QueryState.Pending>
-                  <BotSlackSkeleton />
-                </QueryState.Pending>
-                <QueryState.Error fallback={t('bots.settings.slack.loadFailed')} />
-                <QueryState.Data>
-                  <BotSlack botId={botId} />
-                </QueryState.Data>
-              </QueryState>
-            </section>
-          ) : null}
+          <Panel key={tab} botId={botId} />
         </div>
       </div>
     </>
   );
 }
+
+/** Each WhatsApp number this bot can answer on, with the chats it answers there. */
+function WhatsappPanel({ botId }: { botId: string }) {
+  const { t } = useTranslation();
+  return (
+    <QueryState>
+      <QueryState.Pending>
+        <BotGatewaysSkeleton />
+      </QueryState.Pending>
+      <QueryState.Error fallback={t('bots.settings.gateways.whatsappFailed')} />
+      <QueryState.Data>
+        <BotWhatsappGateways botId={botId} />
+      </QueryState.Data>
+    </QueryState>
+  );
+}
+
+/** The Telegram bots this bot answers on. */
+function TelegramPanel({ botId }: { botId: string }) {
+  const { t } = useTranslation();
+  return (
+    <QueryState>
+      <QueryState.Pending>
+        <BotGatewaysSkeleton />
+      </QueryState.Pending>
+      <QueryState.Error fallback={t('bots.settings.gateways.telegramFailed')} />
+      <QueryState.Data>
+        <BotTelegramGateways botId={botId} />
+      </QueryState.Data>
+    </QueryState>
+  );
+}
+
+/** The bot's own Slack app: what it does, then its setup or its connection. */
+function SlackPanel({ botId }: { botId: string }) {
+  const { t } = useTranslation();
+  return (
+    <section data-testid="bot-slack-gateway" className="flex flex-col gap-3">
+      <p className="m-0 px-1 text-sm text-fg-muted">{t('bots.settings.slack.subtitle')}</p>
+      <QueryState>
+        <QueryState.Pending>
+          <BotSlackSkeleton />
+        </QueryState.Pending>
+        <QueryState.Error fallback={t('bots.settings.slack.loadFailed')} />
+        <QueryState.Data>
+          <BotSlack botId={botId} />
+        </QueryState.Data>
+      </QueryState>
+    </section>
+  );
+}
+
+/** One panel per tab; a new gateway is a tab id, a panel and a line here. */
+const GATEWAY_PANELS: Record<BotGatewayTab, ComponentType<{ botId: string }>> = {
+  whatsapp: WhatsappPanel,
+  telegram: TelegramPanel,
+  slack: SlackPanel,
+};
