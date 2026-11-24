@@ -61,20 +61,20 @@ export class BotBrowserToolsFactory implements BotToolArea {
       name: 'use_browser',
       scope: 'sessions:write',
       asks: true,
-      description: promptText('tools/browser.use-browser'),
+      description: promptText('browser/tools.use-browser'),
       input: z.object({
-        action: z.enum(BROWSER_ACTIONS).describe(promptText('tools/browser.use-browser-action')),
+        action: z.enum(BROWSER_ACTIONS).describe(promptText('browser/tools.use-browser-action')),
         url: z
           .string()
           .min(1)
           .max(BROWSER_URL_MAX)
           .optional()
-          .describe(promptText('tools/browser.use-browser-url')),
+          .describe(promptText('browser/tools.use-browser-url')),
         ref: z
           .string()
           .regex(BROWSER_REF_PATTERN)
           .optional()
-          .describe(promptText('tools/browser.use-browser-ref')),
+          .describe(promptText('browser/tools.use-browser-ref')),
         x: z.number().int().min(0).max(BROWSER_VIEWPORT_WIDTH).optional(),
         y: z.number().int().min(0).max(BROWSER_VIEWPORT_HEIGHT).optional(),
         scroll_y: z
@@ -83,19 +83,19 @@ export class BotBrowserToolsFactory implements BotToolArea {
           .min(-COMPUTER_SCROLL_MAX)
           .max(COMPUTER_SCROLL_MAX)
           .optional()
-          .describe(promptText('tools/browser.use-browser-scroll-y')),
+          .describe(promptText('browser/tools.use-browser-scroll-y')),
         text: z
           .string()
           .min(1)
           .max(COMPUTER_TEXT_MAX)
           .optional()
-          .describe(promptText('tools/browser.use-browser-text')),
+          .describe(promptText('browser/tools.use-browser-text')),
         keys: z
           .array(z.string().regex(COMPUTER_KEY_PATTERN))
           .min(1)
           .max(COMPUTER_KEYS_MAX)
           .optional()
-          .describe(promptText('tools/browser.use-browser-keys')),
+          .describe(promptText('browser/tools.use-browser-keys')),
         seconds: z
           .number()
           .int()
@@ -103,11 +103,11 @@ export class BotBrowserToolsFactory implements BotToolArea {
           .max(COMPUTER_WAIT_MAX_SECONDS)
           .optional()
           .describe(
-            promptText('tools/browser.use-browser-seconds', {
+            promptText('browser/tools.use-browser-seconds', {
               maxSeconds: String(COMPUTER_WAIT_MAX_SECONDS),
             }),
           ),
-        host_id: z.uuid().optional().describe(promptText('tools/browser.use-browser-host-id')),
+        host_id: z.uuid().optional().describe(promptText('browser/tools.use-browser-host-id')),
       }),
       normalize: async (input, context) => {
         this.refuseUnusable(input, context, true);
@@ -158,7 +158,7 @@ export class BotBrowserToolsFactory implements BotToolArea {
     const problem = browserCallProblem(input);
     if (problem) throw new BotToolRefusal(problem);
     if (inTurn && input.action === 'screenshot' && !context.seesImages) {
-      throw new BotToolRefusal(promptText('tools/browser.no-eyes'));
+      throw new BotToolRefusal(promptText('browser/tools.no-eyes'));
     }
   }
 }

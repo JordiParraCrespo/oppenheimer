@@ -138,7 +138,7 @@ export function checkBackTurn(
     botId: props.botId,
     turnId: turn.id,
     role: 'event',
-    content: promptText('wake/check-back.opening', {
+    content: promptText('core/wake-check-back.opening', {
       look: String(look.step + 1),
       startedAt: formatToolTime(look.chainStartedAt, props.timeZone ?? 'UTC'),
       about: look.about,
@@ -152,5 +152,5 @@ export function checkBackTurn(
 
 /** What a look's turn is asked: the look as Oppenheimer's note, then what to do about it. */
 export function checkBackPrompt(content: string): string {
-  return `${eventNote(content)}\n\n${promptText('wake/check-back.ask')}`;
+  return `${eventNote(content)}\n\n${promptText('core/wake-check-back.ask')}`;
 }

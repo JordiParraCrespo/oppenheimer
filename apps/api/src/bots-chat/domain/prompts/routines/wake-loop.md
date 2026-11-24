@@ -1,4 +1,4 @@
-<!-- A loop (`/loop`): what each run tells the bot, the rules every run carries (the first, which the person's /loop opens, included: its first line is `turn/slash-command.md`), and how a loop ended, as a line outside any turn that the person sees and the bot reads in its history. -->
+<!-- A loop (`/loop`): what each run tells the bot, the rules every run carries (the first, which the person's /loop opens, included: its first line is `core/turn-slash-command.md`), and how a loop ended, as a line outside any turn that the person sees and the bot reads in its history. -->
 
 <!-- fragment: run -->
 <!-- {{shown}} counts the setting turn as run 1. -->

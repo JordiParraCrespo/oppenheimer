@@ -45,22 +45,28 @@ import {
 
 /** The three ids every pull request tool takes, as list_pull_requests gives them. */
 const address = {
-  installation_id: z.uuid().describe(promptText('tools/pull-request.address-installation-id')),
+  installation_id: z
+    .uuid()
+    .describe(promptText('github/tools-pull-request.address-installation-id')),
   github_repo_id: z
     .number()
     .int()
     .positive()
-    .describe(promptText('tools/pull-request.address-github-repo-id')),
+    .describe(promptText('github/tools-pull-request.address-github-repo-id')),
   number: z.number().int().positive().describe('The pull request number.'),
 };
 
 const lineComment = z.object({
-  path: z.string().min(1).max(4096).describe(promptText('tools/pull-request.line-comment-path')),
+  path: z
+    .string()
+    .min(1)
+    .max(4096)
+    .describe(promptText('github/tools-pull-request.line-comment-path')),
   line: z.number().int().positive().describe('The line in the diff.'),
   side: z
     .enum(['LEFT', 'RIGHT'])
     .default('RIGHT')
-    .describe(promptText('tools/pull-request.line-comment-side')),
+    .describe(promptText('github/tools-pull-request.line-comment-side')),
   body: z.string().trim().min(1).max(REVIEW_COMMENT_MAX),
 });
 
@@ -73,30 +79,34 @@ const ciFinding = z.object({
     .trim()
     .min(1)
     .max(CI_FINDING_CHECK_MAX)
-    .describe(promptText('tools/pull-request.ci-finding-check')),
+    .describe(promptText('github/tools-pull-request.ci-finding-check')),
   root_cause: z
     .string()
     .trim()
     .min(1)
     .max(CI_FINDING_ROOT_CAUSE_MAX)
-    .describe(promptText('tools/pull-request.ci-finding-root-cause')),
+    .describe(promptText('github/tools-pull-request.ci-finding-root-cause')),
   relation: z
     .enum(CI_FINDING_RELATIONS)
-    .describe(promptText('tools/pull-request.ci-finding-relation')),
-  flake: z.enum(CI_FINDING_FLAKE).describe(promptText('tools/pull-request.ci-finding-flake')),
-  action: z.enum(CI_FINDING_ACTIONS).describe(promptText('tools/pull-request.ci-finding-action')),
+    .describe(promptText('github/tools-pull-request.ci-finding-relation')),
+  flake: z
+    .enum(CI_FINDING_FLAKE)
+    .describe(promptText('github/tools-pull-request.ci-finding-flake')),
+  action: z
+    .enum(CI_FINDING_ACTIONS)
+    .describe(promptText('github/tools-pull-request.ci-finding-action')),
   next: z
     .string()
     .trim()
     .min(1)
     .max(CI_FINDING_NEXT_MAX)
-    .describe(promptText('tools/pull-request.ci-finding-next')),
+    .describe(promptText('github/tools-pull-request.ci-finding-next')),
   confidence: z.enum(CI_FINDING_CONFIDENCE),
   evidence: z
     .array(z.string().trim().min(1).max(CI_FINDING_EVIDENCE_ITEM_MAX))
     .min(1)
     .max(CI_FINDING_EVIDENCE_MAX)
-    .describe(promptText('tools/pull-request.ci-finding-evidence')),
+    .describe(promptText('github/tools-pull-request.ci-finding-evidence')),
 });
 
 /**
@@ -147,7 +157,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'record_ci_findings',
       scope: 'pulls:write',
-      description: promptText('tools/pull-request.record-ci-findings', {
+      description: promptText('github/tools-pull-request.record-ci-findings', {
         ciFindingsPerRecordMax: String(CI_FINDINGS_PER_RECORD_MAX),
       }),
       input: z.strictObject({
@@ -164,7 +174,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
           }),
         );
         const checks = input.findings.map((finding) => finding.check).join(', ');
-        return promptText('tools/pull-request.record-ci-findings-done', {
+        return promptText('github/tools-pull-request.record-ci-findings-done', {
           findingsCount: String(input.findings.length),
           suffix: input.findings.length === 1 ? '' : 's',
           number: String(input.number),
@@ -183,7 +193,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       asks: true,
       sharesOutside: true,
       subject: (input, context) => this.repositorySubject(context, input),
-      description: promptText('tools/pull-request.comment-on-pull-request'),
+      description: promptText('github/tools-pull-request.comment-on-pull-request'),
       input: z
         .object({
           ...address,
@@ -198,23 +208,23 @@ export class BotPullRequestToolsFactory implements BotToolArea {
             .min(1)
             .max(4096)
             .optional()
-            .describe(promptText('tools/pull-request.comment-on-pull-request-path')),
+            .describe(promptText('github/tools-pull-request.comment-on-pull-request-path')),
           line: z
             .number()
             .int()
             .positive()
             .optional()
-            .describe(promptText('tools/pull-request.comment-on-pull-request-line')),
+            .describe(promptText('github/tools-pull-request.comment-on-pull-request-line')),
           side: z
             .enum(['LEFT', 'RIGHT'])
             .default('RIGHT')
-            .describe(promptText('tools/pull-request.comment-on-pull-request-side')),
+            .describe(promptText('github/tools-pull-request.comment-on-pull-request-side')),
         })
         // In the schema, so a half line comment is refused in either mode and
         // never posted on the conversation instead.
         .refine((value) => (value.path === undefined) === (value.line === undefined), {
           path: ['line'],
-          message: promptText('tools/pull-request.comment-on-pull-request-message'),
+          message: promptText('github/tools-pull-request.comment-on-pull-request-message'),
         }),
       summarize: async (input, context) => {
         const where = input.path ? ` on ${input.path}:${input.line}` : '';
@@ -230,7 +240,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
               comment: { path: input.path, line: input.line, side: input.side, body: input.body },
             }),
           );
-          return promptText('tools/pull-request.comment-on-line-done', {
+          return promptText('github/tools-pull-request.comment-on-line-done', {
             path: input.path,
             line: String(input.line),
             number: String(input.number),
@@ -246,7 +256,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
             body: input.body,
           }),
         );
-        return promptText('tools/pull-request.comment-done', {
+        return promptText('github/tools-pull-request.comment-done', {
           number: String(input.number),
           htmlUrl: posted.htmlUrl,
         });
@@ -262,13 +272,13 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       asks: true,
       sharesOutside: true,
       subject: (input, context) => this.repositorySubject(context, input),
-      description: promptText('tools/pull-request.review-pull-request'),
+      description: promptText('github/tools-pull-request.review-pull-request'),
       input: z
         .object({
           ...address,
           verdict: z
             .enum(['approve', 'request_changes', 'comment'])
-            .describe(promptText('tools/pull-request.review-pull-request-verdict')),
+            .describe(promptText('github/tools-pull-request.review-pull-request-verdict')),
           body: z.string().trim().max(REVIEW_COMMENT_MAX).optional().describe('The summary.'),
           comments: z.array(lineComment).max(50).default([]),
         })
@@ -277,7 +287,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
             value.verdict === 'approve' || Boolean(value.body) || value.comments.length > 0,
           {
             path: ['body'],
-            message: promptText('tools/pull-request.review-pull-request-message'),
+            message: promptText('github/tools-pull-request.review-pull-request-message'),
           },
         ),
       summarize: async (input, context) => {
@@ -298,7 +308,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
             review: { verdict: input.verdict, body: input.body, comments: input.comments },
           }),
         );
-        return promptText('tools/pull-request.review-submitted', {
+        return promptText('github/tools-pull-request.review-submitted', {
           verdict: input.verdict,
           number: String(input.number),
         });
@@ -313,25 +323,25 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       asks: true,
       // Every merge is its own decision: no Allow, no standing grant.
       perCallOnly: true,
-      description: promptText('tools/pull-request.merge-pull-request'),
+      description: promptText('github/tools-pull-request.merge-pull-request'),
       input: z.object({
         ...address,
         method: z
           .enum(MERGE_METHODS)
           .default('squash')
-          .describe(promptText('tools/pull-request.merge-pull-request-method')),
+          .describe(promptText('github/tools-pull-request.merge-pull-request-method')),
         head_sha: z
           .string()
           .regex(/^[0-9a-f]{40}$/)
           .optional()
-          .describe(promptText('tools/pull-request.merge-pull-request-head-sha')),
+          .describe(promptText('github/tools-pull-request.merge-pull-request-head-sha')),
       }),
       // The card is pinned to the head it was raised on, so a yes merges what the card showed.
       normalize: async (input, context) => {
         const pull = await this.pull(context, input);
         if (pull.state !== 'open') {
           throw new BotToolRefusal(
-            promptText('tools/pull-request.merge-nothing-to-merge', {
+            promptText('github/tools-pull-request.merge-nothing-to-merge', {
               number: String(input.number),
               state: pull.state,
             }),
@@ -339,7 +349,7 @@ export class BotPullRequestToolsFactory implements BotToolArea {
         }
         if (input.head_sha && pull.headSha !== input.head_sha) {
           throw new BotToolRefusal(
-            promptText('tools/pull-request.merge-new-commits', {
+            promptText('github/tools-pull-request.merge-new-commits', {
               number: String(input.number),
               headSha: pull.headSha.slice(0, 7),
             }),
@@ -370,22 +380,24 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       name: 'start_review_session',
       scope: 'sessions:write',
       asks: true,
-      description: promptText('tools/pull-request.start-review-session'),
+      description: promptText('github/tools-pull-request.start-review-session'),
       input: z.object({
         ...address,
         host_id: z
           .uuid()
           .optional()
-          .describe(promptText('tools/pull-request.start-review-session-host-id')),
+          .describe(promptText('github/tools-pull-request.start-review-session-host-id')),
         watch: z
           .boolean()
           .optional()
-          .describe(promptText('tools/pull-request.start-review-session-watch')),
+          .describe(promptText('github/tools-pull-request.start-review-session-watch')),
       }),
       normalize: (input, context) => {
         const hostId = input.host_id ?? context.homeHostId;
         if (!hostId) {
-          throw new BotToolRefusal(promptText('tools/pull-request.start-review-session-normalize'));
+          throw new BotToolRefusal(
+            promptText('github/tools-pull-request.start-review-session-normalize'),
+          );
         }
         return { ...input, host_id: hostId };
       },
@@ -396,7 +408,9 @@ export class BotPullRequestToolsFactory implements BotToolArea {
       run: async (input, context) => {
         const hostId = input.host_id ?? context.homeHostId;
         if (!hostId) {
-          throw new BotToolRefusal(promptText('tools/pull-request.start-review-session-normalize'));
+          throw new BotToolRefusal(
+            promptText('github/tools-pull-request.start-review-session-normalize'),
+          );
         }
         const result = await this.commandBus.execute<
           StartReviewSessionCommand,
@@ -411,14 +425,14 @@ export class BotPullRequestToolsFactory implements BotToolArea {
           }),
         );
         const offline = result.hints.includes('host_offline')
-          ? ` ${promptText('tools/pull-request.review-session-host-offline')}`
+          ? ` ${promptText('github/tools-pull-request.review-session-host-offline')}`
           : '';
         const watched =
           input.watch === false
-            ? promptText('tools/pull-request.review-session-not-watched')
+            ? promptText('github/tools-pull-request.review-session-not-watched')
             : await this.watches.follow(context, result.sessionId, 'first_task');
         return {
-          content: promptText('tools/pull-request.start-review-session-content', {
+          content: promptText('github/tools-pull-request.start-review-session-content', {
             sessionId: result.sessionId,
             number: String(input.number),
             hostId,

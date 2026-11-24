@@ -64,7 +64,7 @@ export class BotCheckBackToolsFactory implements BotToolArea {
       // exists would hand its look what it was denied: a GitHub ask's look could
       // comment again in the owner's name, and a goal's could renew the goal.
       notOn: ['github', 'goal'],
-      description: promptText('tools/check-back.check-back', {
+      description: promptText('core/tools-check-back.check-back', {
         backoff: checkBackBackoffText(),
         maxGapMinutes: String(BOT_CHECK_BACK_MAX_GAP_MINUTES),
         horizonHours: HORIZON_HOURS,
@@ -75,26 +75,26 @@ export class BotCheckBackToolsFactory implements BotToolArea {
           .trim()
           .min(1)
           .max(BOT_CHECK_BACK_ABOUT_MAX)
-          .describe(promptText('tools/check-back.check-back-about')),
+          .describe(promptText('core/tools-check-back.check-back-about')),
         minutes: z
           .number()
           .int()
           .min(BOT_CHECK_BACK_MINUTES.min)
           .max(BOT_CHECK_BACK_MINUTES.max)
           .optional()
-          .describe(promptText('tools/check-back.check-back-minutes')),
+          .describe(promptText('core/tools-check-back.check-back-minutes')),
       }),
       run: async (input, context) => {
         // A look starts a turn with no bot chain, so one set on a turn another
         // bot asked would slip the chain's depth, budget and cycle limits.
         if (context.lane === 'bots') {
-          throw new BotToolRefusal(promptText('tools/check-back.check-back-not-for-bots'));
+          throw new BotToolRefusal(promptText('core/tools-check-back.check-back-not-for-bots'));
         }
         const now = new Date();
         const plan = planCheckBack(input, await this.chainOf(context), context.turnId, now);
         if (plan.kind === 'past_horizon') {
           throw new BotToolRefusal(
-            promptText('tools/check-back.check-back-past-horizon', {
+            promptText('core/tools-check-back.check-back-past-horizon', {
               startedAt: formatToolTime(plan.chainStartedAt, context.timeZone),
               at: formatToolTime(plan.at, context.timeZone),
               horizonHours: HORIZON_HOURS,
@@ -105,7 +105,7 @@ export class BotCheckBackToolsFactory implements BotToolArea {
         const at = formatToolTime(look.at, context.timeZone);
         const earlier = context.budget.once('check_back', at);
         if (earlier !== null) {
-          return promptText('tools/check-back.check-back-already-set', { at: earlier });
+          return promptText('core/tools-check-back.check-back-already-set', { at: earlier });
         }
         try {
           await this.checkBacks.schedule(BotTurnMapper.toScheduledCheckBack(look, context), null);
@@ -114,7 +114,10 @@ export class BotCheckBackToolsFactory implements BotToolArea {
           context.budget.release('check_back');
           throw error;
         }
-        return promptText('tools/check-back.check-back-set', { at, look: String(look.step + 1) });
+        return promptText('core/tools-check-back.check-back-set', {
+          at,
+          look: String(look.step + 1),
+        });
       },
     });
   }

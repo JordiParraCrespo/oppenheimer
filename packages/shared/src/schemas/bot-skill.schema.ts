@@ -93,9 +93,18 @@ export type BotBuiltInCommand = (typeof BOT_BUILT_IN_COMMANDS)[number];
  * `oppenheimer` reads Oppenheimer's own guide before the bot answers a
  * question about Oppenheimer, which the bot uses unasked and the person does
  * not run; `recap` catches the person up on their sessions, pull requests and
- * plan, which they run with `/recap` and the bot uses when asked.
+ * plan, which they run with `/recap` and the bot uses when asked. The rest
+ * are the capabilities' skills, whose words are the API's (`watch-inbox`,
+ * `use-a-computer`, `use-a-browser`): the bot reads them when the work comes
+ * up, and the names are reserved so a skill of a bot's never hides one.
  */
-export const BOT_BUILT_IN_SKILL_NAMES = ['oppenheimer', 'recap'] as const;
+export const BOT_BUILT_IN_SKILL_NAMES = [
+  'oppenheimer',
+  'recap',
+  'watch-inbox',
+  'use-a-computer',
+  'use-a-browser',
+] as const;
 export type BotBuiltInSkillName = (typeof BOT_BUILT_IN_SKILL_NAMES)[number];
 
 /**
@@ -173,7 +182,11 @@ export const BOT_RECAP_SKILL: BotBuiltInSkillText = {
   modelInvocable: true,
 };
 
-/** Every built-in skill, in the order the prompt and Settings → Skills list them. */
+/**
+ * The built-in skills whose words are here, in the order the prompt and
+ * Settings → Skills list them. The capabilities' skills (`watch-inbox`,
+ * `use-a-computer`, `use-a-browser`) are the API's and not shown there yet.
+ */
 export const BOT_BUILT_IN_SKILL_TEXTS: readonly BotBuiltInSkillText[] = [
   BOT_OPPENHEIMER_SKILL,
   BOT_RECAP_SKILL,

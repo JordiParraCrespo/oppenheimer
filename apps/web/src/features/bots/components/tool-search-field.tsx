@@ -22,10 +22,9 @@ export function ToolSearchField({
   return (
     <Input
       type="search"
-      size="sm"
       pill
       className="w-60 max-w-full"
-      leading={<Search className="size-3.5" aria-hidden />}
+      leading={<Search aria-hidden />}
       value={draft}
       onChange={(event) => type(event.target.value)}
       onKeyDown={(event) => {

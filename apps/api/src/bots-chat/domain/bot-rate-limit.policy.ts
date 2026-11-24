@@ -64,7 +64,7 @@ export function laterLimit(held: BotRateLimit | null, limit: BotRateLimit): BotR
  * instead (`rateLimitedPartwayLine`).
  */
 export function rateLimitedLine(code: string, limit: BotRateLimit, now: Date): string {
-  return promptText('tools/rate-limit.rate-limited-line', {
+  return promptText('core/tools-rate-limit.rate-limited-line', {
     code,
     system: limit.system,
     until: untilWords(limit, now),
@@ -77,7 +77,7 @@ export function rateLimitedLine(code: string, limit: BotRateLimit, now: Date): s
  * stands, the rest was not reached.
  */
 export function rateLimitedPartwayLine(limit: BotRateLimit, notReached: number, now: Date): string {
-  return promptText('tools/rate-limit.rate-limited-partway-line', {
+  return promptText('core/tools-rate-limit.rate-limited-partway-line', {
     system: limit.system,
     until: untilWords(limit, now),
     notReached: String(notReached),
@@ -92,5 +92,5 @@ function untilWords(limit: BotRateLimit, now: Date): string {
 }
 
 function waitAdvice(limit: BotRateLimit): string {
-  return promptText('tools/rate-limit.wait-advice', { system: limit.system });
+  return promptText('core/tools-rate-limit.wait-advice', { system: limit.system });
 }

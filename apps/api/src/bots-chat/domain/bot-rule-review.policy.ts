@@ -40,7 +40,7 @@ export function rulesToReview(
   return permissions.rules.some((rule) => rule.effect === changes) ? permissions.rules : [];
 }
 
-export const BOT_RULE_REVIEWER_PROMPT = promptText('jobs/rule-review.system');
+export const BOT_RULE_REVIEWER_PROMPT = promptText('core/job-rule-review.system');
 
 /** The reviewer's message: the rules, numbered from 1, then the call as data. */
 export function composeRuleReview(call: BotReviewedCall, rules: BotPermissions['rules']): string {

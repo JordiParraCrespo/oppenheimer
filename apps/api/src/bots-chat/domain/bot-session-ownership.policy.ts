@@ -8,7 +8,7 @@ import { promptText } from './bot-prompt-text.policy';
 export function botSessionRefusal(session: { id: string; origin: string }): string | null {
   if (session.origin === 'bot') return null;
   const article = /^[aeiou]/.test(session.origin) ? 'an' : 'a';
-  return promptText('tools/sessions.close-not-a-bots-session', {
+  return promptText('sessions/tools.close-not-a-bots-session', {
     id: session.id,
     article,
     origin: session.origin,
