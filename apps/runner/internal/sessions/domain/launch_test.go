@@ -192,7 +192,8 @@ func TestARestartReopensQwensConversationByIDOnceItIsSaved(t *testing.T) {
 	// Once Qwen has written the session's conversation, a restart names it:
 	// in a folder another Qwen shares, `--continue` may open the other's.
 	// Before that, `--resume <id>` would exit, and `--continue` may open the
-	// other's too, so it is created again under its id, with its task.
+	// other's too, so it is created again under its id; never with the task,
+	// which with chat recording off may have run already.
 	// Regression: a folder session restarted before its first message that
 	// continued another Qwen's conversation.
 	id := "8b4c5d6e-0000-4000-8000-000000000001"
@@ -201,7 +202,7 @@ func TestARestartReopensQwensConversationByIDOnceItIsSaved(t *testing.T) {
 		t.Fatalf("saved restart argv = %q, want %q", saved, want)
 	}
 	fresh := Launch{Permission: "ask", Conversation: id, Resume: true, Saved: NotSaved, Prompt: "fix it"}.Args(AgentQwen)
-	if want := []string{"--approval-mode", "default", "--session-id", id, "--prompt-interactive=fix it"}; !reflect.DeepEqual(fresh, want) {
+	if want := []string{"--approval-mode", "default", "--session-id", id}; !reflect.DeepEqual(fresh, want) {
 		t.Fatalf("unsaved restart argv = %q, want %q", fresh, want)
 	}
 	// Not looked for: the folder's last one, as before the runner looked.

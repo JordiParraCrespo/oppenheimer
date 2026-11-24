@@ -105,21 +105,31 @@ func (q qwenSource) file(session domain.Session) string {
 }
 
 // saved reports whether Qwen has written conversation down: its file is
-// created with its first record, not at launch. An id it could not look
-// for is SavingUnknown, which leaves the restart to `--continue`.
+// created with its first record, not at launch. NotSaved only when the
+// conversation's `<id>.runtime.json`, which Qwen writes at launch (watched,
+// 0.28.4), is here without it: that shows Qwen keeps its chats where the
+// runner looks (not under a `QWEN_RUNTIME_DIR`, or a `QWEN_HOME` only its
+// shell has). An archived one (`chats/archive/`), one never launched here,
+// or an id it could not look for is SavingUnknown, which leaves the restart
+// to `--continue`: `--session-id` would exit on an id Qwen already holds.
 func (q qwenSource) saved(conversation string) domain.Saving {
 	if !conversationPattern.MatchString(conversation) || q.projects == "" {
 		return domain.SavingUnknown
 	}
-	named, err := filepath.Glob(filepath.Join(q.projects, "*", "chats", conversation+".jsonl"))
-	switch {
-	case err != nil:
+	chats := filepath.Join(q.projects, "*", "chats")
+	written, err := filepath.Glob(filepath.Join(chats, conversation+".jsonl"))
+	if err != nil {
 		return domain.SavingUnknown
-	case len(named) > 0:
+	}
+	if len(written) > 0 {
 		return domain.Saved
-	default:
+	}
+	archived, _ := filepath.Glob(filepath.Join(chats, "archive", conversation+".jsonl"))
+	launched, _ := filepath.Glob(filepath.Join(chats, conversation+".runtime.json"))
+	if len(archived) == 0 && len(launched) > 0 {
 		return domain.NotSaved
 	}
+	return domain.SavingUnknown
 }
 
 // qwenInternal reports a conversation Qwen keeps for one of its own agents

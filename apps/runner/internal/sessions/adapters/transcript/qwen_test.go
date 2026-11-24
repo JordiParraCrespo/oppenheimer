@@ -17,6 +17,18 @@ const qwenProject = "-home-dev-src-app"
 
 // writeQwen puts a conversation file in a Qwen `projects/` folder, under
 // qwenProject, last written at.
+// writeQwenFile writes one more file into the project's chats folder.
+func writeQwenFile(t *testing.T, projects, name, body string) {
+	t.Helper()
+	path := filepath.Join(projects, qwenProject, "chats", name)
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func writeQwen(t *testing.T, projects, name, body string, at time.Time) {
 	t.Helper()
 	dir := filepath.Join(projects, qwenProject, "chats")
@@ -146,8 +158,21 @@ func TestAQwenSessionFollowsTheConversationItMovedTo(t *testing.T) {
 	if got := reader.CurrentConversation(worktree); got != conversation {
 		t.Fatalf("with nothing written, conversation = %q, want the session's own", got)
 	}
+	// Nor launched here: Qwen may keep its chats elsewhere, where
+	// `--session-id` would find the id taken.
+	if got := reader.SavedConversation(worktree); got != domain.SavingUnknown {
+		t.Fatalf("with nothing launched here, saved = %v, want SavingUnknown", got)
+	}
+	writeQwenFile(t, projects, conversation+".runtime.json", "{}")
 	if got := reader.SavedConversation(worktree); got != domain.NotSaved {
-		t.Fatalf("with nothing written, saved = %v, want NotSaved: `--resume <id>` would exit on it", got)
+		t.Fatalf("launched with nothing written, saved = %v, want NotSaved: `--resume <id>` would exit on it", got)
+	}
+	writeQwenFile(t, projects, filepath.Join("archive", conversation+".jsonl"), line)
+	if got := reader.SavedConversation(worktree); got != domain.SavingUnknown {
+		t.Fatalf("archived, saved = %v, want SavingUnknown: Qwen refuses the id it archived", got)
+	}
+	if err := os.Remove(filepath.Join(projects, qwenProject, "chats", "archive", conversation+".jsonl")); err != nil {
+		t.Fatal(err)
 	}
 	fresh := "0b7f6a3e-1111-4c2d-9e8f-000000000001"
 	writeQwen(t, projects, fresh, line, created.Add(time.Minute))

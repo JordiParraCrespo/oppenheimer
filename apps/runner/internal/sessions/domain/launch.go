@@ -40,6 +40,7 @@ type Launch struct {
 	// resume reopens it by id (conversationReopen); before, it is created
 	// again under the same id, since "the last one here" may be another's in
 	// a shared folder. The runner looks at each restart, so it is never saved.
+	// SavingUnknown, the zero value, keeps the agent's own resume.
 	Saved Saving `json:"-"`
 	// Teleport is a cloud session of the agent's own that this session
 	// continues: the agent starts with its branch and history (`claude
@@ -326,14 +327,14 @@ func (l Launch) conversation(m launchMap) conversationArgs {
 		return conversationArgs{argv: substitute(m.conversationReopen, "<conversation>", l.Conversation)}
 	// Before the agent wrote it, the by-id form finds nothing (Qwen's exits)
 	// and "the last one here" may be another's, so the conversation is
-	// created again under the session's id, with the first task: nothing was
-	// said in it, and the agent refuses an id only once it is written.
+	// created again under the session's id; the agent refuses an id only
+	// once it is written. Without the first task, as any resume: a runner
+	// that finds nothing written cannot tell that nothing was done (Qwen
+	// with its chat recording off writes nothing), and the task again would
+	// ask for the same work twice.
 	case l.Resume && m.conversationReopen != nil && l.Server == nil && l.Saved == NotSaved &&
 		l.Conversation != "" && m.conversationCreate != nil:
-		return conversationArgs{
-			argv:   substitute(m.conversationCreate, "<conversation>", l.Conversation),
-			prompt: true,
-		}
+		return conversationArgs{argv: substitute(m.conversationCreate, "<conversation>", l.Conversation)}
 	case l.Resume && m.conversationResume != nil && (l.Conversation != "" || !namesConversation(m.conversationResume)):
 		return conversationArgs{
 			argv:  substitute(m.conversationResume, "<conversation>", l.Conversation),

@@ -81,9 +81,10 @@ export const QWEN_AGENT: CodingAgentDefinition = Object.freeze({
     // something is said, and until then `--resume <id>` prints "No saved
     // session found with ID …" and exits 1 (watched), and `--continue` opens
     // the folder's newest, possibly another's, so a restart before the first
-    // message creates it again, `--session-id <id>` with the task: Qwen
-    // refuses an id only once `<id>.jsonl` exists (watched). `--continue` is
-    // left for a restart whose runner could not look.
+    // message creates it again, `--session-id <id>` without the task: Qwen
+    // refuses an id only once `<id>.jsonl` exists (watched). The runner tells
+    // "before" by the `<id>.runtime.json` Qwen writes at launch; where it
+    // cannot (an archived conversation, chats kept elsewhere), `--continue`.
     conversation: Object.freeze({
       create: Object.freeze(['--session-id', '<conversation>']),
       resume: Object.freeze(['--continue']),

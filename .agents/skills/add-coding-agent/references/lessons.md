@@ -72,8 +72,12 @@ to `SKILL.md`.
   `conversation.reopen` (`--resume <id>`) only then, since before it the
   by-id form exits. Before it, "the newest here" is still not safe (review):
   the restart creates the conversation again under the session's id
-  (`--session-id <id>` and the task), which Qwen refuses only once the file
-  exists (watched).
+  (`--session-id <id>`), which Qwen refuses only once the file exists
+  (watched). Never with the task: with chat recording off nothing is ever
+  written, and the task would run again at every restart. And "no file" is
+  not "nothing said": the runner says NotSaved only beside Qwen's own launch
+  marker (`<id>.runtime.json`), since chats kept under another directory or
+  archived would make the id taken (review).
 - **A stored user message is not what the person typed.** Qwen stores an
   `@file`'s contents, a hook's context and system reminders as parts after
   the typed text; the chat shows `systemPayload.displayText` when kept, and
