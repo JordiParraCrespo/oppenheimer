@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from './theme-provider';
 
 /**
- * The brand's two-up theme pill: a 60×30 hairline capsule whose active half
+ * The brand's two-up theme pill: a 60×28 hairline capsule (the ramp's `sm`) whose active half
  * fills with a light grey knob. The knob colour is deliberately the same in
  * both themes — it is the one chrome element that does not invert.
  */
@@ -27,7 +27,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       aria-pressed={isDark}
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       className={cn(
-        'inline-flex h-[30px] w-15 items-stretch rounded-full border border-border-default p-0.5',
+        'inline-flex h-(--control-h-sm) w-15 items-stretch rounded-full border border-border-default p-0.5',
         className,
       )}
     >

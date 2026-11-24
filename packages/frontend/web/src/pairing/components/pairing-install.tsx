@@ -1,4 +1,4 @@
-import { Button, CodeBlock, Skeleton } from '@oppenheimer/design-system-web';
+import { Button, CodeBlock, codeBlockTabVariants, Skeleton } from '@oppenheimer/design-system-web';
 import { Copy } from '@oppenheimer/design-system-web/icons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -83,14 +83,7 @@ function PairingInstructionSkeleton() {
       <div className="flex items-center justify-between gap-2.5 border-b border-border-subtle p-1.5">
         <div aria-hidden className="flex gap-0.5">
           {FORMATS.map((option) => (
-            <span
-              key={option}
-              className={
-                option === 'command'
-                  ? 'rounded-pill bg-card px-2.5 py-1 text-xs leading-tight text-fg'
-                  : 'rounded-pill px-2.5 py-1 text-xs leading-tight text-fg-muted'
-              }
-            >
+            <span key={option} className={codeBlockTabVariants({ selected: option === 'command' })}>
               {t(`hosts.pairing.${option}` as const)}
             </span>
           ))}

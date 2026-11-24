@@ -76,7 +76,7 @@ export function InboxFilterMenu({
       <DropdownMenuTrigger
         render={
           <IconButton
-            size="xs"
+            size="sm"
             variant="quiet"
             aria-label={t('inbox.filter.label')}
             data-dirty={dirty || undefined}

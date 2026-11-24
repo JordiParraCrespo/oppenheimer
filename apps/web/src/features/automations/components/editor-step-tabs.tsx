@@ -42,7 +42,7 @@ export function EditorStepTabs({
             disabled={!reachable || !onStepChange}
             onClick={() => onStepChange?.(candidate)}
             className={cn(
-              'flex h-7.5 flex-1 items-center justify-center gap-1.75 rounded-pill px-3 text-sm transition-colors duration-fast disabled:cursor-default',
+              'flex h-(--control-h-sm) flex-1 items-center justify-center gap-1.75 rounded-pill px-3 text-sm transition-colors duration-fast disabled:cursor-default',
               on ? 'bg-popover text-fg' : 'text-fg-muted enabled:hover:text-fg',
             )}
           >

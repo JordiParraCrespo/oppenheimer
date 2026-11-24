@@ -216,7 +216,7 @@ export {
   ChipSelectTrigger,
 } from './components/chip-select';
 export type { CodeBlockTab } from './components/code-block';
-export { CodeBlock } from './components/code-block';
+export { CodeBlock, codeBlockTabVariants } from './components/code-block';
 export {
   Command,
   CommandDialog,

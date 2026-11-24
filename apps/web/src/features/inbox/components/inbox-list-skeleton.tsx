@@ -20,7 +20,7 @@ export function InboxListSkeleton() {
     <div aria-busy className="flex min-h-0 flex-1 flex-col">
       <LoadingStatus />
       <InboxListHead title={t('inbox.title')}>
-        <IconButton size="xs" variant="quiet" aria-label={t('inbox.filter.label')} disabled>
+        <IconButton size="sm" variant="quiet" aria-label={t('inbox.filter.label')} disabled>
           <SlidersVertical />
         </IconButton>
       </InboxListHead>
