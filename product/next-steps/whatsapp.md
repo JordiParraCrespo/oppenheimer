@@ -244,7 +244,8 @@ A group of its own in Settings → Permissions, **WhatsApp**:
   answer a group by voice answered a greeting there in text: the reply at
   the turn's end is text, and the voice tool was not there to call. Where
   the voice tool would run in that chat without a card (a standing yes for
-  the chat, or the tool allowed outright, never when it is off) and the
+  the chat, or the tool allowed outright with no ask rule its call would
+  be read against, never when it is off) and the
   workspace can speak, the turn is told it may start its reply with
   `[voice]`, and only when its instructions or the chat ask for audio and
   the answer is not better read. The reply then goes as one voice note

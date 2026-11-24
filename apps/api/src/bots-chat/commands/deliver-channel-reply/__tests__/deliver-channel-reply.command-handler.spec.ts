@@ -501,6 +501,16 @@ describe('DeliverChannelReplyCommandHandler', () => {
         },
       ],
       ['a workspace with no speech', { ...allowed, speaks: false }],
+      [
+        'Full access and an ask rule the voice tool would be read against',
+        {
+          preset: 'full' as const,
+          permissions: {
+            ...NO_PERMISSIONS,
+            rules: [{ id: 'r-1', effect: 'ask' as const, text: 'Ask me before any voice note' }],
+          },
+        },
+      ],
     ])('sends a marked reply as text, mark off, with %s', async (_case, voice: VoiceSetup) => {
       const { bus, deliver, speech } = setup(
         groupTurn(),

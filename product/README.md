@@ -1988,7 +1988,8 @@ earlier note:
   text, and a bot told to answer a group by voice never could. On
   2026-11-24 such a turn may answer as one voice note where
   `send_whatsapp_voice_note` would run in that chat without asking (a
-  standing yes for the chat, or the tool allowed outright) and the
+  standing yes for the chat, or the tool allowed outright with no ask
+  rule) and the
   workspace can speak: it is told so, marks its reply, and the reply goes
   as the note and never also as text, falling back to text when it cannot
   be spoken or sent (`next-steps/whatsapp.md`, 2026-11-24). It still gets

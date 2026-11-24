@@ -1,4 +1,5 @@
 import type { BotPermission } from '@oppenheimer/shared';
+import { rulesToReview } from './bot-rule-review.policy';
 import { type BotPermissions, grantFor, toolDecision } from './bot-tool-permission.policy';
 
 /** The tool whose permission a spoken reply rides on: what speaks for the owner in a chat. */
@@ -14,8 +15,8 @@ export const VOICE_REPLY_MARK = '[voice]';
 /**
  * Whether a contact's turn in this chat may answer as a voice note: exactly
  * where `send_whatsapp_voice_note` would run there without a card, a standing
- * grant for this number's chat or the tool allowed outright, and never where
- * it is off. Allowing a chat for text, or the chat for this bot to answer,
+ * grant for this number's chat or the tool allowed outright with no ask rule
+ * for its call to be read against, and never where it is off. Allowing a chat for text, or the chat for this bot to answer,
  * allows no voice: the owner's voice is its own permission.
  */
 export function voiceReplyAllowed(
@@ -26,7 +27,9 @@ export function voiceReplyAllowed(
   const tool = { name: VOICE_REPLY_TOOL, asks: true, perCallOnly: false };
   const decision = toolDecision(permissions, tool, preset);
   if (decision === 'off') return false;
-  if (decision === 'allow') return true;
+  // The tool on Allow still has its call read against the owner's ask
+  // rules; a reply has no card to raise, so any ask rule keeps it text.
+  if (decision === 'allow') return rulesToReview(permissions, 'allow').length === 0;
   const subject = {
     kind: 'whatsapp_chat',
     key: `${chat.whatsappAccountId}:${chat.chatId}`,
