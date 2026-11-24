@@ -637,6 +637,33 @@ about a runner session come next, as their own changes; a phone push
 is the backend's, later. OpenCode's `question` tool and Codex's
 older-release prompts were not watched.
 
+## A notification in this browser (2026-11-24)
+
+The second step of the owner's ask: the Inbox is where a wait lands, but
+only for a reader looking at it. Now a console tab the reader is not
+looking at raises a system notification for each session that comes to
+wait on them and each notice an agent sends; a click brings the tab
+forward on that session.
+
+- **Opt in, per browser.** "Notify me in this browser" in the Inbox's
+  filter menu, beside Show pull requests, kept on the device like it.
+  Turning it on is what asks the browser for permission (a browser asks
+  only on a click); a permission refused or revoked shows the item as
+  blocked rather than on.
+- **The Inbox's own items, from the session list alone.** A waiting
+  session and a session's notice, keyed as the Inbox keys them, so one
+  occurrence is told once and a new wait on the same session is told
+  again. What already waited when the console opened is remembered, not
+  announced.
+- **Only where the reader is not looking.** A hidden tab, or a window
+  without focus; the tab in front stays quiet. Every open console tab
+  hears the change through the workspace stream, so the reader's other
+  tabs are the ones that tell.
+
+Not yet: bot approvals, pull requests and failed runs are not told this
+way (they are not on the session list); the Chrome extension telling about
+runner sessions is next, and a phone push is the backend's, later.
+
 ## Its own page, and a deck (2026-11-24)
 
 The owner asked on 2026-11-24 for the Inbox to leave Plan and have a page of
