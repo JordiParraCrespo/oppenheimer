@@ -1374,8 +1374,6 @@
   min-width: 0;
 }
 
-/* No scrollbar at all, for a list that scrolls but draws its own edges — the
-   console's sessions sidebar. The pane still scrolls by wheel, touch and keys. */
 /* A line that may run past its box fades out over its last 16px rather than
    ending in an ellipsis; the padding it adds is where the fade falls, so a
    line that fits ends before it (a tab's name). */
@@ -1384,6 +1382,8 @@
   mask-image: linear-gradient(90deg, #000 calc(100% - --spacing(4)), transparent);
 }
 
+/* No scrollbar at all, for a list that scrolls but draws its own edges — the
+   console's sessions sidebar. The pane still scrolls by wheel, touch and keys. */
 @utility no-scrollbar {
   scrollbar-width: none;
 
