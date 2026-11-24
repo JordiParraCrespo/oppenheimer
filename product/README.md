@@ -1940,6 +1940,14 @@ earlier note:
   window, never deferred with a large window) and the model finds what it
   needs, while the bot's own tools (memory, skills, questions, notices)
   and the tools a built-in skill calls always load. GLM and the OpenAI engines send every tool as before.
+- `next-steps/whatsapp.md` §3 kept an image on the phone, the bot told
+  "[image]" and the caption, after voice notes became the one exception
+  (2026-11-18). On 2026-11-24 the owner reported that the WhatsApp bots
+  cannot see images: the runner keeps each image's media key and path for
+  48 hours as it does a voice note's, and when the turn the image woke
+  starts the API asks for it (`whatsapp.media.get`, `kind: "image"`), the
+  runner scaling one past a link frame to a JPEG that fits; the bot's chat
+  keeps the copy as an image of the message and the bot sees it.
 - `29-inbox.md` counted a session as waiting on you once its agent had been
   blocked 30 s, measured from the runner's second report 15 s in, so a
   question reached the Inbox about a minute after it was asked. On
@@ -1947,6 +1955,14 @@ earlier note:
   you at once, and the runner sends that report 3 s after the first
   ("A question reaches you in seconds"). Codex's and OpenCode's detection
   rules were rewritten from their real screens the same day.
+- `next-steps/slack-for-bots.md` §4 cut a bot's Slack answer at 3,900
+  characters, into several messages. On 2026-11-24, copying Orca's Slack
+  fixes, an answer goes in one message up to 39,000 (Slack folds it behind
+  "Show more"), the owner's message carries a 👀 reaction while the bot
+  works, mentions arrive by name, secrets are redacted in what goes to
+  Slack, and images the owner shares reach the bot (§1 said the bot reads
+  only words); the manifest asks for `reactions:write`, `users:read` and
+  `files:read` too.
 - `next-steps/agent-tools.md` §2 left a browser notification for later. On
   2026-11-24 the console raised one, opt-in per browser from the Inbox's
   filter menu, for each session that comes to wait on the reader and each

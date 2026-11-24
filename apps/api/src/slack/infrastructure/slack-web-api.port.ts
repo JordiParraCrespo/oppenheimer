@@ -25,4 +25,27 @@ export interface SlackWebApiPort {
     access: SlackAppAccess,
     message: { channel: string; text: string; threadTs: string | null },
   ): Promise<SlackPosted>;
+  /**
+   * A person's name as their workspace shows it (`users.info`): their display
+   * name, else their full name, else their handle; null when Slack has none.
+   * Needs `users:read`; throws as `post` does.
+   */
+  userName(access: SlackAppAccess, userId: string): Promise<string | null>;
+  /**
+   * Puts the app's reaction `name` on a message (`reactions.add`), or takes it
+   * off (`reactions.remove`). One already there, or already gone, is no
+   * error. Needs `reactions:write`; throws as `post` does.
+   */
+  react(
+    access: SlackAppAccess,
+    message: { channel: string; ts: string; name: string },
+    on: boolean,
+  ): Promise<void>;
+  /**
+   * A file the app can see, fetched with its token from Slack's file host
+   * (`SLACK_FILE_HOST`; any other address is refused before a request is
+   * made), its bytes at most `maxBytes`. Needs `files:read`. Throws
+   * `SLACK_006` for a file it could not fetch, as `post` does otherwise.
+   */
+  download(access: SlackAppAccess, url: string, maxBytes: number): Promise<Buffer>;
 }

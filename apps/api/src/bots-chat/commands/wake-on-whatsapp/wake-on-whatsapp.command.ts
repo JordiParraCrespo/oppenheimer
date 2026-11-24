@@ -25,6 +25,8 @@ export class WakeOnWhatsappCommand extends CommandBase {
   readonly text: string;
   /** A voice note with no caption: `text` is empty, and the turn's words are what it says. */
   readonly voiceNote: boolean;
+  /** An image: the turn fetches it when it starts, and the bot sees it. */
+  readonly image: boolean;
 
   constructor(props: CommandProps<WakeOnWhatsappCommand>) {
     super(props);
@@ -38,6 +40,7 @@ export class WakeOnWhatsappCommand extends CommandBase {
     this.conversationStartsAt = props.conversationStartsAt;
     this.command = props.command;
     this.text = props.text;
+    this.image = props.image;
     this.voiceNote = props.voiceNote;
   }
 }

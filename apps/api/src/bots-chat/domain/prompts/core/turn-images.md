@@ -11,3 +11,7 @@
 <!-- fragment: attached -->
 
 [Oppenheimer: the images with this message{{ids}}; to attach one to mail, give its id as chat_image.]
+
+<!-- fragment: slack-unread -->
+
+[Oppenheimer: the owner shared {{what}} in Slack with this message that you cannot see: {{why}}.]

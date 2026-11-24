@@ -153,24 +153,42 @@ func TestOutgoingQuotesTheMessageRepliedTo(t *testing.T) {
 	}
 }
 
-// A voice note reads as audio with what fetching it later takes: the
-// AudioMessage itself, which audioOf reads back with its media key and path.
-// A text carries none.
-func TestReceivedKeepsAVoiceNoteForFetching(t *testing.T) {
+// A voice note and an image read with what fetching them later takes: the
+// AudioMessage or ImageMessage itself, which downloadableOf reads back with
+// its media key and path, as the kind it was kept as. A text carries none.
+// Breaks if an image is kept as audio (WhatsApp refuses the download) or
+// either loses its key.
+func TestReceivedKeepsVoiceNotesAndImagesForFetching(t *testing.T) {
 	note := read(evt(marta, marta, &waE2E.Message{AudioMessage: &waE2E.AudioMessage{
 		PTT: proto.Bool(true), Seconds: proto.Uint32(12), FileLength: proto.Uint64(20480),
 		Mimetype: proto.String("audio/ogg; codecs=opus"), DirectPath: proto.String("/v/t62.7117-24/1"),
 		MediaKey: []byte{7, 7, 7},
 	}}), nil, nil)
-	if note.Media != domain.MediaAudio || note.Voice == nil || note.Voice.Seconds != 12 || note.Voice.Size != 20480 {
+	if note.Media != domain.MediaAudio || note.Kept == nil || note.Kept.Kind != domain.KeptVoice ||
+		note.Kept.Seconds != 12 || note.Kept.Size != 20480 {
 		t.Fatalf("voice note: %+v", note)
 	}
-	audio, err := audioOf(note.Voice.Ref)
-	if err != nil || audio.GetDirectPath() != "/v/t62.7117-24/1" || string(audio.GetMediaKey()) != "\x07\x07\x07" {
-		t.Fatalf("read back %v %v", audio, err)
+	audio, mimetype, length, err := downloadableOf(domain.KeptVoice, note.Kept.Ref)
+	if err != nil || mimetype != "audio/ogg; codecs=opus" || length != 20480 ||
+		string(audio.GetMediaKey()) != "\x07\x07\x07" || audio.GetDirectPath() != "/v/t62.7117-24/1" {
+		t.Fatalf("read back %v %q %d %v", audio, mimetype, length, err)
 	}
-	if text := read(evt(marta, marta, &waE2E.Message{Conversation: proto.String("hola")}), nil, nil); text.Voice != nil {
-		t.Fatalf("a text carries a voice: %+v", text.Voice)
+
+	photo := read(evt(marta, marta, &waE2E.Message{ImageMessage: &waE2E.ImageMessage{
+		Caption: proto.String("look"), FileLength: proto.Uint64(90000), Mimetype: proto.String("image/jpeg"),
+		DirectPath: proto.String("/v/t62.7118-24/2"), MediaKey: []byte{9},
+	}}), nil, nil)
+	if photo.Media != domain.MediaImage || photo.Text != "look" || photo.Kept == nil ||
+		photo.Kept.Kind != domain.KeptImage || photo.Kept.Size != 90000 {
+		t.Fatalf("image: %+v", photo)
+	}
+	img, mimetype, _, err := downloadableOf(domain.KeptImage, photo.Kept.Ref)
+	if err != nil || mimetype != "image/jpeg" || img.GetDirectPath() != "/v/t62.7118-24/2" {
+		t.Fatalf("read back %v %q %v", img, mimetype, err)
+	}
+
+	if text := read(evt(marta, marta, &waE2E.Message{Conversation: proto.String("hola")}), nil, nil); text.Kept != nil {
+		t.Fatalf("a text carries media: %+v", text.Kept)
 	}
 }
 
