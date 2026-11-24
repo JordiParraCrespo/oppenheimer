@@ -31,6 +31,9 @@ func (noDevice) SendVoice(context.Context, string, []byte, int) (string, time.Ti
 func (noDevice) Download(context.Context, []byte) ([]byte, string, error) {
 	return nil, "", nil
 }
+func (noDevice) DownloadImage(context.Context, []byte, int) ([]byte, string, error) {
+	return nil, "", nil
+}
 func (noDevice) Close() {}
 
 // emptyOutbox keeps nothing.

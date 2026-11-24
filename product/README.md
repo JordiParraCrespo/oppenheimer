@@ -1904,3 +1904,11 @@ earlier note:
   it is told apart from what the owner wrote, and the App's comments wake
   nothing (`loopGuard`), so an answer never asks a bot again. The guide's
   "writing to a bot only in the console" stopped holding the same day.
+- `next-steps/whatsapp.md` §3 kept an image on the phone, the bot told
+  "[image]" and the caption, after voice notes became the one exception
+  (2026-11-18). On 2026-11-24 the owner reported that the WhatsApp bots
+  cannot see images: the runner keeps each image's media key and path for
+  48 hours as it does a voice note's, and when the turn the image woke
+  starts the API asks for it (`whatsapp.media.get`, `kind: "image"`), the
+  runner scaling one past a link frame to a JPEG that fits; the bot's chat
+  keeps the copy as an image of the message and the bot sees it.

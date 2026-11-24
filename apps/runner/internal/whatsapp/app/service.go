@@ -30,7 +30,10 @@ type Options struct {
 	// VoiceNotes keeps the voice notes the control plane may ask for; nil
 	// keeps none, and every ask is WA_005.
 	VoiceNotes VoiceNotes
-	Logger     *slog.Logger
+	// Images keeps the images the control plane may ask for; nil keeps none,
+	// and every ask is WA_005.
+	Images Images
+	Logger *slog.Logger
 	// Budget is the host's own send limit; nil is domain.SendsPerMinute and
 	// domain.SendsPerDay.
 	Budget *domain.Budget
@@ -43,6 +46,7 @@ type Service struct {
 	device Device
 	outbox Outbox
 	voices VoiceNotes
+	images Images
 	logger *slog.Logger
 	budget *domain.Budget
 	now    func() time.Time
@@ -77,7 +81,7 @@ func New(opts Options) *Service {
 		logger = slog.Default()
 	}
 	return &Service{
-		device: opts.Device, outbox: opts.Outbox, voices: opts.VoiceNotes, logger: logger, budget: budget, now: now,
+		device: opts.Device, outbox: opts.Outbox, voices: opts.VoiceNotes, images: opts.Images, logger: logger, budget: budget, now: now,
 		status: domain.Status{State: domain.StateUnlinked}, inFlight: map[string]time.Time{},
 	}
 }
@@ -204,6 +208,11 @@ func (s *Service) Unlink(ctx context.Context) error {
 			s.logger.Warn("whatsapp: the kept voice notes could not be forgotten", slog.Any("error", err))
 		}
 	}
+	if s.images != nil {
+		if err := s.images.ClearImages(ctx); err != nil {
+			s.logger.Warn("whatsapp: the kept images could not be forgotten", slog.Any("error", err))
+		}
+	}
 	s.mu.Lock()
 	s.inFlight = map[string]time.Time{}
 	s.chats = nil
@@ -287,6 +296,38 @@ func (s *Service) VoiceNote(ctx context.Context, chatID, id string) ([]byte, str
 	return data, mimetype, nil
 }
 
+// Image fetches an image the number received, for a bot to see: one it
+// still keeps (domain.VoiceNoteKept), scaled down when it is larger than a
+// frame carries (domain.FitImage). Like a voice note, fetching spends no
+// send budget.
+func (s *Service) Image(ctx context.Context, chatID, id string) ([]byte, string, error) {
+	if s.Status().State != domain.StateConnected {
+		return nil, "", domain.ErrNotConnected
+	}
+	if s.images == nil {
+		return nil, "", domain.ErrNoVoiceNote
+	}
+	image, ok, err := s.images.FindImage(ctx, chatID, id)
+	if err != nil {
+		return nil, "", domain.ErrNoVoiceNote.WithDetail("the kept images could not be read: %v", err)
+	}
+	if !ok {
+		return nil, "", domain.ErrNoVoiceNote.WithDetail("no image kept for %s; they are kept %s", id, domain.VoiceNoteKept)
+	}
+	if image.TooLarge() {
+		return nil, "", domain.ErrVoiceTooLarge.WithDetail("%d bytes, at most %d", image.Size, domain.ImageDownloadMaxBytes)
+	}
+	data, mimetype, err := s.device.DownloadImage(ctx, image.Ref, domain.ImageDownloadMaxBytes)
+	if err != nil {
+		return nil, "", domain.ErrVoiceDownload.WithDetail("%v", err)
+	}
+	fitted, mimetype, err := domain.FitImage(data, mimetype, domain.ImageMaxBytes)
+	if err != nil {
+		return nil, "", domain.ErrVoiceTooLarge.WithDetail("%d bytes: %v", len(data), err)
+	}
+	return fitted, mimetype, nil
+}
+
 // Ack forgets what the control plane stored.
 func (s *Service) Ack(ctx context.Context, keys []string) {
 	if err := s.outbox.Ack(ctx, keys); err != nil {
@@ -355,6 +396,11 @@ func (s *Service) Received(r domain.Received) {
 		if err := s.voices.Keep(ctx, message.ChatID, message.ID, *r.Voice); err != nil {
 			s.logger.Warn("whatsapp: a voice note could not be kept; bots will not hear it", slog.Any("error", err))
 			message.VoiceSeconds = 0
+		}
+	}
+	if r.Image != nil && s.images != nil {
+		if err := s.images.KeepImage(ctx, message.ChatID, message.ID, *r.Image); err != nil {
+			s.logger.Warn("whatsapp: an image could not be kept; bots will not see it", slog.Any("error", err))
 		}
 	}
 	if err := s.outbox.Put(ctx, message); err != nil {

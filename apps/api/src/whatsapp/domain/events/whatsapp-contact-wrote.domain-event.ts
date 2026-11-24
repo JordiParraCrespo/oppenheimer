@@ -27,6 +27,11 @@ export class WhatsappContactWroteDomainEvent extends DomainEvent {
   /** The chat's bot: the one chosen for it, or the number's default. */
   readonly botId: string;
   readonly text: string;
+  /**
+   * The message is an image (its caption, or `[image]`, is `text`): the turn
+   * fetches it from the host and the bot sees it.
+   */
+  readonly image: boolean;
 
   constructor(props: DomainEventProps<WhatsappContactWroteDomainEvent>) {
     super(props);
@@ -42,5 +47,6 @@ export class WhatsappContactWroteDomainEvent extends DomainEvent {
     this.seq = props.seq;
     this.botId = props.botId;
     this.text = props.text;
+    this.image = props.image;
   }
 }

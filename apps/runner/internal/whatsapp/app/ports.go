@@ -44,6 +44,9 @@ type Device interface {
 	// Download fetches and decrypts the audio a domain.Voice's Ref names, and
 	// says WhatsApp's MIME type for it.
 	Download(ctx context.Context, ref []byte) (data []byte, mimetype string, err error)
+	// DownloadImage fetches and decrypts the image a domain.Image's Ref
+	// names, refusing one past max bytes, and says WhatsApp's MIME type for it.
+	DownloadImage(ctx context.Context, ref []byte, max int) (data []byte, mimetype string, err error)
 	Close()
 }
 
@@ -91,4 +94,16 @@ type VoiceNotes interface {
 	Find(ctx context.Context, chatID, id string) (domain.Voice, bool, error)
 	// ClearVoiceNotes forgets every voice note.
 	ClearVoiceNotes(ctx context.Context) error
+}
+
+// Images keeps what fetching each image takes (never the image), so the
+// control plane can ask for one after it acknowledged the message.
+type Images interface {
+	// KeepImage keeps an image under its chat and id, forgetting those past
+	// domain.VoiceNoteKept or beyond domain.VoiceNotesKeptMax.
+	KeepImage(ctx context.Context, chatID, id string, image domain.Image) error
+	// FindImage is the image under chat and id, if it is still kept.
+	FindImage(ctx context.Context, chatID, id string) (domain.Image, bool, error)
+	// ClearImages forgets every image.
+	ClearImages(ctx context.Context) error
 }

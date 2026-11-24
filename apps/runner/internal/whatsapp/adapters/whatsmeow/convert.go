@@ -98,7 +98,35 @@ func (rd reader) received(ctx context.Context, evt *events.Message) domain.Recei
 		}
 	}
 	r.Voice = voiceOf(evt.Message, rd.logger)
+	r.Image = imageOf(evt.Message, rd.logger)
 	return r
+}
+
+// imageOf is what fetching a message's image later takes, when it carries
+// one: the ImageMessage itself, serialized, which holds its media key and
+// path.
+func imageOf(m *waE2E.Message, logger *slog.Logger) *domain.Image {
+	img := m.GetImageMessage()
+	if img == nil {
+		return nil
+	}
+	ref, err := proto.Marshal(img)
+	if err != nil {
+		if logger != nil {
+			logger.Warn("whatsapp: an image could not be kept for fetching", slog.Any("error", err))
+		}
+		return nil
+	}
+	return &domain.Image{Ref: ref, Size: img.GetFileLength()}
+}
+
+// imageMessageOf reads back the ImageMessage imageOf kept.
+func imageMessageOf(ref []byte) (*waE2E.ImageMessage, error) {
+	var img waE2E.ImageMessage
+	if err := proto.Unmarshal(ref, &img); err != nil {
+		return nil, fmt.Errorf("a kept image is unreadable: %w", err)
+	}
+	return &img, nil
 }
 
 // voiceOf is what fetching a message's audio later takes, when it carries

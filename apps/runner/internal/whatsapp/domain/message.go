@@ -48,7 +48,8 @@ const (
 )
 
 // Media kinds, as `whatsapp.messages` names them. Only the kind travels: the
-// media itself stays on the phone.
+// media itself stays on the phone, but for a voice note or an image the
+// control plane asks for (`whatsapp.media.get`).
 const (
 	MediaImage    = "image"
 	MediaVideo    = "video"
@@ -63,13 +64,14 @@ const (
 // (`WHATSAPP_VOICE_NOTE_MAX_BYTES`): one link frame, base64 and all.
 const VoiceNoteMaxBytes = 352 * 1024
 
-// VoiceNoteKept is how long a voice note can still be fetched after it
-// arrived (`WHATSAPP_VOICE_NOTE_KEPT_HOURS`): what is kept is its media key
-// and path, never the audio, and an owner's bot asks for it within seconds.
+// VoiceNoteKept is how long a voice note or an image can still be fetched
+// after it arrived (`WHATSAPP_VOICE_NOTE_KEPT_HOURS`): what is kept is its
+// media key and path, never the bytes, and an owner's bot asks for it within
+// seconds.
 const VoiceNoteKept = 48 * time.Hour
 
-// VoiceNotesKeptMax bounds how many voice notes are kept at once; past it the
-// oldest go.
+// VoiceNotesKeptMax bounds how many voice notes, and apart how many images,
+// are kept at once; past it the oldest go.
 const VoiceNotesKeptMax = 2000
 
 // Voice is what fetching a voice note takes: the adapter's own reference to
@@ -115,6 +117,8 @@ type Received struct {
 	SentAt   time.Time
 	// Voice is set on a voice note (or any audio) the adapter can fetch later.
 	Voice *Voice
+	// Image is set on an image the adapter can fetch later.
+	Image *Image
 }
 
 // Inbound is a message the control plane is handed and keeps.

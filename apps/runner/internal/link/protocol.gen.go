@@ -109,6 +109,7 @@ const (
 	CapabilityWhatsapp                 = "whatsapp"
 	CapabilityWhatsappVoice            = "whatsapp.voice"
 	CapabilityWhatsappVoiceSend        = "whatsapp.voice.send"
+	CapabilityWhatsappImage            = "whatsapp.image"
 	CapabilityTelegram                 = "telegram"
 	CapabilitySharedPreview            = "shared.preview"
 	CapabilityTranscriptRead           = "transcript.read"
@@ -1272,6 +1273,7 @@ type WhatsappMediaGet struct {
 	CommandID string `json:"commandId"`
 	ChatID    string `json:"chatId"`
 	MessageID string `json:"messageId"`
+	Kind      string `json:"kind,omitempty"`
 }
 
 // WhatsappMedia is the `whatsapp.media` message.

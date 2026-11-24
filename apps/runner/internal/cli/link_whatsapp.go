@@ -25,8 +25,8 @@ const (
 	laneWhatsAppPair = "whatsapp:pair"
 	laneWhatsAppSend = "whatsapp:send"
 	laneWhatsAppAck  = "whatsapp:ack"
-	// Voice notes download on a lane of their own, so a slow one never holds
-	// a send back.
+	// Voice notes and images download on a lane of their own, so a slow one
+	// never holds a send back.
 	laneWhatsAppMedia = "whatsapp:media"
 )
 
@@ -108,8 +108,8 @@ func (h *linkHandler) whatsAppMessage(msg link.Message) {
 	}
 }
 
-// whatsAppMediaTimeout bounds one voice note's download; the control plane
-// gives up on it a little later.
+// whatsAppMediaTimeout bounds one download of a voice note or an image; the
+// control plane gives up on it a little later.
 const whatsAppMediaTimeout = 40 * time.Second
 
 func (h *linkHandler) whatsAppMedia(m link.WhatsappMediaGet) {
@@ -119,13 +119,17 @@ func (h *linkHandler) whatsAppMedia(m link.WhatsappMediaGet) {
 	}
 	ctx, cancel := context.WithTimeout(h.life, whatsAppMediaTimeout)
 	defer cancel()
-	data, mimetype, err := h.whatsapp.VoiceNote(ctx, m.ChatID, m.MessageID)
+	fetch, fallback := h.whatsapp.VoiceNote, "audio/ogg; codecs=opus"
+	if m.Kind == "image" {
+		fetch, fallback = h.whatsapp.Image, wadomain.ImageMimetype
+	}
+	data, mimetype, err := fetch(ctx, m.ChatID, m.MessageID)
 	if err != nil {
 		h.fail(m.CommandID, err)
 		return
 	}
 	if mimetype == "" {
-		mimetype = "audio/ogg; codecs=opus"
+		mimetype = fallback
 	}
 	_ = h.client.Send(link.WhatsappMedia{
 		Type: link.TypeWhatsappMedia, CommandID: m.CommandID,

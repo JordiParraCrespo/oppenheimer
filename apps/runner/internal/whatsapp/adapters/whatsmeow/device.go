@@ -90,6 +90,7 @@ type Device struct {
 	events    app.Events
 	outbox    *Outbox
 	voices    *Voices
+	images    *Images
 	handler   uint32
 
 	groups sync.Map // types.JID → groupName
@@ -108,6 +109,7 @@ var (
 	_ app.Device     = (*Device)(nil)
 	_ app.Outbox     = (*Device)(nil)
 	_ app.VoiceNotes = (*Device)(nil)
+	_ app.Images     = (*Device)(nil)
 )
 
 // New builds the device; nothing is opened until Open.
@@ -154,13 +156,18 @@ func (d *Device) Open(ctx context.Context, listener app.Events) (app.Paired, err
 		_ = db.Close()
 		return app.Paired{}, err
 	}
+	images, err := newImages(ctx, db)
+	if err != nil {
+		_ = db.Close()
+		return app.Paired{}, err
+	}
 	device, err := container.GetFirstDevice(ctx)
 	if err != nil {
 		_ = db.Close()
 		return app.Paired{}, fmt.Errorf("whatsapp store: %w", err)
 	}
 	d.mu.Lock()
-	d.db, d.container, d.events, d.outbox, d.voices = db, container, listener, outbox, voices
+	d.db, d.container, d.events, d.outbox, d.voices, d.images = db, container, listener, outbox, voices, images
 	d.useClientLocked(device)
 	d.mu.Unlock()
 	if device.ID == nil {
@@ -377,6 +384,28 @@ func (d *Device) Download(ctx context.Context, ref []byte) ([]byte, string, erro
 	return data, audio.GetMimetype(), nil
 }
 
+// DownloadImage fetches an image from WhatsApp's media servers and decrypts
+// it, from the serialized ImageMessage ref holds. One WhatsApp says is past
+// max is refused before anything is downloaded.
+func (d *Device) DownloadImage(ctx context.Context, ref []byte, max int) ([]byte, string, error) {
+	client, _ := d.current()
+	if client == nil || !client.IsLoggedIn() {
+		return nil, "", domain.ErrNotConnected
+	}
+	img, err := imageMessageOf(ref)
+	if err != nil {
+		return nil, "", err
+	}
+	if img.GetFileLength() > uint64(max) { //nolint:gosec // max is a positive constant
+		return nil, "", fmt.Errorf("%d bytes, at most %d", img.GetFileLength(), max)
+	}
+	data, err := client.Download(ctx, img)
+	if err != nil {
+		return nil, "", err
+	}
+	return data, img.GetMimetype(), nil
+}
+
 // Close disconnects and closes the file.
 func (d *Device) Close() {
 	d.mu.Lock()
@@ -472,6 +501,44 @@ func (d *Device) ClearVoiceNotes(ctx context.Context) error {
 		return err
 	}
 	return voices.ClearVoiceNotes(ctx)
+}
+
+/* ---------------------------------------------------------------- images, on the same file */
+
+func (d *Device) imageStore() (*Images, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.images == nil {
+		return nil, errors.New("whatsapp store not open")
+	}
+	return d.images, nil
+}
+
+// KeepImage keeps what fetching an image takes.
+func (d *Device) KeepImage(ctx context.Context, chatID, id string, image domain.Image) error {
+	images, err := d.imageStore()
+	if err != nil {
+		return err
+	}
+	return images.KeepImage(ctx, chatID, id, image)
+}
+
+// FindImage is a kept image.
+func (d *Device) FindImage(ctx context.Context, chatID, id string) (domain.Image, bool, error) {
+	images, err := d.imageStore()
+	if err != nil {
+		return domain.Image{}, false, err
+	}
+	return images.FindImage(ctx, chatID, id)
+}
+
+// ClearImages forgets every kept image.
+func (d *Device) ClearImages(ctx context.Context) error {
+	images, err := d.imageStore()
+	if err != nil {
+		return err
+	}
+	return images.ClearImages(ctx)
 }
 
 /* ---------------------------------------------------------------- events */

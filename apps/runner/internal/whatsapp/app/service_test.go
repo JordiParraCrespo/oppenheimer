@@ -28,6 +28,8 @@ type fakeDevice struct {
 	loggedOut bool
 	// audio is what Download hands back for any ref.
 	audio []byte
+	// image is what DownloadImage hands back for any ref.
+	image []byte
 }
 
 func (d *fakeDevice) Open(context.Context, app.Events) (app.Paired, error) { return d.stored, nil }
@@ -76,7 +78,45 @@ func (d *fakeDevice) Download(_ context.Context, ref []byte) ([]byte, string, er
 	}
 	return d.audio, "audio/ogg; codecs=opus", nil
 }
+func (d *fakeDevice) DownloadImage(_ context.Context, ref []byte, max int) ([]byte, string, error) {
+	if string(ref) != "ref" {
+		return nil, "", errors.New("unknown ref")
+	}
+	if len(d.image) > max {
+		return nil, "", errors.New("too large")
+	}
+	return d.image, "image/jpeg", nil
+}
 func (d *fakeDevice) Close() {}
+
+type memImages struct {
+	mu   sync.Mutex
+	kept map[string]domain.Image
+}
+
+func (m *memImages) KeepImage(_ context.Context, chatID, id string, image domain.Image) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.kept == nil {
+		m.kept = map[string]domain.Image{}
+	}
+	m.kept[domain.KeyOf(chatID, id)] = image
+	return nil
+}
+
+func (m *memImages) FindImage(_ context.Context, chatID, id string) (domain.Image, bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	image, ok := m.kept[domain.KeyOf(chatID, id)]
+	return image, ok, nil
+}
+
+func (m *memImages) ClearImages(context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.kept = nil
+	return nil
+}
 
 type memVoices struct {
 	mu   sync.Mutex
@@ -212,7 +252,7 @@ func started(t *testing.T, device *fakeDevice, budget *domain.Budget) (*app.Serv
 	t.Helper()
 	outbox, pub := &memOutbox{}, &recorder{}
 	svc := app.New(app.Options{
-		Device: device, Outbox: outbox, VoiceNotes: &memVoices{}, Budget: budget, Now: func() time.Time { return now },
+		Device: device, Outbox: outbox, VoiceNotes: &memVoices{}, Images: &memImages{}, Budget: budget, Now: func() time.Time { return now },
 		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 	svc.SetPublisher(pub)
@@ -490,6 +530,51 @@ func TestVoiceNoteIsFetchedAfterTheAck(t *testing.T) {
 	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
 	if _, _, err := svc.VoiceNote(context.Background(), note.ChatID, "V1"); codeOf(err) != "WA_005" {
 		t.Fatalf("after unlinking, a kept voice note answered %v", err)
+	}
+}
+
+// An image that arrives is kept, so the control plane can fetch it after
+// the ack for a bot to see; one the host does not know is WA_005, one past
+// what is downloaded at all WA_006 before anything is fetched, and
+// unlinking forgets them all.
+func TestImageIsFetchedAfterTheAck(t *testing.T) {
+	device := &fakeDevice{image: []byte("small jpeg")}
+	svc, _, pub := started(t, device, nil)
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	svc.LinkUp(context.Background())
+
+	photo := message("I1")
+	photo.Text, photo.Media = "look", domain.MediaImage
+	photo.Image = &domain.Image{Ref: []byte("ref"), Size: 10}
+	svc.Received(photo)
+	huge := message("I2")
+	huge.Text, huge.Media = "", domain.MediaImage
+	huge.Image = &domain.Image{Ref: []byte("ref"), Size: domain.ImageDownloadMaxBytes + 1}
+	svc.Received(huge)
+	pub.mu.Lock()
+	sent := pub.batches[len(pub.batches)-1]
+	pub.mu.Unlock()
+	if got := sent[len(sent)-1]; got.ID != "I2" || got.Media != domain.MediaImage {
+		t.Fatalf("the image went out as %+v", got)
+	}
+	svc.Ack(context.Background(), []string{domain.KeyOf(photo.ChatID, "I1")})
+
+	data, mimetype, err := svc.Image(context.Background(), photo.ChatID, "I1")
+	if err != nil || string(data) != "small jpeg" || mimetype != "image/jpeg" {
+		t.Fatalf("fetched %q %q %v", data, mimetype, err)
+	}
+	if _, _, err := svc.Image(context.Background(), photo.ChatID, "I2"); codeOf(err) != "WA_006" {
+		t.Fatalf("an image past the download cap answered %v", err)
+	}
+	if _, _, err := svc.Image(context.Background(), photo.ChatID, "V1"); codeOf(err) != "WA_005" {
+		t.Fatalf("an unknown image answered %v", err)
+	}
+	if err := svc.Unlink(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	if _, _, err := svc.Image(context.Background(), photo.ChatID, "I1"); codeOf(err) != "WA_005" {
+		t.Fatalf("after unlinking, a kept image answered %v", err)
 	}
 }
 
