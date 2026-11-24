@@ -1773,10 +1773,11 @@ earlier note:
   page's own ground rather than the grey band §3's contrast pass first gave
   it.
 - `versions/mvp/33-session-tabs.md` §1 then put the 45px tab bar on the
-  page's own ground (the terminal's colour on a session, black on New
-  session). Later on 2026-11-24 the owner took the grey band back ("I liked
-  that the tabs have the gray color"), the same on a session and on New
-  session, so the bar does not change when a session is created. Only the
+  page's own ground (the terminal's grey on a session, the canvas's black
+  on New session). Later on 2026-11-24 the owner asked for the grey
+  everywhere ("I liked that the tabs have the gray color", "never full
+  black"): the bar stands on the terminal's ground on New session too, so it
+  does not change when a session is created. Only the
   tabs stay on the medium rung; the bar's other controls go back to the
   small one.
 - `versions/mvp/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
