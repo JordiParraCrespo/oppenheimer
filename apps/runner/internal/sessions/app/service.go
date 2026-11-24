@@ -165,7 +165,7 @@ func New(opts Options) (*Service, error) {
 		sessions: map[string]domain.Session{}, creating: map[string]*creation{},
 		revs: map[string]uint64{}, busy: map[string]int{}, inFlight: map[string]bool{}, confirmed: map[string]bool{}, blockedSince: map[string]time.Time{}, decisions: map[string]string{},
 		keeper: newKeeper(), observer: observer{classifier: opts.Classifier, program: opts.ProgramStatus},
-		watches:   newWatchBook(), presence: newPresence(),
+		watches: newWatchBook(), presence: newPresence(),
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,

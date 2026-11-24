@@ -21,10 +21,10 @@ import (
 )
 
 var (
-	_ app.Terminals = (*Terminals)(nil)
+	_ app.Terminals       = (*Terminals)(nil)
 	_ app.TerminalClients = (*Terminals)(nil)
-	_ app.Worktrees = (*Worktrees)(nil)
-	_ app.Places    = (*Places)(nil)
+	_ app.Worktrees       = (*Worktrees)(nil)
+	_ app.Places          = (*Places)(nil)
 )
 
 // Terminals is an in-memory tmux server.
