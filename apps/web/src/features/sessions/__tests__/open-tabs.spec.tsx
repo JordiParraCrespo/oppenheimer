@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useOpenTabs } from '../hooks/use-open-tabs';
 import { openTabOf, tabAfterClosing } from '../lib/open-tabs';
 
@@ -10,7 +10,10 @@ import { openTabOf, tabAfterClosing } from '../lib/open-tabs';
  * browser closes a tab; another browser tab's change is drawn here too.
  */
 
-afterEach(() => window.localStorage.clear());
+afterEach(() => {
+  vi.restoreAllMocks();
+  window.localStorage.clear();
+});
 
 describe('open tabs', () => {
   it('opens the page on screen at the end, keeps it across a reload, and never moves a tab already open', () => {
@@ -58,5 +61,20 @@ describe('open tabs', () => {
     expect(openTabOf('task:x')).toBeNull();
     expect(openTabOf('session:')).toBeNull();
     expect(openTabOf('nonsense')).toBeNull();
+  });
+
+  // Last: the kit holds a refused list for the page, until a write lands.
+  it('keeps the tabs on this page when storage refuses to save them', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota', 'QuotaExceededError');
+    });
+    const strip = renderHook(({ shown }) => useOpenTabs(shown), {
+      initialProps: { shown: 'session:a' },
+    });
+    strip.rerender({ shown: 'session:b' });
+    expect(strip.result.current.keys).toEqual(['session:a', 'session:b']);
+
+    act(() => strip.result.current.close('session:a'));
+    expect(strip.result.current.keys).toEqual(['session:b']);
   });
 });
