@@ -26,6 +26,18 @@ export interface DesktopState {
   refusal: DesktopRefusal | null;
 }
 
+/**
+ * Where the host's pointer is, in the host's screen units on a screen
+ * `width` by `height` of them, as its runner last said while the reader
+ * watched. The server never says: its runner reads it.
+ */
+export interface DesktopPointer {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 /** What a VNC viewer reads off a close, as a `CloseEvent` carries it. */
 interface DesktopCloseEvent {
   code: number;
@@ -78,6 +90,8 @@ export class AttachDesktopConnection {
   private early: ArrayBuffer[] = [];
   private state: DesktopState = { status: 'connecting', control: false, refusal: null };
   private readonly listeners = new Set<(state: DesktopState) => void>();
+  private pointer: DesktopPointer | null = null;
+  private readonly pointerListeners = new Set<(pointer: DesktopPointer) => void>();
   private readonly socketFactory: SocketFactory;
 
   constructor(private readonly options: DesktopConnectionOptions) {
@@ -110,6 +124,17 @@ export class AttachDesktopConnection {
     listener(this.state);
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  /**
+   * Where the host's pointer is, now if it is known and on every move, until
+   * the returned call. Apart from `onState`, because it moves about thirty
+   * times a second and a viewer draws it without re-rendering anything.
+   */
+  onPointer(listener: (pointer: DesktopPointer) => void): () => void {
+    if (this.pointer) listener(this.pointer);
+    this.pointerListeners.add(listener);
+    return () => this.pointerListeners.delete(listener);
   }
 
   /** Take control of the desktop, or go back to watching it. */
@@ -178,6 +203,17 @@ export class AttachDesktopConnection {
       case 'hint':
         if (message.kind === 'host_offline') this.update({ status: 'offline' });
         return;
+      case 'pointer': {
+        const pointer = {
+          x: message.x,
+          y: message.y,
+          width: message.width,
+          height: message.height,
+        };
+        this.pointer = pointer;
+        for (const listener of this.pointerListeners) listener(pointer);
+        return;
+      }
       default:
         return;
     }

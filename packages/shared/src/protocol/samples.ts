@@ -176,6 +176,14 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
   'desktop.open': { type: 'desktop.open', commandId, attachmentId: 13, control: false },
   'desktop.opened': { type: 'desktop.opened', attachmentId: 13 },
   'desktop.control': { type: 'desktop.control', attachmentId: 13, control: true },
+  'desktop.pointer': {
+    type: 'desktop.pointer',
+    attachmentId: 13,
+    x: 812.5,
+    y: 431,
+    width: 1920,
+    height: 1080,
+  },
   'desktop.close': { type: 'desktop.close', attachmentId: 13 },
   'cloud.reply': {
     type: 'cloud.reply',

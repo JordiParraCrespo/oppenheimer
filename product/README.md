@@ -1963,3 +1963,9 @@ earlier note:
   Slack, and images the owner shares reach the bot (§1 said the bot reads
   only words); the manifest asks for `reactions:write`, `users:read` and
   `files:read` too.
+- `research/device-streaming.md` ("A host's desktop") left the pointer to
+  the screen-sharing server, and a watched Mac showed none: Apple's Screen
+  Sharing sends the cursor's shape but never where it is. On 2026-11-24 the
+  runner took that over: it reads the pointer with CoreGraphics and sends
+  `desktop.pointer` while the reader watches (`versions/mvp/01-protocol.md`),
+  and the console draws the host's cursor there.

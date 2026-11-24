@@ -60,6 +60,29 @@ export const desktopControlSchema = z.object({
 export type DesktopControlMessage = z.infer<typeof desktopControlSchema>;
 
 /**
+ * Where the host's pointer is, sent while the reader of an open desktop only
+ * watches. Apple's Screen Sharing neither paints its pointer into the
+ * framebuffer nor reports where it is (the Cursor pseudo-encoding carries the
+ * shape only), so the runner reads it from the host and sends it beside the
+ * RFB: at most about thirty a second, only when it moved. `x` and `y` are in
+ * the host's own screen units (points on macOS), on a screen `width` by
+ * `height` of them, so the console maps them onto whatever framebuffer the
+ * server sends; a pointer off that screen (on a second display) is outside
+ * it. Not sent while the reader is in control: their own pointer is the
+ * host's then. A host that cannot read its pointer sends none.
+ */
+export const desktopPointerSchema = z.object({
+  type: z.literal('desktop.pointer'),
+  attachmentId: attachmentIdSchema,
+  x: z.number(),
+  y: z.number(),
+  width: z.number().positive(),
+  height: z.number().positive(),
+});
+
+export type DesktopPointerMessage = z.infer<typeof desktopPointerSchema>;
+
+/**
  * The control plane hangs up a desktop attachment: the runner closes its
  * connection to the server. The runner's own hang-up is `attachment.closed`.
  */

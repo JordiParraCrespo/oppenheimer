@@ -432,6 +432,23 @@ runner does with it and point back.
   channel itself, so no link message changed, and the relay's `attached`
   names the host (`direct.hostId`) for the browser to pin its key under.
   Credit and resize stay on the link whichever path the bytes take.
+- **A host's desktop** (`desktop.open | opened | control | close`, the
+  `desktop.stream` capability) is a port tunnel carrying RFB, designed in
+  `research/device-streaming.md` ("A host's desktop"). Since 2026-11-24 the
+  runner also sends **`desktop.pointer`**, `{ attachmentId, x, y, width,
+  height }`: where the host's pointer is, in the host's own screen units on
+  a screen `width` by `height` of them, at most about thirty a second and
+  only when it moved, and never while the reader is in control. Apple's
+  Screen Sharing neither paints its pointer into the framebuffer nor sends
+  its position (the Cursor pseudo-encoding carries the shape only;
+  PointerPos and the VMware cursor are never answered), so a reader who
+  only watched saw no pointer at all. It is a link message rather than an
+  RFB PointerPos rect the runner splices into the server's stream, because
+  splicing needs the runner to find where each server message ends, which
+  means parsing every encoding the server sends, and noVNC 1.7 has no
+  PointerPos handler anyway. The relay forwards it to the browser as a
+  `pointer` frame; the runner reads it on a Mac with CoreGraphics and sends
+  none on Linux, whose servers can draw their own pointer.
 - Every command is idempotent by session id and command id, because a
   reconnect may redeliver. For `session.create` that means the session id
   is the key: a redelivered create either finds the session the first

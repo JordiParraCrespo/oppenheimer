@@ -83,6 +83,8 @@ export class LinkPortStream extends Duplex {
     chat: () => {},
     opened: () => this.onOpened(),
     credit: (bytes) => this.onCredit(bytes),
+    // A desktop's pointer, for whoever reads the stream: a `pointer` event.
+    pointer: (message) => this.emit('pointer', message),
   };
 
   /** A connection to one of a session's ports. */

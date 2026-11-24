@@ -184,6 +184,7 @@ const (
 	TypeDesktopOpen             = "desktop.open"
 	TypeDesktopOpened           = "desktop.opened"
 	TypeDesktopControl          = "desktop.control"
+	TypeDesktopPointer          = "desktop.pointer"
 	TypeDesktopClose            = "desktop.close"
 	TypeCloudReply              = "cloud.reply"
 	TypeCloudReplied            = "cloud.replied"
@@ -274,6 +275,7 @@ var MessageTypes = []string{
 	TypeDesktopOpen,
 	TypeDesktopOpened,
 	TypeDesktopControl,
+	TypeDesktopPointer,
 	TypeDesktopClose,
 	TypeCloudReply,
 	TypeCloudReplied,
@@ -427,6 +429,8 @@ func NewMessage(messageType string) (any, bool) {
 		return new(DesktopOpened), true
 	case TypeDesktopControl:
 		return new(DesktopControl), true
+	case TypeDesktopPointer:
+		return new(DesktopPointer), true
 	case TypeDesktopClose:
 		return new(DesktopClose), true
 	case TypeCloudReply:
@@ -1145,6 +1149,16 @@ type DesktopControl struct {
 	Type         string `json:"type"`
 	AttachmentID uint32 `json:"attachmentId"`
 	Control      bool   `json:"control"`
+}
+
+// DesktopPointer is the `desktop.pointer` message.
+type DesktopPointer struct {
+	Type         string  `json:"type"`
+	AttachmentID uint32  `json:"attachmentId"`
+	X            float64 `json:"x"`
+	Y            float64 `json:"y"`
+	Width        float64 `json:"width"`
+	Height       float64 `json:"height"`
 }
 
 // DesktopClose is the `desktop.close` message.

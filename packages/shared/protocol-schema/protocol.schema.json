@@ -2406,6 +2406,40 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "desktop.pointer"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "x",
+        "y",
+        "width",
+        "height"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "desktop.close"
         },
         "attachmentId": {
