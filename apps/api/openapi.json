@@ -24098,7 +24098,7 @@
     },
     "/api/v1/bots/{id}/conversation": {
       "get": {
-        "description": "Its newest `limit` messages, oldest first, with the turns they belong to and any turn still queued or running, and how many messages it holds in all. The whole chat is `GET /bots/:id/conversation/export`.",
+        "description": "Its newest `limit` messages, oldest first, with the turns they belong to and any turn still queued or running, and how many messages it holds in all. With `before` (a message id, the oldest the reader holds), the `limit` messages just older than that one; `hasOlder` says whether more remain. The whole chat is `GET /bots/:id/conversation/export`.",
         "operationId": "findBotConversation",
         "parameters": [
           {
@@ -24107,6 +24107,27 @@
             "in": "path",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "description": "A message of this chat, the oldest the reader holds: the page is the messages just older than it.",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "How many messages; 100 when absent.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 200,
+              "type": "number"
             }
           }
         ],
@@ -36653,6 +36674,7 @@
               "paused",
               "deleted",
               "own_event",
+              "own_session_event",
               "automation_rate_limited",
               "workspace_rate_limited",
               "overlapping",
@@ -42245,6 +42267,10 @@
               "$ref": "#/components/schemas/BotMessageResponseDto"
             }
           },
+          "hasOlder": {
+            "type": "boolean",
+            "description": "Whether the chat holds messages older than these: the next page is `before` the first."
+          },
           "turns": {
             "description": "The turns those messages belong to, and any still queued or running; oldest first.",
             "type": "array",
@@ -42266,6 +42292,7 @@
         },
         "required": [
           "messages",
+          "hasOlder",
           "turns",
           "messageCount",
           "storedTextBlocks"

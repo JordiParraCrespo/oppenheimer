@@ -1279,7 +1279,11 @@ export const sendBotMessageSchema = z
   });
 export type SendBotMessageDto = z.infer<typeof sendBotMessageSchema>;
 
-/** `GET /bots/:id/conversation`: the newest `limit` messages, oldest first. */
+/**
+ * `GET /bots/:id/conversation`: the newest `limit` messages, oldest first; with
+ * `before`, the `limit` messages just older than that one, for a chat
+ * scrolled up past its window.
+ */
 export const findBotConversationSchema = z.object({
   limit: z.coerce
     .number()
@@ -1287,6 +1291,8 @@ export const findBotConversationSchema = z.object({
     .min(1)
     .max(BOT_CONVERSATION_PAGE_MAX)
     .default(BOT_CONVERSATION_PAGE_DEFAULT),
+  /** A message of the chat, the oldest the reader holds: the page ends just before it. */
+  before: z.string().uuid().optional(),
 });
 export type FindBotConversationDto = z.infer<typeof findBotConversationSchema>;
 

@@ -73,12 +73,16 @@ export interface BotMessageRepositoryPort {
   ): Promise<void>;
   /**
    * A conversation's newest `limit` messages, oldest first: the console
-   * chat's when `conversationId` is the bot's id.
+   * chat's when `conversationId` is the bot's id. With `beforeId`, the
+   * newest `limit` older than that message (by when it was written, then
+   * its place in its turn, then id); none when it is not this
+   * conversation's.
    */
   findConversation(
     scope: AccessScope,
     conversationId: string,
     limit: number,
+    beforeId?: string | null,
   ): Promise<BotMessageEntity[]>;
   /**
    * The person's and the bot's messages whose words match `query`

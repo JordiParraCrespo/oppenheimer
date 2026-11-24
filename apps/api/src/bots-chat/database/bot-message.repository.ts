@@ -177,10 +177,20 @@ export class BotMessageRepository
     scope: AccessScope,
     conversationId: string,
     limit: number,
+    beforeId: string | null = null,
   ): Promise<BotMessageEntity[]> {
-    // IDX_bot_message_conversation, read backwards.
-    const records = await this.scopedQuery(scope)
-      .andWhere('message.conversationId = :conversationId', { conversationId })
+    // IDX_bot_message_conversation, read backwards; the cursor is the stored
+    // row's own time, so a page boundary keeps the database's microseconds. A cursor not in this conversation reads nothing.
+    const query = this.scopedQuery(scope).andWhere('message.conversationId = :conversationId', {
+      conversationId,
+    });
+    if (beforeId) {
+      query.andWhere(
+        `(message.createdAt, message.position, message.id) < (SELECT c."createdAt", c."position", c.id FROM bot_message c WHERE c."organizationId" = message."organizationId" AND c."conversationId" = :conversationId AND c.id = :beforeId)`,
+        { beforeId },
+      );
+    }
+    const records = await query
       .orderBy('message.createdAt', 'DESC')
       .addOrderBy('message.position', 'DESC')
       .addOrderBy('message.id', 'DESC')

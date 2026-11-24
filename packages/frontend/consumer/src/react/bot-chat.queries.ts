@@ -10,6 +10,7 @@ import {
 import type { BotAttachment } from '@oppenheimer/shared/schemas/bot';
 import { type QueryClient, skipToken, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import type { ConsumerApp } from '../di/consumer-app';
 import type {
   BotApprovalEntity,
   BotConversationEntity,
@@ -48,6 +49,14 @@ import {
   noteBotRetry,
   putBotSnapshot,
 } from '../modules/bots/live-text';
+import {
+  addOlderPage,
+  type BotOlderMessages,
+  fillOlderGap,
+  joinsWindow,
+  olderCursor,
+  withOlderMessages,
+} from '../modules/bots/older-messages';
 import { type BotSending, withBotSendings } from '../modules/bots/sending';
 import { botsKeys } from './bots.keys';
 import { useConsumerApp } from './context';
@@ -83,15 +92,95 @@ function useBotSendings(id: string): readonly BotSending[] {
   return data ?? NO_SENDINGS;
 }
 
-/** The newest messages, oldest first, and their turns, under a Suspense `QueryState`. */
+/**
+ * The pages older than the window the reader scrolled up into
+ * ({@link useLoadOlderBotMessages}): their own entry in the cache, never read
+ * from the API on its own, so the window's reads, every time the bot writes,
+ * neither drop nor read them again.
+ */
+function useBotOlderMessages(id: string): BotOlderMessages | null {
+  const { data } = useQuery<BotOlderMessages | null>({
+    queryKey: botsKeys.olderMessages(id),
+    queryFn: skipToken,
+    initialData: null,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+  return data ?? null;
+}
+
+/**
+ * The chat's read, the same for every reader of it: its newest window, and,
+ * when the bot wrote a window's worth while the reader was up in older pages,
+ * the pages between read too, so the older pages still join it
+ * ({@link fillOlderGap}).
+ */
+function conversationQuery(app: ConsumerApp, queryClient: QueryClient, id: string) {
+  return {
+    queryKey: botsKeys.conversation(id),
+    queryFn: async (): Promise<BotConversationEntity> => {
+      const window = await app.bots.findConversation(id);
+      const older = queryClient.getQueryData<BotOlderMessages | null>(botsKeys.olderMessages(id));
+      if (older && window.hasOlder && !joinsWindow(window, older)) {
+        const filled = await fillOlderGap(window, older, (before) =>
+          app.bots.findConversation(id, before),
+        );
+        queryClient.setQueryData(botsKeys.olderMessages(id), filled);
+      }
+      return window;
+    },
+  };
+}
+
+/**
+ * The newest messages, oldest first, and their turns, under a Suspense
+ * `QueryState`; with the older pages the reader scrolled up into laid under
+ * them.
+ */
 export function useSuspenseBotConversation(id: string) {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
   const sendings = useBotSendings(id);
+  const older = useBotOlderMessages(id);
   return useSuspenseQuery<BotConversationEntity, Error>({
-    queryKey: botsKeys.conversation(id),
-    queryFn: () => app.bots.findConversation(id),
-    select: (conversation) => withBotSendings(conversation, sendings),
+    ...conversationQuery(app, queryClient, id),
+    select: (conversation) => withBotSendings(withOlderMessages(conversation, older), sendings),
   });
+}
+
+/**
+ * Reads the page older than what the chat shows, for a reader who scrolled
+ * to its top, and lays it under the rest. One page at a time: a call while
+ * one is in flight, or once the chat shows its first message, does nothing.
+ * `loadOlder` keeps one identity for the life of the chat.
+ */
+export function useLoadOlderBotMessages(id: string) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+  const load = useMutation<void, Error, void>({
+    mutationKey: botsKeys.olderMessages(id),
+    mutationFn: async () => {
+      // This load counts itself: more than one is a page already on its way.
+      if (queryClient.isMutating({ mutationKey: botsKeys.olderMessages(id) }) > 1) return;
+      const window = queryClient.getQueryData<BotConversationEntity>(botsKeys.conversation(id));
+      if (!window) return;
+      const older = queryClient.getQueryData<BotOlderMessages | null>(botsKeys.olderMessages(id));
+      const before = olderCursor(window, older);
+      if (!before) return;
+      const page = await app.bots.findConversation(id, before);
+      // The window as it is now: a read may have landed while this one was out.
+      const now =
+        queryClient.getQueryData<BotConversationEntity>(botsKeys.conversation(id)) ?? window;
+      queryClient.setQueryData(
+        botsKeys.olderMessages(id),
+        addOlderPage(
+          now,
+          queryClient.getQueryData<BotOlderMessages | null>(botsKeys.olderMessages(id)),
+          page,
+        ),
+      );
+    },
+  });
+  return { loadOlder: load.mutate, isPending: load.isPending, error: load.error };
 }
 
 /** What Settings says of a chat: how many messages it holds, the newest's time, whether a turn works. */
@@ -105,10 +194,10 @@ export interface BotHistory {
 /** The chat read as Settings → Profile's history row draws it, under a Suspense `QueryState`. */
 export function useSuspenseBotHistory(id: string) {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
   const sendings = useBotSendings(id);
   return useSuspenseQuery<BotConversationEntity, Error, BotHistory>({
-    queryKey: botsKeys.conversation(id),
-    queryFn: () => app.bots.findConversation(id),
+    ...conversationQuery(app, queryClient, id),
     select: (stored) => {
       const conversation = withBotSendings(stored, sendings);
       return {
@@ -161,11 +250,13 @@ export const useExportBotConversation = mutation<Blob, ExportBotConversationVari
  */
 export const useClearBotConversation = mutation<void, string>({
   run: (app, id) => app.bots.clearConversation(id),
-  update: (queryClient, _data, id) =>
-    Promise.all([
+  update: (queryClient, _data, id) => {
+    queryClient.setQueryData(botsKeys.olderMessages(id), null);
+    return Promise.all([
       queryClient.invalidateQueries({ queryKey: botsKeys.detail(id) }),
       queryClient.invalidateQueries({ queryKey: botsKeys.lists() }),
-    ]),
+    ]);
+  },
 });
 
 /**
@@ -174,10 +265,10 @@ export const useClearBotConversation = mutation<void, string>({
  */
 export function useBotActiveTurn(id: string): BotTurnEntity | null {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
   const sendings = useBotSendings(id);
   const { data } = useQuery<BotConversationEntity, Error, BotTurnEntity | null>({
-    queryKey: botsKeys.conversation(id),
-    queryFn: () => app.bots.findConversation(id),
+    ...conversationQuery(app, queryClient, id),
     select: (conversation) => withBotSendings(conversation, sendings).activeTurn,
   });
   return data ?? null;
@@ -191,10 +282,10 @@ const NO_WAITING: readonly BotWaitingMessage[] = [];
  */
 export function useBotWaitingMessages(id: string): readonly BotWaitingMessage[] {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
   const sendings = useBotSendings(id);
   const { data } = useQuery<BotConversationEntity, Error, readonly BotWaitingMessage[]>({
-    queryKey: botsKeys.conversation(id),
-    queryFn: () => app.bots.findConversation(id),
+    ...conversationQuery(app, queryClient, id),
     select: (conversation) => withBotSendings(conversation, sendings).waitingMessages,
   });
   return data ?? NO_WAITING;
@@ -205,10 +296,10 @@ const NO_SENT: readonly string[] = [];
 /** What you wrote to the bot, newest first, for the composer to recall: nothing while the chat loads. */
 export function useBotSentTexts(id: string): readonly string[] {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
   const sendings = useBotSendings(id);
   const { data } = useQuery<BotConversationEntity, Error, readonly string[]>({
-    queryKey: botsKeys.conversation(id),
-    queryFn: () => app.bots.findConversation(id),
+    ...conversationQuery(app, queryClient, id),
     select: (conversation) => withBotSendings(conversation, sendings).sentTexts,
   });
   return data ?? NO_SENT;
@@ -219,10 +310,10 @@ const NO_ROOM: BotRoomLeft = { context: null, planLimits: null };
 /** How much room the bot has left, as of its newest turn that said; none while the chat loads. */
 export function useBotRoomLeft(id: string): BotRoomLeft {
   const app = useConsumerApp();
+  const queryClient = useQueryClient();
   const sendings = useBotSendings(id);
   const { data } = useQuery<BotConversationEntity, Error, BotRoomLeft>({
-    queryKey: botsKeys.conversation(id),
-    queryFn: () => app.bots.findConversation(id),
+    ...conversationQuery(app, queryClient, id),
     select: (conversation) => withBotSendings(conversation, sendings).roomLeft,
   });
   return data ?? NO_ROOM;
