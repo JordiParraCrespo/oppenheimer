@@ -160,7 +160,10 @@
   },
   "botNotice": {
     "title": "{{bot}} tiene novedades para ti",
-    "openChat": "Abrir chat"
+    "openChat": "Abrir chat",
+    "reply": "Responder aquí",
+    "hideReply": "Ocultar chat",
+    "chat": "Chat con {{bot}}"
   },
   "report": {
     "sender": "Un agente",
