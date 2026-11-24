@@ -111,6 +111,15 @@ owner's only.
   starts, before the turn goes on, and loses it when the turn ended, whether
   its answer went or not, so Slack shows the bot is on it. A message written into a thread while its turn runs is taken
   into that turn and gets none, nor does one that never became a turn.
+- **The bot's own reactions** (2026-11-24, the owner: "better the agent
+  decide"). The bot's `react` tool puts a reaction on the owner's message in
+  the thread, as the app, one at a time, as it does in the console. Slack
+  takes a reaction's name, not the character, so the bot reacts from a set of
+  about a hundred common emoji the API names (`slack-reaction.policy.ts`), and
+  is told to pick another outside it. 👀 stays the working sign's, which the
+  turn's end takes off, so the bot is told to use another. It reacts to the
+  message that opened a turn; one folded into a running turn has no key of
+  its own, and the bot answers in words. The 👀 working sign is unchanged.
 - **Secrets stay out of the thread.** Everything sent to Slack, as it goes
   and at the end, has secrets (tokens, keys, passwords, as the session
   transcript finds them) replaced with `[redacted]`; the console keeps the
@@ -167,3 +176,6 @@ owner's only.
   Two scopes added (`reactions:write`, `users:read`). Images on a Slack
   request were added the same day, with `files:read` (§3). Retrying a
   failed turn from its thread is not built yet.
+- 2026-11-24: the bot reacts on Slack itself, with its `react` tool, beside
+  the automatic 👀 (§4, "The bot's own reactions"); until then the tool
+  worked in the console chat only.

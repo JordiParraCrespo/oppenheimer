@@ -350,6 +350,29 @@ func (d *Device) SendVoice(ctx context.Context, chatID string, audio []byte, sec
 	return resp.ID, resp.Timestamp, nil
 }
 
+// React puts emoji under a message in a chat, as the paired number, or
+// takes the number's reaction back when emoji is empty. WhatsApp keeps one
+// reaction per person on a message, so a new one replaces the last.
+func (d *Device) React(ctx context.Context, chatID, messageID, senderID, emoji string) (string, time.Time, error) {
+	client, _ := d.current()
+	if client == nil || !client.IsLoggedIn() {
+		return "", time.Time{}, domain.ErrNotConnected
+	}
+	chat, err := types.ParseJID(chatID)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("not a WhatsApp chat: %w", err)
+	}
+	sender, err := types.ParseJID(senderID)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("not a WhatsApp sender: %w", err)
+	}
+	resp, err := client.SendMessage(ctx, chat, client.BuildReaction(chat, sender, messageID, emoji))
+	if err != nil {
+		return "", time.Time{}, rateLimited(err)
+	}
+	return resp.ID, resp.Timestamp, nil
+}
+
 // rateLimited marks WhatsApp's 429 as domain.ErrRateLimited, which pauses the
 // host's sends.
 func rateLimited(err error) error {

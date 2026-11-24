@@ -2013,3 +2013,10 @@ earlier note:
   Show done on by default, so a done item stayed in the list struck
   through. On 2026-11-24 the owner asked that it leave: Show done is off
   unless turned on in the filter menu ("Done leaves the list").
+- A bot's `react` tool worked in its console chat only, refusing on a
+  channel's conversation ("answer in words"). On 2026-11-24 the owner asked
+  for the bot to decide its reactions on the channels too, keeping Slack's
+  automatic 👀: it reacts on Slack as its app and on WhatsApp as the number,
+  without asking, in a chat it answers (`next-steps/slack-for-bots.md` §4,
+  `next-steps/answering-on-telegram-and-whatsapp.md` §4). Telegram still
+  takes none.
