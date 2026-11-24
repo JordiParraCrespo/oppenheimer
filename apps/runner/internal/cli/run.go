@@ -97,6 +97,9 @@ func (a *App) Run(ctx context.Context, logger *slog.Logger, opts RunOptions) err
 			logger.Warn("could not prepare the work folder",
 				slog.String("dir", a.Paths.Workspaces), slog.Any("error", err))
 		}
+		// Every level's README.md and AGENTS.md, for a folder an older runner
+		// made and for anything that changed while none was running.
+		a.WorkFolder.WriteGuides()
 	}
 
 	// Sessions live in tmux, which outlived this process being replaced.

@@ -192,6 +192,14 @@ host: remove it under Settings → Hosts).
     sessions.noindex/<slug>/<directory>          the checkout the agent works in
 ```
 
+Every level above (the root, each account, workspace, `repos.noindex/`,
+`sessions.noindex/` and session folder) also carries a `README.md`, which
+names what the id-named folder is and lists what it holds (workspaces by
+slug; sessions by name, repositories, branch and agent), and an `AGENTS.md`
+telling an agent where its checkout is and what not to touch. The runner
+rewrites both on every create and close and when it starts; a file at that
+path it did not write is left alone.
+
 The layout is `product/versions/mvp/24-session-places.md` §2. The two
 directories that hold checkouts end in `.noindex`, which Spotlight skips:
 indexing a host's sessions costs it more CPU than the agents use. Every level is
