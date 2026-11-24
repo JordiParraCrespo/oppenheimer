@@ -1,0 +1,41 @@
+import { IconButton } from '@oppenheimer/design-system-web';
+import { MessageSquareIcon, SquareTerminalIcon } from '@oppenheimer/design-system-web/icons';
+import { useTranslation } from 'react-i18next';
+import type { SessionView } from '../lib/chat-blocks';
+
+/**
+ * Terminal / Chat in the session's bar: two quiet square icons, the view on
+ * screen lit, each named by its tooltip. A terminal's status line, with no
+ * room for a tooltip to explain a glyph, keeps the worded `ChatViewToggle`.
+ */
+export function ChatViewIcons({
+  view,
+  onViewChange,
+}: {
+  view: SessionView;
+  onViewChange: (view: SessionView) => void;
+}) {
+  const { t } = useTranslation();
+  const views = [
+    { value: 'terminal', Icon: SquareTerminalIcon },
+    { value: 'chat', Icon: MessageSquareIcon },
+  ] as const;
+  return (
+    <fieldset aria-label={t('sessions.chat.view.label')} className="m-0 flex gap-0.5 border-0 p-0">
+      {views.map(({ value, Icon }) => (
+        <IconButton
+          key={value}
+          size="sm"
+          shape="square"
+          aria-label={t(`sessions.chat.view.${value}`)}
+          title={t(`sessions.chat.view.${value}`)}
+          aria-pressed={view === value}
+          data-dirty={view === value ? '' : undefined}
+          onClick={() => onViewChange(value)}
+        >
+          <Icon />
+        </IconButton>
+      ))}
+    </fieldset>
+  );
+}

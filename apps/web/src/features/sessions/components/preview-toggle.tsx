@@ -11,6 +11,8 @@ export function PreviewToggle({ open, onToggle }: { open: boolean; onToggle: () 
   return (
     <IconButton
       size="sm"
+      shape="square"
+      title={open ? t('sessions.side.hide') : t('sessions.side.show')}
       aria-label={open ? t('sessions.side.hide') : t('sessions.side.show')}
       aria-pressed={open}
       data-dirty={open ? '' : undefined}

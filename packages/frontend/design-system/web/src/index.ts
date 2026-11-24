@@ -396,6 +396,7 @@ export { Input, inputVariants } from './components/input';
 export type { JsonTreeAnnotate } from './components/json-tree';
 export { JsonTree } from './components/json-tree';
 export { Kbd } from './components/kbd';
+export { Launcher, LauncherHeading, LauncherItem } from './components/launcher';
 export { Link } from './components/link';
 export { MergePath } from './components/merge-path';
 export { MilestoneCard, MilestoneGrid } from './components/milestone-card';

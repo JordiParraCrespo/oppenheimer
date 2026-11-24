@@ -188,17 +188,20 @@ test.describe('Session screen', () => {
     await page.goto(`/sessions/${sessionId}`);
     await page.getByRole('button', { name: 'Show side pane' }).click();
     const pane = page.getByRole('complementary', { name: 'Side pane' });
-    await expect(pane.getByText('Open beside this session')).toBeVisible();
-    await expect(pane.getByRole('option', { name: /^Terminal/ })).toHaveCount(0);
-    await expect(pane.getByRole('option', { name: /^Agent/ })).toHaveCount(0);
+    const launcher = pane.getByRole('list', { name: 'Open beside this session' });
+    await expect(launcher).toBeVisible();
+    await expect(launcher.getByRole('button', { name: /^Terminal/ })).toHaveCount(0);
 
-    await pane.getByRole('option', { name: /^Bot/ }).click();
+    await launcher.getByRole('button', { name: 'Side chats' }).click();
+    await expect(pane.getByRole('button', { name: /^Another agent/ })).toHaveCount(0);
+    await pane.getByRole('button', { name: 'A bot' }).click();
     await pane.getByRole('option', { name: /Side Bot/ }).click();
     await expect(pane.getByRole('tab', { name: 'Side Bot' })).toBeVisible();
     await expect(pane.getByRole('textbox', { name: 'Message Side Bot' })).toBeVisible();
 
     await pane.getByRole('button', { name: 'Open something else' }).click();
-    await pane.getByRole('option', { name: /^Session/ }).click();
+    await pane.getByRole('button', { name: 'Side chats' }).click();
+    await pane.getByRole('button', { name: /^Another session/ }).click();
     await pane.getByRole('option', { name: /Other work/ }).click();
     await expect(pane.getByRole('tab', { name: 'Other work' })).toBeVisible();
 
@@ -208,6 +211,43 @@ test.describe('Session screen', () => {
     await pane.getByRole('button', { name: 'Close Other work' }).click();
     await expect(pane.getByRole('tab', { name: 'Other work' })).toHaveCount(0);
     await expect(pane.getByRole('textbox', { name: 'Message Side Bot' })).toBeVisible();
+
+    await owner.api.dispose();
+  });
+
+  test('opening sessions keeps each as a tab, and closing the one on screen shows its neighbour', async ({
+    page,
+  }) => {
+    // The tabs are this device's: arriving on a session
+    // opens its tab, they come back after a reload, and closing the tab on
+    // screen goes to the next one, then to New session after the last.
+    const owner = await provisionedUser('sessiontabs');
+    const hostId = await pairHost(owner.api, 'Quiet box');
+    const installationId = await connectInstallation(owner.api);
+    const firstId = await createSession(owner.api, hostId, installationId);
+    const secondId = await createSession(owner.api, hostId, installationId);
+    await owner.api.patch(`/api/v1/sessions/${firstId}`, { data: { name: 'First tab' } });
+    await owner.api.patch(`/api/v1/sessions/${secondId}`, { data: { name: 'Second tab' } });
+
+    await signInAs(page, owner.user);
+    await page.goto(`/sessions/${firstId}`);
+    await page.goto(`/sessions/${secondId}`);
+    const tabs = page.getByRole('navigation', { name: 'Open sessions' });
+    await expect(tabs.getByRole('link', { name: 'First tab' })).toBeVisible();
+    await expect(tabs.getByRole('link', { name: 'Second tab' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+
+    await tabs.getByRole('link', { name: 'First tab' }).click();
+    await expect(page).toHaveURL(new RegExp(`/sessions/${firstId}$`));
+    await page.reload();
+    await tabs.getByRole('button', { name: 'Close First tab' }).click();
+    await expect(page).toHaveURL(new RegExp(`/sessions/${secondId}$`));
+    await expect(tabs.getByRole('link', { name: 'First tab' })).toHaveCount(0);
+
+    await tabs.getByRole('button', { name: 'Close Second tab' }).click();
+    await expect(page).toHaveURL(/\/sessions\/new$/);
 
     await owner.api.dispose();
   });
@@ -243,7 +283,7 @@ test.describe('Session screen', () => {
     await page.goto(`/sessions/${sessionId}`);
     await page.getByRole('button', { name: 'Show side pane' }).click();
     const pane = page.getByRole('complementary', { name: 'Side pane' });
-    await pane.getByRole('option', { name: /^Browser/ }).click();
+    await pane.getByRole('button', { name: 'Browser' }).click();
     await expect(pane.getByText('The host is offline')).toBeVisible();
     await expect(pane.getByText('The preview comes back when the host reconnects.')).toBeVisible();
   });

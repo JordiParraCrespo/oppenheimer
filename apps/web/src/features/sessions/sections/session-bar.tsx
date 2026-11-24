@@ -22,6 +22,10 @@ import { SessionShareButton } from './session-share-button';
  * keystroke round trip sits after the state, in the bar rather than over
  * the grid.
  *
+ * Under Sessions the route hands it the open tabs (`open`): they take the
+ * name's place, the state moves to the tab's dot and tooltip, the readout
+ * to the right, and the bar keeps one line.
+ *
  * Every state of the session draws it — starting, live, stopped — so the way
  * back to the sidebar never moves. `preview` is the toggle for the pane the
  * frame opens beside a session; of its two tabs only the Simulator is built.
@@ -29,12 +33,18 @@ import { SessionShareButton } from './session-share-button';
 export function SessionBar({
   session,
   back,
+  open,
   tabs,
   preview,
 }: {
   session: SessionEntity;
   /** "Back to task", when the route has one. */
   back?: ReactNode;
+  /**
+   * The open tabs over Sessions, from the route: the bar's title. The name
+   * and state are then this session's tab and its tooltip.
+   */
+  open?: ReactNode;
   /** Terminal / Chat, once the chat is offered. */
   tabs?: ReactNode;
   /** The preview pane's toggle, while the session is live. */
@@ -46,28 +56,31 @@ export function SessionBar({
   return (
     <PageBar
       leading={back}
-      title={session.name}
+      title={open ?? session.name}
       // Beside the name, as the frame draws it, rather than at the far end.
       meta={
-        <>
-          <StatusDot
-            state={dot}
-            density="compact"
-            pulse={dot === 'pending'}
-            className="shrink-0 text-xs text-fg-muted"
-          >
-            {t(`sessions.session.state.${stateWordFor(session)}`)}
-          </StatusDot>
-          {note ? <AgentReportNote word={note.word} message={note.message} /> : null}
-          {/* A cloud session has no terminal here: nothing to time, nothing to share. */}
-          {session.isCloud ? null : <LatencyReadout sessionId={session.id} />}
-        </>
+        open ? null : (
+          <>
+            <StatusDot
+              state={dot}
+              density="compact"
+              pulse={dot === 'pending'}
+              className="shrink-0 text-xs text-fg-muted"
+            >
+              {t(`sessions.session.state.${stateWordFor(session)}`)}
+            </StatusDot>
+            {note ? <AgentReportNote word={note.word} message={note.message} /> : null}
+            {/* A cloud session has no terminal here: nothing to time, nothing to share. */}
+            {session.isCloud ? null : <LatencyReadout sessionId={session.id} />}
+          </>
+        )
       }
       tabs={tabs}
       // A cloud session has no terminal here: no device beside it, nothing to share.
       actions={
         session.isCloud ? null : (
           <>
+            {open ? <LatencyReadout sessionId={session.id} /> : null}
             {preview}
             <SessionShareButton sessionId={session.id} />
           </>
@@ -76,7 +89,7 @@ export function SessionBar({
       // On the terminal's ground with a hairline under it, whichever view is
       // on screen: the chat stands on the same ground, so bar, grid and chat
       // read as one surface and switching views changes no colour.
-      className="border-b border-border-subtle bg-term-bg"
+      className="border-b border-border-subtle bg-term-bg [--chat-tab-ground:var(--term-bg)]"
     />
   );
 }
