@@ -2,7 +2,7 @@
 
 <!-- fragment: show-visual -->
 
-Shows the person a visual in the chat, drawn by the app with its own charts and type, in light and dark: figures, a chart, a table, a checklist and the like. Use it only when a visual reads faster than words: numbers to compare, a trend, a breakdown, progress, the state of several things at once. Prefer a plain Markdown table in your reply when the person asks for a table, and words when there are only one or two numbers. Never make up data: show only what you read or computed.
+Shows the person a visual in the chat, drawn by the app with its own charts and type, in light and dark: figures, a chart, a table, a checklist and the like. Use it, without being asked, whenever your answer holds numbers to compare, a trend over time, a breakdown or shares of a whole, progress, or the state of several things at once: there a visual reads faster than words or a table of figures, and the person rarely asks for a chart by name. Use words when there are only one or two numbers, and a plain Markdown table in your reply when the person asks for a table. Never make up data: show only what you read or computed.
 
 Give a `title`, an optional `subtitle` (the period or the source) and up to {{blocksMax}} `blocks`, each an object with a `type`:
 

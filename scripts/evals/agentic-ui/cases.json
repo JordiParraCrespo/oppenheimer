@@ -1,0 +1,115 @@
+{
+  "now": "2026-11-24T18:00:00Z",
+  "bot": {
+    "name": "Oppie",
+    "description": "Runs Jordi's releases and keeps an eye on his hosts and the work he hands off.",
+    "instructions": "You help Jordi ship Oppenheimer: start coding sessions on his hosts for releases and fixes, watch them through, and tell him how they went."
+  },
+  "hosts": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "Mac-Studio",
+      "online": true,
+      "runningSessions": 3,
+      "os": "macOS 26",
+      "runnerVersion": "0.1.21"
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "hetzner-1",
+      "online": true,
+      "runningSessions": 5,
+      "os": "Ubuntu 24.04",
+      "runnerVersion": "0.1.21"
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "name": "laptop",
+      "online": false,
+      "runningSessions": 0,
+      "os": "macOS 26",
+      "runnerVersion": "0.1.19"
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444444",
+      "name": "ci-box",
+      "online": true,
+      "runningSessions": 1,
+      "os": "Debian 13",
+      "runnerVersion": "0.1.20"
+    }
+  ],
+  "projects": [
+    {
+      "id": "55555555-5555-4555-8555-555555555555",
+      "name": "Oppenheimer"
+    }
+  ],
+  "cases": [
+    {
+      "id": "deploys-trend",
+      "message": "Deploys per day this week: Mon 4, Tue 7, Wed 3, Thu 9, Fri 6, Sat 1, Sun 0. Last week was Mon 5, Tue 5, Wed 6, Thu 4, Fri 8, Sat 0, Sun 1. How did this week go?",
+      "expect": "visual",
+      "blocks": ["bar", "line", "area", "metrics"],
+      "why": "two series over seven days: a chart reads faster than words"
+    },
+    {
+      "id": "service-latency",
+      "message": "p95 latency by service, this week vs last (ms): api 182 vs 240, relay 41 vs 39, web 96 vs 130, links 12 vs 11, preview 310 vs 295, auth 55 vs 71. Which ones got better?",
+      "expect": "visual",
+      "blocks": ["bar", "ranking", "table", "metrics"],
+      "why": "twelve numbers to compare"
+    },
+    {
+      "id": "release-progress",
+      "message": "Here's the 0.2 release so far. Done: changelog, tag, darwin builds, docs. Not done: linux builds, signing, publish to stable, announce. How far along are we?",
+      "expect": "visual",
+      "blocks": ["checklist", "progress"],
+      "why": "the state of several things at once, given by the person"
+    },
+    {
+      "id": "one-number",
+      "message": "How many sessions are running on hetzner-1 right now?",
+      "expect": "no_visual",
+      "why": "one number: words"
+    },
+    {
+      "id": "table-asked",
+      "message": "Give me a table of my hosts with their OS and runner version.",
+      "expect": "no_visual",
+      "why": "the tool says a plain Markdown table when the person asks for a table"
+    },
+    {
+      "id": "no-data",
+      "message": "Show me a chart of our API error rate over the last 30 days.",
+      "expect": "no_invented",
+      "why": "no tool reads error rates: never make up data"
+    },
+    {
+      "id": "signed-change",
+      "message": "Net change in open issues per week: +12, -4, +3, -9, -2, +6. Chart it for me.",
+      "expect": "visual",
+      "blocks": ["bar", "line", "area", "metrics", "table", "ranking"],
+      "why": "values under zero are refused; the bot has to recover into a shape that holds them"
+    },
+    {
+      "id": "capacity-calculator",
+      "message": "Make me a little interactive calculator: I drag how many sessions I want to run in parallel, at 6 per host, and it shows how many hosts I need and what that costs at 40 EUR a host a month.",
+      "expect": "visual",
+      "blocks": ["html"],
+      "why": "only the html block can take input"
+    },
+    {
+      "id": "release-details",
+      "message": "Set up the next runner release for me. I'll give you the details.",
+      "expect": "form",
+      "why": "several typed values at once (version, date, notes): one form"
+    },
+    {
+      "id": "one-choice",
+      "message": "Deploy the fix from the hotfix session, but ask me first whether it goes to staging or straight to prod.",
+      "expect": "question",
+      "why": "one choice among two: ask_user, not a form"
+    }
+  ]
+}

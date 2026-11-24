@@ -1,8 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { parseVisual, VISUAL_BLOCKS_MAX, VISUAL_SERIES_MAX } from '@oppenheimer/shared';
+import {
+  BOT_CHANNEL_ORIGINS,
+  parseVisual,
+  VISUAL_BLOCKS_MAX,
+  VISUAL_SERIES_MAX,
+} from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import type { FlagEvaluatorPort } from '../../feature-flags/application/flag-evaluator.port';
 import { FLAG_EVALUATOR } from '../../feature-flags/feature-flags.di-tokens';
+import { NOT_ON_A_GITHUB_ASK } from '../domain/bot-github-ask.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
 import { VISUALS_PER_TURN } from '../domain/bot-visual.policy';
 import {
@@ -37,9 +43,9 @@ const showVisualInput = z.object({
  * the console draws with its own charts, so no code of the model's runs. It
  * reaches nothing outside Oppenheimer and never asks first. An `html` block
  * runs the model's own page in a sandboxed frame; the `visual_html` flag
- * refuses it. On a channel
- * that draws no visuals (Telegram, WhatsApp) the person reads the reply's
- * words, which the description asks to carry the meaning.
+ * refuses it. It is not offered on a turn whose reply goes out as text
+ * (Telegram, WhatsApp, Slack, a GitHub comment): nothing draws it there, and
+ * the description tells the model to put figures in it and not repeat them.
  */
 @Injectable()
 export class BotVisualToolsFactory implements BotToolArea {
@@ -53,6 +59,7 @@ export class BotVisualToolsFactory implements BotToolArea {
       defineBotTool({
         name: 'show_visual',
         scope: 'bots:write',
+        notOn: [...BOT_CHANNEL_ORIGINS, ...NOT_ON_A_GITHUB_ASK],
         description: promptText('core/tools-visual.show-visual', {
           blocksMax: String(VISUAL_BLOCKS_MAX),
           seriesMax: String(VISUAL_SERIES_MAX),

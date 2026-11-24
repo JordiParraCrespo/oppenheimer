@@ -87,3 +87,17 @@ describe('BotVisualToolsFactory', () => {
     expect(over.content).toContain('Answer in words');
   });
 });
+
+// What breaks this: a bot answering on Telegram, WhatsApp, Slack or in a
+// GitHub comment offered show_visual, which nothing there draws, while its
+// description asks for the figures to go in it and not be repeated: the
+// person would read what the figures mean without ever seeing them.
+it('is not offered on a turn whose reply goes out as text', () => {
+  const [showVisual] = new BotVisualToolsFactory({
+    isEnabled: () => true,
+  } as unknown as FlagEvaluatorPort).definitions();
+  expect(showVisual.notOn).toEqual(
+    expect.arrayContaining(['telegram', 'whatsapp', 'slack', 'github']),
+  );
+  expect(showVisual.notOn).not.toContain('message');
+});

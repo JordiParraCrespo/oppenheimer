@@ -136,7 +136,7 @@ func (l Launch) briefing() string {
 	if l.Note != "" {
 		b.WriteString(" Read " + l.Note + " before you start: it says how this session is set up and what to do when you finish a task.")
 	}
-	b.WriteString(" The `runner` command lets you start other agents, tell the person, send them a file and be woken later; run `runner --skill` once for how.")
+	b.WriteString(" The `runner` command lets you start other agents, tell the person, send them a file or show them a visual (figures, a chart), and be woken later; run `runner --skill` once for how.")
 	if len(l.Tools) > 0 {
 		b.WriteString(" The same commands are the tools of the `" + ToolsServer + "` MCP server.")
 	}

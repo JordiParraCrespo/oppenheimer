@@ -16,6 +16,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type Anthropic from '@anthropic-ai/sdk';
 import { BotCheckBackToolsFactory } from '../../apps/api/src/bots-chat/application/bot-check-back-tools.factory';
+import { BotFormToolsFactory } from '../../apps/api/src/bots-chat/application/bot-form-tools.factory';
 import { BotGoalToolsFactory } from '../../apps/api/src/bots-chat/application/bot-goal-tools.factory';
 import { BotGuideToolsFactory } from '../../apps/api/src/bots-chat/application/bot-guide-tools.factory';
 import { BotLoopToolsFactory } from '../../apps/api/src/bots-chat/application/bot-loop-tools.factory';
@@ -24,6 +25,7 @@ import { BotQuestionToolsFactory } from '../../apps/api/src/bots-chat/applicatio
 import { BotSelfToolsFactory } from '../../apps/api/src/bots-chat/application/bot-self-tools.factory';
 import { BotSkillToolsFactory } from '../../apps/api/src/bots-chat/application/bot-skill-tools.factory';
 import { alwaysLoaded } from '../../apps/api/src/bots-chat/application/bot-toolbox.factory';
+import { BotVisualToolsFactory } from '../../apps/api/src/bots-chat/application/bot-visual-tools.factory';
 import { DEFER_TOOLS_ABOVE_CHARS } from '../../packages/backend/agents/src/claude/claude-options';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -191,6 +193,8 @@ function ownToolNames(): ReadonlySet<string> {
     new BotQuestionToolsFactory(none, none),
     new BotNoticeToolsFactory(none, none),
     new BotCheckBackToolsFactory(none, none),
+    new BotVisualToolsFactory(none),
+    new BotFormToolsFactory(none, none),
   ]);
 }
 

@@ -217,7 +217,10 @@ func (s *mcpServer) call(ctx context.Context, name string, raw json.RawMessage) 
 
 const mcpInstructions = "Tools for the Oppenheimer session this agent runs in: start other agents as sessions " +
 	"of your own and hear back from them, tell the person, show them a file or a visual, and be woken later or by a " +
-	"pull request. They are the `runner sessions` commands; `runner --skill` is the full manual."
+	"pull request. They are the `runner sessions` commands; `runner --skill` is the full manual. When your answer " +
+	"reports figures (sizes, timings, counts, coverage, before and after, one set against another, a trend, " +
+	"progress), call show_visual with them without being asked, and keep your reply to what they mean, rather " +
+	"than writing the figures as a Markdown table: the person watches the session's chat, where it reads faster."
 
 // mcpTool is one tool: what tools/list says of it and what tools/call runs,
 // so the two cannot disagree. Its required fields are checked before run is
@@ -316,10 +319,12 @@ var mcpTools = []mcpTool{
 	{
 		name: "show_visual",
 		description: "Show the person a visual in this session's chat, drawn by the console with its own charts, " +
-			"light and dark: figures, a chart, a table, a checklist. Use it only when a visual reads faster than " +
-			"words (numbers to compare, a trend, a breakdown, progress); a plain Markdown table when they ask for a " +
-			"table. Never make up data. Each block is an object with a `type`: markdown {text}; metrics {items: " +
-			"[{label, value, delta?, good?: up|down, hint?}]}; bar, line, area {title?, labels, series: [{label, " +
+			"light and dark: figures, a chart, a table, a checklist. Use it, without being asked, whenever your answer " +
+			"has numbers to compare, a trend, a breakdown or progress: there it reads faster than words or a table of " +
+			"figures. Words for one or two numbers; a plain Markdown table when they ask for a table. Never make up " +
+			"data. Each block is an object with a `type`: markdown {text}; metrics {items: [{label, value, delta?, " +
+			"good?: up|down, hint?}]}, value a number or short text, delta a number in the value's units, never text; " +
+			"bar, line, area {title?, labels, series: [{label, " +
 			"values}]}, one value per label and none under zero, up to 5 series; ring {title?, total?, segments: [{label, value}]}; " +
 			"ranking {title?, items: [{label, value, detail?}]}; table {title?, columns: [{label, align?}], rows: " +
 			"[[cell, …]]}; checklist {title?, items: [{text, done, note?}]}; progress {title?, items: [{label, " +
@@ -327,8 +332,9 @@ var mcpTools = []mcpTool{
 			"neutral|info|success|warning|danger, title?, text}; links {title?, items: [{label, url, description?}]}; " +
 			"html {title?, html}, a fragment with inline style and script for what no other block draws, run sandboxed " +
 			"with the network closed. " +
-			"Numeric blocks take format {prefix?, suffix?, decimals?, compact?}. Up to 24 blocks; `runner --skill` " +
-			"has an example.",
+			"A numeric block takes format {prefix?, suffix?, decimals?, compact?} on the block itself, beside its " +
+			"items or series, never on an item; a table takes it per column. Up to 24 blocks; `runner --skill` has " +
+			"an example.",
 		properties: map[string]any{
 			"title":    mcpString("What it shows, in a few words."),
 			"subtitle": mcpString("The period, the source or the scope."),
