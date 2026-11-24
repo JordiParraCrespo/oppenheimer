@@ -61,6 +61,7 @@ export function PullRequestToolbar({
       </IconButton>
       <PillTabs
         size="sm"
+        className="no-scrollbar min-w-0 flex-nowrap overflow-x-auto"
         value={view}
         onValueChange={(next) => onViewChange(next as PullRequestView)}
         aria-label={t('pullRequests.detail.viewLabel')}
