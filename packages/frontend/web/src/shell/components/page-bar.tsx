@@ -17,6 +17,8 @@ export function SidebarToggle() {
     <IconButton
       variant="quiet"
       size="sm"
+      // Over an image a screen lays under the whole pane it stands on a frosted chip.
+      data-pane-chrome
       aria-label={t('nav.toggleSidebar')}
       onClick={toggleSidebar}
     >

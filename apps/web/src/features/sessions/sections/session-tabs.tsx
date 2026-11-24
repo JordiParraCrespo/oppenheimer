@@ -1,10 +1,9 @@
 import { ChatTab, ChatTabStrip } from '@oppenheimer/design-system-web';
 import { PlusIcon } from '@oppenheimer/design-system-web/icons';
-import { useBots, useSessions } from '@oppenheimer/frontend-consumer/react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Fragment, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useOpenTabs } from '../hooks/use-open-tabs';
+import { useDrawnTabs } from '../hooks/use-drawn-tabs';
 import { type OpenTab, openTabKey, openTabOf, tabAfterClosing } from '../lib/open-tabs';
 import { SessionOpenTab } from './session-open-tab';
 import { ShownSessionTab } from './shown-session-tab';
@@ -38,25 +37,12 @@ export function SessionTabs({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const shownKey = shown ? openTabKey(shown) : null;
-  const tabs = useOpenTabs(shownKey);
-  const { data: sessions } = useSessions({
-    select: (list) => new Map(list.map((session) => [session.id, session])),
-  });
-  const { data: botIds } = useBots({ select: (list) => new Set(list.map((one) => one.id)) });
-
-  const drawn = tabs.keys.flatMap((key) => {
-    const tab = openTabOf(key);
-    if (!tab) return [];
-    if (key === shownKey) return [{ key, tab }];
-    if (tab.kind === 'session' && !sessions?.has(tab.id)) return [];
-    if (tab.kind === 'bot' && !botIds?.has(tab.id)) return [];
-    return [{ key, tab }];
-  });
+  const { drawn, sessions, close: closeTab } = useDrawnTabs(shownKey);
   const order = drawn.map((one) => one.key);
 
   const close = (key: string) => {
     const next = tabAfterClosing(order, shownKey, key);
-    tabs.close(key);
+    closeTab(key);
     if (next === shownKey) return;
     const tab = next ? openTabOf(next) : null;
     if (!tab) void navigate({ to: '/sessions/new' });

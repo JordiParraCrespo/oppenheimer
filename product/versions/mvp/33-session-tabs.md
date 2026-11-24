@@ -42,7 +42,9 @@ rung, tabs included, and on the same ground as the page under it, the way
 a calm app header reads: the terminal's colour on a session, the pane's
 on New session, with a hairline at its foot. On New session the reader's
 background image lies only under the content below the bar; the bar
-keeps its dark ground over it. The shown
+keeps its dark ground over it. With no other tab open, New session keeps
+the quiet bar it had before the tabs: the sidebar toggle and the image's
+button on frosted chips, over an image that runs to the top. The shown
 tab stands out by its card and hairline (§2), not by the band around it.
 
 ## 2. What a tab shows
