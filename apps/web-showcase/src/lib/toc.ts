@@ -73,7 +73,7 @@ import {
   TypeIcon,
   UnplugIcon,
   WavesIcon,
-  ZapIcon,
+  AlarmClockIcon,
 } from '@oppenheimer/design-system-web/icons';
 
 /**
@@ -167,7 +167,7 @@ export const TOC: TocGroup[] = [
     group: 'Navigation',
     items: [
       { id: 'sidebar', label: 'Rail · Sidebar', icon: PanelLeftIcon, components: ['rail', 'sidebar', 'sidebar-fold-label', 'session-item'] },
-      { id: 'routineitem', label: 'RoutineItem', icon: ZapIcon, components: ['routine-item'] },
+      { id: 'routineitem', label: 'RoutineItem', icon: AlarmClockIcon, components: ['routine-item'] },
       { id: 'inbox', label: 'Inbox', icon: BellIcon, components: ['inbox'] },
       { id: 'pilltabs', label: 'PillTabs', icon: ToggleLeftIcon, components: ['pill-tabs'] },
       { id: 'editorpage', label: 'EditorPage', icon: PanelTopIcon, components: ['editor-page'] },
@@ -249,7 +249,7 @@ export const TOC: TocGroup[] = [
       { id: 'avatarpicker', label: 'AvatarPicker', icon: CircleUserRoundIcon, components: ['avatar-picker'] },
       { id: 'avatarcolorpicker', label: 'AvatarColorPicker', icon: CircleUserRoundIcon, components: [] },
       { id: 'botfacepicker', label: 'BotFacePicker', icon: CircleUserRoundIcon, components: ['bot-face-picker'] },
-      { id: 'routinecard', label: 'RoutineCard', icon: ZapIcon, components: ['routine-card'] },
+      { id: 'routinecard', label: 'RoutineCard', icon: AlarmClockIcon, components: ['routine-card'] },
       { id: 'settingslist', label: 'SettingsListRow · SettingsAddRow', icon: RowsIcon, components: [] },
       { id: 'settingstopbar', label: 'SettingsTopBar', icon: PanelTopIcon, components: [] },
     ],

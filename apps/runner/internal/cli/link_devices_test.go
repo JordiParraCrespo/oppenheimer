@@ -1,10 +1,12 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
 	"log/slog"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -135,4 +137,114 @@ func TestAPickThatCannotOpenKeepsTheOldDevice(t *testing.T) {
 		}
 	}
 	lastInfo(t, sent, 1, "UDID-1")
+}
+
+// listScreen streams its frames in order, then waits to be closed.
+type listScreen struct {
+	frames [][]byte
+	closed chan struct{}
+	once   sync.Once
+}
+
+func (s *listScreen) Next(ctx context.Context) ([]byte, error) {
+	if len(s.frames) > 0 {
+		frame := s.frames[0]
+		s.frames = s.frames[1:]
+		return frame, nil
+	}
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-s.closed:
+		return nil, errors.New("closed")
+	}
+}
+
+func (s *listScreen) Close() error {
+	s.once.Do(func() { close(s.closed) })
+	return nil
+}
+
+type listScreens struct{ frames [][]byte }
+
+func (l listScreens) Open(context.Context, devdomain.Device) (devapp.Screen, error) {
+	return &listScreen{frames: l.frames, closed: make(chan struct{})}, nil
+}
+
+// halving stands in for the scaler: every frame comes out half its size.
+type halving struct{}
+
+func (halving) Fit(frame []byte) ([]byte, error) { return frame[:len(frame)/2], nil }
+
+func pumpHandler(t *testing.T, frames [][]byte, fitter devapp.Fitter, log io.Writer) (*linkHandler, *capturedLink) {
+	t.Helper()
+	h, sent := devicesHandler(t, nil)
+	h.logger = slog.New(slog.NewTextHandler(log, nil))
+	h.devices = devapp.New(devapp.Options{
+		Devices: []devdomain.Device{{Serial: "UDID-1", Name: "iPhone 17 Pro", Platform: devdomain.IOS}},
+		Screens: listScreens{frames: frames},
+		Fitter:  fitter,
+	})
+	return h, sent
+}
+
+func waitFrameBytes(t *testing.T, sent *capturedLink, want int) string {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for len(sent.framed()) < want {
+		if time.Now().After(deadline) {
+			t.Fatalf("sent %d frame bytes, want %d", len(sent.framed()), want)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	return sent.framed()
+}
+
+// A simulator's full-resolution frame is larger than the link carries: the
+// pump sends the fitted frame, not the one the device made.
+func TestThePumpSendsTheFittedFrame(t *testing.T) {
+	big := bytes.Repeat([]byte{'x'}, link.MaxFrameBytes+1000)
+	h, sent := pumpHandler(t, [][]byte{big}, halving{}, io.Discard)
+	h.deviceAttach(link.DeviceAttach{Type: link.TypeDeviceAttach, CommandID: "c", SessionID: devicesSession, AttachmentID: 1}, h.currentEpoch())
+	if got := waitFrameBytes(t, sent, len(big)/2); len(got) != len(big)/2 {
+		t.Fatalf("sent %d bytes, want the fitted %d", len(got), len(big)/2)
+	}
+}
+
+// A frame still too large once fitted is skipped and said so in the log, and
+// the stream goes on with the next: it was dropped in silence before.
+func TestAFrameTooLargeForTheLinkIsLoggedAndSkipped(t *testing.T) {
+	huge := bytes.Repeat([]byte{'x'}, 3*link.MaxFrameBytes)
+	var log syncBuffer
+	h, sent := pumpHandler(t, [][]byte{huge}, halving{}, &log)
+	h.deviceAttach(link.DeviceAttach{Type: link.TypeDeviceAttach, CommandID: "c", SessionID: devicesSession, AttachmentID: 1}, h.currentEpoch())
+	deadline := time.Now().Add(2 * time.Second)
+	for !strings.Contains(log.String(), "device frame not sent") {
+		if time.Now().After(deadline) {
+			t.Fatalf("the oversized frame left no trace in the log: %q", log.String())
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if !strings.Contains(log.String(), "unsent=1") {
+		t.Fatalf("the log does not count it: %q", log.String())
+	}
+	if got := sent.framed(); got != "" {
+		t.Fatalf("an oversized frame went on the link (%d bytes)", len(got))
+	}
+}
+
+func TestDeviceScreenWidthReadsTheVariable(t *testing.T) {
+	for _, tc := range []struct {
+		spec string
+		want int
+	}{{"", DefaultDeviceScreenWidth}, {" 600 ", 600}, {"FULL", 0}} {
+		if got, err := deviceScreenWidth(tc.spec); err != nil || got != tc.want {
+			t.Errorf("%q: %d, %v; want %d", tc.spec, got, err, tc.want)
+		}
+	}
+	for _, spec := range []string{"wide", "40", "100000", "-1"} {
+		if _, err := deviceScreenWidth(spec); err == nil {
+			t.Errorf("%q was taken as a width", spec)
+		}
+	}
 }

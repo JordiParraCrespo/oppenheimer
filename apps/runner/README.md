@@ -59,6 +59,10 @@ host gives it, through Argent (`product/research/device-streaming.md`). A
 host with Argent installed needs no setup: each new session takes one of the
 simulators and emulators running at the time, and keeps it for its life.
 `RUNNER_DEVICES` names them instead, or turns it `off` (`.env.example`).
+A simulator streams every frame at its full resolution, larger than the
+link carries, so the runner scales the frame it is about to send to 720
+pixels wide (`RUNNER_DEVICE_SCREEN_WIDTH`), and logs any frame that still
+does not fit rather than dropping it unseen.
 
 The host's own desktop streams to the console (Settings → Hosts → Desktop,
 and a session's Desktop tab) once its owner runs `runner desktop on`: the
@@ -187,6 +191,14 @@ host: remove it under Settings → Hosts).
     sessions.noindex/<slug>/.oppenheimer/meta.json  {"kind":"session","id":…}
     sessions.noindex/<slug>/<directory>          the checkout the agent works in
 ```
+
+Every level above (the root, each account, workspace, `repos.noindex/`,
+`sessions.noindex/` and session folder) also carries a `README.md`, which
+names what the id-named folder is and lists what it holds (workspaces by
+slug; sessions by name, repositories, branch and agent), and an `AGENTS.md`
+telling an agent where its checkout is and what not to touch. The runner
+rewrites both on every create and close and when it starts; a file at that
+path it did not write is left alone.
 
 The layout is `product/versions/mvp/24-session-places.md` §2. The two
 directories that hold checkouts end in `.noindex`, which Spotlight skips:

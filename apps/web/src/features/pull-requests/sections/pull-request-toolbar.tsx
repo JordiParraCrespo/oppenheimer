@@ -2,6 +2,8 @@ import {
   type DiffLayout,
   DiffStat,
   IconButton,
+  PillTab,
+  PillTabs,
   SegmentedControl,
   SegmentedControlItem,
   Skeleton,
@@ -57,14 +59,15 @@ export function PullRequestToolbar({
       >
         <ChevronLeft />
       </IconButton>
-      <SegmentedControl
-        size="md"
+      <PillTabs
+        size="sm"
+        className="no-scrollbar min-w-0 flex-nowrap overflow-x-auto"
         value={view}
         onValueChange={(next) => onViewChange(next as PullRequestView)}
         aria-label={t('pullRequests.detail.viewLabel')}
       >
         {PULL_REQUEST_VIEWS.map((value) => (
-          <SegmentedControlItem key={value} value={value}>
+          <PillTab key={value} value={value}>
             {t(`pullRequests.detail.views.${value}`)}
             {value === 'changes' && pull ? (
               <DiffStat additions={pull.additions} deletions={pull.deletions} />
@@ -73,9 +76,9 @@ export function PullRequestToolbar({
                 <Skeleton shape="sm" className="h-2.5 w-12" />
               </span>
             ) : null}
-          </SegmentedControlItem>
+          </PillTab>
         ))}
-      </SegmentedControl>
+      </PillTabs>
       {view === 'changes' ? (
         <SegmentedControl
           size="md"

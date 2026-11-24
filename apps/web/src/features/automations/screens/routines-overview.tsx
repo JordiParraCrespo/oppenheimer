@@ -1,27 +1,20 @@
-import {
-  RoutineTable,
-  RoutineTableHead,
-  RoutineTableRowSkeleton,
-} from '@oppenheimer/design-system-web';
 import { QueryState } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { botRoutineColumns } from '../lib/automation-view';
+import { RoutinesSkeleton } from '../components/routines-skeleton';
+import { useRoutinesFilters } from '../hooks/use-routines-filters';
 import { BotRoutinesTable } from '../sections/bot-routines-table';
 import { OverviewTop } from '../sections/overview-top';
 
 /** The overview on its Bot routines tab: the tabs and every bot's routines. */
 export function RoutinesOverviewScreen() {
   const { t } = useTranslation();
+  const { state } = useRoutinesFilters();
   return (
     <>
       <OverviewTop />
       <QueryState>
         <QueryState.Pending>
-          <RoutineTable aria-busy>
-            <RoutineTableHead aria-hidden columns={botRoutineColumns(t)} />
-            <RoutineTableRowSkeleton index={0} />
-            <RoutineTableRowSkeleton index={1} />
-          </RoutineTable>
+          <RoutinesSkeleton status={state.status} />
         </QueryState.Pending>
         <QueryState.Error fallback={t('automations.routines.loadFailed')} />
         <QueryState.Data>
