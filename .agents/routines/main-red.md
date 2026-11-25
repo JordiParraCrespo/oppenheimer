@@ -68,7 +68,9 @@ almost every failure is in the one step `pnpm ci:local --all`.
   run on a merged fix is red on the same row, a person takes it from there.
 - **Say each thing once.** Comment on the issue only when the state changed
   since your last comment there; a new run that fails the same row the same
-  way is not a change. A run that finds nothing new posts nothing.
+  way is not a change. A run that finds nothing new posts nothing. Every
+  comment that hands something to a person mentions the repository's owner,
+  so it reaches them.
 
 ## 1. Where does it stand?
 
@@ -233,7 +235,8 @@ on the issue in one line which rule kept it open, and stop.
 1. **The cause is plain.** The failure is **confirmed**, the failing row
    points at a change that is already on `main`, and the error itself
    points at one mechanical fix that changes no behaviour (when it swaps
-   one call for another, the tests at that call pass on both), one the
+   one call for another, the tests at that call pass with either one,
+   where both can run), one the
    repository already knows how to apply (its own generator, its own formatter, the
    spelling the rest of the code already uses). Examples, not a catalog: a
    stale generated file; two pull requests that each passed alone and
@@ -285,6 +288,7 @@ commit after it (`git merge-base --is-ancestor <merge> <head_sha>`).
 ## End
 
 End every run with one line in its own output (not on GitHub), "nothing
-red" when there is nothing: what was red, the class, what this run did,
+red" when there is nothing, and never a secret or a host from a log: what
+was red, the class, what this run did,
 and the pull request (merged, waiting on which gate, or left for a person
 and why).
