@@ -12,7 +12,8 @@
 // answers as production does, and runs one turn.
 //
 // A run is right when its reply has words: a reaction alone, or an empty
-// reply, is a miss. Reacting is not required; replying in words only is right.
+// reply, is a miss, and one miss fails its case. Reacting is not required;
+// replying in words only is right.
 //
 //   pnpm eval:bot-react                  every case, 3 runs each
 //   pnpm eval:bot-react --case okeys --runs 1
@@ -140,7 +141,8 @@ async function main(): Promise<void> {
     const mine = results.filter((run) => run.id === item.id);
     const right = mine.filter((run) => run.right).length;
     const reacted = mine.filter((run) => run.reacted).length;
-    const pass = right * 2 > mine.length;
+    // Every run: one lone emoji is the reply the owner reported, so a single one fails the case.
+    const pass = right === mine.length;
     if (!pass) failed += 1;
     console.log(
       `${pass ? 'pass' : 'FAIL'}  ${item.id.padEnd(10)} ${right}/${mine.length} with words, ${reacted} reacted`,

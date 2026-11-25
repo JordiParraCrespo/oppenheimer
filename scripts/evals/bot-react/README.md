@@ -18,7 +18,8 @@ schema, as a stub) and a few stub mail tools, and runs one turn.
 
 A run is right when its reply has words (a letter or digit). A reaction
 alone, or a reply of emoji only, is a miss. Reacting is never required. A
-case passes on a majority of its runs.
+case passes only when every run is right: the reported reply was one lone
+emoji, so a single miss fails it, where the other bot evals take a majority.
 
 ```bash
 pnpm eval:bot-react                       # every case, 3 runs each
@@ -43,8 +44,12 @@ BOT_REACT_EVAL_MODEL=glm-5.2 pnpm eval:bot-react --runs 5
 | 2026-11-25 | claude-sonnet-5-5 | after | 15/15 |
 | 2026-11-25 | glm-5.2 | before | 25/25 |
 | 2026-11-25 | glm-5.2 | after | 25/25 |
+| 2026-11-25 | glm-4.6 | before | 14/15, `okeys` fails (a lone emoji) |
+| 2026-11-25 | glm-4.6 | after | 15/15 |
+| 2026-11-25 | glm-5-turbo | before | 14/15, `thanks` fails (a lone emoji) |
+| 2026-11-25 | glm-5-turbo | after | 15/15 |
 
-Neither Sonnet nor GLM left a lone emoji, even before the change. The report came from
-a bot on GPT-6.2 Sol, which this eval cannot run without an OpenAI
-transport, so it guards the rule on Claude rather than reproducing the
-report.
+Sonnet and GLM 5.2 never left a lone emoji, even before the change; the
+older GLM 4.6 and GLM 5 Turbo did, once in fifteen runs each, and the new
+prompt stopped both. The report came from a bot on GPT-6.2 Sol, which this
+eval cannot run without an OpenAI transport.
