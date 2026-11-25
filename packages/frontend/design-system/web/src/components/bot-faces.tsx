@@ -21,9 +21,10 @@ function facesThatFit(width: number): number {
  * `BotFaceItem`s 4px apart, so the list folds away and the people in it
  * stay. It fills the space it is given and shows as many as that holds; when they do not all fit, the
  * last place is a `+N` chip (`moreLabel` names it) that calls `onMore`, which
- * unfolds the list. It sits in `SidebarListHead`'s `summary`. As the list
- * folds, the faces rise into the heading one after another, left to right;
- * reduced motion shows them at once.
+ * unfolds the list. It sits in `SidebarListHead`'s `summary`. When it mounts
+ * (as the list folds, or on a load that finds it folded) the faces rise into
+ * the heading one after another, left to right; reduced motion shows them at
+ * once.
  */
 function BotFaces({
   moreLabel,
