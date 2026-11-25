@@ -3,6 +3,7 @@
 import { Collapsible as CollapsiblePrimitive } from '@base-ui/react/collapsible';
 import { ChevronDownIcon } from 'lucide-react';
 import * as React from 'react';
+import { FoldPanel } from '../internal/fold';
 import { SidebarSectionHandle } from '../internal/sidebar-section-handle';
 import { cn } from '../lib/utils';
 
@@ -52,10 +53,10 @@ function SidebarFoldLabel({
 }
 
 /**
- * SidebarFoldPanel — the list a `SidebarFoldLabel` folds. It closes on its own
- * height, fading as it goes, and opens the same way, at the base duration
- * (Base UI measures `--collapsible-panel-height`); reduced motion keeps the
- * jump. Its children are unmounted once it has closed.
+ * SidebarFoldPanel — the list a `SidebarFoldLabel` folds: the chat's
+ * `FoldPanel` (it closes on its height and fades, reduced motion keeps the
+ * jump) under a Root that `open` drives. Its children are unmounted once it
+ * has closed.
  */
 function SidebarFoldPanel({
   open,
@@ -64,14 +65,7 @@ function SidebarFoldPanel({
 }: Omit<CollapsiblePrimitive.Panel.Props, 'keepMounted'> & { open: boolean }) {
   return (
     <CollapsiblePrimitive.Root open={open}>
-      <CollapsiblePrimitive.Panel
-        data-slot="sidebar-fold-panel"
-        className={cn(
-          'h-(--collapsible-panel-height) overflow-hidden transition-[height,opacity] duration-base ease-standard data-ending-style:h-0 data-ending-style:opacity-0 data-starting-style:h-0 data-starting-style:opacity-0 motion-reduce:transition-none',
-          className,
-        )}
-        {...props}
-      />
+      <FoldPanel data-slot="sidebar-fold-panel" className={className} {...props} />
     </CollapsiblePrimitive.Root>
   );
 }
