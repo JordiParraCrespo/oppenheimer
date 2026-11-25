@@ -63,8 +63,12 @@ const DEFAULT_LABELS: AgentModelSelectLabels = {
   configure: 'Choose agents',
 };
 
-/** Rows visible before the list scrolls. */
-const VISIBLE_ROWS = 7;
+/**
+ * Rows visible before the list scrolls: five and half of the sixth, so the
+ * cut row says there are more (the list's scrollbar is hidden) and the popup
+ * stays short over the composer with the effort foot under it.
+ */
+const VISIBLE_ROWS = 5.5;
 
 /** The Favourites tab's id; no agent is called this. */
 const FAVOURITES = '★';
