@@ -1772,6 +1772,14 @@ earlier note:
   is not kept. The bar is 45px with its controls on the medium rung, on the
   page's own ground rather than the grey band §3's contrast pass first gave
   it.
+- `versions/mvp/33-session-tabs.md` §1 then put the 45px tab bar on the
+  page's own ground (the terminal's grey on a session, the canvas's black
+  on New session). Later on 2026-11-24 the owner asked for the grey
+  everywhere ("I liked that the tabs have the gray color", "never full
+  black"): the bar stands on the terminal's ground on New session too, so it
+  does not change when a session is created. Only the
+  tabs stay on the medium rung; the bar's other controls go back to the
+  small one.
 - `versions/mvp/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
   a job over four tiles (next-step pills once it had instructions), over the
   stacked composer. On 2026-11-16 the owner found it loud in the side pane
@@ -2109,3 +2117,7 @@ earlier note:
   put Mute notifications beside Mark as unread on a session row's menu.
   The same day the owner asked for a sublevel: both moved into a
   Notifications & read pane.
+- `next-steps/0.5-mobile.md` ("A shell first", 2026-11-14) had each of the
+  phone's five sections fill in a slice of its own. On 2026-11-18 the owner
+  postponed the Pull requests tab: it stays a placeholder while the other
+  four are built ("The Pull requests tab waits").

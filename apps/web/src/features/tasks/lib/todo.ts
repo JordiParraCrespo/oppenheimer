@@ -1,14 +1,16 @@
 import {
   comparePriority,
   compareRank,
+  mostUrgent,
   type SessionEntity,
   type TaskEntity,
+  type TaskSession,
+  type TaskSessionState,
+  taskSessionsOf,
 } from '@oppenheimer/frontend-consumer';
 import { searchText, todayIn } from '@oppenheimer/frontend-web';
 import { calendarDateSchema } from '@oppenheimer/shared/schemas/task';
 import { z } from 'zod';
-import { type TaskSession, taskSessionsOf } from './session-line';
-import { mostUrgent, type TaskSessionState } from './session-state';
 
 /**
  * To do's address (the 2026-11-08 `Tasks` frame): the projects it is

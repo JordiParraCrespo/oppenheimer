@@ -14,6 +14,9 @@ export interface EventSourceLike {
   close(): void;
 }
 
+/** Dials a stream at a URL: the browser's `EventSource`, or a platform's own. */
+export type EventSourceFactory = (url: string) => EventSourceLike;
+
 export interface ServerEventStreamOptions<TEvent> {
   url: string;
   /** The frame that says the server is subscribed. */
@@ -25,8 +28,8 @@ export interface ServerEventStreamOptions<TEvent> {
    * it crossed the network, and an unreadable frame is dropped.
    */
   read: (data: unknown) => TEvent | null;
-  /** Injected in tests; `EventSource` with credentials otherwise. */
-  sourceFactory?: (url: string) => EventSourceLike;
+  /** A platform's own client, or a test's fake; `EventSource` with credentials otherwise. */
+  sourceFactory?: EventSourceFactory;
 }
 
 /** `EventSource.CLOSED`, without reading a global a non-browser test may not have. */
@@ -42,7 +45,7 @@ const CLOSED = 2;
 export class ServerEventStream<TEvent> {
   private readonly eventListeners = new Set<(event: TEvent) => void>();
   private readonly statusListeners = new Set<(status: ServerEventStreamStatus) => void>();
-  private readonly sourceFactory: (url: string) => EventSourceLike;
+  private readonly sourceFactory: EventSourceFactory;
 
   private source: EventSourceLike | null = null;
   private status: ServerEventStreamStatus = 'down';

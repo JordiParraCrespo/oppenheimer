@@ -1,9 +1,9 @@
 import { AgentMark, ChatTab } from '@oppenheimer/design-system-web';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { type SessionEntity, stateWordFor } from '@oppenheimer/frontend-consumer';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useSessionUnread } from '../hooks/use-session-unread';
-import { agentNoteFor, isWorking, rowAttentionFor, stateWordFor } from '../lib/session-run-state';
+import { agentNoteFor, isWorking, rowAttentionFor } from '../lib/session-run-state';
 
 /**
  * A session open as a tab over Sessions: its agent's mark, its name and its

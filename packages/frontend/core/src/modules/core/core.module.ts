@@ -7,6 +7,7 @@ import type { IAuthClient } from '../auth/auth.client';
 import type { IErrorReportingClient } from '../error-reporting/error-reporting.client';
 import { NoopErrorReportingClient } from '../error-reporting/noop-error-reporting.client';
 import type { FeatureFlagsClientContext } from '../feature-flags/feature-flags.client';
+import type { EventSourceFactory } from './server-event-stream';
 import type { IStorageService } from './storage.service';
 
 export interface CoreModuleConfig {
@@ -16,6 +17,7 @@ export interface CoreModuleConfig {
   analytics?: IAnalyticsClient;
   errorReporting?: IErrorReportingClient;
   featureFlags?: FeatureFlagsClientContext;
+  eventSource?: EventSourceFactory;
 }
 
 export function createCoreModule(config: CoreModuleConfig): ContainerModule {
@@ -38,5 +40,8 @@ export function createCoreModule(config: CoreModuleConfig): ContainerModule {
     bind<FeatureFlagsClientContext>(TOKENS.FeatureFlagsClientContext).toConstantValue(
       config.featureFlags ?? {},
     );
+    if (config.eventSource) {
+      bind<EventSourceFactory>(TOKENS.EventSourceFactory).toConstantValue(config.eventSource);
+    }
   });
 }

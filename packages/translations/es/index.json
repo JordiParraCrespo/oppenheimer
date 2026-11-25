@@ -180,11 +180,7 @@
     "error": "Algo ha ido mal",
     "comingToMobile": {
       "title": "Próximamente en el móvil",
-      "sessions": "Sigue tus sesiones y responde a un agente que espera, desde aquí.",
-      "employees": "Habla con tus empleados desde el móvil.",
-      "pullRequests": "Revisa las pull requests que te necesitan.",
-      "automations": "Consulta tus automatizaciones y cómo han ido sus ejecuciones.",
-      "plan": "Tus tareas, hitos y calendario, desde aquí."
+      "pullRequests": "Revisa las pull requests que te necesitan."
     },
     "projectFilter": {
       "label": "Proyecto",
@@ -1257,7 +1253,8 @@
       "openAtVendor": "Se abre en {{vendor}}",
       "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros.",
       "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba.",
-      "noPinned": "No hay sesiones fijadas. Fija una desde su menú, o desactiva Solo fijadas en el menú de filtros."
+      "noPinned": "No hay sesiones fijadas. Fija una desde su menú, o desactiva Solo fijadas en el menú de filtros.",
+      "noSessionsPhone": "Aún no hay sesiones. Empieza una desde la consola en tu ordenador; aparecerá aquí."
     },
     "deleteSession": {
       "title": "¿Eliminar «{{name}}»?",
@@ -1851,6 +1848,25 @@
         "agentBody": "Pega esto en Claude Code, u otro agente de código, en una copia del repositorio. Añade el hook y su configuración, y luego te dice qué configurar en claude.ai. Tu clave no va en el prompt: la pegas tú en claude.ai.",
         "agentLabel": "Prompt para tu agente"
       }
+    },
+    "mobile": {
+      "notFound": "Esta sesión ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+      "shareLink": "Compartir enlace",
+      "actions": "Acciones de la sesión",
+      "answerFailed": "La respuesta no llegó al agente. Vuelve a intentarlo.",
+      "needsApproval": "Necesita aprobación",
+      "keys": "Teclas del terminal",
+      "replyToAgent": "Responde al agente",
+      "reply": "Responde o ejecuta un comando",
+      "starting": "Iniciando la sesión en su host…",
+      "cloud": "Esta sesión se ejecuta en {{place}}. Ábrela allí para seguirla.",
+      "openCloud": "Abrir en el navegador",
+      "failed": "No se pudo iniciar la sesión.",
+      "connecting": "Conectando…",
+      "steps_one": "{{count}} paso",
+      "steps_other": "{{count}} pasos",
+      "steps_many": "{{count}} pasos",
+      "loadFailed": "No se pudo cargar esta sesión."
     },
     "tabs": {
       "label": "Sesiones abiertas",
@@ -2833,6 +2849,19 @@
       "more_one": "{{count}} bot más: mostrar la lista",
       "more_many": "{{count}} bots más: mostrar la lista",
       "more_other": "{{count}} bots más: mostrar la lista"
+    },
+    "mobile": {
+      "search": "Buscar empleados",
+      "loadFailed": "No se pudieron cargar tus empleados.",
+      "ungrouped": "Sin grupo",
+      "noMatches": "Ningún empleado se llama «{{query}}».",
+      "empty": "Aún no hay empleados. Crea uno desde la consola en tu ordenador.",
+      "notFound": "Este empleado ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+      "chatFailed": "No se pudo cargar el chat.",
+      "actions": "Acciones del empleado",
+      "decideFailed": "La decisión no llegó al bot. Vuelve a intentarlo.",
+      "answerFailed": "La respuesta no llegó al bot. Vuelve a intentarlo.",
+      "botLoadFailed": "No se pudo cargar este empleado."
     }
   },
   "automations": {
@@ -3238,6 +3267,16 @@
         "github": "GitHub",
         "webhook": "Webhook"
       }
+    },
+    "mobile": {
+      "empty": "Aún no hay automatizaciones. Crea una desde la consola en tu ordenador.",
+      "pauseFailed": "No se pudo pausar ni reanudar la automatización.",
+      "runFailed": "No se pudo iniciar la ejecución.",
+      "duplicateFailed": "No se pudo duplicar la automatización.",
+      "started": "Ejecución iniciada",
+      "nextRun": "Próxima ejecución · {{when}}",
+      "instructions": "Instrucciones",
+      "recentRuns": "Ejecuciones recientes"
     }
   },
   "pullRequests": {
@@ -3837,6 +3876,14 @@
       "high": "Alta",
       "medium": "Media",
       "low": "Baja"
+    },
+    "mobile": {
+      "actions": "Acciones de la tarea",
+      "notFound": "Esta tarea ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+      "loadFailed": "No se pudieron cargar los proyectos y los hitos en los que está archivada esta tarea.",
+      "due": "Vence",
+      "sessions": "Sesiones",
+      "noSessions": "Ninguna sesión trabaja en esta tarea todavía. Inicia una desde la consola en tu ordenador."
     }
   },
   "calendar": {

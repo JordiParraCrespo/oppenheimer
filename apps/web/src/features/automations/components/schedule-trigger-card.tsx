@@ -1,15 +1,8 @@
 import { TokenSentence, TriggerCard, useNow } from '@oppenheimer/design-system-web';
 import { Clock } from '@oppenheimer/design-system-web/icons';
+import { calendarDate, daysText, WEEK_ORDER, weekdayName } from '@oppenheimer/frontend-consumer';
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
-import {
-  calendarDate,
-  daysText,
-  useLocale,
-  viewerTimeZone,
-  WEEK_ORDER,
-  wallClock,
-  weekdayName,
-} from '@oppenheimer/frontend-web';
+import { useLocale, viewerTimeZone, wallClock } from '@oppenheimer/frontend-web';
 import {
   EDITOR_SCHEDULE_FREQUENCIES,
   SCHEDULE_MAX_DAY_OF_MONTH,

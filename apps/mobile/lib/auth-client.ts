@@ -136,7 +136,12 @@ export const mobileAuthClient: IAuthClient = {
   // Attach the Better Auth session cookie (stored in SecureStore) to the
   // generated REST client's requests.
   async getAuthHeaders(): Promise<Record<string, string>> {
-    const cookie = authClient.getCookie();
-    return cookie ? { Cookie: cookie } : {};
+    return sessionCookieHeaders();
   },
 };
+
+/** The Better Auth session cookie as a request header, for a client that cannot carry it itself. */
+export function sessionCookieHeaders(): Record<string, string> {
+  const cookie = authClient.getCookie();
+  return cookie ? { Cookie: cookie } : {};
+}

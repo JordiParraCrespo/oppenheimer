@@ -13,6 +13,7 @@ import { dragIgnore, useSortableControl } from './drag';
 import { Input } from './input';
 import { Separator } from './separator';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../internal/sheet';
+import { SidebarSectionHandle } from '../internal/sidebar-section-handle';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state';
@@ -355,6 +356,9 @@ function SidebarSearch({
   );
 }
 
+/** Keeps a press on a control inside a sortable section's head from lifting the section. */
+const stopPress = (event: React.PointerEvent) => event.stopPropagation();
+
 /**
  * SidebarListHead — the line over a grouped list: the list's name as a muted
  * uppercase label, its count in mono, then any actions (New project, the
@@ -376,11 +380,18 @@ function SidebarListHead({
   /** Icon buttons after the count. */
   children?: React.ReactNode;
 }) {
+  // Inside a `SortableSidebarSection` the head is the section's handle.
+  const sortable = React.useContext(SidebarSectionHandle);
   return (
     <div
       data-slot="sidebar-list-head"
-      className={cn('flex items-center gap-2 px-3 pt-0.5 pb-1.5 [&_button]:rounded-nav', className)}
+      className={cn(
+        'flex items-center gap-2 px-3 pt-0.5 pb-1.5 [&_button]:rounded-nav',
+        sortable && 'touch-none',
+        className,
+      )}
       {...props}
+      {...sortable?.handle}
     >
       <span
         className={cn(
@@ -394,8 +405,59 @@ function SidebarListHead({
       {count !== undefined ? (
         <span className="figures text-micro leading-(--leading-body) tracking-normal text-fg-muted">{count}</span>
       ) : null}
-      {children}
+      {sortable && children ? (
+        // A press on the head's actions never picks its section up.
+        <span onPointerDown={stopPress} className="flex shrink-0 items-center gap-2">
+          {children}
+        </span>
+      ) : (
+        children
+      )}
     </div>
+  );
+}
+
+/**
+ * SortableSidebarSection — one of a sidebar's sections (a `SidebarListHead`
+ * and the list under it) that the reader can drag above or below the
+ * others, in a `SortableGroup` that takes `sidebar-section`. Its
+ * `SidebarListHead` is the handle: a press on the head past 5px, or Space on
+ * its `SidebarFoldLabel`, picks the whole section up, while a click still
+ * folds it and the head's actions never pick it up. Lists inside keep their
+ * own drags. While it moves its place is the drop slot. Where the order is
+ * kept is the app's.
+ */
+function SortableSidebarSection({
+  id,
+  label,
+  disabled,
+  className,
+  children,
+  ...props
+}: Omit<React.ComponentProps<'div'>, 'id'> & {
+  id: string;
+  /** The section's name, for the lifted copy and what a screen reader hears. */
+  label: string;
+  disabled?: boolean;
+}) {
+  const { node, control } = useSortableControl({ id, data: { type: 'sidebar-section', label }, disabled });
+  // Only the pointer lifts from the head: Space on the fold label (the
+  // control) lifts from the keyboard, so no key the head's buttons see is
+  // ever stopped, Escape and the console's shortcuts included.
+  const { onPointerDown, onKeyDown: _keys, ref, style, className: slot, ...rest } = node;
+  return (
+    <SidebarSectionHandle.Provider value={{ handle: { onPointerDown }, control }}>
+      <div
+        ref={ref}
+        style={style}
+        data-slot="sortable-sidebar-section"
+        className={cn(slot, 'flex touch-auto flex-col rounded-nav', className)}
+        {...rest}
+        {...props}
+      >
+        {children}
+      </div>
+    </SidebarSectionHandle.Provider>
   );
 }
 
@@ -957,6 +1019,7 @@ export {
   SidebarProjectGroup,
   SidebarProjectHeader,
   SortableSidebarProjectGroup,
+  SortableSidebarSection,
   sortableProjectId,
   SidebarRail,
   SidebarSearch,

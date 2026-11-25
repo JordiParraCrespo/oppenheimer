@@ -574,6 +574,7 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   SortableSidebarProjectGroup,
+  SortableSidebarSection,
   sortableProjectId,
   useSidebar,
 } from './components/sidebar';

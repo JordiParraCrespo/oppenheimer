@@ -197,7 +197,7 @@ function ChatTab({
       title={title}
       className={cn(
         'group/tab relative flex h-(--control-h-sm) min-w-24 shrink basis-60 items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-sm text-fg-muted transition-colors duration-fast',
-        'hover:bg-hover-surface hover:text-fg data-active:border-border-subtle data-active:bg-card data-active:font-medium data-active:text-fg',
+        'hover:bg-hover-surface hover:text-fg data-active:border-border-subtle data-active:bg-(--chat-tab-lit) data-active:font-medium data-active:text-fg',
         // A hairline between two tabs that are not shown.
         "not-first:before:absolute not-first:before:top-1/2 not-first:before:-translate-y-1/2 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
         'data-active:before:hidden hover:before:hidden [[data-active]+&]:before:hidden [:hover+&]:before:hidden',
@@ -221,7 +221,7 @@ function ChatTab({
                 role="img"
                 aria-label={attentionLabel ?? TAB_ATTENTION[attention].label}
                 className={cn(
-                  'absolute -top-0.75 -right-0.75 size-1.75 rounded-pill ring-2 ring-(--chat-tab-ground) group-data-active/tab:ring-card',
+                  'absolute -top-0.75 -right-0.75 size-1.75 rounded-pill ring-2 ring-(--chat-tab-ground) group-data-active/tab:ring-(--chat-tab-lit)',
                   !icon && 'static',
                   TAB_ATTENTION[attention].className,
                 )}

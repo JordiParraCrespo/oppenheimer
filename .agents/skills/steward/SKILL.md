@@ -44,6 +44,27 @@ A fix after step 7 goes back to step 2 for that fix, and through 4–8 again;
 once the pull request is open, step 5 runs again only for a fix that
 changes behavior.
 
+## Stacked pull requests
+
+The user works in stacks: a piece of work too large for one review lands as
+a chain of pull requests, each based on the one before it, each one thing a
+reviewer can read alone.
+
+- **One branch per layer**, cut from the layer below and named after the
+  stack's first branch with the layer's subject (`…-mobile-sessions`). Its
+  pull request's base is that branch, not `main`, so its diff is only its own.
+- **The description says where it stands**: a `## Stack` section at the top
+  listing every layer, bottom first, each a link, this one marked.
+- **Every layer is green on its own head**, carries its own report, label and
+  screenshots, and goes through the order above. A layer never fixes what a
+  lower one got wrong: the fix goes in that layer, and the layers above
+  merge it in.
+- **When a lower layer changes**, merge it into the layer above, run
+  `pnpm ci:local` there and push, up the stack. Never a rebase or a force
+  push (the git guard refuses both).
+- **When the bottom merges**, the next layer's base becomes `main` and it
+  merges `main` in. A layer merges only after everything below it has.
+
 ## Before every push
 
 1. Commit, then run `pnpm ci:local`. It refuses uncommitted changes and

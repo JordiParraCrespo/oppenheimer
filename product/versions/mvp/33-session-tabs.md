@@ -47,6 +47,22 @@ the quiet bar it had before the tabs: the sidebar toggle and the image's
 button on frosted chips, over an image that runs to the top. The shown
 tab stands out by its card and hairline (§2), not by the band around it.
 
+Later that day, after using it, the owner asked for the session's grey on
+New session too: "I liked that the tabs have the gray color", "I do not want
+to change the top bg header when creating a new session", "so it always
+keeps gray, never full black". The tab bar stands on the terminal's ground
+(`--term-bg`, the grey in dark, not the canvas's black) on a session, a
+bot's chat and New session alike, so it stays the same colour when a
+session is created; its 45px, its
+hairline and New session's image under the content alone stay. The owner
+also found the bar's other controls too big ("this right icons should be
+smaller", the Terminal / Chat switch "adapted to the height of the
+header"): only the tabs stand on the medium rung, and the toggles, the +,
+Share and the menus go back to the small one with its small glyph, the
+Terminal / Chat pill as tall as they are. On that grey the shown tab's card
+had lost its lift (it was the same colour), so it takes the step above it
+(`--card-active`), the contrast the owner asked to recover.
+
 ## 2. What a tab shows
 
 The shown tab stands on the canvas inside a hairline; the rest are flat,

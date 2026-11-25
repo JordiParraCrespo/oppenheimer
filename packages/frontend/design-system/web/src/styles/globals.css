@@ -197,6 +197,10 @@
     /* What an open tab's dot is cut out of: the ground its strip stands on. A bar
        of tabs on another ground (the chrome) points it there. */
     --chat-tab-ground: var(--canvas);
+    /* The shown tab's card: the lit card on a recessed ground. A bar on a
+       card-coloured ground (the console's tab bar, on the terminal's) points
+       it a step up, `--card-active`, so the shown tab still stands out. */
+    --chat-tab-lit: var(--card);
     --term-fg: var(--op-gray-900);
     --term-dim: var(--op-gray-600);
     --term-border: #e6e6ea;

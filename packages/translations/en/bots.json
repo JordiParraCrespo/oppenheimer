@@ -940,5 +940,18 @@
     "faceWorking": "{{name}}, working",
     "more_one": "{{count}} more bot: show the list",
     "more_other": "{{count}} more bots: show the list"
+  },
+  "mobile": {
+    "search": "Search employees",
+    "loadFailed": "Your employees could not be loaded.",
+    "ungrouped": "Ungrouped",
+    "noMatches": "No employee is called “{{query}}”.",
+    "empty": "No employees yet. Make one in the console on your computer.",
+    "notFound": "This employee is gone. It may have been deleted from another device.",
+    "chatFailed": "The chat could not be loaded.",
+    "actions": "Employee actions",
+    "decideFailed": "The decision didn't reach the bot. Try again.",
+    "answerFailed": "The answer didn't reach the bot. Try again.",
+    "botLoadFailed": "This employee could not be loaded."
   }
 }

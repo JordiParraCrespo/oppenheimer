@@ -1,10 +1,10 @@
 import { StatusDot } from '@oppenheimer/design-system-web';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { type SessionEntity, stateWordFor } from '@oppenheimer/frontend-consumer';
 import { PageBar } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AgentReportNote } from '../components/agent-report-note';
-import { agentNoteFor, dotFor, stateWordFor } from '../lib/session-run-state';
+import { agentNoteFor, dotFor } from '../lib/session-run-state';
 import { SessionShareButton } from './session-share-button';
 
 /**
@@ -82,10 +82,10 @@ export function SessionBar({
         )
       }
       // On the terminal's ground with a hairline under it, whichever view is
-      // on screen: the chat stands on the same ground, so bar, grid and chat
-      // read as one surface and switching views changes no colour.
+      // on screen, so switching views changes no colour: the tab bar's own
+      // with tabs, a guest's (no tabs) named here.
       tone={open ? 'chrome' : 'page'}
-      className="border-b border-border-subtle bg-term-bg [--chat-tab-ground:var(--term-bg)]"
+      className={open ? undefined : 'border-b border-border-subtle bg-term-bg'}
     />
   );
 }

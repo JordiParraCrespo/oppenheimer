@@ -38,9 +38,3 @@ export function formatCalendarMonth(month: string, locale: string): string {
     utcMidnight(`${month}-01`),
   );
 }
-
-/** `today`, `tomorrow` or `yesterday` for a day next to `today`, so a caller can say it in words. */
-export function nearDay(iso: string, today: string): 'today' | 'tomorrow' | 'yesterday' | null {
-  const days = Math.round((utcMidnight(iso).getTime() - utcMidnight(today).getTime()) / 86_400_000);
-  return days === 0 ? 'today' : days === 1 ? 'tomorrow' : days === -1 ? 'yesterday' : null;
-}

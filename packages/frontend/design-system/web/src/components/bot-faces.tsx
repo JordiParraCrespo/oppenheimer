@@ -7,6 +7,9 @@ import { BotAvatar, type BotFaceSpec } from './avatar-picker';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
 const FACE_SIZE = 20;
+
+/** A press on a face or the chip opens or unfolds; it never lifts the section around them. */
+const stopPress = (event: React.PointerEvent) => event.stopPropagation();
 const FACE_GAP = 4;
 /** How far apart the faces start their entrance, left to right. */
 const FACE_STAGGER_MS = 30;
@@ -21,10 +24,11 @@ function facesThatFit(width: number): number {
  * `BotFaceItem`s 4px apart, so the list folds away and the people in it
  * stay. It fills the space it is given and shows as many as that holds; when they do not all fit, the
  * last place is a `+N` chip (`moreLabel` names it) that calls `onMore`, which
- * unfolds the list. It sits in `SidebarListHead`'s `summary`. When it mounts
- * (as the list folds, or on a load that finds it folded) the faces rise into
- * the heading one after another, left to right; reduced motion shows them at
- * once.
+ * unfolds the list. It sits in `SidebarListHead`'s `summary`, where a press
+ * on a face or the chip never picks a sortable section up; the space
+ * between them still does. When it mounts (as the list folds, or on a load
+ * that finds it folded) the faces rise into the heading one after another,
+ * left to right; reduced motion shows them at once.
  */
 function BotFaces({
   moreLabel,
@@ -70,6 +74,7 @@ function BotFaces({
           role="listitem"
           className="flex shrink-0 motion-safe:animate-appear"
           style={{ animationDelay: `${index * FACE_STAGGER_MS}ms` }}
+          onPointerDown={stopPress}
         >
           {face}
         </span>
@@ -79,6 +84,7 @@ function BotFaces({
           role="listitem"
           className="flex shrink-0 motion-safe:animate-appear"
           style={{ animationDelay: `${shown * FACE_STAGGER_MS}ms` }}
+          onPointerDown={stopPress}
         >
           <button
             type="button"

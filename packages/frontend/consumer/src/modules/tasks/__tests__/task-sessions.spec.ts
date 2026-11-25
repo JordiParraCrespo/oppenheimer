@@ -1,6 +1,6 @@
-import { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
-import { mostUrgent, sessionStateOf } from '../lib/session-state';
+import { SessionEntity } from '../../sessions';
+import { mostUrgent, sessionStateOf } from '../task-sessions';
 
 function session(lifecycle: SessionEntity['lifecycle'], state: SessionEntity['state'] = 'working') {
   return new SessionEntity({

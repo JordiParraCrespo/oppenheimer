@@ -278,6 +278,26 @@ function dropAnimation(reduced: boolean): DropAnimation | null {
 const slotKeyboardCoordinates: KeyboardCoordinateGetter = (event, args) =>
   sortableKeyboardCoordinates(event, { ...args, context: { ...args.context, over: null } });
 
+type KeyListeners = { add: (name: string, handler: EventListener, options?: boolean) => void };
+
+/**
+ * dnd-kit's keyboard sensor, hearing the keys on the way down. It listens on
+ * the document, and a dialog or a sheet stops the arrows, Home and End
+ * from leaving its popup (Base UI does, so a list behind it never moves), so
+ * an item carried inside one (a sidebar section in the phone drawer) took
+ * Space and never an arrow. Heard in the capture phase, the keys reach the
+ * carry before any popup can stop them.
+ */
+class CaptureKeyboardSensor extends KeyboardSensor {
+  constructor(props: ConstructorParameters<typeof KeyboardSensor>[0]) {
+    super(props);
+    // The sensor adds its keydown listener a tick after it starts, through this.
+    const listeners = (this as unknown as { listeners: KeyListeners }).listeners;
+    const add = listeners.add.bind(listeners);
+    listeners.add = (name, handler) => add(name, handler, true);
+  }
+}
+
 /**
  * One surface's drag. `overlay` draws the lifted copy for the active item;
  * without it nothing follows the pointer, which suits a target-only surface
@@ -329,7 +349,7 @@ function DragProvider({
   const collisionDetection: CollisionDetection = (args) => detect({ ...args, active: resolveActive(args.active) });
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: ACTIVATION_PX } }),
-    useSensor(KeyboardSensor, { coordinateGetter: live ? slotKeyboardCoordinates : sortableKeyboardCoordinates }),
+    useSensor(CaptureKeyboardSensor, { coordinateGetter: live ? slotKeyboardCoordinates : sortableKeyboardCoordinates }),
   );
 
   const announcements: Announcements = {

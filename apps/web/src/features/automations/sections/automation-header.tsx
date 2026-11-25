@@ -15,6 +15,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Ellipsis, Play } from '@oppenheimer/design-system-web/icons';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
+import { pausedReasonText } from '@oppenheimer/frontend-consumer';
 import { useProjects } from '@oppenheimer/frontend-consumer/react';
 import { ConfirmDialog, ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
@@ -24,7 +25,7 @@ import { useConsoleDialog } from '@/lib/console';
 import { NextRunCountdown } from '../components/next-run-countdown';
 import { TriggerGlyph } from '../components/trigger-glyph';
 import { useAutomationActions } from '../hooks/use-automation-actions';
-import { automationDot, automationSubline, pausedReasonText } from '../lib/automation-view';
+import { automationDot, automationSubline } from '../lib/automation-view';
 import { runLocation } from '../lib/run-location';
 import { automationTriggerText } from '../lib/trigger-text';
 

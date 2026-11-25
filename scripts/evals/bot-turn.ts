@@ -27,7 +27,10 @@ import { BotSelfToolsFactory } from '../../apps/api/src/bots-chat/application/bo
 import { BotSkillToolsFactory } from '../../apps/api/src/bots-chat/application/bot-skill-tools.factory';
 import { alwaysLoaded } from '../../apps/api/src/bots-chat/application/bot-toolbox.factory';
 import { BotVisualToolsFactory } from '../../apps/api/src/bots-chat/application/bot-visual-tools.factory';
-import { DEFER_TOOLS_ABOVE_CHARS } from '../../packages/backend/agents/src/claude/claude-options';
+import {
+  claudeSystemPrompt,
+  DEFER_TOOLS_ABOVE_CHARS,
+} from '../../packages/backend/agents/src/claude/claude-options';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -68,9 +71,9 @@ export interface Turn {
   /** Why the turn ended other than by answering: the cap, or a failure. */
   stopped?: string;
   /** How many times the model searched for a deferred tool (Claude Code's `ToolSearch`). */
+  searches?: number;
   /** Tools the model called by the bare name, which Claude Code never ran ("No such tool"). */
   unprefixed?: string[];
-  searches?: number;
 }
 
 export interface TurnRequest {
@@ -265,7 +268,8 @@ function claudeCode(model: string): Transport['turn'] {
         prompt: request.message,
         options: {
           model,
-          systemPrompt: request.system,
+          // As the engine sends it (`claudeSystemPrompt`): how to call the tools on Claude Code.
+          systemPrompt: claudeSystemPrompt({ systemPrompt: request.system, tools: request.tools }),
           cwd,
           tools: deferring ? ['ToolSearch'] : [],
           allowedTools: [
