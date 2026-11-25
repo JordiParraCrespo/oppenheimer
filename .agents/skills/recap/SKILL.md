@@ -19,7 +19,7 @@ you ask before doing.
 ## When
 
 - **Unasked**, as the last message of a task that has ended: the lane's
-  last step is done (`land` merged, `propose` handed over, `research`
+  last step is done (`go` merged, `propose` handed over, `research`
   merged), the question is answered, or the work stopped and will not go
   on in this session. It replaces the lane's own "tell the user" message
   rather than following it.

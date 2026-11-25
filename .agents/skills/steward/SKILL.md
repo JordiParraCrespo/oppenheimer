@@ -12,7 +12,7 @@ scheduled run is what catches a report that was wrong.
 
 ## The order
 
-This is the one place the order is written; `local-stack`, `land` and the
+This is the one place the order is written; `local-stack`, `go` and the
 other skills point here.
 
 1. **Edit.**
@@ -112,17 +112,17 @@ is the protocol: it says what the pull request waits for, and who merges.
 
 | Label | Started by | Waits for | Merged by |
 | --- | --- | --- | --- |
-| `land` | `/land` (a fix) | ready, and a `PASS` from a fresh agent that did not write it | the agent, on its own |
-| `propose` | `/propose` (a change the user signs off: a feature, a refactor, a fix they want to see) | the same, and the user accepting it: `/land`, or swapping the label to `land` | the agent, once accepted |
+| `go` | `/go` (a fix) | ready, and a `PASS` from a fresh agent that did not write it | the agent, on its own |
+| `propose` | `/propose` (a change the user signs off: a feature, a refactor, a fix they want to see) | the same, and the user accepting it: `/go`, or swapping the label to `go` | the agent, once accepted |
 | `research` | `/research` (a note or a proof of concept) | ready | the agent, as soon as it is green |
 
 `/cook` picks one of the three for a task and says which (when it runs: `AGENTS.md`, "Hard rules"). A pull request with none of them merges only when the user says so. A review
 is never an approval: the bot reviews post from the user's account. The
-lanes are the `land`, `propose` and `research` skills; all three merge
-through `land` step 4, which also resolves conflicts with the target.
-The `land` lane was called `ship` until Claude Code shipped a `/ship` skill
-of its own; a pull request still labelled `ship` is a `land` one. So the
-labels that mark an agent pull request, the set to query by, are `land`,
+lanes are the `go`, `propose` and `research` skills; all three merge
+through `go` step 4, which also resolves conflicts with the target.
+The `go` lane was called `ship` until Claude Code shipped a `/ship` skill
+of its own; a pull request still labelled `ship` is a `go` one. So the
+labels that mark an agent pull request, the set to query by, are `go`,
 `propose`, `research` and `ship`, until no open pull request carries `ship`.
 
 ## Babysitting
@@ -165,7 +165,7 @@ work, in this order:
 
 Keep one check-in armed about every four hours while it is open, so a
 conflict from another merge is caught without an event; every hour once
-nothing but the merge is left (`land` step 4). When nothing is
+nothing but the merge is left (`go` step 4). When nothing is
 left to do, say once what it waits for, then stay quiet until something
 changes.
 

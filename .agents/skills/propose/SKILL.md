@@ -1,6 +1,6 @@
 ---
 name: propose
-description: Do a change, verify it, and propose it to the user before it merges - a feature, a refactor, or a fix they want to see first. Labels the pull request `propose`, drives it with the steward skill, babysits it until the user accepts it with /land, then merges. Use only when the user invokes /propose.
+description: Do a change, verify it, and propose it to the user before it merges - a feature, a refactor, or a fix they want to see first. Labels the pull request `propose`, drives it with the steward skill, babysits it until the user accepts it with /go, then merges. Use only when the user invokes /propose.
 disable-model-invocation: true
 argument-hint: "[the change]"
 ---
@@ -16,7 +16,7 @@ is `.agents/skills/steward/SKILL.md`, "Merging"; this skill is the
 
 - Follow the skills and rules for the code you touch (`scaffold-feature`,
   `scaffold-module`, `design-database`, ...), in the order `steward` writes
-  down ("The order"). A fix reproduces the bug first, as in `land` step 1.
+  down ("The order"). A fix reproduces the bug first, as in `go` step 1.
 - Keep to what was asked. Decisions that are the user's (a product call, an
   API shape nobody specified) go in the description as questions, with
   your default applied.
@@ -29,7 +29,7 @@ activity.
 
 ## 3. Verify it
 
-Same as `land` step 3: a fresh agent that did not write the code drives
+Same as `go` step 3: a fresh agent that did not write the code drives
 what changed (each thing a user can now do, or the bug's repro) on the
 real surface, and answers `PASS` or `FAIL` with evidence, posted on the
 pull request with its SHA. Fix every `FAIL` and verify again.
@@ -50,7 +50,7 @@ it is mergeable the moment the user accepts.
 
 ## 5. Accepted
 
-The user accepts with `/land` in this session, or by swapping the label
-`propose` for `land` on GitHub. Either way, the `land` skill's step 4
+The user accepts with `/go` in this session, or by swapping the label
+`propose` for `go` on GitHub. Either way, the `go` skill's step 4
 merges it. A change the user asks for instead is new work: make it, verify the
 new head, and hand it over again.

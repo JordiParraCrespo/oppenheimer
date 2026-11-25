@@ -1,5 +1,5 @@
 /**
- * The eval cases for `land` step 4 (merge, or bring up to date and babysit),
+ * The eval cases for `go` step 4 (merge, or bring up to date and babysit),
  * each a sandbox to build and the checks that grade what the agent did in it.
  * `setup.mjs` builds them, `grade.mjs` grades them; README.md says how a run
  * goes.
@@ -81,7 +81,7 @@ const addRoute = (name) => ({ [`src/routes/${name}.mjs`]: `export const path = '
 export const cases = [
   {
     id: 'clean',
-    trigger: 'The user typed `/land 42`.',
+    trigger: 'The user typed `/go 42`.',
     build(f) {
       f.branch('fix/trim', 'main');
       f.commit('fix(greet): trim the name', trim);
@@ -96,7 +96,7 @@ export const cases = [
   },
   {
     id: 'text-conflict',
-    trigger: 'The user typed `/land 42`.',
+    trigger: 'The user typed `/go 42`.',
     build(f) {
       f.branch('feat/status', 'main');
       f.commit('feat: a status command', addCommand('status'));
@@ -114,7 +114,7 @@ export const cases = [
   },
   {
     id: 'generated-file',
-    trigger: 'The user typed `/land 42`.',
+    trigger: 'The user typed `/go 42`.',
     build(f) {
       f.branch('feat/blog', 'main');
       f.commit('feat: a blog route', addRoute('blog'), { gen: true });
@@ -131,7 +131,7 @@ export const cases = [
   },
   {
     id: 'product-call',
-    trigger: 'The user typed `/land 42`.',
+    trigger: 'The user typed `/go 42`.',
     build(f) {
       f.branch('feat/legacy-bang', 'main');
       f.commit('feat(greet): end the legacy format with a bang', {
@@ -153,7 +153,7 @@ export const cases = [
   },
   {
     id: 'head-moved',
-    trigger: 'The user typed `/land 42`. The fresh agent verified it an hour ago; another session has pushed to it since.',
+    trigger: 'The user typed `/go 42`. The fresh agent verified it an hour ago; another session has pushed to it since.',
     build(f) {
       f.branch('fix/trim', 'main');
       f.commit('fix(greet): trim the name', trim);
@@ -174,7 +174,7 @@ export const cases = [
   },
   {
     id: 'merge-only',
-    trigger: 'The user typed `/land 42`. The fresh agent verified it an hour ago; main has been merged into it since.',
+    trigger: 'The user typed `/go 42`. The fresh agent verified it an hour ago; main has been merged into it since.',
     build(f) {
       f.branch('fix/trim', 'main');
       f.commit('fix(greet): trim the name', trim);
@@ -192,7 +192,7 @@ export const cases = [
   },
   {
     id: 'unknown-mergeable',
-    trigger: 'The user typed `/land 42`.',
+    trigger: 'The user typed `/go 42`.',
     build(f) {
       f.branch('fix/trim', 'main');
       f.commit('fix(greet): trim the name', trim);
@@ -208,7 +208,7 @@ export const cases = [
   },
   {
     id: 'open-thread',
-    trigger: 'The user typed `/land 42`.',
+    trigger: 'The user typed `/go 42`.',
     build(f) {
       f.branch('fix/trim', 'main');
       f.commit('fix(greet): trim the name', trim);
@@ -235,7 +235,7 @@ export const cases = [
   },
   {
     id: 'stacked-base',
-    trigger: 'The user typed `/land 42`.',
+    trigger: 'The user typed `/go 42`.',
     build(f) {
       f.branch('feat/alpha', 'main');
       f.commit('feat: an alpha route', addRoute('alpha'), { gen: true });

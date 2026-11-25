@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Builds the sandboxes for the `land` step 4 evals (cases.mjs), one per case:
+ * Builds the sandboxes for the `go` step 4 evals (cases.mjs), one per case:
  *
- *   node .agents/skills/land/evals/setup.mjs <out-dir> [case ...]
+ *   node .agents/skills/go/evals/setup.mjs <out-dir> [case ...]
  *
  * Each `<out-dir>/<case>/` holds `origin.git` (a bare remote that refuses
  * non-fast-forward pushes), `work/` (a clone on the pull request's head
@@ -88,7 +88,7 @@ for (const c of cases.filter((c) => only.length === 0 || only.includes(c.id))) {
         base: baseRef,
         head: pr.head,
         headRepo: 'JordiParraCrespo/greeter',
-        labels: ['land'],
+        labels: ['go'],
         verdicts,
         reports: { [head]: { sha: head, green: true } },
         reviews: pr.reviews ?? [],

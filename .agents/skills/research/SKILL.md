@@ -27,7 +27,7 @@ is the `research` lane.
 
 - Commit, run `pnpm ci:local`, push on green, and open the pull request
   ready, with the `research` label and the report.
-- Merge it yourself as soon as it is green, as `land` step 4 merges,
+- Merge it yourself as soon as it is green, as `go` step 4 merges,
   without its verdict.
   No verifier and no wait: nothing in it ships to users. Review comments that arrive later are answered in a
   follow-up pull request.

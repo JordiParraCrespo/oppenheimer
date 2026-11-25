@@ -101,7 +101,7 @@ When you add a file that mentions an optional app (CI, compose,
   `.github/workflows/ci.yml` runs `pnpm ci:local --all` on `main` on a
   schedule; a red run opens a `main-red` issue, which comes before new work.
   Driving a pull request, and the order of its steps, is the `/steward` skill.
-  Every agent pull request is `/land` (a fix, merged on its own once a fresh
+  Every agent pull request is `/go` (a fix, merged on its own once a fresh
   agent verifies it), `/propose` (merged once the user accepts) or
   `/research` (merged once green), and carries that label. **Every task that
   changes the repository starts with `/cook`**, typed or not: it picks the
