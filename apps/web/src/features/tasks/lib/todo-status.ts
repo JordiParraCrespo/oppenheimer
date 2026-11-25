@@ -1,8 +1,8 @@
 import { type StatusState, TASK_STATUS_STATE } from '@oppenheimer/design-system-web';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
+import { type TaskSession, type TaskSessionState } from '@oppenheimer/frontend-consumer';
 import type { TaskStatus } from '@oppenheimer/shared/schemas/task';
-import type { TaskSession } from './session-line';
-import { SESSION_STATUS, type TaskSessionState } from './session-state';
+import { SESSION_STATUS } from './session-state';
 import type { TodoMark, TodoPlace } from './todo';
 
 // Apart from `todo.ts`: the sidebar's count reads that file, and the design

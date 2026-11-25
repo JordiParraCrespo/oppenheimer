@@ -1,16 +1,17 @@
-import { TaskEntity } from '@oppenheimer/frontend-consumer';
-import type { TaskPriority, TaskStatus } from '@oppenheimer/shared/schemas/task';
-import { describe, expect, it } from 'vitest';
 import {
   afterTaskIdFor,
   boardColumnsOf,
   boardCounts,
+  cardView,
   columnOf,
   doneCutoffOf,
+  dueDayLabel,
   filingOf,
-} from '../lib/board';
+  TaskEntity,
+} from '@oppenheimer/frontend-consumer';
+import type { TaskPriority, TaskStatus } from '@oppenheimer/shared/schemas/task';
+import { describe, expect, it } from 'vitest';
 import { boardSearchSchema } from '../lib/board-search';
-import { cardView, dueDayLabel } from '../lib/card-view';
 
 function task(
   id: string,

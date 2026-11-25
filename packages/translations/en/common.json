@@ -176,8 +176,7 @@
   "error": "Something went wrong",
   "comingToMobile": {
     "title": "Coming to mobile",
-    "pullRequests": "Review the pull requests that need you.",
-    "plan": "Your tasks, milestones and calendar, from here."
+    "pullRequests": "Review the pull requests that need you."
   },
   "projectFilter": {
     "label": "Project",

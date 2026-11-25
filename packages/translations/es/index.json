@@ -180,8 +180,7 @@
     "error": "Algo ha ido mal",
     "comingToMobile": {
       "title": "Próximamente en el móvil",
-      "pullRequests": "Revisa las pull requests que te necesitan.",
-      "plan": "Tus tareas, hitos y calendario, desde aquí."
+      "pullRequests": "Revisa las pull requests que te necesitan."
     },
     "projectFilter": {
       "label": "Proyecto",
@@ -3877,6 +3876,14 @@
       "high": "Alta",
       "medium": "Media",
       "low": "Baja"
+    },
+    "mobile": {
+      "actions": "Acciones de la tarea",
+      "notFound": "Esta tarea ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+      "loadFailed": "No se pudieron cargar los proyectos y los hitos en los que está archivada esta tarea.",
+      "due": "Vence",
+      "sessions": "Sesiones",
+      "noSessions": "Ninguna sesión trabaja en esta tarea todavía. Inicia una desde la consola en tu ordenador."
     }
   },
   "calendar": {

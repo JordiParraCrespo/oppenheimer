@@ -179,8 +179,7 @@
   "error": "Algo ha ido mal",
   "comingToMobile": {
     "title": "Próximamente en el móvil",
-    "pullRequests": "Revisa las pull requests que te necesitan.",
-    "plan": "Tus tareas, hitos y calendario, desde aquí."
+    "pullRequests": "Revisa las pull requests que te necesitan."
   },
   "projectFilter": {
     "label": "Proyecto",
