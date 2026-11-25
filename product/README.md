@@ -2121,3 +2121,11 @@ earlier note:
   phone's five sections fill in a slice of its own. On 2026-11-18 the owner
   postponed the Pull requests tab: it stays a placeholder while the other
   four are built ("The Pull requests tab waits").
+- `next-steps/0.5-mobile.md` ("Native Liquid Glass, wherever the platform
+  has it", 2026-11-15) named the tab bar, selects, back buttons and floating
+  glass as the platform's. On 2026-11-25 the owner widened it to every
+  control the platform has: switches, checkboxes, segmented controls, menus,
+  alerts and sheets are SwiftUI's or Material 3's too, and the design
+  system's JavaScript look-alikes (dialogs, popovers, dropdown and context
+  menus, tabs, toggle groups, radio groups, the @gorhom bottom sheet) were
+  deleted.

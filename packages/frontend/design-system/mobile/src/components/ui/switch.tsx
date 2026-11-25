@@ -1,32 +1,33 @@
-import * as SwitchPrimitives from '@rn-primitives/switch';
-import { Platform } from 'react-native';
-import { cn } from '../../lib/utils';
+import { Host, Switch as NativeSwitch } from '@expo/ui';
+import { useColorScheme } from 'nativewind';
+import { nativeLabel } from '../../lib/native-label';
 
-function Switch({ className, ...props }: React.ComponentProps<typeof SwitchPrimitives.Root>) {
+export type SwitchProps = {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean;
+  /** What a screen reader calls the control when no label is drawn. */
+  accessibilityLabel?: string;
+  testID?: string;
+};
+
+/**
+ * An on/off setting, as the platform draws it: SwiftUI's toggle (`UISwitch`)
+ * on iOS, Material 3's switch on Android. The track, the thumb, the motion and
+ * the haptic tick are the system's; nothing here paints them.
+ */
+export function Switch({ checked, onCheckedChange, disabled, accessibilityLabel, testID }: SwitchProps) {
+  const { colorScheme } = useColorScheme();
+
   return (
-    <SwitchPrimitives.Root
-      className={cn(
-        'flex h-[1.15rem] w-8 shrink-0 flex-row items-center rounded-full border border-transparent',
-        Platform.select({
-          web: 'focus-visible:border-ring focus-visible:ring-ring/50 peer inline-flex outline-none transition-all focus-visible:ring-[3px] disabled:cursor-not-allowed',
-        }),
-        props.checked ? 'bg-accent-blue' : 'bg-track-off',
-        props.disabled && 'opacity-50',
-        className,
-      )}
-      {...props}
-    >
-      <SwitchPrimitives.Thumb
-        className={cn(
-          'size-4 rounded-full bg-white transition-transform',
-          Platform.select({
-            web: 'pointer-events-none block ring-0',
-          }),
-          props.checked ? 'translate-x-3.5' : 'translate-x-0',
-        )}
+    <Host matchContents colorScheme={colorScheme === 'dark' ? 'dark' : 'light'}>
+      <NativeSwitch
+        value={checked}
+        onValueChange={onCheckedChange}
+        disabled={disabled}
+        testID={testID}
+        modifiers={nativeLabel(accessibilityLabel)}
       />
-    </SwitchPrimitives.Root>
+    </Host>
   );
 }
-
-export { Switch };
