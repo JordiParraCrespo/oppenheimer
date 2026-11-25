@@ -5,9 +5,10 @@ import {
   TriggerCard,
   useNow,
 } from '@oppenheimer/design-system-web';
+import { eventLabel } from '@oppenheimer/frontend-consumer';
 import { useTriggerPreview } from '@oppenheimer/frontend-consumer/react';
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
-import { eventLabel, formatShortDuration } from '@oppenheimer/frontend-web';
+import { formatShortDuration } from '@oppenheimer/frontend-web';
 import {
   externalEventDefinition,
   GITHUB_EVENT_TYPES,

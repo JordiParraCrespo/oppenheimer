@@ -20,8 +20,9 @@
 //        BOT_EVAL_BOT (the bot's id; required),
 //        BOT_EVAL_PROJECT (a project the bot can see, by name; required)
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { startEvalRecording } from '../../../.agents/hooks/verification.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 /** How long one case may take: a turn that reads projects and hosts first takes a while. */
@@ -146,6 +147,7 @@ async function observe(call, botId, content) {
 }
 
 async function main() {
+  startEvalRecording(join(HERE, '../../..'), basename(HERE));
   const api = process.env.BOT_EVAL_API ?? 'http://localhost:3000/api';
   const token = process.env.BOT_EVAL_TOKEN;
   const botId = process.env.BOT_EVAL_BOT;

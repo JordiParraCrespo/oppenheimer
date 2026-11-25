@@ -39,7 +39,7 @@ Scopes are `resource:read` or `resource:write` (write includes read), for resour
 | --- | --- |
 | `sessions run` | `sessions:write`, `hosts:read`, `projects:read`, and `repositories:read` for a repository no project holds |
 | `sessions transcript` | `sessions:read` |
-| `sessions send`, `stop`, `close` | `sessions:write` |
+| `sessions send`, `stop`, `restart`, `close` | `sessions:write` |
 | `automations create` | `automations:write`, `hosts:read`, `projects:read` |
 | `bots chat` | `bots:write` |
 | `tasks add`, `move` | `tasks:write` |
@@ -52,7 +52,7 @@ The console has no page for API tokens; use `opp tokens`.
 | --- | --- |
 | `opp hosts list \| get` | Your hosts and which are online |
 | `opp projects list` | Projects with their repositories, default host and agent |
-| `opp sessions list \| get \| run \| send \| wait \| stop \| close` | Sessions on your hosts |
+| `opp sessions list \| get \| run \| send \| wait \| stop \| restart \| close` | Sessions on your hosts |
 | `opp sessions run --hidden`, `opp sessions hide \| show <id>` | Keep a session out of the console's sidebar, or show it again; it runs the same |
 | `opp sessions transcript` | A session's conversation, a page at a time (`--cursor` reads on, `--from-start` begins at its first turn, `--all` reads all of it), secrets replaced |
 | `opp automations list \| create \| run \| pause \| resume \| delete` | Automations |
@@ -74,7 +74,7 @@ opp sessions close <id>
 ```
 
 - `--repo owner/name` is looked up in your projects, then in any installation that grants it; `--project` uses the project's default repository and host; `--folder /path` runs in a folder already on the host.
-- `send` works only while the agent waits at its prompt; the session's log records the prompt as yours.
+- `send` works only while the agent waits at its prompt; the session's log records the prompt as yours. A stopped session (one left idle for hours stops on its own) takes none until `opp sessions restart <id>` brings it back.
 - `wait` returns when the agent is idle, ready for review, waiting on you, or gone. After `--timeout` (default 30 minutes) it exits 1 and the session keeps running. `run --wait` and `send --wait` wait for the agent to take the prompt first.
 - A session started this way is an ordinary session in the console.
 
@@ -95,7 +95,7 @@ The server runs over stdio with an API token, or as one hosted server over Strea
 | --- | --- |
 | Who | `whoami` (call it first when a tool is missing) |
 | Hosts and projects | `list_hosts`, `list_projects` |
-| Sessions | `list_sessions`, `get_session`, `read_session_transcript`, `wait_for_session`, `start_session`, `send_to_session`, `set_session_visibility`, `stop_session`, `close_session` |
+| Sessions | `list_sessions`, `get_session`, `read_session_transcript`, `wait_for_session`, `start_session`, `send_to_session`, `set_session_visibility`, `stop_session`, `restart_session`, `close_session` |
 | Automations | `list_automations`, `create_automation`, `run_automation`, `pause_automation`, `resume_automation` |
 | Bots | `list_bots`, `ask_bot` |
 | Plan | `list_tasks`, `create_task`, `move_task` (a task made here waits in the person's [Inbox](./inbox.md) until they take it up) |

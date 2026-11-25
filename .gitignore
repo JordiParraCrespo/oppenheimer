@@ -76,6 +76,8 @@ go.work.sum
 
 # The local stack (scripts/stack/stack.mjs): pids, logs, the host account
 .stack/
+# What the bot evals checked (scripts/evals/bot-turn.ts, .agents/hooks/verification.mjs)
+/.evals/
 
 # Local storage (STORAGE_PROVIDER=local, UPLOAD_DIR=./uploads): avatars and
 # chat images the API and the e2e suite write, which otherwise stop the next

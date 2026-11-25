@@ -13,6 +13,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Paperclip } from '@oppenheimer/design-system-web/icons';
 import type { SessionEntity, TaskEntity } from '@oppenheimer/frontend-consumer';
+import { sessionStateOf } from '@oppenheimer/frontend-consumer';
 import {
   useHosts,
   useLinkTaskSession,
@@ -23,7 +24,7 @@ import { ErrorAlert, LoadingStatus } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionAge } from '../components/session-age';
-import { SESSION_STATUS, sessionStateOf } from '../lib/session-state';
+import { SESSION_STATUS } from '../lib/session-state';
 
 /**
  * Link existing: a pane under the button, not a dialog over the task's. It

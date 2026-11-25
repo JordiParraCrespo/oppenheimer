@@ -177,11 +177,7 @@
     "error": "Something went wrong",
     "comingToMobile": {
       "title": "Coming to mobile",
-      "sessions": "Follow your sessions and answer an agent that is waiting, from here.",
-      "employees": "Chat with your employees from your phone.",
-      "pullRequests": "Review the pull requests that need you.",
-      "automations": "See your automations and how their runs went.",
-      "plan": "Your tasks, milestones and calendar, from here."
+      "pullRequests": "Review the pull requests that need you."
     },
     "projectFilter": {
       "label": "Project",
@@ -1246,7 +1242,8 @@
       "openAtVendor": "Opens in {{vendor}}",
       "allHidden": "Every project is hidden. Show them again from the filter menu.",
       "noSessions": "No sessions yet. Start one with New session above.",
-      "noPinned": "No pinned sessions. Pin one from its menu, or turn off Pinned only in the filter menu."
+      "noPinned": "No pinned sessions. Pin one from its menu, or turn off Pinned only in the filter menu.",
+      "noSessionsPhone": "No sessions yet. Start one from the console on your computer; it shows up here."
     },
     "deleteSession": {
       "title": "Delete “{{name}}”?",
@@ -1815,6 +1812,24 @@
         "agentBody": "Paste this into Claude Code, or another coding agent, in a checkout of the repository. It adds the hook and its settings, then tells you what to set in claude.ai. Your key isn’t in the prompt: you paste it into claude.ai yourself.",
         "agentLabel": "Prompt for your agent"
       }
+    },
+    "mobile": {
+      "notFound": "This session is gone. It may have been deleted from another device.",
+      "shareLink": "Share link",
+      "actions": "Session actions",
+      "answerFailed": "The answer didn't reach the agent. Try again.",
+      "needsApproval": "Needs approval",
+      "keys": "Terminal keys",
+      "replyToAgent": "Reply to the agent",
+      "reply": "Reply or run a command",
+      "starting": "Starting the session on its host…",
+      "cloud": "This session runs on {{place}}. Open it there to follow it.",
+      "openCloud": "Open in browser",
+      "failed": "The session could not be started.",
+      "connecting": "Connecting…",
+      "steps_one": "{{count}} step",
+      "steps_other": "{{count}} steps",
+      "loadFailed": "This session could not be loaded."
     },
     "tabs": {
       "label": "Open sessions",
@@ -2764,6 +2779,19 @@
       "faceWorking": "{{name}}, working",
       "more_one": "{{count}} more bot: show the list",
       "more_other": "{{count}} more bots: show the list"
+    },
+    "mobile": {
+      "search": "Search employees",
+      "loadFailed": "Your employees could not be loaded.",
+      "ungrouped": "Ungrouped",
+      "noMatches": "No employee is called “{{query}}”.",
+      "empty": "No employees yet. Make one in the console on your computer.",
+      "notFound": "This employee is gone. It may have been deleted from another device.",
+      "chatFailed": "The chat could not be loaded.",
+      "actions": "Employee actions",
+      "decideFailed": "The decision didn't reach the bot. Try again.",
+      "answerFailed": "The answer didn't reach the bot. Try again.",
+      "botLoadFailed": "This employee could not be loaded."
     }
   },
   "automations": {
@@ -3166,6 +3194,16 @@
         "github": "GitHub",
         "webhook": "Webhook"
       }
+    },
+    "mobile": {
+      "empty": "No automations yet. Make one in the console on your computer.",
+      "pauseFailed": "The automation could not be paused or resumed.",
+      "runFailed": "The run could not be started.",
+      "duplicateFailed": "The automation could not be duplicated.",
+      "started": "Run started",
+      "nextRun": "Next run · {{when}}",
+      "instructions": "Instructions",
+      "recentRuns": "Recent runs"
     }
   },
   "pullRequests": {
@@ -3760,6 +3798,14 @@
       "high": "High",
       "medium": "Medium",
       "low": "Low"
+    },
+    "mobile": {
+      "actions": "Task actions",
+      "notFound": "This task is gone. It may have been deleted from another device.",
+      "loadFailed": "Couldn’t load the projects and milestones this task is filed under.",
+      "due": "Due",
+      "sessions": "Sessions",
+      "noSessions": "No session works on this task yet. Start one from the console on your computer."
     }
   },
   "calendar": {

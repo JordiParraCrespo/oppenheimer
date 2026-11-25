@@ -10,6 +10,11 @@
 # machine it says that node_modules is missing and leaves the install to them.
 # It never fails the session: whatever happens, it exits 0, and what went
 # wrong is one line in the session's context.
+#
+# In a cloud session it then starts the local stack in the background
+# (`scripts/stack/cloud-warmup.sh`: Postgres, Redis, the stubs, the API and
+# the console), so a change can be run where it runs from the first turn; the
+# verification guard (`verify-guard.mjs`) asks for that before a push.
 set -uo pipefail
 cat >/dev/null
 
@@ -17,9 +22,18 @@ root=${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}
 cd "$root" 2>/dev/null || exit 0
 [[ -f pnpm-lock.yaml ]] || exit 0
 
+warmup() {
+  [[ "${CLAUDE_CODE_REMOTE:-}" == "true" && -x scripts/stack/cloud-warmup.sh ]] || return 0
+  [[ -d node_modules ]] || return 0
+  scripts/stack/cloud-warmup.sh
+}
+
 stamp=node_modules/.oppenheimer-lockfile
 want=$(git hash-object pnpm-lock.yaml 2>/dev/null || cksum <pnpm-lock.yaml)
-[[ -d node_modules && -f "$stamp" && "$(cat "$stamp")" == "$want" ]] && exit 0
+if [[ -d node_modules && -f "$stamp" && "$(cat "$stamp")" == "$want" ]]; then
+  warmup
+  exit 0
+fi
 
 if [[ "${CLAUDE_CODE_REMOTE:-}" != "true" ]]; then
   [[ -d node_modules ]] || echo 'node_modules is missing: run `pnpm install --frozen-lockfile` before Biome, the tests or `pnpm arch`.'
@@ -41,4 +55,5 @@ if CI=true pnpm install --frozen-lockfile >"$log" 2>&1; then
 else
   echo "pnpm install --frozen-lockfile failed (log at $log); run it again before Biome, the tests or \`pnpm arch\`."
 fi
+warmup
 exit 0

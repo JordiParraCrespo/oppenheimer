@@ -1,14 +1,14 @@
-import { Layers } from '@oppenheimer/design-system-mobile/icons';
-import { AccountButton, TabPlaceholder, TabScreen } from '@oppenheimer/frontend-mobile';
+import { AccountButton, TabScreen } from '@oppenheimer/frontend-mobile';
 import { useTranslation } from 'react-i18next';
+import { PlanBoard } from '../sections/plan-board';
 
-/** The Plan tab: the tasks, as the console's rail calls it. Its board comes in a later slice. */
+/** The Plan tab: your tasks, as the console's board lays them out, one column after another. */
 export function PlanScreen() {
   const { t } = useTranslation();
 
   return (
     <TabScreen title={t('nav.plan')} trailing={<AccountButton href="/account" />}>
-      <TabPlaceholder icon={Layers} description={t('common.comingToMobile.plan')} />
+      <PlanBoard />
     </TabScreen>
   );
 }

@@ -12,9 +12,10 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type Anthropic from '@anthropic-ai/sdk';
+import { startEvalRecording } from '../../.agents/hooks/verification.mjs';
 import { BotCheckBackToolsFactory } from '../../apps/api/src/bots-chat/application/bot-check-back-tools.factory';
 import { BotFormToolsFactory } from '../../apps/api/src/bots-chat/application/bot-form-tools.factory';
 import { BotGoalToolsFactory } from '../../apps/api/src/bots-chat/application/bot-goal-tools.factory';
@@ -26,9 +27,17 @@ import { BotSelfToolsFactory } from '../../apps/api/src/bots-chat/application/bo
 import { BotSkillToolsFactory } from '../../apps/api/src/bots-chat/application/bot-skill-tools.factory';
 import { alwaysLoaded } from '../../apps/api/src/bots-chat/application/bot-toolbox.factory';
 import { BotVisualToolsFactory } from '../../apps/api/src/bots-chat/application/bot-visual-tools.factory';
-import { DEFER_TOOLS_ABOVE_CHARS } from '../../packages/backend/agents/src/claude/claude-options';
+import {
+  claudeSystemPrompt,
+  DEFER_TOOLS_ABOVE_CHARS,
+} from '../../packages/backend/agents/src/claude/claude-options';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+
+// Every bot eval loads this first: its green exit then records it in
+// `.evals/passed.json` as having checked the agentic code as it was loaded,
+// which answers the verification guard's eval check (`.agents/hooks/verification.mjs`).
+startEvalRecording(join(HERE, '../..'), basename(dirname(process.argv[1] ?? '')));
 
 // The repository root depends on none of these: take each from the
 // workspace package that does, so the versions are the ones the API runs.
@@ -63,6 +72,8 @@ export interface Turn {
   stopped?: string;
   /** How many times the model searched for a deferred tool (Claude Code's `ToolSearch`). */
   searches?: number;
+  /** Tools the model called by the bare name, which Claude Code never ran ("No such tool"). */
+  unprefixed?: string[];
 }
 
 export interface TurnRequest {
@@ -251,12 +262,14 @@ function claudeCode(model: string): Transport['turn'] {
     const cwd = mkdtempSync(join(tmpdir(), 'bot-eval-'));
     let stopped: string | undefined;
     let searches = 0;
+    const unprefixed: string[] = [];
     try {
       for await (const message of query({
         prompt: request.message,
         options: {
           model,
-          systemPrompt: request.system,
+          // As the engine sends it (`claudeSystemPrompt`): how to call the tools on Claude Code.
+          systemPrompt: claudeSystemPrompt({ systemPrompt: request.system, tools: request.tools }),
           cwd,
           tools: deferring ? ['ToolSearch'] : [],
           allowedTools: [
@@ -276,6 +289,15 @@ function claudeCode(model: string): Transport['turn'] {
           for (const block of message.message.content) {
             if (block.type === 'text') said.push({ text: block.text, after: calls.length });
             if (block.type === 'tool_use' && block.name === 'ToolSearch') searches++;
+            // A call by the bare name never reaches the tool server: Claude Code
+            // answers it "No such tool". Kept apart, so a run can tell it from silence.
+            if (
+              block.type === 'tool_use' &&
+              block.name !== 'ToolSearch' &&
+              !block.name.startsWith('mcp__')
+            ) {
+              unprefixed.push(block.name);
+            }
           }
         } else if (message.type === 'result' && message.subtype !== 'success') {
           stopped = message.subtype;
@@ -291,6 +313,7 @@ function claudeCode(model: string): Transport['turn'] {
       answer: answerOf(said),
       blocks: said,
       searches,
+      ...(unprefixed.length > 0 ? { unprefixed } : {}),
       ...(stopped ? { stopped } : {}),
     };
   };

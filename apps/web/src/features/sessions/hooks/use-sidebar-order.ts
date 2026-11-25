@@ -5,10 +5,13 @@ import {
   sortableProjectId,
   useSortableGroups,
 } from '@oppenheimer/design-system-web';
-import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
+import {
+  groupByProject,
+  type ProjectEntity,
+  type SessionEntity,
+} from '@oppenheimer/frontend-consumer';
 import { useMoveSession } from '@oppenheimer/frontend-consumer/react';
 import { useEffect, useState } from 'react';
-import { groupByProject } from '../lib/session-groups';
 import {
   mergeOrder,
   orderProjects,
