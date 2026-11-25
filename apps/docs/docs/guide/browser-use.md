@@ -10,7 +10,7 @@ For anything that is not a web page (an app, a simulator), see [Bots using a com
 
 ## Turning it on
 
-Ask the bot: "turn the browser on and do it". It turns it on with `set_host_settings`, on a card of its own under Approve for me, and carries on. It does so only when you ask in your own chat with it (the console, or your own WhatsApp, Telegram or Slack chat), never because a page, a mail or someone else's message says so.
+Ask the bot: "turn the browser on and do it". It turns it on with `set_host_settings`, on a card of its own unless the bot is on Full access, and carries on. It does so only when you ask in your own chat with it (the console, or your own WhatsApp, Telegram or Slack chat), never because a page, a mail or someone else's message says so.
 
 Or, on the host itself, in a terminal:
 
@@ -35,7 +35,7 @@ The bot has one tool, `use_browser`. Each call does one thing and comes back wit
 
 Ask in the chat: "Open the pricing page of example.com and tell me what the team plan costs", or "Open localhost:5173 on build-02 and check the sign-up form works".
 
-- **Permission.** Under **Approve for me** the first step raises a **Needs input** card. **Always allow for** its browser on that host lets the rest of the task run without a card per click. In **Settings → Permissions**, `use_browser` can be set to Allow, Ask or Off like any tool.
+- **Permission.** Under **Ask for approval** the first step raises a **Needs input** card; under **Approve for me** the reviewer may let a step you asked for run, and raises the card otherwise. On the card, **Always allow for** its browser on that host lets the rest of the task run without a card per click. In **Settings → Permissions**, `use_browser` can be set to Allow, Ask or Off like any tool.
 - **Models.** Every model can browse: the page comes back as text. A model that reads images (Claude, GPT, Grok) also gets a picture of the page with each step; GLM browses by text alone.
 - **What you see.** The chat shows a line per step. Pictures of the page go to the model only; they are not stored and not shown in the chat.
 

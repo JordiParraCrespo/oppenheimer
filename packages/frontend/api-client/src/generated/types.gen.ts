@@ -4241,7 +4241,7 @@ export type BotResponseDto = {
     /**
      * How far a turn may go without asking.
      */
-    permission: 'auto' | 'full';
+    permission: 'ask' | 'auto' | 'full';
     /**
      * The bot that created it (`create_bot`); null when it was made in the console, or once that bot is deleted.
      */
@@ -4295,7 +4295,7 @@ export type UpdateBotRequest = {
     provider?: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
     model?: string | null;
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
-    permission?: 'auto' | 'full';
+    permission?: 'ask' | 'auto' | 'full';
     learnAutomatically?: boolean;
     sections?: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
 };
@@ -5227,7 +5227,7 @@ export type BotUsageBackgroundResponseDto = {
     /**
      * Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory.
      */
-    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream' | 'suggestion';
+    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream' | 'suggestion' | 'auto_review';
     calls: number;
 };
 
@@ -5659,7 +5659,7 @@ export type BotPermissionsResponseDto = {
     /**
      * The preset every tool with no setting follows.
      */
-    preset: 'auto' | 'full';
+    preset: 'ask' | 'auto' | 'full';
     tools: Array<BotToolPermissionDto>;
     /**
      * Newest first.

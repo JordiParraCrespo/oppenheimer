@@ -12,6 +12,7 @@ import { QueueModule } from '../queue/queue.module';
 import { BotApprovalRequestFactory } from './application/bot-approval-request.factory';
 import { BotApprovalStartedPolicy } from './application/bot-approval-started.policy';
 import { BotApprovedCallResolver } from './application/bot-approved-call.resolver';
+import { BotAutoReviewerFactory } from './application/bot-auto-reviewer.factory';
 import { BotAutomationToolsFactory } from './application/bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './application/bot-bots-tools.factory';
 import { BotBrowserToolsFactory } from './application/bot-browser-tools.factory';
@@ -519,6 +520,7 @@ const queryHandlers: Provider[] = [
     BotOwnerScopeResolver,
     BotPermissionsResolver,
     BotRuleReviewerFactory,
+    BotAutoReviewerFactory,
     BotOwnerPermissionsResolver,
     BotToolboxFactory,
     BotHostToolsFactory,

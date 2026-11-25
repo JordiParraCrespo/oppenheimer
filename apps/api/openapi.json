@@ -40538,6 +40538,7 @@
           "permission": {
             "type": "string",
             "enum": [
+              "ask",
               "auto",
               "full"
             ],
@@ -40787,6 +40788,7 @@
           "permission": {
             "type": "string",
             "enum": [
+              "ask",
               "auto",
               "full"
             ]
@@ -42989,7 +42991,8 @@
               "summary",
               "rule_review",
               "dream",
-              "suggestion"
+              "suggestion",
+              "auto_review"
             ],
             "description": "Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory."
           },
@@ -44038,6 +44041,7 @@
           "preset": {
             "type": "string",
             "enum": [
+              "ask",
               "auto",
               "full"
             ],

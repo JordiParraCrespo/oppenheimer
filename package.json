@@ -67,6 +67,7 @@
     "eval:bot-session-unblock": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-session-unblock/run.ts",
     "eval:bot-skills": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-skills/run.ts",
     "eval:bot-suggestion": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-suggestion/run.ts",
+    "eval:bot-auto-review": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-auto-review/run.ts",
     "eval:session-title": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/session-title/run.ts",
     "changeset": "changeset",
     "version-packages": "changeset version",
