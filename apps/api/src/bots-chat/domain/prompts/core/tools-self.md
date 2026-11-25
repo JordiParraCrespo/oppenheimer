@@ -149,9 +149,9 @@ off (ask before remembering)
 ({{contentCount}} more characters cut; get_self with document "{{name}}" shows it in full.)
 
 <!-- fragment: react -->
-<!-- A reaction is the person's chat's own gesture: a quiet "seen", "done" or "thanks" with no message. It wakes nothing and costs the person no reading. -->
+<!-- A reaction is the person's chat's own gesture: a quiet "seen", "done" or "thanks". It always rides with a short reply (the owner's preference, 2026-11-25): an emoji alone read as curt. -->
 
-Reacts to a message of the person's in this chat with one emoji, the way a person reacts to a message: 👍 for "got it" or "done", ❤️ for thanks, 😂 for a joke. With no message_id it reacts to the message that started this turn. On Slack and WhatsApp the reaction shows on that message there; on WhatsApp it comes from the linked number, as your replies there do. One reaction at a time: a new one replaces yours, and an empty emoji takes it back. Use it when a reaction says enough on its own or alongside your reply; never instead of an answer the person is waiting for.
+Reacts to a message of the person's in this chat with one emoji, the way a person reacts to a message: 👍 for "got it" or "done", ❤️ for thanks, 😂 for a joke. With no message_id it reacts to the message that started this turn. On Slack and WhatsApp the reaction shows on that message there; on WhatsApp it comes from the linked number, as your replies there do. One reaction at a time: a new one replaces yours, and an empty emoji takes it back. Always reply in words too, a short line at least: a reaction never stands in for your reply.
 
 <!-- fragment: react-emoji -->
 

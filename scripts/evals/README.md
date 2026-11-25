@@ -44,6 +44,7 @@ recording), and add a `pnpm eval:<name>` script.
 | A routine's run meeting a blocker | `pnpm eval:bot-blocked-run` |
 | Channels (Telegram, WhatsApp): answer first, then the work | `pnpm eval:bot-channel-ack` |
 | Getting started, a new bot's first reply | `pnpm eval:bot-first-chat` |
+| Reactions: `react`, the reaction line of how a turn goes | `pnpm eval:bot-react` |
 | The composer's suggested next message | `pnpm eval:bot-suggestion` |
 | The core system prompt, the toolbox, the agent engines | the bot evals nearest the change, `--runs 1` each; the whole set before a large change |
 | Session titles: `session-name.policy.ts`, `prompts/system/title.md` | `pnpm eval:session-title` |

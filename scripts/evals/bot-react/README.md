@@ -1,0 +1,40 @@
+# Bot react eval
+
+When a bot reacts to the person's message, does it also write a short line?
+
+On 2026-11-25 a bot answered the owner's "okeys!" with a lone 👍 and no
+words. The owner likes the reaction but wants a short message with it. The
+prompt then allowed a reaction "instead of [a reply] when the reaction says
+it all"; it now says a reaction always comes with a short reply
+(`core/system-how-a-turn-goes`, the `react` tool's description in
+`core/tools-self`).
+
+## How it works
+
+Each case in `cases.json` is the bot's last message and the person's short
+answer to it: an acknowledgement, thanks, good news, a joke. The runner
+builds the real system prompt with `react` (its production description and
+schema, as a stub) and a few stub mail tools, and runs one turn.
+
+A run is right when its reply has words (a letter or digit). A reaction
+alone, or a reply of emoji only, is a miss. Reacting is never required. A
+case passes on a majority of its runs.
+
+```bash
+pnpm eval:bot-react                       # every case, 3 runs each
+pnpm eval:bot-react --case okeys --runs 1
+```
+
+`BOT_REACT_EVAL_MODEL` picks the model (default `claude-sonnet-5-5`).
+
+## Results
+
+| Date | Model | Prompt | Runs right |
+| --- | --- | --- | --- |
+| 2026-11-25 | claude-sonnet-5-5 | before | 15/15 |
+| 2026-11-25 | claude-sonnet-5-5 | after | 15/15 |
+
+Sonnet never left a lone emoji, even before the change. The report came from
+a bot on GPT-6.2 Sol, which this eval cannot run without an OpenAI
+transport, so it guards the rule on Claude rather than reproducing the
+report.

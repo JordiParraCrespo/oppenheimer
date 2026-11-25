@@ -1,0 +1,30 @@
+{
+  "bot": { "name": "Facturas" },
+  "cases": [
+    {
+      "id": "okeys",
+      "history": "Today's invoice check couldn't reach either Gmail inbox: the Claude browser extension on Pop-os is disconnected. Please reconnect it in Chrome or Brave on Pop-os.",
+      "message": "okeys!"
+    },
+    {
+      "id": "thanks",
+      "history": "Done: the three March invoices are filed in Drive under Facturas/2026-03.",
+      "message": "thanks!!"
+    },
+    {
+      "id": "good-news",
+      "history": "I'll keep an eye on the payment from Acme.",
+      "message": "Acme just paid the invoice 🎉"
+    },
+    {
+      "id": "joke",
+      "history": "Your inbox has 412 unread invoices.",
+      "message": "lol my accountant is going to love me"
+    },
+    {
+      "id": "ok-spanish",
+      "history": "He enviado la factura 2026-114 a Zengue Jewels.",
+      "message": "vale, perfecto"
+    }
+  ]
+}
