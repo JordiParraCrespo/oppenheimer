@@ -5,7 +5,8 @@ import { provisionedUser, signInAs } from '../../support/web';
 /**
  * The tabs over Sessions are dragged into the reader's own order, and the
  * order is kept on this device: a reload draws them where they were dropped.
- * A click on a tab still opens its session.
+ * A click on a tab still opens its session, and a tab picked up from the
+ * keyboard is announced by its name.
  */
 
 /** Where `target` is drawn, asked again while Playwright answers it has no box yet. */
@@ -67,6 +68,15 @@ test('a tab dragged to the front of the strip stays there after a reload', async
   await expect(page).toHaveURL(new RegExp(`/sessions/${ids[2]}$`));
 
   await page.reload();
+  await expect.poll(order).toEqual([names[2], names[0], names[1]]);
+
+  // From the keyboard, Space picks a tab up and a screen reader hears the name it draws.
+  await tab(names[1]).getByRole('link').focus();
+  await page.keyboard.press('Space');
+  await expect(
+    page.getByRole('status').filter({ hasText: `${names[1]} is over ${names[1]}.` }),
+  ).toBeAttached();
+  await page.keyboard.press('Escape');
   await expect.poll(order).toEqual([names[2], names[0], names[1]]);
 
   await tab(names[0]).getByRole('link').click();

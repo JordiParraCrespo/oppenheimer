@@ -55,7 +55,7 @@ export function SessionTabs({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const shownKey = shown ? openTabKey(shown) : null;
-  const { drawn, sessions, bots, close: closeTab, reorder } = useDrawnTabs(shownKey);
+  const { drawn, sessions, close: closeTab, reorder } = useDrawnTabs(shownKey);
   const order = drawn.map((one) => one.key);
   const dragLabels = useDragLabels();
   const drag = useSortableGroups(
@@ -83,8 +83,6 @@ export function SessionTabs({
         {bot(tab.id, { active: key === shownKey, onClose: () => close(key) })}
       </Fragment>
     );
-  const nameOf = ({ tab }: (typeof drawn)[number]) =>
-    tab.kind === 'session' ? sessions?.get(tab.id)?.name : bots?.get(tab.id);
 
   const sessionTab = (key: string, id: string) => {
     if (key === shownKey) {
@@ -123,7 +121,7 @@ export function SessionTabs({
           className="contents"
         >
           {drawn.map((one) => (
-            <SortableChatTab key={one.key} id={one.key} label={nameOf(one)}>
+            <SortableChatTab key={one.key} id={one.key}>
               {tabOf(one)}
             </SortableChatTab>
           ))}

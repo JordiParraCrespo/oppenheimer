@@ -150,8 +150,13 @@ function ChatTabStrip({
   );
 }
 
-/** The drag contract of the `SortableChatTab` around a tab, which its frame and its link wear. */
-const TabSort = React.createContext<ReturnType<typeof useSortableControl> | null>(null);
+/**
+ * The drag contract of the `SortableChatTab` around a tab, which its frame
+ * and its link wear, and where the tab tells it the name it draws.
+ */
+const TabSort = React.createContext<
+  (ReturnType<typeof useSortableControl> & { setName: (name: string | undefined) => void }) | null
+>(null);
 
 /**
  * Makes the `ChatTab` (or `ChatTabSkeleton`) inside it a sortable item, on
@@ -161,12 +166,15 @@ const TabSort = React.createContext<ReturnType<typeof useSortableControl> | null
  * copy is the provider's `overlay` (a plain `ChatTab`, outside this), and
  * the neighbours slide. Its close never picks it up, and on a touch screen
  * a swipe along the strip scrolls it rather than dragging. It draws nothing of its own, so the strip's
- * spacing and hairlines are the tabs' as ever. Where the order is kept is
+ * spacing and hairlines are the tabs' as ever. A drag is announced by the
+ * name the tab draws (its text), or `label`. Where the order is kept is
  * the app's.
  */
 function SortableChatTab({ id, label, children }: { id: string; label?: string; children: React.ReactNode }) {
-  const sortable = useSortableControl({ id, data: { type: 'chat-tab', label } });
-  return <TabSort.Provider value={sortable}>{children}</TabSort.Provider>;
+  // A screen reader hears the name the tab draws, unless the caller names it.
+  const [name, setName] = React.useState<string>();
+  const sortable = useSortableControl({ id, data: { type: 'chat-tab', label: label ?? name } });
+  return <TabSort.Provider value={{ ...sortable, setName }}>{children}</TabSort.Provider>;
 }
 
 /** Each kind of dot on a tab's mark, and what a screen reader hears when the caller names nothing. */
@@ -229,6 +237,10 @@ function ChatTab({
   render?: React.ReactElement;
 }) {
   const sortable = React.useContext(TabSort);
+  const setName = sortable?.setName;
+  const name = typeof children === 'string' ? children : undefined;
+  // Tells the `SortableChatTab` around it the name a drag of it is announced by.
+  React.useEffect(() => setName?.(name), [setName, name]);
   return (
     <span
       data-slot="chat-tab"
@@ -302,16 +314,15 @@ function ChatTab({
  * page on screen.
  */
 function ChatTabSkeleton({ active = false, className }: { active?: boolean; className?: string }) {
-  // A placeholder in a sortable strip still holds its slot, so the tabs around it measure true.
-  const node = React.useContext(TabSort)?.node;
+  // In a sortable strip a placeholder is a tab like the others: it holds its slot and drags by its frame.
+  const sortable = React.useContext(TabSort);
   return (
     <span
       data-slot="chat-tab"
       data-active={active || undefined}
       aria-hidden
-      ref={node?.ref}
-      style={node?.style}
-      className={cn(TAB_FRAME, className)}
+      {...sortable?.node}
+      className={cn(TAB_FRAME, sortable?.node.className, sortable && 'touch-pan-x', className)}
     >
       <Skeleton shape="sm" className="size-3.5 shrink-0" />
       <Skeleton className="h-2.5 w-20 min-w-0" />
