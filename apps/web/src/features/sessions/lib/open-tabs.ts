@@ -5,8 +5,8 @@
 export type OpenTab = { kind: 'session'; id: string } | { kind: 'bot'; id: string };
 
 /**
- * The tabs this device keeps open, in the order they were opened, the way a
- * browser keeps its own: a tab is the reader's, not the session's, so the API
+ * The tabs this device keeps open, in the order they were opened or the
+ * reader dragged them into, the way a browser keeps its own: a tab is the reader's, not the session's, so the API
  * never hears of them, and another device opens its own.
  */
 export const OPEN_TABS_KEY = 'oppenheimer.sessions.tabs';
@@ -21,6 +21,20 @@ export function openTabOf(key: string): OpenTab | null {
   const id = key.slice(at + 1);
   if (at < 0 || id === '') return null;
   return kind === 'session' || kind === 'bot' ? { kind, id } : null;
+}
+
+/**
+ * `keys` with the tabs the reader dragged into `order`: those of them kept
+ * take its order in the places they held, every key the strip did not draw
+ * (a tab whose list is loading, one gone elsewhere) keeps its place, and a
+ * drawn tab not kept yet (the page on screen) is kept at the end.
+ */
+export function withTabsOrdered(keys: readonly string[], order: readonly string[]): string[] {
+  const drawn = new Set(order);
+  const kept = order.filter((key) => keys.includes(key));
+  let next = 0;
+  const placed = keys.map((key) => (drawn.has(key) ? (kept[next++] ?? key) : key));
+  return [...placed, ...order.filter((key) => !keys.includes(key))];
 }
 
 /** `keys` with `key` at the end, unless it is open already: opening a tab never moves one. */

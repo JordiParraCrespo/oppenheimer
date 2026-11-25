@@ -1,9 +1,10 @@
 import { useStoredList } from '@oppenheimer/frontend-web';
 import { useEffect } from 'react';
-import { OPEN_TABS_KEY, openTabOf, withTabOpen } from '../lib/open-tabs';
+import { OPEN_TABS_KEY, openTabOf, withTabOpen, withTabsOrdered } from '../lib/open-tabs';
 
 /**
- * The tabs this device keeps open over Sessions, in their order, with the
+ * The tabs this device keeps open over Sessions, in their order (the reader
+ * drags them into another, `reorder`), with the
  * page on screen among them (none on New session, which opens no tab): arriving on a session or a bot, by the sidebar,
  * a link or the address, opens its tab, or finds it open already. Every
  * reader on the page shares one list, another browser tab's change arrives
@@ -20,5 +21,7 @@ export function useOpenTabs(shownKey: string | null) {
   return {
     keys: shownKey === null ? keys : withTabOpen(keys, shownKey),
     close: (key: string) => setStored((current) => current.filter((one) => one !== key)),
+    /** Keeps the tabs drawn in `order`, the reader's drag. */
+    reorder: (order: readonly string[]) => setStored((current) => withTabsOrdered(current, order)),
   };
 }

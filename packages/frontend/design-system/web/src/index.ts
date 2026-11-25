@@ -139,6 +139,7 @@ export {
   ChatTabSkeleton,
   ChatTabStrip,
   ChatTrayButton,
+  SortableChatTab,
   ThreadFindBar,
 } from './components/chat-header';
 export {

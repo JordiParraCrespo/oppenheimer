@@ -5,6 +5,7 @@ import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { useSortableControl } from './drag';
 import { IconButton } from './icon-button';
 import { Skeleton } from './skeleton';
 
@@ -19,7 +20,8 @@ import { Skeleton } from './skeleton';
  * - `ChatTabStrip` · `ChatTab`: open things as tabs on the 28px rung, each with its
  *   mark and the dot of what it needs from the reader; the shown one lit on
  *   the card inside a hairline, the rest flat, a close on each.
- *   `ChatTabSkeleton` stands for a tab whose name is still loading.
+ *   `ChatTabSkeleton` stands for a tab whose name is still loading, and
+ *   `SortableChatTab` makes the tab inside it one the reader can drag.
  * - `ThreadFindBar`: ⌘F, floating top-right over the header: a 44px pill
  *   field with the close, and once there is a query, a row under it with
  *   previous, next and "2 / 7 results".
@@ -148,6 +150,24 @@ function ChatTabStrip({
   );
 }
 
+/** The drag contract of the `SortableChatTab` around a tab, which its frame and its link wear. */
+const TabSort = React.createContext<ReturnType<typeof useSortableControl> | null>(null);
+
+/**
+ * Makes the `ChatTab` (or `ChatTabSkeleton`) inside it a sortable item, on
+ * the drag layer: put the tabs in a horizontal `SortableGroup` inside a
+ * `DragProvider`, in the strip. A click or Enter still opens the tab, a drag
+ * past 5px or Space picks it up; its own place is the drop slot, the lifted
+ * copy is the provider's `overlay` (a plain `ChatTab`, outside this), and
+ * the neighbours slide. It draws nothing of its own, so the strip's
+ * spacing and hairlines are the tabs' as ever. Where the order is kept is
+ * the app's.
+ */
+function SortableChatTab({ id, label, children }: { id: string; label?: string; children: React.ReactNode }) {
+  const sortable = useSortableControl({ id, data: { type: 'chat-tab', label } });
+  return <TabSort.Provider value={sortable}>{children}</TabSort.Provider>;
+}
+
 /** Each kind of dot on a tab's mark, and what a screen reader hears when the caller names nothing. */
 const TAB_ATTENTION = {
   'needs-you': { label: 'Needs input', className: 'bg-warning' },
@@ -207,12 +227,19 @@ function ChatTab({
   /** What the tab is: a link (`<Link to=… />`) instead of a button. */
   render?: React.ReactElement;
 }) {
+  const sortable = React.useContext(TabSort);
   return (
     <span
       data-slot="chat-tab"
       data-active={active || undefined}
       title={title}
-      className={cn(TAB_FRAME, 'hover:bg-hover-surface hover:text-fg hover:before:hidden [:hover+&]:before:hidden', className)}
+      {...sortable?.node}
+      className={cn(
+        TAB_FRAME,
+        'hover:bg-hover-surface hover:text-fg hover:before:hidden [:hover+&]:before:hidden',
+        sortable?.node.className,
+        className,
+      )}
     >
       <ButtonPrimitive
         role={render ? undefined : 'tab'}
@@ -222,6 +249,7 @@ function ChatTab({
         nativeButton={render === undefined}
         className="flex h-full min-w-0 flex-1 items-center gap-2 text-current no-underline outline-none focus-visible:underline"
         {...props}
+        {...sortable?.control}
       >
         {icon || attention ? (
           <span className="relative flex shrink-0 [&_svg]:size-3.5">
@@ -270,11 +298,15 @@ function ChatTab({
  * page on screen.
  */
 function ChatTabSkeleton({ active = false, className }: { active?: boolean; className?: string }) {
+  // A placeholder in a sortable strip still holds its slot, so the tabs around it measure true.
+  const node = React.useContext(TabSort)?.node;
   return (
     <span
       data-slot="chat-tab"
       data-active={active || undefined}
       aria-hidden
+      ref={node?.ref}
+      style={node?.style}
       className={cn(TAB_FRAME, className)}
     >
       <Skeleton shape="sm" className="size-3.5 shrink-0" />
@@ -421,5 +453,15 @@ function ChatTrayButton({
   );
 }
 
-export { ChatEmptyState, ChatHeader, ChatHeaderTag, ChatTab, ChatTabSkeleton, ChatTabStrip, ChatTrayButton, ThreadFindBar };
+export {
+  ChatEmptyState,
+  ChatHeader,
+  ChatHeaderTag,
+  ChatTab,
+  ChatTabSkeleton,
+  ChatTabStrip,
+  ChatTrayButton,
+  SortableChatTab,
+  ThreadFindBar,
+};
 export type { ThreadFindLabels };
