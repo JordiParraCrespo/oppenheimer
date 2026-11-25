@@ -22,6 +22,13 @@ export function useOpenTabs(shownKey: string | null) {
     keys: shownKey === null ? keys : withTabOpen(keys, shownKey),
     close: (key: string) => setStored((current) => current.filter((one) => one !== key)),
     /** Keeps the tabs drawn in `order`, the reader's drag. */
-    reorder: (order: readonly string[]) => setStored((current) => withTabsOrdered(current, order)),
+    // A tab another browser tab closed while this drag was held stays closed.
+    reorder: (order: readonly string[]) =>
+      setStored((current) =>
+        withTabsOrdered(
+          current,
+          order.filter((key) => key === shownKey || current.includes(key)),
+        ),
+      ),
   };
 }

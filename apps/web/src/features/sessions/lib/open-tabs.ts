@@ -24,17 +24,22 @@ export function openTabOf(key: string): OpenTab | null {
 }
 
 /**
- * `keys` with the tabs the reader dragged into `order`: those of them kept
- * take its order in the places they held, every key the strip did not draw
- * (a tab whose list is loading, one gone elsewhere) keeps its place, and a
- * drawn tab not kept yet (the page on screen) is kept at the end.
+ * `keys` with the tabs the reader dragged into `order`: they take its order,
+ * each key the strip did not draw (a tab whose list is loading, one gone
+ * elsewhere) stays after the drawn tab it followed, and a drawn tab not
+ * kept yet (the page on screen) is kept where it was dropped.
  */
 export function withTabsOrdered(keys: readonly string[], order: readonly string[]): string[] {
   const drawn = new Set(order);
-  const kept = order.filter((key) => keys.includes(key));
-  let next = 0;
-  const placed = keys.map((key) => (drawn.has(key) ? (kept[next++] ?? key) : key));
-  return [...placed, ...order.filter((key) => !keys.includes(key))];
+  const leading: string[] = [];
+  const after = new Map<string, string[]>();
+  let anchor: string | null = null;
+  for (const key of keys) {
+    if (drawn.has(key)) anchor = key;
+    else if (anchor === null) leading.push(key);
+    else after.set(anchor, [...(after.get(anchor) ?? []), key]);
+  }
+  return [...leading, ...order.flatMap((key) => [key, ...(after.get(key) ?? [])])];
 }
 
 /** `keys` with `key` at the end, unless it is open already: opening a tab never moves one. */
