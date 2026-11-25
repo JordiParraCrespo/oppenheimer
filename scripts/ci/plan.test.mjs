@@ -158,3 +158,10 @@ test('Go waits for every step that rewrites the generated Go files', () => {
   ]);
 });
 // oppenheimer:end runner
+
+test("on GitHub's VM the unit tests run two packages at a time, and a contributor's machine keeps the default", () => {
+  const onGitHub = plan(everything('@oppenheimer/web'), { env: { GITHUB_ACTIONS: 'true' } });
+  assert.ok(step(onGitHub, 'test/turbo test').args.includes('--concurrency=2'));
+  const local = plan(everything('@oppenheimer/web'), { env: {} });
+  assert.ok(!step(local, 'test/turbo test').args.some((arg) => arg.startsWith('--concurrency')));
+});
