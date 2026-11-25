@@ -7,11 +7,13 @@ import (
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
-// changesReadTime is how long one read of a session's changes may take,
-// patches included, inside the control plane's wait for the answer: a store
-// fetched without its blobs fetches them as the diff reads them, and a
-// patch not read by then is left out with its counts kept.
-const changesReadTime = 12 * time.Second
+// ChangesReadTime is how long one read of a session's changes may take from
+// the moment it was asked, patches included, inside the control plane's
+// 15s wait for the answer: a store fetched without its blobs fetches them as
+// the diff reads them, and a patch not read by then is left out with its
+// counts kept. A caller that queues reads starts the clock when the read
+// arrives (ctx's deadline), so time spent waiting counts.
+const ChangesReadTime = 12 * time.Second
 
 // ReadChanges reads what a session's checkouts changed, the first checkout
 // first: since each branch left its base, or with uncommitted only the
@@ -34,7 +36,7 @@ func (s *Service) ReadChanges(ctx context.Context, id string, uncommitted bool, 
 	if err != nil {
 		return nil, err
 	}
-	ctx, cancel := context.WithTimeout(domain.WithSession(ctx, id), changesReadTime)
+	ctx, cancel := context.WithTimeout(domain.WithSession(ctx, id), ChangesReadTime)
 	defer cancel()
 
 	checkouts := session.Checkouts()

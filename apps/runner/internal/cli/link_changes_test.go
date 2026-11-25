@@ -6,8 +6,10 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
+	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	sessionsdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
@@ -90,5 +92,34 @@ func TestAnAnswerIsFittedToTheFrameAsItIsEncoded(t *testing.T) {
 	}
 	if c := crowded.Checkouts[0]; c.OmittedFiles == 0 || len(c.Files)+c.OmittedFiles != 500 {
 		t.Fatalf("files %d + omitted %d; want the cut counted", len(c.Files), c.OmittedFiles)
+	}
+}
+
+// A read's time runs from when it reached the runner, not from when it left
+// the lane reads queue on: the control plane's wait started when it sent it.
+// One whose time ran out in the queue is dropped, unread and unanswered,
+// so a backlog drains instead of running git for readers that left. The
+// regression: two slow reads, the second timing out at the API while the
+// runner, its clock not yet started, read on regardless.
+func TestAChangesReadWhoseTimeRanOutInTheQueueIsDropped(t *testing.T) {
+	p := newPlacesHarness(t, t.TempDir(), "acct")
+	openFolderSession(t, p)
+
+	const stale, fresh = "e1111111-1111-4111-8111-111111111111", "e2222222-2222-4222-8222-222222222222"
+	long := time.Now().Add(-sessionsapp.ChangesReadTime - time.Second)
+	p.h.changesRead(context.Background(), long, link.SessionChangesRead{
+		Type: link.TypeSessionChangesRead, CommandID: stale, SessionID: sessionUnderTest, Scope: "base",
+	})
+	p.h.changesRead(context.Background(), time.Now(), link.SessionChangesRead{
+		Type: link.TypeSessionChangesRead, CommandID: fresh, SessionID: sessionUnderTest, Scope: "base",
+	})
+	p.sent.waitFor(t, "session.changes", isSessionChanges(fresh))
+
+	p.sent.mu.Lock()
+	defer p.sent.mu.Unlock()
+	for _, m := range p.sent.sent {
+		if isSessionChanges(stale)(m) || isCommandFailed(stale)(m) {
+			t.Fatalf("a read past its time was answered: %+v", m)
+		}
 	}
 }

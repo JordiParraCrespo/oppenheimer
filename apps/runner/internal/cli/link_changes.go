@@ -3,8 +3,10 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
+	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
 )
 
@@ -22,7 +24,18 @@ var sessionChangesBounds = domain.ChangesBounds{
 // checkouts changed: since each branch left its base, or with `uncommitted`
 // the edits not committed yet. A session this host does not hold is
 // SESS_001, as command.failed.
-func (h *linkHandler) changesRead(ctx context.Context, m link.SessionChangesRead) {
+//
+// Its time runs from arrived, when the read reached the runner: reads wait
+// on one lane, and the control plane's wait started when it sent this one.
+// A read whose time ran out in the queue is dropped unread and unanswered,
+// since nobody is waiting for its answer any more, so a backlog drains
+// rather than runs git for readers that left.
+func (h *linkHandler) changesRead(ctx context.Context, arrived time.Time, m link.SessionChangesRead) {
+	ctx, cancel := context.WithDeadline(ctx, arrived.Add(sessionsapp.ChangesReadTime))
+	defer cancel()
+	if ctx.Err() != nil {
+		return
+	}
 	read, err := h.app.Sessions.ReadChanges(ctx, m.SessionID, m.Scope == "uncommitted", sessionChangesBounds)
 	if err != nil {
 		h.fail(m.CommandID, err)

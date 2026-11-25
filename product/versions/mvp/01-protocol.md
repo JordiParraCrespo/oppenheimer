@@ -135,8 +135,9 @@ runner does with it and point back.
   history the base's tip stands in, and the checkout says `approximate`.
   The answer stays under the frame: 500 files a checkout (the rest
   counted), 64 KiB a patch and 256 KiB of patches a read, and a patch past
-  a bound, or not read within the runner's 12s, is left out whole, never
-  cut, its counts kept. An untracked file past the 500 is listed without
+  a bound, or not read within 12s of the read reaching the runner, is left
+  out whole, never cut, its counts kept; a read whose 12s ran out while it
+  waited behind another is dropped unanswered, nobody waiting on it. An untracked file past the 500 is listed without
   being opened. Last, the answer is measured as it is encoded (JSON writes
   `<` as six bytes) and fitted to the frame: patches, then files, left out
   from the last checkout back, the files counted. Refusals are `command.failed` (`SESS_001`). The

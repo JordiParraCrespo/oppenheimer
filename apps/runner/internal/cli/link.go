@@ -774,7 +774,10 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 	case link.TypeSessionChangesRead:
 		var m link.SessionChangesRead
 		if msg.Decode(&m) == nil {
-			h.lanes.run(laneChangesRead, func() { h.changesRead(h.life, m) })
+			// The read's time starts now, not when it leaves the lane: the
+			// control plane's wait does, and reads queue behind each other.
+			arrived := time.Now()
+			h.lanes.run(laneChangesRead, func() { h.changesRead(h.life, arrived, m) })
 		}
 	case "host.update":
 		var m link.HostUpdate
