@@ -63,8 +63,12 @@ const DEFAULT_LABELS: AgentModelSelectLabels = {
   configure: 'Choose agents',
 };
 
-/** Rows visible before the list scrolls. */
-const VISIBLE_ROWS = 7;
+/**
+ * Rows visible before the list scrolls: five and half of the sixth, so the
+ * cut row says there are more (the list's scrollbar is hidden) and the popup
+ * stays short over the composer with the effort foot under it.
+ */
+const VISIBLE_ROWS = 5.5;
 
 /** The Favourites tab's id; no agent is called this. */
 const FAVOURITES = '★';
@@ -296,9 +300,13 @@ function AgentModelEffortFoot<V extends string>({
  * the list, as `engineKey`s. With `onConfigure`, a settings glyph ends the
  * strip, outside the tabs, for where the caller chooses which agents the
  * strip holds; the popup closes as it is pressed. With `effort`, the popup ends in the effort
- * slider for the current model and the button names the level, in a cell as
- * wide as the longest level so the button never changes width under the
- * popup anchored to it.
+ * slider for the current model and the button names the level, muted after
+ * the model ("Opus 5.5 Medium"), as wide as that level. While the popup is
+ * open the button holds the level it opened on, so it never changes width
+ * under the popup anchored to it; the foot's header follows the slider, and
+ * the button catches up when the popup closes. `onOpenChange` tells the
+ * caller when it opens and closes, for a caller that saves the level once,
+ * on close, rather than on every stop.
  *
  * ```tsx
  * <AgentModelSelect
@@ -319,6 +327,7 @@ function AgentModelSelect<V extends string = string>({
   onFavouritesChange,
   effort,
   onConfigure,
+  onOpenChange: onOpenChangeProp,
   labels: labelsProp,
   searchPlaceholder = 'Search models…',
   emptyText: emptyTextProp,
@@ -336,6 +345,7 @@ function AgentModelSelect<V extends string = string>({
   effort?: AgentModelEffort<V>;
   /** Present: the strip ends in a settings glyph that calls it. */
   onConfigure?: () => void;
+  onOpenChange?: (open: boolean) => void;
   labels?: Partial<AgentModelSelectLabels>;
   searchPlaceholder?: string;
   emptyText?: (query: string) => React.ReactNode;
@@ -351,6 +361,8 @@ function AgentModelSelect<V extends string = string>({
   const [query, setQuery] = React.useState('');
   // Null until the reader toggles it: open when the current model is a legacy one.
   const [moreOpen, setMoreOpen] = React.useState<boolean | null>(null);
+  // The effort the popup opened on, named by the button until it closes.
+  const [heldEffort, setHeldEffort] = React.useState<V | null>(null);
 
   const current = agents.find((agent) => agent.id === value.agent);
   const currentModel = current?.models.find((model) => model.value === value.model);
@@ -374,11 +386,13 @@ function AgentModelSelect<V extends string = string>({
 
   function onOpenChange(next: boolean) {
     setOpen(next);
+    setHeldEffort(next && effort ? effort.value : null);
     if (!next) {
       setTab(null);
       setQuery('');
       setMoreOpen(null);
     }
+    onOpenChangeProp?.(next);
   }
 
   function renderRow(row: Row) {
@@ -434,20 +448,8 @@ function AgentModelSelect<V extends string = string>({
           >
             {currentModel?.label ?? current?.label ?? value.agent}
             {effort ? (
-              // Every stop in one cell: as wide as the longest, only the current one paints.
-              <span className="ml-[7px] inline-grid text-fg-muted">
-                {effort.stops.map((stop) => (
-                  <span
-                    key={stop.value}
-                    aria-hidden={stop.value !== effort.value}
-                    className={cn(
-                      'col-start-1 row-start-1',
-                      stop.value !== effort.value && 'invisible',
-                    )}
-                  >
-                    {stop.label}
-                  </span>
-                ))}
+              <span className="ml-1.5 text-fg-muted">
+                {effort.stops.find((stop) => stop.value === (heldEffort ?? effort.value))?.label}
               </span>
             ) : null}
           </ComposerToolButton>
