@@ -18,6 +18,7 @@ import {
   toUpdateBotBody,
   type UpdateBotsInput,
 } from '../bot-peer-tool.mapper';
+import { describeBotEffort } from '../domain/bot-effort.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
 
 export type { UpdateBotsInput };
@@ -209,7 +210,7 @@ export function botsUpdatedAnswer(
             engineLabel: engineLabelOf(bot.provider, bot.model),
             provider: bot.provider,
             model: bot.model ?? 'default',
-            effort: bot.effort ?? 'default',
+            effort: describeBotEffort(bot),
             permission: BOT_PERMISSION_LABELS[bot.permission],
           }),
         ),

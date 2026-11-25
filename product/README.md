@@ -2096,6 +2096,12 @@ earlier note:
   list's empty state as one muted "Nothing needs you." row. On 2026-11-24
   the owner asked for more: the list shows "Inbox zero" over a check in a
   green disc, and "No matches" when filters match nothing ("Inbox zero").
+- `versions/mvp/25-bots.md` (§1, "Its provider, model and effort") had a
+  bot on Auto send no effort, so its turns ran at the model's own default.
+  On 2026-11-25, after Oppie barely reasoned at GPT-6.2 Sol's `low` and
+  widened a job it was given, Auto runs at a floor of `medium` on a model
+  whose default is lower, and "How a turn goes" says to do what was asked
+  and nothing more.
 - `versions/mvp/25-bots.md` §4.2 kept a host's switches for bots
   (`runner exec`, `runner computer`, `runner browser`) on the host alone,
   never written by the control plane. On 2026-11-24 the owner, told by a

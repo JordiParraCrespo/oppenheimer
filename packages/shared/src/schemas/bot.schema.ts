@@ -347,6 +347,32 @@ export function botEffortLevelFor(
   return botModelOf(provider, model)?.effort?.levels.includes(level) ? level : null;
 }
 
+/**
+ * The least effort a bot's turn runs at when its owner left effort on Auto.
+ * Several models default to `low` (GPT-6.2 Sol, Oppie's), where a bot barely
+ * reasons before it acts; OpenClaw and Hermes both land on `medium` too.
+ */
+export const BOT_EFFORT_FLOOR: SessionEffort = 'medium';
+
+/**
+ * The effort a bot's turn runs at: the one its owner chose, or on Auto (null)
+ * `BOT_EFFORT_FLOOR` when the model's own default is below it and the model
+ * offers it, else null, the model's own default, which is then the floor or
+ * above (and Claude's adaptive thinking is left to decide).
+ */
+export function botTurnEffort(
+  provider: BotProvider,
+  model: string | null,
+  effort: SessionEffort | null,
+): SessionEffort | null {
+  if (effort !== null) return effort;
+  const offered = botModelOf(provider, model)?.effort;
+  if (!offered) return null;
+  const floor = offered.levels.indexOf(BOT_EFFORT_FLOOR);
+  const fallback = offered.levels.indexOf(offered.default);
+  return floor >= 0 && fallback >= 0 && fallback < floor ? BOT_EFFORT_FLOOR : null;
+}
+
 /** A provider key's length bounds: wide enough for every provider's format. */
 export const BOT_PROVIDER_KEY_MIN = 8;
 export const BOT_PROVIDER_KEY_MAX = 512;

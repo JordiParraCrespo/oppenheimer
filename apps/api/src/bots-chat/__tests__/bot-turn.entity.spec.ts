@@ -217,3 +217,36 @@ describe('BotTurnEntity.queue as a steer', () => {
     );
   });
 });
+
+describe('BotTurnEntity.queue, effort', () => {
+  const queued = (provider: 'chatgpt' | 'anthropic', model: string, effort: 'high' | null) =>
+    BotTurnEntity.queue({
+      organizationId: randomUUID(),
+      botId: randomUUID(),
+      requestedByUserId: randomUUID(),
+      provider,
+      model,
+      effort,
+    });
+
+  // What breaks this: a bot left on Auto runs at its model's own default, which
+  // for GPT-6.2 Sol is low, so it barely reasons before it acts (Oppie,
+  // 2026-11-25: 1,711 output tokens on a turn that started a session and a task).
+  it('runs a bot on Auto on gpt-6.2-sol at medium, not the model’s low, and records it', () => {
+    expect(queued('chatgpt', 'gpt-6.2-sol', null).effort).toBe('medium');
+  });
+
+  it('keeps the effort the owner chose, even below the floor’s default', () => {
+    expect(queued('chatgpt', 'gpt-6.2-sol', 'high').effort).toBe('high');
+  });
+
+  it('leaves a model whose default is the floor or above to its own default', () => {
+    expect(queued('chatgpt', 'gpt-6.1-terra', null).effort).toBeNull();
+    expect(queued('anthropic', 'claude-opus-5-5', null).effort).toBeNull();
+    expect(queued('anthropic', 'claude-fable-5-2', null).effort).toBeNull();
+  });
+
+  it('sends no effort to a model that takes none', () => {
+    expect(queued('anthropic', 'claude-haiku-4-5', null).effort).toBeNull();
+  });
+});
