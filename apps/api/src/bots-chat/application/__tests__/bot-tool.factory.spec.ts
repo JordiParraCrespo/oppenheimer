@@ -25,6 +25,8 @@ function setup(
     summarize?: () => string;
     asks?: true | 'always' | 'card';
     escalates?: boolean;
+    /** Pins the call's host, as a merge pins the head it was read at. */
+    pins?: string;
   } = {},
 ) {
   const run = vi.fn(async (input: { task: string; host?: string }) => `Started ${input.task}`);
@@ -32,6 +34,9 @@ function setup(
     name: 'start_thing',
     asks: options.asks ?? true,
     ...(options.escalates && { escalates: () => true }),
+    ...(options.pins && {
+      normalize: (input: { task: string; host?: string }) => ({ ...input, host: options.pins }),
+    }),
     scope: 'sessions:write',
     description: 'Starts a thing.',
     input: z.object({ task: z.string().min(1), host: z.string().optional() }),
@@ -369,6 +374,16 @@ describe('defineBotTool, Approve for me’s reviewer', () => {
     expect(run).toHaveBeenCalledTimes(1);
     expect(approvals.request).not.toHaveBeenCalled();
     expect(result.data).toMatchObject({ allowedBy: 'Auto-approved: You asked to deploy.' });
+  });
+
+  it('runs the call as the reviewer read it, normalized, never the model’s input again', async () => {
+    // A merge is normalized to the head it was read at; running the raw input
+    // instead would merge whatever was pushed while the review ran.
+    const { run, call } = setup({ pins: 'head-at-review' });
+    const auto = reviewer(async () => allow);
+    await call({ task: 'deploy' }, { permission: 'auto', autoReviewer: auto });
+    expect(auto.review.mock.calls[0][0]).toMatchObject({ input: { host: 'head-at-review' } });
+    expect(run.mock.calls[0][0]).toEqual({ task: 'deploy', host: 'head-at-review' });
   });
 
   it('raises the card for a call the reviewer will not clear, its reason on the card', async () => {

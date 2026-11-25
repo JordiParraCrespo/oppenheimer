@@ -461,8 +461,12 @@ export function defineBotTool<Input extends z.ZodType>(
         !asks && traits.asks && rulesToReview(context.permissions, 'allow').length > 0;
       // Full access raises no card for a call that reaches further: it skips them all.
       const escalates = spec.escalates !== undefined && context.permission !== 'full';
+      // What the checks decided on is what runs: the call as normalized (a
+      // merge pinned to the head the reviewer saw), never the model's input again.
+      const runDecided: DecidedRun<Input> = async (normalized, { signal, callId }) =>
+        toEngineResult(await call(normalized, callId ? { ...context, callId } : context, signal));
       return asks || reviews || escalates
-        ? decidedFirst(tool, spec, traits, { ...context, asks })
+        ? decidedFirst(tool, spec, traits, { ...context, asks }, runDecided)
         : tool;
     },
     runApproved: (input, context, signal) => call(input as z.output<Input>, context, signal),
@@ -477,11 +481,18 @@ export function defineBotTool<Input extends z.ZodType>(
  * model is told to end its turn (or to wait when a card is already up). A
  * bad call is the tool's own error, unchanged.
  */
+/** Runs a call as the checks decided on it: normalized, unparsed again. */
+type DecidedRun<Input extends z.ZodType> = (
+  call: z.output<Input>,
+  options: Parameters<BotEngineTool['run']>[1],
+) => Promise<BotEngineToolResult>;
+
 function decidedFirst<Input extends z.ZodType>(
   tool: BotEngineTool,
   spec: BotToolSpec<Input>,
   traits: BotToolTraits,
   context: BotToolContext & { asks: boolean },
+  runDecided: DecidedRun<Input>,
 ): BotEngineTool {
   return {
     ...tool,
@@ -515,9 +526,10 @@ function decidedFirst<Input extends z.ZodType>(
                 reviewOf(kind, plan.rules, spec, context, call, options.signal),
               );
         if (outcome.kind === 'run') {
+          const result = await runDecided(call, options);
           return outcome.line
-            ? allowedRun(tool, input, options, outcome.line)
-            : tool.run(input, options);
+            ? { ...result, data: { ...result.data, [ALLOWED_BY_DATA_KEY]: outcome.line } }
+            : result;
         }
         const cardSubject = subject === undefined ? await subjectOf(spec, call, context) : subject;
         return carded(await askOwner(spec, context, call, cardSubject, outcome.note));
@@ -526,17 +538,6 @@ function decidedFirst<Input extends z.ZodType>(
       }
     },
   };
-}
-
-/** Runs the call, its step saying why it ran without a card. */
-async function allowedRun(
-  tool: BotEngineTool,
-  input: unknown,
-  options: Parameters<BotEngineTool['run']>[1],
-  allowedBy: string,
-) {
-  const result = await tool.run(input, options);
-  return { ...result, data: { ...result.data, [ALLOWED_BY_DATA_KEY]: allowedBy } };
 }
 
 /**
