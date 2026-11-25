@@ -16,6 +16,7 @@ export function BotSteerMessage({ message, time }: { message: BotMessageEntity; 
     <div data-slot="bot-steer" className="flex flex-col items-end">
       <ChatMarker icon={<CornerDownRight aria-hidden />}>{t('bots.chat.steered')}</ChatMarker>
       <ChatUserMessage
+        tone="wash"
         data-message-id={message.id}
         className="w-full"
         time={time}

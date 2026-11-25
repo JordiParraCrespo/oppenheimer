@@ -1,5 +1,9 @@
+'use client';
+
+import { Collapsible as CollapsiblePrimitive } from '@base-ui/react/collapsible';
 import { ChevronDownIcon } from 'lucide-react';
 import * as React from 'react';
+import { FoldPanel } from '../internal/fold';
 import { SidebarSectionHandle } from '../internal/sidebar-section-handle';
 import { cn } from '../lib/utils';
 
@@ -7,9 +11,10 @@ import { cn } from '../lib/utils';
  * SidebarFoldLabel — a `SidebarListHead` label that folds the list under it:
  * the name, uppercase like the head it sits in, then a chevron that shows on
  * hover and focus and stays, turned right, while the list is folded. The head
- * stays the layout; the caller passes this as its `label` and leaves the list
- * out while `open` is false. Inside a `SortableSidebarSection` it is the
- * section's keyboard control: Space picks the section up, Enter folds it.
+ * stays the layout; the caller passes this as its `label` and puts the list
+ * in a `SidebarFoldPanel` given the same `open`. Inside a
+ * `SortableSidebarSection` it is the section's keyboard control: Space picks
+ * the section up, Enter folds it.
  */
 function SidebarFoldLabel({
   open,
@@ -47,4 +52,22 @@ function SidebarFoldLabel({
   );
 }
 
-export { SidebarFoldLabel };
+/**
+ * SidebarFoldPanel — the list a `SidebarFoldLabel` folds: the chat's
+ * `FoldPanel` (it closes on its height and fades, reduced motion keeps the
+ * jump) under a Root that `open` drives. Its children are unmounted once it
+ * has closed.
+ */
+function SidebarFoldPanel({
+  open,
+  className,
+  ...props
+}: Omit<CollapsiblePrimitive.Panel.Props, 'keepMounted'> & { open: boolean }) {
+  return (
+    <CollapsiblePrimitive.Root open={open}>
+      <FoldPanel data-slot="sidebar-fold-panel" className={className} {...props} />
+    </CollapsiblePrimitive.Root>
+  );
+}
+
+export { SidebarFoldLabel, SidebarFoldPanel };

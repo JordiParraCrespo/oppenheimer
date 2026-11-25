@@ -67,8 +67,7 @@ export function SessionScreen({
           <PageBar
             title={bar.open ?? <Skeleton className="h-4 w-40" />}
             // The session bar's ground and edge, so nothing changes colour when it answers.
-            tone={bar.open ? 'chrome' : 'page'}
-            className={bar.open ? undefined : 'border-b border-border-subtle bg-term-bg'}
+            tone={bar.open ? 'chrome' : 'ground'}
           />
         ) : null}
         <SessionSkeleton />

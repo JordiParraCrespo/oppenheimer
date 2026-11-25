@@ -5,7 +5,9 @@ import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { dragIgnore, useSortableControl } from './drag';
 import { IconButton } from './icon-button';
+import { Skeleton } from './skeleton';
 
 /**
  * The chat's chrome (Chat Components, Header, find and empty state).
@@ -18,6 +20,8 @@ import { IconButton } from './icon-button';
  * - `ChatTabStrip` · `ChatTab`: open things as tabs on the 28px rung, each with its
  *   mark and the dot of what it needs from the reader; the shown one lit on
  *   the card inside a hairline, the rest flat, a close on each.
+ *   `ChatTabSkeleton` stands for a tab whose name is still loading, and
+ *   `SortableChatTab` makes the tab inside it one the reader can drag.
  * - `ThreadFindBar`: ⌘F, floating top-right over the header: a 44px pill
  *   field with the close, and once there is a query, a row under it with
  *   previous, next and "2 / 7 results".
@@ -56,8 +60,11 @@ function ChatHeader({
         {meta}
       </span>
       {status ? <span className="flex shrink-0 items-center gap-1.5 text-[12.5px] text-fg-muted">{status}</span> : null}
-      {tabs}
-      {actions ? <span className="flex shrink-0 items-center gap-0.5">{actions}</span> : null}
+      {/* What closes the bar, one group so a bar of tabs can keep it one width on every page. */}
+      <span data-slot="chat-header-end" className="flex shrink-0 items-center justify-end gap-2.5 empty:hidden">
+        {tabs}
+        {actions ? <span className="flex shrink-0 items-center gap-0.5">{actions}</span> : null}
+      </span>
     </header>
   );
 }
@@ -143,12 +150,51 @@ function ChatTabStrip({
   );
 }
 
+/**
+ * The drag contract of the `SortableChatTab` around a tab, which its frame
+ * and its link wear, and where the tab tells it the name it draws.
+ */
+const TabSort = React.createContext<
+  (ReturnType<typeof useSortableControl> & { setName: (name: string | undefined) => void }) | null
+>(null);
+
+/**
+ * Makes the `ChatTab` (or `ChatTabSkeleton`) inside it a sortable item, on
+ * the drag layer: put the tabs in a horizontal `SortableGroup` inside a
+ * `DragProvider`, in the strip. A click or Enter still opens the tab, a drag
+ * past 5px or Space picks it up; its own place is the drop slot, the lifted
+ * copy is the provider's `overlay` (a plain `ChatTab`, outside this), and
+ * the neighbours slide. Its close never picks it up, and on a touch screen
+ * a swipe along the strip scrolls it rather than dragging. It draws nothing of its own, so the strip's
+ * spacing and hairlines are the tabs' as ever. A drag is announced by the
+ * name the tab draws (its text), or `label`. Where the order is kept is
+ * the app's.
+ */
+function SortableChatTab({ id, label, children }: { id: string; label?: string; children: React.ReactNode }) {
+  // A screen reader hears the name the tab draws, unless the caller names it.
+  const [name, setName] = React.useState<string>();
+  const sortable = useSortableControl({ id, data: { type: 'chat-tab', label: label ?? name } });
+  return <TabSort.Provider value={{ ...sortable, setName }}>{children}</TabSort.Provider>;
+}
+
 /** Each kind of dot on a tab's mark, and what a screen reader hears when the caller names nothing. */
 const TAB_ATTENTION = {
   'needs-you': { label: 'Needs input', className: 'bg-warning' },
   done: { label: 'Done', className: 'bg-primary' },
   unread: { label: 'Unread', className: 'bg-primary' },
 } as const;
+
+/**
+ * A tab's frame: one width that shrinks to fit the strip, on the small rung
+ * (the bar of tabs points it at the medium one), the shown one lit on its card
+ * inside a hairline, and a hairline between two tabs that are not shown.
+ */
+const TAB_FRAME = cn(
+  'group/tab relative flex h-(--control-h-sm) min-w-24 shrink basis-60 items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-sm text-fg-muted transition-colors duration-fast',
+  'data-active:border-border-subtle data-active:bg-(--chat-tab-lit) data-active:font-medium data-active:text-fg',
+  "not-first:before:absolute not-first:before:top-1/2 not-first:before:-translate-y-1/2 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
+  'data-active:before:hidden [[data-active]+&]:before:hidden',
+);
 
 /**
  * One open thing in a `ChatTabStrip`: its mark, its name, its close. Every
@@ -190,17 +236,23 @@ function ChatTab({
   /** What the tab is: a link (`<Link to=… />`) instead of a button. */
   render?: React.ReactElement;
 }) {
+  const sortable = React.useContext(TabSort);
+  const setName = sortable?.setName;
+  const name = typeof children === 'string' ? children : undefined;
+  // Tells the `SortableChatTab` around it the name a drag of it is announced by.
+  React.useEffect(() => setName?.(name), [setName, name]);
   return (
     <span
       data-slot="chat-tab"
       data-active={active || undefined}
       title={title}
+      {...sortable?.node}
       className={cn(
-        'group/tab relative flex h-(--control-h-sm) min-w-24 shrink basis-60 items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-sm text-fg-muted transition-colors duration-fast',
-        'hover:bg-hover-surface hover:text-fg data-active:border-border-subtle data-active:bg-(--chat-tab-lit) data-active:font-medium data-active:text-fg',
-        // A hairline between two tabs that are not shown.
-        "not-first:before:absolute not-first:before:top-1/2 not-first:before:-translate-y-1/2 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
-        'data-active:before:hidden hover:before:hidden [[data-active]+&]:before:hidden [:hover+&]:before:hidden',
+        TAB_FRAME,
+        'hover:bg-hover-surface hover:text-fg hover:before:hidden [:hover+&]:before:hidden',
+        sortable?.node.className,
+        // On a touch screen a swipe along the strip scrolls it rather than lifting the tab.
+        sortable && 'touch-pan-x',
         className,
       )}
     >
@@ -212,6 +264,7 @@ function ChatTab({
         nativeButton={render === undefined}
         className="flex h-full min-w-0 flex-1 items-center gap-2 text-current no-underline outline-none focus-visible:underline"
         {...props}
+        {...sortable?.control}
       >
         {icon || attention ? (
           <span className="relative flex shrink-0 [&_svg]:size-3.5">
@@ -244,11 +297,35 @@ function ChatTab({
           size="xs"
           aria-label={closeLabel}
           onClick={onClose}
+          {...(sortable ? dragIgnore : {})}
           className="hidden group-focus-within/tab:flex group-hover/tab:flex group-data-active/tab:flex focus-visible:ring-2 focus-visible:ring-ring"
         >
           <XIcon />
         </IconButton>
       ) : null}
+    </span>
+  );
+}
+
+/**
+ * A tab whose name has not arrived yet (its list is still loading), on the
+ * tab's own frame, so the strip has its tabs' widths from the first paint
+ * and nothing moves when the name lands. `active` when it stands for the
+ * page on screen.
+ */
+function ChatTabSkeleton({ active = false, className }: { active?: boolean; className?: string }) {
+  // In a sortable strip a placeholder is a tab like the others: it holds its slot and drags by its frame.
+  const sortable = React.useContext(TabSort);
+  return (
+    <span
+      data-slot="chat-tab"
+      data-active={active || undefined}
+      aria-hidden
+      {...sortable?.node}
+      className={cn(TAB_FRAME, sortable?.node.className, sortable && 'touch-pan-x', className)}
+    >
+      <Skeleton shape="sm" className="size-3.5 shrink-0" />
+      <Skeleton className="h-2.5 w-20 min-w-0" />
     </span>
   );
 }
@@ -391,5 +468,15 @@ function ChatTrayButton({
   );
 }
 
-export { ChatEmptyState, ChatHeader, ChatHeaderTag, ChatTab, ChatTabStrip, ChatTrayButton, ThreadFindBar };
+export {
+  ChatEmptyState,
+  ChatHeader,
+  ChatHeaderTag,
+  ChatTab,
+  ChatTabSkeleton,
+  ChatTabStrip,
+  ChatTrayButton,
+  SortableChatTab,
+  ThreadFindBar,
+};
 export type { ThreadFindLabels };
