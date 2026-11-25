@@ -39,7 +39,9 @@ test('the API reads what a session changed off its host, since its base or not c
       .exec(`find "$HOME" -name .git -type f -path '*/sessions*/*' 2>/dev/null || true`)
       .split('\n')
       .filter(Boolean);
-  await expect.poll(worktrees, { message: 'the session’s worktree', timeout: 30_000 }).toHaveLength(1);
+  await expect
+    .poll(worktrees, { message: 'the session’s worktree', timeout: 30_000 })
+    .toHaveLength(1);
   const worktree = worktrees()[0].replace(/\/\.git$/, '');
   box.host.exec(
     [
