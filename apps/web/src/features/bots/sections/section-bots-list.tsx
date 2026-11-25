@@ -71,7 +71,7 @@ export function SectionBotsList({
             accepts={['bot']}
             data={{ label: t('bots.section.heading') }}
           >
-            <BotList className="mx-1.5">
+            <BotList className="mx-3">
               {bots.map((bot) => (
                 <SectionBotRow
                   key={bot.id}
