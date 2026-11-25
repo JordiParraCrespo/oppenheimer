@@ -1,7 +1,7 @@
-import SegmentedControl from '@expo/ui/community/segmented-control';
 import { useNow } from '@oppenheimer/design-system-mobile';
 import { Icon } from '@oppenheimer/design-system-mobile/icon';
 import { Clock, GitBranch } from '@oppenheimer/design-system-mobile/icons';
+import { SegmentedControl } from '@oppenheimer/design-system-mobile/segmented-control';
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { formatAge } from '@oppenheimer/frontend-mobile';
@@ -16,7 +16,6 @@ import { useSessionLink } from '../hooks/use-session-link';
 import { SessionDock } from './session-dock';
 
 type PaneView = 'terminal' | 'chat';
-const VIEWS: readonly PaneView[] = ['terminal', 'chat'];
 const AGE_TICK_MS = 60_000;
 
 /**
@@ -69,14 +68,16 @@ export function SessionPane({ session }: { session: SessionEntity }) {
           {status ? <Text variant="caption">{status}</Text> : null}
         </View>
         {chatOffered ? (
-          <SegmentedControl
-            values={[t('sessions.chat.view.terminal'), t('sessions.chat.view.chat')]}
-            selectedIndex={VIEWS.indexOf(view)}
-            onChange={(event) =>
-              setPicked(VIEWS[event.nativeEvent.selectedSegmentIndex] ?? 'terminal')
-            }
-            style={{ width: 150 }}
-          />
+          <View style={{ width: 150 }}>
+            <SegmentedControl
+              value={view}
+              options={[
+                { value: 'terminal', label: t('sessions.chat.view.terminal') },
+                { value: 'chat', label: t('sessions.chat.view.chat') },
+              ]}
+              onValueChange={setPicked}
+            />
+          </View>
         ) : null}
       </View>
       <View className="flex-1">
