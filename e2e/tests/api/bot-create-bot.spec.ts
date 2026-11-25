@@ -84,11 +84,14 @@ test('a bot under Full access asked to create a bot creates exactly one, yours, 
   await api.dispose();
 });
 
-test('under Approve for me the creation waits on a card, and approving it creates that one bot', async () => {
+test('under Ask for approval the creation waits on a card, and approving it creates that one bot', async () => {
   const key = process.env.GLM_API_KEY;
   test.skip(!key, 'GLM_API_KEY is not set: the live turn needs a real key');
   const { api, bot, bots } = await glmWorkspace('botcreateask', key as string);
   expect(bot.permission).toBe('auto');
+  // Approve for me's reviewer would clear a creation asked for this plainly: Ask for approval cards it.
+  const asks = await api.patch(`/api/v1/bots/${bot.id}`, { data: { permission: 'ask' } });
+  expect(asks.status(), await asks.text()).toBe(200);
 
   const sent = await api.post(`/api/v1/bots/${bot.id}/messages`, { data: { content: ASK } });
   expect(sent.status(), await sent.text()).toBe(202);
@@ -119,6 +122,6 @@ test('under Approve for me the creation waits on a card, and approving it create
     .toContain('Created bot');
   const made = (await bots()).filter((row) => row.createdByBotId === bot.id);
   expect(made).toHaveLength(1);
-  expect(made[0]).toMatchObject({ name: 'Scout', provider: 'glm', permission: 'auto' });
+  expect(made[0]).toMatchObject({ name: 'Scout', provider: 'glm', permission: 'ask' });
   await api.dispose();
 });

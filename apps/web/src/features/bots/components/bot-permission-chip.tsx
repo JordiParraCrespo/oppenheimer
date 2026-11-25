@@ -1,11 +1,10 @@
 import { PermissionMenu } from '@oppenheimer/design-system-web';
-import type { BotPermission } from '@oppenheimer/shared/schemas/bot';
+import { BOT_PERMISSIONS, type BotPermission } from '@oppenheimer/shared/schemas/bot';
 import { useTranslation } from 'react-i18next';
 
 /**
- * How far a bot's turns go without asking. Two levels until approvals
- * arrive: a headless turn with no prompt tool would refuse every tool, so
- * Ask for approval is not offered yet.
+ * How far a bot's turns go without asking, the sessions' three levels: Ask
+ * for approval, Approve for me (a reviewer decides) and Full access.
  */
 export function BotPermissionChip({
   value,
@@ -22,22 +21,16 @@ export function BotPermissionChip({
     <PermissionMenu
       value={value}
       onValueChange={(next) => {
-        if (next === 'auto' || next === 'full') onValueChange(next);
+        const level = BOT_PERMISSIONS.find((candidate) => candidate === next);
+        if (level) onValueChange(level);
       }}
       disabled={disabled}
       aria-label={t('bots.chat.permission.label')}
-      options={[
-        {
-          value: 'auto',
-          label: t('bots.chat.permission.auto.label'),
-          description: t('bots.chat.permission.auto.description'),
-        },
-        {
-          value: 'full',
-          label: t('bots.chat.permission.full.label'),
-          description: t('bots.chat.permission.full.description'),
-        },
-      ]}
+      options={BOT_PERMISSIONS.map((level) => ({
+        value: level,
+        label: t(`bots.chat.permission.${level}.label`),
+        description: t(`bots.chat.permission.${level}.description`),
+      }))}
     />
   );
 }

@@ -211,13 +211,17 @@
     "noModel": "Ningún modelo coincide con «{{query}}».",
     "permission": {
       "label": "Nivel de aprobación",
+      "ask": {
+        "label": "Pedir aprobación",
+        "description": "Te pregunta antes de todo lo que sale de Oppenheimer."
+      },
       "auto": {
         "label": "Aprobar por mí",
-        "description": "Edita archivos y ejecuta comandos sin preguntar."
+        "description": "Un revisor deja ejecutarse lo que pediste; lo arriesgado sigue preguntando."
       },
       "full": {
         "label": "Acceso total",
-        "description": "Todo, sin supervisión, en la máquina principal del bot."
+        "description": "Nunca pregunta. Todo se ejecuta, sin supervisión."
       }
     },
     "saveFailed": "No se ha podido cambiar el bot.",
@@ -453,6 +457,9 @@
         "ruleReview_one": "{{count}} revisión de reglas",
         "ruleReview_other": "{{count}} revisiones de reglas",
         "ruleReview_many": "{{count}} revisiones de reglas",
+        "autoReview_one": "{{count}} revisión automática",
+        "autoReview_other": "{{count}} revisiones automáticas",
+        "autoReview_many": "{{count}} revisiones automáticas",
         "dream_one": "{{count}} orden de memoria",
         "dream_other": "{{count}} órdenes de memoria",
         "dream_many": "{{count}} órdenes de memoria",
@@ -811,8 +818,9 @@
         "changed_many": "{{count}} cambiadas por ti"
       },
       "preset": {
-        "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pregunta antes.",
-        "full": "Las herramientas que dejas en su valor por defecto siguen Acceso total: se ejecutan sin preguntar."
+        "ask": "Las herramientas que dejas en su valor por defecto siguen Pedir aprobación: todo lo que sale de Oppenheimer pregunta antes.",
+        "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pasa antes por un revisor, que deja ejecutarse lo que pediste y te deja el resto a ti. Una herramienta que pones en Preguntar siempre pregunta.",
+        "full": "Las herramientas que dejas en su valor por defecto siguen Acceso total: se ejecutan sin preguntar, también las que siempre preguntan. Enviar correo, y lo que pones en Preguntar o pide una regla, siguen esperando tu sí."
       },
       "decisions": {
         "allow": "Permitir",

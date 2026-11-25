@@ -2127,3 +2127,13 @@ earlier note:
   phone's five sections fill in a slice of its own. On 2026-11-18 the owner
   postponed the Pull requests tab: it stays a placeholder while the other
   four are built ("The Pull requests tab waits").
+- `versions/mvp/25-bots.md` §5 gave a bot two levels: Approve for me (what
+  reaches outside Oppenheimer asks) and Full access (everything runs, but
+  trashing mail, archiving a project and a session at full access still
+  asked). On 2026-11-25 the owner asked for an auto mode and a "dangerously
+  skip permissions" mode, and chose the sessions' three levels: the old
+  Approve for me is now Ask for approval (stored bots moved to it,
+  unchanged), Approve for me is a reviewer that lets what the owner asked
+  for run and leaves the rest on the card (`research/auto-mode.md`), and
+  Full access raises no card but the owner's own Ask, an ask rule and
+  sending mail ("three levels, and Approve for me is a reviewer").

@@ -97,6 +97,21 @@ export const LEDGER = [
     why: "an approval card's note, for the person",
   },
   {
+    file: 'bots-chat/domain/bot-auto-review.policy.ts',
+    starts: 'Approve for me left this to you',
+    why: "an approval card's note, for the person",
+  },
+  {
+    file: 'bots-chat/domain/bot-auto-review.policy.ts',
+    starts: 'Approve for me could not review',
+    why: "an approval card's note, for the person",
+  },
+  {
+    file: 'bots-chat/domain/bot-auto-review.policy.ts',
+    starts: 'Approve for me cannot read all',
+    why: "an approval card's note, for the person",
+  },
+  {
     file: 'bots-chat/domain/bot-session-activity.policy.ts',
     starts: 'that follow-up never reached the host',
     why: "one phrase of a table with one per kind of a session's activity entry; the others are short labels, and the table stays whole",

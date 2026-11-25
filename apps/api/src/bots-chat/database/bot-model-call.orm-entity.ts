@@ -11,7 +11,7 @@ import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn 
 @Index('IDX_bot_model_call_bot', ['organizationId', 'botId', 'createdAt'])
 @Check(
   'CHK_bot_model_call_purpose',
-  `purpose IN ('goal_review', 'summary', 'rule_review', 'dream', 'suggestion')`,
+  `purpose IN ('goal_review', 'summary', 'rule_review', 'dream', 'suggestion', 'auto_review')`,
 )
 @Check(
   'CHK_bot_model_call_provider',

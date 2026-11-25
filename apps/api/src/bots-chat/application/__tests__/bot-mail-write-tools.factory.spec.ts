@@ -130,7 +130,7 @@ describe('BotMailWriteToolsFactory', () => {
     expect(result.content).toContain('nothing was sent');
   });
 
-  it('asks before sending even under Approve everything, storing the planned message on the card', async () => {
+  it('asks before sending even under Full access, storing the planned message on the card', async () => {
     const { context, request, commands, definition } = setup('full');
 
     await definition('send_mail').bind(context).run(SEND, { signal });
