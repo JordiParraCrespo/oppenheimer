@@ -522,7 +522,7 @@ func (w *Worktrees) Dirty(_ context.Context, path string) (bool, error) {
 }
 
 // Changes implements app.Worktrees.
-func (w *Worktrees) Changes(_ context.Context, path, baseBranch string, uncommitted bool) (domain.CheckoutChanges, error) {
+func (w *Worktrees) Changes(_ context.Context, path, baseBranch string, uncommitted bool, _ int) (domain.CheckoutChanges, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.ChangesAsked = append(w.ChangesAsked, fmt.Sprintf("%s %s %t", path, baseBranch, uncommitted))

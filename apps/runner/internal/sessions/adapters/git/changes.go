@@ -27,6 +27,10 @@ const binarySniff = 8000
 // no external diff or textconv program, no colour, renames found.
 var diffFlags = []string{"--no-ext-diff", "--no-textconv", "--no-color", "-M"}
 
+// literal makes a path after `--` the path itself, never a glob: a file named
+// `app/[id]/page.tsx` must not also match `app/i/page.tsx`.
+const literal = "--literal-pathspecs"
+
 // Changes lists what the worktree at path changed: against where the branch
 // meets origin/<baseBranch>, or with uncommitted against its last commit.
 // The files come without patches; Patch reads one.
@@ -34,8 +38,10 @@ var diffFlags = []string{"--no-ext-diff", "--no-textconv", "--no-color", "-M"}
 // When the branch's history does not reach its base yet (the store is
 // still fetching it), the base branch's tip stands in and the answer says
 // it is approximate. Untracked files git does not ignore are listed as
-// untracked, counted from the file itself.
-func (c *Client) Changes(ctx context.Context, path, baseBranch string, uncommitted bool) (domain.CheckoutChanges, error) {
+// untracked, counted from the file itself while fewer than counted files
+// are named and ctx lasts: a `node_modules` nobody ignored lists thousands
+// of them, and counting each to its end would outlast the read.
+func (c *Client) Changes(ctx context.Context, path, baseBranch string, uncommitted bool, counted int) (domain.CheckoutChanges, error) {
 	base, approximate := c.compareBase(ctx, path, baseBranch, uncommitted)
 	against := base
 	if against == "" {
@@ -64,8 +70,10 @@ func (c *Client) Changes(ctx context.Context, path, baseBranch string, uncommitt
 			continue
 		}
 		file := domain.ChangedFile{Path: name, Status: domain.ChangeUntracked}
-		if lines, binary, ok := countUntracked(path, name); ok {
-			file.Additions, file.Binary = lines, binary
+		if len(files) < counted && ctx.Err() == nil {
+			if lines, binary, ok := countUntracked(ctx, path, name); ok {
+				file.Additions, file.Binary = lines, binary
+			}
 		}
 		files = append(files, file)
 	}
@@ -77,7 +85,9 @@ func (c *Client) Changes(ctx context.Context, path, baseBranch string, uncommitt
 func (c *Client) compareBase(ctx context.Context, path, baseBranch string, uncommitted bool) (string, bool) {
 	head := c.revParse(ctx, path, "HEAD")
 	if uncommitted || baseBranch == "" {
-		return head, !uncommitted && head != ""
+		// With no base to meet, the last commit is what the read compares
+		// with, for `base` as for `uncommitted`: nothing stands in for anything.
+		return head, false
 	}
 	remote := "refs/remotes/origin/" + baseBranch
 	if out, err := c.run(ctx, command{timeout: quickTimeout, dir: path, stdout: true}, "merge-base", "HEAD", remote); err == nil {
@@ -114,7 +124,7 @@ func (c *Client) Patch(ctx context.Context, path, base string, file domain.Chang
 	if base == "" {
 		base = emptyTree
 	}
-	args := append(append([]string{"diff"}, diffFlags...), base, "--")
+	args := append(append([]string{literal, "diff"}, diffFlags...), base, "--")
 	if file.OldPath != "" {
 		args = append(args, file.OldPath)
 	}
@@ -255,7 +265,7 @@ func untrackedFile(root, name string) (*os.File, bool) {
 
 // countUntracked counts an untracked file's lines, as git counts a new
 // file's additions, and tells a binary one by a NUL in its first bytes.
-func countUntracked(root, name string) (lines int, binary bool, ok bool) {
+func countUntracked(ctx context.Context, root, name string) (lines int, binary bool, ok bool) {
 	f, ok := untrackedFile(root, name)
 	if !ok {
 		return 0, false, false
@@ -269,6 +279,10 @@ func countUntracked(root, name string) (lines int, binary bool, ok bool) {
 	var last byte
 	buf := make([]byte, 32*1024)
 	for {
+		// A file of gigabytes is counted only while the read has time.
+		if ctx.Err() != nil {
+			return 0, false, false
+		}
 		n, err := reader.Read(buf)
 		chunk := buf[:n]
 		lines += bytes.Count(chunk, []byte{'\n'})

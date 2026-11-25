@@ -41,7 +41,7 @@ func (s *Service) ReadChanges(ctx context.Context, id string, uncommitted bool, 
 	read := make([]domain.CheckoutChanges, 0, len(checkouts))
 	budget := bounds.Patches
 	for _, checkout := range checkouts {
-		changes, err := s.worktrees.Changes(ctx, checkout.Worktree, checkout.BaseBranch, uncommitted)
+		changes, err := s.worktrees.Changes(ctx, checkout.Worktree, checkout.BaseBranch, uncommitted, bounds.Files)
 		if err != nil {
 			return nil, err
 		}

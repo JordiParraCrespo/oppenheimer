@@ -58,9 +58,9 @@ const changesFrameHeadroom = 1 << 10
 // read's bounds count raw bytes, and JSON writes some of them as six (`<`,
 // `>` and `&`, a control byte, a byte that is not UTF-8), as long paths
 // across many checkouts can also add up: an answer over the frame is not
-// sent at all, and the control plane would wait it out. Past limit, patches
-// are left out from the last file back, then whole files, counted as
-// omitted, until it fits.
+// sent at all, and the control plane would wait it out. Past limit, the
+// last checkout gives way first: its patches from its last file back, then
+// its files, counted as omitted; then the checkout before it, until it fits.
 func fitFrame(answer link.SessionChanges, limit int) link.SessionChanges {
 	size := func(v any) int {
 		body, _ := json.Marshal(v)

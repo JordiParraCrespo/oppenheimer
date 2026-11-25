@@ -136,7 +136,10 @@ runner does with it and point back.
   The answer stays under the frame: 500 files a checkout (the rest
   counted), 64 KiB a patch and 256 KiB of patches a read, and a patch past
   a bound, or not read within the runner's 12s, is left out whole, never
-  cut, its counts kept. Refusals are `command.failed` (`SESS_001`). The
+  cut, its counts kept. An untracked file past the 500 is listed without
+  being opened. Last, the answer is measured as it is encoded (JSON writes
+  `<` as six bytes) and fitted to the frame: patches, then files, left out
+  from the last checkout back, the files counted. Refusals are `command.failed` (`SESS_001`). The
   control plane waits 15s for it and stores nothing; a runner without the
   capability is never asked.
 - **`session.window.open` may name a second agent** (since 2026-11-16):

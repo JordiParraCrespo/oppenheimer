@@ -64,7 +64,7 @@ func TestChangesSinceTheBaseHoldTheCommitsTheEditsAndTheUntrackedFiles(t *testin
 	advance(t, remote, "main")
 	git(t, worktree, "fetch", "-q", "origin", "+refs/heads/main:refs/remotes/origin/main")
 
-	changes, err := c.Changes(ctx, worktree, "main", false)
+	changes, err := c.Changes(ctx, worktree, "main", false, 500)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func TestChangesSinceTheBaseHoldTheCommitsTheEditsAndTheUntrackedFiles(t *testin
 func TestUncommittedChangesLeaveTheCommitsOut(t *testing.T) {
 	_, worktree := changedWorktree(t)
 	c, _ := client(t)
-	changes, err := c.Changes(context.Background(), worktree, "main", true)
+	changes, err := c.Changes(context.Background(), worktree, "main", true, 500)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +118,7 @@ func TestARenameAgainstItsOwnPastReadsAsARename(t *testing.T) {
 	c, _ := client(t)
 	git(t, worktree, "checkout", "-q", "--", "kept.txt")
 	git(t, worktree, "mv", "kept.txt", "moved.txt")
-	changes, err := c.Changes(context.Background(), worktree, "", true)
+	changes, err := c.Changes(context.Background(), worktree, "", true, 500)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +134,7 @@ func TestAPatchIsWholeOrLeftOut(t *testing.T) {
 	_, worktree := changedWorktree(t)
 	c, _ := client(t)
 	ctx := context.Background()
-	changes, err := c.Changes(ctx, worktree, "main", false)
+	changes, err := c.Changes(ctx, worktree, "main", false, 500)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func TestAnUntrackedLinkOutOfTheCheckoutIsNeverRead(t *testing.T) {
 	if err := os.Symlink(secret, filepath.Join(worktree, "leak.txt")); err != nil {
 		t.Fatal(err)
 	}
-	changes, err := c.Changes(ctx, worktree, "main", true)
+	changes, err := c.Changes(ctx, worktree, "main", true, 500)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -184,5 +184,58 @@ func TestAnUntrackedLinkOutOfTheCheckoutIsNeverRead(t *testing.T) {
 	}
 	if patch, ok, _ := c.Patch(ctx, worktree, changes.Base, leak, 64<<10); ok || strings.Contains(patch, "token") {
 		t.Fatalf("the link was read: %q", patch)
+	}
+}
+
+// Past the files a read names, an untracked file is listed but not opened:
+// a `node_modules` nobody ignored lists thousands, and counting each to its
+// end outlasted the read, holding every other session's read behind it.
+func TestUntrackedFilesPastTheBoundAreNotCounted(t *testing.T) {
+	_, worktree := changedWorktree(t)
+	c, _ := client(t)
+	for _, name := range []string{"x1.txt", "x2.txt", "x3.txt"} {
+		write(t, worktree, name, "line\n")
+	}
+	changes, err := c.Changes(context.Background(), worktree, "main", true, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	counted := 0
+	for _, f := range changes.Files {
+		if f.Status == domain.ChangeUntracked && f.Additions > 0 {
+			counted++
+		}
+	}
+	if len(changes.Files) != 5 || counted != 1 {
+		t.Fatalf("files = %+v; want all 5 listed, the one untracked file inside the bound counted", changes.Files)
+	}
+}
+
+// A path is a path, not a glob: the patch of `app/[id]/page.tsx` holds that
+// file alone, not also `app/i/page.tsx`, which the brackets would match.
+func TestAPatchReadsItsPathLiterally(t *testing.T) {
+	_, worktree := changedWorktree(t)
+	c, _ := client(t)
+	ctx := context.Background()
+	for _, dir := range []string{"app/[id]", "app/i"} {
+		if err := os.MkdirAll(filepath.Join(worktree, dir), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		write(t, worktree, dir+"/page.tsx", "one\n")
+	}
+	git(t, worktree, "add", "app")
+	git(t, worktree, "commit", "-q", "-m", "pages")
+	write(t, worktree, "app/[id]/page.tsx", "one\ntwo\n")
+	write(t, worktree, "app/i/page.tsx", "one\nthree\n")
+	changes, err := c.Changes(ctx, worktree, "", true, 500)
+	if err != nil {
+		t.Fatal(err)
+	}
+	patch, ok, err := c.Patch(ctx, worktree, changes.Base, byPath(changes.Files)["app/[id]/page.tsx"], 64<<10)
+	if err != nil || !ok {
+		t.Fatalf("ok = %v, err = %v", ok, err)
+	}
+	if strings.Contains(patch, "app/i/page.tsx") {
+		t.Fatalf("the patch matched another file as a glob:\n%s", patch)
 	}
 }

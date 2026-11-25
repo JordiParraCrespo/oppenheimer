@@ -1926,7 +1926,7 @@ export const openSessionWindow = <ThrowOnError extends boolean = false>(options:
 /**
  * Read a session's changes
  *
- * What each of the session's checkouts changed, read with git on its host now: every changed file with its status, its line counts and its unified diff. `base` (the default) is everything since the branch left its base, commits and edits not committed yet; `uncommitted` only the edits not committed yet. Untracked files are included. A read is bounded: past 500 files a checkout counts the rest, and patches stop at 64 KiB a file and 256 KiB a read, the files keeping their counts. Nothing is cached.
+ * What each of the session's checkouts changed, read with git on its host now: every changed file with its status, its line counts and its unified diff. `base` (the default) is everything since the branch left its base, commits and edits not committed yet; `uncommitted` only the edits not committed yet. Untracked files are included. A read is bounded: past 500 files a checkout counts the rest, and patches stop at 64 KiB a file and 256 KiB a read, the files keeping their counts; an answer that would not fit the host's link drops patches, then files, from its last checkout, counting them. Nothing is cached.
  */
 export const findSessionChanges = <ThrowOnError extends boolean = false>(options: Options<FindSessionChangesData, ThrowOnError>): RequestResult<FindSessionChangesResponses, FindSessionChangesErrors, ThrowOnError> => (options.client ?? client).get<FindSessionChangesResponses, FindSessionChangesErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

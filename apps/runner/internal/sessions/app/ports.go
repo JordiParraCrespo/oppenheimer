@@ -128,8 +128,9 @@ type Worktrees interface {
 	Dirty(ctx context.Context, path string) (bool, error)
 	// Changes lists the files a worktree changed against where its branch
 	// meets origin/<baseBranch>, or with uncommitted against its last
-	// commit, untracked files included, without their patches.
-	Changes(ctx context.Context, path, baseBranch string, uncommitted bool) (domain.CheckoutChanges, error)
+	// commit, untracked files included, without their patches. An untracked
+	// file is counted only while fewer than counted files are named.
+	Changes(ctx context.Context, path, baseBranch string, uncommitted bool, counted int) (domain.CheckoutChanges, error)
 	// Patch reads one changed file's unified diff against base, and reports
 	// false when it is longer than limit bytes: it is then not returned at
 	// all, never cut.
