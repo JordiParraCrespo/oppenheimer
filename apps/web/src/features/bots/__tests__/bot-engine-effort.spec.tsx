@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BotEngineChips } from '../components/bot-engine-chips';
 
 /**
- * The bot's effort is saved once per adjustment, when its popover closes.
+ * The bot's effort is saved once per adjustment, when the model picker closes.
  * What breaks this: a save per stop the knob crosses, so one slide from Low
  * to Max is a burst of updates that the API's rate limit refuses.
  */
@@ -14,7 +14,7 @@ vi.mock('react-i18next', () => ({
 
 afterEach(cleanup);
 
-describe('the bot’s effort picker', () => {
+describe('the bot’s effort, in its model picker', () => {
   it('saves the settled pick once, on close, and not per step', () => {
     const onEffortChange = vi.fn();
     render(
@@ -28,7 +28,7 @@ describe('the bot’s effort picker', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'sessions.new.effort.label' }));
+    fireEvent.click(screen.getByRole('button', { name: 'bots.chat.model' }));
     const slider = screen.getByRole('slider');
     fireEvent.keyDown(slider, { key: 'ArrowRight' });
     fireEvent.keyDown(slider, { key: 'ArrowRight' });

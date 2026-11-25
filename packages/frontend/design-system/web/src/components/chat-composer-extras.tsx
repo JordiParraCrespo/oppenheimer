@@ -19,8 +19,9 @@ import { IconButton } from './icon-button';
  * - `DictationFrame`: a plain multi-line field that takes dictation: the
  *   field with the mic in its bottom-right corner (the field keeps room for
  *   it on the right), and the recorder under it while dictating.
- * - `ComposerContextMeter`: how full the model's context is, a 28px pill in
- *   mono with a 28×4 bar and the share; a click compacts the thread.
+ * - `ComposerContextMeter`: how full the model's context is, a 16px ring in
+ *   a 28px round button, the used share drawn in blue (amber from 80%), the
+ *   share itself in its name and title; a click compacts the thread.
  * - `ComposerMenu`: what opens above the composer while typing `/` or `@`,
  *   or from the + button: groups under 11px eyebrows, 32px rows of a glyph,
  *   the name, a line and a trailing mono hint (the command, a shortcut).
@@ -181,6 +182,11 @@ function DictationFrame({
   );
 }
 
+const RING_R = 6.5;
+const RING_C = 2 * Math.PI * RING_R;
+/** The share from which the ring takes the warning tone, as the usage popover's bars do. */
+const RING_WARN_AT = 80;
+
 function ComposerContextMeter({
   value,
   onCompact,
@@ -204,7 +210,7 @@ function ComposerContextMeter({
       title={name}
       disabled={!onCompact && !props.onClick}
       className={cn(
-        'figures inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-2 font-mono text-[11.5px] text-fg-subtle outline-none transition-colors duration-fast enabled:hover:bg-hover-surface enabled:hover:text-fg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default',
+        'inline-flex size-7 shrink-0 items-center justify-center rounded-pill text-fg-subtle outline-none transition-colors duration-fast enabled:hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default',
         className,
       )}
       {...props}
@@ -213,14 +219,24 @@ function ComposerContextMeter({
         props.onClick?.(event);
       }}
     >
-      <span aria-hidden className="h-1 w-7 overflow-hidden rounded-pill bg-hover-surface">
-        <span
-          className="block h-full bg-fg-muted transition-[width] duration-slow ease-standard"
-          // biome-ignore lint/style/noInlineStyles: the fill is the share.
-          style={{ width: `${pct}%` }}
+      <svg aria-hidden viewBox="0 0 16 16" className="size-4 -rotate-90">
+        <circle cx="8" cy="8" r={RING_R} fill="none" strokeWidth="2" className="stroke-hover-surface" />
+        <circle
+          cx="8"
+          cy="8"
+          r={RING_R}
+          fill="none"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeDasharray={RING_C}
+          strokeDashoffset={RING_C * (1 - pct / 100)}
+          className={cn(
+            'transition-[stroke-dashoffset] duration-slow ease-standard',
+            pct >= RING_WARN_AT ? 'stroke-warning' : 'stroke-primary',
+            pct === 0 && 'opacity-0',
+          )}
         />
-      </span>
-      {pct}%
+      </svg>
     </button>
   );
 }
