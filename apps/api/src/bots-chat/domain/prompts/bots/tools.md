@@ -46,7 +46,7 @@ A model id or label the provider offers; yours on the same provider when omitted
 
 <!-- fragment: create-bot-effort -->
 
-Only for a model that takes one; null is the model's own default.
+Only for a model that takes one; null is Auto: medium on a model whose own default is lower, else the model's own default.
 
 <!-- fragment: create-bot-permission -->
 

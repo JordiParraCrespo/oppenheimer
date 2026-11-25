@@ -57,6 +57,32 @@
     "list_issues": "1 open issue labelled main-red:\n- #1066 \"main is red: link-relay.spec.ts times out\" opened 07:04 by the automation.",
     "get_issue": "#1066 \"main is red: link-relay.spec.ts times out\" (open, main-red)\nmain at ea473bf fails `pnpm ci:local --all`: apps/api `link-relay.spec.ts` › reconnects after a dropped socket times out after 5000 ms. Opened by Verify main is green; updated 08:06."
   },
+  "judged": [
+    {
+      "brief": "Restore green main and improve automatic repair. Check latest main SHA/CI and #1066. If still broken, prepare the smallest root-cause fix and open a focused repair PR. Also prepare a separate small PR to improve the main-red runbook.",
+      "widened": true
+    },
+    {
+      "brief": "Fix the link relay reconnect test that times out on ea473bf, then update the runbook.",
+      "widened": true
+    },
+    {
+      "brief": "Get main back to green (reconnects after a dropped socket times out), then improve the automation.",
+      "widened": true
+    },
+    {
+      "brief": "Fix the failing link_relay spec and improve the main-red runbook.",
+      "widened": true
+    },
+    {
+      "brief": "Edit docs/runbooks/main-red.md so that on a red run the automation fixes the current failure, opens a PR and merges it to main. Change only the runbook and open a pull request; do not merge it.",
+      "widened": false
+    },
+    {
+      "brief": "Edit docs/runbooks/main-red.md (the runbook the Verify main is green automation follows): when main is red, find the cause, fix it or revert the bad commit, open a PR labelled ship, and close the main-red issue once main is green again; don't open a second fix PR for the current red run if one exists. Open a PR with the runbook change only.",
+      "widened": false
+    }
+  ],
   "cases": [
     {
       "id": "improve-automation",

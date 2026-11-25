@@ -175,7 +175,7 @@ function describeChanges(input: UpdateBotsInput, plan: BotUpdatePlan): string[] 
     ];
     changes.push(`runs on ${engines.join(' / ')}`);
   }
-  if (input.effort !== undefined) changes.push(`effort ${input.effort ?? 'default'}`);
+  if (input.effort !== undefined) changes.push(`effort ${input.effort ?? 'auto'}`);
   if (input.permission !== undefined) {
     changes.push(`permission ${BOT_PERMISSION_LABELS[input.permission]}`);
   }
