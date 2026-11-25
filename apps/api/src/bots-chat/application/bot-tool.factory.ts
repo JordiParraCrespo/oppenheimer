@@ -18,16 +18,20 @@ import { MAIL_DRAFT_DATA_KEY } from '../bot-mail-tool.mapper';
 import {
   ALLOWED_BY_DATA_KEY,
   askedForApproval,
-  grantedLine,
   waitingForApproval,
 } from '../domain/bot-approval.policy';
+import {
+  approvalPlan,
+  type BotApprovalReview,
+  type BotApprovalVerdict,
+  decideApproval,
+} from '../domain/bot-approval-decision.policy';
 import {
   AUTO_TOO_LONG_NOTE,
   AUTO_UNCHECKED_NOTE,
   AutoReviewIncompleteError,
   autoAllowedLine,
   autoPausedNote,
-  autoReviews,
 } from '../domain/bot-auto-review.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
 import {
@@ -466,21 +470,12 @@ export function defineBotTool<Input extends z.ZodType>(
 }
 
 /**
- * How an asking tool's call is decided, on the call itself,
- * read once and normalized once:
- * - a call that `escalates` raises a card of its own offering only this call,
- *   whatever Settings, a standing grant, a rule or the reviewer would let run
- *   (never under Full access, which raises none);
- * - a call that would ask (`asks`) runs on a standing grant for the call's
- *   subject, or an allow rule no ask rule overrides; an ask rule raises its
- *   card; then, under Approve for me, the reviewer decides whether it runs
- *   or raises the card (`autoReviews`). Otherwise it becomes a Needs input
- *   card and the model is told to end its turn (or to wait when a card is
- *   already up);
- * - a call that would run (Full access, or set to Allow) is read against the
- *   owner's rules first: a matching ask rule, or a review that cannot say,
- *   raises the card instead.
- * A bad call is the tool's own error, unchanged.
+ * How an asking tool's call is decided, on the call itself, read once and
+ * normalized once: `approvalPlan` says which checks it goes through and in
+ * which order (`bot-approval-decision.policy.ts`, the contract), and this
+ * runs them. A call that settles as ask becomes a Needs input card and the
+ * model is told to end its turn (or to wait when a card is already up). A
+ * bad call is the tool's own error, unchanged.
  */
 function decidedFirst<Input extends z.ZodType>(
   tool: BotEngineTool,
@@ -495,47 +490,37 @@ function decidedFirst<Input extends z.ZodType>(
       if (!parsed.success) return tool.run(input, options);
       try {
         const call = spec.normalize ? await spec.normalize(parsed.data, context) : parsed.data;
-        if (context.permission !== 'full' && (await spec.escalates?.(call, context))) {
-          const subject = await subjectOf(spec, call, context);
-          return carded(await askOwner({ ...spec, perCallOnly: true }, context, call, subject));
+        const escalates =
+          context.permission !== 'full' && Boolean(await spec.escalates?.(call, context));
+        const subject =
+          escalates || context.asks ? await subjectOf(spec, call, context) : undefined;
+        const plan = approvalPlan({
+          preset: context.permission,
+          permissions: context.permissions,
+          traits,
+          asks: context.asks,
+          escalates,
+          granted: context.asks ? grantFor(context.permissions, traits, subject ?? null) : null,
+          reviewers: { rules: Boolean(context.reviewer), auto: Boolean(context.autoReviewer) },
+        });
+        if (plan.kind === 'escalate') {
+          return carded(
+            await askOwner({ ...spec, perCallOnly: true }, context, call, subject ?? null),
+          );
         }
-        if (!context.asks) {
-          const rules = traits.asks ? rulesToReview(context.permissions, 'allow') : [];
-          if (rules.length === 0 || !context.reviewer) return tool.run(input, options);
-          const verdict = await reviewOf(context.reviewer, spec, context, call, rules);
-          if (verdict.effect !== 'ask') return tool.run(input, options);
-          const subject = await subjectOf(spec, call, context);
-          return carded(await askOwner(spec, context, call, subject, verdict.note));
+        const outcome =
+          plan.kind === 'run'
+            ? plan
+            : await decideApproval(plan, (kind) =>
+                reviewOf(kind, plan.rules, spec, context, call, options.signal),
+              );
+        if (outcome.kind === 'run') {
+          return outcome.line
+            ? allowedRun(tool, input, options, outcome.line)
+            : tool.run(input, options);
         }
-        const subject = await subjectOf(spec, call, context);
-        // A standing grant for the very thing this call acts on: it runs.
-        const granted = grantFor(context.permissions, traits, subject);
-        if (granted) return allowedRun(tool, input, options, grantedLine(granted.label));
-        // An allow rule may let it run; an ask rule that also matches wins. Before
-        // the reviewer, an ask rule is read too: it keeps the card the owner wanted.
-        const auto =
-          context.autoReviewer && autoReviews(context.permissions, traits, context.permission)
-            ? context.autoReviewer
-            : null;
-        const rules = auto ? context.permissions.rules : rulesToReview(context.permissions, 'ask');
-        let reviewNote: string | null = null;
-        if (rules.length > 0 && context.reviewer) {
-          const verdict = await reviewOf(context.reviewer, spec, context, call, rules);
-          if (verdict.effect === 'allow') {
-            return allowedRun(tool, input, options, ruleAllowedLine(verdict.rule.text));
-          }
-          if (verdict.effect === 'ask') {
-            return carded(await askOwner(spec, context, call, subject, verdict.note));
-          }
-        }
-        if (auto) {
-          const verdict = await autoReviewOf(auto, spec, context, call, options.signal);
-          // A turn stopped while its review ran neither runs the call nor raises its card.
-          options.signal.throwIfAborted();
-          if (verdict.outcome === 'allow') return allowedRun(tool, input, options, verdict.line);
-          reviewNote = verdict.note;
-        }
-        return carded(await askOwner(spec, context, call, subject, reviewNote));
+        const cardSubject = subject === undefined ? await subjectOf(spec, call, context) : subject;
+        return carded(await askOwner(spec, context, call, cardSubject, outcome.note));
       } catch (error) {
         return toEngineResult(failureOf(error));
       }
@@ -555,53 +540,66 @@ async function allowedRun(
 }
 
 /**
- * The rules' verdict on one call, failing closed: a review that throws, or
- * cannot be read, asks, and the card says the rules could not be checked.
+ * One review of a call, as a verdict the plan reads, each failing closed: a
+ * review that throws, or cannot be read, asks, and the card says why. The
+ * owner's rules say which rule matched; Approve for me's reviewer always
+ * settles (run or ask), asks for a call too long to read whole, and a turn
+ * stopped while it ran neither runs the call nor raises its card.
  */
 async function reviewOf<Input extends z.ZodType>(
-  reviewer: BotRuleReviewer,
-  spec: BotToolSpec<Input>,
-  context: BotToolCallContext,
-  input: z.output<Input>,
+  kind: BotApprovalReview,
   rules: BotPermissions['rules'],
-): Promise<
-  { effect: 'allow'; rule: { text: string } } | { effect: 'ask' | 'none'; note: string | null }
-> {
-  try {
-    const summary = spec.summarize ? await spec.summarize(input, context) : spec.name;
-    const verdict = await reviewer.review({ tool: spec.name, summary, input }, rules);
-    if (verdict.effect === 'allow') return { effect: 'allow', rule: verdict.rule };
-    if (verdict.effect === 'ask') return { effect: 'ask', note: rulePausedNote(verdict.rule.text) };
-    return { effect: 'none', note: null };
-  } catch {
-    return { effect: 'ask', note: RULES_UNCHECKED_NOTE };
-  }
-}
-
-/**
- * The reviewer's verdict on one call under Approve for me, failing closed: a
- * review that throws, or cannot be read, asks, and the card says so.
- */
-async function autoReviewOf<Input extends z.ZodType>(
-  reviewer: BotAutoReviewer,
   spec: BotToolSpec<Input>,
-  context: BotToolCallContext,
+  context: BotToolContext,
   input: z.output<Input>,
   signal: AbortSignal,
-): Promise<{ outcome: 'allow'; line: string } | { outcome: 'ask'; note: string }> {
+): Promise<BotApprovalVerdict> {
+  if (kind === 'rules') {
+    try {
+      const verdict = await (context.reviewer as BotRuleReviewer).review(
+        await reviewedCall(spec, context, input),
+        rules,
+      );
+      if (verdict.effect === 'allow') {
+        return { effect: 'allow', line: ruleAllowedLine(verdict.rule.text) };
+      }
+      if (verdict.effect === 'ask')
+        return { effect: 'ask', note: rulePausedNote(verdict.rule.text) };
+      return { effect: 'none' };
+    } catch {
+      return { effect: 'ask', note: RULES_UNCHECKED_NOTE };
+    }
+  }
+  let verdict: BotApprovalVerdict;
   try {
-    const summary = spec.summarize ? await spec.summarize(input, context) : spec.name;
-    const verdict = await reviewer.review({ tool: spec.name, summary, input }, signal);
-    return verdict.outcome === 'allow'
-      ? { outcome: 'allow', line: autoAllowedLine(verdict.reason) }
-      : { outcome: 'ask', note: autoPausedNote(verdict.reason) };
+    const said = await (context.autoReviewer as BotAutoReviewer).review(
+      await reviewedCall(spec, context, input),
+      signal,
+    );
+    verdict =
+      said.outcome === 'allow'
+        ? { effect: 'allow', line: autoAllowedLine(said.reason) }
+        : { effect: 'ask', note: autoPausedNote(said.reason) };
   } catch (error) {
     // A call the tool would refuse raises no card, as in `summaryOf`.
     if (error instanceof BotToolRefusal) throw error;
-    if (error instanceof AutoReviewIncompleteError)
-      return { outcome: 'ask', note: AUTO_TOO_LONG_NOTE };
-    return { outcome: 'ask', note: AUTO_UNCHECKED_NOTE };
+    verdict = {
+      effect: 'ask',
+      note: error instanceof AutoReviewIncompleteError ? AUTO_TOO_LONG_NOTE : AUTO_UNCHECKED_NOTE,
+    };
   }
+  signal.throwIfAborted();
+  return verdict;
+}
+
+/** A call as a reviewer reads it: the tool, its card's line and its input. */
+async function reviewedCall<Input extends z.ZodType>(
+  spec: BotToolSpec<Input>,
+  context: BotToolCallContext,
+  input: z.output<Input>,
+) {
+  const summary = spec.summarize ? await spec.summarize(input, context) : spec.name;
+  return { tool: spec.name, summary, input };
 }
 
 /** The tool's subject for a call, cut to fit; none when it names none or cannot say. */
