@@ -5,7 +5,7 @@ import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
-import { useSortableControl } from './drag';
+import { dragIgnore, useSortableControl } from './drag';
 import { IconButton } from './icon-button';
 import { Skeleton } from './skeleton';
 
@@ -159,7 +159,8 @@ const TabSort = React.createContext<ReturnType<typeof useSortableControl> | null
  * `DragProvider`, in the strip. A click or Enter still opens the tab, a drag
  * past 5px or Space picks it up; its own place is the drop slot, the lifted
  * copy is the provider's `overlay` (a plain `ChatTab`, outside this), and
- * the neighbours slide. It draws nothing of its own, so the strip's
+ * the neighbours slide. Its close never picks it up, and on a touch screen
+ * a swipe along the strip scrolls it rather than dragging. It draws nothing of its own, so the strip's
  * spacing and hairlines are the tabs' as ever. Where the order is kept is
  * the app's.
  */
@@ -238,6 +239,8 @@ function ChatTab({
         TAB_FRAME,
         'hover:bg-hover-surface hover:text-fg hover:before:hidden [:hover+&]:before:hidden',
         sortable?.node.className,
+        // On a touch screen a swipe along the strip scrolls it rather than lifting the tab.
+        sortable && 'touch-pan-x',
         className,
       )}
     >
@@ -282,6 +285,7 @@ function ChatTab({
           size="xs"
           aria-label={closeLabel}
           onClick={onClose}
+          {...(sortable ? dragIgnore : {})}
           className="hidden group-focus-within/tab:flex group-hover/tab:flex group-data-active/tab:flex focus-visible:ring-2 focus-visible:ring-ring"
         >
           <XIcon />
