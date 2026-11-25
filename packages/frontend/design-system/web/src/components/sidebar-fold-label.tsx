@@ -1,3 +1,6 @@
+'use client';
+
+import { Collapsible as CollapsiblePrimitive } from '@base-ui/react/collapsible';
 import { ChevronDownIcon } from 'lucide-react';
 import type * as React from 'react';
 import { cn } from '../lib/utils';
@@ -6,8 +9,8 @@ import { cn } from '../lib/utils';
  * SidebarFoldLabel — a `SidebarListHead` label that folds the list under it:
  * the name, uppercase like the head it sits in, then a chevron that shows on
  * hover and focus and stays, turned right, while the list is folded. The head
- * stays the layout; the caller passes this as its `label` and leaves the list
- * out while `open` is false.
+ * stays the layout; the caller passes this as its `label` and puts the list
+ * in a `SidebarFoldPanel` given the same `open`.
  */
 function SidebarFoldLabel({
   open,
@@ -43,4 +46,29 @@ function SidebarFoldLabel({
   );
 }
 
-export { SidebarFoldLabel };
+/**
+ * SidebarFoldPanel — the list a `SidebarFoldLabel` folds. It closes on its own
+ * height, fading as it goes, and opens the same way, at the base duration
+ * (Base UI measures `--collapsible-panel-height`); reduced motion keeps the
+ * jump. Its children are unmounted once it has closed.
+ */
+function SidebarFoldPanel({
+  open,
+  className,
+  ...props
+}: Omit<CollapsiblePrimitive.Panel.Props, 'keepMounted'> & { open: boolean }) {
+  return (
+    <CollapsiblePrimitive.Root open={open}>
+      <CollapsiblePrimitive.Panel
+        data-slot="sidebar-fold-panel"
+        className={cn(
+          'h-(--collapsible-panel-height) overflow-hidden transition-[height,opacity] duration-base ease-standard data-ending-style:h-0 data-ending-style:opacity-0 data-starting-style:h-0 data-starting-style:opacity-0 motion-reduce:transition-none',
+          className,
+        )}
+        {...props}
+      />
+    </CollapsiblePrimitive.Root>
+  );
+}
+
+export { SidebarFoldLabel, SidebarFoldPanel };
