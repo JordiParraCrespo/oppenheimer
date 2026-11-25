@@ -104,6 +104,7 @@
       "fromMail": "Tomado del mensaje al que responde",
       "files_one": "{{count}} archivo",
       "files_other": "{{count}} archivos",
+      "files_many": "{{count}} archivos",
       "signature": "Debajo va la firma de Gmail de {{email}} y luego el mensaje citado.",
       "draft": "El borrador de {{email}}, enviado tal y como está ahora en Gmail.",
       "nobody": "Nadie",
@@ -138,6 +139,32 @@
       "more_one": "+{{count}} más",
       "more_many": "+{{count}} más",
       "more_other": "+{{count}} más"
+    },
+    "emoji": {
+      "menu": "Emoji",
+      "pick": "Insertar {{emoji}} :{{name}}:",
+      "open": "Emoji",
+      "search": "Buscar emoji",
+      "noResults": "Ningún emoji coincide",
+      "results": "Resultados",
+      "groups": {
+        "recent": "Usados recientemente",
+        "smileys": "Caras y emociones",
+        "people": "Personas y cuerpo",
+        "nature": "Animales y naturaleza",
+        "food": "Comida y bebida",
+        "travel": "Viajes y lugares",
+        "activities": "Actividades",
+        "objects": "Objetos",
+        "symbols": "Símbolos",
+        "flags": "Banderas"
+      },
+      "react": "Reaccionar",
+      "reactWith": "Reaccionar con {{emoji}}",
+      "removeReaction": "Quitar la reacción {{emoji}}",
+      "more": "Más emoji",
+      "yourReaction": "Tu reacción: {{emoji}}",
+      "reactFailed": "No se pudo guardar la reacción"
     }
   },
   "search": {
@@ -149,9 +176,63 @@
     "groups": "Buscar grupos",
     "noMatch": "Nada coincide con «{{query}}»."
   },
+  "error": "Algo ha ido mal",
+  "comingToMobile": {
+    "title": "Próximamente en el móvil",
+    "pullRequests": "Revisa las pull requests que te necesitan."
+  },
   "projectFilter": {
     "label": "Proyecto",
     "all": "Todos los proyectos",
     "none": "Sin proyecto"
+  },
+  "visual": {
+    "chart": "Gráfico",
+    "table": "Tabla",
+    "viewAs": "Ver como",
+    "copyData": "Copiar datos",
+    "copiedData": "Datos copiados",
+    "expand": "Ampliar",
+    "showAll": "Ver las {{rows}} filas",
+    "showFewer": "Ver menos",
+    "sortBy": "Ordenar por {{column}}",
+    "checklistDone": "{{done}} de {{total}} hechas",
+    "progressOf": "de {{target}}",
+    "total": "Total",
+    "empty": "—",
+    "label": "Etiqueta",
+    "invalid": "No se ha podido dibujar este visual",
+    "chartLabel": "{{title}}, un gráfico de {{kind}}",
+    "kinds": {
+      "bar": "barras",
+      "line": "líneas",
+      "area": "áreas"
+    },
+    "html": {
+      "notRun": "Parte de este visual es HTML, que esta consola no ejecuta",
+      "showSource": "Ver código",
+      "didNotLoad": "El HTML de este visual no se ha cargado",
+      "frameTitle": "Un visual que dibujó el agente",
+      "failedInside": "Algo ha fallado dentro de este visual: {{message}}",
+      "openLinkTitle": "¿Abrir este enlace?",
+      "openLinkBody": "El visual quiere abrir una página de {{host}} en una pestaña nueva.",
+      "openLink": "Abrir enlace"
+    }
+  },
+  "markdown": {
+    "diagram": {
+      "diagram": "Diagrama",
+      "source": "Código",
+      "views": "Ver el diagrama o su código",
+      "title": "Diagrama",
+      "copy": "Copiar el código",
+      "expand": "Abrir en grande",
+      "drawing": "Dibujando el diagrama…",
+      "unreadable": "No se pudo dibujar este diagrama, así que aquí está su código.",
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar",
+      "fit": "Ajustar a la ventana",
+      "zoomHint": "Desplaza para acercar, arrastra para moverte, doble clic para acercar o volver."
+    }
   }
 }

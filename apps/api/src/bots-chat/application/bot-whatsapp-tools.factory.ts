@@ -3,6 +3,12 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { WHATSAPP_TEXT_MAX_CHARS } from '@oppenheimer/shared/protocol';
 import { z } from 'zod/v4';
+import {
+  type SpokenAudio,
+  SynthesizeSpeechCommand,
+} from '../../voice/commands/synthesize-speech/synthesize-speech.command';
+import { SPEECH_TEXT_MAX_CHARS } from '../../voice/domain/voice-synthesis.policy';
+import { FindSpeechSynthesisQuery } from '../../voice/queries/find-speech-synthesis/find-speech-synthesis.query';
 import { SendWhatsappMessageCommand } from '../../whatsapp/commands/send-whatsapp-message/send-whatsapp-message.command';
 import type {
   WhatsappChat,
@@ -28,6 +34,7 @@ import { promptText } from '../domain/bot-prompt-text.policy';
 import { formatToolList } from '../domain/bot-tool-text.policy';
 import {
   type BotToolArea,
+  type BotToolCallContext,
   type BotToolDefinition,
   BotToolRefusal,
   defineBotTool,
@@ -54,13 +61,29 @@ const plannedSend = z.object({
 });
 type PlannedSend = z.infer<typeof plannedSend>;
 
+/** What one send tool says and does beyond the plan every send shares (`askingSend`). */
+interface AskingSendSpec {
+  name: string;
+  description: string;
+  /** The text the tool takes, with its own bound. */
+  text: z.ZodString;
+  /** Refuses the call when it cannot go at all: before any card, and again before it runs. */
+  ready?: (organizationId: string) => Promise<void>;
+  /** The card's line: every word that goes, and where. */
+  summarize(planned: PlannedSend, text: string): string;
+  /** Sends the text to the planned chat, and answers what the model is told. */
+  deliver(planned: PlannedSend, text: string, context: BotToolCallContext): Promise<string>;
+}
+
 /**
  * WhatsApp: the owner's own linked numbers, their chats as the host saw them
  * since the number was linked, search over what was said, and a message sent as
- * the owner. Reads only see the owner's numbers; what other people wrote comes
- * back inside `<whatsapp>`, marked as data. A send asks by default (Settings →
+ * the owner, as text or as a voice note spoken from a short text. Reads only
+ * see the owner's numbers; what other people wrote comes back inside
+ * `<whatsapp>`, marked as data. A send asks by default (Settings →
  * Permissions can allow it per chat), because it speaks for the owner to
- * someone else.
+ * someone else; a voice note is a tool of its own, so a chat allowed for text
+ * is not thereby allowed for the owner's voice.
  */
 @Injectable()
 export class BotWhatsappToolsFactory implements BotToolArea {
@@ -73,7 +96,14 @@ export class BotWhatsappToolsFactory implements BotToolArea {
   ) {}
 
   definitions(): readonly BotToolDefinition[] {
-    return [this.listAccounts(), this.listChats(), this.readChat(), this.search(), this.send()];
+    return [
+      this.listAccounts(),
+      this.listChats(),
+      this.readChat(),
+      this.search(),
+      this.send(),
+      this.sendVoice(),
+    ];
   }
 
   private listAccounts(): BotToolDefinition {
@@ -81,7 +111,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
       name: 'list_whatsapp_accounts',
       readOnly: true,
       scope: 'whatsapp:read',
-      description: promptText('tools/whatsapp.list-whatsapp-accounts'),
+      description: promptText('whatsapp/tools.list-whatsapp-accounts'),
       input: z.object({}),
       run: async (_input, context) => {
         const views = await this.accounts.all(context.owner);
@@ -99,7 +129,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
       name: 'list_whatsapp_chats',
       readOnly: true,
       scope: 'whatsapp:read',
-      description: promptText('tools/whatsapp.list-whatsapp-chats', {
+      description: promptText('whatsapp/tools.list-whatsapp-chats', {
         whatsappChatsLimitMax: String(WHATSAPP_CHATS_LIMIT_MAX),
       }),
       input: z.object({
@@ -131,7 +161,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
       name: 'read_whatsapp_chat',
       readOnly: true,
       scope: 'whatsapp:read',
-      description: promptText('tools/whatsapp.read-whatsapp-chat', {
+      description: promptText('whatsapp/tools.read-whatsapp-chat', {
         whatsappReadLimitMax: String(WHATSAPP_READ_LIMIT_MAX),
       }),
       input: z.object({
@@ -141,7 +171,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
         before: z.iso
           .datetime({ offset: true })
           .optional()
-          .describe(promptText('tools/whatsapp.read-whatsapp-chat-before')),
+          .describe(promptText('whatsapp/tools.read-whatsapp-chat-before')),
       }),
       run: async (input, context) => {
         const chosen = await this.accounts.one(context.owner, input.account);
@@ -158,7 +188,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
           describeWhatsappMessage(message, context.timeZone),
         );
         return [
-          promptText('tools/whatsapp.read-whatsapp-chat-chat-chat-id', {
+          promptText('whatsapp/tools.read-whatsapp-chat-chat-chat-id', {
             describeWhatsappTarget: describeWhatsappTarget(read.chat),
             chatId: read.chat.chatId,
             accountLabel: read.accountLabel,
@@ -176,7 +206,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
       name: 'search_whatsapp',
       readOnly: true,
       scope: 'whatsapp:read',
-      description: promptText('tools/whatsapp.search-whatsapp'),
+      description: promptText('whatsapp/tools.search-whatsapp'),
       input: z.object({
         account: account.optional(),
         query: z.string().trim().min(2).max(200),
@@ -207,26 +237,87 @@ export class BotWhatsappToolsFactory implements BotToolArea {
   }
 
   private send(): BotToolDefinition {
-    return defineBotTool({
+    return this.askingSend({
       name: 'send_whatsapp_message',
+      description: promptText('whatsapp/tools.send-whatsapp-message', {
+        whatsappTextMaxChars: String(WHATSAPP_TEXT_MAX_CHARS),
+      }),
+      text: z.string().trim().min(1).max(WHATSAPP_TEXT_MAX_CHARS),
+      summarize: (planned, text) =>
+        `Send on WhatsApp from "${planned.accountLabel}" to ${describeWhatsappTarget(planned)}: ${text}`,
+      deliver: async (planned, text, context) => {
+        const id = await this.sendAs(planned, text, context);
+        return promptText('whatsapp/tools.send-whatsapp-message-done', {
+          describeWhatsappTarget: describeWhatsappTarget(planned),
+          accountLabel: planned.accountLabel,
+          id,
+        });
+      },
+    });
+  }
+
+  private sendVoice(): BotToolDefinition {
+    return this.askingSend({
+      name: 'send_whatsapp_voice_note',
+      description: promptText('whatsapp/tools.send-whatsapp-voice-note', {
+        speechTextMaxChars: String(SPEECH_TEXT_MAX_CHARS),
+      }),
+      text: z
+        .string()
+        .trim()
+        .min(1)
+        .max(SPEECH_TEXT_MAX_CHARS)
+        .describe(promptText('whatsapp/tools.send-whatsapp-voice-note-text')),
+      // A yes the workspace cannot speak would be a wait for nothing.
+      ready: (organizationId) => this.requireSpeech(organizationId),
+      // The card quotes every word the note will say, and where it goes.
+      summarize: (planned, text) =>
+        `Send a voice note on WhatsApp from "${planned.accountLabel}" to ${describeWhatsappTarget(planned)}, saying: ${text}`,
+      deliver: async (planned, text, context) => {
+        // Spoken from the text the card showed, held in memory for this call
+        // only, and dropped once the host has it.
+        const spoken = await this.commandBus.execute<SynthesizeSpeechCommand, SpokenAudio>(
+          new SynthesizeSpeechCommand({ organizationId: context.organizationId, text }),
+        );
+        const id = await this.sendAs(planned, text, context, {
+          audio: spoken.data,
+          seconds: spoken.seconds,
+        });
+        return promptText('whatsapp/tools.send-whatsapp-voice-note-done', {
+          describeWhatsappTarget: describeWhatsappTarget(planned),
+          accountLabel: planned.accountLabel,
+          seconds: String(spoken.seconds),
+          id,
+        });
+      },
+    });
+  }
+
+  /**
+   * A send that asks: the number and the chat planned once when the card is
+   * raised, named as the subject a grant covers, and carried out to that
+   * plan. Every send tool is one of these, so what a yes sends to is decided
+   * in one place.
+   */
+  private askingSend(spec: AskingSendSpec): BotToolDefinition {
+    return defineBotTool({
+      name: spec.name,
       asks: true,
       sharesOutside: true,
       scope: 'whatsapp:write',
-      description: promptText('tools/whatsapp.send-whatsapp-message', {
-        whatsappTextMaxChars: String(WHATSAPP_TEXT_MAX_CHARS),
-      }),
+      description: spec.description,
       input: z.object({
         account: account.optional(),
         chat,
-        text: z.string().trim().min(1).max(WHATSAPP_TEXT_MAX_CHARS),
+        text: spec.text,
         planned: plannedSend
           .optional()
-          .describe(promptText('tools/whatsapp.send-whatsapp-message-planned')),
+          .describe(promptText('whatsapp/tools.send-whatsapp-message-planned')),
       }),
-      normalize: async (input, context) => ({
-        ...input,
-        planned: await this.plan(input, context.owner),
-      }),
+      normalize: async (input, context) => {
+        await spec.ready?.(context.organizationId);
+        return { ...input, planned: await this.plan(input, context.owner) };
+      },
       subject: (input) => {
         const planned = plannedOf(input.planned);
         return {
@@ -235,10 +326,7 @@ export class BotWhatsappToolsFactory implements BotToolArea {
           label: describeWhatsappTarget(planned),
         };
       },
-      summarize: (input) => {
-        const planned = plannedOf(input.planned);
-        return `Send on WhatsApp from "${planned.accountLabel}" to ${describeWhatsappTarget(planned)}: ${input.text}`;
-      },
+      summarize: (input) => spec.summarize(plannedOf(input.planned), input.text),
       run: async (input, context) => {
         // Only a card's stored call carries a plan Oppenheimer made. A call
         // that runs without one (Full access, a grant for the chat) is the
@@ -247,26 +335,37 @@ export class BotWhatsappToolsFactory implements BotToolArea {
         const planned = context.approvalId
           ? plannedOf(input.planned)
           : await this.plan(input, context.owner);
-        const id = await this.commandBus.execute<SendWhatsappMessageCommand, string>(
-          new SendWhatsappMessageCommand({
-            scope: context.owner,
-            accountId: planned.accountId,
-            chat: {
-              chatId: planned.chatId,
-              chatKind: planned.chatKind,
-              chatName: planned.chatName,
-            },
-            text: input.text,
-            botId: context.botId,
-          }),
-        );
-        return promptText('tools/whatsapp.send-whatsapp-message-done', {
-          describeWhatsappTarget: describeWhatsappTarget(planned),
-          accountLabel: planned.accountLabel,
-          id,
-        });
+        await spec.ready?.(context.organizationId);
+        return spec.deliver(planned, input.text, context);
       },
     });
+  }
+
+  /** The send itself, as the bot, to the planned chat; answers WhatsApp's id. */
+  private sendAs(
+    planned: PlannedSend,
+    text: string,
+    context: BotToolCallContext,
+    voice?: { audio: Buffer; seconds: number },
+  ): Promise<string> {
+    return this.commandBus.execute<SendWhatsappMessageCommand, string>(
+      new SendWhatsappMessageCommand({
+        scope: context.owner,
+        accountId: planned.accountId,
+        chat: { chatId: planned.chatId, chatKind: planned.chatKind, chatName: planned.chatName },
+        text,
+        botId: context.botId,
+        ...(voice ? { voice } : {}),
+      }),
+    );
+  }
+
+  /** Refuses a voice note for a workspace with no provider to speak it. */
+  private async requireSpeech(organizationId: string): Promise<void> {
+    const speaks = await this.queryBus.execute<FindSpeechSynthesisQuery, boolean>(
+      new FindSpeechSynthesisQuery(organizationId),
+    );
+    if (!speaks) throw new BotToolRefusal(promptText('whatsapp/tools.speech-not-set-up'));
   }
 
   /** The number and the chat a send means, resolved once so a yes sends where the card said. */
@@ -309,6 +408,6 @@ function targetOf(chat: WhatsappChatTarget): Omit<PlannedSend, 'accountId' | 'ac
 /** The send the card stored, which a call carrying out its approval runs. */
 function plannedOf(stored: unknown): PlannedSend {
   const parsed = plannedSend.safeParse(stored);
-  if (!parsed.success) throw new BotToolRefusal(promptText('tools/whatsapp.planned-of'));
+  if (!parsed.success) throw new BotToolRefusal(promptText('whatsapp/tools.planned-of'));
   return parsed.data;
 }

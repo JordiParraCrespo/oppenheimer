@@ -1,0 +1,149 @@
+package app
+
+import (
+	"context"
+	"errors"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
+)
+
+// endTerminal ends a session's tmux session and makes sure the agent in it
+// went too: killing the tmux session only hangs the pane up, and an agent
+// that ignores the hangup would keep running with no pane, long after the
+// session reads closed. A failure to look for it is not one to fail the
+// close on: EndStrayWrappers comes round again.
+func (s *Service) endTerminal(ctx context.Context, session domain.Session) error {
+	s.quitAgent(ctx, session)
+	if err := s.terminals.Kill(ctx, session.TmuxName()); err != nil {
+		return err
+	}
+	_ = s.endSessions(ctx, map[string]bool{session.ID: true})
+	return nil
+}
+
+// quitGrace is how long an agent given lines to quit by has to act on them
+// before its terminal is ended: a turn to stop at its gateway, a chat to close.
+const quitGrace = 2 * time.Second
+
+// quitAgent types the agent's quit lines into window 0, each then its submit,
+// and gives it quitGrace: for an agent whose work outlives its terminal
+// (Hermes, whose turn runs at its gateway), ending the terminal would leave it
+// working. An agent with none is left to the kill. A line that cannot be typed
+// (the window is gone) ends the attempt; the kill still follows.
+func (s *Service) quitAgent(ctx context.Context, session domain.Session) {
+	input := session.Agent.Input()
+	if len(input.Quit) == 0 {
+		return
+	}
+	target := session.Target(0)
+	for _, line := range input.Quit {
+		if s.terminals.SendKeys(ctx, target, line) != nil || !sleep(ctx, input.PasteGap) ||
+			s.terminals.SendKeys(ctx, target, input.Submit) != nil {
+			return
+		}
+	}
+	sleep(ctx, quitGrace)
+}
+
+// endSessions ends every running wrapper of the sessions named.
+func (s *Service) endSessions(ctx context.Context, ids map[string]bool) error {
+	if s.wrappers == nil || len(ids) == 0 {
+		return nil
+	}
+	running, err := s.wrappers.Running(ctx)
+	if err != nil {
+		return err
+	}
+	var matched []Wrapper
+	for _, w := range running {
+		if ids[w.SessionID] {
+			matched = append(matched, w)
+		}
+	}
+	_, err = s.endEach(ctx, matched)
+	return err
+}
+
+// endEach ends the wrappers given, all at once: each End may spend the whole
+// grace period waiting. It answers the ones it ended.
+func (s *Service) endEach(ctx context.Context, wrappers []Wrapper) ([]Wrapper, error) {
+	var (
+		wg    sync.WaitGroup
+		mu    sync.Mutex
+		ended []Wrapper
+		errs  []error
+	)
+	for _, w := range wrappers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := s.wrappers.End(ctx, w)
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				errs = append(errs, err)
+				return
+			}
+			ended = append(ended, w)
+		}()
+	}
+	wg.Wait()
+	return ended, errors.Join(errs...)
+}
+
+// EndStrayWrappers ends the wrappers whose session is over: those whose
+// tmux session is gone, which closing and stopping both kill. It is the
+// safety net behind endTerminal, for an agent a close could not end (a
+// runner that stopped halfway, or one from before endTerminal existed). A
+// session a command is working on, or still being created, is left to that
+// command. It answers the wrappers it ended.
+func (s *Service) EndStrayWrappers(ctx context.Context) ([]Wrapper, error) {
+	if s.wrappers == nil {
+		return nil, nil
+	}
+	// The processes are listed before tmux, so any wrapper seen was started
+	// before the tmux listing: one whose tmux session that listing does not
+	// hold has lost it, rather than not having it yet.
+	running, err := s.wrappers.Running(ctx)
+	if err != nil || len(running) == 0 {
+		return nil, err
+	}
+	names, err := s.terminals.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	live := map[string]bool{}
+	for _, name := range names {
+		if id, ok := strings.CutPrefix(name, domain.Prefix); ok {
+			live[id] = true
+		}
+	}
+	var stray []Wrapper
+	s.mu.Lock()
+	for _, w := range running {
+		if s.strayLocked(w, live) {
+			stray = append(stray, w)
+		}
+	}
+	s.mu.Unlock()
+	// Exactly the processes judged, never a fresh listing: a session
+	// restarted since has a new wrapper, and that one is not stray.
+	return s.endEach(ctx, stray)
+}
+
+// strayLocked reports whether a wrapper's session is over. A session a
+// command is working on, or still being created, is that command's. Past
+// that, the tmux session is the one witness to trust; a closed or stopped
+// record alone is not: `runner sessions restart` runs in a process of its
+// own and gives the session a new tmux session and wrapper while this
+// one's map still says stopped. Closing or stopping kills the tmux
+// session, so a session that is over has none. s.mu is held.
+func (s *Service) strayLocked(w Wrapper, live map[string]bool) bool {
+	if _, creating := s.creating[w.SessionID]; creating || s.busy[w.SessionID] > 0 {
+		return false
+	}
+	return !live[w.SessionID]
+}

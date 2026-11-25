@@ -278,11 +278,11 @@ export type CurrentCredentialResponseDto = {
     /**
      * Scopes the credential carries. Null for a browser session, which is not scope-restricted.
      */
-    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'> | null;
+    grantedScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'> | null;
     /**
      * What the credential can actually do: its scopes intersected with the owner’s current roles.
      */
-    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
+    effectiveScopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
     /**
      * Organizations the credential is restricted to, or null when unrestricted.
      */
@@ -300,7 +300,7 @@ export type ApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -321,7 +321,7 @@ export type ScopePolicyDto = {
 };
 
 export type ScopeLevelDto = {
-    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write';
+    scope: 'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write';
     label: string;
     description: string;
     /**
@@ -336,7 +336,7 @@ export type ScopeLevelsDto = {
 };
 
 export type PermissionGroupDto = {
-    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'host-desktops' | 'projects' | 'sessions' | 'cloud-chat' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'mail' | 'whatsapp' | 'telegram' | 'cloud-agents' | 'pulls' | 'repositories' | 'flags' | 'inbox' | 'inbox-reports';
+    resource: 'profile' | 'users' | 'admin' | 'roles' | 'organizations' | 'members' | 'invitations' | 'workspaces' | 'tokens' | 'hosts' | 'host-desktops' | 'projects' | 'sessions' | 'cloud-chat' | 'automations' | 'bots' | 'tasks' | 'calendar' | 'mail' | 'whatsapp' | 'telegram' | 'slack' | 'cloud-agents' | 'pulls' | 'repositories' | 'flags' | 'inbox' | 'inbox-reports';
     label: string;
     description: string;
     /**
@@ -354,12 +354,12 @@ export type PermissionCatalogResponseDto = {
     /**
      * Scopes the caller may put on a token. Anything outside this list is refused at creation.
      */
-    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
+    grantable: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
 };
 
 export type CreateApiTokenRequest = {
     name: string;
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
     organizationIds?: Array<string>;
     expiresInDays?: number | null;
     ipAllowlist?: Array<string>;
@@ -375,7 +375,7 @@ export type CreatedApiTokenResponseDto = {
     /**
      * Granted permissions.
      */
-    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
+    scopes: Array<'profile:read' | 'profile:write' | 'users:read' | 'users:write' | 'admin:read' | 'admin:write' | 'roles:read' | 'roles:write' | 'organizations:read' | 'organizations:write' | 'members:read' | 'members:write' | 'invitations:read' | 'invitations:write' | 'workspaces:read' | 'workspaces:write' | 'tokens:read' | 'tokens:write' | 'hosts:read' | 'hosts:write' | 'host-desktops:read' | 'host-desktops:write' | 'projects:read' | 'projects:write' | 'sessions:read' | 'sessions:write' | 'cloud-chat:read' | 'cloud-chat:write' | 'automations:read' | 'automations:write' | 'bots:read' | 'bots:write' | 'tasks:read' | 'tasks:write' | 'calendar:read' | 'calendar:write' | 'mail:read' | 'mail:write' | 'whatsapp:read' | 'whatsapp:write' | 'telegram:read' | 'telegram:write' | 'slack:read' | 'slack:write' | 'cloud-agents:read' | 'cloud-agents:write' | 'pulls:read' | 'pulls:write' | 'repositories:read' | 'repositories:write' | 'flags:read' | 'flags:write' | 'inbox:read' | 'inbox:write' | 'inbox-reports:read' | 'inbox-reports:write'>;
     /**
      * Organizations this token is restricted to. Null means it follows the owner’s memberships.
      */
@@ -1424,7 +1424,7 @@ export type ProjectResponseDto = {
     /**
      * The agent a new session is offered, from the coding-agent catalog.
      */
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | null;
     /**
      * The workspace’s Unassigned project: where a session that names no project is listed. One per workspace; it cannot be renamed or archived.
      */
@@ -1442,7 +1442,7 @@ export type CreateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | null;
 };
 
 export type UpdateProjectRequest = {
@@ -1454,7 +1454,7 @@ export type UpdateProjectRequest = {
         isDefault: boolean;
     }>;
     defaultHostId?: string | null;
-    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | null;
+    defaultAgent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | null;
 };
 
 export type FindSharedSessionRequest = {
@@ -1698,7 +1698,7 @@ export type SessionResponseDto = {
     /**
      * The coding agent this session runs: one a host launches, or a vendor’s own in the cloud (`cursor`).
      */
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | 'cursor';
     /**
      * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).
      */
@@ -1805,7 +1805,7 @@ export type PaginatedSessionsResponseDto = {
 
 export type CreateSessionRequest = {
     hostId: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell';
     projectId?: string;
     name?: string;
     checkouts?: Array<{
@@ -2308,7 +2308,7 @@ export type OpenSessionWindowRequest = {
     model?: string;
     permission?: 'ask' | 'auto' | 'full';
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra';
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen';
     prompt?: string;
 };
 
@@ -2422,7 +2422,7 @@ export type AutomationRevisionResponseDto = {
 };
 
 export type ScheduleResponseDto = {
-    frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+    frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'cron';
     hour: number;
     minute: number;
     /**
@@ -2434,6 +2434,10 @@ export type ScheduleResponseDto = {
      * Once: the local date, `YYYY-MM-DD`.
      */
     date?: string;
+    /**
+     * Cron: five fields (minute hour day-of-month month day-of-week) read in `timezone`, with `L`, `LW`, `d#n` and `dL`. A bot routine only.
+     */
+    expression?: string;
     /**
      * The IANA zone the wall time is in.
      */
@@ -2454,11 +2458,11 @@ export type AutomationTriggerResponseDto = {
      * The card’s place in the editor, from 0.
      */
     position: number;
-    source: 'schedule' | 'github' | 'gmail';
+    source: 'schedule' | 'github' | 'gmail' | 'webhook';
     /**
-     * `schedule`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).
+     * `schedule`, `webhook_received`, or the catalog event (`pr_opened`, `push`, `mail_received`, …).
      */
-    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review' | 'mail_received';
+    event: 'schedule' | 'pr_opened' | 'pr_draft' | 'pr_sync' | 'pr_merged' | 'comment' | 'push' | 'issue_labeled' | 'check_failed' | 'issue_opened' | 'mention' | 'release' | 'check_passed' | 'review' | 'mail_received' | 'webhook_received';
     schedule?: ScheduleResponseDto;
     /**
      * GitHub: the repositories it listens on.
@@ -2536,6 +2540,22 @@ export type AutomationResponseDto = {
     updatedAt: string;
 };
 
+export type RoutineWebhookResponseDto = {
+    /**
+     * The start of the URL’s token.
+     */
+    tokenPrefix: string;
+    /**
+     * Whether a request must carry a signature.
+     */
+    signed: boolean;
+    /**
+     * When the current URL was issued.
+     */
+    issuedAt: string;
+    lastReceivedAt?: string | null;
+};
+
 export type BotRoutineResponseDto = {
     id: string;
     /**
@@ -2561,6 +2581,10 @@ export type BotRoutineResponseDto = {
      * Its latest run over the listed window; null when it has none.
      */
     lastRun?: AutomationRunSummaryResponseDto | null;
+    /**
+     * Its webhook URL, once one is issued; null without one. Only a routine with a webhook trigger can have one.
+     */
+    webhook?: RoutineWebhookResponseDto | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -2576,12 +2600,13 @@ export type CreateAutomationRequest = {
     name: string;
     triggers: Array<{
         source: 'schedule';
-        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'cron';
         hour: number;
         minute: number;
         days?: Array<number>;
         dayOfMonth?: number;
         date?: string;
+        expression?: string;
         timezone: string;
     } | {
         source: 'github';
@@ -2598,9 +2623,12 @@ export type CreateAutomationRequest = {
         event: 'mail_received';
         connectionId: string;
         query?: string | null;
+    } | {
+        source: 'webhook';
+        event?: 'webhook_received';
     }>;
     prompt: string;
-    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | 'cursor';
+    agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2656,12 +2684,13 @@ export type UpdateAutomationRequest = {
     name?: string;
     triggers?: Array<{
         source: 'schedule';
-        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+        frequency: 'once' | 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'cron';
         hour: number;
         minute: number;
         days?: Array<number>;
         dayOfMonth?: number;
         date?: string;
+        expression?: string;
         timezone: string;
     } | {
         source: 'github';
@@ -2678,9 +2707,12 @@ export type UpdateAutomationRequest = {
         event: 'mail_received';
         connectionId: string;
         query?: string | null;
+    } | {
+        source: 'webhook';
+        event?: 'webhook_received';
     }>;
     prompt?: string;
-    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell' | 'cursor';
+    agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | 'cursor';
     launch?: {
         model?: string;
         permission?: 'auto' | 'full';
@@ -2742,7 +2774,7 @@ export type AutomationRunResponseDto = {
      * What became of the firing before a session.
      */
     outcome: 'pending' | 'skipped' | 'expired' | 'dispatched';
-    skipReason?: 'paused' | 'deleted' | 'own_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | 'idle' | null;
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'own_session_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | 'idle' | null;
     cause: 'schedule' | 'event' | 'manual';
     causeSummary: RunCauseResponseDto;
     title: string;
@@ -2838,7 +2870,43 @@ export type UpdateAutomationSettingsRequest = {
 };
 
 export type UpdateBotRoutineRequest = {
-    enabled: boolean;
+    name?: string;
+    prompt?: string;
+    enabled?: boolean;
+};
+
+export type IssueRoutineWebhookRequest = {
+    signed?: boolean;
+};
+
+export type IssuedRoutineWebhookResponseDto = {
+    /**
+     * The start of the URL’s token.
+     */
+    tokenPrefix: string;
+    /**
+     * Whether a request must carry a signature.
+     */
+    signed: boolean;
+    /**
+     * When the current URL was issued.
+     */
+    issuedAt: string;
+    lastReceivedAt?: string | null;
+    url: string;
+    /**
+     * The signing secret, when one was asked for. Not shown again.
+     */
+    signingSecret?: string | null;
+};
+
+export type RoutineWebhookReceivedResponseDto = {
+    runId: string;
+    /**
+     * `queued`: the bot will run. `skipped`: an hourly cap turned it away, recorded on the run. `duplicate`: an earlier POST with this `Idempotency-Key` made the run.
+     */
+    status: 'queued' | 'skipped' | 'duplicate';
+    skipReason?: 'paused' | 'deleted' | 'own_event' | 'own_session_event' | 'automation_rate_limited' | 'workspace_rate_limited' | 'overlapping' | 'missed' | 'not_launchable' | 'agent_unavailable' | 'unattended' | 'idle' | null;
 };
 
 export type TaskSessionLinkResponseDto = {
@@ -2945,7 +3013,7 @@ export type MoveTaskRequest = {
 export type StartTaskSessionRequest = {
     session: {
         hostId: string;
-        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
+        agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell';
         projectId?: string;
         name?: string;
         checkouts?: Array<{
@@ -3521,6 +3589,80 @@ export type TelegramOwnerLinkResponseDto = {
 
 export type UpdateTelegramAccountRequest = {
     answeringBotId: string | null;
+};
+
+export type SlackAccountResponseDto = {
+    id: string;
+    /**
+     * The Oppenheimer bot the app is.
+     */
+    botId: string;
+    /**
+     * `connected` answers; `revoked` is a token Slack refused (the app was uninstalled, or the token rotated), until it is connected again.
+     */
+    status: 'connected' | 'revoked';
+    /**
+     * Why it is revoked, in Slack’s words.
+     */
+    statusReason: string | null;
+    /**
+     * The Slack workspace the app is installed in.
+     */
+    teamId: string;
+    teamName: string;
+    /**
+     * The app’s bot user.
+     */
+    botUserId: string;
+    botName: string;
+    /**
+     * The bot token’s last characters.
+     */
+    tokenHint: string;
+    /**
+     * Whether the owner’s Slack user is recorded, by the one-time `link` code.
+     */
+    ownerLinked: boolean;
+    /**
+     * When it was first connected.
+     */
+    linkedAt: string;
+};
+
+export type SlackAppSetupResponseDto = {
+    /**
+     * The address Slack sends the app’s events to: this bot’s.
+     */
+    eventsUrl: string;
+    /**
+     * Opens Slack’s "Create an app" with the manifest below filled in.
+     */
+    createUrl: string;
+    /**
+     * The app’s manifest, as JSON: its name, scopes and events.
+     */
+    manifest: string;
+};
+
+export type ConnectSlackRequest = {
+    botId: string;
+    botToken: string;
+    signingSecret: string;
+};
+
+export type SlackOwnerLinkResponseDto = {
+    /**
+     * What to send the app in its DM.
+     */
+    message: string;
+    /**
+     * Opens the app’s direct messages in Slack.
+     */
+    url: string;
+    /**
+     * When the code stops working: ten minutes after it was made.
+     */
+    expiresAt: string;
 };
 
 export type PullRequestLaneReasonDto = {
@@ -4328,7 +4470,7 @@ export type UpdateBotGroupRequest = {
 };
 
 export type ModelProviderCredentialResponseDto = {
-    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
+    provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai' | 'groq' | 'elevenlabs';
     /**
      * Whether the workspace has a key for this provider.
      */
@@ -4423,6 +4565,27 @@ export type BotQuestionEventResponseDto = {
      * Each question and its answer, in words; empty when dismissed.
      */
     answers: Array<BotAnsweredQuestionResponseDto>;
+};
+
+export type BotSubmittedFormValueResponseDto = {
+    label: string;
+    /**
+     * What was sent, in words; empty for a field left blank.
+     */
+    value: string;
+};
+
+export type BotFormEventResponseDto = {
+    kind: 'form';
+    outcome: 'submitted' | 'dismissed';
+    /**
+     * The form's title.
+     */
+    title: string;
+    /**
+     * Each field and the value sent, in words; empty when dismissed.
+     */
+    values: Array<BotSubmittedFormValueResponseDto>;
 };
 
 export type BotRoutineEventResponseDto = {
@@ -4535,6 +4698,42 @@ export type BotPullRequestEventResponseDto = {
     event: 'check_failed' | 'check_passed' | 'review' | 'comment' | 'pr_merged';
 };
 
+export type BotGithubAskEventResponseDto = {
+    kind: 'github_ask';
+    /**
+     * `mention` for `@oppenheimer <bot>` in a comment or a review, `label` for `bot:<bot>`.
+     */
+    via: 'mention' | 'label';
+    /**
+     * The installation the answer is posted through.
+     */
+    installationId: string;
+    /**
+     * GitHub's repository id, as a string: it is a bigint.
+     */
+    githubRepoId: string;
+    /**
+     * `owner/name`.
+     */
+    repository: string;
+    /**
+     * The issue or pull request number.
+     */
+    number: number;
+    /**
+     * Whether `number` is a pull request; null when GitHub did not say.
+     */
+    isPullRequest: boolean | null;
+    /**
+     * The comment, review or issue the ask was made on.
+     */
+    url: string | null;
+    /**
+     * The GitHub login that asked: the owner.
+     */
+    actorLogin: string;
+};
+
 export type BotTaskEventResponseDto = {
     kind: 'task';
     /**
@@ -4617,6 +4816,26 @@ export type BotLoopEventResponseDto = {
      * For `stopped`: the status of the run that ended it, or `access_lost`; otherwise null.
      */
     reason: string | null;
+};
+
+export type BotCheckBackEventResponseDto = {
+    kind: 'check_back';
+    /**
+     * The looks at one thing: the id of the turn that set the chain's first look.
+     */
+    chainId: string;
+    /**
+     * Which look of the chain this is, from 0.
+     */
+    step: number;
+    /**
+     * When the chain's first look was set; a chain stops 24 hours later.
+     */
+    chainStartedAt: string;
+    /**
+     * What the bot is waiting on and what to look at, in its own words.
+     */
+    about: string;
 };
 
 export type BotDreamEventResponseDto = {
@@ -4725,6 +4944,12 @@ export type BotToolStepResponseDto = {
         [key: string]: unknown;
     } | null;
     /**
+     * The visual a `show_visual` call drew (`title`, `subtitle`, `blocks`: the typed blocks of `@oppenheimer/shared/schemas/visual`), checked; null for any other call.
+     */
+    visual: {
+        [key: string]: unknown;
+    } | null;
+    /**
      * The system that was limiting our requests when the call ended, and until when: the chat draws the step as a wait, not a failure. Null when no limit stopped it.
      */
     rateLimit: BotToolStepRateLimitResponseDto | null;
@@ -4758,11 +4983,19 @@ export type BotMessageResponseDto = {
     /**
      * What an event says happened, by `kind`; null on every other role.
      */
-    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotTaskEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
+    event: BotApprovalEventResponseDto | BotQuestionEventResponseDto | BotFormEventResponseDto | BotRoutineEventResponseDto | BotPeerMessageEventResponseDto | BotPeerReplyEventResponseDto | BotSessionEventResponseDto | BotPullRequestEventResponseDto | BotGithubAskEventResponseDto | BotTaskEventResponseDto | BotGoalEventResponseDto | BotLoopEventResponseDto | BotCheckBackEventResponseDto | BotDreamEventResponseDto | BotCompactionEventResponseDto | null;
     /**
      * The images a message of yours carries, in the order attached; read each from `GET /bots/:id/attachments/:attachmentId/content`. Empty on every other role.
      */
     attachments: Array<BotAttachmentResponseDto>;
+    /**
+     * Your reaction to it, one emoji (`PUT /bots/:id/messages/:messageId/reaction`); null for none. Only a message of yours or the bot’s has one.
+     */
+    reaction: string | null;
+    /**
+     * The bot’s reaction to a message of yours, one emoji its `react` tool set; null for none. Only a message of yours has one.
+     */
+    botReaction: string | null;
     createdAt: string;
 };
 
@@ -4833,6 +5066,10 @@ export type BotConversationResponseDto = {
      * Oldest first.
      */
     messages: Array<BotMessageResponseDto>;
+    /**
+     * Whether the chat holds messages older than these: the next page is `before` the first.
+     */
+    hasOlder: boolean;
     /**
      * The turns those messages belong to, and any still queued or running; oldest first.
      */
@@ -5284,6 +5521,88 @@ export type DismissBotQuestionRequest = {
     note?: string;
 };
 
+export type BotFormFieldResponseDto = {
+    /**
+     * What the bot reads the value by.
+     */
+    id: string;
+    kind: 'text' | 'textarea' | 'number' | 'select' | 'email' | 'date';
+    label: string;
+    /**
+     * An example shown in the empty field.
+     */
+    placeholder: string | null;
+    /**
+     * The form cannot be sent without it.
+     */
+    required: boolean;
+    /**
+     * What the field starts with: a number for a `number`, words otherwise.
+     */
+    default: string | number | null;
+    /**
+     * A `number`’s smallest value.
+     */
+    min: number | null;
+    /**
+     * A `number`’s largest value.
+     */
+    max: number | null;
+    /**
+     * A `select`’s options.
+     */
+    options: Array<string> | null;
+};
+
+export type BotFormResponseDto = {
+    id: string;
+    /**
+     * The turn whose call asked.
+     */
+    turnId: string;
+    /**
+     * What the form is for: its line in the chat.
+     */
+    title: string;
+    description: string | null;
+    /**
+     * The button’s word; null for the default.
+     */
+    submitLabel: string | null;
+    fields: Array<BotFormFieldResponseDto>;
+    status: 'pending' | 'submitted' | 'dismissed' | 'expired';
+    /**
+     * A value per field id, once submitted; null for a field left blank.
+     */
+    values: {
+        [key: string]: string | number | null;
+    } | null;
+    /**
+     * What the person added to a dismissal.
+     */
+    note: string | null;
+    decidedAt: string | null;
+    createdAt: string;
+};
+
+export type BotPendingFormResponseDto = {
+    form: BotFormResponseDto | null;
+};
+
+export type SubmitBotFormRequest = {
+    values: {
+        [key: string]: string | number | unknown;
+    };
+};
+
+export type DismissBotFormRequest = {
+    note?: string;
+};
+
+export type ReactToBotMessageRequest = {
+    emoji: string | null;
+};
+
 export type BotToolPermissionDto = {
     /**
      * The tool, as the bot knows it (`merge_pull_request`).
@@ -5373,7 +5692,7 @@ export type VoiceTranscriptionResponseDto = {
     /**
      * Who heard it: the workspace's ChatGPT sign-in, or the deployment's own speech-to-text server.
      */
-    provider: 'chatgpt' | 'speech_key';
+    provider: 'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key';
     /**
      * Whether `text` is the polish, or the raw transcript because no polish ran or was quick enough.
      */
@@ -5388,7 +5707,34 @@ export type VoiceStatusResponseDto = {
     /**
      * The providers available, in the order a dictation tries them.
      */
-    providers: Array<'chatgpt' | 'speech_key'>;
+    providers: Array<'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key'>;
+};
+
+export type VoiceSettingsAvailableDto = {
+    transcription: Array<'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key'>;
+    synthesis: Array<'openai' | 'elevenlabs' | 'speech_key'>;
+    polish: Array<'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai'>;
+};
+
+export type VoiceSettingsResponseDto = {
+    transcriptionProvider: 'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key';
+    transcriptionModel: string | null;
+    synthesisProvider: 'openai' | 'elevenlabs' | 'speech_key';
+    synthesisModel: string | null;
+    synthesisVoice: string | null;
+    polishProvider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai' | 'off';
+    polishModel: string | null;
+    available: VoiceSettingsAvailableDto;
+};
+
+export type UpdateVoiceSettingsRequest = {
+    transcriptionProvider: 'chatgpt' | 'openai' | 'groq' | 'elevenlabs' | 'speech_key' | null;
+    transcriptionModel: string | null;
+    synthesisProvider: 'openai' | 'elevenlabs' | 'speech_key' | null;
+    synthesisModel: string | null;
+    synthesisVoice: string | null;
+    polishProvider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai' | 'off' | null;
+    polishModel: string | null;
 };
 
 export type InboxMarkResponseDto = {
@@ -5504,6 +5850,10 @@ export type CapabilitiesResponseDto = {
      * Where Connect GitHub sends the browser, built from the App's slug. `null` when no App is configured — a console must not offer an install page that does not exist. Served here so the browser needs no copy of the slug.
      */
     github_app_install_url: string | null;
+    /**
+     * The page a visual's HTML runs in, on an origin of its own under the preview domain; the console frames it. `null` when no preview domain is configured.
+     */
+    visual_frame_url: string | null;
 };
 
 export type DependencyStatusDto = {
@@ -10217,7 +10567,11 @@ export type FindSessionsData = {
          * Default `recent`
          */
         sort?: 'recent' | 'oldest' | 'name';
-        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'shell';
+        agent?: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell';
+        /**
+         * `false` leaves resolved sessions out (the console’s list, which draws only the open ones), `true` keeps only them. Absent, both.
+         */
+        resolved?: 'true' | 'false';
         /**
          * A live checkout of it
          */
@@ -12712,6 +13066,10 @@ export type UpdateBotRoutineErrors = {
      * AUTOMATIONS_001 — Routine not found
      */
     404: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_003 — The routine changed meanwhile
+     */
+    409: ProblemDetailsDto;
 };
 
 export type UpdateBotRoutineError = UpdateBotRoutineErrors[keyof UpdateBotRoutineErrors];
@@ -12758,6 +13116,126 @@ export type RunBotRoutineError = RunBotRoutineErrors[keyof RunBotRoutineErrors];
 export type RunBotRoutineResponses = {
     202: unknown;
 };
+
+export type RevokeRoutineWebhookData = {
+    body?: never;
+    path: {
+        id: string;
+        routineId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines/{routineId}/webhook';
+};
+
+export type RevokeRoutineWebhookErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Routine not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type RevokeRoutineWebhookError = RevokeRoutineWebhookErrors[keyof RevokeRoutineWebhookErrors];
+
+export type RevokeRoutineWebhookResponses = {
+    204: void;
+};
+
+export type RevokeRoutineWebhookResponse = RevokeRoutineWebhookResponses[keyof RevokeRoutineWebhookResponses];
+
+export type IssueRoutineWebhookData = {
+    body: IssueRoutineWebhookRequest;
+    path: {
+        id: string;
+        routineId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/routines/{routineId}/webhook';
+};
+
+export type IssueRoutineWebhookErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_001 — Routine not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_014 — The routine has no webhook trigger
+     */
+    422: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_015 — Signing is not configured
+     */
+    503: ProblemDetailsDto;
+};
+
+export type IssueRoutineWebhookError = IssueRoutineWebhookErrors[keyof IssueRoutineWebhookErrors];
+
+export type IssueRoutineWebhookResponses = {
+    201: IssuedRoutineWebhookResponseDto;
+};
+
+export type IssueRoutineWebhookResponse = IssueRoutineWebhookResponses[keyof IssueRoutineWebhookResponses];
+
+export type ReceiveRoutineWebhookData = {
+    body?: never;
+    headers?: {
+        /**
+         * A retried POST with the same key is the same run.
+         */
+        'Idempotency-Key'?: string;
+        'x-oppenheimer-signature'?: string;
+    };
+    path: {
+        /**
+         * The token the Routines tab issued, `owh_…`.
+         */
+        token: string;
+    };
+    query?: never;
+    url: '/api/v1/routine-webhooks/{token}';
+};
+
+export type ReceiveRoutineWebhookErrors = {
+    /**
+     * AUTOMATIONS_011 — Bad signature
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_010 — No such webhook
+     */
+    404: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_013 — Routine paused
+     */
+    409: ProblemDetailsDto;
+    /**
+     * AUTOMATIONS_012 — Body too large
+     */
+    413: ProblemDetailsDto;
+};
+
+export type ReceiveRoutineWebhookError = ReceiveRoutineWebhookErrors[keyof ReceiveRoutineWebhookErrors];
+
+export type ReceiveRoutineWebhookResponses = {
+    202: RoutineWebhookReceivedResponseDto;
+};
+
+export type ReceiveRoutineWebhookResponse = ReceiveRoutineWebhookResponses[keyof ReceiveRoutineWebhookResponses];
 
 export type StreamWorkspaceEventsData = {
     body?: never;
@@ -14620,6 +15098,191 @@ export type UpdateTelegramAccountResponses = {
 };
 
 export type UpdateTelegramAccountResponse = UpdateTelegramAccountResponses[keyof UpdateTelegramAccountResponses];
+
+export type FindSlackAccountsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/slack/accounts';
+};
+
+export type FindSlackAccountsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindSlackAccountsError = FindSlackAccountsErrors[keyof FindSlackAccountsErrors];
+
+export type FindSlackAccountsResponses = {
+    200: Array<SlackAccountResponseDto>;
+};
+
+export type FindSlackAccountsResponse = FindSlackAccountsResponses[keyof FindSlackAccountsResponses];
+
+export type ConnectSlackData = {
+    body: ConnectSlackRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/slack/accounts';
+};
+
+export type ConnectSlackErrors = {
+    /**
+     * SLACK_002 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — No such bot of yours
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SLACK_005 — That Slack app already answers as another bot
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SLACK_004 — Slack refused the bot token
+     */
+    422: ProblemDetailsDto;
+    /**
+     * SLACK_007 — Slack's rate limit was reached; try again after Retry-After
+     */
+    429: ProblemDetailsDto;
+    /**
+     * SLACK_006 — Slack did not answer
+     */
+    502: ProblemDetailsDto;
+    /**
+     * SLACK_003 — Slack is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ConnectSlackError = ConnectSlackErrors[keyof ConnectSlackErrors];
+
+export type ConnectSlackResponses = {
+    201: SlackAccountResponseDto;
+};
+
+export type ConnectSlackResponse = ConnectSlackResponses[keyof ConnectSlackResponses];
+
+export type FindSlackAppSetupData = {
+    body?: never;
+    path: {
+        /**
+         * One of the caller’s bots.
+         */
+        botId: string;
+    };
+    query?: never;
+    url: '/api/v1/slack/bots/{botId}/app';
+};
+
+export type FindSlackAppSetupErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — No such bot of yours
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SLACK_003 — Slack is not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type FindSlackAppSetupError = FindSlackAppSetupErrors[keyof FindSlackAppSetupErrors];
+
+export type FindSlackAppSetupResponses = {
+    200: SlackAppSetupResponseDto;
+};
+
+export type FindSlackAppSetupResponse = FindSlackAppSetupResponses[keyof FindSlackAppSetupResponses];
+
+export type OpenSlackOwnerLinkData = {
+    body?: never;
+    path: {
+        /**
+         * The connected Slack app.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/slack/accounts/{id}/owner-link';
+};
+
+export type OpenSlackOwnerLinkErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SLACK_001 — No such Slack app
+     */
+    404: ProblemDetailsDto;
+};
+
+export type OpenSlackOwnerLinkError = OpenSlackOwnerLinkErrors[keyof OpenSlackOwnerLinkErrors];
+
+export type OpenSlackOwnerLinkResponses = {
+    201: SlackOwnerLinkResponseDto;
+};
+
+export type OpenSlackOwnerLinkResponse = OpenSlackOwnerLinkResponses[keyof OpenSlackOwnerLinkResponses];
+
+export type RemoveSlackAccountData = {
+    body?: never;
+    path: {
+        /**
+         * The connected Slack app.
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/slack/accounts/{id}';
+};
+
+export type RemoveSlackAccountErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type RemoveSlackAccountError = RemoveSlackAccountErrors[keyof RemoveSlackAccountErrors];
+
+export type RemoveSlackAccountResponses = {
+    204: void;
+};
+
+export type RemoveSlackAccountResponse = RemoveSlackAccountResponses[keyof RemoveSlackAccountResponses];
 
 export type FindPullRequestsData = {
     body?: never;
@@ -16582,7 +17245,16 @@ export type FindBotConversationData = {
     path: {
         id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * A message of this chat, the oldest the reader holds: the page is the messages just older than it.
+         */
+        before?: string;
+        /**
+         * How many messages; 100 when absent.
+         */
+        limit?: number;
+    };
     url: '/api/v1/bots/{id}/conversation';
 };
 
@@ -17411,6 +18083,157 @@ export type DismissBotQuestionResponses = {
 
 export type DismissBotQuestionResponse = DismissBotQuestionResponses[keyof DismissBotQuestionResponses];
 
+export type FindPendingBotFormData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/form';
+};
+
+export type FindPendingBotFormErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+};
+
+export type FindPendingBotFormError = FindPendingBotFormErrors[keyof FindPendingBotFormErrors];
+
+export type FindPendingBotFormResponses = {
+    200: BotPendingFormResponseDto;
+};
+
+export type FindPendingBotFormResponse = FindPendingBotFormResponses[keyof FindPendingBotFormResponses];
+
+export type SubmitBotFormData = {
+    body: SubmitBotFormRequest;
+    path: {
+        id: string;
+        formId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/forms/{formId}/submit';
+};
+
+export type SubmitBotFormErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_046 — Form not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_048 — Already sent
+     */
+    409: ProblemDetailsDto;
+    /**
+     * BOTS_047 — Values that do not fit
+     */
+    422: ProblemDetailsDto;
+};
+
+export type SubmitBotFormError = SubmitBotFormErrors[keyof SubmitBotFormErrors];
+
+export type SubmitBotFormResponses = {
+    201: BotFormResponseDto;
+};
+
+export type SubmitBotFormResponse = SubmitBotFormResponses[keyof SubmitBotFormResponses];
+
+export type DismissBotFormData = {
+    body: DismissBotFormRequest;
+    path: {
+        id: string;
+        formId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/forms/{formId}/dismiss';
+};
+
+export type DismissBotFormErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_046 — Form not found
+     *
+     * BOTS_001 — Bot not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_048 — Already sent
+     */
+    409: ProblemDetailsDto;
+};
+
+export type DismissBotFormError = DismissBotFormErrors[keyof DismissBotFormErrors];
+
+export type DismissBotFormResponses = {
+    201: BotFormResponseDto;
+};
+
+export type DismissBotFormResponse = DismissBotFormResponses[keyof DismissBotFormResponses];
+
+export type ReactToBotMessageData = {
+    body: ReactToBotMessageRequest;
+    path: {
+        id: string;
+        messageId: string;
+    };
+    query?: never;
+    url: '/api/v1/bots/{id}/messages/{messageId}/reaction';
+};
+
+export type ReactToBotMessageErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_044 — Message not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_045 — This message takes no reaction
+     */
+    422: ProblemDetailsDto;
+};
+
+export type ReactToBotMessageError = ReactToBotMessageErrors[keyof ReactToBotMessageErrors];
+
+export type ReactToBotMessageResponses = {
+    200: BotMessageResponseDto;
+};
+
+export type ReactToBotMessageResponse = ReactToBotMessageResponses[keyof ReactToBotMessageResponses];
+
 export type FindBotPermissionsData = {
     body?: never;
     path: {
@@ -17677,6 +18500,66 @@ export type FindVoiceStatusResponses = {
 };
 
 export type FindVoiceStatusResponse = FindVoiceStatusResponses[keyof FindVoiceStatusResponses];
+
+export type FindVoiceSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/voice/settings';
+};
+
+export type FindVoiceSettingsErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type FindVoiceSettingsError = FindVoiceSettingsErrors[keyof FindVoiceSettingsErrors];
+
+export type FindVoiceSettingsResponses = {
+    200: VoiceSettingsResponseDto;
+};
+
+export type FindVoiceSettingsResponse = FindVoiceSettingsResponses[keyof FindVoiceSettingsResponses];
+
+export type UpdateVoiceSettingsData = {
+    body: UpdateVoiceSettingsRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/voice/settings';
+};
+
+export type UpdateVoiceSettingsErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type UpdateVoiceSettingsError = UpdateVoiceSettingsErrors[keyof UpdateVoiceSettingsErrors];
+
+export type UpdateVoiceSettingsResponses = {
+    204: void;
+};
+
+export type UpdateVoiceSettingsResponse = UpdateVoiceSettingsResponses[keyof UpdateVoiceSettingsResponses];
 
 export type FindInboxMarksData = {
     body?: never;

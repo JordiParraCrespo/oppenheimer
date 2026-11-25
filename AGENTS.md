@@ -10,7 +10,8 @@ Flama full-stack starter. The MVP is `apps/api` (control plane), `apps/web`
 (the console), `apps/runner` (the host agent), `apps/docs` and `e2e`; that is
 what `pnpm dev:mvp` starts. Beyond the MVP are `apps/web-showcase`, the
 gallery of the web design system, `apps/extension`, a Chrome extension
-that tracks your Claude Code cloud sessions and tells you which need you, and
+that tracks your Claude Code cloud sessions and tells you which need you,
+`apps/mobile`, the Expo app for 0.5 (a shell so far: sign-in and the tabs), and
 `apps/cli` and `apps/mcp`: `opp` and the MCP server, through which people,
 scripts and agents on other hosts drive the same API (0.6).
 
@@ -36,7 +37,9 @@ All research and decisions live in `product/`; start with `product/README.md`.
 - When a decision changes, update the note that made it and add a line to
   the "decisions that changed" list in `product/README.md`. Do not silently
   rewrite history in earlier notes. `product/brief.html` is regenerated from
-  the notes; keep it in sync when a note changes.
+  the notes; keep it in sync when a note changes. `scripts/check-product-sync.mjs`
+  fails a branch whose notes changed without both; an edit that changes no
+  decision says so in a commit trailer, `Product-Sync: <why>`.
 - The runner is `product/versions/mvp/02-runner.md` and
   `…/09-runner-install-and-update.md`; the wire is `…/01-protocol.md`.
 
@@ -45,15 +48,16 @@ All research and decisions live in `product/`; start with `product/README.md`.
 ```
 apps/        api (NestJS control plane) · web (Vite + TanStack Router console)
              runner (Go host agent) · docs (Docusaurus) · extension (Chrome)
-             web-showcase (Next.js gallery of the design system)
+             web-showcase (Next.js gallery of the design system) · mobile (Expo)
              cli (`opp`, commander) · mcp (MCP server, stdio + Streamable HTTP)
 packages/    shared (Zod schemas, types, CASL, scope + flag catalogs, the link protocol)
              auth (Better Auth config) · env (root .env loader) · tsconfig
              http-client (the transport cli and mcp call the API through)
              translations (i18n JSON)
              backend/  agents authz cache core ddd email error-reporting i18n llm queue storage
-             frontend/ core (kernel) · consumer (the console's domain) · web (platform kit)
+             frontend/ core (kernel) · consumer (the console's domain) · web (platform kit) · mobile (Expo kit)
                        api-client (generated) · design-system/web (shadcn/ui + Base UI + Tailwind v4)
+                       design-system/mobile (NativeWind + rn-primitives)
              go/       core config httpx auth health ws postgres selfupdate execx
 deploy/dev/  the dev deployment (README is the runbook) · docker/ Compose · .github/
 ```
@@ -66,7 +70,7 @@ backend/* → api (ddd depends on nothing; agents is the only code that imports 
 translations → web, frontend/web, api (email copy via backend/i18n)
 design-system/web → web, web-showcase, frontend/web
 api-client → frontend/core, frontend/consumer · frontend/core → every frontend package, web
-frontend/consumer, frontend/web → web · go/core → every go module · go/* → runner
+frontend/consumer, frontend/web → web · frontend/mobile, design-system/mobile → mobile · go/core → every go module · go/* → runner
 http-client → cli, mcp
 ```
 
@@ -117,6 +121,19 @@ When you add a file that mentions an optional app (CI, compose,
   how to take them is the `/local-stack` skill ("Show a visual change"); the
   pull request's `## Screenshots` section is `/steward`. A change there that
   is not visual records why with `pnpm screens --not-visual "<why>"`.
+- **In a cloud session, a change is run on the local stack before it is
+  pushed.** The SessionStart hook brings the stack up in the background
+  (`scripts/stack/cloud-warmup.sh`); check the change on it with the
+  `/local-stack` skill, then `node scripts/stack/stack.mjs verified "<what you
+  ran and saw>"`. What counts is `CHECKS` in `.agents/hooks/verification.mjs`,
+  held by `.agents/hooks/verify-guard.mjs`; a change nothing running can show
+  records why with `node scripts/stack/stack.mjs skip "<why>"`.
+- **An agentic change is evaluated before it is pushed, on any machine.**
+  What a model is shown or can call (the bots' prompts, tools and policies,
+  the agent engines, the LLM package, every `domain/prompts/`) runs through the
+  evals that cover it, and a new tool or rule gets a failing case first
+  (`scripts/evals/README.md`). A green eval records itself; a change no eval
+  can see records why with `node scripts/evals/record.mjs --skip "<why>"`.
 - **One `.env`, at the repo root.** The root `.env.example` documents every
   variable with a note; a new variable goes there. Never add a per-package
   `.env`. Node apps load it through `@oppenheimer/env` (real env vars win),
@@ -147,10 +164,13 @@ frontmatter; this is the index.
 | touching a table, an entity or a migration | `database-design.md`, `typeorm.md`; a new table is `/design-database` |
 | writing or pruning a backend test | `testing-backend.md`; the value bar is `/test-audit` |
 | building a `packages/backend/*` package | `backend-packages.md` (exports, pluggable vs library) |
-| guarding a route | `rbac-roles.md` (roles), `scopes-and-credentials.md` (API tokens, OAuth clients) |
+| guarding a route | `rbac-roles.md` (roles), `scopes-and-credentials.md` (API tokens, OAuth clients, a scope grants no more than its name) |
+| handling text, input, limits, ids, schedules, or removing anything | `edge-cases.md` (where most review-found bugs came from) |
+| reading, writing or subscribing to data in a client (`apps/web`, `apps/mobile`, `apps/extension`, `packages/frontend`) | `client-state.md` (failures, late answers, live data, widths and focus) |
 | adding or reading a feature flag | `feature-flags.md` |
 | calling a system we do not run | `integrations.md` (rate-limit budgets); a new vendor is `/integrate-provider` and `provider-integrations.md` |
 | writing Go (`apps/runner`, `packages/go`) | `go.md`, `apps/runner/ARCHITECTURE.md`, `packages/go/README.md` |
+| adding a coding agent a session can run, or changing how one launches, is typed into or reads in the chat | `/add-coding-agent` |
 | placing frontend code | `frontend-architecture.md`, `packages/frontend/ARCHITECTURE.md`, `apps/web/ARCHITECTURE.md`; a new screen is `/scaffold-feature`, a review is `/frontend-audit` |
 | writing markup or styles | `frontend-ui.md` and the design system's `AGENTS.md`; a design export is `/design-export-port` |
 | building a form | `forms.md` |
@@ -158,6 +178,25 @@ frontmatter; this is the index.
 | checking a change end to end | `/local-stack`; the e2e suites are `e2e/README.md` |
 | reading the API's logs or metrics, or adding a metric | `apps/docs/docs/deployment/monitoring.md` (`pnpm logs` is LogQL over the local Loki), `deploy/dev/monitoring/README.md` (`pnpm monitoring:up`) |
 | deploying | `deploy/dev/README.md`, `apps/docs/docs/deployment/` |
+
+## Review guidelines
+
+For the automated reviewers on a pull request (Codex reads this section).
+`/autoreview` has its own bar, in its brief, which also blocks on a broken
+rule with a cited line:
+
+- **P0**: data loss, a security or authorization hole, a crash on a real path.
+- **P1**: wrong behaviour a person can reach: a race, lost input, a failure
+  drawn as success or as empty, an id matched by name, a limit not checked.
+- **P2**: wrong behaviour that is rare and recoverable.
+- **P3**: a broken repository convention with no change in behaviour (where a
+  mapping lives, a product note out of sync, a missing plural form). A
+  convention is never P1.
+- Each finding names the input or the path that triggers it. Look first where
+  bugs here have come from: `.agents/rules/edge-cases.md`,
+  `.agents/rules/client-state.md`, "A limit, a side effect or a loop is part
+  of the write" in `nestjs-architecture.md`, and "A scope grants no more than
+  its name" in `scopes-and-credentials.md`.
 
 ## Commands
 

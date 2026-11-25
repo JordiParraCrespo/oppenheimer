@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node scripts/build.mjs --watch",
     "build": "tsc -b && node scripts/build.mjs",
+    "package": "node scripts/package.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
@@ -15,6 +16,7 @@
   },
   "dependencies": {
     "@oppenheimer/design-system-web": "workspace:*",
+    "@oppenheimer/shared": "workspace:*",
     "@oppenheimer/translations": "workspace:*",
     "i18next": "^26.4.2",
     "react": "19.2.3",

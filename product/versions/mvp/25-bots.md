@@ -543,6 +543,72 @@ questions on a card, each with two to four likely answers and a tag
 - **Not built:** Grok Bot's other resume points, a sign-in to a connector
   and handing a computer over; they need a connector or a host to resume
   from.
+- **A form, for several values at once** (2026-11-24,
+  `research/generative-ui-in-chat.md` §6 row 4). `ask_form` puts a form on
+  a card of its own: a title, a line on what it is for, one to eight typed
+  fields (`text`, `textarea`, `number` with a min and a max, `select` with
+  its options, `email`, `date`), each with an id, a label, a placeholder,
+  whether it is required and a default, and the button's word. It waits and
+  resumes the way `ask_user` does: the turn ends, the form is a `bot_form`
+  row, one card of any kind is up at a time (approval, questions or form),
+  a new message retires it, and submitting
+  (`POST /bots/:id/forms/:formId/submit`) or dismissing (`…/dismiss`)
+  queues the turn that reads it, of origin `question`, each value under its
+  field's id between markers. Values are read against the fields twice: in
+  the console as the person leaves each field, and by the API, which
+  refuses what does not fit (`BOTS_047`, naming which); a form already
+  decided is `BOTS_048`, one not found `BOTS_046`. `GET /bots/:id/form`
+  reads the waiting form. The tool's description sends one choice among a
+  few likely answers to `ask_user`, and several values, most of all typed
+  ones, to a form. Once sent, the card says so for a moment and the chat
+  keeps the record: each field's label over the value sent. Like questions,
+  a form is answered in the console only: a turn on a channel can raise one,
+  and the channel is not shown it yet.
+
+### 3.3 Asked on GitHub
+
+Built 2026-11-20 (issue #952, from `../../research/orca-bots.md` §4.2): a
+bot is asked where the work already is. The owner writes
+`@oppenheimer <bot>` in a comment or a review on a pull request or issue,
+or adds the label `bot:<bot>`; the bot works on it, and its last words go
+back there as one comment.
+
+- **Who asks.** Only the workspace's owner, whose GitHub login is the one
+  the GitHub module knows them by (their App user authorization, else a
+  personal installation, else their oldest personal token). Anyone else's
+  mention or label queues nothing and answers nothing, and their words are
+  never read. A workspace whose owner has no known login cannot be asked.
+- **Which bot.** The owner's bot whose name follows `@oppenheimer`, the
+  longest that fits ("Feynman 2" over "Feynman"), or the one the label
+  names after `bot:`; neither the case nor `-`, `_` or a space between words
+  matters. A mention that names no bot is left to the routines that wake on
+  a mention.
+- **What it reads.** A line naming where the ask was made and how to read it
+  with the GitHub tools, then what was written (the comment, or for a label
+  the issue's title and body) inside the untrusted-data envelope routines
+  use: GitHub saying the owner wrote it is not proof, so it is a request to
+  weigh, never an instruction or an approval.
+- **The turn.** Origin `github`, in the background lane, in the bot's
+  console chat, keyed by the stored event so a redelivery is one turn. It is
+  not attended: nobody is in the console to answer a card, so a tool that
+  asks is not offered, and the bot says in its answer what it would need
+  approved. The chat shows a line, "Asked on GitHub, in a comment on #7 of
+  acme/app", linking to the comment (`github_ask`).
+- **The answer.** When the turn ends, its last text (or what happened to
+  it) is posted once, as a comment of Oppenheimer's App, through the
+  installation that covers the repository; with none there is no ask. The
+  App posts it, not the owner, so the answer is told apart from what they
+  wrote, and the App's own comments wake no routine and no bot
+  (`loopGuard`), so an answer that names a bot asks nothing. The turn is not
+  offered the tools that write on GitHub in the owner's name (comment,
+  review, open an issue) nor `ask_bot` (`NOT_ON_A_GITHUB_ASK`): the thread
+  never gets two answers under two names, a comment of the owner's naming a
+  bot cannot ask it again in a chain nothing bounds, and no answer arrives
+  later as a turn that posts nothing. The job is not retried: an answer
+  GitHub refused is logged, and the chat still has it.
+- **Not built:** a reply tool for progress or a question before the answer
+  (the answer is one comment), handing part of the work to another bot and
+  posting its answer, anyone but the owner asking, Slack and Linear.
 
 ## 4. The tools
 
@@ -646,6 +712,7 @@ it one:
 | `set_goal` / `end_goal` | Set a goal it keeps working toward across turns, with an optional token budget; say it is met (for the reviewer to check) or blocked (2026-10-29, reworked 2026-11-09; below) | auto |
 | `notify` | One line, at most 500 characters, in the person's Inbox, in place of its last notice; for a bot whose chat nobody watches. Never asks; at most 2 a turn (`../../next-steps/agent-tools.md` §5, built 2026-11-03) | auto |
 | `ask_user` | Up to 4 questions on a card of their own, each with 2 to 4 likely answers; the turn ends and the answers open the next. Only on a turn someone is waiting on (§3.2, built 2026-10-29) | auto |
+| `ask_form` | A form of 1 to 8 typed fields on a card of its own; the turn ends and the values open the next. Only on a turn someone is waiting on (§3.2, built 2026-11-24) | auto |
 
 **Goals** (2026-10-29, from Grok Bot's goals,
 `research/lessons-from-grok-bot.md` §9 row 10; reviewed and set with `/goal`
@@ -1210,6 +1277,7 @@ agent's, in a session, where Claude Code ships them.
 | `start_session` | Start an agent on a host, in a new worktree or a folder, with a task; the session's origin is `bot`. It launched at `auto` on the host's default model until 2026-11-10 (decided 2026-10-18: nobody sits at a bot's terminal, so `ask` would wait forever); since then it takes the composer's foot row and branch (`model`, `effort`, `permission`, `base_branch`), read by `bots-chat/domain/bot-session-launch.policy.ts`, which is the contract: what each field accepts, what is refused, and that a call at `full` always asks on a card of its own for that call alone. The eval is `scripts/evals/bot-session-launch/` | ask |
 | `start_cloud_session` | Start a session in a vendor's cloud on a project's repository; `agent` picks the cloud. `claude-code` (default, claude.ai/code) and `codex` (chatgpt.com/codex, with an optional `codex_environment`) go through the sessions' own create with `cloud`, so a host's runner runs `claude --cloud` or `codex cloud exec` in a scratch checkout, exactly as the console's cloud place and a `claude-cloud` automation do; host chosen as `start_session`'s. It waits (at most 120 s, the runner's own limit) for the host to report the session's id and answers with its URL. `cursor` goes through `StartCloudSessionCommand` (`POST /sessions/cloud`'s), on the owner's own Cursor key with no host and an optional `model`; the card says it runs on that key, and a missing key is the call's error (`CLOUD_AGENTS_004`). Scope `sessions:write`, origin `bot`; `get_session` shows the URL after. Watched as `start_session`'s unless `watch` is false (2026-11-07; it was not watched, as followed at its vendor, until a start that failed went unreported); an answer with no link is not a start (added 2026-10-30; Codex and Cursor 2026-11-02) | ask |
 | `watch_session` / `unwatch_session` / `list_watches` | Follow a session, so its task needing input or ending wakes the bot (`start_session` follows its own session); built 2026-10-22, note 27. A `pattern` wakes it when the terminal prints a matching line, matched on the host (2026-10-29). A running task it follows gets the hand-off's looks every few minutes, and `check_in_minutes` one more at a time it names (2026-11-10, note 27 §4.2) | auto |
+| `check_back` | Wake the bot later with a turn of its own to look at anything it delegated or waits on (a session, a pull request, a deploy, a person, a cloud run, a host update): `about` (what to look at, in its words, up to 300 characters) and `minutes` (1 to 240) when the task suggests a time, else a backoff of 5, 10, 20, 40, 80 minutes then every 120. One a turn; a call in a look's own turn goes on with its chain, any other starts one, and a chain stops 24 hours after its first look was set. Scope `bots:write`, under Self; built 2026-11-23, note 27 §7.3 | auto |
 | `watch_pull_request` / `unwatch_pull_request` | Follow an open pull request of a repository the owner can read, so a check failing or passing, a review, a comment or the merge wakes the bot with the event's metadata, never anyone's words; a merge ends it; built 2026-11-03, note 27 §7.1. `list_watches` lists them too | auto |
 | `watch_project` / `watch_milestone` / `unwatch_project` / `unwatch_milestone` | Follow every task of a project, or those under one milestone, so a change Plan logs on one of them wakes the bot: by default a task added, moved column, done, reopened, blocked, unblocked or deleted; `events` names others (`rescheduled`, `reassigned`, `session_linked`). The wake names the task, the columns and whether the person made the change, never its notes; the bot's own changes never wake it, and there is no wake limit. Scope `tasks:read`; built 2026-11-14, note 27 §7.2. `list_watches` lists them too | auto |
 | `wait_for_session` | Wait up to 120 s inside the turn for a session's task to need input or end, at most 3 times a turn (2026-10-29) | auto |
@@ -1218,8 +1286,12 @@ agent's, in a session, where Claude Code ships them.
 | `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan). `after_seq` reads only what followed an entry; `send_to_session` and `answer_session` name the entry their input followed (2026-10-29) | auto |
 | `search_sessions` | Search every session of the workspace, on any host and closed ones included, for words in its name and log (tasks, follow-ups, the agent's results, notes, questions, failures): web-search syntax, best first, at most 2 excerpts per session, each with the session's id for `read_session`; filters `host_id`, `project_id`, `since`. Not the agents' transcripts (2026-11-09; below) | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up. `close_session` is the sessions' own close (`CloseSessionCommand`: push each branch, remove the worktree; unpushed work kept unless `accept_unpushed_work`) and only for a session whose origin is `bot`; any other is refused before a card, the person's to close. The `failed` wake offers it once the person is told, so a failed start does not stay in the sidebar (built 2026-11-09) | ask |
+| `restart_session` | Bring a stopped session back in the worktrees it has, through the sessions' own restart (`RestartSessionCommand`, the console's Restart): what opening it does for a person, so a bot whose session stopped idle (02 §5) or with its host carries on rather than sending the person to open it. Only a stopped session on a host; a running, closed or cloud one is refused before a card. `send_to_session` on a stopped session is refused before its card with the way back. Added 2026-11-24 | ask |
 | `list_folders` | Browse a host's folders | auto |
 | `run_command` | Run one program on a host and read its exit code, stdout and stderr in the same turn, only what that host's own policy allows (below; built 2026-11-07) | ask |
+| `set_host_settings` | Turn a host's browser or screen for bots on or off, set its exec mode or add programs to its allowlist, when the person asks in their own chat: the same files `runner browser`, `runner computer` and `runner exec` write (below, "The host's switches"; built 2026-11-24) | ask, each call on its own card |
+| `use_browser` | Do one thing in a browser of the bot's own on a host (open, read, click or type by an element's ref, keys, scroll, back) and read the page that comes back, with a picture for a model that reads one; only on a host whose browser switch is on, by `runner browser on` or `set_host_settings` (below; built 2026-11-11) | ask |
+| `use_computer` | Do one thing on a host's screen (look, click, type, press keys, scroll, drag) and read a picture of the screen after it; only on a host whose screen switch is on, by `runner computer on` or `set_host_settings` (below; built 2026-11-09) | ask |
 | `open_terminal` / `type_in_terminal` / `read_terminal` | Open a blank terminal (agent `shell`) on a host, type into it (text, then named keys such as Enter or C-c) and read its screen back after waiting for a pattern; only on a host whose `runner exec` mode is `full` (below; built 2026-11-08) | ask / ask / auto |
 
 Built 2026-10-27 (issue #493), so a bot that manages sessions can see them
@@ -1284,7 +1356,9 @@ more (`10-sleep-wake-and-pricing.md` §7 prices the sandbox services).
   folder cannot dress the bot's own file as an allowed script, while a
   virtualenv's python or a Homebrew link still runs under its own name. Off
   refuses before anything on disk is looked at. The control plane never reads or writes the policy, so a
-  compromised control plane runs nothing the person did not allow.
+  compromised control plane runs nothing the person did not allow. (Changed
+  2026-11-24: a bot writes it when the person asks, below, "The host's
+  switches".)
 - **The bot's own folder.** A call starts in `<workspaces>/bots/<bot id>`,
   made on first use and kept, unless it names an absolute `cwd`. That is
   the bot's machine without a VM: its scripts, data and virtualenvs.
@@ -1334,6 +1408,154 @@ bots that run bash or ssh interactively, as a person at a keyboard does.
 
 On the wire it is `terminal.drive` and `terminal.screen`, gated on the
 `terminal.drive` capability (`01-protocol.md`).
+
+#### Using a computer
+
+Added 2026-11-09. The owner asked that a bot can, remotely, use a computer
+on a host: its real desktop, on a Mac and on Linux.
+
+- **The screen is a host's, never the control plane's.** §2 turned the
+  engines' own computer tools off because the loop runs beside the API. That
+  stays: `use_computer` is a tool of ours that reaches a host's screen
+  through its runner, as `run_command` reaches its programs.
+- **One action, then the screen.** A call does one thing (`screenshot`,
+  `move`, `click`, `double_click`, `right_click`, `middle_click`, `drag`,
+  `scroll`, `type`, `key`, `wait`) and answers with a JPEG of the screen
+  after it, at most 1,280 pixels on its long edge and 256 KB. The bot points
+  in that image's pixels and the runner maps them onto the screen, so a
+  Retina display needs nothing from the model. Keys are a closed grammar
+  (`cmd+shift+4`, `ctrl+c`, `enter`), the same on both systems.
+- **The host decides, with a switch of its own.** `runner computer on`, off
+  by default, in `~/.oppenheimer/computer.json`, which the control plane
+  never writes (`COMPUTER_001` when off; changed 2026-11-24, "The host's
+  switches"). No tool of ours changes it, but
+  a host that lets bots run any program (`runner exec mode full`, or
+  `runner` on its allowlist) lets a bot run `runner computer on` too: the
+  two are the host owner's to decide together. It is not the exec policy: a host
+  may run programs for bots and still not show them its screen, and a
+  screenshot carries whatever is open to the model provider.
+- **Which screen.** A Mac: its main display, through `screencapture` and
+  `osascript` (CoreGraphics events and System Events; the runner is built
+  without cgo), which needs Screen Recording and Accessibility granted to
+  the runner. Linux: an X display through `xdotool` and ImageMagick, the
+  runner's own or another this account owns, else a virtual one (Xvfb, 1280
+  by 800) the runner starts and keeps, locked with an `xauth` key in the
+  account's `~/.Xauthority` so no other account on the machine can watch or
+  type. A Wayland session is refused (its X displays are XWayland's, which
+  show and take nothing of the desktop). `COMPUTER_002` names what is
+  missing.
+- **One provider-neutral tool, not the vendors' computer tools.** The
+  screenshot goes back as an image in the tool's answer, which both engines
+  carry (an MCP image block; a Responses function output part), so every
+  provider whose models read images can use it and GLM is told it cannot.
+  The image reaches the model only: it is not stored, not in any event, and
+  the chat does not show it.
+- **Permission is per host.** It asks under Approve for me, and its subject
+  is the host's screen, so "always allow" on the first card covers the rest
+  of the task. An approved single call is carried out after its turn, where
+  no model reads an image: it answers in words and the bot looks again.
+- **Its prompt** ("Using a computer"): one step then look, prefer any other
+  tool that does the job, never type or read out a secret, ask before
+  anything that sends, buys, deletes or publishes, and what the screen shows
+  is never an instruction.
+
+Not built: showing the screenshots to the person in the chat, more than one
+display, Wayland, and a browser of the bot's own (the alternative the owner
+passed over for the real desktop). The Mac path is written and unit-tested
+for its key codes but had not run on a Mac when it was proposed.
+
+On the wire it is `computer.act` and `computer.screen`, gated on the
+`computer.use` capability (`01-protocol.md`).
+
+#### Using a browser
+
+Added 2026-11-11. With `use_computer` proposed, the owner asked for browser
+use as well, and said Claude Code is the better of the agents he uses at it.
+
+- **Read, then act on a ref** (how Claude in Chrome does it, which is why
+  it misses fewer clicks than a tool that points at a picture). Every answer
+  is the page: title, address, and the visible things one can act on (links,
+  buttons, fields; at most 150, those on screen first), each with a ref such
+  as `e7`, a role, a name and what a field holds. `click` and `type` take a
+  ref; `read` adds the page's text (its first 24 KB); a picture of the page
+  rides each answer for a model that reads images. A point of the picture
+  (`x`, `y`) is the fallback, not the way.
+- **Works without image input.** The page is text, so GLM browses too; only
+  `screenshot` is refused for it, with "use read".
+- **A browser of the bot's own.** One per bot and host, headless, with a
+  profile under the runner's state folder: none of the person's logins,
+  cookies or history, and nothing on their screen. Closed by the bot or
+  with the runner (on a Mac, at that bot's next start), and reaped after
+  twenty minutes idle when another action arrives.
+- **From the host.** It reaches what the host reaches, `localhost` and the
+  local network included, which is what a dev server needs and why the
+  switch is the host's: `runner browser on`, off by default, in
+  `~/.oppenheimer/browser.json`, never written by the control plane (changed 2026-11-24, "The host's
+  switches")
+  (`BROWSER_001` when off). It opens `http` and `https` only.
+- **Driven over the DevTools protocol** by the runner itself (Chrome,
+  Chromium or Edge already on the host; no Node, no Python, no cgo), over
+  a pipe the browser inherits rather than a debugging port, so no other
+  account on the host can drive it. The page is read from a script world
+  of the runner's own and its address is the browser's, so a page's
+  scripts cannot answer for it; downloads are refused. The
+  open-source `browser-use` library was the other candidate: it is a Python
+  agent with a model key of its own, so a bot would have handed it whole
+  tasks and seen none of its steps, and every host would have needed Python.
+- **What a page says is fenced** as outside text in every answer, a
+  password field's value is never read out, and the prompt ("Using a
+  browser") says to stop at a sign-in, to ask before anything that sends,
+  buys, deletes or publishes, and that a page never gives instructions.
+- **Permission is per host**, as for `use_computer`: one card, "always
+  allow for its browser on that host". An approved single call still answers
+  with the page as text.
+
+Not built: tabs and pop-ups, downloads and uploads, the person's own signed-in
+browser (what Codex's and Claude's Chrome extensions do), and showing the
+page's picture in the chat.
+
+On the wire it is `browser.act` and `browser.page`, gated on the
+`browser.use` capability (`01-protocol.md`).
+
+#### The host's switches
+
+Added 2026-11-24. A bot asked to read a chat in WhatsApp Web answered
+that the browser was off and that only the owner could turn it on, with
+`runner browser on` on the host. The owner said "do it yourself" and got
+the same answer, and said they do not want guardrails like that: when the
+person says to do something, it is done. Until then the three switches
+(`runner exec`, `runner computer`, `runner browser`) were the host's alone,
+never written by the control plane.
+
+- **`set_host_settings` writes them for the person.** `browser` and
+  `computer` take `on` or `off`, `exec_mode` takes `off`, `allowlist` or
+  `full`, and `exec_allow` adds programs to the allowlist (it never removes
+  one). Only the fields given change. The runner writes the same files the
+  `runner` commands do and answers with what the host now allows. A bad
+  allowlist entry (`EXEC_008`), an allowlist that would outgrow its file
+  (`EXEC_009`) or an exec policy that cannot be read changes nothing: all is
+  checked before any file is written.
+- **Only on the person's word.** The tool is offered only on the owner's
+  own turns in their chat (the console, and their own WhatsApp, Telegram
+  or Slack chat): never a contact's or a group's turn, a routine, a wake or
+  another bot's message, so a page, a mail or someone else cannot switch a
+  host open. The prompt says to turn on only what the work needs.
+- **One card per call** under Approve for me (`perCallOnly`): no standing
+  grant, since a change opens more than the call itself. Under Full access
+  it runs at once. Review pointed out that a page or mail the bot reads on
+  the owner's own turn could then prompt it to open a host; asked whether
+  turning a switch on should ask even under Full access, the owner said no.
+- **The refusals point at it.** `BROWSER_001`, `COMPUTER_001`, `EXEC_001`,
+  `EXEC_002` and `EXEC_006` tell the bot to turn the switch on with this tool
+  when the person asked for the work, and run the action again, rather than
+  to send the person to the host.
+
+What it gives up: a compromised control plane can now open a host's
+switches. It could already start a coding agent on that host, which runs
+anything, so the switches were never the only line.
+
+On the wire it is `host.settings.set` and `host.settings`, gated on the
+`host.settings` capability (`01-protocol.md`).
 
 **Searching every session** (2026-11-09, from Hermes Agent's session
 search). A bot could list sessions and read one it had the id of, but not
@@ -1431,6 +1653,8 @@ Built 2026-10-20, after a bot told its owner it could not merge a pull
 request it had just reported ready. Every write is made with the owner's
 own GitHub user token through the pull-requests and github modules'
 commands, so GitHub records the person and its branch rules stay the gate.
+The one exception (2026-11-20) is the answer to an ask on GitHub (§3.3),
+posted by the App with the installation's token, which no tool makes.
 `comment_on_pull_request` posts on the conversation, or on a line when
 `path` and `line` are given; `review_pull_request` offers approve, request
 changes and comment, never approve and merge, so every merge goes through
@@ -2003,6 +2227,10 @@ The decisions it produced:
   card of its own (`bot_question`), answered or dismissed and never
   approved, beside the approval card; one card of either kind is up at a
   time. From Grok Bot's form cards (§9 row 12).
+- 2026-11-24: **a bot asks for several values on a form** (`ask_form`,
+  §3.2): a card of its own (`bot_form`), submitted or dismissed and never
+  approved, waiting and resuming as questions do; one card of any kind is
+  up at a time. From `research/generative-ui-in-chat.md` §6 row 4.
 - 2026-10-29: **a fact has a tier and a scope**: in mind or looked up,
   the bot's or about the person and read by all their bots, still one row
   owned by the bot that learned it (§4.1). It moves user memory out of §7.
@@ -2194,6 +2422,19 @@ The decisions it produced:
   screen, on a host whose exec mode is `full`. It changes §2's "the bot
   delegates a complete task and never runs a terminal" for blank terminals
   only: a coding agent is still given a task, never typed at.
+- 2026-11-09: **bots use a computer on a host** (§4.2, "Using a computer").
+  The owner asked for it, on the host's real desktop, Mac and Linux. It
+  narrows §2's "the SDK's own computer tools are off": they still are, on
+  the control plane; `use_computer` is ours, reaches a host's screen through
+  its runner, and only where the person on that host ran `runner computer
+  on`. `research/lessons-from-grok-bot.md` had left computer use "on the
+  bot's own loop" out for the same reason, which this keeps.
+- 2026-11-11: **bots use a browser on a host** (§4.2, "Using a browser").
+  The owner asked for it beside computer use. `use_browser` drives a browser
+  of the bot's own on a host through the runner, reads a page as elements
+  with refs and acts on a ref, and needs no image input. Its own switch on
+  the host, `runner browser on`. The `browser-use` library was considered
+  and not taken (a second agent, with its own key, on every host).
 - 2026-11-09: **a turn has no step or time limit, and every engine compacts
   mid-turn** (§2). The owner asked why a bot stopped after 20 steps, and
   then for tasks that run for hours. Codex, Grok Bot and OpenClaw cap
@@ -2380,7 +2621,7 @@ The decisions it produced:
   Code's prompt suggestions). After a turn ends, with the box empty, the
   bot's own model, with no tools, guesses the person's next message from
   the end of the chat (`GET /bots/:id/suggestion`, the prompt
-  `jobs/suggestion.md`); the composer shows it as the placeholder and Tab
+  `core/job-suggestion.md`); the composer shows it as the placeholder and Tab
   writes it into the box, never sends it. One guess per message of the
   bot's, kept a day in the cache; the model answers NONE when there is no
   clear next step, and a failure shows nothing. It is spend on the owner's
@@ -2389,3 +2630,19 @@ The decisions it produced:
   suggests an irreversible step the bot did not propose. Eval
   `bot-suggestion`: 47/48 on Opus 5.5; 33/48 on Haiku 5.5, which can answer
   a preference question for the person with made-up details.
+- 2026-11-21: **a bot texts like a person on WhatsApp and Telegram** (§1).
+  A bot on a phone read like a help desk: it quoted the owner's words back
+  ("I got your 'Hello?'"), said how a voice note reached it, and listed what
+  it can and cannot do, down to how many days messages are kept. The turn's
+  channel line (`core/turn-context.md`) is followed, on WhatsApp and Telegram alike, by one shared fragment, `on-a-phone`, that asks for
+  a friend's texting voice in the owner's language and register, an emoji
+  when it fits, an answer to what they meant, never their words echoed or the
+  way their message arrived, and no capabilities, machinery or limits unless
+  asked. A new bot's `SOUL.md` says the same in one line under Vibe; an
+  existing bot's soul is its own and is left as it is.
+- 2026-11-24: **a bot turns a host's switches on when asked** (§4.2, "The
+  host's switches"). The owner said "do it yourself" to a bot that told them
+  to run `runner browser on`, and did not want that guardrail.
+  `set_host_settings` writes the browser, screen and exec switches the
+  `runner` commands write, on the owner's own turns only, one card per call
+  under Approve for me.

@@ -1,7 +1,9 @@
 {
   "title": "Bandeja",
   "list": {
+    "emptyTitle": "Bandeja vacía",
     "empty": "Nada te necesita.",
+    "noneMatchingTitle": "Sin coincidencias",
     "noneMatching": "Nada que coincida con estos filtros o palabras te necesita.",
     "low": "Baja",
     "snoozed": "Pospuestos",
@@ -26,7 +28,8 @@
     "low": "Bajar prioridad",
     "restore": "Restaurar prioridad",
     "snooze": "Posponer",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "start": "Seleccionar"
   },
   "filter": {
     "label": "Filtrar la bandeja",
@@ -35,6 +38,8 @@
     "any": "Cualquiera",
     "showDone": "Mostrar hechos",
     "showPulls": "Mostrar pull requests",
+    "alerts": "Avisarme en este navegador",
+    "alertsBlocked": "Este navegador bloquea las notificaciones",
     "clear": "Quitar filtros",
     "remove": "Quitar filtro",
     "typeChip": "Tipo: {{value}}",
@@ -85,6 +90,7 @@
     "permissionBody": "Su agente se detuvo a preguntar antes de seguir. Tu respuesta se escribe en su terminal.",
     "questionTitle_one": "Una pregunta antes de que {{name}} continúe",
     "questionTitle_other": "{{count}} preguntas antes de que {{name}} continúe",
+    "questionTitle_many": "{{count}} preguntas antes de que {{name}} continúe",
     "questionBody": "Elige una respuesta para cada una, o escribe la tuya, y seguirá donde se detuvo.",
     "send": "Enviar respuestas",
     "sending": "Enviando…",
@@ -132,7 +138,6 @@
     "open": "Abrir ejecución"
   },
   "card": {
-    "later": "Más tarde",
     "answerFailed": "No se pudo hacer. Inténtalo de nuevo."
   },
   "pane": {
@@ -144,16 +149,21 @@
     "clearTitle": "Estás al día",
     "clear": "Lo nuevo llega aquí cuando algo necesita una decisión.",
     "clearRunning_one": "{{count}} sesión sigue en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
-    "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión."
+    "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
+    "clearRunning_many": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
+    "cleared_one": "Has despejado {{count}} elemento en esta visita.",
+    "cleared_other": "Has despejado {{count}} elementos en esta visita.",
+    "cleared_many": "Has despejado {{count}} elementos en esta visita."
   },
   "notice": {
-    "title": "{{name}} tiene novedades para ti",
-    "done": "Hecho"
+    "title": "{{name}} tiene novedades para ti"
   },
   "botNotice": {
     "title": "{{bot}} tiene novedades para ti",
     "openChat": "Abrir chat",
-    "done": "Hecho"
+    "reply": "Responder aquí",
+    "hideReply": "Ocultar chat",
+    "chat": "Chat con {{bot}}"
   },
   "report": {
     "sender": "Un agente",
@@ -164,19 +174,35 @@
     "answerPlaceholder": "¿Qué debería hacer?",
     "send": "Enviar respuesta",
     "sending": "Enviando…",
-    "done": "Hecho",
     "answerFailed": "No se pudo enviar la respuesta. Inténtalo de nuevo."
   },
   "task": {
     "sender": "Un agente",
     "short": "Nueva tarea: {{title}}",
-    "body": "Un agente añadió esta tarea a tu tablero. Ponla para hoy, empieza una sesión con ella o descártala para dejarla en el tablero tal como está.",
+    "body": "Un agente añadió esta tarea a tu tablero. Ponla para hoy o empieza una sesión con ella; Hecho la deja en el tablero tal como está.",
     "due": "Vence el {{date}}",
-    "open": "Abrir tarea",
     "start": "Empezar sesión",
     "today": "Poner para hoy",
-    "planning": "Poniéndola para hoy…",
-    "dismiss": "Descartar",
-    "dismissing": "Descartando…"
+    "planning": "Poniéndola para hoy…"
+  },
+  "question": {
+    "step": "Pregunta {{n}} de {{total}}",
+    "ready": "Listo para enviar",
+    "back": "Atrás",
+    "next": "Siguiente pregunta",
+    "edit": "Cambiar la respuesta a: {{question}}",
+    "label": "Pregunta {{n}}"
+  },
+  "dock": {
+    "label": "Moverse por la bandeja",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "done": "Hecho"
+  },
+  "alert": {
+    "doneTitle": "{{name}} terminó su turno",
+    "doneBody": "Abre la sesión para ver qué hizo.",
+    "staleTitle": "{{name}} lleva 30 minutos esperando",
+    "staleBody": "Todavía te necesita. Abre la sesión para retomarla."
   }
 }

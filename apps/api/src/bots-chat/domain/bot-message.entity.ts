@@ -5,6 +5,7 @@ import {
   ArgumentNotProvidedException,
   type CreateEntityProps,
 } from '@oppenheimer/backend-ddd';
+import type { Visual } from '@oppenheimer/shared';
 import {
   BOT_MESSAGE_IMAGES_MAX,
   BOT_MESSAGE_ROLES,
@@ -13,6 +14,7 @@ import {
   type BotMessageEvent,
   type BotMessageRole,
   type BotSubagentRun,
+  isReactionEmoji,
 } from '@oppenheimer/shared';
 import type { BotRateLimit } from './bot-rate-limit.policy';
 
@@ -37,6 +39,8 @@ export interface BotToolStep {
   allowedBy: string | null;
   /** The draft a mail call saved, for the chat's card; null for any other call. */
   mailDraft: BotMailDraft | null;
+  /** The visual a `show_visual` call drew, checked, for the chat's card; null for any other call. */
+  visual: Visual | null;
   /**
    * The system that was limiting our requests when the call ended, and until
    * when (`bot-rate-limit.policy.ts`); null when no limit stopped it. A
@@ -50,10 +54,11 @@ export const BOT_TOOL_OUTPUT_MAX = 2_000;
 
 /**
  * Media a message of yours carries that is read only when its turn starts:
- * the words the turn is asked replace the message's placeholder then
- * (`BotOpeningMediaResolver`). One reader per kind.
+ * the words the turn is asked replace the message's placeholder then, with
+ * the images it turned out to be (`BotOpeningMediaResolver`). One reader per
+ * kind: a WhatsApp voice note is heard, a WhatsApp image fetched to be seen.
  */
-export const BOT_PENDING_MEDIA_KINDS = ['whatsapp_voice_note'] as const;
+export const BOT_PENDING_MEDIA_KINDS = ['whatsapp_voice_note', 'whatsapp_image'] as const;
 export type BotPendingMediaKind = (typeof BOT_PENDING_MEDIA_KINDS)[number];
 
 export interface BotPendingMedia {
@@ -89,6 +94,10 @@ export interface BotMessageProps {
   attachments?: readonly BotAttachment[];
   /** Media still to read before the turn this message opens is asked it; null once read. */
   pendingMedia?: BotPendingMedia | null;
+  /** Your reaction to it, one emoji; null for none. Only a message of yours or the bot's has one. */
+  reaction?: string | null;
+  /** The bot's reaction to a message of yours, one emoji (its `react` tool); null for none. */
+  botReaction?: string | null;
 }
 
 /** One thing the chat draws. */
@@ -118,11 +127,13 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
 
   /**
    * What its pending media says, once its turn read it: the message's words
-   * from then on, in the chat and in every later turn's history, with
+   * from then on, in the chat and in every later turn's history, and the
+   * images it carries (a WhatsApp image, stored as the chat's own), with
    * nothing left pending.
    */
-  read(words: string): void {
+  read(words: string, images: readonly BotAttachment[] = []): void {
     this.props.content = words;
+    this.props.attachments = [...this.attachments, ...images];
     this.props.pendingMedia = null;
     this.validate();
   }
@@ -146,6 +157,42 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
   }
   get pendingMedia(): BotPendingMedia | null {
     return this.props.pendingMedia ?? null;
+  }
+  get reaction(): string | null {
+    return this.props.reaction ?? null;
+  }
+
+  get botReaction(): string | null {
+    return this.props.botReaction ?? null;
+  }
+
+  /** The bot's reaction to this message of yours, replacing its one before; null takes it back. */
+  reactAsBot(emoji: string | null): void {
+    const before = this.props.botReaction ?? null;
+    this.props.botReaction = emoji;
+    try {
+      this.validate();
+    } catch (error) {
+      this.props.botReaction = before;
+      throw error;
+    }
+  }
+
+  /** Whether the chat lets you react to it: a message of yours or the bot's words. */
+  get reactable(): boolean {
+    return this.props.role === 'user' || this.props.role === 'assistant';
+  }
+
+  /** Your reaction, replacing the one before (one at a time); null takes it back. */
+  react(emoji: string | null): void {
+    const before = this.props.reaction ?? null;
+    this.props.reaction = emoji;
+    try {
+      this.validate();
+    } catch (error) {
+      this.props.reaction = before;
+      throw error;
+    }
   }
 
   public validate(): void {
@@ -172,6 +219,20 @@ export class BotMessageEntity extends AggregateRoot<BotMessageProps> {
     const pending = props.pendingMedia ?? null;
     if (pending && (props.role !== 'user' || !BOT_PENDING_MEDIA_KINDS.includes(pending.kind))) {
       throw new ArgumentInvalidException('Only a message of yours carries media still to read');
+    }
+    const reaction = props.reaction ?? null;
+    if (reaction !== null && !this.reactable) {
+      throw new ArgumentInvalidException('Only a message of yours or the bot’s takes a reaction');
+    }
+    if (reaction !== null && !isReactionEmoji(reaction)) {
+      throw new ArgumentInvalidException('A reaction is one emoji');
+    }
+    const botReaction = props.botReaction ?? null;
+    if (botReaction !== null && props.role !== 'user') {
+      throw new ArgumentInvalidException('The bot reacts only to a message of yours');
+    }
+    if (botReaction !== null && !isReactionEmoji(botReaction)) {
+      throw new ArgumentInvalidException('A reaction is one emoji');
     }
     if (props.role !== 'activity' && !props.content && attachments.length === 0) {
       throw new ArgumentInvalidException('A message says something');

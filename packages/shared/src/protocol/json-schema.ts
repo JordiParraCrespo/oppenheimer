@@ -12,6 +12,9 @@ import {
   RUNNER_LINK_REFUSALS,
 } from './link.js';
 import {
+  COMPUTER_SCREEN_MAX_EDGE,
+  COMPUTER_SCREENSHOT_MAX_BYTES,
+  HELLO_CAPABILITIES_MAX,
   HOST_EXEC_OUTPUT_MAX_BYTES,
   PROTOCOL_MAX_EVENT_PAYLOAD_BYTES,
   protocolMessageSchema,
@@ -65,12 +68,15 @@ export function toProtocolJsonSchema(): Record<string, unknown> {
       creditWindowBytes: ATTACHMENT_CREDIT_WINDOW_BYTES,
       maxFrameBytes: LINK_MAX_FRAME_BYTES,
       capabilities: RUNNER_CAPABILITIES,
+      helloCapabilitiesMax: HELLO_CAPABILITIES_MAX,
       maxEventPayloadBytes: PROTOCOL_MAX_EVENT_PAYLOAD_BYTES,
       chatEntryMaxBytes: CHAT_ENTRY_MAX_BYTES,
       chatBatchMaxEntries: CHAT_BATCH_MAX_ENTRIES,
       chatCommandsMax: CHAT_COMMANDS_MAX,
       execOutputMaxBytes: HOST_EXEC_OUTPUT_MAX_BYTES,
       terminalScreenMaxBytes: TERMINAL_SCREEN_MAX_BYTES,
+      computerScreenMaxEdge: COMPUTER_SCREEN_MAX_EDGE,
+      computerScreenshotMaxBytes: COMPUTER_SCREENSHOT_MAX_BYTES,
     },
   };
 }

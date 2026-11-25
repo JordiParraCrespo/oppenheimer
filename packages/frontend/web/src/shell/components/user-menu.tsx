@@ -67,7 +67,7 @@ export function UserMenu({ trigger = 'sidebar' }: { trigger?: 'sidebar' | 'avata
             <IconButton
               variant="ghost"
               aria-label={`${t('nav.profile')}: ${name}`}
-              className="size-8.5 cursor-pointer"
+              className="cursor-pointer"
             />
           }
         >

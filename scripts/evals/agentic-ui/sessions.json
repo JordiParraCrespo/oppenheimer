@@ -1,0 +1,50 @@
+{
+  "cases": [
+    {
+      "id": "bundle-compare",
+      "task": "I changed the build config on this branch. Compare the bundle sizes in bench/main.json and bench/branch.json and tell me how it looks.",
+      "files": {
+        "bench/main.json": "{\"routes\": {\"/\": 182.4, \"/sessions\": 141.9, \"/settings\": 128.3, \"/bots\": 156.0, \"/hosts\": 97.2}, \"unit\": \"KB gzip\"}\n",
+        "bench/branch.json": "{\"routes\": {\"/\": 161.1, \"/sessions\": 139.5, \"/settings\": 112.0, \"/bots\": 158.7, \"/hosts\": 88.4}, \"unit\": \"KB gzip\"}\n"
+      },
+      "expect": "visual",
+      "why": "ten numbers to compare, the case the tool is for"
+    },
+    {
+      "id": "coverage-trend",
+      "task": "How has our test coverage moved over the last weeks? The numbers are in coverage-history.csv.",
+      "files": {
+        "coverage-history.csv": "week,lines,branches\n2026-W38,71.2,60.1\n2026-W39,71.9,60.4\n2026-W40,72.4,61.0\n2026-W41,70.8,59.2\n2026-W42,73.1,62.3\n2026-W43,74.0,63.1\n2026-W44,74.6,63.9\n2026-W45,75.9,65.0\n"
+      },
+      "expect": "visual",
+      "why": "a trend over eight weeks"
+    },
+    {
+      "id": "read-code",
+      "task": "What does src/range.js export, and what does each function do?",
+      "files": {
+        "src/range.js": "// Integer ranges.\nexport function range(start, end) {\n  const out = [];\n  for (let i = start; i < end; i++) out.push(i);\n  return out;\n}\n\nexport function clamp(value, min, max) {\n  return Math.min(Math.max(value, min), max);\n}\n"
+      },
+      "expect": "no_visual",
+      "why": "a question about code: words"
+    },
+    {
+      "id": "table-asked",
+      "task": "List the failing tests in report.json as a table: name, file and how long each took.",
+      "files": {
+        "report.json": "{\"failed\": [{\"name\": \"renders the chat\", \"file\": \"chat.spec.tsx\", \"ms\": 812}, {\"name\": \"keeps the draft\", \"file\": \"composer.spec.tsx\", \"ms\": 230}, {\"name\": \"retries the upload\", \"file\": \"upload.spec.ts\", \"ms\": 4100}], \"passed\": 412}\n"
+      },
+      "expect": "no_visual",
+      "why": "the tool says a plain Markdown table when the person asks for a table"
+    },
+    {
+      "id": "fix-bug",
+      "task": "clamp in src/range.js returns the wrong value when min is larger than max; make it swap them. Keep the change small.",
+      "files": {
+        "src/range.js": "// Integer ranges.\nexport function range(start, end) {\n  const out = [];\n  for (let i = start; i < end; i++) out.push(i);\n  return out;\n}\n\nexport function clamp(value, min, max) {\n  return Math.min(Math.max(value, min), max);\n}\n"
+      },
+      "expect": "no_visual",
+      "why": "a code change: no visual to show"
+    }
+  ]
+}

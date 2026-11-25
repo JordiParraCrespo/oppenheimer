@@ -37,4 +37,25 @@ var (
 	// A bot driving a terminal session (`terminal.drive`): a shell runs
 	// anything, so only a host whose exec policy is full takes it.
 	ErrTerminalNeedsFull = problem.New("EXEC_006", http.StatusForbidden, "This host does not let bots drive a terminal")
+	// An allowlist entry a bot asked for (`host.settings.set`) that is not a
+	// program name or an absolute path.
+	ErrExecEntry = problem.New("EXEC_008", http.StatusBadRequest, "Not a program name or an absolute path")
+	// An allowlist a bot asked to grow past what the policy file holds.
+	ErrExecAllowFull = problem.New("EXEC_009", http.StatusRequestEntityTooLarge, "The host's allowlist is full")
+	// A bot using the host's screen, mouse and keyboard (`computer.act`,
+	// 25 §4.2). The codes are the protocol's, named in packages/shared's
+	// computerActSchema.
+	ErrComputerOff        = problem.New("COMPUTER_001", http.StatusForbidden, "Using this host's screen is off")
+	ErrComputerNoScreen   = problem.New("COMPUTER_002", http.StatusFailedDependency, "This host has no screen the runner can use")
+	ErrComputerAction     = problem.New("COMPUTER_003", http.StatusBadRequest, "The action does not fit the screen")
+	ErrComputerUnusable   = problem.New("COMPUTER_004", http.StatusFailedDependency, "The screen could not be read or used")
+	ErrComputerPolicyFile = problem.New("COMPUTER_005", http.StatusInternalServerError, "The host's computer setting cannot be read")
+	// A bot driving a browser of its own on the host (`browser.act`, 25
+	// §4.2). The codes are the protocol's, named in packages/shared's
+	// browserActSchema.
+	ErrBrowserOff        = problem.New("BROWSER_001", http.StatusForbidden, "Browsers for bots are off on this host")
+	ErrBrowserMissing    = problem.New("BROWSER_002", http.StatusFailedDependency, "This host has no browser the runner can start")
+	ErrBrowserAction     = problem.New("BROWSER_003", http.StatusBadRequest, "The action does not fit the page")
+	ErrBrowserFailed     = problem.New("BROWSER_004", http.StatusFailedDependency, "The browser or the page failed")
+	ErrBrowserPolicyFile = problem.New("BROWSER_005", http.StatusInternalServerError, "The host's browser setting cannot be read")
 )

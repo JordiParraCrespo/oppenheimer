@@ -67,19 +67,50 @@ export class BotMessageRepository
     return stored.length === 1;
   }
 
-  async saveContent(message: BotMessageEntity): Promise<void> {
-    // The mapper's columns, so they are what an insert writes: cleaned for Postgres.
-    const { content, pendingMedia } = this.mapper.toPersistence(message);
+  async findOne(
+    scope: AccessScope,
+    botId: string,
+    messageId: string,
+  ): Promise<BotMessageEntity | null> {
+    const record = await this.scopedQuery(scope)
+      .andWhere('message.id = :messageId AND message.botId = :botId', { messageId, botId })
+      .getOne();
+    return record ? this.mapper.toDomain(record) : null;
+  }
+
+  async saveReaction(message: BotMessageEntity): Promise<void> {
     await this.repository
       .createQueryBuilder()
       .update(BotMessageOrmEntity)
-      .set({ content, pendingMedia: () => ':pendingMedia::jsonb' })
-      .setParameter('pendingMedia', pendingMedia ? JSON.stringify(pendingMedia) : null)
+      .set({ reaction: message.reaction, botReaction: message.botReaction })
       .where('id = :id AND "organizationId" = :organizationId', {
         id: message.id,
         organizationId: message.organizationId,
       })
       .execute();
+  }
+
+  async saveReading(message: BotMessageEntity): Promise<void> {
+    // The mapper's columns, so they are what an insert writes: cleaned for Postgres.
+    const { content, pendingMedia, attachments } = this.mapper.toPersistence(message);
+    await this.dataSource.transaction(async (manager) => {
+      await manager
+        .createQueryBuilder()
+        .update(BotMessageOrmEntity)
+        .set({
+          content,
+          pendingMedia: () => ':pendingMedia::jsonb',
+          attachments: () => ':attachments::jsonb',
+        })
+        .setParameter('pendingMedia', pendingMedia ? JSON.stringify(pendingMedia) : null)
+        .setParameter('attachments', JSON.stringify(attachments))
+        .where('id = :id AND "organizationId" = :organizationId', {
+          id: message.id,
+          organizationId: message.organizationId,
+        })
+        .execute();
+      await claimShownWithin(manager, message);
+    });
   }
 
   async saveSteps(message: BotMessageEntity): Promise<void> {
@@ -154,10 +185,20 @@ export class BotMessageRepository
     scope: AccessScope,
     conversationId: string,
     limit: number,
+    beforeId: string | null = null,
   ): Promise<BotMessageEntity[]> {
-    // IDX_bot_message_conversation, read backwards.
-    const records = await this.scopedQuery(scope)
-      .andWhere('message.conversationId = :conversationId', { conversationId })
+    // IDX_bot_message_conversation, read backwards; the cursor is the stored
+    // row's own time, so a page boundary keeps the database's microseconds. A cursor not in this conversation reads nothing.
+    const query = this.scopedQuery(scope).andWhere('message.conversationId = :conversationId', {
+      conversationId,
+    });
+    if (beforeId) {
+      query.andWhere(
+        `(message.createdAt, message.position, message.id) < (SELECT c."createdAt", c."position", c.id FROM bot_message c WHERE c."organizationId" = message."organizationId" AND c."conversationId" = :conversationId AND c.id = :beforeId)`,
+        { beforeId },
+      );
+    }
+    const records = await query
       .orderBy('message.createdAt', 'DESC')
       .addOrderBy('message.position', 'DESC')
       .addOrderBy('message.id', 'DESC')

@@ -28,6 +28,8 @@ type fakeDevice struct {
 	loggedOut bool
 	// audio is what Download hands back for any ref.
 	audio []byte
+	// image is what DownloadImage hands back for any ref.
+	image []byte
 }
 
 func (d *fakeDevice) Open(context.Context, app.Events) (app.Paired, error) { return d.stored, nil }
@@ -61,40 +63,65 @@ func (d *fakeDevice) Send(_ context.Context, chatID, text string, quote *domain.
 	d.sent = append(d.sent, chatID+": "+text)
 	return fmt.Sprintf("ID%d", len(d.sent)), now, nil
 }
-func (d *fakeDevice) Download(_ context.Context, ref []byte) ([]byte, string, error) {
+func (d *fakeDevice) SendVoice(_ context.Context, chatID string, audio []byte, seconds int) (string, time.Time, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.sendErr != nil {
+		return "", time.Time{}, d.sendErr
+	}
+	d.sent = append(d.sent, fmt.Sprintf("%s: voice %ds %dB", chatID, seconds, len(audio)))
+	return fmt.Sprintf("ID%d", len(d.sent)), now, nil
+}
+func (d *fakeDevice) React(_ context.Context, chatID, messageID, senderID, emoji string) (string, time.Time, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.sendErr != nil {
+		return "", time.Time{}, d.sendErr
+	}
+	d.sent = append(d.sent, fmt.Sprintf("%s: react %q on %s by %s", chatID, emoji, messageID, senderID))
+	return fmt.Sprintf("ID%d", len(d.sent)), now, nil
+}
+func (d *fakeDevice) Download(_ context.Context, kind domain.KeptKind, ref []byte, max int) ([]byte, string, error) {
 	if string(ref) != "ref" {
 		return nil, "", errors.New("unknown ref")
 	}
-	return d.audio, "audio/ogg; codecs=opus", nil
+	data, mimetype := d.audio, "audio/ogg; codecs=opus"
+	if kind == domain.KeptImage {
+		data, mimetype = d.image, "image/jpeg"
+	}
+	if len(data) > max {
+		return nil, "", errors.New("too large")
+	}
+	return data, mimetype, nil
 }
 func (d *fakeDevice) Close() {}
 
-type memVoices struct {
+type memKept struct {
 	mu   sync.Mutex
-	kept map[string]domain.Voice
+	kept map[string]domain.Kept
 }
 
-func (v *memVoices) Keep(_ context.Context, chatID, id string, voice domain.Voice) error {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-	if v.kept == nil {
-		v.kept = map[string]domain.Voice{}
+func (m *memKept) Keep(_ context.Context, chatID, id string, media domain.Kept) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.kept == nil {
+		m.kept = map[string]domain.Kept{}
 	}
-	v.kept[domain.KeyOf(chatID, id)] = voice
+	m.kept[string(media.Kind)+":"+domain.KeyOf(chatID, id)] = media
 	return nil
 }
 
-func (v *memVoices) Find(_ context.Context, chatID, id string) (domain.Voice, bool, error) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-	voice, ok := v.kept[domain.KeyOf(chatID, id)]
-	return voice, ok, nil
+func (m *memKept) Find(_ context.Context, kind domain.KeptKind, chatID, id string) (domain.Kept, bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	media, ok := m.kept[string(kind)+":"+domain.KeyOf(chatID, id)]
+	return media, ok, nil
 }
 
-func (v *memVoices) ClearVoiceNotes(context.Context) error {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-	v.kept = nil
+func (m *memKept) ClearKept(context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.kept = nil
 	return nil
 }
 
@@ -149,7 +176,20 @@ type recorder struct {
 	mu      sync.Mutex
 	states  []domain.Status
 	batches [][]domain.Inbound
+	chats   [][]domain.KnownChat
 	refuse  bool
+}
+
+func (r *recorder) Chats(batch []domain.KnownChat) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.chats = append(r.chats, append([]domain.KnownChat(nil), batch...))
+}
+
+func (r *recorder) chatFrames() [][]domain.KnownChat {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return append([][]domain.KnownChat(nil), r.chats...)
 }
 
 func (r *recorder) State(s domain.Status) {
@@ -190,7 +230,7 @@ func started(t *testing.T, device *fakeDevice, budget *domain.Budget) (*app.Serv
 	t.Helper()
 	outbox, pub := &memOutbox{}, &recorder{}
 	svc := app.New(app.Options{
-		Device: device, Outbox: outbox, VoiceNotes: &memVoices{}, Budget: budget, Now: func() time.Time { return now },
+		Device: device, Outbox: outbox, Kept: &memKept{}, Budget: budget, Now: func() time.Time { return now },
 		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 	svc.SetPublisher(pub)
@@ -230,6 +270,43 @@ func TestStartConnectsAStoredDevice(t *testing.T) {
 	if got := pub.last(); got.State != domain.StateConnecting || got.Phone != "34600111222@s.whatsapp.net" {
 		t.Fatalf("link up heard %+v", got)
 	}
+}
+
+// The device's groups and contacts go to the link in frames of at most
+// ChatsBatchMax, and again to every new link, so Settings lists them before
+// anyone writes; unlinking forgets them. Breaks if a list is sent in one
+// frame the control plane refuses, or a link that came up later never hears it.
+func TestChatsGoToTheLinkInFramesAndAgainOnLinkUp(t *testing.T) {
+	device := &fakeDevice{}
+	svc, _, pub := started(t, device, nil)
+	chats := make([]domain.KnownChat, domain.ChatsBatchMax+2)
+	for i := range chats {
+		chats[i] = domain.KnownChat{ChatID: fmt.Sprintf("3460000%04d@s.whatsapp.net", i), Kind: domain.ChatDirect}
+	}
+	svc.Chats(chats)
+	frames := pub.chatFrames()
+	if len(frames) != 2 || len(frames[0]) != domain.ChatsBatchMax || len(frames[1]) != 2 {
+		t.Fatalf("frames of %v", frameSizes(frames))
+	}
+	svc.LinkUp(context.Background())
+	if got := frameSizes(pub.chatFrames()); len(got) != 4 {
+		t.Fatalf("a new link heard frames of %v", got)
+	}
+	if err := svc.Unlink(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	svc.LinkUp(context.Background())
+	if got := frameSizes(pub.chatFrames()); len(got) != 4 {
+		t.Fatalf("an unlinked number's chats went out again: %v", got)
+	}
+}
+
+func frameSizes(frames [][]domain.KnownChat) []int {
+	sizes := make([]int, 0, len(frames))
+	for _, f := range frames {
+		sizes = append(sizes, len(f))
+	}
+	return sizes
 }
 
 // Pairing hands every QR code to the link, then the paired number; a host
@@ -397,11 +474,11 @@ func TestVoiceNoteIsFetchedAfterTheAck(t *testing.T) {
 
 	note := message("V1")
 	note.Text, note.Media = "", domain.MediaAudio
-	note.Voice = &domain.Voice{Ref: []byte("ref"), Seconds: 12, Size: 10}
+	note.Kept = &domain.Kept{Kind: domain.KeptVoice, Ref: []byte("ref"), Seconds: 12, Size: 10}
 	svc.Received(note)
 	big := message("V2")
 	big.Text, big.Media = "", domain.MediaAudio
-	big.Voice = &domain.Voice{Ref: []byte("ref"), Seconds: 900, Size: domain.VoiceNoteMaxBytes + 1}
+	big.Kept = &domain.Kept{Kind: domain.KeptVoice, Ref: []byte("ref"), Seconds: 900, Size: domain.VoiceNoteMaxBytes + 1}
 	svc.Received(big)
 
 	pub.mu.Lock()
@@ -415,21 +492,141 @@ func TestVoiceNoteIsFetchedAfterTheAck(t *testing.T) {
 		t.Fatalf("outbox after the ack: %+v", outbox.rows)
 	}
 
-	data, mimetype, err := svc.VoiceNote(context.Background(), note.ChatID, "V1")
+	data, mimetype, err := svc.Media(context.Background(), domain.KeptVoice, note.ChatID, "V1")
 	if err != nil || string(data) != "OggS voice" || mimetype != "audio/ogg; codecs=opus" {
 		t.Fatalf("fetched %q %q %v", data, mimetype, err)
 	}
-	if _, _, err := svc.VoiceNote(context.Background(), note.ChatID, "V2"); codeOf(err) != "WA_006" {
+	if _, _, err := svc.Media(context.Background(), domain.KeptVoice, note.ChatID, "V2"); codeOf(err) != "WA_006" {
 		t.Fatalf("a voice note past a frame answered %v", err)
 	}
-	if _, _, err := svc.VoiceNote(context.Background(), note.ChatID, "nope"); codeOf(err) != "WA_005" {
+	if _, _, err := svc.Media(context.Background(), domain.KeptVoice, note.ChatID, "nope"); codeOf(err) != "WA_005" {
 		t.Fatalf("an unknown voice note answered %v", err)
 	}
 	if err := svc.Unlink(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
-	if _, _, err := svc.VoiceNote(context.Background(), note.ChatID, "V1"); codeOf(err) != "WA_005" {
+	if _, _, err := svc.Media(context.Background(), domain.KeptVoice, note.ChatID, "V1"); codeOf(err) != "WA_005" {
 		t.Fatalf("after unlinking, a kept voice note answered %v", err)
+	}
+}
+
+// An image that arrives is kept, so the control plane can fetch it after
+// the ack for a bot to see; one the host does not know is WA_005, one past
+// what is downloaded at all WA_006 before anything is fetched, and
+// unlinking forgets them all.
+func TestImageIsFetchedAfterTheAck(t *testing.T) {
+	device := &fakeDevice{image: []byte("small jpeg")}
+	svc, _, pub := started(t, device, nil)
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	svc.LinkUp(context.Background())
+
+	photo := message("I1")
+	photo.Text, photo.Media = "look", domain.MediaImage
+	photo.Kept = &domain.Kept{Kind: domain.KeptImage, Ref: []byte("ref"), Size: 10}
+	svc.Received(photo)
+	huge := message("I2")
+	huge.Text, huge.Media = "", domain.MediaImage
+	huge.Kept = &domain.Kept{Kind: domain.KeptImage, Ref: []byte("ref"), Size: domain.ImageDownloadMaxBytes + 1}
+	svc.Received(huge)
+	pub.mu.Lock()
+	sent := pub.batches[len(pub.batches)-1]
+	pub.mu.Unlock()
+	if got := sent[len(sent)-1]; got.ID != "I2" || got.Media != domain.MediaImage {
+		t.Fatalf("the image went out as %+v", got)
+	}
+	svc.Ack(context.Background(), []string{domain.KeyOf(photo.ChatID, "I1")})
+
+	data, mimetype, err := svc.Media(context.Background(), domain.KeptImage, photo.ChatID, "I1")
+	if err != nil || string(data) != "small jpeg" || mimetype != "image/jpeg" {
+		t.Fatalf("fetched %q %q %v", data, mimetype, err)
+	}
+	if _, _, err := svc.Media(context.Background(), domain.KeptImage, photo.ChatID, "I2"); codeOf(err) != "WA_006" {
+		t.Fatalf("an image past the download cap answered %v", err)
+	}
+	if _, _, err := svc.Media(context.Background(), domain.KeptImage, photo.ChatID, "V1"); codeOf(err) != "WA_005" {
+		t.Fatalf("an unknown image answered %v", err)
+	}
+	if err := svc.Unlink(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	if _, _, err := svc.Media(context.Background(), domain.KeptImage, photo.ChatID, "I1"); codeOf(err) != "WA_005" {
+		t.Fatalf("after unlinking, a kept image answered %v", err)
+	}
+}
+
+// oggOpus is the smallest audio CheckVoiceOut takes: one Ogg page, no
+// segments, carrying the Opus identification header.
+func oggOpus(size int) []byte {
+	head := append([]byte("OggS"), make([]byte, 23)...)
+	head = append(head, []byte("OpusHead")...)
+	if size > len(head) {
+		head = append(head, make([]byte, size-len(head))...)
+	}
+	return head
+}
+
+// A voice note reaches the device only from a connected number, only as
+// Ogg/Opus within a frame (WA_008, WA_006, before any budget is spent), and
+// spends the same host budget a text does, so speaking cannot get round the
+// number's send limits; WhatsApp's 429 on it pauses every send (WA_003, then
+// WA_004). A voice path that skipped the budget would let a bot burn the
+// number by answering aloud.
+func TestSendVoiceRefusalsAndBudget(t *testing.T) {
+	chat := "34600333444@s.whatsapp.net"
+	device := &fakeDevice{}
+	svc, _, _ := started(t, device, domain.NewBudget(1, 10))
+	if _, _, err := svc.SendVoice(context.Background(), chat, oggOpus(64), 3); codeOf(err) != "WA_002" {
+		t.Fatalf("voice without a device: %v", err)
+	}
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	if _, _, err := svc.SendVoice(context.Background(), chat, []byte("RIFF....WAVEfmt "), 3); codeOf(err) != "WA_008" {
+		t.Fatalf("a WAV sent as a voice note: %v", err)
+	}
+	if _, _, err := svc.SendVoice(context.Background(), chat, oggOpus(domain.VoiceNoteMaxBytes+1), 3); codeOf(err) != "WA_006" {
+		t.Fatalf("a voice note past a frame: %v", err)
+	}
+	if _, _, err := svc.SendVoice(context.Background(), chat, oggOpus(64), 0); codeOf(err) != "WA_008" {
+		t.Fatalf("a voice note of no length: %v", err)
+	}
+	id, _, err := svc.SendVoice(context.Background(), chat, oggOpus(64), 3)
+	if err != nil || id != "ID1" || len(device.sent) != 1 || device.sent[0] != chat+": voice 3s 64B" {
+		t.Fatalf("voice: %q %v %v", id, err, device.sent)
+	}
+	if _, _, err := svc.Send(context.Background(), chat, "and a text", nil); codeOf(err) != "WA_004" {
+		t.Fatalf("a text after the voice note spent the budget: %v", err)
+	}
+
+	limited := &fakeDevice{sendErr: fmt.Errorf("%w: 429", domain.ErrRateLimited)}
+	svc, _, _ = started(t, limited, domain.NewBudget(5, 10))
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	if _, _, err := svc.SendVoice(context.Background(), chat, oggOpus(64), 3); codeOf(err) != "WA_003" {
+		t.Fatalf("rate-limited voice: %v", err)
+	}
+	limited.sendErr = nil
+	if _, _, err := svc.Send(context.Background(), chat, "hi", nil); codeOf(err) != "WA_004" {
+		t.Fatalf("send during WhatsApp's pause after a voice note: %v", err)
+	}
+}
+
+// A reaction reaches the device only from a connected number, naming the
+// message and who wrote it, and spends the host budget a text does:
+// WhatsApp counts it as a message the number sent, so a bot reacting to
+// every line of a busy group must not get round the number's limits.
+func TestReactSpendsTheSendBudget(t *testing.T) {
+	chat := "34600333444@s.whatsapp.net"
+	device := &fakeDevice{}
+	svc, _, _ := started(t, device, domain.NewBudget(1, 10))
+	if _, _, err := svc.React(context.Background(), chat, "3EB0", chat, "👍"); codeOf(err) != "WA_002" {
+		t.Fatalf("a reaction without a device: %v", err)
+	}
+	svc.Connected("34600111222@s.whatsapp.net", "Jordi")
+	id, _, err := svc.React(context.Background(), chat, "3EB0", chat, "👍")
+	if err != nil || id != "ID1" || len(device.sent) != 1 || device.sent[0] != chat+`: react "👍" on 3EB0 by `+chat {
+		t.Fatalf("react: %q %v %v", id, err, device.sent)
+	}
+	if _, _, err := svc.React(context.Background(), chat, "3EB0", chat, ""); codeOf(err) != "WA_004" {
+		t.Fatalf("a second reaction past the budget: %v", err)
 	}
 }

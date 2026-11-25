@@ -73,6 +73,7 @@ import { NumberStepperDemo, PillGroupDemo, SwitchDemo } from '../components/cont
 import { PullRequestAnalyticsDemo } from '../components/pr-analytics-demos';
 import { PullRequestDescriptionDemo, PullRequestQueueDemo } from '../components/pull-request-demos';
 import { DragPrimitivesDemo } from '../components/drag-demos';
+import { LauncherDemo } from '../components/launcher-demos';
 import { PlanDialogsDemo, SessionPaneHeaderDemo } from '../components/plan-dialog-demos';
 import { TaskBoardDemo, TaskPriorityIcons, TaskSelectionDemo, TaskStatusDots } from '../components/task-board-demos';
 import {
@@ -841,7 +842,7 @@ export default function Page() {
         id="segmented"
         title="SegmentedControl"
         meta="segmented-control.tsx"
-        desc="Two or three ways to read the same thing, one always on: Command / Agent prompt in the Add host dialog. A pill on the hover surface with 2px of inset; the active segment lifts onto the card colour. Never a form value; that is RadioGroup. Three sizes: sm labels a panel, md (28px) switches what a pane shows (Description / Changes), lg (32px) is a page's top row (Mine / Review requests / Watching); an item's count rides after its label in mono."
+        desc="Two or three ways to read the same thing, one always on: Command / Agent prompt in the Add host dialog. A pill on the hover surface with 2px of inset; the active segment lifts onto the card colour. Never a form value; that is RadioGroup. Never tabs; a row that switches views is PillTabs. Sizes on the control ramp, the track's height: sm (28px) labels a panel, md (34px) sets how a pane reads (Unified / Split); an item's count rides after its label in mono."
         code={`<SegmentedControl value={tab} onValueChange={setTab}><SegmentedControlItem value="cmd">Command</SegmentedControlItem>…</SegmentedControl>`}
       >
         <SegmentedDemo />
@@ -884,7 +885,7 @@ export default function Page() {
         id="pillgroup"
         title="PillGroup"
         meta="pill-group.tsx"
-        desc="A form value picked from a short row of 30px pills on the hover wash: For how long on Share, the projects and repositories a bot may touch, what it always asks before. A picked pill takes the selected wash and ink. multiple makes it a set; check draws the round tick first; mono sets a repository's name; count rides after in mono. A pill that cannot be picked now is disabled and the description says why. Views of a page are PillTabs."
+        desc="A form value picked from a short row of 28px pills on the hover wash: For how long on Share, the projects and repositories a bot may touch, what it always asks before. A picked pill takes the selected wash and ink. multiple makes it a set; check draws the round tick first; mono sets a repository's name; count rides after in mono. A pill that cannot be picked now is disabled and the description says why. Views of a page are PillTabs."
         code={`<PillGroup value={ttl} onValueChange={setTtl} aria-label="For how long"><PillGroupItem value="1h">1 hour</PillGroupItem><PillGroupItem value="7d" disabled>7 days</PillGroupItem></PillGroup>`}
       >
         <PillGroupDemo />
@@ -1142,7 +1143,7 @@ export default function Page() {
         id="sidebar"
         title="Rail · Sidebar · SessionItem"
         meta="rail.tsx · sidebar.tsx · sidebar-fold-label.tsx · session-item.tsx"
-        desc="The console's chrome. The 56px rail switches between the sessions and routines lists, its tooltips carrying the counts. A list head's label can fold its list: SidebarFoldLabel, whose chevron shows on hover and stays turned right while folded (fold Projects). The sidebar groups sessions under projects: a header per project with a folding chevron, a mono count and hover-only actions (new session here, project settings); search and the facet chips above the groups, and an empty group says so with a link. A session row is a glyph coloured by state and a name; the age shows on hover and on the active row, and gives way to the ellipsis, whose menu is Rename, Move to project… (a pane inside the menu) and Delete, each with its single-key hint. Rename turns the row into an inline input. A session still provisioning is pending: the grey glyph pulses. A row waiting on something says so in a status word that stays in the age's place: a session deleted while its host was offline reads Deleting… with the pulsing glyph, one its host refused to delete reads Not deleted in red. The rail's items and the sessions reorder by dragging, on one DragProvider for the shell: SortableRailItem in the rail's SortableGroup, and SortableSessionItem in a SortableGroup per project, so a session moves up or down in its project or into another one, the empty Client sites included. The projects reorder too: each is a SortableSidebarProjectGroup in a SortableGroup that takes projects, picked up by its header (a click still folds it, its actions never pick it up). Move to project… writes the same order. A click or Enter opens the item; a drag past 5px or Space picks it up. A search hides the rows it does not match and leaves the order whole. Drag Plan to the top, a session into Client sites, or Atlas above XRP Mobile."
+        desc="The console's chrome. The 56px rail switches between the sessions and routines lists, its tooltips carrying the counts. A list head's label can fold its list: SidebarFoldLabel, whose chevron shows on hover and stays turned right while folded (fold Projects). The sidebar groups sessions under projects: a header per project with a folding chevron, a mono count and hover-only actions (new session here, project settings); search and the facet chips above the groups, and an empty group says so with a link. A session row is a glyph coloured by state and a name; the age shows on hover and on the active row, and gives way to the ellipsis, whose menu is Rename, Move to project… (a pane inside the menu) and Delete, each with its single-key hint. Rename turns the row into an inline input. A session still provisioning is pending: the grey glyph pulses. A row waiting on something says so in a status word that stays in the age's place: a session deleted while its host was offline reads Deleting… with the pulsing glyph, one its host refused to delete reads Not deleted in red. The rail's items and the sessions reorder by dragging, on one DragProvider for the shell: SortableRailItem in the rail's SortableGroup, and SortableSessionItem in a SortableGroup per project, so a session moves up or down in its project or into another one, the empty Client sites included. The projects reorder too: each is a SortableSidebarProjectGroup in a SortableGroup that takes projects, picked up by its header (a click still folds it, its actions never pick it up). A whole section of the sidebar (the console's Bots and Sessions) is a SortableSidebarSection in a SortableGroup that takes sidebar-section, picked up the same way by its SidebarListHead, with its SidebarFoldLabel as the control. Move to project… writes the same order. A click or Enter opens the item; a drag past 5px or Space picks it up. A search hides the rows it does not match and leaves the order whole. Drag Plan to the top, a session into Client sites, or Atlas above XRP Mobile."
         bare
       >
         <div className="flex flex-wrap gap-6">
@@ -1180,7 +1181,7 @@ export default function Page() {
         id="pilltabs"
         title="PillTabs"
         meta="pill-tabs.tsx"
-        desc="Switches views inside a page: Routines / Runs, the template categories, the run status. The selected tab takes a tonal fill, never a colour; counts ride inside the tab in mono. Two sizes: 32px for a page's top row, 28px inside a card."
+        desc="Switches views inside a page: Routines / Runs, the template categories, the run status. The selected tab takes a tonal fill, never a colour; counts ride inside the tab in mono. Two sizes on the control ramp: 34px for a page's top row, 28px inside a card."
         code={`<PillTabs value={view} onValueChange={setView}><PillTab value="runs" count={65}>Runs</PillTab></PillTabs>`}
       >
         <PillTabsDemo />
@@ -1273,6 +1274,20 @@ export default function Page() {
 />`}
       >
         <SessionPaneHeaderDemo />
+      </Spec>
+
+      <Spec
+        id="launcher"
+        title="Launcher"
+        meta="launcher.tsx"
+        desc="What an empty pane offers to open: a short column of 42px rows centred in it, each a glyph, a name and, quiet on the right, what is there before it opens. A row whose open is under way is busy: its name says so and shimmers, and it cannot be pressed twice. LauncherHeading names a group the pane offers only sometimes. The session's side pane opens on it."
+        code={`<Launcher>
+  <LauncherItem icon={<SquareTerminalIcon />} onClick={openTerminal}>Terminal</LauncherItem>
+  <LauncherHeading>Only when this console has them</LauncherHeading>
+  <LauncherItem icon={<MonitorIcon />} detail="mac-studio">Desktop</LauncherItem>
+</Launcher>`}
+      >
+        <LauncherDemo />
       </Spec>
 
       <GroupHead>Routines</GroupHead>
@@ -1462,7 +1477,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="facetselect"
         title="FacetSelect · SearchableFacetSelect · SearchableFacetMultiSelect · SearchList"
         meta="facet-select.tsx · search-list.tsx"
-        desc="One facet of a list's filter: the first option is the facet unset, and any other pick lights the trigger on the selected wash so a narrowed list never looks whole. FacetSelect is a fixed set as radio rows with the count each pick would leave (the queue's Difficulty, Checks, Waiting). SearchableFacetSelect is the same trigger over a list the workspace grows (Plan's Milestone): it opens a SearchList, the Bots picker's shape, a search field over menu rows with the count and the check. SearchableFacetMultiSelect is that list as checks (Plan's Project): it stays open while rows are toggled, the first row clears the set, and the trigger reads the first pick then +N. SearchList is that body alone, for a menu's submenu or pane, or a set of checks (the card below). pill (30px) is Plan's board; labelled (34px) is the pull-request queue."
+        desc="One facet of a list's filter: the first option is the facet unset, and any other pick lights the trigger on the selected wash so a narrowed list never looks whole. FacetSelect is a fixed set as radio rows with the count each pick would leave (the queue's Difficulty, Checks, Waiting). SearchableFacetSelect is the same trigger over a list the workspace grows (Plan's Milestone): it opens a SearchList, the Bots picker's shape, a search field over menu rows with the count and the check. SearchableFacetMultiSelect is that list as checks (Plan's Project): it stays open while rows are toggled, the first row clears the set, and the trigger reads the first pick then +N. SearchList is that body alone, for a menu's submenu or pane, or a set of checks (the card below). pill (28px) is Plan's board; labelled (34px, or 28px at size sm) is the pull-request queue."
         code={`<FacetSelect label="Difficulty" options={lanes} value={lane} onValueChange={setLane} />
 <SearchableFacetMultiSelect variant="pill" label="Project" icon={<FolderIcon />} options={projects} values={picked} onValuesChange={setPicked} searchPlaceholder="Search projects" emptyText={(q) => \`Nothing matches “\${q}”.\`} />
 <SearchList options={projects} value={shown} onPick={(option, selected) => toggle(option.value, selected)} searchPlaceholder="Search projects" emptyText={noMatch} />`}
@@ -1505,7 +1520,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="prqueue"
         title="PullRequestTable"
         meta="pull-request-table.tsx"
-        desc="The queue of pull requests waiting on the reader, on the card. A row is its lane as a Badge (strong for Deep, soft for Medium and Quick), the title with repo #number in mono and who opened it (a session's bot glyph or a person's), a note when something holds it, the size as a DiffStat, checks and conflicts as StatusDot gate states (passing, blocked, waiting) and a word, the wait in mono (full ink once it is late), and the actions. The title is the row's button, stretched over it, so the actions are never inside it. The table reads its own width in three steps: from 1080px Size, Checks and Conflicts are columns; from 720px they fold into a line under the title and the actions keep their column; narrower, the actions wrap under the title. MergeButton asks once in place (Cancel, Confirm merge) and says why it is off while checks, conflicts or a code owner hold it. The page opens on PageHeaderRow display with Review next, the scopes are a large SegmentedControl with counts, the filters are a search, a ChipSelect of repositories with a count per row and the Difficulty, Checks and Waiting FacetSelects; the order is fixed (Deep first, then the longest wait), and the foot is RunsListFoot."
+        desc="The queue of pull requests waiting on the reader, on the card. A row is its lane as a Badge (strong for Deep, soft for Medium and Quick), the title with repo #number in mono and who opened it (a session's bot glyph or a person's), a note when something holds it, the size as a DiffStat, checks and conflicts as StatusDot gate states (passing, blocked, waiting) and a word, the wait in mono (full ink once it is late), and the actions. The title is the row's button, stretched over it, so the actions are never inside it. The table reads its own width in three steps: from 1080px Size, Checks and Conflicts are columns; from 720px they fold into a line under the title and the actions keep their column; narrower, the actions wrap under the title. MergeButton asks once in place (Cancel, Confirm merge) and says why it is off while checks, conflicts or a code owner hold it. The page opens on PageHeaderRow display with Review next, the scopes are PillTabs with counts, the filters are a search, a ChipSelect of repositories with a count per row and the Difficulty, Checks and Waiting FacetSelects; the order is fixed (Deep first, then the longest wait), and the foot is RunsListFoot."
         code={`<PullRequestTable>
   <PullRequestTableHead />
   <PullRequestRow lane={<Badge variant="strong">Deep</Badge>} title="Move session tokens to the runner keychain" reference="oppenheimer #482" author="Session · auth-hardening" additions={612} deletions={248} checks="passing" checksLabel="Passing" conflicts="passing" conflictsLabel="No conflicts" waiting="1d 3h" onOpen={open}
@@ -1520,7 +1535,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="prdescription"
         title="Description · ReviewDecision"
         meta="pull-request-header.tsx · merge-path.tsx · review-decision.tsx · prose.tsx"
-        desc="One pull request, opened on its Description. The bar holds the two views (a medium SegmentedControl, Changes carrying its DiffStat), GitHub and Submit review, which opens ReviewDecision in a popover: the verdicts as a RadioGroup (Comment, Approve, Approve and merge, Request changes), the optional comment (the same field a diff's draft uses: ⌘↵ submits, Esc closes), what posts with it, Discard, and the primary named for the verdict. PullRequestHeader is the state (a StatusDot pill) and reference, the title at H2 and the branch head → base. MergePath is the status strip under it: the DiffStat and the file count, then Checks, Conflicts and Merge, each a dot in its state's colour with its word, and Review changes and a MergeButton on the right; it wraps on a narrow pane. Under it the author's markdown renders in Prose on a Card. The second frame is the same page held by a conflict."
+        desc="One pull request, opened on its Description. The bar holds the two views (small PillTabs, Changes carrying its DiffStat), GitHub and Submit review, which opens ReviewDecision in a popover: the verdicts as a RadioGroup (Comment, Approve, Approve and merge, Request changes), the optional comment (the same field a diff's draft uses: ⌘↵ submits, Esc closes), what posts with it, Discard, and the primary named for the verdict. PullRequestHeader is the state (a StatusDot pill) and reference, the title at H2 and the branch head → base. MergePath is the status strip under it: the DiffStat and the file count, then Checks, Conflicts and Merge, each a dot in its state's colour with its word, and Review changes and a MergeButton on the right; it wraps on a narrow pane. Under it the author's markdown renders in Prose on a Card. The second frame is the same page held by a conflict."
         code={`<PullRequestHeader state="active" stateLabel="Open" reference="oppenheimer #482" title="…" author="Session · auth-hardening" head="agent/auth-keychain" base="main" />
 <MergePath leading={<><DiffStat additions={612} deletions={248} /><span>4 files in 2 folders</span></>} steps={[{ id: 'checks', label: 'Checks', meta: 'All passing', state: 'done' }, …]} actions={…} />
 <Popover><PopoverTrigger render={<SubmitReviewButton count={2} />}>Submit review</PopoverTrigger><PopoverContent align="end"><ReviewDecision verdicts={…} verdict={v} onVerdictChange={setV} comment={c} onCommentChange={setC} submitLabel="Approve and merge" onSubmit={submit} /></PopoverContent></Popover>`}

@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"sort"
 	"strings"
@@ -20,9 +21,10 @@ import (
 )
 
 var (
-	_ app.Terminals = (*Terminals)(nil)
-	_ app.Worktrees = (*Worktrees)(nil)
-	_ app.Places    = (*Places)(nil)
+	_ app.Terminals       = (*Terminals)(nil)
+	_ app.TerminalClients = (*Terminals)(nil)
+	_ app.Worktrees       = (*Worktrees)(nil)
+	_ app.Places          = (*Places)(nil)
 )
 
 // Terminals is an in-memory tmux server.
@@ -52,6 +54,16 @@ type Terminals struct {
 	// FailLaunch makes the next launch fail, standing in for an agent whose
 	// window tmux could not respawn.
 	FailLaunch bool
+	// HostClients is the clients attached to each tmux session from the host
+	// itself, which Clients answers.
+	HostClients map[string]int
+}
+
+// Clients implements app.TerminalClients.
+func (t *Terminals) Clients(context.Context) (map[string]int, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return maps.Clone(t.HostClients), nil
 }
 
 // Files is app.Files in memory.
@@ -597,6 +609,56 @@ func (p *Places) DeleteFolder(path string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	delete(p.Folders, path)
+}
+
+var _ app.Wrappers = (*Wrappers)(nil)
+
+// Wrappers is a process table of `pty` wrappers in memory. It holds only
+// what the real adapter would list, the runner's own: a process the runner
+// did not start is never in it.
+type Wrappers struct {
+	mu      sync.Mutex
+	running []app.Wrapper
+	// Ended is every wrapper End was called for, in order.
+	Ended []app.Wrapper
+}
+
+// NewWrappers returns a table with nothing running.
+func NewWrappers() *Wrappers { return &Wrappers{} }
+
+// Start puts a wrapper in the table.
+func (w *Wrappers) Start(wrapper app.Wrapper) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.running = append(w.running, wrapper)
+}
+
+// Running implements app.Wrappers.
+func (w *Wrappers) Running(context.Context) ([]app.Wrapper, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return slices.Clone(w.running), nil
+}
+
+// End implements app.Wrappers: the wrapper leaves the table.
+func (w *Wrappers) End(_ context.Context, wrapper app.Wrapper) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.running = slices.DeleteFunc(w.running, func(r app.Wrapper) bool { return r.Pid == wrapper.Pid })
+	w.Ended = append(w.Ended, wrapper)
+	return nil
+}
+
+// EndedSessions names the sessions of the wrappers ended, sorted.
+func (w *Wrappers) EndedSessions() []string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	ids := make([]string, 0, len(w.Ended))
+	for _, e := range w.Ended {
+		ids = append(ids, e.SessionID)
+	}
+	sort.Strings(ids)
+	return ids
 }
 
 func splitTarget(target string) (string, int, error) {

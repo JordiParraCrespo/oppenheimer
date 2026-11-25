@@ -5,7 +5,7 @@
 // message (`GET /bots/:id/suggestion`): the bot's own model is sent the end
 // of the chat (`composeSuggestionRequest` in
 // `apps/api/src/bots-chat/domain/bot-suggestion.policy.ts`, its words in
-// `apps/api/src/bots-chat/domain/prompts/jobs/suggestion.md`), and its answer
+// `apps/api/src/bots-chat/domain/prompts/core/job-suggestion.md`), and its answer
 // is shown only when `suggestionText` keeps it. A change to those is what
 // this eval is for.
 //

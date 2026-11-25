@@ -1,8 +1,8 @@
 package cli
 
 // The host's WhatsApp linked device on the link:
-// `whatsapp.link`, `whatsapp.unlink`, `whatsapp.send`, `whatsapp.ack` and
-// `whatsapp.media.get` from the control plane, `whatsapp.state`,
+// `whatsapp.link`, `whatsapp.unlink`, `whatsapp.send`, `whatsapp.send.voice`,
+// `whatsapp.react`, `whatsapp.ack` and `whatsapp.media.get` from the control plane, `whatsapp.state`,
 // `whatsapp.messages` and `whatsapp.media` to it. The
 // device lives on the daemon's context, not a link's: a link that drops
 // leaves it connected, and what arrives meanwhile waits in its outbox.
@@ -25,8 +25,8 @@ const (
 	laneWhatsAppPair = "whatsapp:pair"
 	laneWhatsAppSend = "whatsapp:send"
 	laneWhatsAppAck  = "whatsapp:ack"
-	// Voice notes download on a lane of their own, so a slow one never holds
-	// a send back.
+	// Voice notes and images download on a lane of their own, so a slow one
+	// never holds a send back.
 	laneWhatsAppMedia = "whatsapp:media"
 )
 
@@ -90,6 +90,16 @@ func (h *linkHandler) whatsAppMessage(msg link.Message) {
 		if msg.Decode(&m) == nil {
 			h.lanes.run(laneWhatsAppSend, func() { h.whatsAppSend(m) })
 		}
+	case link.TypeWhatsappSendVoice:
+		var m link.WhatsappSendVoice
+		if msg.Decode(&m) == nil {
+			h.lanes.run(laneWhatsAppSend, func() { h.whatsAppSendVoice(m) })
+		}
+	case link.TypeWhatsappReact:
+		var m link.WhatsappReact
+		if msg.Decode(&m) == nil {
+			h.lanes.run(laneWhatsAppSend, func() { h.whatsAppReact(m) })
+		}
 	case link.TypeWhatsappAck:
 		var m link.WhatsappAck
 		if msg.Decode(&m) == nil && h.whatsapp != nil {
@@ -103,8 +113,8 @@ func (h *linkHandler) whatsAppMessage(msg link.Message) {
 	}
 }
 
-// whatsAppMediaTimeout bounds one voice note's download; the control plane
-// gives up on it a little later.
+// whatsAppMediaTimeout bounds one download of a voice note or an image; the
+// control plane gives up on it a little later.
 const whatsAppMediaTimeout = 40 * time.Second
 
 func (h *linkHandler) whatsAppMedia(m link.WhatsappMediaGet) {
@@ -114,13 +124,18 @@ func (h *linkHandler) whatsAppMedia(m link.WhatsappMediaGet) {
 	}
 	ctx, cancel := context.WithTimeout(h.life, whatsAppMediaTimeout)
 	defer cancel()
-	data, mimetype, err := h.whatsapp.VoiceNote(ctx, m.ChatID, m.MessageID)
+	// A control plane from before images sends no kind: a voice note.
+	kind := wadomain.KeptVoice
+	if m.Kind == string(wadomain.KeptImage) {
+		kind = wadomain.KeptImage
+	}
+	data, mimetype, err := h.whatsapp.Media(ctx, kind, m.ChatID, m.MessageID)
 	if err != nil {
 		h.fail(m.CommandID, err)
 		return
 	}
 	if mimetype == "" {
-		mimetype = "audio/ogg; codecs=opus"
+		mimetype = kind.DefaultMimetype()
 	}
 	_ = h.client.Send(link.WhatsappMedia{
 		Type: link.TypeWhatsappMedia, CommandID: m.CommandID,
@@ -152,6 +167,45 @@ func (h *linkHandler) whatsAppSend(m link.WhatsappSend) {
 	_ = h.client.Send(link.WhatsappSent{Type: link.TypeWhatsappSent, CommandID: m.CommandID, ID: id, SentAt: at})
 }
 
+// whatsAppVoiceSendTimeout bounds one voice note: an upload to WhatsApp's
+// media servers, then the send. The control plane gives up a little later.
+const whatsAppVoiceSendTimeout = 40 * time.Second
+
+func (h *linkHandler) whatsAppSendVoice(m link.WhatsappSendVoice) {
+	if h.whatsapp == nil {
+		h.fail(m.CommandID, wadomain.ErrNotConnected.WithDetail("this host offers no WhatsApp device"))
+		return
+	}
+	audio, err := base64.StdEncoding.DecodeString(m.Data)
+	if err != nil {
+		h.fail(m.CommandID, wadomain.ErrNotVoiceNote.WithDetail("the audio is not base64"))
+		return
+	}
+	ctx, cancel := context.WithTimeout(h.life, whatsAppVoiceSendTimeout)
+	defer cancel()
+	id, at, err := h.whatsapp.SendVoice(ctx, m.ChatID, audio, m.Seconds)
+	if err != nil {
+		h.fail(m.CommandID, err)
+		return
+	}
+	_ = h.client.Send(link.WhatsappSent{Type: link.TypeWhatsappSent, CommandID: m.CommandID, ID: id, SentAt: at})
+}
+
+func (h *linkHandler) whatsAppReact(m link.WhatsappReact) {
+	if h.whatsapp == nil {
+		h.fail(m.CommandID, wadomain.ErrNotConnected.WithDetail("this host offers no WhatsApp device"))
+		return
+	}
+	ctx, cancel := context.WithTimeout(h.life, whatsAppSendTimeout)
+	defer cancel()
+	id, at, err := h.whatsapp.React(ctx, m.ChatID, m.MessageID, m.SenderID, m.Emoji)
+	if err != nil {
+		h.fail(m.CommandID, err)
+		return
+	}
+	_ = h.client.Send(link.WhatsappSent{Type: link.TypeWhatsappSent, CommandID: m.CommandID, ID: id, SentAt: at})
+}
+
 // whatsAppPublisher is the link, as the WhatsApp service reports to it.
 type whatsAppPublisher struct{ h *linkHandler }
 
@@ -167,6 +221,17 @@ func (p whatsAppPublisher) State(status wadomain.Status) {
 		out.QrExpiresAt = &expires
 	}
 	// A state lost to a link that is down is replaced by the one LinkUp sends.
+	_ = p.h.client.Send(out)
+}
+
+func (p whatsAppPublisher) Chats(batch []wadomain.KnownChat) {
+	out := link.WhatsappChats{Type: link.TypeWhatsappChats, Chats: make([]link.WhatsappKnownChat, 0, len(batch))}
+	for _, c := range batch {
+		out.Chats = append(out.Chats, link.WhatsappKnownChat{
+			ChatID: c.ChatID, ChatKind: string(c.Kind), ChatName: wadomain.Fit(c.Name, 200),
+		})
+	}
+	// A list lost to a link that is down goes again with the next LinkUp.
 	_ = p.h.client.Send(out)
 }
 

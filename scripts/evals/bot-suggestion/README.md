@@ -6,7 +6,7 @@ Once a bot has answered, the composer offers a guess at the person's next
 message, greyed out, and Tab writes it in (`GET /bots/:id/suggestion`). The
 bot's own model is sent the end of the chat (`composeSuggestionRequest` in
 `apps/api/src/bots-chat/domain/bot-suggestion.policy.ts`); what it is told is
-`apps/api/src/bots-chat/domain/prompts/jobs/suggestion.md`; `suggestionText`
+`apps/api/src/bots-chat/domain/prompts/core/job-suggestion.md`; `suggestionText`
 decides what is shown. A change to any of those is what this eval is for.
 
 ## The cases

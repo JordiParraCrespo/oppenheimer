@@ -1,4 +1,4 @@
-import type { BotEngineTool, BotEngineToolResult } from '@oppenheimer/backend-agents';
+import type { BotEngineTool, BotEngineToolResult, BotTurnImage } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { AppError, upstreamRateLimitOf } from '@oppenheimer/backend-core';
 import { ExceptionBase } from '@oppenheimer/backend-ddd';
@@ -11,6 +11,7 @@ import type {
   BotTurnLane,
   BotTurnOrigin,
   Scope,
+  Visual,
 } from '@oppenheimer/shared';
 import { z } from 'zod/v4';
 import { MAIL_DRAFT_DATA_KEY } from '../bot-mail-tool.mapper';
@@ -44,6 +45,7 @@ import {
 } from '../domain/bot-tool-permission.policy';
 import { fitToolOutput } from '../domain/bot-tool-text.policy';
 import type { BotTurnBudget } from '../domain/bot-turn-budget.policy';
+import { VISUAL_DATA_KEY } from '../domain/bot-visual.policy';
 import type { BotApprovalRequesterPort } from './bot-approval-requester.port';
 import type { BotRuleReviewer } from './bot-rule-reviewer.factory';
 
@@ -91,6 +93,12 @@ export interface BotToolCallContext {
    */
   credentialScopes: readonly Scope[] | null;
   /**
+   * Whether the turn's model reads images, so a tool may answer with one (a
+   * screenshot). Absent where no model reads the answer: an approved call
+   * carried out after its turn.
+   */
+  seesImages?: boolean;
+  /**
    * Runs `delegate`'s children inside this turn (`BotSubagentRunnerFactory`).
    * Absent where no child may start: a child's own tools, and an approved
    * call carried out after its turn, so delegation is one level deep.
@@ -115,6 +123,15 @@ export interface BotSubagentRunner {
     signal: AbortSignal,
     callId?: string,
   ): Promise<BotSubagentRun[]>;
+}
+
+/**
+ * Whether the call's turn answers in a channel's chat (WhatsApp, Telegram)
+ * rather than the console's: there the chat draws none of the call's data
+ * (a session's button), only the words the bot writes.
+ */
+export function inChannel(context: BotToolCallContext): boolean {
+  return context.conversationId !== context.botId;
 }
 
 /** A turn's context: a call's, and where an asking tool's call goes under Approve for me. */
@@ -154,8 +171,16 @@ export interface BotToolAnswer {
   images?: readonly BotAttachment[];
   /** The draft a mail call saved in Gmail, for the chat to draw as a card. */
   mailDraft?: BotMailDraft;
+  /** The visual a `show_visual` call drew, checked, for the chat to draw as a card. */
+  visual?: Visual;
   /** The limit that stopped the call partway, when one did (`bot-rate-limit.policy.ts`). */
   rateLimit?: BotRateLimit;
+  /**
+   * Images the model reads with the words (a screenshot), and nothing else
+   * does: they are not stored and the chat does not show them. Only for a
+   * turn whose `seesImages` is true.
+   */
+  modelImages?: readonly BotTurnImage[];
 }
 
 /** What a call ended with: the words the model reads, and the session it started, if any. */
@@ -166,8 +191,11 @@ export interface BotToolResult {
   subagents?: readonly BotSubagentRun[];
   images?: readonly BotAttachment[];
   mailDraft?: BotMailDraft;
+  visual?: Visual;
   /** The limit the call met, before or partway through its work. */
   rateLimit?: BotRateLimit;
+  /** Images for the model alone (`BotToolAnswer.modelImages`). */
+  modelImages?: readonly BotTurnImage[];
 }
 
 /** One tool as an area declares it: a name, what it does, its input, and what it runs. */
@@ -367,7 +395,9 @@ export function defineBotTool<Input extends z.ZodType>(
         ...(answer.subagents ? { subagents: answer.subagents } : {}),
         ...(answer.images?.length ? { images: answer.images } : {}),
         ...(answer.mailDraft ? { mailDraft: answer.mailDraft } : {}),
+        ...(answer.visual ? { visual: answer.visual } : {}),
         ...(answer.rateLimit ? { rateLimit: answer.rateLimit } : {}),
+        ...(answer.modelImages?.length ? { modelImages: answer.modelImages } : {}),
       };
     } catch (error) {
       return failureOf(error);
@@ -613,15 +643,21 @@ export class BotToolRefusal extends Error {}
  * refused or failed, goes through here.
  */
 function toEngineResult(result: BotToolResult): Awaited<ReturnType<BotEngineTool['run']>> {
-  const { sessionId, subagents, images, mailDraft, rateLimit, ...rest } = result;
+  const { sessionId, subagents, images, mailDraft, visual, rateLimit, modelImages, ...rest } =
+    result;
   const data = {
     ...(sessionId ? { sessionId } : {}),
     ...(subagents ? { [SUBAGENT_DATA_KEY]: JSON.stringify(subagents) } : {}),
     ...(images?.length ? { [SHOWN_IMAGES_DATA_KEY]: JSON.stringify(images) } : {}),
     ...(mailDraft ? { [MAIL_DRAFT_DATA_KEY]: JSON.stringify(mailDraft) } : {}),
+    ...(visual ? { [VISUAL_DATA_KEY]: JSON.stringify(visual) } : {}),
     ...(rateLimit ? { [RATE_LIMIT_DATA_KEY]: rateLimitData(rateLimit) } : {}),
   };
-  return Object.keys(data).length > 0 ? { ...rest, data } : rest;
+  return {
+    ...rest,
+    ...(Object.keys(data).length > 0 ? { data } : {}),
+    ...(modelImages?.length ? { images: modelImages } : {}),
+  };
 }
 
 /** A failed call: its words, and the limit it met when a system was limiting our requests. */
@@ -643,7 +679,7 @@ export function describeToolFailure(error: unknown, now: Date = new Date()): str
     return `${error.code}: ${error.title}.${error.detail ? ` ${error.detail}` : ''}`;
   }
   if (error instanceof ExceptionBase) return `${error.code}: ${error.message}`;
-  return promptText('tools/toolbox.describe-tool-failure');
+  return promptText('core/tools-toolbox.describe-tool-failure');
 }
 
 /**

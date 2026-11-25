@@ -5,6 +5,7 @@ import { AuthzModule as AuthzKernelModule } from '@oppenheimer/backend-authz';
 import { HostsModule } from '../hosts/hosts.module';
 import { LinksModule } from '../links/links.module';
 import { WhatsappAnswerResolver } from './application/whatsapp-answer.resolver';
+import { WhatsappAnsweringBotResolver } from './application/whatsapp-answering-bot.resolver';
 import { WhatsappChatResolver } from './application/whatsapp-chat.resolver';
 import { WhatsappChatRoutesResolver } from './application/whatsapp-chat-routes.resolver';
 import { WhatsappReplyResolver } from './application/whatsapp-reply.resolver';
@@ -14,7 +15,9 @@ import { ConfirmWhatsappOwnerCommandHandler } from './commands/confirm-whatsapp-
 import { ConfirmWhatsappOwnerHttpController } from './commands/confirm-whatsapp-owner/confirm-whatsapp-owner.http.controller';
 import { LinkWhatsappCommandHandler } from './commands/link-whatsapp/link-whatsapp.command-handler';
 import { LinkWhatsappHttpController } from './commands/link-whatsapp/link-whatsapp.http.controller';
+import { ReactOnWhatsappCommandHandler } from './commands/react-on-whatsapp/react-on-whatsapp.command-handler';
 import { ReceiveWhatsappMessagesCommandHandler } from './commands/receive-whatsapp-messages/receive-whatsapp-messages.command-handler';
+import { RecordWhatsappChatsCommandHandler } from './commands/record-whatsapp-chats/record-whatsapp-chats.command-handler';
 import { RecordWhatsappStateCommandHandler } from './commands/record-whatsapp-state/record-whatsapp-state.command-handler';
 import { RemoveWhatsappAccountCommandHandler } from './commands/remove-whatsapp-account/remove-whatsapp-account.command-handler';
 import { RemoveWhatsappAccountHttpController } from './commands/remove-whatsapp-account/remove-whatsapp-account.http.controller';
@@ -25,6 +28,7 @@ import { RevokeWhatsappChatCommandHandler } from './commands/revoke-whatsapp-cha
 import { RevokeWhatsappChatHttpController } from './commands/revoke-whatsapp-chat/revoke-whatsapp-chat.http.controller';
 import { RouteWhatsappChatsCommandHandler } from './commands/route-whatsapp-chats/route-whatsapp-chats.command-handler';
 import { RouteWhatsappChatsHttpController } from './commands/route-whatsapp-chats/route-whatsapp-chats.http.controller';
+import { SeeWhatsappImageCommandHandler } from './commands/see-whatsapp-image/see-whatsapp-image.command-handler';
 import { SendWhatsappMessageCommandHandler } from './commands/send-whatsapp-message/send-whatsapp-message.command-handler';
 import { TranscribeWhatsappVoiceNoteCommandHandler } from './commands/transcribe-whatsapp-voice-note/transcribe-whatsapp-voice-note.command-handler';
 import { UpdateWhatsappAccountCommandHandler } from './commands/update-whatsapp-account/update-whatsapp-account.command-handler';
@@ -35,6 +39,8 @@ import { WhatsappAccountOrmEntity } from './database/whatsapp-account.orm-entity
 import { WhatsappAccountRepository } from './database/whatsapp-account.repository';
 import { WhatsappChatGrantOrmEntity } from './database/whatsapp-chat-grant.orm-entity';
 import { WhatsappChatGrantRepository } from './database/whatsapp-chat-grant.repository';
+import { WhatsappKnownChatOrmEntity } from './database/whatsapp-known-chat.orm-entity';
+import { WhatsappKnownChatRepository } from './database/whatsapp-known-chat.repository';
 import { WhatsappMessageOrmEntity } from './database/whatsapp-message.orm-entity';
 import { WhatsappMessageRepository } from './database/whatsapp-message.repository';
 import { OggOpusVoiceNoteDecoderAdapter } from './infrastructure/ogg-opus-voice-note-decoder.adapter';
@@ -51,11 +57,13 @@ import {
   VOICE_NOTE_DECODER,
   WHATSAPP_ACCOUNT_REPOSITORY,
   WHATSAPP_CHAT_GRANT_REPOSITORY,
+  WHATSAPP_KNOWN_CHAT_REPOSITORY,
   WHATSAPP_MESSAGE_REPOSITORY,
 } from './whatsapp.di-tokens';
 import { WhatsappResource } from './whatsapp.resource';
 import { WhatsappAccountMapper } from './whatsapp-account.mapper';
 import { WhatsappChatGrantMapper } from './whatsapp-chat-grant.mapper';
+import { WhatsappKnownChatMapper } from './whatsapp-known-chat.mapper';
 import { WhatsappMessageMapper } from './whatsapp-message.mapper';
 
 const httpControllers = [
@@ -75,9 +83,11 @@ const httpControllers = [
 
 /**
  * The relay dispatches the host's reports (`RecordWhatsappState`,
- * `ReceiveWhatsappMessages`); a bot's tools dispatch the send, the end of a
- * WhatsApp turn its reply (`ReplyOnWhatsapp`, from `bots-chat`), and a wake on
- * the owner's voice note its hearing (`TranscribeWhatsappVoiceNote`).
+ * `RecordWhatsappChats`, `ReceiveWhatsappMessages`); a bot's tools dispatch the send, the end of a
+ * WhatsApp turn its reply (`ReplyOnWhatsapp`, from `bots-chat`), a bot's
+ * reaction (`ReactOnWhatsapp`, also from `bots-chat`), and a wake on
+ * the owner's voice note its hearing (`TranscribeWhatsappVoiceNote`), and one
+ * on an image its fetching (`SeeWhatsappImage`).
  */
 const commandHandlers: Provider[] = [
   LinkWhatsappCommandHandler,
@@ -85,11 +95,14 @@ const commandHandlers: Provider[] = [
   RequestWhatsappOwnerCommandHandler,
   ConfirmWhatsappOwnerCommandHandler,
   ReplyOnWhatsappCommandHandler,
+  ReactOnWhatsappCommandHandler,
   RemoveWhatsappAccountCommandHandler,
   RecordWhatsappStateCommandHandler,
+  RecordWhatsappChatsCommandHandler,
   ReceiveWhatsappMessagesCommandHandler,
   SendWhatsappMessageCommandHandler,
   TranscribeWhatsappVoiceNoteCommandHandler,
+  SeeWhatsappImageCommandHandler,
   AllowWhatsappChatCommandHandler,
   UpdateWhatsappChatGrantCommandHandler,
   RouteWhatsappChatsCommandHandler,
@@ -127,6 +140,7 @@ const queryHandlers: Provider[] = [
       WhatsappAccountOrmEntity,
       WhatsappMessageOrmEntity,
       WhatsappChatGrantOrmEntity,
+      WhatsappKnownChatOrmEntity,
     ]),
     AuthzKernelModule.forFeature([WhatsappResource]),
   ],
@@ -137,14 +151,17 @@ const queryHandlers: Provider[] = [
     WhatsappAccountMapper,
     WhatsappMessageMapper,
     WhatsappChatGrantMapper,
+    WhatsappKnownChatMapper,
     WhatsappChatResolver,
     WhatsappChatRoutesResolver,
     WhatsappReplyResolver,
+    WhatsappAnsweringBotResolver,
     WhatsappAnswerResolver,
     { provide: WHATSAPP_ACCOUNT_REPOSITORY, useClass: WhatsappAccountRepository },
     { provide: WHATSAPP_MESSAGE_REPOSITORY, useClass: WhatsappMessageRepository },
     { provide: VOICE_NOTE_DECODER, useClass: OggOpusVoiceNoteDecoderAdapter },
     { provide: WHATSAPP_CHAT_GRANT_REPOSITORY, useClass: WhatsappChatGrantRepository },
+    { provide: WHATSAPP_KNOWN_CHAT_REPOSITORY, useClass: WhatsappKnownChatRepository },
   ],
 })
 export class WhatsappModule {}

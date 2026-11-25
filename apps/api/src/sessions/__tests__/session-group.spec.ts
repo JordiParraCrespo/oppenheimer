@@ -46,11 +46,10 @@ describe('the waiting-on-you sources that have a writer', () => {
     );
   });
 
-  it('an agent blocked for thirty seconds', () => {
-    // Two reports: the first records the transition, the second is what gives the
-    // duration something to measure from.
-    const fold = running(observed('blocked', secondsAgo(90)), observed('blocked', secondsAgo(31)));
-    expect(fold.observedSince).toEqual(secondsAgo(31));
+  it('an agent whose block a second report confirmed', () => {
+    // Two reports: the first records the transition, the second confirms it.
+    const fold = running(observed('blocked', secondsAgo(4)), observed('blocked', secondsAgo(1)));
+    expect(fold.observedSince).toEqual(secondsAgo(1));
     expect(sessionGroup(fold, NOW)).toBe('waiting-on-you');
   });
 
@@ -85,9 +84,11 @@ describe('the debounce', () => {
     expect(sessionGroup(fold, NOW)).toBe('idle');
   });
 
-  it('does not fire one second early', () => {
-    const fold = running(observed('blocked', secondsAgo(90)), observed('blocked', secondsAgo(29)));
-    expect(sessionGroup(fold, NOW)).toBe('idle');
+  it('fires the moment the second report lands, with no wait on top', () => {
+    // The second report is when the person is told; until 2026-11-23 a further
+    // 30 s kept a question out of the Inbox for about a minute.
+    const fold = running(observed('blocked', secondsAgo(3)), observed('blocked', NOW));
+    expect(sessionGroup(fold, NOW)).toBe('waiting-on-you');
   });
 
   it('accumulates across repeated reports of the same state', () => {

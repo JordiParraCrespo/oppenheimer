@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
+	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
@@ -95,35 +97,55 @@ func (rd reader) received(ctx context.Context, evt *events.Message) domain.Recei
 			r.Mentions = append(r.Mentions, id)
 		}
 	}
-	r.Voice = voiceOf(evt.Message, rd.logger)
+	r.Kept = keptOf(evt.Message, rd.logger)
 	return r
 }
 
-// voiceOf is what fetching a message's audio later takes, when it carries
-// some: the AudioMessage itself, serialized, which holds its media key and
-// path. A voice note and an audio file alike.
-func voiceOf(m *waE2E.Message, logger *slog.Logger) *domain.Voice {
-	audio := m.GetAudioMessage()
-	if audio == nil {
+// keptOf is what fetching a message's audio (a voice note or an audio file)
+// or image later takes, when it carries one: the AudioMessage or
+// ImageMessage itself, serialized, which holds its media key and path.
+func keptOf(m *waE2E.Message, logger *slog.Logger) *domain.Kept {
+	var media proto.Message
+	kept := domain.Kept{}
+	switch {
+	case m.GetAudioMessage() != nil:
+		audio := m.GetAudioMessage()
+		media, kept.Kind, kept.Seconds, kept.Size = audio, domain.KeptVoice, int(audio.GetSeconds()), audio.GetFileLength()
+	case m.GetImageMessage() != nil:
+		img := m.GetImageMessage()
+		media, kept.Kind, kept.Size = img, domain.KeptImage, img.GetFileLength()
+	default:
 		return nil
 	}
-	ref, err := proto.Marshal(audio)
+	ref, err := proto.Marshal(media)
 	if err != nil {
 		if logger != nil {
-			logger.Warn("whatsapp: a voice note could not be kept for fetching", slog.Any("error", err))
+			logger.Warn("whatsapp: media could not be kept for fetching", slog.String("kind", string(kept.Kind)), slog.Any("error", err))
 		}
 		return nil
 	}
-	return &domain.Voice{Ref: ref, Seconds: int(audio.GetSeconds()), Size: audio.GetFileLength()}
+	kept.Ref = ref
+	return &kept
 }
 
-// audioOf reads back the AudioMessage voiceOf kept.
-func audioOf(ref []byte) (*waE2E.AudioMessage, error) {
-	var audio waE2E.AudioMessage
-	if err := proto.Unmarshal(ref, &audio); err != nil {
-		return nil, fmt.Errorf("a kept voice note is unreadable: %w", err)
+// downloadableOf reads back the message keptOf kept for kind, and what
+// WhatsApp says of it: its MIME type and length.
+func downloadableOf(kind domain.KeptKind, ref []byte) (whatsmeow.DownloadableMessage, string, uint64, error) {
+	switch kind {
+	case domain.KeptVoice:
+		var audio waE2E.AudioMessage
+		if err := proto.Unmarshal(ref, &audio); err != nil {
+			return nil, "", 0, fmt.Errorf("a kept voice note is unreadable: %w", err)
+		}
+		return &audio, audio.GetMimetype(), audio.GetFileLength(), nil
+	case domain.KeptImage:
+		var img waE2E.ImageMessage
+		if err := proto.Unmarshal(ref, &img); err != nil {
+			return nil, "", 0, fmt.Errorf("a kept image is unreadable: %w", err)
+		}
+		return &img, img.GetMimetype(), img.GetFileLength(), nil
 	}
-	return &audio, nil
+	return nil, "", 0, fmt.Errorf("no kept media of kind %q", kind)
 }
 
 // idOf reads a JID WhatsApp wrote as text (a mention, a quoted message's
@@ -182,6 +204,31 @@ func outgoing(text string, quote *domain.Quote) *waE2E.Message {
 		info.Participant = proto.String(quote.SenderID)
 	}
 	return &waE2E.Message{ExtendedTextMessage: &waE2E.ExtendedTextMessage{Text: proto.String(text), ContextInfo: info}}
+}
+
+// outgoingVoice is the message a voice note uploaded to WhatsApp goes as:
+// an audio message marked push-to-talk, with the upload's keys and hashes, in
+// the one MIME type WhatsApp plays as a voice note, and its waveform, without
+// which the phones do not play it as one.
+func outgoingVoice(up whatsmeow.UploadResponse, seconds int, waveform []byte, at time.Time) *waE2E.Message {
+	// The service allows 1 to domain.VoiceSendMaxSeconds; anything else shows no length.
+	var length uint32
+	if seconds > 0 && seconds <= domain.VoiceSendMaxSeconds {
+		length = uint32(seconds)
+	}
+	return &waE2E.Message{AudioMessage: &waE2E.AudioMessage{
+		URL:               proto.String(up.URL),
+		DirectPath:        proto.String(up.DirectPath),
+		MediaKey:          up.MediaKey,
+		FileEncSHA256:     up.FileEncSHA256,
+		FileSHA256:        up.FileSHA256,
+		FileLength:        proto.Uint64(up.FileLength),
+		Mimetype:          proto.String(domain.VoiceNoteMimetype),
+		Seconds:           proto.Uint32(length),
+		PTT:               proto.Bool(true),
+		Waveform:          waveform,
+		MediaKeyTimestamp: proto.Int64(at.Unix()),
+	}}
 }
 
 func whereOf(chat types.JID) domain.Where {

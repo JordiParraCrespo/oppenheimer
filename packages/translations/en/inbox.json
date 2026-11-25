@@ -1,7 +1,9 @@
 {
   "title": "Inbox",
   "list": {
+    "emptyTitle": "Inbox zero",
     "empty": "Nothing needs you.",
+    "noneMatchingTitle": "No matches",
     "noneMatching": "Nothing matching these filters or words needs you.",
     "low": "Low",
     "snoozed": "Snoozed",
@@ -25,7 +27,8 @@
     "low": "Deprioritize",
     "restore": "Restore priority",
     "snooze": "Snooze",
-    "delete": "Delete"
+    "delete": "Delete",
+    "start": "Select"
   },
   "filter": {
     "label": "Filter the Inbox",
@@ -34,6 +37,8 @@
     "any": "Any",
     "showDone": "Show done",
     "showPulls": "Show pull requests",
+    "alerts": "Notify me in this browser",
+    "alertsBlocked": "Notifications are blocked in this browser",
     "clear": "Clear filters",
     "remove": "Clear filter",
     "typeChip": "Type: {{value}}",
@@ -131,7 +136,6 @@
     "open": "Open run"
   },
   "card": {
-    "later": "Later",
     "answerFailed": "Could not do that. Try again."
   },
   "pane": {
@@ -143,16 +147,19 @@
     "clearTitle": "You're all caught up",
     "clear": "New items land here when one needs a decision.",
     "clearRunning_one": "{{count}} session is still running. New items land here when one needs a decision.",
-    "clearRunning_other": "{{count}} sessions are still running. New items land here when one needs a decision."
+    "clearRunning_other": "{{count}} sessions are still running. New items land here when one needs a decision.",
+    "cleared_one": "You cleared {{count}} item on this visit.",
+    "cleared_other": "You cleared {{count}} items on this visit."
   },
   "notice": {
-    "title": "{{name}} has news for you",
-    "done": "Done"
+    "title": "{{name}} has news for you"
   },
   "botNotice": {
     "title": "{{bot}} has news for you",
     "openChat": "Open chat",
-    "done": "Done"
+    "reply": "Reply here",
+    "hideReply": "Hide chat",
+    "chat": "Chat with {{bot}}"
   },
   "report": {
     "sender": "An agent",
@@ -163,19 +170,35 @@
     "answerPlaceholder": "What should it do?",
     "send": "Send answer",
     "sending": "Sending…",
-    "done": "Done",
     "answerFailed": "Could not send the answer. Try again."
   },
   "task": {
     "sender": "An agent",
     "short": "New task: {{title}}",
-    "body": "An agent added this task to your board. Put it on today, start a session on it, or dismiss it to keep it on the board as it is.",
+    "body": "An agent added this task to your board. Put it on today or start a session on it; Done keeps it on the board as it is.",
     "due": "Due {{date}}",
-    "open": "Open task",
     "start": "Start session",
     "today": "Put on today",
-    "planning": "Putting on today…",
-    "dismiss": "Dismiss",
-    "dismissing": "Dismissing…"
+    "planning": "Putting on today…"
+  },
+  "question": {
+    "step": "Question {{n}} of {{total}}",
+    "ready": "Ready to send",
+    "back": "Back",
+    "next": "Next question",
+    "edit": "Change the answer to: {{question}}",
+    "label": "Question {{n}}"
+  },
+  "dock": {
+    "label": "Move through the Inbox",
+    "previous": "Previous",
+    "next": "Next",
+    "done": "Done"
+  },
+  "alert": {
+    "doneTitle": "{{name}} finished its turn",
+    "doneBody": "Open the session to see what it did.",
+    "staleTitle": "{{name}} has waited 30 minutes",
+    "staleBody": "It still needs you. Open the session to pick it up."
   }
 }

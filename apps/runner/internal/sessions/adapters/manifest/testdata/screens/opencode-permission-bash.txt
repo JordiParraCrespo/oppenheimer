@@ -1,0 +1,39 @@
+  ┃
+  ┃  go
+  ┃
+
+     $ touch /tmp/oc-probe
+
+     ▣  Build · m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ┃
+  ┃  △ Permission required
+  ┃    # Shell command
+  ┃
+  ┃  $ touch /tmp/oc-probe
+  ┃
+  ┃
+  ┃   Allow once   Allow always   Reject                                 ctrl+f fullscreen  ⇆ select  enter confirm
+  ┃
+

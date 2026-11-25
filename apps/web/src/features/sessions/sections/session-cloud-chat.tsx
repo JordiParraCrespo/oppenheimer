@@ -1,10 +1,10 @@
 import { StatusDot } from '@oppenheimer/design-system-web';
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { type SessionEntity, stateWordFor } from '@oppenheimer/frontend-consumer';
 import { ErrorAlert, PageFrame } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { useCloudSessionChat } from '../hooks/use-cloud-session-chat';
 import { useChatTurnIds } from '../hooks/use-session-chat';
-import { dotFor, stateWordFor } from '../lib/session-run-state';
+import { dotFor } from '../lib/session-run-state';
 import { SessionChat } from './session-chat';
 import { SessionCloudChatSetup } from './session-cloud-chat-setup';
 import { SessionCloudSummary } from './session-cloud-summary';

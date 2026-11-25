@@ -380,6 +380,55 @@ runner does with it and point back.
   `SESS_003`, `INVALID_PATTERN`. One lane per session, so drives of one
   terminal keep their order. Sent only to a runner whose `hello` names
   `terminal.drive`, and waited on for the drive's wait and 10 seconds more.
+- `computer.act` and `computer.screen` — a bot using a host's screen, mouse
+  and keyboard (2026-11-09, `25-bots.md` §4.2, "Using a computer"): `{
+  commandId, action, x?, y?, toX?, toY?, scrollX?, scrollY?, text?, keys?,
+  seconds? }`, where `action` is one of `screenshot`, `move`, `click`,
+  `double_click`, `right_click`, `middle_click`, `drag`, `scroll`, `type`,
+  `key`, `wait`. The runner does it, lets the screen settle, and answers `{
+  image, width, height, display? }`: a base64 JPEG of the screen, its long
+  edge at most 1,280 pixels and at most 256 KB, so it fits one frame.
+  Coordinates are pixels of that image; the runner maps them onto the
+  screen. Or `command.failed`: `COMPUTER_001` the host's `runner computer`
+  switch is off, `COMPUTER_002` no screen it can use, `COMPUTER_003` the
+  action does not fit, `COMPUTER_004` the screen could not be read or used,
+  `COMPUTER_005` its setting cannot be read. One lane for the host, so
+  actions keep their order, and a command id sent again (a retried approved
+  call) is answered with the screen it left, not done twice. Sent only to a
+  runner whose `hello` names `computer.use`, and waited on for the action's
+  own wait and 60 seconds more.
+- `browser.act` and `browser.page` — a bot driving a browser of its own on a
+  host (2026-11-11, `25-bots.md` §4.2, "Using a browser"): `{ commandId,
+  browser, action, url?, ref?, x?, y?, scrollY?, text?, keys?, seconds?,
+  picture? }`, where `browser` names whose it is (one per bot) and `action`
+  is one of `open`, `read`, `screenshot`, `click`, `type`, `key`, `scroll`,
+  `back`, `wait`, `close`. The runner answers `{ url, title, elements?,
+  moreElements?, text?, textTruncated?, image?, closed? }`: the visible
+  things one can act on, at most 150, each `{ ref, role, name, value? }`
+  with a ref good until the page changes; the page's text (its first 24 KB)
+  on a `read`; and a base64 JPEG of the 1280 by 800 page when `picture` asked
+  for one. Together they fit one frame. Or `command.failed`: `BROWSER_001`
+  the host's `runner browser` switch is off, `BROWSER_002` no browser is
+  installed, `BROWSER_003` the action does not fit (a ref the page no longer
+  has, an address that is not http or https, an action before any `open`),
+  `BROWSER_004` the browser or the page failed, `BROWSER_005` its setting
+  cannot be read. One lane per browser, a retried command id answered with
+  the page it left. Sent only to a runner whose `hello` names `browser.use`,
+  and waited on for the action's own wait and 75 seconds more.
+- `host.settings.set` and `host.settings` — a bot changing what the host lets
+  bots do when the person asked it to (2026-11-24, `25-bots.md` §4.2, "The
+  host's switches"): `{ commandId, browser?, computer?, execMode?,
+  execAllow? }`, `browser` and `computer` `on` or `off`, `execMode` `off`,
+  `allowlist` or `full`, `execAllow` programs added to the allowlist. Only a
+  field given changes. The runner writes the files `runner browser`,
+  `runner computer` and `runner exec` write and answers `{ browser,
+  computer, execMode, execAllow }`, what the host allows after it; or
+  `command.failed` with `EXEC_008` (an entry that is not a program name or an
+  absolute path), `EXEC_009` (an allowlist that would outgrow its 64 KB file)
+  or the `*_005` of a file it cannot read or write. Every check runs before
+  any file is written; a write that fails after another landed says in its
+  detail what was already saved. One lane for the host. Sent only to a runner whose `hello` names
+  `host.settings`, and waited on for 15 seconds.
 - `attachment.credit` — the browser's consumed-byte credit, relayed to
   the runner so it resumes that attachment's PTY reads. Without it the
   window below is a one-way valve: a noisy pane stalls for good rather
@@ -397,6 +446,25 @@ runner does with it and point back.
   channel itself, so no link message changed, and the relay's `attached`
   names the host (`direct.hostId`) for the browser to pin its key under.
   Credit and resize stay on the link whichever path the bytes take.
+- **A host's desktop** (`desktop.open | opened | control | close`, the
+  `desktop.stream` capability) is a port tunnel carrying RFB, designed in
+  `research/device-streaming.md` ("A host's desktop"). Since 2026-11-24 the
+  runner also sends **`desktop.pointer`**, `{ attachmentId, x, y, width,
+  height }`: where the host's pointer is, in the host's own screen units on
+  a screen `width` by `height` of them, at most about thirty a second and
+  only when it moved, and never while the reader is in control. Apple's
+  Screen Sharing neither paints its pointer into the framebuffer nor sends
+  its position (the Cursor pseudo-encoding carries the shape only;
+  PointerPos and the VMware cursor are never answered), so a reader who
+  only watched saw no pointer at all. It is a link message rather than an
+  RFB PointerPos rect the runner splices into the server's stream, because
+  splicing needs the runner to find where each server message ends, which
+  means parsing every encoding the server sends, and noVNC 1.7 has no
+  PointerPos handler anyway. The relay forwards it to the browser as a
+  `pointer` frame; the runner reads it on a Mac with CoreGraphics and sends
+  none on Linux, whose servers can draw their own pointer, nor on a Mac with
+  more than one display, whose framebuffer may span them in a layout the
+  runner cannot see (a pointer in the wrong place is worse than none).
 - Every command is idempotent by session id and command id, because a
   reconnect may redeliver. For `session.create` that means the session id
   is the key: a redelivered create either finds the session the first

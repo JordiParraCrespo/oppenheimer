@@ -55,18 +55,18 @@ export function planSession(
 ): { body: CreateSessionDto; hostId: string } | { refusal: string } {
   if (!input.folder && !project) {
     return {
-      refusal: promptText('tools/sessions.plan-session-refusal-give-project-id'),
+      refusal: promptText('sessions/tools.plan-session-refusal-give-project-id'),
     };
   }
   const hostId = sessionHostId(input, project, homeHostId);
   if (!hostId) {
     return {
-      refusal: promptText('tools/sessions.launch-no-host'),
+      refusal: promptText('sessions/tools.launch-no-host'),
     };
   }
   if (input.folder && input.base_branch) {
     return {
-      refusal: promptText('tools/sessions.launch-folder-takes-no-branch'),
+      refusal: promptText('sessions/tools.launch-folder-takes-no-branch'),
     };
   }
   const picked = input.folder ? null : pickRepository(project as ProjectEntity, input.repository);
@@ -88,7 +88,7 @@ export function planSession(
       ? { folder: input.folder }
       : { checkouts: [checkout], cwdGithubRepoId: checkout?.githubRepoId }),
   });
-  return parsedPlan(parsed, hostId, promptText('tools/sessions.plan-session'));
+  return parsedPlan(parsed, hostId, promptText('sessions/tools.plan-session'));
 }
 
 function parsedPlan(
@@ -106,7 +106,7 @@ export function invalidBodyRefusal(
   check: string,
 ): string {
   const fields = issues.map((issue) => toolField(issue.path.map(String).join('.')));
-  return promptText('tools/sessions.invalid-body-refusal', {
+  return promptText('sessions/tools.invalid-body-refusal', {
     value: [...new Set(fields)].join(', '),
     check,
   });
@@ -213,11 +213,11 @@ export function pickRepository(
     const names = repositories.map((repo) => repo.repositoryFullName).join(', ') || 'none';
     return {
       reason: name
-        ? promptText('tools/sessions.project-lacks-repository', {
+        ? promptText('sessions/tools.project-lacks-repository', {
             name,
             names,
           })
-        : promptText('tools/sessions.project-has-no-repository'),
+        : promptText('sessions/tools.project-has-no-repository'),
     };
   }
   return {
@@ -233,10 +233,10 @@ export function pickRepository(
  */
 export const SESSION_GROUP_PHRASES: Readonly<Record<SessionGroup, string>> = {
   working: 'the agent is at work',
-  'waiting-on-you': promptText('tools/sessions.session-group-phrases-waiting-on-you'),
-  'ready-for-review': promptText('tools/sessions.session-group-phrases-ready-for-review'),
-  landing: promptText('tools/sessions.session-group-phrases-landing'),
-  idle: promptText('tools/sessions.session-group-phrases-idle'),
+  'waiting-on-you': promptText('sessions/tools.session-group-phrases-waiting-on-you'),
+  'ready-for-review': promptText('sessions/tools.session-group-phrases-ready-for-review'),
+  landing: promptText('sessions/tools.session-group-phrases-landing'),
+  idle: promptText('sessions/tools.session-group-phrases-idle'),
   resolved: 'closed',
 };
 
@@ -244,7 +244,7 @@ export const SESSION_GROUP_PHRASES: Readonly<Record<SessionGroup, string>> = {
 export function describeDecision(decision: SessionDecision): string[] {
   if (decision.kind === 'permission') {
     return [
-      promptText('tools/sessions.describe-decision', { id: decision.id, title: decision.title }),
+      promptText('sessions/tools.describe-decision', { id: decision.id, title: decision.title }),
       ...(decision.detail ? [`  about: ${cut(decision.detail, 500)}`] : []),
       ...decision.options.map((option, index) => `  option ${index}: ${option.label}`),
     ];
@@ -302,7 +302,7 @@ export interface SessionActionOutcome {
   doneHere: boolean;
 }
 
-export type SessionActionVerb = 'stop' | 'close';
+export type SessionActionVerb = 'stop' | 'restart' | 'close';
 
 /**
  * Each verb's answers, one per outcome. An offline host is told apart by
@@ -315,17 +315,22 @@ const SESSION_ACTION_ANSWERS: Readonly<
 > = {
   stop: {
     done: (id) => `Session ${id} is stopped.`,
-    sent: (id) => promptText('tools/sessions.session-action-answers-stop-sent', { id }),
-    offline: (id) => promptText('tools/sessions.session-action-answers-stop-offline', { id }),
+    sent: (id) => promptText('sessions/tools.session-action-answers-stop-sent', { id }),
+    offline: (id) => promptText('sessions/tools.session-action-answers-stop-offline', { id }),
+  },
+  restart: {
+    done: (id) => `Session ${id} is restarted.`,
+    sent: (id) => promptText('sessions/tools.session-action-answers-restart-sent', { id }),
+    offline: (id) => promptText('sessions/tools.session-action-answers-restart-offline', { id }),
   },
   close: {
     done: (id) => `Session ${id} is closed.`,
-    sent: (id) => promptText('tools/sessions.session-action-answers-close-sent', { id }),
-    offline: (id) => promptText('tools/sessions.session-action-answers-close-offline', { id }),
+    sent: (id) => promptText('sessions/tools.session-action-answers-close-sent', { id }),
+    offline: (id) => promptText('sessions/tools.session-action-answers-close-offline', { id }),
   },
 };
 
-/** `stop_session`'s and `close_session`'s answer: done, sent, or owed to an offline host. */
+/** `stop_session`'s, `restart_session`'s and `close_session`'s answer: done, sent, or owed to an offline host. */
 export function sessionActionAnswer(outcome: SessionActionOutcome): string {
   const answers = SESSION_ACTION_ANSWERS[outcome.verb];
   const kind = outcome.doneHere
@@ -357,12 +362,12 @@ export function decisionAnswerSummary(
   if (!decision || decision.id !== input.decision_id) {
     return {
       refusal: decision
-        ? promptText('tools/sessions.decision-changed', {
+        ? promptText('sessions/tools.decision-changed', {
             id: session.id,
             id2: decision.id,
             decisionId: input.decision_id,
           })
-        : promptText('tools/sessions.decision-none', {
+        : promptText('sessions/tools.decision-none', {
             id: session.id,
           }),
     };
@@ -371,7 +376,7 @@ export function decisionAnswerSummary(
     const option = input.option === undefined ? undefined : decision.options[input.option];
     if (!option) {
       return {
-        refusal: promptText('tools/sessions.decision-needs-option', {
+        refusal: promptText('sessions/tools.decision-needs-option', {
           optionsCount: String(decision.options.length - 1),
         }),
       };
@@ -381,7 +386,7 @@ export function decisionAnswerSummary(
   const answers = input.answers;
   if (!answers || answers.length !== decision.questions.length) {
     return {
-      refusal: promptText('tools/sessions.decision-needs-answers', {
+      refusal: promptText('sessions/tools.decision-needs-answers', {
         questionsCount: String(decision.questions.length),
       }),
     };
@@ -446,5 +451,5 @@ export function waitViewOf(session: {
 export function readAfterHint(seq: number | undefined): string {
   return seq === undefined
     ? ''
-    : ` ${promptText('tools/sessions.read-after-hint', { seq: String(seq) })}`;
+    : ` ${promptText('sessions/tools.read-after-hint', { seq: String(seq) })}`;
 }

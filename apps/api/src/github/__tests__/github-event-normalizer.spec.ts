@@ -108,6 +108,21 @@ describe('pull requests', () => {
     expect(event.attributes.fork).toBe(true);
   });
 
+  it("names the head's repository, so a pull request inside a forked repository is told from a fork's", () => {
+    const [own] = normalize('pull_request', {
+      action: 'opened',
+      pull_request: pullRequest({
+        head: {
+          ref: 'opp/fix-env',
+          sha: 'f00',
+          repo: { id: 821374923, full_name: 'acme/xrp-mobile', fork: true },
+        },
+      }),
+    });
+    expect(own.attributes).toMatchObject({ fork: true, headRepoId: 821374923 });
+    expect(own.subject.ref).toBe('821374923');
+  });
+
   it('makes one issue_labeled per label, keyed by the label', () => {
     const [event] = normalize('pull_request', {
       action: 'labeled',
@@ -156,6 +171,33 @@ describe('issues and comments', () => {
     });
     expect(mentioned.map((event) => event.type)).toEqual(['comment', 'mention']);
     expect(new Set(mentioned.map((event) => event.externalId)).size).toBe(2);
+  });
+
+  // Breaks if a bot asked on a pull request is told it is an issue, and reads
+  // it with the issue tools, which refuse a pull request's number.
+  it('says whether what was commented or labelled is a pull request', () => {
+    const on = (event: ReturnType<typeof normalize>[number] | undefined) =>
+      event?.attributes.isPullRequest;
+    const comment = { id: 11, body: 'hi', created_at: '2026-09-27T09:32:00Z' };
+    expect(on(normalize('issue_comment', { action: 'created', issue, comment })[0])).toBe(false);
+    expect(
+      on(
+        normalize('issue_comment', {
+          action: 'created',
+          issue: { ...issue, pull_request: { url: 'x' } },
+          comment,
+        })[0],
+      ),
+    ).toBe(true);
+    expect(
+      on(
+        normalize('pull_request', {
+          action: 'labeled',
+          label: { name: 'bot:x' },
+          pull_request: pullRequest(),
+        })[0],
+      ),
+    ).toBe(true);
   });
 
   it('caps an untrusted body so it cannot flood a prompt', () => {

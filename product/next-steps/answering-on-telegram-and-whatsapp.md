@@ -199,6 +199,13 @@ apart, as OpenClaw and Hermes do.
   longer for a wait on a session. Telegram's typing action and a line after
   fifteen seconds of silence are not built; WhatsApp shows nothing
   (whatsapp.md §2).
+- **Reactions** (2026-11-24, the owner: "better the agent decide"): the
+  bot's `react` tool reacts on WhatsApp to the message that opened its
+  turn, from the number, as its reply is sent: in a chat the bot answers,
+  asking nothing, and spending the host's send budget as a message does
+  (`whatsapp.react` on the link, for runners that name it). Kept in the
+  console only once WhatsApp took it. Nothing reacts on its own, and
+  Telegram takes none yet: the bot is told to answer in words there.
 - **Replies** are split at Telegram's 4,096 characters and at our own
   8,000 on WhatsApp (whatsapp.md §4). On Telegram the bot's markdown is
   turned into Telegram's HTML by us, and everything else in it escaped, so
@@ -307,6 +314,17 @@ per-chat "Always allow" for sends are unchanged.
    which moves to this bot) and Remove, and the Telegram bots it answers
    on. Only listed chats are answered; there is no catch-all for people
    not on the list. A number allows up to 1,000 chats (was 50).*
+   *Then, 2026-11-21 (the owner: a group set to a bot "is not answering",
+   and People showed 0): in a group the owner allowed, every message with
+   words wakes its bot, not only a mention or a reply, and a group's limit
+   is 120 turns an hour (a person's chat stays at 20). The runner reports
+   the groups the number is in and its saved contacts (a name the phone
+   gave them, never someone only seen in a group) when the device connects
+   and again when it joins a group, a group is renamed or the contacts
+   change (`whatsapp.chats`, at most once a minute, kept per number up to
+   5,000, a chat it stops reporting forgotten after 7 days), so Settings
+   lists them before anyone writes. People lists the owner first, fixed on
+   the default bot.*
 6. **Voice notes**, transcribed through voice's providers, on both.
 
 ## Open questions
@@ -339,3 +357,6 @@ per-chat "Always allow" for sends are unchanged.
   contact's turn; Settings lists them, changes their bot and removes them.
   Each has the number's default bot or one chosen for it. Built before the
   turns that answer them.
+- 2026-11-24: a bot reacts on WhatsApp with its `react` tool, in the chats it
+  answers, without asking, as its reply goes (§4, "Reactions"); until then
+  the tool worked in the console chat only.

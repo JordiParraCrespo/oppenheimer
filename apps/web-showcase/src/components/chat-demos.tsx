@@ -2,10 +2,12 @@
 
 import * as React from 'react';
 
+import { AgentMark } from '@oppenheimer/design-system-web/agent-mark';
 import { Button } from '@oppenheimer/design-system-web/button';
 import {
   AnsweredQuestions,
   BotExchange,
+  BotExchangeFoldTurn,
   BotExchangeTurn,
   ChangedFileRow,
   ChangedFilesCard,
@@ -80,6 +82,8 @@ import {
   ChatAttachment,
   ChatCommand,
   ChatMention,
+  ChatReaction,
+  ChatReactionBar,
   ChatReply,
   ChatTranscript,
   ChatUserMessage,
@@ -88,7 +92,7 @@ import {
   TurnHeader,
 } from '@oppenheimer/design-system-web/chat-transcript';
 import { Trace, TraceGroup, TraceLive, TraceNote, TraceOutput, TraceStep } from '@oppenheimer/design-system-web/chat-trace';
-import { AgentActivity, ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallOutput, ToolCallRow } from '@oppenheimer/design-system-web/chat-work';
+import { AgentActivity, ReasoningRow, ToolCallGroup, ToolCallLive, ToolCallOutput, ToolCallRow, ToolCallTail } from '@oppenheimer/design-system-web/chat-work';
 import { CodeBlock } from '@oppenheimer/design-system-web/code-block';
 import { DiffStat } from '@oppenheimer/design-system-web/diff-stat';
 import { DropdownMenuItem } from '@oppenheimer/design-system-web/dropdown-menu';
@@ -104,6 +108,7 @@ import {
   CheckCircleIcon,
   CheckIcon,
   ChevronDownIcon,
+  AlarmClockIcon,
   ClockIcon,
   CopyIcon,
   CpuIcon,
@@ -131,7 +136,6 @@ import {
   TerminalIcon,
   WorkflowIcon,
   XIcon,
-  ZapIcon,
 } from '@oppenheimer/design-system-web/icons';
 import { JsonTree } from '@oppenheimer/design-system-web/json-tree';
 import { StatusDot } from '@oppenheimer/design-system-web/status-dot';
@@ -178,10 +182,23 @@ function ChatTranscriptBody() {
   const [open, setOpen] = React.useState(true);
   return (
     <ChatTranscript>
-      <ChatUserMessage time="09:12" actions={<>{icon(CopyIcon, 'Copy message')}{icon(PencilIcon, 'Edit message')}</>}>
+      <ChatUserMessage
+        time="09:12"
+        actions={<>{icon(CopyIcon, 'Copy message')}{icon(PencilIcon, 'Edit message')}</>}
+        reaction={<ChatReaction emoji="🙏" aria-label="Remove reaction 🙏" onClick={() => undefined} />}
+      >
         When a run is stopped from the console, in-flight tool calls keep running until they time out. Wire cancel
         through the agent gateway.
       </ChatUserMessage>
+      <div className="flex justify-end">
+        <ChatReactionBar
+          emoji={['👍', '❤️', '😂', '😮', '😢', '🙏']}
+          selected="❤️"
+          onPick={() => undefined}
+          onMore={() => undefined}
+          labels={{ react: (emoji) => `React with ${emoji}`, remove: (emoji) => `Remove reaction ${emoji}`, more: 'More emoji' }}
+        />
+      </div>
       <ChatUserMessage
         attachments={
           <>
@@ -269,6 +286,7 @@ function ChatWorkBody() {
         <ToolCallRow icon={<DatabaseIcon />} verb="Called" target="linear.get_issue" meta="MCP" />
       </ToolCallGroup>
       <ToolCallLive verb="Running" target="pnpm build --filter console" elapsed="6s" />
+      <ToolCallTail lines={['vite v7.2.0 building for production...', 'transforming (412) src/features/sessions/lib/chat-blocks.ts', 'rendering chunks (38)...']} />
       <AgentActivity verb="Mustering" detail="4m 31s · ↓ 15.9k tokens · thinking with medium effort" />
       <ReasoningRow label="Thought for 9s" defaultOpen>
         The gateway already holds the run registry, so registering controllers there avoids a second lookup. A tool
@@ -555,9 +573,9 @@ function ChatCardsBody() {
           >
             Is the cancel path on this week’s milestone, or can it wait for 0.9?
           </BotExchangeTurn>
-          <BotExchangeTurn direction="in" reply lead="Plan Bot replied">
+          <BotExchangeFoldTurn direction="in" reply lead="Plan Bot replied">
             It is on Friday’s milestone, as the second of three tasks. Ship it this week.
-          </BotExchangeTurn>
+          </BotExchangeFoldTurn>
         </BotExchange>
         <BotExchange>
           <BotExchangeTurn
@@ -591,7 +609,7 @@ function ChatCardsBody() {
           }
         />
         <ContextCard
-          icon={<ZapIcon />}
+          icon={<AlarmClockIcon />}
           title="Automation created"
           meta={
             <>
@@ -1059,12 +1077,16 @@ function ChatChromeBody() {
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="overflow-hidden rounded-lg border border-border-subtle">
-        <ChatTabStrip onNew={() => {}}>
-          <ChatTab active dot="success" onClose={() => {}}>
-            Wire run cancel…
+        <ChatTabStrip onNew={() => {}} label="Open sessions" className="px-1.5">
+          <ChatTab active icon={<AgentMark agent="claude-code" />} attention="needs-you" onClose={() => {}}>
+            Wire run cancel through the agent gateway
           </ChatTab>
-          <ChatTab>Quota warning at 90%</ChatTab>
-          <ChatTab dot="warning">Retry policy</ChatTab>
+          <ChatTab icon={<AgentMark agent="claude-code" />} working onClose={() => {}}>
+            Quota warning at 90%
+          </ChatTab>
+          <ChatTab icon={<AgentMark agent="codex" />} attention="unread" onClose={() => {}}>
+            Retry policy
+          </ChatTab>
         </ChatTabStrip>
         <ChatHeader
           title="Wire run cancel through the agent gateway"
@@ -1212,7 +1234,7 @@ export function ChatSection() {
         id="chatwork"
         title="Work and tools"
         meta="chat-work.tsx · chat-trace.tsx"
-        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. A run of read-only calls is the same fold as Explored (Exploring while it runs) with its targets in detail, a file read twice named once. ToolCallOutput keeps a call's text to its first five lines, a line too long to read cut to its head and tail, under +N lines. ToolCallLive is the call in flight; AgentActivity is the agent's own word for the moment at the foot of a session's chat, its spinner glyph turning in Claude's clay and its counts in mono; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs. A step's action sits at the end of its line, outside the fold (Open session on a call that started one)."
+        desc="What the agent did, in muted ink so it never reads as the answer. A settled run of calls folds into one verb summary with failures named in red; open, each ToolCallRow hangs from a hairline: the glyph, the verb, the target in mono, its meta. A command with output folds over it on the terminal ground. A run of read-only calls is the same fold as Explored (Exploring while it runs) with its targets in detail, a file read twice named once. ToolCallOutput keeps a call's text to its first five lines, a line too long to read cut to its head and tail, under +N lines. ToolCallLive is the call in flight, and ToolCallTail under a command in flight the last three lines it printed, read off the terminal, in a window that holds its height; AgentActivity is the agent's own word for the moment at the foot of a session's chat, its spinner glyph turning in Claude's clay and its counts in mono; ReasoningRow folds the thinking into Thought for 9s. A bot\'s chat draws its work as a Trace instead (chat-trace.tsx): a 15px TraceStep per call that opens to its TraceOutput (numbered lines, cut with Show more or kept behind Show raw output) or TraceNote, and TraceLive while it runs. A step's action sits at the end of its line, outside the fold (Open session on a call that started one)."
         code={`<ToolCallGroup summary="Read 3 files, ran 2 commands" failed="1 failed"><ToolCallRow icon={<TerminalIcon />} verb="Ran" target="pnpm test" meta="exit 1" tone="danger" output={log} /></ToolCallGroup>`}
       >
         <ChatWorkDemo />
@@ -1282,7 +1304,7 @@ export function ChatSection() {
         id="chatchrome"
         title="Header, find, empty"
         meta="chat-header.tsx"
-        desc="ChatHeader is the chat's 48px bar: the title and its branch, the run state, the tabs and the panels. Open threads sit over it as ChatTabs, the current one on the canvas with its close. ThreadFindBar floats top-right on ⌘F, its results row appearing with the first keystroke. ChatEmptyState is an empty thread: a statement at 34px, the composer, and the tray of what the run will use. Centred, it opens a new bot's chat over the TemplateTiles it can start from."
+        desc="ChatHeader is the chat's 48px bar: the title and its branch, the run state, the tabs and the panels. Open things sit over it as ChatTabs, each with its mark and the dot of what it needs; the shown one on the canvas inside a hairline, the rest flat with their close on hover. ThreadFindBar floats top-right on ⌘F, its results row appearing with the first keystroke. ChatEmptyState is an empty thread: a statement at 34px, the composer, and the tray of what the run will use. Centred, it opens a new bot's chat over the TemplateTiles it can start from."
         code={`<ChatHeader title="Wire run cancel" meta={<ChatHeaderTag icon={<GitBranchIcon />}>acme/cancel-path</ChatHeaderTag>} status={<StatusDot state="running" pulse density="compact">Running</StatusDot>} actions={…} />`}
       >
         <ChatChromeDemo />

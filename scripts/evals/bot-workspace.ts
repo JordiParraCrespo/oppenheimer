@@ -12,6 +12,7 @@ import { randomUUID } from 'node:crypto';
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { BotHostToolsFactory } from '../../apps/api/src/bots-chat/application/bot-host-tools.factory';
 import { BotPlanToolsFactory } from '../../apps/api/src/bots-chat/application/bot-plan-tools.factory';
+import { BotSessionLinkResolver } from '../../apps/api/src/bots-chat/application/bot-session-link.resolver';
 import { BotSessionToolsFactory } from '../../apps/api/src/bots-chat/application/bot-session-tools.factory';
 import type {
   BotToolContext,
@@ -98,6 +99,13 @@ export interface WorkspaceSpec {
   sessions?: SessionSpec[];
   /** The bot's home host, by name. */
   home?: string;
+  /** The bot's permission level (default `auto`, Approve for me: every write raises a card). */
+  permission?: 'auto' | 'full';
+  /**
+   * What a write does once it runs (under Full access): given the command and
+   * the folded sessions, its result. Without it every write throws.
+   */
+  onCommand?: (command: unknown, sessions: readonly WorkSessionEntity[]) => unknown;
 }
 
 /** What a `run_command` stand-in, or any write stand-in, saw: the calls are scored, not run. */
@@ -373,12 +381,19 @@ export function workspace(spec: WorkspaceSpec): Workspace {
   };
 
   const queryBus = { execute: async (query: unknown) => answer(query) } as unknown as QueryBus;
-  // A write reaches nothing: the stand-ins in front of every write tool are the eval's.
+  // A session's console link, as production builds it, over a stand-in config.
+  const links = new BotSessionLinkResolver({
+    getOrThrow: () => 'https://app.oppenheimer.local',
+  } as unknown as ConstructorParameters<typeof BotSessionLinkResolver>[0]);
+  // A write reaches nothing but the case's own stand-in, when it has one.
   const commandBus = {
-    execute: async () => {
+    execute: async (command: unknown) => {
+      if (spec.onCommand) return spec.onCommand(command, sessions);
       throw new Error('The eval runs no command.');
     },
   } as unknown as CommandBus;
+  // A prompt or an answer that ran follows its task; the eval watches nothing.
+  const watches = { follow: async () => '' };
   const home = spec.hosts.find((host) => host.name === spec.home) ?? null;
   const context: BotToolContext = {
     owner,
@@ -388,7 +403,7 @@ export function workspace(spec: WorkspaceSpec): Workspace {
     turnId: 'turn-1',
     homeHostId: home?.id ?? null,
     timeZone: 'Europe/Madrid',
-    permission: 'auto',
+    permission: spec.permission ?? 'auto',
     permissions: NO_PERMISSIONS,
     budget: new BotTurnBudget(),
     credentialScopes: null,
@@ -396,9 +411,9 @@ export function workspace(spec: WorkspaceSpec): Workspace {
     approvals: { request: async () => ({ status: 'requested', approvalId: 'approval-1' }) },
   } as BotToolContext;
   const areas = [
-    new BotHostToolsFactory(queryBus, commandBus),
+    new BotHostToolsFactory(queryBus, commandBus, links),
     new BotPlanToolsFactory(queryBus, commandBus),
-    new BotSessionToolsFactory(queryBus, commandBus, {} as never, {} as never),
+    new BotSessionToolsFactory(queryBus, commandBus, watches as never, {} as never, links),
   ];
   const definitions = areas.flatMap((area) =>
     area.definitions().map((definition) => ({ group: area.group, definition })),

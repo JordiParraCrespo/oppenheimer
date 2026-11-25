@@ -1,17 +1,10 @@
 import { TokenSentence, TriggerCard, useNow } from '@oppenheimer/design-system-web';
 import { Clock } from '@oppenheimer/design-system-web/icons';
+import { calendarDate, daysText, WEEK_ORDER, weekdayName } from '@oppenheimer/frontend-consumer';
 import { CORE_CONFIG } from '@oppenheimer/frontend-core/config';
+import { useLocale, viewerTimeZone, wallClock } from '@oppenheimer/frontend-web';
 import {
-  calendarDate,
-  daysText,
-  useLocale,
-  viewerTimeZone,
-  WEEK_ORDER,
-  wallClock,
-  weekdayName,
-} from '@oppenheimer/frontend-web';
-import {
-  SCHEDULE_FREQUENCIES,
+  EDITOR_SCHEDULE_FREQUENCIES,
   SCHEDULE_MAX_DAY_OF_MONTH,
   timeZoneAbbreviation,
 } from '@oppenheimer/shared/automations';
@@ -78,7 +71,7 @@ export function ScheduleTriggerCard({
           size="md"
           label={t(`automations.frequency.${card.frequency}.label`)}
           value={card.frequency}
-          options={SCHEDULE_FREQUENCIES.map((frequency) => ({
+          options={EDITOR_SCHEDULE_FREQUENCIES.map((frequency) => ({
             value: frequency,
             label: t(`automations.frequency.${frequency}.label`),
             description: t(`automations.frequency.${frequency}.desc`),

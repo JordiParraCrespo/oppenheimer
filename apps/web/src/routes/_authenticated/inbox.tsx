@@ -1,12 +1,22 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
+import { BotSideChat } from '@/features/bots/sections/bot-side-chat';
+import { inboxSearchSchema } from '@/features/inbox/lib/inbox-search';
+import { InboxScreen } from '@/features/inbox/screens/inbox';
 
 /**
- * `/inbox`, where the Inbox lived before it moved into Plan (the 2026-10-29
- * frame): an old link or bookmark goes on to `/plan/inbox`, its search kept
- * for that route's schema to read.
+ * The Inbox: what needs you, a page of its own and the rail's first item,
+ * with no sidebar: the screen is the rest of the window, its list column and
+ * its deck side by side, and draws its own heads. The search names the item
+ * on the deck, the list's words (`?q=`) and its facets. A bot's chat is the
+ * bots feature's; the route composes it in, for a bot's notice to be
+ * answered on its card.
  */
 export const Route = createFileRoute('/_authenticated/inbox')({
-  beforeLoad: () => {
-    throw redirect({ to: '/plan/inbox', search: true, replace: true });
-  },
+  validateSearch: inboxSearchSchema,
+  staticData: { pane: 'full', bar: 'own', sidebar: 'none' },
+  component: InboxRoute,
 });
+
+function InboxRoute() {
+  return <InboxScreen botChat={(botId) => <BotSideChat botId={botId} />} />;
+}

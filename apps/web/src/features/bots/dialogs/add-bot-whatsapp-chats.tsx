@@ -92,6 +92,7 @@ export function AddBotWhatsappChatsDialog({
                 <PillTab value="person">{t('bots.settings.gateways.people')}</PillTab>
               </PillTabs>
               <ToolSearchField
+                size="sm"
                 className="ml-auto w-52 max-w-full"
                 value={query}
                 onChange={setQuery}

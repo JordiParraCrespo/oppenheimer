@@ -1,5 +1,6 @@
 import { Button, Card, Kbd } from '@oppenheimer/design-system-web';
 import { Shield } from '@oppenheimer/design-system-web/icons';
+import { approvalDecisionLooks } from '@oppenheimer/frontend-consumer';
 import {
   useBotPendingApproval,
   useDecideBotApproval,
@@ -12,7 +13,6 @@ import { useTranslation } from 'react-i18next';
 import { ApprovalRequestDetails } from '@/features/bots/components/approval-request-details';
 import { ApprovalNoteForm } from '@/features/bots/forms/approval-note-form';
 import { useApprovalShortcuts } from '@/features/bots/hooks/use-approval-shortcuts';
-import { approvalDecisionLooks } from '@/features/bots/lib/approval-decisions';
 
 /**
  * The Needs input card (after AI Elements' Confirmation): the one call the

@@ -20,9 +20,9 @@ const repository = z
       .number()
       .int()
       .positive()
-      .describe(promptText('tools/pull-request-watch.repository-repository-id-from')),
+      .describe(promptText('github/tools-pull-request-watch.repository-repository-id-from')),
   ])
-  .describe(promptText('tools/pull-request-watch.repository-repository-owner-name'));
+  .describe(promptText('github/tools-pull-request-watch.repository-repository-owner-name'));
 
 /**
  * Following a pull request: watch one, or stop. `list_watches` lists them with
@@ -46,7 +46,7 @@ export class BotPullRequestWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'watch_pull_request',
       scope: 'pulls:read',
-      description: promptText('tools/pull-request-watch.watch-pull-request', {
+      description: promptText('github/tools-pull-request-watch.watch-pull-request', {
         subscriptionWakeLimit: String(BOT_SUBSCRIPTION_WAKE_LIMIT),
         subscriptionsPerBot: String(BOT_SUBSCRIPTIONS_PER_BOT),
       }),
@@ -58,7 +58,7 @@ export class BotPullRequestWatchToolsFactory implements BotToolArea {
           .min(1)
           .max(BOT_SUBSCRIPTION_PURPOSE_MAX)
           .optional()
-          .describe(promptText('tools/pull-request-watch.watch-pull-request-purpose')),
+          .describe(promptText('github/tools-pull-request-watch.watch-pull-request-purpose')),
       }),
       run: async (input, context) => {
         const { subscription, pull } = await this.watches.watch(
@@ -68,12 +68,15 @@ export class BotPullRequestWatchToolsFactory implements BotToolArea {
           input.purpose ?? null,
         );
         const ref = subscription.pullRequest;
-        return promptText('tools/pull-request-watch.watch-pull-request-follow-pull-request', {
-          number: String(pull.number),
-          repository: String(ref?.repository),
-          installationId: pull.installationId,
-          githubRepoId: String(ref?.githubRepoId),
-        });
+        return promptText(
+          'github/tools-pull-request-watch.watch-pull-request-follow-pull-request',
+          {
+            number: String(pull.number),
+            repository: String(ref?.repository),
+            installationId: pull.installationId,
+            githubRepoId: String(ref?.githubRepoId),
+          },
+        );
       },
     });
   }
@@ -82,7 +85,7 @@ export class BotPullRequestWatchToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'unwatch_pull_request',
       scope: 'pulls:read',
-      description: promptText('tools/pull-request-watch.unwatch-pull-request'),
+      description: promptText('github/tools-pull-request-watch.unwatch-pull-request'),
       input: z.object({
         repository,
         number: z.number().int().positive().describe('The pull request number.'),

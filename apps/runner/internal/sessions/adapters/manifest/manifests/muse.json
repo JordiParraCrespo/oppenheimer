@@ -1,0 +1,17 @@
+{
+  "schema": "oppenheimer.manifest/v1",
+  "agent": "muse",
+  "version": "2026.11.23.1",
+  "minEngine": 1,
+  "notes": "One rule, read off the launcher `dev.meta.ai/install.sh` installs (`api.meta.ai/muse-launcher.sh`) and not yet watched in a live session: a host that has never signed in prints `Open this page to sign in:` above an `auth.meta.com` device URL, a wait on the person. Muse's own TUI strings (its approval prompt, its loader) are not in its docs, so everything else is `unknown` until a soak produces patterns of Muse's own.",
+  "rules": [
+    {
+      "id": "sign-in",
+      "state": "blocked",
+      "priority": 1050,
+      "region": "screen",
+      "any": ["(?i)open this page to sign in"],
+      "note": "The launcher's device sign-in (`Open this page to sign in:`); the session cannot start work until somebody signs in. Read off the launcher script, not yet watched."
+    }
+  ]
+}

@@ -105,6 +105,7 @@
         "fromMail": "Tomado del mensaje al que responde",
         "files_one": "{{count}} archivo",
         "files_other": "{{count}} archivos",
+        "files_many": "{{count}} archivos",
         "signature": "Debajo va la firma de Gmail de {{email}} y luego el mensaje citado.",
         "draft": "El borrador de {{email}}, enviado tal y como está ahora en Gmail.",
         "nobody": "Nadie",
@@ -139,6 +140,32 @@
         "more_one": "+{{count}} más",
         "more_many": "+{{count}} más",
         "more_other": "+{{count}} más"
+      },
+      "emoji": {
+        "menu": "Emoji",
+        "pick": "Insertar {{emoji}} :{{name}}:",
+        "open": "Emoji",
+        "search": "Buscar emoji",
+        "noResults": "Ningún emoji coincide",
+        "results": "Resultados",
+        "groups": {
+          "recent": "Usados recientemente",
+          "smileys": "Caras y emociones",
+          "people": "Personas y cuerpo",
+          "nature": "Animales y naturaleza",
+          "food": "Comida y bebida",
+          "travel": "Viajes y lugares",
+          "activities": "Actividades",
+          "objects": "Objetos",
+          "symbols": "Símbolos",
+          "flags": "Banderas"
+        },
+        "react": "Reaccionar",
+        "reactWith": "Reaccionar con {{emoji}}",
+        "removeReaction": "Quitar la reacción {{emoji}}",
+        "more": "Más emoji",
+        "yourReaction": "Tu reacción: {{emoji}}",
+        "reactFailed": "No se pudo guardar la reacción"
       }
     },
     "search": {
@@ -150,10 +177,64 @@
       "groups": "Buscar grupos",
       "noMatch": "Nada coincide con «{{query}}»."
     },
+    "error": "Algo ha ido mal",
+    "comingToMobile": {
+      "title": "Próximamente en el móvil",
+      "pullRequests": "Revisa las pull requests que te necesitan."
+    },
     "projectFilter": {
       "label": "Proyecto",
       "all": "Todos los proyectos",
       "none": "Sin proyecto"
+    },
+    "visual": {
+      "chart": "Gráfico",
+      "table": "Tabla",
+      "viewAs": "Ver como",
+      "copyData": "Copiar datos",
+      "copiedData": "Datos copiados",
+      "expand": "Ampliar",
+      "showAll": "Ver las {{rows}} filas",
+      "showFewer": "Ver menos",
+      "sortBy": "Ordenar por {{column}}",
+      "checklistDone": "{{done}} de {{total}} hechas",
+      "progressOf": "de {{target}}",
+      "total": "Total",
+      "empty": "—",
+      "label": "Etiqueta",
+      "invalid": "No se ha podido dibujar este visual",
+      "chartLabel": "{{title}}, un gráfico de {{kind}}",
+      "kinds": {
+        "bar": "barras",
+        "line": "líneas",
+        "area": "áreas"
+      },
+      "html": {
+        "notRun": "Parte de este visual es HTML, que esta consola no ejecuta",
+        "showSource": "Ver código",
+        "didNotLoad": "El HTML de este visual no se ha cargado",
+        "frameTitle": "Un visual que dibujó el agente",
+        "failedInside": "Algo ha fallado dentro de este visual: {{message}}",
+        "openLinkTitle": "¿Abrir este enlace?",
+        "openLinkBody": "El visual quiere abrir una página de {{host}} en una pestaña nueva.",
+        "openLink": "Abrir enlace"
+      }
+    },
+    "markdown": {
+      "diagram": {
+        "diagram": "Diagrama",
+        "source": "Código",
+        "views": "Ver el diagrama o su código",
+        "title": "Diagrama",
+        "copy": "Copiar el código",
+        "expand": "Abrir en grande",
+        "drawing": "Dibujando el diagrama…",
+        "unreadable": "No se pudo dibujar este diagrama, así que aquí está su código.",
+        "zoomIn": "Acercar",
+        "zoomOut": "Alejar",
+        "fit": "Ajustar a la ventana",
+        "zoomHint": "Desplaza para acercar, arrastra para moverte, doble clic para acercar o volver."
+      }
     }
   },
   "validation": {
@@ -348,6 +429,12 @@
       "AUTOMATIONS_007": "Ese proyecto no puede tener automatizaciones.",
       "AUTOMATIONS_008": "Esa ejecución no existe.",
       "AUTOMATIONS_009": "Esa cuenta de Gmail no puede iniciar una rutina: no es tuya, o hay que volver a conectarla en Ajustes → Correo.",
+      "AUTOMATIONS_010": "Esa URL de webhook ya no es válida: emite una nueva en la pestaña Rutinas.",
+      "AUTOMATIONS_011": "La firma de la petición al webhook falta, es demasiado antigua o no coincide.",
+      "AUTOMATIONS_012": "El cuerpo del webhook es demasiado grande.",
+      "AUTOMATIONS_013": "La rutina está en pausa. Vuelve a activarla en la pestaña Rutinas.",
+      "AUTOMATIONS_014": "Esta rutina no tiene un disparador de webhook. Pide antes al bot que lo añada.",
+      "AUTOMATIONS_015": "La firma de webhooks no está configurada en este despliegue.",
       "TASKS_001": "Esa tarea no existe o se ha eliminado.",
       "TASKS_002": "Ese hito no existe o se ha eliminado.",
       "TASKS_004": "Ese proyecto no admite tareas. Puede que se haya archivado.",
@@ -437,6 +524,14 @@
       "TELEGRAM_008": "Telegram no aceptó el mensaje. Vuelve a intentarlo en un momento.",
       "TELEGRAM_009": "Ese bot de Telegram ya ha enviado todos los mensajes de bots que puede por ahora. Inténtalo más tarde.",
       "TELEGRAM_010": "No hay ningún chat de Telegram así en ese bot.",
+      "SLACK_001": "Esa app de Slack ya no está conectada.",
+      "SLACK_002": "Slack pertenece a un espacio de trabajo. Abre uno y vuelve a intentarlo.",
+      "SLACK_003": "Este servidor no puede guardar tokens de Slack. Pide a quien lo administra que configure SLACK_TOKEN_KEY.",
+      "SLACK_004": "Slack rechazó ese token de bot. Copia el Bot User OAuth Token (xoxb-…) de la página OAuth & Permissions de la app, después de instalarla.",
+      "SLACK_005": "Esa app de Slack ya responde como otro bot. Crea una app para este bot.",
+      "SLACK_006": "Slack no respondió. Vuelve a intentarlo en un momento.",
+      "SLACK_007": "Slack nos pidió ir más despacio. Vuelve a intentarlo en un momento.",
+      "SLACK_008": "Esa petición no la firmó la app de Slack.",
       "CLOUD_AGENTS_003": "Este servidor no puede guardar claves de agentes en la nube. Pide a quien lo administra que configure CLOUD_AGENTS_KEY.",
       "CLOUD_AGENTS_004": "Conecta primero el proveedor con tu clave de API.",
       "CLOUD_AGENTS_005": "El proveedor rechazó esa clave de API. Comprueba que sea una clave de usuario y que no se haya revocado.",
@@ -497,6 +592,10 @@
       "VOICE_005": "El dictado no está configurado. Inicia sesión en ChatGPT en Ajustes → Proveedores de modelos.",
       "VOICE_006": "No se ha podido transcribir la grabación. Inténtalo de nuevo en un momento.",
       "VOICE_007": "Demasiados dictados por ahora. Inténtalo de nuevo en un momento.",
+      "VOICE_008": "Las notas de voz no están configuradas en este espacio de trabajo. Añade una clave de OpenAI o ElevenLabs en Ajustes → Proveedores de modelos.",
+      "VOICE_009": "No se ha podido generar la nota de voz. Inténtalo de nuevo en un momento.",
+      "VOICE_010": "Demasiadas notas de voz por ahora. Inténtalo de nuevo en un momento.",
+      "VOICE_011": "Ese texto es demasiado largo para una nota de voz.",
       "BOTS_029": "Esa herramienta no existe. Recarga la página.",
       "BOTS_030": "Esta herramienta se aprueba llamada a llamada, así que no se puede permitir siempre.",
       "BOTS_031": "Este bot ya tiene tantas reglas como admite. Quita una primero.",
@@ -516,7 +615,12 @@
       "SESSIONS_057": "La ventana del agente no se puede cerrar. Cierra la sesión.",
       "SESSIONS_058": "Esa terminal ya no está abierta.",
       "SESSIONS_059": "El host rechazó cambiar las terminales de la sesión.",
-      "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host."
+      "SESSIONS_060": "El runner de este host no puede iniciar un segundo agente. Actualiza el runner del host.",
+      "BOTS_044": "Ese mensaje ya no está en este chat.",
+      "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción.",
+      "BOTS_046": "Ese formulario ya no está.",
+      "BOTS_047": "Algunos valores no encajan con el formulario.",
+      "BOTS_048": "Ese formulario ya se envió, o el bot siguió adelante."
     },
     "notFound": {
       "title": "Esta página no existe",
@@ -563,7 +667,10 @@
       "noSocialProviders": "El inicio de sesión social no está configurado en este despliegue. Define GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET o GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET en la API para activarlo.",
       "continueWithGithub": "Continuar con GitHub",
       "continueWithGoogle": "Continuar con Google",
-      "socialFailed": "No se pudo iniciar el acceso social. Inténtalo de nuevo o inicia sesión con tu correo y contraseña."
+      "socialFailed": "No se pudo iniciar el acceso social. Inténtalo de nuevo o inicia sesión con tu correo y contraseña.",
+      "continueWithEmail": "Continuar con email",
+      "emailTitle": "Iniciar sesión",
+      "emailDescription": "Usa tu dirección del trabajo."
     },
     "register": {
       "title": "Crea tu cuenta",
@@ -574,7 +681,8 @@
       "hasAccount": "¿Ya tienes una cuenta?",
       "signIn": "Iniciar sesión",
       "failed": "Error en el registro",
-      "passwordHint": "Doce caracteres como mínimo."
+      "passwordHint": "Doce caracteres como mínimo.",
+      "phoneDescription": "Tu cuenta y tu espacio de trabajo, en dos pasos."
     },
     "forgotPassword": {
       "title": "Restablece tu contraseña",
@@ -589,7 +697,8 @@
       "emailLabel": "Correo de trabajo",
       "resend": "Reenviar enlace",
       "differentAddress": "Usar otra dirección",
-      "resendFailed": "No se ha podido reenviar el correo. Inténtalo de nuevo en un momento."
+      "resendFailed": "No se ha podido reenviar el correo. Inténtalo de nuevo en un momento.",
+      "notReceived": "¿No ha llegado nada? Revisa el correo no deseado o <retry>vuelve a intentarlo</retry>."
     },
     "resetPassword": {
       "title": "Crea una nueva contraseña",
@@ -1116,6 +1225,10 @@
       "markUnread": "Marcar como no leída",
       "markRead": "Marcar como leída",
       "unreadLabel": "No leída",
+      "mute": "Silenciar notificaciones",
+      "unmute": "Activar notificaciones",
+      "mutedLabel": "Notificaciones silenciadas",
+      "notifyTitle": "Notificaciones y lectura",
       "hide": "Ocultar",
       "show": "Mostrar",
       "hidden": "Oculta",
@@ -1140,7 +1253,8 @@
       "openAtVendor": "Se abre en {{vendor}}",
       "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros.",
       "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba.",
-      "noPinned": "No hay sesiones fijadas. Fija una desde su menú, o desactiva Solo fijadas en el menú de filtros."
+      "noPinned": "No hay sesiones fijadas. Fija una desde su menú, o desactiva Solo fijadas en el menú de filtros.",
+      "noSessionsPhone": "Aún no hay sesiones. Empieza una desde la consola en tu ordenador; aparecerá aquí."
     },
     "deleteSession": {
       "title": "¿Eliminar «{{name}}»?",
@@ -1248,6 +1362,7 @@
       "writeWarningTitle": "{{who}} actuará como tú en {{host}}",
       "writeWarningCount_one": "{{count}} persona",
       "writeWarningCount_other": "{{count}} personas",
+      "writeWarningCount_many": "{{count}} personas",
       "writeWarningBody": "Todo lo que envíen se ejecuta con tus credenciales y tu token de GitHub. Pueden hacer push, borrar archivos y gastar tu cuota.",
       "writeAck": "Entiendo que actúan como yo en este host",
       "ackRequired": "Confirma que lo entiendes antes de dar acceso de escritura.",
@@ -1365,7 +1480,7 @@
       "composer": {
         "placeholder": "Escribe a {{agent}}",
         "placeholderAnyAgent": "Escribe al agente",
-        "suggestion": "{{suggestion}}  ·  Tab para usarlo",
+        "suggestion": "Tab para usarlo  ·  {{suggestion}}",
         "send": "Enviar",
         "stop": "Detener",
         "attach": "Adjuntar archivos",
@@ -1413,11 +1528,14 @@
       "failed_many": "{{count}} fallaron",
       "files_one": "{{count}} archivo adjunto",
       "files_other": "{{count}} archivos adjuntos",
+      "files_many": "{{count}} archivos adjuntos",
       "tasks_one": "{{done}} de {{count}} tarea hecha",
       "tasks_other": "{{done}} de {{count}} tareas hechas",
+      "tasks_many": "{{done}} de {{count}} tareas hechas",
       "notice": {
         "interrupted": "Detuviste este turno",
-        "compacted": "Contexto compactado"
+        "compacted": "Contexto compactado",
+        "model": "Modelo cambiado a <model>{{model}}</model>"
       },
       "task": {
         "completed": "Tarea en segundo plano terminada",
@@ -1442,24 +1560,34 @@
       "summary": {
         "read_one": "leyó {{count}} archivo",
         "read_other": "leyó {{count}} archivos",
+        "read_many": "leyó {{count}} archivos",
         "search_one": "buscó {{count}} patrón",
         "search_other": "buscó {{count}} patrones",
+        "search_many": "buscó {{count}} patrones",
         "web_one": "consultó {{count}} página",
         "web_other": "consultó {{count}} páginas",
+        "web_many": "consultó {{count}} páginas",
         "edit_one": "editó {{count}} archivo",
         "edit_other": "editó {{count}} archivos",
+        "edit_many": "editó {{count}} archivos",
         "write_one": "escribió {{count}} archivo",
         "write_other": "escribió {{count}} archivos",
+        "write_many": "escribió {{count}} archivos",
         "command_one": "ejecutó {{count}} comando",
         "command_other": "ejecutó {{count}} comandos",
+        "command_many": "ejecutó {{count}} comandos",
         "agent_one": "lanzó {{count}} subagente",
         "agent_other": "lanzó {{count}} subagentes",
+        "agent_many": "lanzó {{count}} subagentes",
         "mcp_one": "llamó {{count}} herramienta",
         "mcp_other": "llamó {{count}} herramientas",
+        "mcp_many": "llamó {{count}} herramientas",
         "question_one": "hizo {{count}} pregunta",
         "question_other": "hizo {{count}} preguntas",
+        "question_many": "hizo {{count}} preguntas",
         "other_one": "usó {{count}} herramienta",
-        "other_other": "usó {{count}} herramientas"
+        "other_other": "usó {{count}} herramientas",
+        "other_many": "usó {{count}} herramientas"
       },
       "verbLive": {
         "command": "Ejecutando",
@@ -1477,10 +1605,33 @@
       "thoughtFor": "Pensó {{seconds}} s",
       "changes_one": "{{count}} archivo cambiado",
       "changes_other": "{{count}} archivos cambiados",
+      "changes_many": "{{count}} archivos cambiados",
       "question": {
         "waiting": "Esperando tu respuesta",
         "dismissed": "Descartaste las preguntas",
         "noAnswer": "No se pudo leer la respuesta"
+      },
+      "permission": {
+        "command": "¿Ejecutar este comando?",
+        "edit": "¿Hacer este cambio?",
+        "write": "¿Crear este archivo?",
+        "web": "¿Abrir esta página?",
+        "tool": "¿Usar esta herramienta?",
+        "allowOnce": "Permitir una vez",
+        "alwaysAllow": "Permitir siempre",
+        "deny": "Denegar",
+        "denyHint": "Detener y decirle a {{agent}} qué hacer en su lugar",
+        "keys": "{{first}}–{{last}} para elegir · Esc para denegar",
+        "withNote": "Denegar con una nota",
+        "note": "¿Qué debería hacer {{agent}} en su lugar?",
+        "noteLabel": "Tu nota para {{agent}}",
+        "noteHint": "Enter para enviar · Esc para volver",
+        "sendNote": "Denegar y enviar",
+        "back": "Volver",
+        "allowed": "Permitido · {{agent}} sigue",
+        "denied": "Denegado · {{agent}} se detiene aquí",
+        "caution": "Revísalo bien: puede borrar o sobrescribir trabajo",
+        "truncated": "El resto de este cambio es más largo de lo que muestra el chat"
       },
       "explored": {
         "title": "Explorado"
@@ -1492,6 +1643,7 @@
       "subagents": {
         "count_one": "{{count}} subagente",
         "count_other": "{{count}} subagentes",
+        "count_many": "{{count}} subagentes",
         "running": "{{count}} en marcha",
         "failed_one": "{{count}} fallido",
         "failed_other": "{{count}} fallidos",
@@ -1499,6 +1651,7 @@
         "untitled": "Subagente",
         "calls_one": "{{count}} llamada",
         "calls_other": "{{count}} llamadas",
+        "calls_many": "{{count}} llamadas",
         "tokens": "{{tokens}} tokens",
         "state": {
           "running": "En marcha",
@@ -1515,6 +1668,21 @@
         "previous": "Coincidencia anterior",
         "next": "Coincidencia siguiente",
         "close": "Cerrar búsqueda"
+      },
+      "feedback": {
+        "label": "Comentario redactado",
+        "review": "Revisar en la terminal",
+        "send": "Enviar",
+        "dismiss": "Descartar",
+        "back": "Atrás",
+        "keep": "Mantener",
+        "turnOff": "Desactivar",
+        "retry": "Revisar y reintentar",
+        "reviewOrDiscard": "Revisar o descartar",
+        "clearPrompt": "Vacía el prompt de la terminal para responder.",
+        "more_one": "{{count}} más en cola",
+        "more_many": "{{count}} más en cola",
+        "more_other": "{{count}} más en cola"
       }
     },
     "side": {
@@ -1527,16 +1695,10 @@
       "closeTab": "Cerrar {{name}}",
       "launcher": {
         "title": "Abrir junto a esta sesión",
-        "description": "Mantén esta sesión a la vista mientras trabajas en otra cosa.",
         "terminal": "Terminal",
-        "terminalDetail": "Una shell en el worktree de esta sesión",
-        "session": "Sesión",
-        "sessionDetail": "Otra sesión, en cualquier host",
-        "bot": "Bot",
-        "botDetail": "Elige uno de tus bots y chatea",
-        "browserDetail": "El servidor de desarrollo de la sesión",
-        "simulatorDetail": "El dispositivo que maneja el agente de la sesión",
-        "desktopDetail": "La pantalla del propio host",
+        "session": "Otra sesión",
+        "sessionDetail": "Cualquier host",
+        "bot": "Un bot",
         "back": "Atrás",
         "sessions": "Elige una sesión",
         "searchSessions": "Buscar sesiones",
@@ -1545,11 +1707,12 @@
         "searchBots": "Buscar bots",
         "noBots": "Aún no hay bots. Crea uno en Empleados.",
         "noMatch": "Nada coincide con «{{query}}».",
-        "agent": "Agente",
-        "agentDetail": "Otro agente en este worktree",
+        "agent": "Otro agente",
+        "agentDetail": "Mismo worktree",
         "agents": "Elige un agente",
         "agentShares": "Trabaja en el worktree de esta sesión, sobre los mismos archivos e índice de git que el agente que ya está allí.",
-        "noAgents": "Ningún agente puede iniciarse junto a esta sesión. Activa uno en Ajustes → Agentes."
+        "noAgents": "Ningún agente puede iniciarse junto a esta sesión. Activa uno en Ajustes → Agentes.",
+        "sideChats": "Chats laterales"
       },
       "terminal": {
         "name": "Terminal {{index}}",
@@ -1576,10 +1739,13 @@
       "title": "{{name}} ejecutándose en el host de esta sesión",
       "connecting": "Conectando con el dispositivo de la sesión…",
       "connectingDetail": "La pantalla aparece cuando el host empieza a transmitirla.",
+      "noPicture": "Esperando la pantalla…",
       "unavailable": "Esta sesión no tiene dispositivo",
       "unavailableDetail": "El host de esta sesión no ofrece simulador ni emulador, o todos los tiene otra sesión.",
       "offline": "El host está desconectado",
       "offlineDetail": "El dispositivo vuelve cuando el host se reconecte.",
+      "reconnecting": "Reconectando con el dispositivo…",
+      "reconnectingDetail": "Los toques de los próximos segundos se enviarán cuando vuelva.",
       "ended": "La sesión ha terminado",
       "browser": "Navegador",
       "address": "localhost:{{port}}",
@@ -1682,6 +1848,30 @@
         "agentBody": "Pega esto en Claude Code, u otro agente de código, en una copia del repositorio. Añade el hook y su configuración, y luego te dice qué configurar en claude.ai. Tu clave no va en el prompt: la pegas tú en claude.ai.",
         "agentLabel": "Prompt para tu agente"
       }
+    },
+    "mobile": {
+      "notFound": "Esta sesión ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+      "shareLink": "Compartir enlace",
+      "actions": "Acciones de la sesión",
+      "answerFailed": "La respuesta no llegó al agente. Vuelve a intentarlo.",
+      "needsApproval": "Necesita aprobación",
+      "keys": "Teclas del terminal",
+      "replyToAgent": "Responde al agente",
+      "reply": "Responde o ejecuta un comando",
+      "starting": "Iniciando la sesión en su host…",
+      "cloud": "Esta sesión se ejecuta en {{place}}. Ábrela allí para seguirla.",
+      "openCloud": "Abrir en el navegador",
+      "failed": "No se pudo iniciar la sesión.",
+      "connecting": "Conectando…",
+      "steps_one": "{{count}} paso",
+      "steps_other": "{{count}} pasos",
+      "steps_many": "{{count}} pasos",
+      "loadFailed": "No se pudo cargar esta sesión."
+    },
+    "tabs": {
+      "label": "Sesiones abiertas",
+      "new": "Nueva sesión",
+      "close": "Cerrar {{name}}"
     }
   },
   "bots": {
@@ -1738,7 +1928,15 @@
       "settings": "Configuración",
       "delete": "Eliminar bot",
       "hello": "Pregunta a {{name}} lo que quieras. Puede leer tus sesiones y actuar sobre ellas.",
-      "placeholder": "Escribe a {{name}}",
+      "field": "Escribe a {{name}}",
+      "placeholders": {
+        "takeOn": "¿De qué se encarga {{name}}?",
+        "job": "Dale un trabajo a {{name}}…",
+        "problem": "Pon a {{name}} con un problema…",
+        "session": "Pide a {{name}} que mire una sesión…",
+        "listening": "{{name}} te escucha…",
+        "anything": "Pregunta a {{name}} lo que quieras"
+      },
       "history": "Historial {{position}}/{{total}}",
       "pasted": {
         "lines": "[Texto pegado #{{n}} +{{lines}} líneas]",
@@ -1751,7 +1949,13 @@
         "showLess": "Mostrar menos"
       },
       "tooLong": "Este mensaje tiene {{length}} caracteres; un bot admite hasta {{max}}.",
-      "placeholderRunning": "Reconduce a {{name}}: Intro reconduce el turno en curso, Alt+Intro lo pone en cola para después, Esc lo detiene",
+      "placeholdersRunning": {
+        "steer": "Reconduce a {{name}} mientras trabaja…",
+        "nudge": "Empuja a {{name}} por otro lado…",
+        "context": "Cuéntale a {{name}} algo que deba saber…",
+        "next": "Deja en cola lo siguiente para {{name}}…",
+        "course": "Cambia el rumbo de {{name}} en marcha…"
+      },
       "steered": "Reconducido mientras trabajaba",
       "send": "Enviar",
       "stop": "Detener",
@@ -1761,6 +1965,7 @@
       "stopFailed": "No se pudo detener el turno.",
       "queuedImages_one": "{{count}} imagen",
       "queuedImages_other": "{{count}} imágenes",
+      "queuedImages_many": "{{count}} imágenes",
       "failed": "{{provider}} no pudo terminar este turno",
       "failedUnknown": "El turno terminó sin decir por qué.",
       "failure": {
@@ -1784,6 +1989,8 @@
       "copyMessage": "Copiar mensaje",
       "copyReply": "Copiar respuesta",
       "toLatest": "Ir a lo último",
+      "loadingOlder": "Cargando mensajes anteriores…",
+      "olderFailed": "No se pudieron cargar los mensajes anteriores. Vuelve a desplazarte hacia arriba para intentarlo de nuevo.",
       "switchedModel": "Cambiado a <model>{{model}}</model>",
       "tokens_one": "{{tokens}} token",
       "tokens_many": "{{tokens}} tokens",
@@ -1851,8 +2058,10 @@
         "groupFailed_other": "{{count}} con error",
         "delegated_one": "Ejecutó {{count}} subagente",
         "delegated_other": "Ejecutó {{count}} subagentes",
+        "delegated_many": "Ejecutó {{count}} subagentes",
         "delegating_one": "Ejecutando {{count}} subagente",
         "delegating_other": "Ejecutando {{count}} subagentes",
+        "delegating_many": "Ejecutando {{count}} subagentes",
         "delegatingDone_one": "Ejecutando {{count}} subagente · {{done}} terminado",
         "delegatingDone_many": "Ejecutando {{count}} subagentes · {{done}} terminados",
         "delegatingDone_other": "Ejecutando {{count}} subagentes · {{done}} terminados",
@@ -1895,6 +2104,22 @@
         "answered": "Respondiste: {{summary}}",
         "dismissed": "Descartaste: {{summary}}",
         "failed": "No se pudieron enviar tus respuestas."
+      },
+      "form": {
+        "label": "Formulario",
+        "submit": "Enviar",
+        "sending": "Enviando…",
+        "sent": "Enviado",
+        "dismiss": "Ahora no",
+        "required": "Obligatorio",
+        "optional": "Opcional",
+        "choose": "Elige una opción",
+        "submitted": "Enviaste: {{title}}",
+        "dismissed": "Descartaste: {{title}}",
+        "blank": "En blanco",
+        "failed": "No se pudo enviar el formulario.",
+        "fixFields": "Revisa los campos marcados.",
+        "loadFailed": "No se ha podido leer el formulario que espera este bot."
       },
       "approval": {
         "needsInput": "Necesita tu respuesta",
@@ -1951,7 +2176,8 @@
           "progress": "Revisé la sesión «{{name}}»",
           "notice": "La sesión «{{name}}» envió un mensaje",
           "matched_one": "La sesión «{{name}}» imprimió una línea que coincide con «{{pattern}}»",
-          "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
+          "matched_other": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»",
+          "matched_many": "La sesión «{{name}}» imprimió {{count}} líneas que coinciden con «{{pattern}}»"
         },
         "pullRequest": {
           "check_failed": "Pull request #{{number}} de {{repository}}: fallaron los checks",
@@ -1959,6 +2185,10 @@
           "review": "Pull request #{{number}} de {{repository}}: nueva revisión",
           "comment": "Pull request #{{number}} de {{repository}}: nuevo comentario",
           "pr_merged": "Pull request #{{number}} de {{repository}}: fusionada"
+        },
+        "githubAsk": {
+          "mention": "Preguntado en GitHub, en un comentario de #{{number}} de {{repository}}",
+          "label": "Preguntado en GitHub, con una etiqueta en #{{number}} de {{repository}}"
         },
         "task": {
           "created": "«{{title}}» se añadió a {{to}}",
@@ -1996,6 +2226,7 @@
           "stopped": "El bucle «{{prompt}}» se detuvo: una ejecución falló o se detuvo",
           "ended": "El bucle «{{prompt}}» terminó: el bot no dijo cuándo volver a ejecutarlo"
         },
+        "checkBack": "Volví a revisar: {{about}}",
         "compaction": "Resumió el trabajo anterior para mantener su contexto pequeño · {{before}} → {{after}} tokens",
         "dream": {
           "dreamed": "Ordenó su memoria · {{before}} datos → {{after}}",
@@ -2043,10 +2274,13 @@
         "every": {
           "minutes_one": "cada minuto",
           "minutes_other": "cada {{count}} minutos",
+          "minutes_many": "cada {{count}} minutos",
           "hours_one": "cada hora",
           "hours_other": "cada {{count}} horas",
+          "hours_many": "cada {{count}} horas",
           "days_one": "cada día",
           "days_other": "cada {{count}} días",
+          "days_many": "cada {{count}} días",
           "selfPaced": "cuando el bot decida"
         },
         "next": "siguiente a las {{time}}",
@@ -2081,6 +2315,7 @@
         "breakdown": "Desglose",
         "models_one": "{{count}} modelo",
         "models_other": "{{count}} modelos",
+        "models_many": "{{count}} modelos",
         "input": "Entrada",
         "output": "Salida",
         "cacheRead": "Lectura de caché",
@@ -2089,19 +2324,24 @@
         "purpose": {
           "goalReview_one": "{{count}} revisión del objetivo",
           "goalReview_other": "{{count}} revisiones del objetivo",
+          "goalReview_many": "{{count}} revisiones del objetivo",
           "summary_one": "{{count}} resumen",
           "summary_other": "{{count}} resúmenes",
+          "summary_many": "{{count}} resúmenes",
           "ruleReview_one": "{{count}} revisión de reglas",
           "ruleReview_other": "{{count}} revisiones de reglas",
+          "ruleReview_many": "{{count}} revisiones de reglas",
           "dream_one": "{{count}} orden de memoria",
           "dream_other": "{{count}} órdenes de memoria",
+          "dream_many": "{{count}} órdenes de memoria",
           "suggestion_one": "{{count}} respuesta sugerida",
           "suggestion_many": "{{count}} respuestas sugeridas",
           "suggestion_other": "{{count}} respuestas sugeridas"
         },
         "empty": "Este chat aún no ha gastado nada.",
         "loadFailed": "No se pudo cargar el uso. Inténtalo de nuevo."
-      }
+      },
+      "botReacted": "El bot reaccionó con {{emoji}}"
     },
     "settings": {
       "back": "Volver al chat",
@@ -2229,9 +2469,11 @@
         "learnFailed": "No se ha podido cambiar cómo aprende el bot.",
         "facts_one": "Datos · {{count}}",
         "facts_other": "Datos · {{count}}",
+        "facts_many": "Datos · {{count}}",
         "clearAll": "Borrar todo",
         "clearTitle_one": "¿Borrar {{count}} dato?",
         "clearTitle_other": "¿Borrar los {{count}} datos?",
+        "clearTitle_many": "¿Borrar los {{count}} datos?",
         "clearBody": "El bot olvida todo lo que se le pidió recordar. Su alma y sus instrucciones se mantienen.",
         "clearing": "Borrando…",
         "clearFailed": "No se ha podido borrar la memoria.",
@@ -2283,6 +2525,7 @@
         "subtitle": "Formas guardadas de hacer una tarea. Ejecuta una escribiendo / y su nombre en el chat; el bot usa una por su cuenta cuando una petición encaja.",
         "count_one": "Habilidades · {{count}}",
         "count_other": "Habilidades · {{count}}",
+        "count_many": "Habilidades · {{count}}",
         "empty": "Aún no hay habilidades. Añade una, o pide al bot que guarde como habilidad cómo hizo algo.",
         "add": "Añadir habilidad",
         "edit": "Editar {{name}}",
@@ -2332,6 +2575,7 @@
         "schedule": "Horario · {{when}}",
         "github": "GitHub · {{when}}",
         "gmail": "Gmail · {{when}}",
+        "webhook": "Webhook · {{when}}",
         "last": "Última",
         "next": "Próxima",
         "more": "Mostrar más",
@@ -2342,8 +2586,21 @@
         "resume": "Reanudar",
         "run": "Ejecutar ahora",
         "running": "Ejecutándose…",
-        "edit": "Editar en el chat",
+        "edit": "Editar rutina",
         "delete": "Eliminar rutina",
+        "dialog": {
+          "title": "Editar «{{name}}»",
+          "description": "Cambia cómo se llama la rutina y qué le pide al bot en cada ejecución.",
+          "name": "Nombre",
+          "prompt": "Instrucciones",
+          "promptHint": "Lo que hace el bot en cada ejecución, como se lo pedirías en el chat.",
+          "when": "Se ejecuta",
+          "whenHint": "Para cambiar cuándo se ejecuta, pídeselo al bot en el chat.",
+          "askInChat": "Pedir en el chat",
+          "save": "Guardar",
+          "saving": "Guardando…",
+          "saveFailed": "No se pudo guardar la rutina."
+        },
         "editPrompt": "Edita tu rutina: {{name}}",
         "deleteTitle": "¿Eliminar «{{name}}»?",
         "deleteBody": "Se elimina la rutina y se detienen sus próximas ejecuciones. No se puede deshacer.",
@@ -2351,7 +2608,32 @@
         "deleteFailed": "No se pudo eliminar la rutina.",
         "switchFailed": "No se pudo cambiar la rutina.",
         "runFailed": "No se pudo ejecutar la rutina.",
-        "loadFailed": "No se pudieron cargar las rutinas del bot."
+        "loadFailed": "No se pudieron cargar las rutinas del bot.",
+        "webhookUrl": {
+          "none": "Webhook · aún sin URL",
+          "create": "Crear URL",
+          "newUrl": "Nueva URL",
+          "creating": "Creando…",
+          "revoke": "Revocar",
+          "revoking": "Revocando…",
+          "revokeTitle": "¿Revocar la URL del webhook de «{{name}}»?",
+          "revokeBody": "Lo que se envíe a ella se rechaza a partir de ahora. La rutina conserva su disparador de webhook: crea una URL nueva para volver a usarlo.",
+          "revokeFailed": "No se pudo revocar la URL.",
+          "isSigned": "Firmada",
+          "isUnsigned": "Sin firma",
+          "lastReceived": "última recepción {{when}}",
+          "neverReceived": "aún no ha recibido nada",
+          "dialogTitle": "URL del webhook de «{{name}}»",
+          "dialogBody": "Cualquier cosa que pueda enviar un POST (un pipeline de despliegue, Sentry, un formulario) ejecuta esta rutina a través de esta URL. El bot lee lo enviado como datos externos, nunca como instrucciones.",
+          "replaces": "La URL que tiene ahora deja de funcionar en cuanto se crea la nueva.",
+          "signed": "Exigir firma (un secreto con el que se firma cada petición)",
+          "shownOnce": "Cópialos ahora: solo se muestran una vez. Después solo se ve el principio de la URL.",
+          "url": "URL",
+          "secret": "Secreto de firma",
+          "signHow": "Envía x-oppenheimer-signature: t=<segundos unix>,v1=<HMAC-SHA256 en hex de «<t>.<cuerpo>» con este secreto>. Se rechazan las peticiones de hace más de cinco minutos.",
+          "done": "Listo",
+          "failed": "No se pudo crear la URL."
+        }
       },
       "homeHost": {
         "title": "Máquina principal",
@@ -2453,7 +2735,7 @@
       },
       "gateways": {
         "title": "Canales",
-        "subtitle": "Dónde la gente habla con este bot: los chats de WhatsApp que responde y los bots de Telegram en los que responde.",
+        "subtitle": "Dónde la gente habla con este bot: los chats de WhatsApp que responde, los bots de Telegram en los que responde y su propia app de Slack.",
         "whatsappFailed": "No se pudieron cargar tus números de WhatsApp.",
         "telegramFailed": "No se pudieron cargar tus bots de Telegram.",
         "chatsFailed": "No se pudieron cargar los chats de este número.",
@@ -2484,8 +2766,68 @@
         "noCandidates": "Ningún chat coincide.",
         "addCount_one": "Añadir {{count}} chat",
         "addCount_other": "Añadir {{count}} chats",
+        "addCount_many": "Añadir {{count}} chats",
         "telegramTitle": "Telegram · {{name}}",
-        "telegramMeta": "Te responde allí. Los grupos y otras personas en Telegram llegan después."
+        "telegramMeta": "Te responde allí. Los grupos y otras personas en Telegram llegan después.",
+        "tabs": {
+          "label": "Canal",
+          "whatsapp": "WhatsApp",
+          "telegram": "Telegram",
+          "slack": "Slack"
+        },
+        "noTelegram": "Ningún bot de Telegram responde como este bot todavía. Elígelo para uno en Ajustes → Telegram."
+      },
+      "slack": {
+        "title": "Slack",
+        "subtitle": "Dale a este bot su propia app de Slack para pedirle cosas mencionándolo en un canal o en sus mensajes directos. Responde en el hilo donde se lo pediste.",
+        "loadFailed": "No se pudo cargar la app de Slack de este bot.",
+        "howItWorks": "El bot solo te responde a ti: si otra persona lo menciona, lo ignora. Las aprobaciones se quedan en Oppenheimer y en tu bandeja; el hilo recibe un enlace a ellas. Escribe stop en un hilo para detener lo que está haciendo allí.",
+        "stepCreate": "Crea la app en Slack",
+        "stepCreateHint": "Slack se abre con el nombre del bot, los permisos que necesita y adónde enviar sus eventos ya rellenados. Elige tu espacio de trabajo y créala.",
+        "createInSlack": "Crear en Slack",
+        "copyEventsUrl": "Copiar la dirección de eventos",
+        "stepInstall": "Instálala en tu espacio de trabajo",
+        "stepInstallHint": "En los ajustes de la app, abre Install App y elige Install to Workspace.",
+        "stepPaste": "Pega su token y su signing secret",
+        "stepPasteHint": "Ambos se guardan cifrados y no se vuelven a mostrar.",
+        "tokenField": "Bot User OAuth Token",
+        "tokenHint": "En OAuth & Permissions, una vez instalada la app. Empieza por xoxb-.",
+        "secretField": "Signing secret",
+        "secretHint": "En Basic Information → App Credentials.",
+        "show": "Mostrar",
+        "hide": "Ocultar",
+        "connect": "Conectar",
+        "connecting": "Conectando…",
+        "connectFailed": "No se pudo conectar la app de Slack.",
+        "inWorkspace": "En {{team}}",
+        "tokenEnding": "Token terminado en {{hint}}",
+        "status": {
+          "answering": "Te responde",
+          "notLinked": "Vincula tu usuario de Slack",
+          "revoked": "Token rechazado"
+        },
+        "replace": "Nuevo token",
+        "replaceTitle": "Nuevo token para @{{name}}",
+        "replaceDescription": "Vuelve a pegar el token y el signing secret, tras reinstalar la app o rotar su token. Con otra app tendrás que volver a vincular tu usuario de Slack.",
+        "replaceSubmit": "Guardar",
+        "disconnect": "Desconectar",
+        "disconnecting": "Desconectando…",
+        "disconnectTitle": "¿Desconectar @{{name}}?",
+        "disconnectDescription": "Oppenheimer olvida el token de la app y el bot deja de responder en Slack. Sus hilos se quedan en el historial del bot. La app sigue en Slack; bórrala allí para quitarla.",
+        "disconnectFailed": "No se pudo desconectar la app de Slack.",
+        "ownerIntro": "@{{name}} solo te responde a ti. Dile qué usuario de Slack eres enviándole un código de un solo uso.",
+        "linkMe": "Vincular mi usuario de Slack",
+        "makingCode": "Creando un código…",
+        "ownerLinkFailed": "No se pudo crear el código.",
+        "ownerStepOpen": "Abre tus mensajes directos con @{{name}}",
+        "openDm": "Abrir en Slack",
+        "ownerStepSend": "Envíale este mensaje en menos de diez minutos",
+        "copyCode": "Copiar el mensaje",
+        "ownerStepCheck": "Luego comprueba que funcionó",
+        "check": "Comprobar",
+        "newCode": "Nuevo código",
+        "copy": "Copiar",
+        "copied": "Copiado"
       }
     },
     "delete": {
@@ -2502,7 +2844,26 @@
       "manage": "Bots en {{section}}",
       "checkedHint": "Los bots marcados aparecen en {{section}}.",
       "manageAll": "Gestionar en {{employees}}",
-      "hide": "Ocultar de {{section}}"
+      "hide": "Ocultar de {{section}}",
+      "faceWaiting": "{{name}}, te necesita",
+      "faceUnread": "{{name}}, sin leer",
+      "faceWorking": "{{name}}, trabajando",
+      "more_one": "{{count}} bot más: mostrar la lista",
+      "more_many": "{{count}} bots más: mostrar la lista",
+      "more_other": "{{count}} bots más: mostrar la lista"
+    },
+    "mobile": {
+      "search": "Buscar empleados",
+      "loadFailed": "No se pudieron cargar tus empleados.",
+      "ungrouped": "Sin grupo",
+      "noMatches": "Ningún empleado se llama «{{query}}».",
+      "empty": "Aún no hay empleados. Crea uno desde la consola en tu ordenador.",
+      "notFound": "Este empleado ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+      "chatFailed": "No se pudo cargar el chat.",
+      "actions": "Acciones del empleado",
+      "decideFailed": "La decisión no llegó al bot. Vuelve a intentarlo.",
+      "answerFailed": "La respuesta no llegó al bot. Vuelve a intentarlo.",
+      "botLoadFailed": "No se pudo cargar este empleado."
     }
   },
   "automations": {
@@ -2533,7 +2894,8 @@
       "runsEmpty": "Todavía no hay ejecuciones. Cada una aparece aquí con la sesión que inició.",
       "loadFailed": "No se han podido cargar las automatizaciones.",
       "actionFailed": "No se ha podido completar.",
-      "actionFailedFor": "«{{name}}» no se ha actualizado"
+      "actionFailedFor": "«{{name}}» no se ha actualizado",
+      "filterNoMatch": "Ninguna automatización coincide con estos filtros."
     },
     "status": {
       "active": "Activa",
@@ -2553,6 +2915,7 @@
       "paused": "Omitida: la automatización estaba en pausa",
       "deleted": "Omitida: la automatización se eliminó",
       "own_event": "Omitida: el evento era nuestro",
+      "own_session_event": "Omitida: la causó una sesión que inició este bot",
       "automation_rate_limited": "Omitida: límite por hora de esta automatización",
       "workspace_rate_limited": "Omitida: límite por hora del espacio de trabajo",
       "overlapping": "Omitida: otra ejecución seguía en curso",
@@ -2594,6 +2957,10 @@
       "monthly": {
         "label": "Mensual",
         "desc": "Un día del mes"
+      },
+      "cron": {
+        "label": "Personalizada",
+        "desc": "Con un horario que un bot escribe por ti"
       }
     },
     "event": {
@@ -2660,10 +3027,42 @@
       "event": "Al ocurrir: {{event}}",
       "mail": "Correo nuevo que coincide con «{{query}}»",
       "anyMail": "Cualquier correo nuevo",
+      "webhook": "Algo enviado a su URL",
       "more": "{{summary}} +{{count}}",
       "manual": "Solo manual",
       "monFri": "lun–vie",
       "weekend": "sáb, dom"
+    },
+    "cron": {
+      "sentence": "{{time}}, {{day}}",
+      "sentenceMonths": "{{time}}, {{day}}, en {{months}}",
+      "zoned": "{{sentence}} ({{zone}})",
+      "custom": "Horario personalizado",
+      "at": "A las {{times}}",
+      "everyMinutes": "Cada {{step}} minutos",
+      "everyMinutesWindow": "Cada {{step}} minutos de {{from}} a {{to}}",
+      "everyHour": "Cada hora a los :{{minute}}",
+      "everyHourAt": "Cada hora a los {{minutes}}",
+      "everyHourWindow": "Cada hora a los :{{minute}} de {{from}} a {{to}}",
+      "everyHours": "Cada {{step}} horas a los :{{minute}}",
+      "everyHoursWindow": "Cada {{step}} horas a los :{{minute}} de {{from}} a {{to}}",
+      "minutesPast": "A los {{minutes}} de las {{hours}}",
+      "everyDay": "todos los días",
+      "monthDays": "el día {{days}} del mes",
+      "lastDay": "el último día del mes",
+      "lastWeekday": "el último día laborable del mes",
+      "nthWeekday": "el {{nth}} {{day}} del mes",
+      "lastWeekdayOf": "el último {{day}} del mes",
+      "either": "{{monthDays}} o {{weekDays}}",
+      "both": "{{monthDays}}, si cae en {{weekDays}}",
+      "bothDays": "{{monthDays}}, si cae en {{weekDays}}",
+      "ordinal": {
+        "1": "primer",
+        "2": "segundo",
+        "3": "tercer",
+        "4": "cuarto",
+        "5": "quinto"
+      }
     },
     "next": {
       "onEvent": "En el próximo evento",
@@ -2792,6 +3191,7 @@
       "searchRepositories": "Buscar repositorios",
       "repoCount_one": "{{count}} repositorio",
       "repoCount_other": "{{count}} repositorios",
+      "repoCount_many": "{{count}} repositorios",
       "runsIn": "Se ejecuta en",
       "placeHost": "En un host",
       "placeHostDesc": "Un worktree en el host, el agente en su terminal",
@@ -2851,7 +3251,34 @@
       "runsOn": "La ejecuta {{bot}}",
       "loadFailed": "No se pudieron cargar las rutinas de los bots.",
       "empty": "Las rutinas de un bot se crean en su chat, con /schedule.",
-      "emptyTitle": "Aún no hay rutinas de bots"
+      "emptyTitle": "Aún no hay rutinas de bots",
+      "filter": {
+        "allBots": "Todos los bots",
+        "searchBots": "Buscar bots",
+        "noMatch": "Ninguna rutina de bot coincide con estos filtros."
+      }
+    },
+    "filter": {
+      "all": "Todas",
+      "active": "Activas",
+      "paused": "En pausa",
+      "trigger": {
+        "any": "Cualquier disparador",
+        "schedule": "Horario",
+        "gmail": "Gmail",
+        "github": "GitHub",
+        "webhook": "Webhook"
+      }
+    },
+    "mobile": {
+      "empty": "Aún no hay automatizaciones. Crea una desde la consola en tu ordenador.",
+      "pauseFailed": "No se pudo pausar ni reanudar la automatización.",
+      "runFailed": "No se pudo iniciar la ejecución.",
+      "duplicateFailed": "No se pudo duplicar la automatización.",
+      "started": "Ejecución iniciada",
+      "nextRun": "Próxima ejecución · {{when}}",
+      "instructions": "Instrucciones",
+      "recentRuns": "Ejecuciones recientes"
     }
   },
   "pullRequests": {
@@ -3186,7 +3613,6 @@
     "backToTask": "Volver a la tarea",
     "nav": {
       "label": "Plan",
-      "inbox": "Bandeja",
       "tasks": "Tareas",
       "calendar": "Calendario",
       "milestones": "Hitos",
@@ -3261,6 +3687,7 @@
       "emptyTitle": "No hay hitos en este proyecto",
       "ofTasks_one": "de {{count}} tarea",
       "ofTasks_other": "de {{count}} tareas",
+      "ofTasks_many": "de {{count}} tareas",
       "today": "Hoy",
       "earlier": "Antes",
       "later": "Después",
@@ -3329,7 +3756,9 @@
       "noRepository": "Sin repositorio",
       "noRepositoryDesc": "Se abre en la carpeta personal del host",
       "repositorySearch": "Buscar repositorios",
-      "noRepositories": "Este proyecto no tiene repositorios. Añade uno en sus ajustes.",
+      "noRepositories": "No hay repositorios. Da acceso a uno a la app de GitHub.",
+      "repositoriesLoading": "Cargando los repositorios del espacio de trabajo…",
+      "repositoriesFailed": "No se pudieron cargar todos los repositorios del espacio de trabajo.",
       "where": "Dónde se ejecuta",
       "whereSearch": "Buscar lugares",
       "noPlaces": "No hay dónde ejecutarla.",
@@ -3449,6 +3878,14 @@
       "high": "Alta",
       "medium": "Media",
       "low": "Baja"
+    },
+    "mobile": {
+      "actions": "Acciones de la tarea",
+      "notFound": "Esta tarea ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+      "loadFailed": "No se pudieron cargar los proyectos y los hitos en los que está archivada esta tarea.",
+      "due": "Vence",
+      "sessions": "Sesiones",
+      "noSessions": "Ninguna sesión trabaja en esta tarea todavía. Inicia una desde la consola en tu ordenador."
     }
   },
   "calendar": {
@@ -3689,7 +4126,9 @@
   "inbox": {
     "title": "Bandeja",
     "list": {
+      "emptyTitle": "Bandeja vacía",
       "empty": "Nada te necesita.",
+      "noneMatchingTitle": "Sin coincidencias",
       "noneMatching": "Nada que coincida con estos filtros o palabras te necesita.",
       "low": "Baja",
       "snoozed": "Pospuestos",
@@ -3714,7 +4153,8 @@
       "low": "Bajar prioridad",
       "restore": "Restaurar prioridad",
       "snooze": "Posponer",
-      "delete": "Eliminar"
+      "delete": "Eliminar",
+      "start": "Seleccionar"
     },
     "filter": {
       "label": "Filtrar la bandeja",
@@ -3723,6 +4163,8 @@
       "any": "Cualquiera",
       "showDone": "Mostrar hechos",
       "showPulls": "Mostrar pull requests",
+      "alerts": "Avisarme en este navegador",
+      "alertsBlocked": "Este navegador bloquea las notificaciones",
       "clear": "Quitar filtros",
       "remove": "Quitar filtro",
       "typeChip": "Tipo: {{value}}",
@@ -3773,6 +4215,7 @@
       "permissionBody": "Su agente se detuvo a preguntar antes de seguir. Tu respuesta se escribe en su terminal.",
       "questionTitle_one": "Una pregunta antes de que {{name}} continúe",
       "questionTitle_other": "{{count}} preguntas antes de que {{name}} continúe",
+      "questionTitle_many": "{{count}} preguntas antes de que {{name}} continúe",
       "questionBody": "Elige una respuesta para cada una, o escribe la tuya, y seguirá donde se detuvo.",
       "send": "Enviar respuestas",
       "sending": "Enviando…",
@@ -3820,7 +4263,6 @@
       "open": "Abrir ejecución"
     },
     "card": {
-      "later": "Más tarde",
       "answerFailed": "No se pudo hacer. Inténtalo de nuevo."
     },
     "pane": {
@@ -3832,16 +4274,21 @@
       "clearTitle": "Estás al día",
       "clear": "Lo nuevo llega aquí cuando algo necesita una decisión.",
       "clearRunning_one": "{{count}} sesión sigue en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
-      "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión."
+      "clearRunning_other": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
+      "clearRunning_many": "{{count}} sesiones siguen en marcha. Lo nuevo llega aquí cuando algo necesita una decisión.",
+      "cleared_one": "Has despejado {{count}} elemento en esta visita.",
+      "cleared_other": "Has despejado {{count}} elementos en esta visita.",
+      "cleared_many": "Has despejado {{count}} elementos en esta visita."
     },
     "notice": {
-      "title": "{{name}} tiene novedades para ti",
-      "done": "Hecho"
+      "title": "{{name}} tiene novedades para ti"
     },
     "botNotice": {
       "title": "{{bot}} tiene novedades para ti",
       "openChat": "Abrir chat",
-      "done": "Hecho"
+      "reply": "Responder aquí",
+      "hideReply": "Ocultar chat",
+      "chat": "Chat con {{bot}}"
     },
     "report": {
       "sender": "Un agente",
@@ -3852,20 +4299,36 @@
       "answerPlaceholder": "¿Qué debería hacer?",
       "send": "Enviar respuesta",
       "sending": "Enviando…",
-      "done": "Hecho",
       "answerFailed": "No se pudo enviar la respuesta. Inténtalo de nuevo."
     },
     "task": {
       "sender": "Un agente",
       "short": "Nueva tarea: {{title}}",
-      "body": "Un agente añadió esta tarea a tu tablero. Ponla para hoy, empieza una sesión con ella o descártala para dejarla en el tablero tal como está.",
+      "body": "Un agente añadió esta tarea a tu tablero. Ponla para hoy o empieza una sesión con ella; Hecho la deja en el tablero tal como está.",
       "due": "Vence el {{date}}",
-      "open": "Abrir tarea",
       "start": "Empezar sesión",
       "today": "Poner para hoy",
-      "planning": "Poniéndola para hoy…",
-      "dismiss": "Descartar",
-      "dismissing": "Descartando…"
+      "planning": "Poniéndola para hoy…"
+    },
+    "question": {
+      "step": "Pregunta {{n}} de {{total}}",
+      "ready": "Listo para enviar",
+      "back": "Atrás",
+      "next": "Siguiente pregunta",
+      "edit": "Cambiar la respuesta a: {{question}}",
+      "label": "Pregunta {{n}}"
+    },
+    "dock": {
+      "label": "Moverse por la bandeja",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "done": "Hecho"
+    },
+    "alert": {
+      "doneTitle": "{{name}} terminó su turno",
+      "doneBody": "Abre la sesión para ver qué hizo.",
+      "staleTitle": "{{name}} lleva 30 minutos esperando",
+      "staleBody": "Todavía te necesita. Abre la sesión para retomarla."
     }
   },
   "settings": {
@@ -3973,6 +4436,7 @@
       "saveFailed": "No se pudo guardar lo que escribiste.",
       "learnedTitle_one": "Lo que aprendieron tus bots · {{count}}",
       "learnedTitle_other": "Lo que aprendieron tus bots · {{count}}",
+      "learnedTitle_many": "Lo que aprendieron tus bots · {{count}}",
       "learnedHint": "Datos sobre ti que un bot guardó en un chat. Cada uno se queda con el bot que lo aprendió: cámbialo u olvídalo aquí y todos los bots leen el cambio.",
       "learnedEmpty": "Tus bots aún no han aprendido nada sobre ti.",
       "loadFailed": "No se pudo cargar lo que tus bots saben de ti.",
@@ -4001,7 +4465,12 @@
     },
     "modelProviders": {
       "title": "Proveedores de modelos",
-      "description": "Las claves con las que funcionan tus bots. Cada bot usa la clave de su proveedor; se guarda cifrada y no se vuelve a mostrar. Los bots nuevos empiezan con el proveedor predeterminado.",
+      "description": "Las claves con las que funcionan tus bots y la voz. Cada bot usa la clave de su proveedor; Groq y ElevenLabs sirven solo para la voz. Una clave se guarda cifrada y no se vuelve a mostrar. Los bots nuevos empiezan con el proveedor predeterminado.",
+      "tabs": {
+        "label": "Vistas de proveedores de modelos",
+        "providers": "Proveedores",
+        "voice": "Voz"
+      },
       "unavailable": "Este servidor aún no está preparado para guardar claves de proveedores (BOTS_PROVIDER_KEY), así que los bots no pueden responder.",
       "loadFailed": "No se pudieron cargar los proveedores de modelos.",
       "keyEnding": "Clave que termina en {{hint}}",
@@ -4024,7 +4493,9 @@
         "glm": "Modelos GLM, a través de z.ai.",
         "openai": "Modelos GPT, a través de la API de OpenAI.",
         "chatgpt": "Modelos GPT, con tu suscripción de ChatGPT en lugar de una clave de API.",
-        "xai": "Modelos Grok, a través de la API de xAI."
+        "xai": "Modelos Grok, a través de la API de xAI.",
+        "groq": "Transcripción con Whisper, rápida, a través de la API de Groq.",
+        "elevenlabs": "Transcripción y voces naturales, a través de la API de ElevenLabs."
       },
       "dialog": {
         "title": "Clave de {{provider}}",
@@ -4053,6 +4524,46 @@
         "connected": "Sesión iniciada. Los bots de ChatGPT ya funcionan con esta suscripción.",
         "done": "Hecho",
         "failed": "No se pudo iniciar sesión en ChatGPT."
+      },
+      "voice": {
+        "title": "Voz",
+        "description": "Qué escucha el dictado y las notas de voz que reciben tus bots, con qué hablan tus bots en sus notas de voz y qué pule una transcripción. Automático usa el primer proveedor que tengas, en el orden de la lista.",
+        "loadFailed": "No se pudieron cargar los ajustes de voz.",
+        "saveFailed": "No se pudieron guardar los ajustes de voz.",
+        "automatic": "Automático",
+        "notConnected": "{{provider}} · no conectado",
+        "server": "Este servidor",
+        "search": "Buscar",
+        "noMatch": "Nada coincide con «{{query}}».",
+        "transcription": {
+          "title": "Voz a texto",
+          "meta": "El dictado en la consola y las notas de voz que reciben tus bots.",
+          "providerLabel": "Proveedor de voz a texto",
+          "modelLabel": "Modelo de voz a texto"
+        },
+        "synthesis": {
+          "title": "Notas de voz",
+          "meta": "Con qué voz hablan tus bots cuando responden con una nota de voz.",
+          "providerLabel": "Proveedor de notas de voz",
+          "modelLabel": "Modelo de notas de voz",
+          "voiceLabel": "Voz",
+          "ownVoice": "Una voz de mi biblioteca…",
+          "own": "Voz {{id}}"
+        },
+        "polish": {
+          "title": "Pulido de la transcripción",
+          "meta": "Convierte lo escuchado en texto escrito: sin muletillas, con los nombres escritos como tú los escribes.",
+          "providerLabel": "Proveedor del pulido",
+          "modelLabel": "Modelo del pulido",
+          "off": "Desactivado: tal cual"
+        },
+        "voiceDialog": {
+          "title": "Voz de ElevenLabs",
+          "description": "Pega el ID de una voz de tu biblioteca de ElevenLabs, también una clonada. Los bots hablan con ella desde su próxima nota de voz.",
+          "label": "ID de la voz",
+          "save": "Usar esta voz",
+          "saving": "Guardando…"
+        }
       }
     },
     "cloudAgents": {
@@ -4208,13 +4719,14 @@
         "manage": "Gestionar chats",
         "manageLabel": "Gestionar los chats de {{label}}",
         "pageTitle": "Número de WhatsApp",
-        "pageDescription": "Quién responde en este número: su bot por defecto, y cada grupo y persona que ha visto.",
+        "pageDescription": "Quién responde en este número: su bot por defecto, y cada grupo y persona que conoce.",
         "goneTitle": "Este número ya no está vinculado.",
         "back": "Volver a WhatsApp",
         "ownerFirst": "Confirma primero tu propio número. Después podrás elegir quién responde a cada grupo y persona aquí.",
         "loadFailed": "No se pudieron cargar los chats de este número.",
         "summary_one": "{{answered}} de {{count}} chat con respuesta",
         "summary_other": "{{answered}} de {{count}} chats con respuesta",
+        "summary_many": "{{answered}} de {{count}} chats con respuesta",
         "tabsLabel": "Grupos o personas",
         "tabs": {
           "group": "Grupos",
@@ -4225,11 +4737,14 @@
         "byAll": "Cualquiera o nadie",
         "byAnswered": "Con respuesta",
         "byDefault": "Bot por defecto",
+        "bySearch": "Buscar bots",
+        "byNoMatch": "Ningún bot coincide con «{{query}}».",
         "none": "Sin respuesta",
         "defaultNamed": "Bot por defecto ({{bot}})",
         "defaultNone": "Bot por defecto (ninguno)",
         "group": "Grupo",
         "person": "Persona",
+        "you": "Tú",
         "noMessages": "Aún sin mensajes",
         "justNow": "Ahora mismo",
         "answerLabel": "Quién responde a {{chat}}",
@@ -4238,16 +4753,18 @@
         "bulkLabel": "Chats seleccionados",
         "selected_one": "{{count}} chat seleccionado",
         "selected_other": "{{count}} chats seleccionados",
+        "selected_many": "{{count}} chats seleccionados",
         "answerWith": "Responder con",
         "apply": "Aplicar",
         "stop": "Dejar de responder",
         "clear": "Limpiar",
         "routeFailed": "No se guardó. Inténtalo de nuevo.",
         "emptyTitle": "Este número aún no ha visto ningún chat",
-        "emptyDescription": "Los grupos y las personas aparecen aquí cuando escriben al número, o él les escribe.",
+        "emptyDescription": "Los grupos y las personas aparecen aquí cuando el número se conecta y lee sus grupos y contactos, o cuando alguien le escribe.",
         "noMatch": "Ningún chat coincide",
         "range_one": "{{from}}–{{to}} de {{count}}",
         "range_other": "{{from}}–{{to}} de {{count}}",
+        "range_many": "{{from}}–{{to}} de {{count}}",
         "previous": "Anterior",
         "next": "Siguiente"
       }
@@ -4369,7 +4886,10 @@
     "logOutFailed": "No se ha podido cerrar la sesión. Inténtalo de nuevo.",
     "plan": "Plan",
     "pullRequests": "Pull requests",
-    "employees": "Empleados"
+    "employees": "Empleados",
+    "account": "Cuenta",
+    "pullRequestsShort": "PRs",
+    "inbox": "Bandeja"
   },
   "language": {
     "label": "Idioma",
@@ -4452,7 +4972,9 @@
         "noGithub": "Sin conectar",
         "noHost": "Aún sin host",
         "doneLabel": "Listo",
-        "failed": "No se ha podido cargar. Recarga la página para intentarlo de nuevo."
+        "failed": "No se ha podido cargar. Recarga la página para intentarlo de nuevo.",
+        "onComputer": "Conecta GitHub y añade tu primer host desde la consola en tu ordenador. Tus sesiones aparecen aquí en cuanto se ejecutan.",
+        "open": "Abrir Oppenheimer"
       }
     }
   },
@@ -4498,11 +5020,11 @@
     "privacy": {
       "changes": {
         "body": "Podemos actualizar esta política cuando cambie el servicio o la normativa. Publicaremos aquí la versión vigente y daremos un aviso adicional cuando un cambio afecte de forma relevante a tus derechos.",
-        "title": "11. Cambios en esta política"
+        "title": "12. Cambios en esta política"
       },
       "children": {
         "body": "El servicio es una herramienta empresarial y no está dirigido a menores de 16 años.",
-        "title": "10. Menores"
+        "title": "11. Menores"
       },
       "contactLabel": "Contacta con el operador del espacio de trabajo para solicitudes de privacidad.",
       "controller": {
@@ -4511,7 +5033,7 @@
       },
       "cookies": {
         "body": "El servicio usa cookies esenciales y almacenamiento del navegador para mantener tu sesión iniciada, proteger el servicio, recordar tus preferencias de idioma y tema y guardar en caché datos de la aplicación para un rendimiento fiable. Estas tecnologías son necesarias para ofrecer el espacio de trabajo. Si se introduce analítica opcional, daremos cualquier aviso u opción que exija la ley antes de usarla.",
-        "title": "7. Cookies y almacenamiento local"
+        "title": "8. Cookies y almacenamiento local"
       },
       "data": {
         "account": "Datos de cuenta e identidad, como nombre, correo de trabajo, foto de perfil, proveedor de autenticación y pertenencia a organizaciones.",
@@ -4522,33 +5044,41 @@
         "title": "2. Datos que tratamos",
         "workspace": "Datos del espacio de trabajo, incluidos roles, permisos, ajustes, eventos de auditoría y actividad necesaria para prestar el servicio."
       },
+      "extension": {
+        "title": "4. La extensión de Chrome",
+        "intro": "La extensión de Oppenheimer para Chrome lista tus sesiones de Claude Code en la nube y te dice cuáles te necesitan. Es su único propósito.",
+        "reads": "Lee tu lista de sesiones de claude.ai con la sesión que ya tienes iniciada en el navegador. Para encontrar esa lista, observa cómo la carga la propia página de claude.ai y anota la dirección a la que se pidió y las cabeceras anthropic-* y x-organization-* de la petición, que indican la organización y la versión de la aplicación. También lee una cookie, lastActiveOrg, que indica de quién son las sesiones que pide. Nunca lee, guarda ni envía tu inicio de sesión de claude.ai, ninguna otra cookie ni ningún token de claude.ai.",
+        "stores": "Guarda, en el almacenamiento de Chrome de tu ordenador: esa lista (el id, el título, el estado, el repositorio y la última actividad de cada sesión y, cuando claude.ai la da, su breve nota de estado, como por qué se detuvo); la dirección y las cabeceras que anotó; y el último error que encontró. Si la conectas a Oppenheimer, guarda también la dirección que escribiste y el token que creaste para ella.",
+        "sends": "Nada sale de tu ordenador salvo que la conectes a un espacio de trabajo de Oppenheimer. Desde entonces, tras cada comprobación envía a ese espacio el id y el estado de cada sesión que sigue; el espacio conserva las que inició y descarta el resto. Nada se vende, se usa para publicidad ni se comparte con nadie más.",
+        "removal": "Desconéctala desde la ventana emergente para borrar la dirección y el token, o elimina la extensión para borrar todo lo que guardó."
+      },
       "eyebrow": "Legal",
       "google": {
         "body": "Si eliges iniciar sesión con Google, Google nos facilita tu nombre, dirección de correo, foto de perfil e identificadores del proveedor. Usamos esta información solo para autenticarte, proteger el acceso y crear o vincular tu perfil. No vendemos estos datos ni los usamos para publicidad.",
         "separateConsent": "El inicio de sesión con Google no da acceso a Gmail, Drive ni a ningún otro servicio de Google. Si tu organización activa más adelante una integración compatible con Google, pedimos los permisos correspondientes mediante una pantalla de consentimiento separada y usamos esos datos solo para ofrecer la integración que elegiste.",
         "title": "3. Acceso con Google y datos de usuario de Google"
       },
-      "lastUpdated": "Última actualización: 27 de agosto de 2026.",
+      "lastUpdated": "Última actualización: 24 de noviembre de 2026.",
       "purposes": {
         "body": "Tratamos datos para prestar y administrar el servicio, autenticar usuarios, facilitar la colaboración, mantener la seguridad, responder solicitudes y cumplir la ley. Según el contexto, la base jurídica es la ejecución de un contrato, nuestro interés legítimo en operar y proteger el servicio, el consentimiento cuando sea necesario o el cumplimiento de una obligación legal.",
-        "title": "4. Finalidades y bases jurídicas"
+        "title": "5. Finalidades y bases jurídicas"
       },
       "retention": {
         "body": "Conservamos los datos de cuenta y del espacio mientras la cuenta u organización correspondiente siga activa y durante el periodo limitado necesario para seguridad, recuperación, resolución de disputas y obligaciones legales. Los datos eliminados pueden permanecer en copias cifradas hasta que expiren en su ciclo normal. Las credenciales de integraciones se eliminan al borrar la conexión, sin perjuicio de copias operativas de corta duración.",
-        "title": "6. Durante cuánto tiempo conservamos los datos"
+        "title": "7. Durante cuánto tiempo conservamos los datos"
       },
       "rights": {
         "authority": "También puedes presentar una reclamación ante la Agencia Española de Protección de Datos (AEPD) o tu autoridad de control local.",
         "body": "Cuando corresponda, puedes solicitar acceso, rectificación, supresión, limitación o portabilidad de tus datos personales, oponerte a determinados tratamientos o retirar tu consentimiento sin afectar al tratamiento lícito anterior. Escríbenos desde el correo asociado a tu cuenta para que podamos verificar y responder a tu solicitud.",
-        "title": "9. Tus derechos de privacidad"
+        "title": "10. Tus derechos de privacidad"
       },
       "security": {
         "body": "Aplicamos medidas técnicas y organizativas diseñadas para proteger los datos, como conexiones cifradas, controles de acceso, infraestructura aislada, gestión de secretos, registros de seguridad y acceso administrativo restringido. Ningún sistema garantiza una seguridad absoluta, pero revisamos y mejoramos estas medidas conforme evoluciona el servicio.",
-        "title": "8. Seguridad"
+        "title": "9. Seguridad"
       },
       "sharing": {
         "body": "Compartimos datos solo cuando es necesario para operar el servicio, cumplir la ley o seguir las instrucciones de tu organización. Los proveedores pueden incluir los de alojamiento, almacenamiento, autenticación, correo e integraciones que tu organización active. Algunos proveedores pueden tratar datos fuera del Espacio Económico Europeo con las garantías aplicables, como decisiones de adecuación o cláusulas contractuales tipo. No vendemos datos personales.",
-        "title": "5. Proveedores y transferencias internacionales"
+        "title": "6. Proveedores y transferencias internacionales"
       },
       "summary": "Esta política explica qué datos personales trata el servicio, por qué los usamos y las opciones y derechos que tienes.",
       "title": "Política de privacidad"

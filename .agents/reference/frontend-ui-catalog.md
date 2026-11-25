@@ -16,7 +16,7 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | Need                                  | Use                           | Not                                                   |
 | ------------------------------------- | ----------------------------- | ----------------------------------------------------- |
 | A command with two ways to read it (Command / Agent prompt) | `CodeBlock layout="panel"` with `tabs` | two `CodeBlock`s, a `SegmentedControl` beside a label |
-| Two views of one pane | `SegmentedControl` | a tab strip, two `Button`s |
+| Two ways to read one pane (Unified / Split, a range) | `SegmentedControl` | a tab strip, two `Button`s |
 | An address checked as you type | `SlugInput` + `FieldDescription tone` | an `Input` with hand-rolled glyphs |
 | Label / value facts before moving on | `SummaryCard` | a `Card` of `div`s |
 | An onboarding step's opening | `StepHeader` | a hand-built eyebrow row |
@@ -32,7 +32,7 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | Pairing a host: the copy buttons, the token line, the instruction, the status | the kit's `PairingChrome`, or its parts with `PairingInstruction` in its `panel` layout | two `CodeBlock`s, a `CodeBlock` alone, a second status row |
 | A menu row that opens a pane in place (Appearance, Move to project…) | `DropdownMenuPaneItem` + `DropdownMenuBack` | `DropdownMenuSub` for a two-level pick |
 | A note under a form, in any tone | `Callout` | `Alert`, a tinted `div` |
-| Views inside one page (Routines / Runs, categories, run status) | `PillTabs` with `count` | a tab strip, `SegmentedControl` |
+| Views inside one page or pane (Routines / Runs, the queue's scopes, a pull request's Description / Changes, categories, run status) | `PillTabs` with `count` | a tab strip, `SegmentedControl` |
 | How a routine page opens | `PageHeader` parts | a hand-built title row |
 | A labelled picker in the routine editor | `FieldSelect` | `ChipSelect`, a `<select>` |
 | Several labelled picks read as one card (the automation editor's Where it runs is one) | `FieldSelectGroup` + `FieldSelectRow` around a `FieldSelect variant="quiet"` | a stack of labelled `FieldSelect`s |
@@ -81,19 +81,20 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | Volume over time (tokens, cost) | `AreaChart` | `LineChart` with a fill of your own, a chart library |
 | Several connected calendar accounts | `CalendarAccountList` + `CalendarAccountRow` + `CalendarAccountAdd` | a `Card` per account |
 | An employee in the sidebar | `BotList` + `BotItem` (`SortableBotItem` to move it; `needsInput` when it waits on the reader) | a `SessionItem` with an avatar |
+| A folded list of bots that keeps them in its heading | `BotFaces` + `BotFaceItem` in `SidebarListHead`'s `summary` (each face a link to its chat, its row's state on the corner) | avatars laid in the label by hand, or hiding the bots while folded |
 | A sidebar's Pinned group above its own groups (sessions, bots) | the kit's `SidebarPinnedGroup`: the order hook's `id`, the pinned `items`, the drag kinds it `accepts`, an `emptyHint`, the rows as children | an eyebrow head, a `SortableGroup` and a drop hint put together in a feature |
 | A sidebar list head that folds its list (a section's Bots) | `SidebarFoldLabel` as the `SidebarListHead`'s `label`, the fold kept with `useStoredList` + `withFold` from the kit | a `button` and chevron of the feature's own, a fold mode on `SidebarListHead` |
 | Employees' group heads, and the list before the first bot | `SidebarProjectHeader tone="eyebrow"` (`marker` for the Built-in lock); `SidebarEmptyCard` | an uppercase `span`, a `Callout` in the sidebar |
 | A bot's photo | `AvatarPicker` (`compact` in a popover, `wide` on Profile); `BotAvatar` to draw one | a grid of `Avatar` buttons |
 | A bot's colour, and its drawn face | `AvatarColorPicker`; `BotAvatar` / `BotItem` with `face` (its colour, id and picked parts) | a row of coloured `div`s, a hex from the database |
 | A bot's face, picked part by part | `BotFacePicker` | a grid of hand-drawn faces, a free-text seed |
-| A file edited in place (a bot's SOUL.md, INSTRUCTIONS.md) | `Textarea variant="code"`; `SegmentedControlItem mono` to switch files | a `Textarea` restyled to mono |
+| A file edited in place (a bot's SOUL.md, INSTRUCTIONS.md) | `Textarea variant="code"`; `PillTab mono` to switch files | a `Textarea` restyled to mono |
 | A bot's own routine | `RoutineCard` | a `RoutineItem`, a `Card` of `div`s |
 | Records in a settings card (revisions, facts, connectors) and adding one | `SettingsListRow` + `SettingsAddRow` | a `SettingsRow` per record, an `Input` and a `Button` |
 | The bar over one thing's own settings | `SettingsTopBar` | a `PageHeader`, a hand-built header |
 | The agent chat's transcript | `ChatTranscript` with `ChatUserMessage`, `TurnHeader`, `ChatReply`, `MessageTrail` | a `Card` per message, `Prose` alone |
 | The `/command` a message starts with, sent or being written | `ChatCommandText` (the `ChatCommand` mark) in the bubble, `ChatComposer`'s `command` in the field | a coloured `span`, a `ChatMention` (its padding moves the field's text) |
-| What the agent did in a turn | `ToolCallGroup` + `ToolCallRow`, `ToolCallLive`, `ReasoningRow`, and `AgentActivity` at the foot of a working session chat (the spinner line the terminal shows); in a bot's chat, a `Trace` of `TraceStep`s (each opening to a `TraceOutput` or `TraceNote`) and `TraceLive` while it runs | a `Disclosure` per call, a `CodeBlock` of the log |
+| What the agent did in a turn | `ToolCallGroup` + `ToolCallRow`, `ToolCallLive` (a running command's last lines under it in a `ToolCallTail`), `ReasoningRow`, and `AgentActivity` at the foot of a working session chat (the spinner line the terminal shows); in a bot's chat, a `Trace` of `TraceStep`s (each opening to a `TraceOutput` or `TraceNote`) and `TraceLive` while it runs | a `Disclosure` per call, a `CodeBlock` of the log |
 | A note between turns, next steps to offer, a fenced block in a bot's reply | `ChatMarker` (a day is a `TranscriptDivider`), `ChatSuggestions` + `ChatSuggestion`, the kit's `ChatCode` in `Markdown`'s `code` slot (a `ChatCodeBlock`, or a `ChatJsonBlock` when the fence holds JSON) | a `Callout`, a row of `Button`s, a `CodeBlock` |
 | JSON in the chat: a fence, a tool call's answer | `JsonTree`, through the kit's `ChatCode` and `ChatToolOutput` (its ISO times read in words) | `JSON.stringify` into a `pre`, a JSON viewer library |
 | A turn's files, plan, subagents, questions, objects | `ChangedFilesCard`, `ProposedPlanCard`, `SubagentRunCard`, `QuestionsPill`, `ContextCard` | a `Card` of `div`s, a `PullRequestRow` |
@@ -103,4 +104,5 @@ This page lives outside `.agents/rules/` on purpose: a file there without a
 | A blocking approval or question in the chat | `ApprovalPanel`, `QuestionPanel`; in a bot's chat, `ComposerApproval` in `ChatComposer`'s `above` | a `Dialog`, a `RadioGroup`, an `ApprovalPanel` stacked over the composer |
 | A field someone writes prose into (a prompt, notes, a comment, a document) | dictation: a host that frames its own field (`Composer`, `ChatComposer`, `DiffCommentDraft`, `ReviewDecision`) takes `dictation={dictationSlots(useDictation(…))}`, a plain `Textarea` sits in the kit's `DictationField`; the text goes in through `dictateInto` / `dictateIntoField`, the `voice` is the product package's `useVoiceDictation()`, one per screen | a recorder of the feature's own, a mic `IconButton`, `getUserMedia` in a feature, an append written by hand |
 | The context meter, the `/` and `@` menus | `ComposerContextMeter`, `ComposerMenu` | a `Command`, a `Progress` |
-| The chat's header, open threads, find, an empty thread | `ChatHeader`, `ChatTabStrip` + `ChatTab`, `ThreadFindBar`, `ChatEmptyState` (`align="center"` over `TemplateTiles` + `TemplateTile` for a new bot) | `SessionPaneHeader`, a tab strip of your own |
+| The chat's header, open things (a session's or a bot's tab over Sessions, a side pane's), find, an empty thread | `ChatHeader`, `ChatTabStrip` + `ChatTab`, `ThreadFindBar`, `ChatEmptyState` (`align="center"` over `TemplateTiles` + `TemplateTile` for a new bot) | `SessionPaneHeader`, a tab strip of your own |
+| What an empty pane offers to open (the session's side pane) | `Launcher` + `LauncherItem` (`detail` on the right, `busy` while it opens), `LauncherHeading` over a group offered only sometimes | `ChipSelectItem` rows in an `EmptyState`, a column of buttons of your own |

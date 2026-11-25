@@ -96,6 +96,10 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return tools(ctx, args)
 	case "exec":
 		return execPolicy(ctx, args)
+	case "computer":
+		return computerPolicy(ctx, args)
+	case "browser":
+		return browserPolicy(ctx, args)
 	case "desktop":
 		return desktopSharing(ctx, args)
 	case "credential-helper":
@@ -126,6 +130,26 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		})
 	case "serve":
 		return serve(ctx)
+	case "mcp":
+		// An agent in a session starts this as its MCP server: the session
+		// commands as tools, on stdin and stdout. The runner names the session
+		// and the socket on its command line, since an agent may not pass its
+		// environment on to the server.
+		fs := flag.NewFlagSet("mcp", flag.ContinueOnError)
+		session := fs.String("session", "", "the session the tools act for (default: OPPENHEIMER_SESSION)")
+		socket := fs.String("socket", "", "the daemon's socket (default: OPPENHEIMER_SOCKET, else this host's)")
+		if err := fs.Parse(args); err != nil {
+			return cli.ExitUsage, err
+		}
+		return withDelegation(func(d cli.Delegation) error {
+			if *session != "" {
+				d.Self = *session
+			}
+			if *socket != "" {
+				d.Socket = *socket
+			}
+			return cli.MCP(ctx, os.Stdin, os.Stdout, d, version)
+		})
 	case "skill", "--skill":
 		// The manual for an agent in a session: helpers, messages, waits.
 		if err := cli.Skill(os.Stdout); err != nil {
@@ -328,6 +352,36 @@ func tools(ctx context.Context, args []string) (int, error) {
 		strings.Join(hostdomain.Installable(hostdomain.InstallTool), "|") + ">")
 }
 
+// browserPolicy dispatches `runner browser`: whether bots may drive a
+// browser of their own on this host. Set here and nowhere else.
+func browserPolicy(ctx context.Context, args []string) (int, error) {
+	switch {
+	case len(args) == 0 || (len(args) == 1 && args[0] == "status"):
+		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.BrowserShow(os.Stdout) })
+	case len(args) == 1 && (args[0] == "on" || args[0] == "off"):
+		return withApp(ctx, func(_ context.Context, app *cli.App) error {
+			return app.BrowserSet(os.Stdout, args[0] == "on")
+		})
+	}
+	usage(os.Stderr)
+	return cli.ExitUsage, errors.New("usage: runner browser [status] | runner browser on | runner browser off")
+}
+
+// computerPolicy dispatches `runner computer`: whether bots may use this
+// host's screen. Like `runner exec`, it is set here and nowhere else.
+func computerPolicy(ctx context.Context, args []string) (int, error) {
+	switch {
+	case len(args) == 0 || (len(args) == 1 && args[0] == "status"):
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error { return app.ComputerShow(ctx, os.Stdout) })
+	case len(args) == 1 && (args[0] == "on" || args[0] == "off"):
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.ComputerSet(ctx, os.Stdout, args[0] == "on")
+		})
+	}
+	usage(os.Stderr)
+	return cli.ExitUsage, errors.New("usage: runner computer [status] | runner computer on | runner computer off")
+}
+
 // execPolicy dispatches `runner exec`: what this host lets bots run. It is
 // set here, on the host, and nowhere else.
 func execPolicy(ctx context.Context, args []string) (int, error) {
@@ -389,7 +443,7 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		fs.StringVar(&opts.Base, "base", "main", "branch to cut the session's branch from")
 		fs.StringVar(&opts.Branch, "branch", "", "branch name (default: oppenheimer/<session id>)")
 		fs.StringVar(&opts.Name, "name", "", "name for the session")
-		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok, pi, omp or shell")
+		fs.StringVar(&opts.Agent, "agent", "claude", cli.AgentChoices(false))
 		fs.BoolVar(&opts.Existing, "existing", false, "check out --branch instead of creating it")
 		if err := fs.Parse(args); err != nil {
 			return cli.ExitUsage, err
@@ -405,7 +459,7 @@ func sessions(ctx context.Context, args []string) (int, error) {
 		// From inside a session: start a child session with a task.
 		fs := flag.NewFlagSet("sessions run", flag.ContinueOnError)
 		opts := cli.ChildOptions{}
-		fs.StringVar(&opts.Agent, "agent", "claude", "claude, codex, opencode, grok, pi, omp or shell")
+		fs.StringVar(&opts.Agent, "agent", cli.DefaultChildAgent, cli.AgentChoices(true))
 		fs.StringVar(&opts.Name, "name", "", "name for the child")
 		fs.StringVar(&opts.Repo, "repo", "", "give the child a worktree of its own of owner/name (default: run in this session's folder)")
 		fs.StringVar(&opts.Base, "base", "", "with --repo, the branch to cut it from (default: this session's base)")
@@ -461,6 +515,11 @@ func sessions(ctx context.Context, args []string) (int, error) {
 			return cli.ExitUsage, err
 		}
 		return withDelegation(func(d cli.Delegation) error { return d.WakeIn(ctx, delay, strings.Join(args[1:], " ")) })
+	case "show":
+		if len(args) != 1 {
+			return cli.ExitUsage, errors.New(`usage: runner sessions show <spec.json | ->`)
+		}
+		return withDelegation(func(d cli.Delegation) error { return d.ShowVisual(ctx, args[0]) })
 	case "send-file":
 		fs := flag.NewFlagSet("sessions send-file", flag.ContinueOnError)
 		caption := fs.String("caption", "", "a line about the file, shown with it")
@@ -670,7 +729,7 @@ var commandSections = []struct {
 	}},
 	{"Agents and tools", []commandEntry{
 		{"runner agents update", "bring every installed agent CLI to its latest release\n(run does it on its own unless RUNNER_AGENT_UPDATES=off)"},
-		{"runner agents install <name>", "install an agent CLI (claude, codex, opencode, grok, pi, omp) as you,\nfrom a checksum-verified release or npm; no sudo"},
+		{"runner agents install <name>", "install an agent CLI (" + strings.Join(hostdomain.Installable(hostdomain.InstallAgent), ", ") + ") as you,\nfrom a checksum-verified release or npm; no sudo"},
 		{"runner tools [ls]", "git, tmux, gh and the agents: versions, and how to get what is missing"},
 		{"runner tools install gh", "install GitHub's CLI into ~/.local/bin (git and tmux: the package\nmanager's command is printed, the runner never uses sudo)"},
 	}},
@@ -682,6 +741,10 @@ var commandSections = []struct {
 		{"runner exec mode off|allowlist|full", "off runs nothing, allowlist runs the programs listed, full runs anything"},
 		{"runner exec allow <program|/abs/path|/abs/glob/*>...", ""},
 		{"runner exec deny <entry>...", "add or remove programs on the allowlist; bots run them with argv\n(no shell) in ~/oppenheimer/bots/<bot> unless they name a folder"},
+		{"runner browser [status]", "whether bots may drive a browser of their own on this host (off\nunless you say so), and the browser they would get"},
+		{"runner browser on|off", "turn it on or off; each bot gets its own profile, never yours"},
+		{"runner computer [status]", "whether bots may see this host's screen and use its mouse and\nkeyboard (off unless you say so), and the screen they would use"},
+		{"runner computer on|off", "turn it on or off; on a Mac, also allow the runner under Screen\nRecording and Accessibility in System Settings"},
 	}},
 	{"From inside a session", []commandEntry{
 		{"runner sessions run [--agent A] [--repo R] [--outlive-parent] \"task\"", "start a child session with a task"},
@@ -690,10 +753,12 @@ var commandSections = []struct {
 		{"runner sessions report \"msg\"", "from inside a child: send the parent a message"},
 		{"runner sessions children", "this session's children and what each one says"},
 		{"runner sessions send-file <path> [--caption \"line\"]", "show the person a file in its chat"},
+		{"runner sessions show <spec.json | ->", "show the person a chart, figures or a table in its chat"},
 		{"runner sessions notify \"line\"", "tell the person, in the console's Inbox"},
 		{"runner sessions watch-pr <n> [--repo R] [--off]", "be woken by a pull request's checks, reviews,\ncomments and merge"},
 		{"runner sessions wake-in <30m|2h|1d> \"note\"", "be woken then with the note, instead of polling"},
 		{"runner --skill", "the manual for an agent in a session (helpers, messages, waits)"},
+		{"runner mcp", "the same commands as an MCP server on stdio, which each session's agent is given"},
 	}},
 	{"Run by the service, git and agents", []commandEntry{
 		{"runner run", "the host agent (what the service unit starts)"},

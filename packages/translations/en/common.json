@@ -136,6 +136,32 @@
       "list": "Listed",
       "more_one": "+{{count}} more",
       "more_other": "+{{count}} more"
+    },
+    "emoji": {
+      "menu": "Emoji",
+      "pick": "Insert {{emoji}} :{{name}}:",
+      "open": "Emoji",
+      "search": "Search emoji",
+      "noResults": "No emoji match",
+      "results": "Results",
+      "groups": {
+        "recent": "Recently used",
+        "smileys": "Smileys & emotion",
+        "people": "People & body",
+        "nature": "Animals & nature",
+        "food": "Food & drink",
+        "travel": "Travel & places",
+        "activities": "Activities",
+        "objects": "Objects",
+        "symbols": "Symbols",
+        "flags": "Flags"
+      },
+      "react": "React",
+      "reactWith": "React with {{emoji}}",
+      "removeReaction": "Remove reaction {{emoji}}",
+      "more": "More emoji",
+      "yourReaction": "Your reaction: {{emoji}}",
+      "reactFailed": "Could not save the reaction"
     }
   },
   "search": {
@@ -147,9 +173,63 @@
     "groups": "Search groups",
     "noMatch": "Nothing matches “{{query}}”."
   },
+  "error": "Something went wrong",
+  "comingToMobile": {
+    "title": "Coming to mobile",
+    "pullRequests": "Review the pull requests that need you."
+  },
   "projectFilter": {
     "label": "Project",
     "all": "All projects",
     "none": "No project"
+  },
+  "visual": {
+    "chart": "Chart",
+    "table": "Table",
+    "viewAs": "Show as",
+    "copyData": "Copy data",
+    "copiedData": "Data copied",
+    "expand": "Expand",
+    "showAll": "Show all {{rows}} rows",
+    "showFewer": "Show fewer",
+    "sortBy": "Sort by {{column}}",
+    "checklistDone": "{{done}} of {{total}} done",
+    "progressOf": "of {{target}}",
+    "total": "Total",
+    "empty": "—",
+    "label": "Label",
+    "invalid": "This visual could not be drawn",
+    "chartLabel": "{{title}}, a {{kind}} chart",
+    "kinds": {
+      "bar": "bar",
+      "line": "line",
+      "area": "area"
+    },
+    "html": {
+      "notRun": "Part of this visual is HTML, which this console does not run",
+      "showSource": "Show source",
+      "didNotLoad": "This visual's HTML did not load",
+      "frameTitle": "A visual the agent drew",
+      "failedInside": "Something in this visual failed: {{message}}",
+      "openLinkTitle": "Open this link?",
+      "openLinkBody": "The visual asks to open a page on {{host}}, in a new tab.",
+      "openLink": "Open link"
+    }
+  },
+  "markdown": {
+    "diagram": {
+      "diagram": "Diagram",
+      "source": "Source",
+      "views": "Show the diagram or its source",
+      "title": "Diagram",
+      "copy": "Copy source",
+      "expand": "Open large",
+      "drawing": "Drawing the diagram…",
+      "unreadable": "This diagram couldn’t be drawn, so here is its source.",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fit": "Fit to the window",
+      "zoomHint": "Scroll to zoom, drag to move around, double-click to zoom in or back out."
+    }
   }
 }

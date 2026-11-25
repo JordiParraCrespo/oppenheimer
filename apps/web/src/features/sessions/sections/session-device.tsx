@@ -1,8 +1,9 @@
 import { EmptyState, IconButton, StatusDot } from '@oppenheimer/design-system-web';
-import { RotateCwIcon, SmartphoneIcon } from '@oppenheimer/design-system-web/icons';
+import { LoaderIcon, RotateCwIcon, SmartphoneIcon } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 import { DeviceFrame } from '../components/device-frame';
 import { DevicePicker } from '../components/device-picker';
+import { DeviceReconnecting } from '../components/device-reconnecting';
 import { useSessionDevice } from '../hooks/use-session-device';
 
 /**
@@ -13,11 +14,18 @@ import { useSessionDevice } from '../hooks/use-session-device';
  * a tap. When the host offers more than one, the line is a picker that moves
  * the session onto another free device; Refresh looks at the host's devices
  * again and restarts the screen. Its socket is open while this tab is shown.
+ *
+ * Until the device sends its first picture the phone says it is waiting,
+ * rather than a black screen under a green dot. While the stream redials,
+ * the last picture stays with a notice over it, and taps made meanwhile are
+ * held and sent once it is live again.
  */
 export function SessionDevice({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
   const { status, device, frame, send, type, select, refresh } = useSessionDevice(sessionId);
   const live = status === 'live';
+  // A stream that was showing the device and dropped: keep its last frame.
+  const reconnecting = (status === 'connecting' || status === 'offline') && frame !== null;
   const name = device?.name ?? t('sessions.preview.simulator');
   const choices = device?.devices ?? [];
 
@@ -51,14 +59,28 @@ export function SessionDevice({ sessionId }: { sessionId: string }) {
         ) : null}
       </div>
       <div className="flex min-h-0 flex-1">
-        {live ? (
+        {live || reconnecting ? (
           <DeviceFrame
             label={t('sessions.preview.frame', { name })}
             frameUrl={frame?.url ?? null}
             onDrawn={() => frame?.drawn()}
             onInput={send}
             onType={type}
-          />
+          >
+            {reconnecting ? (
+              <DeviceReconnecting offline={status === 'offline'} />
+            ) : frame ? null : (
+              <>
+                <LoaderIcon
+                  aria-hidden
+                  className="size-5 text-device-screen-fg-muted motion-safe:animate-spin"
+                />
+                <p role="status" className="text-sm font-medium text-device-screen-fg">
+                  {t('sessions.preview.noPicture')}
+                </p>
+              </>
+            )}
+          </DeviceFrame>
         ) : (
           <EmptyState className="m-auto max-w-80">
             <EmptyState.Header>

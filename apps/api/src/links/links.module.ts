@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
 import {
   CLOUD_SESSION_REPLY,
+  HOST_BROWSER,
+  HOST_COMPUTER,
   HOST_EXEC,
   HOST_FOLDERS,
+  HOST_SETTINGS,
   SESSION_DISPATCH,
   SESSION_PORTS,
   SESSION_SHARED_FILES,
@@ -17,8 +20,11 @@ import { InProcessLinkReplies } from './infrastructure/in-process-link-replies.a
 import { InProcessLinkRegistry } from './infrastructure/link-registry.adapter';
 import { RelayCloudSessionReplyAdapter } from './infrastructure/relay-cloud-session-reply.adapter';
 import { RelayDispatchAdapter } from './infrastructure/relay-dispatch.adapter';
+import { RelayHostBrowserAdapter } from './infrastructure/relay-host-browser.adapter';
+import { RelayHostComputerAdapter } from './infrastructure/relay-host-computer.adapter';
 import { RelayHostExecAdapter } from './infrastructure/relay-host-exec.adapter';
 import { RelayHostFoldersAdapter } from './infrastructure/relay-host-folders.adapter';
+import { RelayHostSettingsAdapter } from './infrastructure/relay-host-settings.adapter';
 import { RelaySessionPortsAdapter } from './infrastructure/relay-session-ports.adapter';
 import { RelaySessionSharedFilesAdapter } from './infrastructure/relay-session-shared-files.adapter';
 import { RelaySessionTerminalAdapter } from './infrastructure/relay-session-terminal.adapter';
@@ -47,6 +53,9 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     { provide: LINK_REPLIES, useClass: InProcessLinkReplies },
     { provide: HOST_FOLDERS, useClass: RelayHostFoldersAdapter },
     { provide: HOST_EXEC, useClass: RelayHostExecAdapter },
+    { provide: HOST_COMPUTER, useClass: RelayHostComputerAdapter },
+    { provide: HOST_BROWSER, useClass: RelayHostBrowserAdapter },
+    { provide: HOST_SETTINGS, useClass: RelayHostSettingsAdapter },
     { provide: SESSION_PORTS, useClass: RelaySessionPortsAdapter },
     { provide: SESSION_WINDOWS, useClass: RelaySessionWindowsAdapter },
     { provide: SESSION_SHARED_FILES, useClass: RelaySessionSharedFilesAdapter },
@@ -64,6 +73,9 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     LINK_REPLIES,
     HOST_FOLDERS,
     HOST_EXEC,
+    HOST_COMPUTER,
+    HOST_BROWSER,
+    HOST_SETTINGS,
     SESSION_PORTS,
     SESSION_WINDOWS,
     SESSION_SHARED_FILES,

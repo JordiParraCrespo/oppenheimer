@@ -25,7 +25,13 @@ func (noDevice) Logout(context.Context) error { return nil }
 func (noDevice) Send(context.Context, string, string, *wadomain.Quote) (string, time.Time, error) {
 	return "", time.Time{}, nil
 }
-func (noDevice) Download(context.Context, []byte) ([]byte, string, error) {
+func (noDevice) SendVoice(context.Context, string, []byte, int) (string, time.Time, error) {
+	return "", time.Time{}, nil
+}
+func (noDevice) React(context.Context, string, string, string, string) (string, time.Time, error) {
+	return "", time.Time{}, nil
+}
+func (noDevice) Download(context.Context, wadomain.KeptKind, []byte, int) ([]byte, string, error) {
 	return nil, "", nil
 }
 func (noDevice) Close() {}
@@ -83,6 +89,50 @@ func TestWhatsAppSendWithoutADeviceIsRefused(t *testing.T) {
 		}))
 		failed := waitFor(t, sent, func(m any) bool { _, ok := m.(link.CommandFailed); return ok })
 		if got := failed.(link.CommandFailed); got.Code != "WA_002" || got.CommandID != "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e" {
+			t.Fatalf("offered=%v: %+v", offered, got)
+		}
+	}
+}
+
+// A host that holds WhatsApp names that it sends voice notes, so the control
+// plane sends `whatsapp.send.voice` only where an answer will come; a voice
+// note asked of a host with no connected device is refused with WA_002,
+// as a text is, never left unanswered.
+func TestWhatsAppVoiceSend(t *testing.T) {
+	on, _ := whatsAppHandler(t, true)
+	if !slices.Contains(on.capabilities(), link.CapabilityWhatsappVoiceSend) {
+		t.Fatal("a host with WhatsApp does not name voice sends")
+	}
+	for _, offered := range []bool{true, false} {
+		h, sent := whatsAppHandler(t, offered)
+		h.Message(context.Background(), message(t, link.TypeWhatsappSendVoice, map[string]any{
+			"commandId": "c3d4e5f6-7a8b-4c9d-8e0f-2a3b4c5d6e7f", "chatId": "34600333444@s.whatsapp.net",
+			"mimetype": "audio/ogg; codecs=opus", "data": "T2dnUwACAAAAAAAAAAA=", "seconds": 2,
+		}))
+		failed := waitFor(t, sent, func(m any) bool { _, ok := m.(link.CommandFailed); return ok })
+		if got := failed.(link.CommandFailed); got.Code != "WA_002" || got.CommandID != "c3d4e5f6-7a8b-4c9d-8e0f-2a3b4c5d6e7f" {
+			t.Fatalf("offered=%v: %+v", offered, got)
+		}
+	}
+}
+
+// A host that holds WhatsApp names that it reacts, so the control plane sends
+// `whatsapp.react` only where an answer will come; a reaction asked of a host
+// with no connected device is refused with WA_002, never left unanswered,
+// which would hold the bot's turn until the control plane gives up.
+func TestWhatsAppReact(t *testing.T) {
+	on, _ := whatsAppHandler(t, true)
+	if !slices.Contains(on.capabilities(), link.CapabilityWhatsappReact) {
+		t.Fatal("a host with WhatsApp does not name reactions")
+	}
+	for _, offered := range []bool{true, false} {
+		h, sent := whatsAppHandler(t, offered)
+		h.Message(context.Background(), message(t, link.TypeWhatsappReact, map[string]any{
+			"commandId": "d4e5f6a7-8b9c-4d0e-9f1a-3b4c5d6e7f80", "chatId": "34600333444@s.whatsapp.net",
+			"messageId": "3EB0C7A1F2", "senderId": "34600333444@s.whatsapp.net", "emoji": "👍",
+		}))
+		failed := waitFor(t, sent, func(m any) bool { _, ok := m.(link.CommandFailed); return ok })
+		if got := failed.(link.CommandFailed); got.Code != "WA_002" || got.CommandID != "d4e5f6a7-8b9c-4d0e-9f1a-3b4c5d6e7f80" {
 			t.Fatalf("offered=%v: %+v", offered, got)
 		}
 	}

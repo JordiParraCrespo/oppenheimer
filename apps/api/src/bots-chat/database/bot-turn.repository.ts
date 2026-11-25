@@ -10,7 +10,6 @@ import {
   BOT_ACTIVE_TURN_STATUSES,
   type BotProvider,
   type BotTurnLane,
-  isChannelOrigin,
   QUEUE_NAMES,
 } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
@@ -34,6 +33,7 @@ import {
   type BotTurnEntity,
   ENDED_TURN_STATUSES,
 } from '../domain/bot-turn.entity';
+import { type TurnEndDelivery, turnEndDeliveries } from '../domain/bot-turn-end.policy';
 import { claimAttachmentsWithin } from './bot-attachment.repository';
 import type { BotConversationRepositoryPort } from './bot-conversation.repository.port';
 import {
@@ -65,11 +65,28 @@ export const RUN_BOT_TURN_JOB = 'run-bot-turn';
 export const DELIVER_BOT_ANSWER_JOB = 'deliver-bot-answer';
 /** Sends a channel turn's answer (Telegram, WhatsApp) to the chat its message came from. */
 export const DELIVER_CHANNEL_REPLY_JOB = 'deliver-channel-reply';
+/** Posts the answer of a turn an ask on GitHub opened, on the issue or pull request it was asked on. */
+export const DELIVER_GITHUB_ANSWER_JOB = 'deliver-github-answer';
 /**
  * The name the Telegram slice staged that job under. Outbox rows still in
  * flight on a deployment carry it, so the worker accepts it for one release.
  */
 export const DELIVER_TELEGRAM_REPLY_JOB = 'deliver-telegram-reply';
+/** The job each delivery a turn's end owes is staged as (`turnEndDeliveries`), and what its outbox row says. */
+const TURN_END_JOBS: Readonly<
+  Record<TurnEndDelivery, { name: string; reason: (turn: BotTurnEntity) => string }>
+> = {
+  channel_reply: {
+    name: DELIVER_CHANNEL_REPLY_JOB,
+    reason: (turn) => `answers a message on ${turn.origin}`,
+  },
+  github_answer: { name: DELIVER_GITHUB_ANSWER_JOB, reason: () => 'answers an ask on GitHub' },
+  bot_answer: {
+    name: DELIVER_BOT_ANSWER_JOB,
+    reason: (turn) => `answers turn ${turn.askedByTurnId}`,
+  },
+};
+
 /** A turn of a bot with a goal ended: the goal decides whether to go on. */
 export const CONTINUE_BOT_GOAL_JOB = 'continue-bot-goal';
 /** A run of a bot's loop ended: the loop decides whether it ends. */
@@ -258,6 +275,8 @@ export class BotTurnRepository
         message,
         correlationId,
       );
+      // A channel message's images (Slack's) were stored as the owner's uploads just before.
+      if (!(await claimAttachmentsTo(manager, turn, message))) throw new AttachmentsTaken();
       return { outcome, turnId: turn.id };
     });
   }
@@ -560,22 +579,13 @@ export class BotTurnRepository
       await this.outbox.stageEvents(manager, turn.domainEvents);
       turn.clearEvents();
       await stageNext(this.outbox, manager, turn, correlationId);
-      if (isChannelOrigin(turn.origin)) {
+      for (const delivery of turnEndDeliveries(turn)) {
+        const job = TURN_END_JOBS[delivery];
         await this.outbox.stageJob(manager, {
           queue: QUEUE_NAMES.BOT_TURNS,
-          jobName: DELIVER_CHANNEL_REPLY_JOB,
+          jobName: job.name,
           payload: { turnId: turn.id },
-          reason: `bot ${turn.botId}: turn ${turn.id} answers a message on ${turn.origin}`,
-          aggregateId: turn.id,
-          correlationId,
-        });
-      }
-      if (turn.replyRequested && turn.askedByTurnId) {
-        await this.outbox.stageJob(manager, {
-          queue: QUEUE_NAMES.BOT_TURNS,
-          jobName: DELIVER_BOT_ANSWER_JOB,
-          payload: { turnId: turn.id },
-          reason: `bot ${turn.botId}: turn ${turn.id} answers turn ${turn.askedByTurnId}`,
+          reason: `bot ${turn.botId}: turn ${turn.id} ${job.reason(turn)}`,
           aggregateId: turn.id,
           correlationId,
         });
@@ -858,8 +868,8 @@ export async function lockBot(
 }
 
 /**
- * The line of the card the bot has waiting, of either kind, or null: a bot
- * has one card up at a time, an approval or a card of questions. Read under
+ * The line of the card the bot has waiting, of any kind, or null: a bot has
+ * one card up at a time, an approval, a card of questions or a form. Read under
  * `lockBot`, so two cards raised at once see each other.
  */
 export async function waitingCardWithin(
@@ -867,11 +877,13 @@ export async function waitingCardWithin(
   organizationId: string,
   botId: string,
 ): Promise<string | null> {
-  // UQ_bot_approval_pending, UQ_bot_question_pending.
+  // UQ_bot_approval_pending, UQ_bot_question_pending, UQ_bot_form_pending.
   const rows: { summary: string }[] = await manager.query(
     `SELECT summary FROM bot_approval WHERE "organizationId" = $1 AND "botId" = $2 AND status = 'pending'
      UNION ALL
      SELECT summary FROM bot_question WHERE "organizationId" = $1 AND "botId" = $2 AND status = 'pending'
+     UNION ALL
+     SELECT summary FROM bot_form WHERE "organizationId" = $1 AND "botId" = $2 AND status = 'pending'
      LIMIT 1`,
     [organizationId, botId],
   );

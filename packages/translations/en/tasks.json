@@ -2,7 +2,6 @@
   "backToTask": "Back to task",
   "nav": {
     "label": "Plan",
-    "inbox": "Inbox",
     "tasks": "Tasks",
     "calendar": "Calendar",
     "milestones": "Milestones",
@@ -144,7 +143,9 @@
     "noRepository": "No repository",
     "noRepositoryDesc": "Opens in the host’s home folder",
     "repositorySearch": "Search repositories",
-    "noRepositories": "This project has no repositories. Add one in its settings.",
+    "noRepositories": "No repositories. Give the GitHub app access to one.",
+    "repositoriesLoading": "Loading the workspace’s repositories…",
+    "repositoriesFailed": "Couldn’t load every repository the workspace reaches.",
     "where": "Where it runs",
     "whereSearch": "Search places",
     "noPlaces": "Nowhere to run it.",
@@ -261,5 +262,13 @@
     "high": "High",
     "medium": "Medium",
     "low": "Low"
+  },
+  "mobile": {
+    "actions": "Task actions",
+    "notFound": "This task is gone. It may have been deleted from another device.",
+    "loadFailed": "Couldn’t load the projects and milestones this task is filed under.",
+    "due": "Due",
+    "sessions": "Sessions",
+    "noSessions": "No session works on this task yet. Start one from the console on your computer."
   }
 }

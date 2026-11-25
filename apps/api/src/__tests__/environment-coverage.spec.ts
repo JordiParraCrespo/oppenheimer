@@ -34,6 +34,9 @@ const OTHER_READERS: { pattern: RegExp; reader: string; directory: string }[] = 
   // First match wins: `RUNNER_IMAGE` is the compose file's, not the runner's.
   { pattern: /_IMAGE$/, reader: 'the compose files', directory: 'docker' },
   { pattern: /^VITE_/, reader: 'the web console', directory: 'apps/web/src' },
+  // oppenheimer:begin mobile
+  { pattern: /^EXPO_PUBLIC_/, reader: 'the mobile app', directory: 'apps/mobile' },
+  // oppenheimer:end mobile
   {
     pattern: /^SENTRY_(AUTH_TOKEN|ORG|WEB_PROJECT)$/,
     reader: 'the console build’s source-map upload',

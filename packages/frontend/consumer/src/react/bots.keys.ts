@@ -37,6 +37,8 @@ export const botsKeys = {
   // one routine refreshes both by name.
   allRoutines: () => [...botsKeys.all, 'routine', 'list'] as const,
   conversation: (id: string) => [...botsKeys.detail(id), 'conversation'] as const,
+  // The pages older than the conversation's window the reader scrolled up into: only loading one writes it.
+  olderMessages: (id: string) => [...botsKeys.detail(id), 'older-messages'] as const,
   // Sends the API has not answered, laid over the conversation: never read from the API.
   sendings: (id: string) => [...botsKeys.detail(id), 'sendings'] as const,
   image: (id: string, attachmentId: string) =>
@@ -45,6 +47,7 @@ export const botsKeys = {
   pendingApproval: (id: string) => [...botsKeys.approvals(id), 'pending'] as const,
   // The card of questions the bot waits on (`ask_user`).
   pendingQuestion: (id: string) => [...botsKeys.detail(id), 'question'] as const,
+  pendingForm: (id: string) => [...botsKeys.detail(id), 'form'] as const,
   // The workspace's approvals across its bots (the Inbox): apart from any one
   // bot's, and announced by `botApproval.changed`.
   workspaceApprovals: () => [...botsKeys.all, 'approvals'] as const,

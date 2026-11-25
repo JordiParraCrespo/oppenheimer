@@ -19,6 +19,7 @@ import {
   FileUpIcon,
   FolderIcon,
   HeadingIcon,
+  PanelRightIcon,
   PanelTopIcon,
   ImageIcon,
   KanbanIcon,
@@ -73,7 +74,7 @@ import {
   TypeIcon,
   UnplugIcon,
   WavesIcon,
-  ZapIcon,
+  AlarmClockIcon,
 } from '@oppenheimer/design-system-web/icons';
 
 /**
@@ -167,7 +168,7 @@ export const TOC: TocGroup[] = [
     group: 'Navigation',
     items: [
       { id: 'sidebar', label: 'Rail · Sidebar', icon: PanelLeftIcon, components: ['rail', 'sidebar', 'sidebar-fold-label', 'session-item'] },
-      { id: 'routineitem', label: 'RoutineItem', icon: ZapIcon, components: ['routine-item'] },
+      { id: 'routineitem', label: 'RoutineItem', icon: AlarmClockIcon, components: ['routine-item'] },
       { id: 'inbox', label: 'Inbox', icon: BellIcon, components: ['inbox'] },
       { id: 'pilltabs', label: 'PillTabs', icon: ToggleLeftIcon, components: ['pill-tabs'] },
       { id: 'editorpage', label: 'EditorPage', icon: PanelTopIcon, components: ['editor-page'] },
@@ -226,6 +227,7 @@ export const TOC: TocGroup[] = [
       { id: 'terminal', label: 'Terminal', icon: TerminalIcon, components: ['terminal'] },
       { id: 'hostlink', label: 'HostLinkChrome · CommandRow', icon: UnplugIcon, components: ['host-link', 'command-row'] },
       { id: 'sessionpane', label: 'SessionPaneHeader', icon: PanelTopIcon, components: ['session-pane-header'] },
+      { id: 'launcher', label: 'Launcher', icon: PanelRightIcon, components: ['launcher'] },
     ],
   },
   {
@@ -246,10 +248,11 @@ export const TOC: TocGroup[] = [
     group: 'Employees',
     items: [
       { id: 'botitem', label: 'BotItem', icon: BotIcon, components: ['bot-item'] },
+      { id: 'botfaces', label: 'BotFaces', icon: BotIcon, components: ['bot-faces'] },
       { id: 'avatarpicker', label: 'AvatarPicker', icon: CircleUserRoundIcon, components: ['avatar-picker'] },
       { id: 'avatarcolorpicker', label: 'AvatarColorPicker', icon: CircleUserRoundIcon, components: [] },
       { id: 'botfacepicker', label: 'BotFacePicker', icon: CircleUserRoundIcon, components: ['bot-face-picker'] },
-      { id: 'routinecard', label: 'RoutineCard', icon: ZapIcon, components: ['routine-card'] },
+      { id: 'routinecard', label: 'RoutineCard', icon: AlarmClockIcon, components: ['routine-card'] },
       { id: 'settingslist', label: 'SettingsListRow · SettingsAddRow', icon: RowsIcon, components: [] },
       { id: 'settingstopbar', label: 'SettingsTopBar', icon: PanelTopIcon, components: [] },
     ],

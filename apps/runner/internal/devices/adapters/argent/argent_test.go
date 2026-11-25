@@ -114,3 +114,28 @@ func TestControlsReportARefusal(t *testing.T) {
 		t.Fatal("a refused tap was reported as applied")
 	}
 }
+
+// A swipe plays back at the reader's pace: a flick flings with its own
+// (short) duration, a slow drag stops where the finger lifted, never faster
+// than Argent takes without momentum, and a console that sends no duration
+// keeps Argent's default pace without momentum.
+func TestSwipesKeepTheReadersPaceAndFling(t *testing.T) {
+	device := domain.Device{Serial: "UDID-1", Platform: domain.IOS}
+	for _, tc := range []struct {
+		name     string
+		in       domain.Input
+		momentum bool
+		duration any
+	}{
+		{"flick", domain.Input{Kind: "swipe", Y: 0.8, ToY: 0.3, DurationMs: 90, Momentum: true}, true, 90},
+		{"slow drag", domain.Input{Kind: "swipe", Y: 0.8, ToY: 0.3, DurationMs: 1400}, false, 1400},
+		{"quick drag held at the end", domain.Input{Kind: "swipe", Y: 0.8, ToY: 0.7, DurationMs: 60}, false, minSteadySwipeMs},
+		{"older console", domain.Input{Kind: "swipe", Y: 0.8, ToY: 0.3}, false, nil},
+	} {
+		tool, args := toolFor(device, tc.in)
+		if tool != "gesture-swipe" || args["momentum"] != tc.momentum || args["durationMs"] != tc.duration {
+			t.Errorf("%s: %s momentum=%v durationMs=%v; want momentum=%v durationMs=%v",
+				tc.name, tool, args["momentum"], args["durationMs"], tc.momentum, tc.duration)
+		}
+	}
+}

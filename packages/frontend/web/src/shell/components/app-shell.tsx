@@ -11,7 +11,7 @@ import { type ReactNode, useRef, useState } from 'react';
 import { useApplyUserSettings } from '../../i18n';
 import { PaneBarContext, type PaneDrop, PaneDropContext } from '../hooks/use-pane';
 import { type ShellConfig, ShellProvider } from '../hooks/use-shell';
-import { resolveContentPane, screenOwnsBar } from '../lib/pane';
+import { resolveContentPane, screenHasNoSidebar, screenOwnsBar } from '../lib/pane';
 import { AppSidebar } from './app-sidebar';
 import { CommandPalette } from './command-palette';
 import { SidebarToggle } from './page-bar';
@@ -46,6 +46,7 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
   useApplyUserSettings();
   const pane = useMatches({ select: resolveContentPane });
   const ownBar = useMatches({ select: screenOwnsBar });
+  const noSidebar = useMatches({ select: screenHasNoSidebar });
   const [bar, setBar] = useState<HTMLElement | null>(null);
   // The pane takes a screen's drops (`usePaneDrop`) and draws their outline on
   // its own edge. One object for the shell's life, so a screen's registration
@@ -67,7 +68,7 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
     <ShellProvider value={config}>
       <SidebarProvider className="h-svh min-h-0">
         {config.rail}
-        <AppSidebar />
+        {noSidebar ? null : <AppSidebar />}
         {/* On a phone the rail is a bar along the bottom (`Rail`), so the
             column keeps clear of it. */}
         <SidebarInset

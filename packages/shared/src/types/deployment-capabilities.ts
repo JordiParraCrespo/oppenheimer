@@ -29,9 +29,16 @@
  * of its own (`VOICE_STT_*`), for the startup log. Whether a workspace can
  * dictate is `GET /voice/status`, which asks every speech provider.
  *
+ * `voice_synthesis` says whether the deployment has a text-to-speech server
+ * (`VOICE_TTS_*`) a bot speaks its WhatsApp voice notes on, for the startup
+ * log; the tool itself refuses without one.
+ *
  * `cloud_agents` says whether a person can store a cloud agent vendor's key:
  * the key it is sealed under (`CLOUD_AGENTS_KEY`). Whether a person can
  * launch one is `GET /cloud-agents/status`, which asks every provider.
+ *
+ * `slack` says whether a bot's own Slack app can be connected: the key its
+ * token and signing secret are sealed under (`SLACK_TOKEN_KEY`).
  *
  * `session_previews` says whether sessions' dev servers can be opened from
  * the console: a preview domain (`PREVIEW_BASE_URL`) the relay serves them on.
@@ -49,7 +56,9 @@ export const DEPLOYMENT_CAPABILITIES = [
   'gmail',
   'bot_providers',
   'voice_transcription',
+  'voice_synthesis',
   'cloud_agents',
+  'slack',
   'session_previews',
 ] as const;
 
@@ -114,4 +123,10 @@ export type ClientCapabilities = Record<ClientCapability, boolean>;
  */
 export interface ClientDeployment extends ClientCapabilities {
   github_app_install_url: string | null;
+  /**
+   * The page a visual's HTML runs in (`visuals.<preview domain>/`), framed by
+   * the console; `null` without a preview domain, where an `html` block shows
+   * as a note.
+   */
+  visual_frame_url: string | null;
 }

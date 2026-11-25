@@ -98,7 +98,7 @@ export type WhatsappStateMessage = z.infer<typeof whatsappStateSchema>;
 
 /**
  * What a message carries besides its text. Only the kind is sent: media stays
- * on the phone, except a voice note the control plane asks for
+ * on the phone, except a voice note or an image the control plane asks for
  * (`whatsapp.media.get`).
  */
 export const WHATSAPP_MEDIA_KINDS = [
@@ -171,6 +171,36 @@ export const whatsappMessagesSchema = z.object({
 
 export type WhatsappMessagesMessage = z.infer<typeof whatsappMessagesSchema>;
 
+/** How many chats one `whatsapp.chats` carries at most; a longer list goes in several. */
+export const WHATSAPP_CHATS_BATCH_MAX = 500;
+
+/** One chat the number can be reached in, as its device knows it before any message. */
+export const whatsappKnownChatSchema = z.object({
+  chatId: jid(),
+  chatKind: z.enum(['direct', 'group']),
+  /** The group's subject, or the contact's name as the phone saved it or WhatsApp shows it. */
+  chatName: displayName().optional(),
+});
+
+export type WhatsappKnownChat = z.infer<typeof whatsappKnownChatSchema>;
+
+/**
+ * The chats the number can be reached in, so Settings lists them before
+ * anyone writes: the groups it is in and the people among its contacts. The
+ * runner sends the whole list, in frames of `WHATSAPP_CHATS_BATCH_MAX`, when
+ * the device connects, and again when it joins a group, a group is renamed
+ * or its contacts change, so it is a state the control plane keeps, never a
+ * history: no message travels with it. Not acknowledged; a lost frame is
+ * replaced by the next list. A runner from before it sends none, and its
+ * chats appear only once one writes.
+ */
+export const whatsappChatsSchema = z.object({
+  type: z.literal('whatsapp.chats'),
+  chats: z.array(whatsappKnownChatSchema).min(1).max(WHATSAPP_CHATS_BATCH_MAX),
+});
+
+export type WhatsappChatsMessage = z.infer<typeof whatsappChatsSchema>;
+
 /** The control plane stored these messages; the runner forgets them. */
 export const whatsappAckSchema = z.object({
   type: z.literal('whatsapp.ack'),
@@ -205,6 +235,33 @@ export const whatsappSendSchema = z.object({
 
 export type WhatsappSendMessage = z.infer<typeof whatsappSendSchema>;
 
+/**
+ * The most UTF-16 code units a WhatsApp reaction holds: one emoji, the
+ * longest family or flag sequence with room; empty takes one back.
+ */
+export const WHATSAPP_REACTION_MAX = 32;
+
+/**
+ * React to one message in a chat, as the paired number: the emoji WhatsApp
+ * shows under it, replacing the number's own reaction there; an empty
+ * `emoji` takes it back. It spends the host's send budget as a text does.
+ * Answered by `whatsapp.sent` with the same `commandId` (the reaction's own
+ * id), or `command.failed`: `WA_002` no device is connected, `WA_003`
+ * WhatsApp refused it, `WA_004` the host's own send budget is spent. Sent
+ * only to a runner that names `whatsapp.react`.
+ */
+export const whatsappReactSchema = z.object({
+  type: z.literal('whatsapp.react'),
+  commandId: commandIdSchema,
+  chatId: jid(),
+  /** The message reacted to: its WhatsApp id and who wrote it. */
+  messageId: z.string().min(1).max(128),
+  senderId: jid(),
+  emoji: z.string().max(WHATSAPP_REACTION_MAX),
+});
+
+export type WhatsappReactMessage = z.infer<typeof whatsappReactSchema>;
+
 /** WhatsApp took the message: its id and when it was sent. */
 export const whatsappSentSchema = z.object({
   type: z.literal('whatsapp.sent'),
@@ -223,40 +280,96 @@ export type WhatsappSentMessage = z.infer<typeof whatsappSentSchema>;
  */
 export const WHATSAPP_VOICE_NOTE_MAX_BYTES = 352 * 1024;
 
+/** What `whatsapp.media.get` asks for: a voice note to hear, or an image to see. */
+export const WHATSAPP_MEDIA_GET_KINDS = ['voice', 'image'] as const;
+export type WhatsappMediaGetKind = (typeof WHATSAPP_MEDIA_GET_KINDS)[number];
+
 /**
- * Hand over a voice note the number received, to be transcribed. The runner
- * keeps what it needs to fetch one (the message's media key and path, never
- * the audio) for `WHATSAPP_VOICE_NOTE_KEPT_HOURS`, and downloads it from
- * WhatsApp only when asked. Answered by `whatsapp.media` with the same
- * `commandId`, or `command.failed`: `WA_002` no device is connected, `WA_005`
- * no voice note the host still knows by that id, `WA_006` it is larger than
- * `WHATSAPP_VOICE_NOTE_MAX_BYTES`, `WA_007` WhatsApp would not hand it over.
- * Sent only to a runner that names `whatsapp.voice`.
+ * The largest image `whatsapp.media` carries, in bytes before base64: the
+ * same one frame a voice note fits in. A larger image WhatsApp holds is
+ * scaled down and re-encoded as a JPEG on the host until it fits, so a photo
+ * is never refused for its size.
+ */
+export const WHATSAPP_IMAGE_MAX_BYTES = 352 * 1024;
+
+/**
+ * Hand over a voice note (to be transcribed) or an image (to be seen) the
+ * number received. The runner keeps what it needs to fetch one (the
+ * message's media key and path, never the bytes) for
+ * `WHATSAPP_VOICE_NOTE_KEPT_HOURS`, and downloads it from WhatsApp only when
+ * asked. Answered by `whatsapp.media` with the same `commandId`, or
+ * `command.failed`: `WA_002` no device is connected, `WA_005` no such media
+ * the host still knows by that id, `WA_006` it is larger than the host hands
+ * over (a voice note past `WHATSAPP_VOICE_NOTE_MAX_BYTES`, an image it could
+ * not scale to `WHATSAPP_IMAGE_MAX_BYTES`), `WA_007` WhatsApp would not hand
+ * it over. A voice note is asked only of a runner that names `whatsapp.voice`,
+ * an image only of one that names `whatsapp.image`.
  */
 export const whatsappMediaGetSchema = z.object({
   type: z.literal('whatsapp.media.get'),
   commandId: commandIdSchema,
   chatId: jid(),
-  /** WhatsApp's id of the voice note's message. */
+  /** WhatsApp's id of the media's message. */
   messageId: z.string().min(1).max(128),
+  /** What is asked for; absent is a voice note, as before images were. */
+  kind: z.enum(WHATSAPP_MEDIA_GET_KINDS).optional(),
 });
 
 export type WhatsappMediaGetMessage = z.infer<typeof whatsappMediaGetSchema>;
 
-/** How long a runner can still fetch a voice note it received. */
+/** How long a runner can still fetch a voice note or an image it received. */
 export const WHATSAPP_VOICE_NOTE_KEPT_HOURS = 48;
 
-/** A voice note, as WhatsApp stored it: decrypted, in its own container. */
+/**
+ * A voice note, as WhatsApp stored it: decrypted, in its own container; or an
+ * image, as WhatsApp stored it, or the host's smaller JPEG of it.
+ */
 export const whatsappMediaSchema = z.object({
   type: z.literal('whatsapp.media'),
   commandId: commandIdSchema,
-  /** WhatsApp's MIME type for it: `audio/ogg; codecs=opus` for a voice note. */
+  /** Its MIME type: `audio/ogg; codecs=opus` for a voice note, `image/jpeg` for most images. */
+  mimetype: z.string().min(1).max(128),
+  /** The bytes, base64. */
+  data: z
+    .string()
+    .min(1)
+    .max(Math.ceil(Math.max(WHATSAPP_VOICE_NOTE_MAX_BYTES, WHATSAPP_IMAGE_MAX_BYTES) / 3) * 4),
+});
+
+export type WhatsappMediaMessage = z.infer<typeof whatsappMediaSchema>;
+
+/**
+ * The longest voice note a bot sends, in seconds. A spoken reply is a few
+ * sentences; past this, text reads better than a note anyone has to sit
+ * through, and the audio stays well inside `WHATSAPP_VOICE_NOTE_MAX_BYTES`.
+ */
+export const WHATSAPP_VOICE_SEND_MAX_SECONDS = 120;
+
+/**
+ * Send a voice note to one chat, as the paired number: Ogg/Opus audio the
+ * control plane made, which the runner uploads to WhatsApp's media servers
+ * and sends as a push-to-talk audio message, so the phone draws it as a
+ * playable voice note rather than a file. The audio lives in this frame and
+ * in memory on the host, never on its disk. Answered by `whatsapp.sent` with
+ * the same `commandId`, or `command.failed`: `WA_002` no device is connected,
+ * `WA_003` WhatsApp refused it (the upload or the message), `WA_004` the
+ * host's own send budget is spent (a voice note spends it as a text does),
+ * `WA_006` it is larger than `WHATSAPP_VOICE_NOTE_MAX_BYTES` or not Ogg.
+ * Sent only to a runner that names `whatsapp.voice.send`.
+ */
+export const whatsappSendVoiceSchema = z.object({
+  type: z.literal('whatsapp.send.voice'),
+  commandId: commandIdSchema,
+  chatId: jid(),
+  /** The audio's MIME type: `audio/ogg; codecs=opus`, the one WhatsApp plays as a voice note. */
   mimetype: z.string().min(1).max(128),
   /** The bytes, base64. */
   data: z
     .string()
     .min(1)
     .max(Math.ceil(WHATSAPP_VOICE_NOTE_MAX_BYTES / 3) * 4),
+  /** How long it runs, which the phone shows before it is played. */
+  seconds: z.number().int().min(1).max(WHATSAPP_VOICE_SEND_MAX_SECONDS),
 });
 
-export type WhatsappMediaMessage = z.infer<typeof whatsappMediaSchema>;
+export type WhatsappSendVoiceMessage = z.infer<typeof whatsappSendVoiceSchema>;

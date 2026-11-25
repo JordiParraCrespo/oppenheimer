@@ -42,6 +42,7 @@ export {
   useCancelBotTurn,
   useClearBotConversation,
   useExportBotConversation,
+  useLoadOlderBotMessages,
   useSendBotMessage,
   useSuspenseBotConversation,
   useSuspenseBotHistory,
@@ -52,6 +53,12 @@ export {
   useRequestBotMemoryDream,
   useUndoBotMemoryDream,
 } from './bot-dream.queries';
+export {
+  type SubmitBotFormVariables,
+  useBotPendingForm,
+  useDismissBotForm,
+  useSubmitBotForm,
+} from './bot-forms.queries';
 export { useBotGoal, useClearBotGoal, useResumeBotGoal } from './bot-goal.queries';
 export { useBotLoop, useClearBotLoop } from './bot-loop.queries';
 export {
@@ -70,15 +77,21 @@ export {
   useBotPendingQuestion,
   useDismissBotQuestion,
 } from './bot-questions.queries';
+export { type ReactToBotMessageVariables, useReactToBotMessage } from './bot-reactions.queries';
 export {
   type BotRoutineVariables,
+  type IssueBotRoutineWebhookVariables,
   type RunBotRoutineVariables,
   type SetBotRoutineEnabledVariables,
+  type UpdateBotRoutineVariables,
   useDeleteBotRoutine,
+  useIssueBotRoutineWebhook,
+  useRevokeBotRoutineWebhook,
   useRunBotRoutine,
   useSetBotRoutineEnabled,
   useSuspenseAllBotRoutines,
   useSuspenseBotRoutines,
+  useUpdateBotRoutine,
 } from './bot-routines.queries';
 export {
   type AddBotSkillVariables,
@@ -103,6 +116,7 @@ export {
   type UpdateBotFactVariables,
   type UpdateBotVariables,
   useAddBotFact,
+  useBot,
   useBotDocuments,
   useBotGroups,
   useBots,
@@ -176,9 +190,11 @@ export {
   type PutInboxMarkVariables,
   useAnswerInboxReport,
   useDeleteInboxMark,
+  useInboxAlertsOn,
   useInboxCount,
   useInboxPullsShown,
   useInboxReportImages,
+  useMutedSessionAlerts,
   usePutInboxMark,
   usePutInboxMarks,
   useRefreshInbox,
@@ -194,6 +210,7 @@ export {
   useRepositoryBranchesFor,
   useStartInstallation,
 } from './installations.queries';
+export { RESTART_WATCH_MS } from './live-poll';
 export {
   useCancelScheduledMail,
   useConnectGmail,
@@ -296,6 +313,7 @@ export {
   useRenameSession,
   useRestartSession,
   useRetrySession,
+  useSession,
   useSessionOpening,
   useSessionShare,
   useSessionStartProgress,
@@ -319,6 +337,13 @@ export {
   useSessionStream,
   useSharedSessionStream,
 } from './sessions.stream';
+export {
+  useConnectSlack,
+  useDisconnectSlack,
+  useOpenSlackOwnerLink,
+  useRefreshSlack,
+  useSuspenseBotSlack,
+} from './slack.queries';
 export {
   HOST_HOME,
   type HostHomeSessionInput,
@@ -355,6 +380,8 @@ export {
   useUnlinkTelegram,
 } from './telegram.queries';
 export {
+  useSuspenseVoiceSettings,
+  useUpdateVoiceSettings,
   useVoiceDictation,
   type VoiceDictation,
 } from './voice.queries';

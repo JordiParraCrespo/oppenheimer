@@ -11,6 +11,8 @@ export class StartCloudSessionCommand extends CommandBase {
   /** The caller's `Idempotency-Key` header, so a retry returns this session. */
   readonly idempotencyKey: string | null;
   readonly origin: SessionOrigin;
+  /** The bot that asked, when origin is `bot`: the routines read it back (`ownSessionGuard`). */
+  readonly botId?: string;
 
   constructor(props: CommandProps<StartCloudSessionCommand>) {
     super(props);
@@ -19,5 +21,6 @@ export class StartCloudSessionCommand extends CommandBase {
     this.input = props.input;
     this.idempotencyKey = props.idempotencyKey;
     this.origin = props.origin;
+    this.botId = props.botId;
   }
 }

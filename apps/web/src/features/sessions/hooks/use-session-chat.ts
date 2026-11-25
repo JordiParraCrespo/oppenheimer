@@ -52,7 +52,9 @@ function sharedRead(chat: SessionChat): () => ChatState {
         next.older === shared.older &&
         next.interruptible === shared.interruptible &&
         next.commands === shared.commands &&
-        next.suggestion === shared.suggestion
+        next.suggestion === shared.suggestion &&
+        next.feedback === shared.feedback &&
+        next.permission === shared.permission
           ? shared
           : { ...next, turns };
     }

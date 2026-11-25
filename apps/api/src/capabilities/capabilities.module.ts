@@ -9,7 +9,8 @@ import { hostsAreConfigured, ipGeolocationIsConfigured } from '../config/hosts.c
 import { mailTokenKeyOf } from '../config/mail.config';
 import { previewsAreConfigured } from '../config/relay.config';
 import { sessionNamerIsConfigured } from '../config/sessions.config';
-import { speechKeyIsConfigured } from '../config/voice.config';
+import { slackTokenKeyOf } from '../config/slack.config';
+import { speechKeyIsConfigured, speechSynthesisIsConfigured } from '../config/voice.config';
 
 /**
  * Whether the sessions GitHub App is usable on this deployment. All six values are
@@ -83,11 +84,16 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     ),
     // A valid sealing key for a person's cloud agent vendor keys.
     cloud_agents: Boolean(cloudAgentsSealKeyOf(configService.get<string>('cloudAgents.sealKey'))),
+    // A valid sealing key for bots' Slack app tokens: the same predicate the
+    // connect route refuses on (`SLACK_003`).
+    slack: Boolean(slackTokenKeyOf(configService.get<string>('slack.tokenKey'))),
     // A valid sealing key for the workspaces' model provider keys.
     bot_providers: Boolean(botsProviderKeyOf(configService.get<string>('bots.providerKey'))),
     // The deployment's own speech-to-text server. A workspace signed in to
     // ChatGPT dictates without it; this is every other workspace's way in.
     voice_transcription: speechKeyIsConfigured(configService),
+    // The deployment's own text-to-speech server: bots' WhatsApp voice notes.
+    voice_synthesis: speechSynthesisIsConfigured(configService),
     // A domain to serve sessions' previews on. The same predicate the preview
     // routes refuse on, so the Browser tab is never offered to fail.
     session_previews: previewsAreConfigured(configService),

@@ -16,7 +16,7 @@ The runner holds one outbound connection to Oppenheimer. It opens no port, and n
 | User | An ordinary user account. The installer refuses to run as root. |
 | Tools | `git` and `tmux`. The installer offers to install them with Homebrew or apt, but only on a typed yes; without them it stops before using the token. |
 | A lasting machine | The runner refuses machines that look temporary (Docker or Podman containers, CI, Codespaces, dev containers, Kubernetes pods). |
-| Agent CLIs | Optional at install: Claude Code, Codex, OpenCode, Grok, Pi, Oh My Pi (`omp`, which needs Bun) and GitHub's `gh`. The default is Claude Code and `gh`. |
+| Agent CLIs | Optional at install: Claude Code, Codex, OpenCode, Grok, Pi, Oh My Pi (`omp`, which needs Bun), Antigravity (`agy`), Vercel's fx, Muse (Meta's Muse Code), Qwen Code (`qwen`, from npm, which needs Node.js 22) and GitHub's `gh`. The default is Claude Code and `gh`. ZCode is not offered: Z.ai publishes no terminal release to install, so install it yourself and the runner finds `zcode` on your PATH. Hermes is not installed for you either: run Nous Research's installer on the host. |
 
 Sessions are capped at 20 per host by default.
 
@@ -72,7 +72,7 @@ The host's owner decides whether its screen is shared, on the host itself:
 - The runner does not start a screen: it uses the screen-sharing server the machine already runs on its loopback, `127.0.0.1:5900` unless `--port` names another. On a Mac that is **Screen Sharing** (System Settings → General → Sharing); on Linux a VNC server such as TigerVNC or x11vnc listening on `127.0.0.1`.
 - If the server asks for a password, give the runner a file holding it, readable by that account only: `runner desktop on --password-file <file>`. macOS Screen Sharing signs in a macOS account: add `--username <account>`. The password stays on the host; the browser is never asked for one.
 
-The desktop opens **watching**: you see the screen, and your clicks and keys reach nothing. **Take control** lets them through, until **Stop controlling**; the host itself drops your input while you only watch. Your session on the screen is shared, so watching never disconnects anyone else using it. **Full screen** gives the desktop the whole window; Escape leaves it.
+The desktop opens **watching**: you see the screen, and your clicks and keys reach nothing. **Take control** lets them through, until **Stop controlling**; the host itself drops your input while you only watch. Your session on the screen is shared, so watching never disconnects anyone else using it. **Full screen** gives the desktop the whole window; Escape leaves it. While you watch a Mac with one display, its own pointer is drawn where it is on the screen, so you can follow what the agent or the person at the machine points at; once you take control, your pointer is the host's. A Linux host's screen-sharing server shows its own pointer, or none.
 
 In the console you open a desktop as yourself. An [API token](./cli-and-mcp.md) needs the **Host desktops** permission (`host-desktops:write`), which no other permission includes: a token that manages hosts (`hosts:write`) cannot open their screens.
 
@@ -83,7 +83,13 @@ When the desktop cannot open, it says why: the host does not share its desktop (
 
 Each agent runs from the host's own installation and its own login. You sign in once per host by starting a session with that agent and following its sign-in in the terminal; a sign-in link the agent prints becomes a button. Oppenheimer never stores an agent's credentials.
 
-From the host you can install more later: `oppenheimer-runner agents install claude` (or `codex`, `opencode`, `grok`), and `oppenheimer-runner tools install gh`. These install in your home directory without sudo. `git` and `tmux` stay with your package manager. The runner updates installed agent CLIs on its own about hourly unless `RUNNER_AGENT_UPDATES=off` is set before install. `oppenheimer-runner tools` lists what is installed.
+From the host you can install more later: `oppenheimer-runner agents install claude` (or `codex`, `opencode`, `grok`, `pi`, `omp`, `antigravity`, `muse`, `qwen`), and `oppenheimer-runner tools install gh`. These install in your home directory without sudo. `git` and `tmux` stay with your package manager. The runner updates installed agent CLIs on its own about hourly unless `RUNNER_AGENT_UPDATES=off` is set before install, except Qwen Code: the runner does not update it, and `agents install qwen` leaves one already installed alone, so update it on the host with `npm install --global --prefix ~/.local @qwen-code/qwen-code@latest`. `oppenheimer-runner tools` lists what is installed.
+
+## Letting bots use the screen
+
+A bot can look at a host's screen and use its mouse and keyboard once it is turned on: ask the bot to turn it on, or run `runner computer on` on that host. The same goes for what a bot may run there (`runner exec`): ask the bot, and it changes it for you. What it needs on a Mac and on Linux, and how a bot uses it, is [Bots using a computer](./computer-use.md).
+
+A bot can also drive a browser of its own on a host, once you ask it to turn that on or run `runner browser on` there: [Bots using a browser](./browser-use.md).
 
 ## Updates
 
@@ -97,7 +103,7 @@ A host is **Offline** when its runner is not connected: the machine is off or as
 
 - Sessions already running keep running in tmux on the host if only the connection is lost. The terminal shows "Host offline" and reconnects on its own, catching up on output.
 - A session you start on an offline host waits as **Queued** and starts when the runner reconnects.
-- After a **reboot**, sessions come back stopped, with a **Restart** button that reopens the agent in the same worktree. A session marked kept (`runner sessions keep`, run from inside it) restarts on its own.
+- After a **reboot**, sessions come back stopped; opening one restarts it in the same worktree, and its **Restart** button does the same. A session marked kept (`runner sessions keep`, run from inside it) restarts on its own.
 - Automations defer runs aimed at an offline host; bots check that a host is online before starting work.
 
 When a terminal says the host is offline, **How to fix** gives the commands to run on the host (`oppenheimer-runner status`, the log, a reinstall) and a troubleshooting prompt you can hand to an agent there.

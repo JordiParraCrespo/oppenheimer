@@ -192,6 +192,7 @@ describe('BotsRepository', () => {
                 sessionId: null,
                 subagents: null,
                 mailDraft: null,
+                visual: null,
                 rateLimit: null,
               },
             ],

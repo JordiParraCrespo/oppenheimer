@@ -29,7 +29,8 @@ for ourselves first.
   and one or more **triggers**. "Any trigger starts a run." It is active
   or paused; paused ignores triggers, and **Run now** still works.
 - **Triggers** are of two sources in the frames: a **schedule** (once,
-  hourly, daily, weekdays, weekly, monthly) and a **GitHub event** (eleven
+  hourly, daily, weekdays, weekly, monthly; a bot's routine can also take
+  a five-field **cron** expression, 2026-11-20, issue #955) and a **GitHub event** (eleven
   events, a repository subset, one filter value or "any"). Slack, Linear
   and others are later sources on the same model.
 - **A run** is an ordinary session the trigger started ("Every run is an
@@ -318,6 +319,7 @@ its run with the reason, so nothing disappears silently.
 | Paused | firing | triggers ignored while paused; Run now passes |
 | Dedupe | firing | the unique `(automationId, causeKey)` |
 | Loop | firing | skip events whose actor is our own App |
+| Own session | firing | a bot's routine skips an event on the branch of a session that bot started (`work_session.botId`; a host session's checkout or a cloud session's run, never a fork's branch): the session acts on GitHub as the owner, so Loop cannot see it (#956) |
 | Rate | firing | per automation and per workspace per hour |
 | Overlap | dispatch | `skip` (default) or `queue` while a run of the same automation is live |
 | Launchable | dispatch | owner still a member, host paired and usable by the owner, agent probed and headless-capable, project active |

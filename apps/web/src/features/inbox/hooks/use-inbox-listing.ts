@@ -10,8 +10,8 @@ import { useInboxVisit } from './use-inbox-visit';
 /**
  * What the list column draws and the reading pane takes its item from, in
  * one place so the two never disagree: the Inbox, its search, the open and
- * done items under the filter and the words, and the item the address names
- * (else the first).
+ * done items under the filter and the words, the item the address names
+ * (else the one after the last in hand, else the first), and the visit.
  */
 export function useInboxListing(now: number) {
   const { t } = useTranslation();
@@ -22,6 +22,10 @@ export function useInboxListing(now: number) {
 
   const found = (item: InboxItem) => matchesQuery(inboxCopy(item, t), search.query);
   const { open, done } = listedItems(inbox, visit, search.filter, search.showDone, found);
-  const current = currentItem(open, search.item, { answered: inbox.answered, done: visit.done });
-  return { inbox, search, open, done, current };
+  const current = currentItem(open, search.item, {
+    answered: inbox.answered,
+    done: visit.done,
+    following: visit.following,
+  });
+  return { inbox, search, open, done, current, visit };
 }

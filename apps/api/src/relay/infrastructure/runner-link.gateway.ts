@@ -435,7 +435,10 @@ export class RunnerLinkGateway {
       case 'shared.preview':
       case 'transcript.page':
       case 'host.exec.result':
+      case 'host.settings':
       case 'terminal.screen':
+      case 'computer.screen':
+      case 'browser.page':
         // Only ever an answer to a request this process is waiting on; a late
         // one (past its timeout) has nobody left to read it.
         if (!this.replies.settle(link.hostId, message)) {
@@ -475,6 +478,10 @@ export class RunnerLinkGateway {
         // A port's or a desktop's connection is up; its bytes may flow (28).
         link.attachment(message.attachmentId)?.opened?.();
         return;
+      case 'desktop.pointer':
+        // Where the host's pointer is, for the desktop's browser to draw.
+        link.attachment(message.attachmentId)?.pointer?.(message);
+        return;
       case 'attachment.credit':
         // The runner's credit for a port attachment's bytes it wrote to the
         // port: the one attachment kind whose bytes flow both ways in bulk.
@@ -490,6 +497,8 @@ export class RunnerLinkGateway {
         return this.whatsapp.onState(link, message);
       case 'whatsapp.messages':
         return this.whatsapp.onMessages(link, message);
+      case 'whatsapp.chats':
+        return this.whatsapp.onChats(link, message);
       case 'telegram.state':
         return this.telegram.onState(link, message);
       case 'telegram.messages':

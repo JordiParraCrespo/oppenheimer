@@ -42,6 +42,12 @@ declare module '@tanstack/react-router' {
      * the bar every console page opens with: the sidebar toggle alone.
      */
     bar?: 'own';
+    /**
+     * `none`: the page stands beside the rail with no sidebar (the console's
+     * Inbox, whose list column is its own). Absent, the shell draws the
+     * sidebar.
+     */
+    sidebar?: 'none';
   }
 }
 
@@ -49,6 +55,13 @@ declare module '@tanstack/react-router' {
  * The innermost match that declares a pane wins, so a layout route can set one
  * for its whole subtree and a single screen can still override it.
  */
+/** Whether a route in the chain goes without the sidebar, so the shell draws none. */
+export function screenHasNoSidebar(
+  matches: readonly { staticData: { sidebar?: 'none' } }[],
+): boolean {
+  return matches.some((match) => match.staticData.sidebar === 'none');
+}
+
 /** Whether a route in the chain draws its own bar, so the shell draws none. */
 export function screenOwnsBar(matches: readonly { staticData: { bar?: 'own' } }[]): boolean {
   return matches.some((match) => match.staticData.bar === 'own');

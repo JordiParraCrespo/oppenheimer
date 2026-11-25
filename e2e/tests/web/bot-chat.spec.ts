@@ -26,7 +26,7 @@ test('a GLM bot answers in its chat', async ({ page }) => {
   await expect(
     page.getByText('Ask Fruit Bot anything. It can read your sessions and act on them.'),
   ).toBeVisible();
-  const box = page.getByPlaceholder('Message Fruit Bot');
+  const box = page.getByRole('textbox', { name: 'Message Fruit Bot' });
   await box.fill('Reply with exactly the word: pineapple');
   await page.getByRole('button', { name: 'Send' }).click();
 

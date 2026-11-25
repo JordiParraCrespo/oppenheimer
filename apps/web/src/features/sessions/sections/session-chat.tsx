@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { SessionChatLoading } from '../components/session-chat-loading';
 import { TerminalColumn } from '../components/terminal-column';
 import { useChatFind } from '../hooks/use-chat-find';
+import { CommandTailContext } from '../hooks/use-command-tail';
 import { useEarlierOnReach } from '../hooks/use-earlier-on-reach';
 import {
   useChatHasSending,
@@ -74,12 +75,15 @@ export function SessionChat({
   agent,
   readOnly,
   attach,
+  onOpenTerminal,
 }: {
   chat: Chat;
   /** Whose conversation it is; none where the reader is not told (a guest on a share). */
   agent: SessionAgent | null;
   readOnly: boolean;
   attach?: ChatAttach;
+  /** Shows the session's terminal, where Claude Code's review of a drafted report opens. */
+  onOpenTerminal?: () => void;
 }) {
   const { t } = useTranslation();
   // The ids alone: each turn subscribes to its own record, so a line the
@@ -172,31 +176,33 @@ export function SessionChat({
                 </EmptyState.Header>
               </EmptyState>
             ) : (
-              <ChatTranscript className="max-w-none">
-                {first > 0 || older !== 'none' ? (
-                  // Keyed by what is left above it and whether a page is
-                  // coming, so a spinner still in view once a page is drawn,
-                  // or once a reconnect let a page asked for go, is a new
-                  // one, seen afresh.
-                  <div
-                    key={`${first}:${older}`}
-                    ref={earlier}
-                    role="status"
-                    aria-label={t('sessions.chat.earlier')}
-                    className="flex justify-center py-2"
-                  >
-                    <LoaderIcon
-                      aria-hidden
-                      className="size-4 text-fg-subtle motion-safe:animate-spin"
-                    />
-                  </div>
-                ) : null}
-                {shown.map((id) => (
-                  <SessionChatTurn key={id} chat={chat} id={id} found={found === id} />
-                ))}
-                <SessionChatSending chat={chat} />
-                <SessionChatActivity chat={chat} />
-              </ChatTranscript>
+              <CommandTailContext.Provider value={chat}>
+                <ChatTranscript className="max-w-none">
+                  {first > 0 || older !== 'none' ? (
+                    // Keyed by what is left above it and whether a page is
+                    // coming, so a spinner still in view once a page is drawn,
+                    // or once a reconnect let a page asked for go, is a new
+                    // one, seen afresh.
+                    <div
+                      key={`${first}:${older}`}
+                      ref={earlier}
+                      role="status"
+                      aria-label={t('sessions.chat.earlier')}
+                      className="flex justify-center py-2"
+                    >
+                      <LoaderIcon
+                        aria-hidden
+                        className="size-4 text-fg-subtle motion-safe:animate-spin"
+                      />
+                    </div>
+                  ) : null}
+                  {shown.map((id) => (
+                    <SessionChatTurn key={id} chat={chat} id={id} found={found === id} />
+                  ))}
+                  <SessionChatSending chat={chat} />
+                  <SessionChatActivity chat={chat} />
+                </ChatTranscript>
+              </CommandTailContext.Provider>
             )}
           </TerminalColumn>
         </div>
@@ -212,9 +218,20 @@ export function SessionChat({
       {readOnly ? null : (
         <TerminalColumn className="pb-3">
           {attach ? (
-            <SessionChatAttachingSend chat={chat} agent={agent} attach={attach} onSent={toLatest} />
+            <SessionChatAttachingSend
+              chat={chat}
+              agent={agent}
+              attach={attach}
+              onOpenTerminal={onOpenTerminal}
+              onSent={toLatest}
+            />
           ) : (
-            <SessionChatSend chat={chat} agent={agent} onSent={toLatest} />
+            <SessionChatSend
+              chat={chat}
+              agent={agent}
+              onOpenTerminal={onOpenTerminal}
+              onSent={toLatest}
+            />
           )}
         </TerminalColumn>
       )}

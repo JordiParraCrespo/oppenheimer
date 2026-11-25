@@ -6,8 +6,8 @@ import {
   PageHeaderRow,
   PageHeaderSep,
   PageHeaderStat,
-  SegmentedControl,
-  SegmentedControlItem,
+  PillTab,
+  PillTabs,
 } from '@oppenheimer/design-system-web';
 import { ChevronLeft, ChevronRight, Plus } from '@oppenheimer/design-system-web/icons';
 import { monthOf, useLocale } from '@oppenheimer/frontend-web';
@@ -68,9 +68,8 @@ export function CalendarHeader() {
         }
         title={headerTitle(shown, locale)}
         actions={
-          <div className="flex items-center gap-1.5">
-            <SegmentedControl
-              size="md"
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2">
+            <PillTabs
               className="mr-2.5"
               aria-label={t('calendar.header.views')}
               value={view}
@@ -84,28 +83,28 @@ export function CalendarHeader() {
               }}
             >
               {CALENDAR_VIEWS.map((name) => (
-                <SegmentedControlItem key={name} value={name}>
+                <PillTab key={name} value={name}>
                   {t(`calendar.header.${name}`)}
-                </SegmentedControlItem>
+                </PillTab>
               ))}
-            </SegmentedControl>
-            <Button variant="secondary" size="sm" onClick={() => at({ view })}>
-              {t('calendar.header.today')}
-            </Button>
-            <IconButton
-              size="sm"
-              aria-label={t('calendar.header.previous')}
-              onClick={() => at({ view, ...step(view, { anchor, month }, -1) })}
-            >
-              <ChevronLeft />
-            </IconButton>
-            <IconButton
-              size="sm"
-              aria-label={t('calendar.header.next')}
-              onClick={() => at({ view, ...step(view, { anchor, month }, 1) })}
-            >
-              <ChevronRight />
-            </IconButton>
+            </PillTabs>
+            <div className="flex items-center gap-1.5">
+              <Button variant="secondary" onClick={() => at({ view })}>
+                {t('calendar.header.today')}
+              </Button>
+              <IconButton
+                aria-label={t('calendar.header.previous')}
+                onClick={() => at({ view, ...step(view, { anchor, month }, -1) })}
+              >
+                <ChevronLeft />
+              </IconButton>
+              <IconButton
+                aria-label={t('calendar.header.next')}
+                onClick={() => at({ view, ...step(view, { anchor, month }, 1) })}
+              >
+                <ChevronRight />
+              </IconButton>
+            </div>
             <Button
               className="ml-3"
               onClick={() =>

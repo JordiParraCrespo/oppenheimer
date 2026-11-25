@@ -12,15 +12,31 @@
  * a line this does not recognise is skipped, never an error.
  */
 
+import type { CodingAgentClear } from '@oppenheimer/shared/agents';
 import type { ChatCommand } from '@oppenheimer/shared/protocol';
 import type { ChatItemTodo } from '@oppenheimer/shared/schemas/chat-item';
-import { type ChatAnswer, QUESTION_KEY_GAP_MS, questionKeys } from '@oppenheimer/shared/sessions';
+import {
+  type ChatAnswer,
+  PERMISSION_KEY_GAP_MS,
+  permissionChoiceKeys,
+  QUESTION_KEY_GAP_MS,
+  questionKeys,
+} from '@oppenheimer/shared/sessions';
 import { type ChatToolKind, classifyTool, fieldOf, todosOf } from '../../chat/chat-tools';
 import { type ChatActivity, sameActivity } from './agent-activity';
 import {
+  type ChatFeedbackAction,
+  type ChatFeedbackDraft,
+  sameFeedbackDraft,
+} from './feedback-draft';
+import { type ChatPermissionPrompt, samePermissionPrompt } from './permission-prompt';
+import {
   type ChatSharedFile,
+  type ChatSharedVisual,
   SHARED_ENTRY,
   sharedFileOf,
+  sharedVisualOf,
+  VISUAL_ENTRY,
   withSharedFiles,
 } from './session-chat-files';
 import { FirstLoad, linesToCome, Quiet } from './session-chat-history';
@@ -149,6 +165,12 @@ export type ChatStep =
   | { kind: 'tool'; id: string; at: Date | null; call: ChatToolCall }
   | { kind: 'notice'; id: string; at: Date | null; notice: 'interrupted' | 'compacted' }
   /**
+   * The agent answered on another model than it last did (a `/model`, a plan
+   * mode that switches, a fallback): placed before the first step it wrote
+   * on the new one. Never for the first model the chat holds.
+   */
+  | { kind: 'model'; id: string; at: Date | null; model: string }
+  /**
    * What a command the CLI answers itself printed (`/context`, `/cost`), as
    * text with the terminal's colours taken out; `failed` when it wrote to
    * stderr.
@@ -163,7 +185,9 @@ export type ChatStep =
   /** A background task finished: the line Claude Code hands the agent, not a prompt. */
   | { kind: 'task'; id: string; at: Date | null; status: ChatTaskStatus; summary: string | null }
   /** A file the agent showed the person (`runner sessions send-file`), placed by when. */
-  | { kind: 'file'; id: string; at: Date | null; file: ChatSharedFile };
+  | { kind: 'file'; id: string; at: Date | null; file: ChatSharedFile }
+  /** A visual the agent showed the person (`runner sessions show`), placed by when; checked where it is drawn. */
+  | { kind: 'visual'; id: string; at: Date | null; spec: unknown };
 
 export interface ChatPrompt {
   id: string;
@@ -256,6 +280,21 @@ export interface ChatState {
    */
   suggestion: string | null;
   /**
+   * The feedback report the agent drafted, as the card over the terminal's
+   * input box shows it (`setFeedback`, `readFeedbackDraft`), for the chat to
+   * offer its keys (`pressFeedback`). None while it shows none, or while no
+   * terminal is drawn to read it from.
+   */
+  feedback: ChatFeedbackDraft | null;
+  /**
+   * The permission dialog the agent draws before a tool runs, as the
+   * terminal under the chat shows it (`setPermission`,
+   * `readPermissionPrompt`), for the chat to answer (`answerPermission`).
+   * None while it draws none, for an agent whose dialog the console does not
+   * read, or while no terminal is drawn to read it from.
+   */
+  permission: ChatPermissionPrompt | null;
+  /**
    * Whether what the chat is connected to can stop the agent's turn: a
    * terminal can (Escape), a Claude Code cloud session's hooks cannot
    * (`connect`). While it cannot, the composer offers no Stop, and a message
@@ -299,6 +338,8 @@ const EMPTY: ChatState = {
   older: 'none',
   activity: null,
   suggestion: null,
+  feedback: null,
+  permission: null,
   interruptible: true,
   commands: null,
 };
@@ -313,6 +354,18 @@ const PASTE_END = '\u001b[201~';
 const ESCAPE = '\u001b';
 /** How long the agent's prompt takes the text before Enter submits it. */
 const SUBMIT_AFTER_TEXT_MS = 60;
+/**
+ * How long a key pressed on the drafted-feedback card holds the next one
+ * while the card on screen has not moved: long enough for a double click,
+ * short enough that a key the card ignored does not leave it dead.
+ */
+const FEEDBACK_KEY_HOLD_MS = 1500;
+/**
+ * How long a note waits after the refusal it goes with, where the dialog
+ * takes none of its own: the agent closes the dialog and opens its prompt
+ * before it can take the words.
+ */
+const NOTE_AFTER_REFUSAL_MS = 400;
 /**
  * How long a queued message that went waits for its turn to show before
  * the next may go: a message that opens no turn (a slash command the CLI
@@ -458,6 +511,8 @@ class Transcript {
       this.lines.length,
       (index) => this.lines[index]?.entry,
       this.openFrom,
+      false,
+      lastModel(this.closed),
     );
     const open = turns.length - 1;
     for (const [index, turn] of turns.slice(0, Math.max(0, open)).entries()) {
@@ -548,12 +603,16 @@ class Transcript {
  * reads it and types through it without knowing there is a stream.
  */
 export class SessionChat {
+  /** When a key last went to the drafted-feedback card whose reading still stands. */
+  private feedbackPressedAt: number | null = null;
   private readonly transcript = new Transcript();
   /** The subagents the agent ran, held apart and put into their calls (`turnsOf`). */
   private readonly subagents = new Subagents(sidechainTurns);
   /** A first load's history, held until it has all come (`ChatState.loading`). */
   private readonly firstLoad = new FirstLoad();
   private type: ((data: string) => void) | null = null;
+  /** How the agent's prompt is emptied before a message; null for an agent that needs nothing. */
+  private clear: CodingAgentClear | null = null;
   /** Asks the host for the turns before an offset, lent with the input (`connect`). */
   private askOlder: ((before: number) => void) | null = null;
   /** Where in the transcript the lines held start: 0 for its first line. */
@@ -578,6 +637,8 @@ export class SessionChat {
   );
   /** The quiet that ends a first load or a replay that came back short. */
   private readonly quiet = new Quiet();
+  /** The visuals the agent showed, in the order they came; each a step of its turn. */
+  private visuals: readonly ChatSharedVisual[] = [];
 
   apply(batch: ChatBatch): void {
     if (batch.older) {
@@ -618,6 +679,13 @@ export class SessionChat {
         // Each attachment sends every shared file again; one is held once.
         const file = sharedFileOf(entry);
         if (file && !files.some((held) => held.id === file.id)) files = [...files, file];
+      } else if (type === VISUAL_ENTRY) {
+        // Each attachment sends every visual again, as it does the files; one is held once.
+        const visual = sharedVisualOf(entry);
+        if (visual && !this.visuals.some((held) => held.id === visual.id)) {
+          this.visuals = [...this.visuals, visual];
+          changed = true;
+        }
       } else {
         const subagent = this.subagents.take(raw, entry);
         if (subagent === null ? this.transcript.take(raw, entry) : subagent) changed = true;
@@ -734,9 +802,9 @@ export class SessionChat {
     this.flush();
   };
 
-  /** The conversation's turns, with the shared files placed in them. */
+  /** The conversation's turns, with the shared files and visuals placed in them. */
   private turnsOf(files: readonly ChatSharedFile[]): ChatTurn[] {
-    return withSharedFiles(this.subagents.place(this.transcript.turns()), files);
+    return withSharedFiles(this.subagents.place(this.transcript.turns()), files, this.visuals);
   }
 
   /** A first load is still arriving. */
@@ -859,13 +927,16 @@ export class SessionChat {
    * Lends the chat a way to type into the session's PTY, and to ask its host
    * for older turns; the function returned takes them back. `interruptible:
    * false` says the source cannot stop a turn (`ChatState.interruptible`).
+   * `clear` empties the agent's prompt before a message (`clearOf`, ZCode's
+   * Ctrl+U).
    */
   connect(
     type: (data: string) => void,
     askOlder?: (before: number) => void,
-    { interruptible = true }: { interruptible?: boolean } = {},
+    { interruptible = true, clear }: { interruptible?: boolean; clear?: CodingAgentClear } = {},
   ): () => void {
     this.type = type;
+    this.clear = clear ?? null;
     this.askOlder = askOlder ?? null;
     if (this.state.interruptible !== interruptible) this.publish({ ...this.state, interruptible });
     return () => {
@@ -891,8 +962,21 @@ export class SessionChat {
     const type = this.type;
     const empty = message.trim() === '';
     if (!type || (empty && !withFiles)) return;
-    if (!empty) type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
-    setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
+    const typeMessage = () => {
+      if (!empty) type(message.includes('\n') ? `${PASTE_START}${message}${PASTE_END}` : message);
+      setTimeout(() => type('\r'), SUBMIT_AFTER_TEXT_MS);
+    };
+    // A prompt can hold text nobody left there (ZCode recalls its last one on
+    // an Up arrow), which the message would be sent joined to: the clear keys
+    // go first, and the words once the agent has acted on them, since words
+    // in the same burst land in the prompt it has not emptied yet. Not with
+    // files: their paths are already in the prompt, pasted for this message.
+    if (!empty && !withFiles && this.clear) {
+      type(this.clear.keys);
+      setTimeout(typeMessage, this.clear.settleMs);
+    } else {
+      typeMessage();
+    }
     // A source that cannot stop the turn says itself what waits with it, and
     // one taken into the turn under way opens no prompt to replace it.
     if (!empty && this.state.interruptible && !this.busy()) this.startSending(message);
@@ -943,6 +1027,77 @@ export class SessionChat {
     this.publish({ ...this.state, suggestion });
   }
 
+  /**
+   * The drafted feedback the terminal under the chat shows now
+   * (`readFeedbackDraft`); none once it is gone. A reading that says what the
+   * last one said publishes nothing.
+   */
+  setFeedback(feedback: ChatFeedbackDraft | null): void {
+    if (sameFeedbackDraft(this.state.feedback, feedback)) return;
+    this.feedbackPressedAt = null;
+    this.publish({ ...this.state, feedback });
+  }
+
+  /**
+   * Answers the drafted-feedback card with one of the keys it names, typed
+   * as the person would type it in the terminal. False when nothing is
+   * connected to type it.
+   */
+  pressFeedback(action: ChatFeedbackAction): boolean {
+    const type = this.type;
+    if (!type) return false;
+    // The card asks twice on purpose (send, then send without reviewing;
+    // dismiss, then turn drafting off): a second press before the screen
+    // shows the card's next state would answer a question nobody saw.
+    const now = Date.now();
+    if (this.feedbackPressedAt !== null && now - this.feedbackPressedAt < FEEDBACK_KEY_HOLD_MS) {
+      return false;
+    }
+    this.feedbackPressedAt = now;
+    type(action.key);
+    return true;
+  }
+
+  /**
+   * The permission dialog the terminal under the chat shows now
+   * (`readPermissionPrompt`); none once it is gone. A reading that says what
+   * the last one said publishes nothing.
+   */
+  setPermission(permission: ChatPermissionPrompt | null): void {
+    if (samePermissionPrompt(this.state.permission, permission)) return;
+    this.publish({ ...this.state, permission });
+  }
+
+  /**
+   * Answers the permission dialog on screen with one of its options, by its
+   * index, typed as the person would (`permissionChoiceKeys`), with words of
+   * their own where they gave some: in the dialog where it takes them, or
+   * else as the next message once the refusal has closed it. False when
+   * nothing is connected to type them, or the dialog has moved on since it
+   * was shown: an answer is never typed into a dialog nobody saw.
+   */
+  answerPermission(
+    prompt: ChatPermissionPrompt,
+    choice: number,
+    note: string | null = null,
+  ): boolean {
+    const type = this.type;
+    if (!type || this.state.permission?.id !== prompt.id) return false;
+    const keys = permissionChoiceKeys(this.state.permission, choice, note);
+    if (keys.length === 0) return false;
+    keys.forEach((key, index) => {
+      setTimeout(() => type(key), index * PERMISSION_KEY_GAP_MS);
+    });
+    const words = note?.trim();
+    if (words && !this.state.permission.amendKey) {
+      setTimeout(
+        () => this.send(words),
+        keys.length * PERMISSION_KEY_GAP_MS + NOTE_AFTER_REFUSAL_MS,
+      );
+    }
+    return true;
+  }
+
   snapshot = (): ChatState => this.state;
 
   subscribe = (listener: () => void): (() => void) => {
@@ -979,6 +1134,8 @@ type Reading =
   | { kind: 'prompt'; prompt: ChatPrompt }
   | {
       kind: 'steps';
+      /** The transcript line's own id. */
+      id: string;
       steps: ChatStep[];
       model: string | null;
       at: Date | null;
@@ -1017,8 +1174,9 @@ export function classify(value: unknown, index: number, sidechain = false): Read
     });
     return {
       kind: 'steps',
+      id,
       steps,
-      model: text(message.model),
+      model: modelOf(message.model),
       at,
       contextTokens: contextOf(message.usage),
     };
@@ -1027,6 +1185,7 @@ export function classify(value: unknown, index: number, sidechain = false): Read
   if (entry.isCompactSummary === true) {
     return {
       kind: 'steps',
+      id,
       steps: [{ kind: 'notice', id, at, notice: 'compacted' }],
       model: null,
       at,
@@ -1063,7 +1222,7 @@ export function classify(value: unknown, index: number, sidechain = false): Read
           .join('\n'),
   );
   const system = systemSteps(said, id, at);
-  if (system) return { kind: 'steps', steps: system, model: null, at };
+  if (system) return { kind: 'steps', id, steps: system, model: null, at };
   const typed = typedPrompt(said);
   if (typed === null) return null;
   const files = blocks.filter(
@@ -1192,7 +1351,10 @@ function buildTurns(
   entryAt: (index: number) => unknown,
   from: number,
   sidechain = false,
+  /** The model the agent last answered on before `from`, so a change across a build is still seen. */
+  before: string | null = null,
 ): { turns: ChatTurn[]; starts: number[] } {
+  let model = before;
   const turns: ChatTurn[] = [];
   const starts: number[] = [];
   const calls = new Map<string, ChatToolCall>();
@@ -1217,6 +1379,15 @@ function buildTurns(
         // The agent at work again (a background task's end woke it) after a
         // command the CLI answered: the turn is no longer settled by that answer.
         if (reading.steps.length > 0) answered.delete(turn);
+        if (reading.model && model && reading.model !== model) {
+          turn.steps.push({
+            kind: 'model',
+            id: `${reading.id}:model`,
+            at: reading.at,
+            model: reading.model,
+          });
+        }
+        model = reading.model ?? model;
         turn.model = reading.model ?? turn.model;
         turn.contextTokens = reading.contextTokens ?? turn.contextTokens;
         if (reading.at) turn.lastAt = reading.at;
@@ -1272,11 +1443,31 @@ function open(turns: ChatTurn[], prompt: ChatPrompt | null, id: string, at: Date
 
 /** The last turn is the agent's while a call is open or it has not answered in words. */
 function isWorking(turn: ChatTurn): boolean {
-  const tail = turn.steps.at(-1);
+  // A model change says nothing about whether the agent is done.
+  const tail = turn.steps.filter((step) => step.kind !== 'model').at(-1);
   if (tail === undefined) return true;
   if (turn.steps.some((step) => step.kind === 'tool' && step.call.status === 'running'))
     return true;
   return tail.kind !== 'reply' && tail.kind !== 'notice' && tail.kind !== 'output';
+}
+
+/**
+ * The model an answer names, as the agent wrote it; none for Claude Code's
+ * `<synthetic>`, the name it gives a line it wrote itself (an API error, a
+ * stop), which is no model the agent moved to.
+ */
+function modelOf(value: unknown): string | null {
+  const model = text(value);
+  return model && !model.startsWith('<') ? model : null;
+}
+
+/** The model the last of these turns answered on, for a build that starts after them. */
+function lastModel(turns: readonly ChatTurn[]): string | null {
+  for (let index = turns.length - 1; index >= 0; index -= 1) {
+    const model = turns[index]?.model;
+    if (model) return model;
+  }
+  return null;
 }
 
 function toolCall(block: Loose): ChatToolCall {

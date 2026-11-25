@@ -4,6 +4,8 @@ import {
   type BotConversationResponseDto,
   type BotDocumentResponseDto,
   type BotDocumentRevisionResponseDto,
+  type BotFormFieldResponseDto,
+  type BotFormResponseDto,
   type BotGroupResponseDto,
   type BotMemoryFactResponseDto,
   type BotMessageResponseDto,
@@ -19,14 +21,17 @@ import {
   heyApiSdk,
   type ModelProviderCredentialResponseDto,
   type PersonMemoryResponseDto,
+  type RoutineWebhookResponseDto,
   type WorkspaceBotApprovalResponseDto,
   type WorkspaceBotNoticeResponseDto,
 } from '@oppenheimer/api-client';
-import { AppError, callApi } from '@oppenheimer/frontend-core';
+import { AppError, callApi, type EventSourceFactory } from '@oppenheimer/frontend-core';
 import {
   BOT_APPROVAL_DECISIONS,
   BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
+  BOT_FORM_OUTCOMES,
+  BOT_GITHUB_ASK_VIAS,
   BOT_GOAL_ACTIVITIES,
   BOT_LOOP_ACTIVITIES,
   BOT_PLAN_WATCH_SCOPES,
@@ -37,6 +42,8 @@ import {
   type BotApprovalDecision,
   type BotAttachment,
   type BotDocumentName,
+  type BotFormField,
+  type BotFormValues,
   type BotGoal,
   type BotLoop,
   type BotMemoryDreamState,
@@ -55,6 +62,8 @@ import {
   type MailPlan,
   mailPlanSchema,
 } from '@oppenheimer/shared/schemas/mail';
+import type { ModelProvider } from '@oppenheimer/shared/schemas/model-provider';
+import { parseVisual, type Visual } from '@oppenheimer/shared/schemas/visual';
 import { inject, injectable, optional } from 'inversify';
 import { TOKENS } from '../../di/tokens';
 import { triggerOf } from '../automations/automations.repository';
@@ -65,10 +74,12 @@ import {
   BotGroupEntity,
   BotMemoryFactEntity,
   BotRoutineEntity,
+  type BotRoutineWebhook,
   BotSkillEntity,
   ChatgptLoginEntity,
   type ChatgptLoginState,
   type CreateBotSkillInput,
+  type IssuedBotRoutineWebhook,
   ModelProviderEntity,
   PersonMemoryEntity,
   type SaveBotDocumentInput,
@@ -79,6 +90,7 @@ import {
 import {
   BotApprovalEntity,
   BotConversationEntity,
+  BotFormCardEntity,
   BotMessageEntity,
   type BotPlanLimits,
   type BotPlanWindow,
@@ -182,7 +194,17 @@ function toRoutine(dto: BotRoutineResponseDto): BotRoutineEntity {
     dto.triggers.flatMap((trigger) => triggerOf(trigger) ?? []),
     dto.lastRun ? { status: dto.lastRun.status, createdAt: new Date(dto.lastRun.createdAt) } : null,
     new Date(dto.updatedAt),
+    dto.webhook ? toRoutineWebhook(dto.webhook) : null,
   );
+}
+
+function toRoutineWebhook(dto: RoutineWebhookResponseDto): BotRoutineWebhook {
+  return {
+    tokenPrefix: dto.tokenPrefix,
+    signed: dto.signed,
+    issuedAt: new Date(dto.issuedAt),
+    lastReceivedAt: dto.lastReceivedAt ? new Date(dto.lastReceivedAt) : null,
+  };
 }
 
 function toFact(dto: BotMemoryFactResponseDto): BotMemoryFactEntity {
@@ -224,6 +246,7 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
   const steps: BotToolStep[] = dto.steps.map((step) => ({
     ...step,
     mailDraft: draftOf(step.mailDraft),
+    visual: visualOf(step.visual),
     rateLimit: step.rateLimit
       ? { system: step.rateLimit.system, resetAt: new Date(step.rateLimit.resetAt) }
       : null,
@@ -237,6 +260,8 @@ function toMessage(dto: BotMessageResponseDto): BotMessageEntity {
     new Date(dto.createdAt),
     dto.event ? toEvent(dto.event) : null,
     (dto.attachments ?? []).map(toAttachment),
+    dto.reaction ?? null,
+    dto.botReaction ?? null,
   );
 }
 
@@ -275,6 +300,17 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
             outcome,
             summary: dto.summary,
             answers: dto.answers.map((answer) => ({ ...answer })),
+          }
+        : null;
+    }
+    case 'form': {
+      const outcome = BOT_FORM_OUTCOMES.find((candidate) => candidate === dto.outcome);
+      return outcome
+        ? {
+            kind: 'form',
+            outcome,
+            title: dto.title,
+            values: dto.values.map((value) => ({ ...value })),
           }
         : null;
     }
@@ -332,6 +368,22 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
           }
         : null;
     }
+    case 'github_ask': {
+      const via = BOT_GITHUB_ASK_VIAS.find((candidate) => candidate === dto.via);
+      return via
+        ? {
+            kind: 'github_ask',
+            via,
+            installationId: dto.installationId,
+            githubRepoId: dto.githubRepoId,
+            repository: dto.repository,
+            number: dto.number,
+            isPullRequest: dto.isPullRequest ?? null,
+            url: dto.url ?? null,
+            actorLogin: dto.actorLogin,
+          }
+        : null;
+    }
     case 'task': {
       const event = BOT_TASK_WAKE_EVENTS.find((candidate) => candidate === dto.event);
       const scope = BOT_PLAN_WATCH_SCOPES.find((candidate) => candidate === dto.scope);
@@ -378,6 +430,14 @@ function toEvent(dto: NonNullable<BotMessageResponseDto['event']>): BotMessageEv
     }
     case 'compaction':
       return { kind: 'compaction', tokensBefore: dto.tokensBefore, tokensAfter: dto.tokensAfter };
+    case 'check_back':
+      return {
+        kind: 'check_back',
+        chainId: dto.chainId,
+        step: dto.step,
+        chainStartedAt: dto.chainStartedAt,
+        about: dto.about,
+      };
     case 'loop': {
       const activity = BOT_LOOP_ACTIVITIES.find((candidate) => candidate === dto.activity);
       return activity
@@ -459,6 +519,54 @@ function toQuestionCard(dto: BotQuestionResponseDto): BotQuestionCardEntity {
   );
 }
 
+/** One field as the response carries it, read by its kind: the keys its kind has none of go. */
+function toFormField(dto: BotFormFieldResponseDto): BotFormField | null {
+  const base = {
+    id: dto.id,
+    label: dto.label,
+    placeholder: dto.placeholder,
+    required: dto.required,
+  };
+  const words = typeof dto.default === 'string' ? dto.default : null;
+  switch (dto.kind) {
+    case 'number':
+      return {
+        ...base,
+        kind: 'number',
+        min: dto.min,
+        max: dto.max,
+        default: typeof dto.default === 'number' ? dto.default : null,
+      };
+    case 'select':
+      return { ...base, kind: 'select', options: [...(dto.options ?? [])], default: words };
+    case 'text':
+    case 'textarea':
+    case 'email':
+    case 'date':
+      return { ...base, kind: dto.kind, default: words };
+    default:
+      return null;
+  }
+}
+
+function toFormCard(dto: BotFormResponseDto): BotFormCardEntity {
+  return new BotFormCardEntity(
+    dto.id,
+    dto.turnId,
+    {
+      title: dto.title,
+      description: dto.description,
+      submitLabel: dto.submitLabel,
+      fields: dto.fields.flatMap((field) => {
+        const read = toFormField(field);
+        return read ? [read] : [];
+      }),
+    },
+    dto.status,
+    new Date(dto.createdAt),
+  );
+}
+
 function toPermissions(dto: BotPermissionsResponseDto): BotPermissionsEntity {
   return new BotPermissionsEntity(
     dto.preset,
@@ -472,6 +580,13 @@ function toPermissions(dto: BotPermissionsResponseDto): BotPermissionsEntity {
 function draftOf(raw: unknown): BotMailDraft | null {
   const parsed = botMailDraftSchema.safeParse(raw);
   return parsed.success ? parsed.data : null;
+}
+
+/** A step's visual, checked again: one the API stored under an older schema reads as none. */
+function visualOf(raw: unknown): Visual | null {
+  if (raw === null || raw === undefined) return null;
+  const parsed = parseVisual(raw);
+  return parsed.ok ? parsed.visual : null;
 }
 
 /** The tools whose card stores the message it sends, as `input.plan`. */
@@ -513,6 +628,7 @@ function toConversation(dto: BotConversationResponseDto): BotConversationEntity 
     dto.turns.map(toTurn),
     dto.messageCount,
     dto.storedTextBlocks,
+    dto.hasOlder,
   );
 }
 
@@ -527,12 +643,20 @@ export class BotsRepository {
     @inject(TOKENS.ApiBaseUrl)
     @optional()
     private readonly apiBaseUrl: string = '',
+    @inject(TOKENS.EventSourceFactory)
+    @optional()
+    private readonly sourceFactory?: EventSourceFactory,
   ) {}
 
-  /** The newest messages of the chat, oldest first, and their turns. */
-  findConversation(id: string): Promise<BotConversationEntity> {
+  /**
+   * The newest messages of the chat, oldest first, and their turns; with
+   * `before` (a message of it), the page just older than that one.
+   */
+  findConversation(id: string, before?: string): Promise<BotConversationEntity> {
     return callApi(BotsErrors.FETCH_CONVERSATION_FAILED, async (api) => {
-      const data = await api.body(heyApiSdk.findBotConversation({ path: { id } }));
+      const data = await api.body(
+        heyApiSdk.findBotConversation({ path: { id }, query: before ? { before } : undefined }),
+      );
       return toConversation(data);
     });
   }
@@ -753,6 +877,36 @@ export class BotsRepository {
     });
   }
 
+  /** The form the bot waits on (`ask_form`); `null` when none does. */
+  findPendingForm(id: string): Promise<BotFormCardEntity | null> {
+    return callApi(BotsErrors.FETCH_FORM_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.findPendingBotForm({ path: { id } }));
+      return data.form ? toFormCard(data.form) : null;
+    });
+  }
+
+  /** Sends a form, a value per field id; the bot carries on with them. */
+  submitForm(
+    id: string,
+    formId: string,
+    values: Readonly<BotFormValues>,
+  ): Promise<BotFormCardEntity> {
+    return callApi(BotsErrors.SUBMIT_FORM_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.submitBotForm({ path: { id, formId }, body: { values: { ...values } } }),
+      );
+      return toFormCard(data);
+    });
+  }
+
+  /** Declines a form; the bot is told, and not to ask again. */
+  dismissForm(id: string, formId: string): Promise<BotFormCardEntity> {
+    return callApi(BotsErrors.SUBMIT_FORM_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.dismissBotForm({ path: { id, formId }, body: {} }));
+      return toFormCard(data);
+    });
+  }
+
   /** Declines a card of questions; the bot is told, and not to ask again. */
   dismissQuestion(id: string, questionId: string): Promise<BotQuestionCardEntity> {
     return callApi(BotsErrors.ANSWER_QUESTION_FAILED, async (api) => {
@@ -763,9 +917,23 @@ export class BotsRepository {
     });
   }
 
+  /** Your reaction to a message of yours or the bot's: one emoji, or `null` to take it back. */
+  react(id: string, messageId: string, emoji: string | null): Promise<BotMessageEntity> {
+    return callApi(BotsErrors.REACT_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.reactToBotMessage({ path: { id, messageId }, body: { emoji } }),
+      );
+      return toMessage(data);
+    });
+  }
+
   /** The chat, live, not dialled yet: the caller subscribes, then `open()`s it. */
   openStream(id: string): BotStream {
-    return new BotStream({ apiBaseUrl: this.apiBaseUrl, botId: id });
+    return new BotStream({
+      apiBaseUrl: this.apiBaseUrl,
+      botId: id,
+      sourceFactory: this.sourceFactory,
+    });
   }
 
   findAll(): Promise<BotEntity[]> {
@@ -905,6 +1073,20 @@ export class BotsRepository {
     });
   }
 
+  /**
+   * The tab's Edit dialog: the name or prompt that changed, the prompt as the
+   * routine's next revision. A field left out stays as it is.
+   */
+  updateRoutine(
+    id: string,
+    routineId: string,
+    changes: { name?: string; prompt?: string },
+  ): Promise<void> {
+    return callApi(BotsErrors.SAVE_ROUTINE_FAILED, async (api) => {
+      await api.result(heyApiSdk.updateBotRoutine({ path: { id, routineId }, body: changes }));
+    });
+  }
+
   /** Run now: one run, paused or not. */
   runRoutine(id: string, routineId: string, idempotencyKey: string): Promise<void> {
     return callApi(BotsErrors.RUN_ROUTINE_FAILED, async (api) => {
@@ -914,6 +1096,30 @@ export class BotsRepository {
           headers: { 'Idempotency-Key': idempotencyKey },
         }),
       );
+    });
+  }
+
+  /** A new URL for a routine's webhook; the old one stops working. Its URL and secret are only in this answer. */
+  issueRoutineWebhook(
+    id: string,
+    routineId: string,
+    signed: boolean,
+  ): Promise<IssuedBotRoutineWebhook> {
+    return callApi(BotsErrors.ISSUE_ROUTINE_WEBHOOK_FAILED, async (api) => {
+      const data = await api.body(
+        heyApiSdk.issueRoutineWebhook({ path: { id, routineId }, body: { signed } }),
+      );
+      return {
+        ...toRoutineWebhook(data),
+        url: data.url,
+        signingSecret: data.signingSecret ?? null,
+      };
+    });
+  }
+
+  revokeRoutineWebhook(id: string, routineId: string): Promise<void> {
+    return callApi(BotsErrors.REVOKE_ROUTINE_WEBHOOK_FAILED, async (api) => {
+      await api.result(heyApiSdk.revokeRoutineWebhook({ path: { id, routineId } }));
     });
   }
 
@@ -1079,7 +1285,7 @@ export class BotsRepository {
   }
 
   /** Stores the workspace's key for `provider`, replacing the one there. The key is never read back. */
-  putModelProviderKey(provider: BotProvider, apiKey: string): Promise<void> {
+  putModelProviderKey(provider: ModelProvider, apiKey: string): Promise<void> {
     return callApi(BotsErrors.SAVE_PROVIDER_KEY_FAILED, async (api) => {
       await api.result(
         heyApiSdk.putModelProviderCredential({ path: { provider }, body: { apiKey } }),
@@ -1094,7 +1300,7 @@ export class BotsRepository {
     });
   }
 
-  removeModelProviderKey(provider: BotProvider): Promise<void> {
+  removeModelProviderKey(provider: ModelProvider): Promise<void> {
     return callApi(BotsErrors.DELETE_PROVIDER_KEY_FAILED, async (api) => {
       await api.result(heyApiSdk.deleteModelProviderCredential({ path: { provider } }));
     });

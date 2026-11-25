@@ -740,6 +740,12 @@ owner. See `product/versions/mvp/16-automations-architecture.md`.
 | `AUTOMATIONS_007` <a id="automations_007" /> | That project cannot hold automations        | 422  |
 | `AUTOMATIONS_008` <a id="automations_008" /> | Run not found                               | 404  |
 | `AUTOMATIONS_009` <a id="automations_009" /> | That Gmail account cannot start a routine   | 422  |
+| `AUTOMATIONS_010` <a id="automations_010" /> | Webhook not found                           | 404  |
+| `AUTOMATIONS_011` <a id="automations_011" /> | The webhook signature is missing, stale or wrong | 401 |
+| `AUTOMATIONS_012` <a id="automations_012" /> | The webhook body is too large               | 413  |
+| `AUTOMATIONS_013` <a id="automations_013" /> | The routine is paused                       | 409  |
+| `AUTOMATIONS_014` <a id="automations_014" /> | The routine has no webhook trigger          | 422  |
+| `AUTOMATIONS_015` <a id="automations_015" /> | Webhook signing is not configured on this deployment | 503 |
 
 `AUTOMATIONS_001` is also returned for an automation in another workspace, and for a
 deleted one: its runs stay readable, but it cannot be edited or run.
@@ -757,6 +763,20 @@ past, or a rule with nothing to fire on.
 
 `AUTOMATIONS_007` is a project that is archived, or the workspace's Unassigned
 project, which holds sessions that name none and no automations.
+
+`AUTOMATIONS_010` to `AUTOMATIONS_013` answer a POST to a routine's webhook URL
+(`/api/v1/routine-webhooks/{token}`). `010` is a token no routine holds: never
+issued, replaced by a newer URL, revoked, or its routine's webhook trigger removed.
+`011` is a signed URL's request whose `x-oppenheimer-signature` is absent, not
+`t=<unix seconds>,v1=<hex>`, more than five minutes from the server's clock, or not
+the HMAC-SHA256 of `<t>.<body>` under the signing secret. `012` is a body over
+256 KiB. `013` is a paused routine: turn it on from its Routines tab. A POST past
+these is `202` with the run's id, even when an hourly cap skipped it.
+
+`AUTOMATIONS_014` is asking for a URL for a routine whose triggers have no webhook:
+the bot adds one in chat. `AUTOMATIONS_015` is asking for a signing secret, or
+receiving on a signed URL, while `BOTS_PROVIDER_KEY` is unset or was replaced, so
+the secret cannot be kept or opened.
 
 A run the owner can no longer start is not an error to the caller: it is recorded
 on the run as `skipped` with a reason (`not_launchable`, `agent_unavailable`,
@@ -813,6 +833,11 @@ See `product/versions/mvp/25-bots.md`.
 | `BOTS_041` <a id="bots_041" />       | The bot has no dream to undo | 404  |
 | `BOTS_042` <a id="bots_042" />       | The bot answers on a Telegram bot | 409  |
 | `BOTS_043` <a id="bots_043" />       | The bot answers on a WhatsApp number | 409  |
+| `BOTS_044` <a id="bots_044" />       | Message not found | 404  |
+| `BOTS_045` <a id="bots_045" />       | This message takes no reaction | 422  |
+| `BOTS_046` <a id="bots_046" />       | Form not found | 404  |
+| `BOTS_047` <a id="bots_047" />       | The values do not fit the form | 422  |
+| `BOTS_048` <a id="bots_048" />       | The form was already sent | 409  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -918,6 +943,20 @@ another bot, or none, to answer there (Settings → Telegram), then delete it.
 the bot of one of its allowed chats: it answers there. Choose another bot, or
 none (Settings → WhatsApp), then delete it.
 
+`BOTS_044` and `BOTS_045` are a reaction in a bot's chat
+(`PUT /bots/:id/messages/:messageId/reaction`). `BOTS_044` is a message that is
+not this bot's or not in the caller's workspace. `BOTS_045` is a reaction to an
+activity line or an event: only your messages and the bot's words take one.
+
+`BOTS_046` to `BOTS_048` are a form a bot asked you to fill (`ask_form`), a
+card of its own beside questions and approvals. `BOTS_046` is a form that is
+not this bot's or not in the caller's workspace. `BOTS_047` is values that do
+not fit it: a required field left blank, a number outside its bounds, words
+where a number goes, an option a select does not list, an address or a day
+that does not read as one, or a field the form does not have; its `detail`
+names which. `BOTS_048` is a form already submitted or dismissed, or retired
+because a message reached the bot first.
+
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
 ## Voice
@@ -934,12 +973,26 @@ ChatGPT sign-in or the deployment's own speech-to-text server
 | `VOICE_005` <a id="voice_005" />     | Dictation is not set up for this workspace                   | 409  |
 | `VOICE_006` <a id="voice_006" />     | The speech-to-text provider could not transcribe the recording | 502  |
 | `VOICE_007` <a id="voice_007" />     | The speech-to-text provider is rate limiting this workspace  | 429  |
+| `VOICE_008` <a id="voice_008" />     | Speech synthesis is not set up for this workspace            | 409  |
+| `VOICE_009` <a id="voice_009" />     | The text-to-speech provider could not speak the text         | 502  |
+| `VOICE_010` <a id="voice_010" />     | The text-to-speech provider is rate limiting this workspace  | 429  |
+| `VOICE_011` <a id="voice_011" />     | That text cannot be spoken as one voice note                 | 422  |
 
 `VOICE_005` means nobody can hear the clip: sign the workspace in to ChatGPT
-(Settings → Model providers), or give the deployment a speech-to-text server.
-A ChatGPT sign-in that cannot transcribe (`VOICE_006`, or a lapsed sign-in)
-falls back to the deployment's server when there is one; a rate limit
+or add an OpenAI, Groq or ElevenLabs key (Settings → Model providers), or give
+the deployment a speech-to-text server. The provider chosen under Voice on that
+page is tried first; one that cannot transcribe (`VOICE_006`, or a lapsed
+sign-in or removed key) falls back to the next one available; a rate limit
 (`VOICE_007`, with `Retry-After`) does not.
+
+`VOICE_008` to `VOICE_011` are a bot's WhatsApp voice note being spoken.
+`VOICE_008` is a workspace with no provider that speaks: no OpenAI or
+ElevenLabs key, and no text-to-speech server on the deployment (`VOICE_TTS_*`
+in `.env.example`); the bot is refused before any card and told to send text.
+`VOICE_009` is the provider unreachable, refusing (an ElevenLabs voice the
+account cannot use, say), or answering something that is not Ogg/Opus audio of
+at most two minutes, or Ogg/Opus that decodes to silence; `VOICE_010` is it rate limiting the key, with
+`Retry-After`. `VOICE_011` is an empty text or one longer than 600 characters.
 
 ## Inbox
 
@@ -1193,6 +1246,32 @@ Choosing the bot that answers you on a Telegram bot answers `BOTS_001` for a
 bot that is not yours. A one-time owner link for a bot the host has not
 checked yet answers `TELEGRAM_007`: its Telegram name is not known until then.
 
+## Slack
+
+A bot's own Slack app, created from the manifest in the bot's Slack settings,
+whose events reach `POST /v1/slack/events?bot=<id>` and which answers its
+owner in the thread they asked in. See `product/next-steps/slack-for-bots.md`.
+
+| Code                             | Title                                         | HTTP |
+| -------------------------------- | --------------------------------------------- | ---- |
+| `SLACK_001` <a id="slack_001" /> | That Slack app is not connected               | 404  |
+| `SLACK_002` <a id="slack_002" /> | Slack belongs to an organization              | 400  |
+| `SLACK_003` <a id="slack_003" /> | Slack is not configured on this server        | 503  |
+| `SLACK_004` <a id="slack_004" /> | Slack refused the bot token                   | 422  |
+| `SLACK_005` <a id="slack_005" /> | That Slack app already answers as another bot | 409  |
+| `SLACK_006` <a id="slack_006" /> | Slack did not answer                          | 502  |
+| `SLACK_007` <a id="slack_007" /> | Slack’s rate limit was reached                | 429  |
+| `SLACK_008` <a id="slack_008" /> | The Slack event’s signature does not match    | 401  |
+
+`SLACK_003` is a server with no `SLACK_TOKEN_KEY`: no app's token can be kept.
+`SLACK_004` is Slack refusing the bot token when it is connected, or later
+when the bot answers (the app was uninstalled, or its token revoked): the app
+then reads `revoked` until it is connected again; `upstreamCode` carries
+Slack's error. `SLACK_005` is one Slack app pasted for a second bot: each bot
+needs its own. `SLACK_007` carries `Retry-After`. `SLACK_008` is answered to
+Slack, never to a person: a request not signed with the app's signing secret,
+or signed more than five minutes ago.
+
 ## Cloud agents
 
 A vendor's cloud (Cursor's Cloud Agents), where a cloud session runs on each
@@ -1288,6 +1367,18 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `EXEC_005` <a id="exec_005" />         | The host's exec policy cannot be read        | 500  |
 | `EXEC_006` <a id="exec_006" />         | This host does not let bots drive a terminal | 403  |
 | `EXEC_007` <a id="exec_007" />         | The session is not a blank terminal          | 409  |
+| `EXEC_008` <a id="exec_008" />         | Not a program name or an absolute path       | 400  |
+| `EXEC_009` <a id="exec_009" />         | The host's allowlist is full                 | 413  |
+| `COMPUTER_001` <a id="computer_001" /> | Using this host's screen is off              | 403  |
+| `COMPUTER_002` <a id="computer_002" /> | This host has no screen the runner can use   | 424  |
+| `COMPUTER_003` <a id="computer_003" /> | The action does not fit the screen           | 400  |
+| `COMPUTER_004` <a id="computer_004" /> | The screen could not be read or used         | 424  |
+| `COMPUTER_005` <a id="computer_005" /> | The host's computer setting cannot be read   | 500  |
+| `BROWSER_001` <a id="browser_001" />   | Browsers for bots are off on this host       | 403  |
+| `BROWSER_002` <a id="browser_002" />   | This host has no browser the runner can start | 424 |
+| `BROWSER_003` <a id="browser_003" />   | The action does not fit the page             | 400  |
+| `BROWSER_004` <a id="browser_004" />   | The browser or the page failed               | 424  |
+| `BROWSER_005` <a id="browser_005" />   | The host's browser setting cannot be read    | 500  |
 | `PAIR_001` <a id="pair_001" />         | This host is not paired yet                  | 428  |
 | `PAIR_002` <a id="pair_002" />         | This host is already paired                  | 409  |
 | `PAIR_003` <a id="pair_003" />         | The registration token was rejected          | 401  |
@@ -1326,9 +1417,10 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `WA_002` <a id="wa_002" />           | No WhatsApp device is connected on this host | 503  |
 | `WA_003` <a id="wa_003" />           | WhatsApp refused the message                 | 502  |
 | `WA_004` <a id="wa_004" />           | This host's WhatsApp send budget is spent    | 429  |
-| `WA_005` <a id="wa_005" />           | This host knows no such WhatsApp voice note  | 404  |
-| `WA_006` <a id="wa_006" />           | The WhatsApp voice note is too large to hand over | 413  |
-| `WA_007` <a id="wa_007" />           | WhatsApp would not hand over the voice note  | 502  |
+| `WA_005` <a id="wa_005" />           | This host knows no such WhatsApp voice note or image | 404  |
+| `WA_006` <a id="wa_006" />           | The WhatsApp voice note or image is too large to hand over | 413  |
+| `WA_007` <a id="wa_007" />           | WhatsApp would not hand over the voice note or image | 502  |
+| `WA_008` <a id="wa_008" />           | That audio is not a voice note WhatsApp can play | 415  |
 | `TG_001` <a id="tg_001" />           | Telegram refused the bot's token             | 400  |
 | `TG_002` <a id="tg_002" />           | This host already holds another Telegram bot | 409  |
 | `TG_003` <a id="tg_003" />           | No Telegram bot is connected on this host    | 503  |
@@ -1356,6 +1448,7 @@ for a 404 or 428, 6 for a 502, 503 or 504, 7 for `PAIR_009`, and 1 for anything 
 | `SESS_020` <a id="sess_020" />         | Claude Code could not send the message to the cloud session | 502 |
 | `SESS_021` <a id="sess_021" />         | Claude Code did not confirm the message to the cloud session in time | 504 |
 | `SESS_022` <a id="sess_022" />         | Codex on this host is not signed in to ChatGPT | 502 |
+| `SESS_023` <a id="sess_023" />         | The visual cannot be shown                   | 400  |
 | `TMUX_001` <a id="tmux_001" />         | tmux is not available on this host           | 424  |
 | `TMUX_002` <a id="tmux_002" />         | The tmux server refused the command          | 500  |
 | `GIT_001` <a id="git_001" />           | The worktree could not be prepared           | 500  |
@@ -1433,12 +1526,22 @@ ten minutes. The control plane answers a bot with its own `WHATSAPP_*` code
 for each (`WHATSAPP_007`, `WHATSAPP_008`, `WHATSAPP_009`).
 
 `WA_005` to `WA_007` answer `whatsapp.media.get`, the control plane asking
-for a voice note to transcribe. The host keeps what fetching one takes (its
-media key and path, never the audio) for 48 hours, so an older one, or one
-from before the host was updated, is `WA_005`. `WA_006` is a note longer than
-one link frame carries, about two minutes. `WA_007` is WhatsApp's media
-server refusing the download. The bot then reads the note as one it could
-not hear.
+for a voice note to transcribe or an image for a bot to see. The host keeps
+what fetching one takes (its media key and path, never the bytes) for 48
+hours, so an older one, or one from before the host was updated, is
+`WA_005`. `WA_006` is a note longer than one link frame carries, about two
+minutes, or an image past 16 MB or one the host could not scale down to a
+frame. `WA_007` is WhatsApp's media server refusing the download. The bot
+then reads the note as one it could not hear, or the image as one it could
+not see.
+
+`whatsapp.send.voice`, a bot's spoken reply, is answered like a text: `WA_002`,
+`WA_003` (WhatsApp refused the upload or the message) and `WA_004`, the same
+budget a text spends. Before anything is uploaded the host refuses audio
+larger than one frame (`WA_006`) and audio that is not Ogg/Opus, runs
+outside 1 to 120 seconds or is silent from end to end (`WA_008`). The control plane's link refuses audio
+past one frame itself, as `WA_006`, before it is sent (a larger frame would
+close the host's link); the bot reads either as `WHATSAPP_008`.
 
 The `TG_*` codes reach the control plane the same way, in answer to
 `telegram.link` and `telegram.send` (`packages/shared/src/protocol/telegram.ts`).

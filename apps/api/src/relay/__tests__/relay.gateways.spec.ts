@@ -168,6 +168,7 @@ async function harness(options: { fingerprint?: string | null } = {}): Promise<H
     slugOf: vi.fn().mockResolvedValue('jordi'),
     isMember: vi.fn().mockResolvedValue(true),
     ownedBy: vi.fn().mockResolvedValue([]),
+    ownerOf: vi.fn().mockResolvedValue(null),
   };
   const config = {
     get: (key: string) =>
@@ -2085,6 +2086,20 @@ describe('device attach socket', () => {
       y: 0.25,
     });
 
+    // A drag reaches the runner with its pace and whether it was a flick.
+    const swipe = nextMessage(runner);
+    const flick = {
+      kind: 'swipe',
+      x: 0.5,
+      y: 0.8,
+      toX: 0.5,
+      toY: 0.2,
+      durationMs: 90,
+      momentum: true,
+    };
+    browser.send(JSON.stringify({ type: 'device.input', ...flick }));
+    expect((await swipe).text).toEqual({ type: 'device.input', attachmentId: 1, ...flick });
+
     const pick = nextMessage(runner);
     browser.send(JSON.stringify({ type: 'device.select', serial: 'emulator-5556' }));
     expect((await pick).text).toEqual({
@@ -2205,6 +2220,28 @@ describe('desktop socket', () => {
     const answer = nextMessage(runner);
     browser.send(version);
     expect((await answer).bytes).toEqual(linkFrame(1, version));
+
+    // Where the host's pointer is, which the screen-sharing server never
+    // says, reaches the browser as a frame of its own, without the
+    // attachment id the browser never named.
+    const pointer = nextMessage(browser);
+    runner.send(
+      JSON.stringify({
+        type: 'desktop.pointer',
+        attachmentId: 1,
+        x: 812.5,
+        y: 431,
+        width: 1920,
+        height: 1080,
+      }),
+    );
+    expect((await pointer).text).toEqual({
+      type: 'pointer',
+      x: 812.5,
+      y: 431,
+      width: 1920,
+      height: 1080,
+    });
 
     const control = nextMessage(runner);
     const told = nextMessage(browser);

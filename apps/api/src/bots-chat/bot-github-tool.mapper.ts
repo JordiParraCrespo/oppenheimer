@@ -119,10 +119,10 @@ export const BODY_MAX = 3_000;
 export const COMMENT_MAX = 600;
 export const TITLE_MAX = 200;
 
-export const NOT_CONNECTED = promptText('tools/github.not-connected');
-export const NONE_USABLE = promptText('tools/github.none-usable');
+export const NOT_CONNECTED = promptText('github/tools.not-connected');
+export const NONE_USABLE = promptText('github/tools.none-usable');
 
-export const UNTRUSTED_NOTE = promptText('tools/github.untrusted-note');
+export const UNTRUSTED_NOTE = promptText('github/tools.untrusted-note');
 
 /**
  * Who wrote a comment or a review, as the model reads it: a collaborator is
@@ -131,7 +131,7 @@ export const UNTRUSTED_NOTE = promptText('tools/github.untrusted-note');
  */
 export function authorTag(author: string, insider: boolean | null | undefined): string {
   if (insider === true) return `${author} (collaborator)`;
-  if (insider === false) return promptText('tools/github.author-tag', { author });
+  if (insider === false) return promptText('github/tools.author-tag', { author });
   return author;
 }
 
@@ -172,7 +172,7 @@ export function describePullRequest(pull: PullRequestDetailView): string[] {
     ? pull.reviewers.map((reviewer) => `${reviewer.login} ${reviewer.state}`).join(', ')
     : 'none';
   const lines = [
-    promptText('tools/github.pull-request-header', {
+    promptText('github/tools.pull-request-header', {
       number: String(pull.number),
       repository: pull.repository,
       installationId: pull.installationId,
@@ -183,7 +183,7 @@ export function describePullRequest(pull: PullRequestDetailView): string[] {
     `- author: ${pull.author}${pull.authorKind === 'session' ? ' (a session)' : ''}`,
     `- branches: ${pull.headRef} into ${pull.baseRef}${pull.fromFork ? ' (from a fork)' : ''}; head ${pull.headSha}`,
     `- size: ${pull.changedFiles} files, +${pull.additions} -${pull.deletions}; lane ${pull.lane}`,
-    promptText('tools/github.pull-request-checks', {
+    promptText('github/tools.pull-request-checks', {
       state: checks.state,
       passed: String(checks.passed),
       failed: String(checks.failed),
@@ -218,7 +218,7 @@ function describeCiFindings(findings: PullRequestDetailView['ciFindings']): stri
       `- ${finding.check}: ${finding.relation}, ${finding.flake}, ${finding.action} (${finding.confidence}). ${cut(finding.rootCause, 200)}`,
   );
   return [
-    promptText('tools/github.describe-ci-findings', { untrustedNote: UNTRUSTED_NOTE }),
+    promptText('github/tools.describe-ci-findings', { untrustedNote: UNTRUSTED_NOTE }),
     untrusted(rows.join('\n')),
   ];
 }
@@ -254,7 +254,7 @@ export function describeFiles(files: PromiseSettledResult<PullRequestFileView[]>
   const more =
     files.value.length > FILES_SHOWN
       ? [
-          promptText('tools/github.describe-files', {
+          promptText('github/tools.describe-files', {
             filesShown: String(FILES_SHOWN),
             valueCount: String(files.value.length),
           }),
@@ -272,7 +272,7 @@ export function describeConversation(
   const notes: string[] = [];
   if (activity.status === 'rejected') {
     notes.push(
-      promptText('tools/github.conversation-unread', {
+      promptText('github/tools.conversation-unread', {
         describeToolFailure: describeToolFailure(activity.reason),
       }),
     );
@@ -280,7 +280,7 @@ export function describeConversation(
     const latest = activity.value.slice(-ACTIVITY_SHOWN);
     if (activity.value.length > latest.length) {
       notes.push(
-        promptText('tools/github.conversation-latest-shown', {
+        promptText('github/tools.conversation-latest-shown', {
           latestCount: String(latest.length),
           valueCount: String(activity.value.length),
         }),
@@ -290,7 +290,7 @@ export function describeConversation(
   }
   if (comments.status === 'rejected') {
     notes.push(
-      promptText('tools/github.line-comments-unread', {
+      promptText('github/tools.line-comments-unread', {
         describeToolFailure: describeToolFailure(comments.reason),
       }),
     );
@@ -298,7 +298,7 @@ export function describeConversation(
     const latest = comments.value.slice(-LINE_COMMENTS_SHOWN);
     if (comments.value.length > latest.length) {
       notes.push(
-        promptText('tools/github.line-comments-latest-shown', {
+        promptText('github/tools.line-comments-latest-shown', {
           latestCount: String(latest.length),
           valueCount: String(comments.value.length),
         }),
@@ -312,13 +312,13 @@ export function describeConversation(
   }
   const block = entries.length
     ? [
-        promptText('tools/github.conversation-and-line-comments', {
+        promptText('github/tools.conversation-and-line-comments', {
           untrustedNote: UNTRUSTED_NOTE,
           untrusted: untrusted(entries.join('\n')),
         }),
       ]
     : activity.status === 'fulfilled' && comments.status === 'fulfilled'
-      ? [promptText('tools/github.conversation-empty')]
+      ? [promptText('github/tools.conversation-empty')]
       : [];
   return [...block, ...notes];
 }
@@ -406,7 +406,7 @@ export function describeIssueComments(
 ): string[] {
   if (comments.status === 'rejected') {
     return [
-      promptText('tools/github.issue-comments-unread', {
+      promptText('github/tools.issue-comments-unread', {
         describeToolFailure: describeToolFailure(comments.reason),
       }),
     ];
@@ -420,7 +420,7 @@ export function describeIssueComments(
   const more =
     comments.value.length > latest.length
       ? [
-          promptText('tools/github.issue-comments-latest-shown', {
+          promptText('github/tools.issue-comments-latest-shown', {
             latestCount: String(latest.length),
             valueCount: String(comments.value.length),
           }),

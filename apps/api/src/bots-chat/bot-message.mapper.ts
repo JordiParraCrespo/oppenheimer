@@ -6,6 +6,8 @@ import {
   BOT_APPROVAL_EVENT_STAGES,
   BOT_DREAM_ACTIVITIES,
   BOT_EVENT_OUTCOMES,
+  BOT_FORM_OUTCOMES,
+  BOT_GITHUB_ASK_VIAS,
   BOT_GOAL_ACTIVITIES,
   BOT_IMAGE_MIME_TYPES,
   BOT_LOOP_ACTIVITIES,
@@ -24,9 +26,12 @@ import {
   type BotMessageRole,
   type BotSubagentProgress,
   type BotSubagentRun,
+  type BotSubmittedFormValue,
   botMailDraftSchema,
   PULL_REQUEST_WAKE_EVENTS,
+  parseVisual,
   TASK_STATUSES,
+  type Visual,
 } from '@oppenheimer/shared';
 import { BotMessageOrmEntity } from './database/bot-message.orm-entity';
 import type { BotSteerTaken } from './database/bot-turn.repository.port';
@@ -43,8 +48,11 @@ import { ENDED_TURN_STATUSES } from './domain/bot-turn.entity';
 import { BotAttachmentResponseDto } from './dtos/bot-attachment.response.dto';
 import {
   BotApprovalEventResponseDto,
+  BotCheckBackEventResponseDto,
   BotCompactionEventResponseDto,
   BotDreamEventResponseDto,
+  BotFormEventResponseDto,
+  BotGithubAskEventResponseDto,
   BotGoalEventResponseDto,
   BotLoopEventResponseDto,
   type BotMessageEventResponseDto,
@@ -82,12 +90,15 @@ export class BotMessageMapper
       subagents: step.subagents,
       allowedBy: step.allowedBy,
       mailDraft: step.mailDraft,
+      visual: step.visual,
       rateLimit: rateLimitRecordOf(step),
     }));
     record.position = entity.position;
     record.event = entity.event ? { ...entity.event } : null;
     record.attachments = entity.attachments.map((attachment) => ({ ...attachment }));
     record.pendingMedia = entity.pendingMedia ? { kind: entity.pendingMedia.kind } : null;
+    record.reaction = entity.reaction;
+    record.botReaction = entity.botReaction;
     return record;
   }
 
@@ -108,6 +119,8 @@ export class BotMessageMapper
         event: toEvent(record.event),
         attachments: (record.attachments ?? []).flatMap(toAttachment),
         pendingMedia: toPendingMedia(record.pendingMedia),
+        reaction: record.reaction ?? null,
+        botReaction: record.botReaction ?? null,
       },
     });
   }
@@ -128,9 +141,12 @@ export class BotMessageMapper
       subagents: step.subagents,
       allowedBy: step.allowedBy,
       mailDraft: step.mailDraft,
+      visual: step.visual,
       rateLimit: rateLimitRecordOf(step),
     }));
     dto.event = entity.event ? toEventResponse(entity.event) : null;
+    dto.reaction = entity.reaction;
+    dto.botReaction = entity.botReaction;
     dto.attachments = entity.attachments.map((attachment) =>
       Object.assign(new BotAttachmentResponseDto(), attachment),
     );
@@ -182,6 +198,7 @@ function toStep(raw: Record<string, unknown>): BotToolStep {
     subagents: toSubagentRuns(raw.subagents),
     allowedBy: typeof raw.allowedBy === 'string' ? raw.allowedBy : null,
     mailDraft: toMailDraft(raw.mailDraft),
+    visual: toVisual(raw.visual),
     rateLimit: rateLimitOfRecord(raw.rateLimit),
   };
 }
@@ -191,6 +208,25 @@ function rateLimitRecordOf(step: BotToolStep): { system: string; resetAt: string
   return step.rateLimit
     ? { system: step.rateLimit.system, resetAt: step.rateLimit.resetAt.toISOString() }
     : null;
+}
+
+/**
+ * The visual a `show_visual` step holds, narrowed once: from the step's
+ * stored column, or from the JSON its call's data carried, checked against
+ * the one schema. Anything else reads as none.
+ */
+export function toVisual(raw: unknown): Visual | null {
+  let value = raw;
+  if (typeof raw === 'string') {
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (value === null || value === undefined) return null;
+  const parsed = parseVisual(value);
+  return parsed.ok ? parsed.visual : null;
 }
 
 /**
@@ -312,6 +348,8 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotApprovalEventResponseDto(), event);
     case 'question':
       return Object.assign(new BotQuestionEventResponseDto(), event);
+    case 'form':
+      return Object.assign(new BotFormEventResponseDto(), event);
     case 'routine':
       return Object.assign(new BotRoutineEventResponseDto(), event);
     case 'bot_message':
@@ -322,12 +360,16 @@ function toEventResponse(event: BotMessageEvent): BotMessageEventResponseDto {
       return Object.assign(new BotSessionEventResponseDto(), event);
     case 'pull_request':
       return Object.assign(new BotPullRequestEventResponseDto(), event);
+    case 'github_ask':
+      return Object.assign(new BotGithubAskEventResponseDto(), event);
     case 'task':
       return Object.assign(new BotTaskEventResponseDto(), event);
     case 'goal':
       return Object.assign(new BotGoalEventResponseDto(), event);
     case 'loop':
       return Object.assign(new BotLoopEventResponseDto(), event);
+    case 'check_back':
+      return Object.assign(new BotCheckBackEventResponseDto(), event);
     case 'dream':
       return Object.assign(new BotDreamEventResponseDto(), event);
     case 'compaction':
@@ -341,6 +383,15 @@ function toAnsweredQuestions(raw: readonly unknown[]): BotAnsweredQuestion[] {
     if (!item || typeof item !== 'object') return [];
     const { question, answer } = item as Record<string, unknown>;
     return typeof question === 'string' && typeof answer === 'string' ? [{ question, answer }] : [];
+  });
+}
+
+/** A submitted form's labels and values in words, narrowed once; anything else is dropped. */
+function toSubmittedValues(raw: readonly unknown[]): BotSubmittedFormValue[] {
+  return raw.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const { label, value } = item as Record<string, unknown>;
+    return typeof label === 'string' && typeof value === 'string' ? [{ label, value }] : [];
   });
 }
 
@@ -369,6 +420,16 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       outcome,
       summary: String(raw.summary ?? ''),
       answers: Array.isArray(raw.answers) ? toAnsweredQuestions(raw.answers) : [],
+    };
+  }
+  if (raw.kind === 'form') {
+    const outcome = BOT_FORM_OUTCOMES.find((known) => known === raw.outcome);
+    if (!outcome) return null;
+    return {
+      kind: 'form',
+      outcome,
+      title: String(raw.title ?? ''),
+      values: Array.isArray(raw.values) ? toSubmittedValues(raw.values) : [],
     };
   }
   if (raw.kind === 'routine') {
@@ -417,6 +478,7 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
     };
   }
   if (raw.kind === 'pull_request') return pullRequestEventOf(raw);
+  if (raw.kind === 'github_ask') return githubAskEventOf(raw);
   if (raw.kind === 'task') return taskEventOf(raw);
   if (raw.kind === 'goal') {
     const activity = BOT_GOAL_ACTIVITIES.find((known) => known === raw.activity);
@@ -442,6 +504,16 @@ function toEvent(raw: Record<string, unknown> | null): BotMessageEvent | null {
       intervalMinutes: typeof raw.intervalMinutes === 'number' ? raw.intervalMinutes : null,
       run: typeof raw.run === 'number' ? raw.run : 0,
       reason: typeof raw.reason === 'string' ? raw.reason : null,
+    };
+  }
+  if (raw.kind === 'check_back') {
+    if (typeof raw.chainId !== 'string' || typeof raw.chainStartedAt !== 'string') return null;
+    return {
+      kind: 'check_back',
+      chainId: raw.chainId,
+      step: typeof raw.step === 'number' ? raw.step : 0,
+      chainStartedAt: raw.chainStartedAt,
+      about: String(raw.about ?? ''),
     };
   }
   if (raw.kind === 'dream') {
@@ -478,6 +550,25 @@ function pullRequestEventOf(raw: Record<string, unknown>): BotMessageEvent | nul
     repository: String(raw.repository ?? ''),
     number,
     event,
+  };
+}
+
+/** A stored ask on GitHub, narrowed once; one the mapper did not write reads as none. */
+function githubAskEventOf(raw: Record<string, unknown>): BotMessageEvent | null {
+  const via = BOT_GITHUB_ASK_VIAS.find((known) => known === raw.via);
+  const { installationId, githubRepoId, number, actorLogin } = raw;
+  if (!via || typeof installationId !== 'string' || typeof githubRepoId !== 'string') return null;
+  if (typeof number !== 'number' || typeof actorLogin !== 'string') return null;
+  return {
+    kind: 'github_ask',
+    via,
+    installationId,
+    githubRepoId,
+    repository: String(raw.repository ?? ''),
+    number,
+    isPullRequest: typeof raw.isPullRequest === 'boolean' ? raw.isPullRequest : null,
+    url: typeof raw.url === 'string' ? raw.url : null,
+    actorLogin,
   };
 }
 

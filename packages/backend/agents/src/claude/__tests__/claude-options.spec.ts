@@ -13,11 +13,14 @@ import {
   BUILT_IN_TOOLS,
   claudeEnv,
   claudeOptions,
+  claudeSystemPrompt,
+  DEFER_TOOLS_ABOVE_CHARS,
   DISALLOWED_TOOLS,
   MODEL_VARIABLES,
   pinAllModels,
   scratchDirs,
 } from '../claude-options';
+import { TOOL_NAMES_NOTE } from '../claude-tool-server';
 
 describe('pinAllModels', () => {
   it('sets every model variable to the model and leaves the rest alone', () => {
@@ -92,10 +95,67 @@ describe('claudeOptions', () => {
     expect(options(base)).toMatchObject({ tools: BUILT_IN_TOOLS, allowedTools: BUILT_IN_TOOLS });
   });
 
+  // What breaks this: a bot with every area on sending ~39,000 tokens of
+  // tool definitions on every turn (2026-11-23), or one whose tools are
+  // deferred with no `ToolSearch` to find them (Claude Code then loads them
+  // all), or tool search asked of an endpoint not known to serve it.
+  it('lets Claude Code defer the tools that may wait, on Anthropic only, with its tool search', () => {
+    // Big enough together to be worth a search (`DEFER_TOOLS_ABOVE_CHARS`).
+    const tool = (name: string, deferrable?: boolean) => ({
+      name,
+      description: 'x'.repeat(DEFER_TOOLS_ABOVE_CHARS),
+      inputSchema: {},
+      run: async () => ({ content: '' }),
+      ...(deferrable === undefined ? {} : { deferrable }),
+    });
+    const anthropic = { ...base, provider: 'anthropic' as const };
+    const mixed = options({ ...anthropic, tools: [tool('remember'), tool('search_mail', true)] });
+    expect(mixed.tools).toEqual([...BUILT_IN_TOOLS, 'ToolSearch']);
+    expect(mixed.env?.ENABLE_TOOL_SEARCH).toBe('true');
+    const small = { ...tool('search_mail', true), description: 'Searches mail.' };
+    expect(options({ ...anthropic, tools: [small] }).env?.ENABLE_TOOL_SEARCH).toBe('false');
+    for (const none of [
+      { ...anthropic, tools: [tool('remember')] },
+      { ...base, tools: [tool('search_mail', true)] },
+      { ...anthropic, baseUrl: 'https://proxy.example', tools: [tool('search_mail', true)] },
+    ]) {
+      expect(options(none).tools).toEqual(BUILT_IN_TOOLS);
+      expect(options(none).env?.ENABLE_TOOL_SEARCH).toBe('false');
+    }
+    expect(options({ ...anthropic, engineTools: false, tools: [tool('a', true)] }).tools).toEqual(
+      [],
+    );
+  });
+
   it('offers no engine tool to a completion, and keeps the rest denied', () => {
     const completion = options({ ...base, engineTools: false });
     expect(completion.tools).toEqual([]);
     expect(completion.allowedTools).toEqual([]);
     expect(completion.disallowedTools).toEqual(DISALLOWED_TOOLS);
+  });
+});
+
+// What breaks this: everything a bot reads names its tools bare
+// (`send_to_session`) while Claude Code serves them as
+// `mcp__oppenheimer__<name>`, so a call by the name it read was answered "No
+// such tool" and ran nothing: about half of a bot eval's runs (2026-11-24).
+// Rewriting the names into that text instead corrupted the person's words and
+// the world's (`import React from "react"`), so the bot is told once.
+describe('claudeSystemPrompt', () => {
+  const tool = { name: 'send_to_session' };
+
+  it('tells a bot with tools how to call them here, after its own prompt, word for word', () => {
+    const prompt = claudeSystemPrompt({
+      systemPrompt: 'Remember to react: import React from "react".',
+      tools: [tool],
+    });
+    expect(prompt).toBe(`Remember to react: import React from "react".\n\n${TOOL_NAMES_NOTE}`);
+    expect(TOOL_NAMES_NOTE).toContain('mcp__oppenheimer__send_to_session');
+  });
+
+  it('adds nothing to a turn with no tools', () => {
+    expect(claudeSystemPrompt({ systemPrompt: 'You are a bot.', tools: [] })).toBe(
+      'You are a bot.',
+    );
   });
 });

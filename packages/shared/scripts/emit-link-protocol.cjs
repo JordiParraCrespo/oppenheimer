@@ -64,9 +64,11 @@ const INTEGER_TYPES = {
   'heartbeat.load.memoryAvailableBytes': 'uint64',
   'hint.retryAfterSeconds': 'int',
   'whatsapp.messages.messages[].voiceSeconds': 'int',
+  'whatsapp.send.voice.seconds': 'int',
   'welcome.protocol': 'int',
   'welcome.epoch': 'uint64',
   'attachment.credit.bytes': 'int',
+  'device.input.durationMs': 'int',
   'attachment.path.offset': 'uint64',
   // A byte offset into a transcript file, as Go's `os` reads one.
   'attachment.chat.before': 'int64',
@@ -91,6 +93,19 @@ const INTEGER_TYPES = {
   'terminal.drive.waitSeconds': 'int',
   'terminal.drive.history': 'int',
   'terminal.screen.waitedMs': 'int64',
+  'computer.act.x': 'int',
+  'computer.act.y': 'int',
+  'computer.act.toX': 'int',
+  'computer.act.toY': 'int',
+  'computer.act.scrollX': 'int',
+  'computer.act.scrollY': 'int',
+  'computer.act.seconds': 'int',
+  'computer.screen.width': 'int',
+  'computer.screen.height': 'int',
+  'browser.act.x': 'int',
+  'browser.act.y': 'int',
+  'browser.act.scrollY': 'int',
+  'browser.act.seconds': 'int',
 };
 
 /** Inline objects the runner already had a name for; the rest are `<Parent><Field>`. */
@@ -102,6 +117,7 @@ const NESTED_NAMES = {
   'session.create.checkouts[]': 'Checkout',
   'port.listing.ports[]': 'ListedPort',
   'whatsapp.messages.messages[]': 'WhatsappInbound',
+  'whatsapp.chats.chats[]': 'WhatsappKnownChat',
 };
 
 /** Doc comments for the constants, which the schema carries as bare values. */
@@ -143,6 +159,10 @@ const CONSTANT_DOCS = {
     'The hello capabilities: commands a runner takes beyond its protocol',
     "version's baseline.",
   ],
+  helloCapabilitiesMax: [
+    'HelloCapabilitiesMax is the most capabilities one `hello` may name: the',
+    'control plane refuses a hello naming more, and the host never links.',
+  ],
   maxEventPayloadBytes: [
     "MaxEventPayloadBytes caps an event's JSON payload string, because an event",
     'never carries pane text.',
@@ -160,6 +180,14 @@ const CONSTANT_DOCS = {
   terminalScreenMaxBytes: [
     'TerminalScreenMaxBytes is how much of a captured screen `terminal.screen`',
     'carries: the last bytes.',
+  ],
+  computerScreenMaxEdge: [
+    'ComputerScreenMaxEdge is the long edge, in pixels, of the image',
+    '`computer.screen` carries; `computer.act` points in that image.',
+  ],
+  computerScreenshotMaxBytes: [
+    'ComputerScreenshotMaxBytes is the largest image `computer.screen`',
+    'carries, before base64.',
   ],
 };
 
@@ -406,6 +434,9 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     ...comment(CONSTANT_DOCS.maxFrameBytes),
     `const MaxFrameBytes = ${constants.maxFrameBytes}`,
     '',
+    ...comment(CONSTANT_DOCS.helloCapabilitiesMax),
+    `const HelloCapabilitiesMax = ${constants.helloCapabilitiesMax}`,
+    '',
     ...comment(CONSTANT_DOCS.maxEventPayloadBytes),
     `const MaxEventPayloadBytes = ${constants.maxEventPayloadBytes}`,
     '',
@@ -423,6 +454,12 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     '',
     ...comment(CONSTANT_DOCS.terminalScreenMaxBytes),
     `const TerminalScreenMaxBytes = ${constants.terminalScreenMaxBytes}`,
+    '',
+    ...comment(CONSTANT_DOCS.computerScreenMaxEdge),
+    `const ComputerScreenMaxEdge = ${constants.computerScreenMaxEdge}`,
+    '',
+    ...comment(CONSTANT_DOCS.computerScreenshotMaxBytes),
+    `const ComputerScreenshotMaxBytes = ${constants.computerScreenshotMaxBytes}`,
     '',
     ...comment(CONSTANT_DOCS.capabilities),
     ...constGroup(

@@ -36,7 +36,7 @@ import { BotTurnRepository } from '../database/bot-turn.repository';
 import { BotMessageEntity } from '../domain/bot-message.entity';
 import { BotTurnEntity } from '../domain/bot-turn.entity';
 import {
-  WHATSAPP_CONTACT_TURNS_PER_HOUR,
+  WHATSAPP_GROUP_TURNS_PER_HOUR,
   WHATSAPP_VOICE_NOTE_OPENING,
   whatsappSourceKey,
 } from '../domain/bot-whatsapp-turn.policy';
@@ -194,6 +194,7 @@ describe('waking a bot on WhatsApp (integration)', () => {
       command: 'message',
       text: `Message ${seq}`,
       voiceNote: false,
+      image: false,
       metadata: { correlationId: randomUUID(), timestamp: Date.now() },
       ...overrides,
     });
@@ -374,6 +375,7 @@ describe('waking a bot on WhatsApp (integration)', () => {
         botId: juno.id,
         text: `@Juno message ${seq}`,
         metadata: { correlationId: randomUUID(), timestamp: Date.now() },
+        image: false,
         ...overrides,
       });
 
@@ -416,7 +418,7 @@ describe('waking a bot on WhatsApp (integration)', () => {
     it('wakes nothing past the chat’s turns an hour, and keeps the owner’s own chat apart', async () => {
       // A burst, as the outbox delivers one intake's events side by side.
       await Promise.all(
-        Array.from({ length: WHATSAPP_CONTACT_TURNS_PER_HOUR + 5 }, (_, at) =>
+        Array.from({ length: WHATSAPP_GROUP_TURNS_PER_HOUR + 5 }, (_, at) =>
           spoke(String(100 + at)),
         ),
       );
@@ -424,7 +426,7 @@ describe('waking a bot on WhatsApp (integration)', () => {
         `SELECT count(*)::int AS count FROM bot_turn WHERE "botId" = $1 AND contact IS NOT NULL`,
         [juno.id],
       );
-      expect(count).toBe(WHATSAPP_CONTACT_TURNS_PER_HOUR);
+      expect(count).toBe(WHATSAPP_GROUP_TURNS_PER_HOUR);
 
       await wrote('200');
       expect(

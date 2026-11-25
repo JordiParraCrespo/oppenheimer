@@ -17,6 +17,9 @@ import { authRateLimit } from './auth-rate-limit.util';
 import { betterAuthSecondaryStorage, sessionStore } from './better-auth-secondary-storage.adapter';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
 import { buildInvitationUrl } from './invitation-url.util';
+// oppenheimer:begin mobile
+import { mobileAppAuth } from './mobile-app-auth.util';
+// oppenheimer:end mobile
 import { sessionDeleteHooks } from './session-delete-hook.util';
 
 /**
@@ -45,6 +48,11 @@ const superadminAc = defaultAc.newRole({
 const OAUTH_SCOPES_SUPPORTED = ['openid', 'profile', 'email', 'offline_access', ...SCOPES];
 
 const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+// oppenheimer:begin mobile
+// The phone app's deep-link scheme, trusted only when this deployment names it
+// (`mobileAppAuth` says why there is no default).
+const mobileApp = mobileAppAuth({ MOBILE_SCHEME: process.env.MOBILE_SCHEME });
+// oppenheimer:end mobile
 
 // Parsed by the same schema as TypeORM's `database` config. Better Auth owns
 // its own pool rather than TypeORM's, and two pools that disagreed about the
@@ -123,7 +131,12 @@ export const auth = betterAuth({
   // be revoked, so a ban, a deletion or "sign out other devices" would wait out
   // its `maxAge`.
   secondaryStorage: betterAuthSecondaryStorage,
-  trustedOrigins: [frontendUrl],
+  trustedOrigins: [
+    frontendUrl,
+    // oppenheimer:begin mobile
+    ...mobileApp.trustedOrigins,
+    // oppenheimer:end mobile
+  ],
   // Brute-force protection on the auth surface, on everywhere but under test.
   rateLimit: authRateLimit({
     AUTH_RATE_LIMIT_ENABLED: process.env.AUTH_RATE_LIMIT_ENABLED,
@@ -398,6 +411,9 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    // oppenheimer:begin mobile
+    ...mobileApp.plugins,
+    // oppenheimer:end mobile
     admin({
       // Users whose `role` is one of these can call the admin plugin endpoints
       // (list/ban/impersonate/set-role/...). CASL still governs the app's own

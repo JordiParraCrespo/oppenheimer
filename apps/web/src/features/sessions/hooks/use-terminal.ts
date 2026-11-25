@@ -1,3 +1,5 @@
+import type { CodingAgentClear } from '@oppenheimer/shared/agents';
+import type { PermissionPromptSpec } from '@oppenheimer/shared/sessions';
 import '@xterm/xterm/css/xterm.css';
 import type {
   SessionChat,
@@ -65,8 +67,10 @@ export function useTerminal(
     snapshotKey?: string;
     /** The chat view this stream feeds and types for (0.7). */
     chat?: SessionChat;
-    /** Where the echo readout is published (`SessionTerminalOptions.latencyKey`). */
-    latencyKey?: string;
+    /** How the agent's prompt is emptied before the chat types into it (`clearOf`). */
+    chatClear?: CodingAgentClear;
+    /** How the agent's permission dialog reads, for the chat to answer it (`permissionPromptOf`). */
+    chatPermission?: PermissionPromptSpec;
   } = {},
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -102,7 +106,8 @@ export function useTerminal(
   const readOnly = options.readOnly ?? false;
   const snapshotKey = options.snapshotKey;
   const chat = options.chat;
-  const latencyKey = options.latencyKey;
+  const chatClear = options.chatClear;
+  const chatPermission = options.chatPermission;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: generation is the re-run key
   useEffect(() => {
@@ -127,7 +132,6 @@ export function useTerminal(
         : undefined,
       onFiles: (files) => onFilesRef.current?.(files),
       typeahead: () => typeaheadRef.current,
-      latencyKey,
       // A reconnect replays the scrollback, so a session that has already run
       // answers this on its first frame and the waiting state never shows.
       onFirstOutput: () => setHasOutput(true),
@@ -135,6 +139,13 @@ export function useTerminal(
       onActivity: chat ? (activity) => chat.setActivity(activity) : undefined,
       // and what it suggests sending next, which the composer offers.
       onSuggestion: chat ? (suggestion) => chat.setSuggestion(suggestion) : undefined,
+      // and the feedback it drafted, whose keys the chat offers.
+      onFeedback: chat ? (feedback) => chat.setFeedback(feedback) : undefined,
+      // and the permission dialog it waits on, which the chat answers.
+      permission:
+        chat && chatPermission
+          ? { spec: chatPermission, onPermission: (prompt) => chat.setPermission(prompt) }
+          : undefined,
     });
     const offStatus = stream.onStatus((next) => {
       setStatus(next);
@@ -154,6 +165,7 @@ export function useTerminal(
     const releaseChat = chat?.connect(
       (data) => stream.send(data),
       stream.askOlderChat ? (before) => stream.askOlderChat?.(before) : undefined,
+      { clear: chatClear },
     );
     const offEnd = stream.onEnd((reason) => {
       setEnded(reason);
@@ -176,7 +188,16 @@ export function useTerminal(
       stream.dispose();
       if (streamRef.current === stream) streamRef.current = null;
     };
-  }, [createStream, agentWindow, readOnly, snapshotKey, generation, chat, latencyKey]);
+  }, [
+    createStream,
+    agentWindow,
+    readOnly,
+    snapshotKey,
+    generation,
+    chat,
+    chatClear,
+    chatPermission,
+  ]);
 
   const hostId = options.hostId;
   // No host, no list to watch: a shared pane's holder may not be signed in,

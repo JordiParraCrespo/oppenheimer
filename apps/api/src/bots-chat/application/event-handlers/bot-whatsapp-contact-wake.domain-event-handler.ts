@@ -30,6 +30,7 @@ export class BotWhatsappContactWakeDomainEventHandler {
       | 'seq'
       | 'botId'
       | 'text'
+      | 'image'
       | 'metadata'
     >,
   ): Promise<void> {
@@ -47,6 +48,8 @@ export class BotWhatsappContactWakeDomainEventHandler {
         messageRowId: event.messageRowId,
         seq: event.seq,
         text: event.text,
+        // Absent on an event staged before images were seen.
+        image: event.image ?? false,
         metadata: { correlationId: event.metadata?.correlationId ?? undefined },
       }),
     );

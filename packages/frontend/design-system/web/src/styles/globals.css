@@ -194,6 +194,9 @@
        light mode the terminal is paper, not a dark rectangle in a light app.
        The deep 700s exist because the 500s fall under 4.5:1 as small text. */
     --term-bg: var(--op-white);
+    /* What an open tab's dot is cut out of: the ground its strip stands on. A bar
+       of tabs on another ground (the chrome) points it there. */
+    --chat-tab-ground: var(--canvas);
     --term-fg: var(--op-gray-900);
     --term-dim: var(--op-gray-600);
     --term-border: #e6e6ea;
@@ -225,6 +228,10 @@
        the frame's own near-black, `#0b0b0c`, in both themes, because it is
        the hardware's colour and not the UI's. */
     --device-bezel: #0b0b0c;
+    /* Words on that screen while it has no picture: light on the bezel's
+       black in both themes, for the same reason. */
+    --device-screen-fg: rgba(255, 255, 255, 0.88);
+    --device-screen-fg-muted: rgba(255, 255, 255, 0.58);
     --term-selection: rgba(0, 113, 227, 0.16);
     /* ANSI magenta and cyan have no UI counterpart — nothing in the product is
        coloured with them — but a real PTY emits all sixteen slots, so the two
@@ -426,6 +433,10 @@
     --control-h-sm: 28px;
     --control-h-md: 34px;
     --control-h-lg: 42px;
+    /* The bar a strip of tabs stands in (a session's, New session's): 45px,
+       the owner's call on 2026-11-24, a calm band around the 28px tabs and
+       controls it holds rather than the 48px page bar. */
+    --tab-bar-h: 45px;
     --control-pad-sm: 12px;
     --control-pad-md: 16px;
     --control-pad-lg: 22px;
@@ -840,6 +851,9 @@
   --animate-appear-fast: op-effort-in 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-appear: op-effort-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-drag-lift: op-drag-lift var(--dur-fast) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  /* A picture that was being drawn (a reply's diagram) settling into its
+     frame: a fade and the last 1.5% of its scale. */
+  --animate-diagram-in: op-diagram-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
   /* The agent chat: a band of full ink sweeps across work in flight, and
      the write head of a streaming reply blinks. Both sit behind
      `motion-safe:`, since reduced motion zeroes durations, not animations. */
@@ -902,6 +916,8 @@
   --color-term-border: var(--term-border);
   --color-term-accent: var(--term-accent);
   --color-device-bezel: var(--device-bezel);
+  --color-device-screen-fg: var(--device-screen-fg);
+  --color-device-screen-fg-muted: var(--device-screen-fg-muted);
   --color-chat-ground: var(--chat-ground);
   --color-chat-wash: var(--chat-wash);
   --color-chat-spinner: var(--chat-spinner);
@@ -1251,6 +1267,16 @@
     transform: none;
   }
 }
+@keyframes op-diagram-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 /* A dragged item leaving its place: a slight tilt and grow, as a card picked up. */
 @keyframes op-drag-lift {
   from {
@@ -1365,6 +1391,14 @@
   min-width: 0;
 }
 
+/* A line that may run past its box fades out over its last 16px rather than
+   ending in an ellipsis; the padding it adds is where the fade falls, so a
+   line that fits ends before it (a tab's name). */
+@utility fade-end {
+  padding-inline-end: --spacing(4);
+  mask-image: linear-gradient(90deg, #000 calc(100% - --spacing(4)), transparent);
+}
+
 /* No scrollbar at all, for a list that scrolls but draws its own edges — the
    console's sessions sidebar. The pane still scrolls by wheel, touch and keys. */
 @utility no-scrollbar {
@@ -1441,4 +1475,39 @@
   --trees-file-icon-color-yml: var(--file-icon-yml);
   --trees-file-icon-color-zig: var(--file-icon-zig);
   --trees-file-icon-color-zip: var(--file-icon-zip);
+}
+
+/* The Inbox's deck (`InboxDeck`): the message sits on a card, so it keeps a
+   card's bottom inset rather than a page's; and where there is a keyboard,
+   each answer on the card in hand wears its number, the digit that presses
+   it, which the deck writes on it (`data-answer-key`). */
+[data-slot='inbox-deck-card'] [data-slot='inbox-message'] {
+  padding-bottom: 1.5rem;
+}
+/* A command can run long (a whole script): the card keeps its shape and the
+   command scrolls inside it. */
+[data-slot='inbox-deck-card'] [data-slot='approval-command'] {
+  max-height: 9rem;
+  overflow: auto;
+  font-size: 12px;
+}
+@media (hover: hover) and (pointer: fine) {
+  [data-slot='inbox-deck-card'] [data-answer-key]::before {
+    content: attr(data-answer-key);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 3px;
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, currentColor 14%, transparent);
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  [data-slot='inbox-question-option']::before {
+    grid-row: 1 / span 2;
+  }
 }

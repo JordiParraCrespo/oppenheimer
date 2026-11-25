@@ -1,5 +1,5 @@
 import { z } from 'zod/v4';
-import { DEVICE_CHOICES_MAX, deviceChoiceSchema } from './devices.js';
+import { DEVICE_CHOICES_MAX, deviceChoiceSchema, deviceSwipeDurationSchema } from './devices.js';
 import { attachTicketHintSchema } from './hint.js';
 import {
   CHAT_BATCH_MAX_ENTRIES,
@@ -67,8 +67,8 @@ const devicePoint = () => z.number().min(0).max(1);
 
 /**
  * A gesture or key for the session's device, on a device attachment (a
- * ticket minted with `target: 'device'`). Relayed as `device.input`; the
- * runner applies it to the session's own device.
+ * ticket minted with `target: 'device'`). Relayed as `device.input`, whose
+ * fields it has; the runner applies it to the session's own device.
  */
 export const attachDeviceInputSchema = z.object({
   type: z.literal('device.input'),
@@ -77,6 +77,8 @@ export const attachDeviceInputSchema = z.object({
   y: devicePoint().optional(),
   toX: devicePoint().optional(),
   toY: devicePoint().optional(),
+  durationMs: deviceSwipeDurationSchema().optional(),
+  momentum: z.boolean().optional(),
   text: z.string().min(1).max(1000).optional(),
   key: z.enum(DEVICE_KEYS).optional(),
   button: z.enum(DEVICE_BUTTONS).optional(),
@@ -235,6 +237,20 @@ export const attachDesktopSchema = z.object({
   control: z.boolean(),
 });
 
+/**
+ * On a desktop socket, where the host's pointer is: the runner's
+ * `desktop.pointer`, relayed while the reader only watches. `x` and `y` are
+ * in the host's screen units on a screen `width` by `height` of them; the
+ * console scales them onto the framebuffer it draws.
+ */
+export const attachPointerSchema = z.object({
+  type: z.literal('pointer'),
+  x: z.number(),
+  y: z.number(),
+  width: z.number().positive(),
+  height: z.number().positive(),
+});
+
 export const attachServerMessageSchema = z.discriminatedUnion('type', [
   attachAttachedSchema,
   attachHintSchema,
@@ -246,6 +262,7 @@ export const attachServerMessageSchema = z.discriminatedUnion('type', [
   attachChatSchema,
   attachDeviceSchema,
   attachDesktopSchema,
+  attachPointerSchema,
 ]);
 
 export type AttachServerMessage = z.infer<typeof attachServerMessageSchema>;

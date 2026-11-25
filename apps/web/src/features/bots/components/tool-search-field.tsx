@@ -13,6 +13,7 @@ export function ToolSearchField({
   onChange,
   label,
   className = 'w-60 max-w-full',
+  size,
 }: {
   /** The settled search, as the address keeps it. */
   value: string;
@@ -20,16 +21,18 @@ export function ToolSearchField({
   label: string;
   /** Its width and place in the toolbar it stands in. */
   className?: string;
+  /** The dialog's toolbar keeps the small field; the Permissions toolbar stands on the ramp. */
+  size?: 'sm';
 }) {
   const { draft, type } = useSearchDraft({ value, onChange });
 
   return (
     <Input
       type="search"
-      size="sm"
       pill
+      size={size}
       className={className}
-      leading={<Search className="size-3.5" aria-hidden />}
+      leading={<Search className={size === 'sm' ? 'size-3.5' : undefined} aria-hidden />}
       value={draft}
       onChange={(event) => type(event.target.value)}
       onKeyDown={(event) => {

@@ -134,6 +134,7 @@ function Composer({
   attachments,
   onRemoveAttachment,
   onAttach,
+  emoji,
   dictation,
   tools,
   engine,
@@ -163,6 +164,8 @@ function Composer({
   onRemoveAttachment?: (id: string) => void;
   /** Present: shows the attach button. */
   onAttach?: () => void;
+  /** An emoji button, after the attach button. */
+  emoji?: React.ReactNode;
   /** Dictation: the mic before send, the recorder in the foot row's place, the notice under the box. */
   dictation?: DictationSlot;
   /** Controls after attach: what the run may touch (the permission level). */
@@ -267,6 +270,7 @@ function Composer({
                   <PaperclipIcon className="size-[15px]" />
                 </IconButton>
               ) : null}
+              {emoji}
               {tools}
             </>
           }
@@ -322,6 +326,7 @@ function ComposerPill({
   attachments,
   onRemoveAttachment,
   onAttach,
+  emoji,
   dictation,
   labels,
   className,
@@ -342,6 +347,8 @@ function ComposerPill({
   onRemoveAttachment?: (id: string) => void;
   /** Present: shows Add files at the line's start. */
   onAttach?: () => void;
+  /** An emoji button, after Add files at the line's start. */
+  emoji?: React.ReactNode;
   /** Dictation: the mic before send, the recorder as the box in the line's place, the notice under the box. */
   dictation?: DictationSlot;
   /** The icon buttons' accessible names; any left out stay in English. */
@@ -388,17 +395,20 @@ function ComposerPill({
         </ComposerRecorder>
       ) : (
         <div className="flex items-end">
-          {onAttach ? (
-            <span className="flex shrink-0 items-center p-1.5 pr-0">
-              <IconButton
-                aria-label={label.attach}
-                title={label.attach}
-                size="sm"
-                onClick={onAttach}
-                className="size-8 text-fg-muted"
-              >
-                <PlusIcon className="size-4.25" />
-              </IconButton>
+          {onAttach || emoji ? (
+            <span className="flex shrink-0 items-center gap-0.5 p-1.5 pr-0">
+              {onAttach ? (
+                <IconButton
+                  aria-label={label.attach}
+                  title={label.attach}
+                  size="sm"
+                  onClick={onAttach}
+                  className="size-8 text-fg-muted"
+                >
+                  <PlusIcon className="size-4.25" />
+                </IconButton>
+              ) : null}
+              {emoji}
             </span>
           ) : null}
           <textarea
@@ -412,7 +422,7 @@ function ComposerPill({
             rows={1}
             className={cn(
               'field-sizing-content max-h-52 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2.5 text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
-              onAttach ? 'pl-1' : 'pl-4.5',
+              onAttach || emoji ? 'pl-1' : 'pl-4.5',
             )}
           />
           <span className="flex shrink-0 items-center gap-1 p-1.5">
@@ -438,7 +448,7 @@ function ComposerPill({
 
 /**
  * ComposerChoices — the row under a `ComposerPill`: what the run will use, as
- * quiet 30px choices that read left to right as where it runs and what it may
+ * quiet 28px choices that read left to right as where it runs and what it may
  * touch (`children`: the place, the repositories and branch, the permission
  * level), then, pushed to the right, who drives it (`engine`: the agent and
  * model, the effort). It is always one line: when it runs out of room the
@@ -469,7 +479,7 @@ function ComposerChoices({
 }
 
 /**
- * ComposerToolButton — the 30px text trigger in the composer's foot row: an
+ * ComposerToolButton — the 28px text trigger in the composer's foot row: an
  * optional 14px leading mark, the label, a 12px chevron when it opens a menu.
  * Transparent at rest, the hover wash on hover and while its menu is open.
  * `tone="muted"` for a setting (permission level, effort) so the model, which
@@ -498,7 +508,7 @@ function ComposerToolButton({
       data-popup-open={open ? '' : undefined}
       aria-expanded={open}
       className={cn(
-        'flex h-[30px] shrink-0 items-center gap-[7px] rounded-sm px-2.5 text-sm tracking-[-0.006em] whitespace-nowrap outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring aria-expanded:bg-hover-surface data-popup-open:bg-hover-surface disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0',
+        'flex h-(--control-h-sm) shrink-0 items-center gap-[7px] rounded-sm px-2.5 text-sm tracking-[-0.006em] whitespace-nowrap outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring aria-expanded:bg-hover-surface data-popup-open:bg-hover-surface disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0',
         tone === 'default' && 'text-fg',
         tone === 'muted' && 'text-fg-muted',
         tone === 'warning' && 'text-warning',

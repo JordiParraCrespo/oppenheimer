@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
@@ -152,24 +153,42 @@ func TestOutgoingQuotesTheMessageRepliedTo(t *testing.T) {
 	}
 }
 
-// A voice note reads as audio with what fetching it later takes: the
-// AudioMessage itself, which audioOf reads back with its media key and path.
-// A text carries none.
-func TestReceivedKeepsAVoiceNoteForFetching(t *testing.T) {
+// A voice note and an image read with what fetching them later takes: the
+// AudioMessage or ImageMessage itself, which downloadableOf reads back with
+// its media key and path, as the kind it was kept as. A text carries none.
+// Breaks if an image is kept as audio (WhatsApp refuses the download) or
+// either loses its key.
+func TestReceivedKeepsVoiceNotesAndImagesForFetching(t *testing.T) {
 	note := read(evt(marta, marta, &waE2E.Message{AudioMessage: &waE2E.AudioMessage{
 		PTT: proto.Bool(true), Seconds: proto.Uint32(12), FileLength: proto.Uint64(20480),
 		Mimetype: proto.String("audio/ogg; codecs=opus"), DirectPath: proto.String("/v/t62.7117-24/1"),
 		MediaKey: []byte{7, 7, 7},
 	}}), nil, nil)
-	if note.Media != domain.MediaAudio || note.Voice == nil || note.Voice.Seconds != 12 || note.Voice.Size != 20480 {
+	if note.Media != domain.MediaAudio || note.Kept == nil || note.Kept.Kind != domain.KeptVoice ||
+		note.Kept.Seconds != 12 || note.Kept.Size != 20480 {
 		t.Fatalf("voice note: %+v", note)
 	}
-	audio, err := audioOf(note.Voice.Ref)
-	if err != nil || audio.GetDirectPath() != "/v/t62.7117-24/1" || string(audio.GetMediaKey()) != "\x07\x07\x07" {
-		t.Fatalf("read back %v %v", audio, err)
+	audio, mimetype, length, err := downloadableOf(domain.KeptVoice, note.Kept.Ref)
+	if err != nil || mimetype != "audio/ogg; codecs=opus" || length != 20480 ||
+		string(audio.GetMediaKey()) != "\x07\x07\x07" || audio.GetDirectPath() != "/v/t62.7117-24/1" {
+		t.Fatalf("read back %v %q %d %v", audio, mimetype, length, err)
 	}
-	if text := read(evt(marta, marta, &waE2E.Message{Conversation: proto.String("hola")}), nil, nil); text.Voice != nil {
-		t.Fatalf("a text carries a voice: %+v", text.Voice)
+
+	photo := read(evt(marta, marta, &waE2E.Message{ImageMessage: &waE2E.ImageMessage{
+		Caption: proto.String("look"), FileLength: proto.Uint64(90000), Mimetype: proto.String("image/jpeg"),
+		DirectPath: proto.String("/v/t62.7118-24/2"), MediaKey: []byte{9},
+	}}), nil, nil)
+	if photo.Media != domain.MediaImage || photo.Text != "look" || photo.Kept == nil ||
+		photo.Kept.Kind != domain.KeptImage || photo.Kept.Size != 90000 {
+		t.Fatalf("image: %+v", photo)
+	}
+	img, mimetype, _, err := downloadableOf(domain.KeptImage, photo.Kept.Ref)
+	if err != nil || mimetype != "image/jpeg" || img.GetDirectPath() != "/v/t62.7118-24/2" {
+		t.Fatalf("read back %v %q %v", img, mimetype, err)
+	}
+
+	if text := read(evt(marta, marta, &waE2E.Message{Conversation: proto.String("hola")}), nil, nil); text.Kept != nil {
+		t.Fatalf("a text carries media: %+v", text.Kept)
 	}
 }
 
@@ -200,5 +219,23 @@ func TestReceivedReportsMentionsAndTheQuotedSenderByNumber(t *testing.T) {
 	plain := rd.received(context.Background(), evt(group, marta, &waE2E.Message{Conversation: proto.String("hola")}))
 	if plain.QuotedSenderID != "" || plain.Mentions != nil {
 		t.Fatalf("a plain message reported %q, %v", plain.QuotedSenderID, plain.Mentions)
+	}
+}
+
+// A voice note goes as push-to-talk Ogg/Opus with the upload's keys, which is
+// what makes the phone draw a playable voice note: without PTT it shows as an
+// audio file, and without the keys and path the recipient cannot fetch it.
+func TestOutgoingVoiceIsAPlayableVoiceNote(t *testing.T) {
+	at := time.Date(2026, 11, 20, 10, 0, 0, 0, time.UTC)
+	m := outgoingVoice(whatsmeow.UploadResponse{
+		URL: "https://mmg.whatsapp.net/v/1", DirectPath: "/v/1", MediaKey: []byte{1},
+		FileEncSHA256: []byte{2}, FileSHA256: []byte{3}, FileLength: 2048,
+	}, 4, []byte{0, 50, 100}, at).GetAudioMessage()
+	if !m.GetPTT() || m.GetMimetype() != "audio/ogg; codecs=opus" || m.GetSeconds() != 4 ||
+		m.GetDirectPath() != "/v/1" || m.GetURL() != "https://mmg.whatsapp.net/v/1" ||
+		string(m.GetMediaKey()) != "\x01" || string(m.GetFileEncSHA256()) != "\x02" ||
+		string(m.GetFileSHA256()) != "\x03" || m.GetFileLength() != 2048 ||
+		m.GetMediaKeyTimestamp() != at.Unix() || string(m.GetWaveform()) != "\x00\x32\x64" {
+		t.Fatalf("voice note: %v", m)
 	}
 }

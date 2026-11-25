@@ -12,6 +12,7 @@ import type {
   BotProvider,
   BotSection,
 } from '@oppenheimer/shared/schemas/bot';
+import type { ModelProvider } from '@oppenheimer/shared/schemas/model-provider';
 import type { AutomationStatus, AutomationTrigger } from '../automations/automation.entity';
 
 type BotAvatarFace = { color: BotAvatarColor; seed: string; parts: BotFace | null };
@@ -287,7 +288,7 @@ export function documentConflictRevision(error: unknown): number | null {
  */
 export class ModelProviderEntity {
   constructor(
-    public readonly provider: BotProvider,
+    public readonly provider: ModelProvider,
     public readonly configured: boolean,
     public readonly keyHint: string | null,
     public readonly updatedAt: Date | null,
@@ -329,6 +330,23 @@ export interface BotRoutineLastRun {
 }
 
 /**
+ * A routine's webhook URL as the Routines tab shows it after it was issued:
+ * the start of its token, never the URL or the secret, which are shown once.
+ */
+export interface BotRoutineWebhook {
+  tokenPrefix: string;
+  signed: boolean;
+  issuedAt: Date;
+  lastReceivedAt: Date | null;
+}
+
+/** A URL just issued: the one time its full address and signing secret are known. */
+export interface IssuedBotRoutineWebhook extends BotRoutineWebhook {
+  url: string;
+  signingSecret: string | null;
+}
+
+/**
  * One of a bot's routines: what it is told, when it runs, whether it is on, and
  * how it last went. The bot makes and changes it in chat; the Routines tab
  * turns it on or off, runs it now or deletes it.
@@ -348,10 +366,17 @@ export class BotRoutineEntity {
     public readonly triggers: AutomationTrigger[],
     public readonly lastRun: BotRoutineLastRun | null,
     public readonly updatedAt: Date,
+    /** Its URL once issued; null before, or after it was revoked. */
+    public readonly webhook: BotRoutineWebhook | null = null,
   ) {}
 
   /** A run is queued or its turn is running. */
   get isRunning(): boolean {
     return this.status === 'running';
+  }
+
+  /** It runs on something posted to its URL, so the tab offers one. */
+  get hasWebhookTrigger(): boolean {
+    return this.triggers.some((trigger) => trigger.source === 'webhook');
   }
 }

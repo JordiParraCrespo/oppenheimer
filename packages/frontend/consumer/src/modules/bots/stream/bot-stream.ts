@@ -1,5 +1,5 @@
 import {
-  type EventSourceLike,
+  type EventSourceFactory,
   ServerEventStream,
   type ServerEventStreamStatus,
 } from '@oppenheimer/frontend-core';
@@ -16,8 +16,8 @@ export type BotStreamStatus = ServerEventStreamStatus;
 export interface BotStreamOptions {
   apiBaseUrl: string;
   botId: string;
-  /** Injected in tests; `EventSource` with credentials otherwise. */
-  sourceFactory?: (url: string) => EventSourceLike;
+  /** A platform's own client, or a test's fake; `EventSource` with credentials otherwise. */
+  sourceFactory?: EventSourceFactory;
 }
 
 /**

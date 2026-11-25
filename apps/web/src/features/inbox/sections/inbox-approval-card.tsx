@@ -15,7 +15,6 @@ import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
 import { formatApprovalInput } from '@/features/inbox/lib/approval-input';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
 import { inboxVisit } from '@/features/inbox/lib/inbox-visit';
-import { InboxLaterButton } from '@/features/inbox/sections/inbox-later-button';
 
 /**
  * A bot's approval in the pane: what it wants to run (the tool, and its call's
@@ -76,19 +75,15 @@ export function InboxApprovalCard({
           onDismiss={decide.reset}
         />
       ) : null}
-      <InboxMessageActions
-        leading={
-          <>
-            <InboxLaterButton itemKey={item.key} />
-            <Button
-              variant="secondary"
-              render={<Link to="/bots/$botId" params={{ botId: approval.botId }} />}
-            >
-              {t('inbox.approval.openChat')}
-            </Button>
-          </>
-        }
-      >
+      <InboxMessageActions>
+        <Button
+          pending={inFlight === 'approve'}
+          pendingLabel={t('inbox.approval.approving')}
+          disabled={inFlight !== null}
+          onClick={() => answer('approve')}
+        >
+          {t('inbox.approval.approve')}
+        </Button>
         <Button
           variant="secondary"
           pending={inFlight === 'deny'}
@@ -99,12 +94,10 @@ export function InboxApprovalCard({
           {t('inbox.approval.deny')}
         </Button>
         <Button
-          pending={inFlight === 'approve'}
-          pendingLabel={t('inbox.approval.approving')}
-          disabled={inFlight !== null}
-          onClick={() => answer('approve')}
+          variant="secondary"
+          render={<Link to="/bots/$botId" params={{ botId: approval.botId }} />}
         >
-          {t('inbox.approval.approve')}
+          {t('inbox.approval.openChat')}
         </Button>
       </InboxMessageActions>
     </InboxMessage>

@@ -27,6 +27,10 @@
     "packages/frontend/web": {
       "project": ["src/**/*.{ts,tsx}"],
       "includeEntryExports": true
+    },
+    "apps/mobile": {
+      "metro": false,
+      "expo": false
     }
   }
 }

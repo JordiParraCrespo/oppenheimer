@@ -79,6 +79,9 @@ export const KNOWN_SUBJECTS = [
   // A Telegram bot a person connected on one of their hosts: like `Whatsapp`,
   // every read adds its owner.
   'Telegram',
+  // A bot's own Slack app, connected by the bot's maker: like `Telegram`,
+  // every read adds its owner.
+  'Slack',
   // The Pull requests area: GitHub's pull requests, read and reviewed through
   // the workspace's installations, and a person's watched repositories.
   'PullRequest',
@@ -397,6 +400,11 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<string, PermissionDefinition[]> = {
     {
       action: 'manage',
       subject: 'Telegram',
+      conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
+    },
+    {
+      action: 'manage',
+      subject: 'Slack',
       conditions: { organizationId: ACTIVE_ORGANIZATION_ID },
     },
     {

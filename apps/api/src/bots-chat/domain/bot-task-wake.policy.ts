@@ -102,31 +102,31 @@ export function taskWakeSourceKey(wake: Pick<TaskWake, 'subscriptionId' | 'event
 /** What happened, in a clause: "moved from Not started to In progress". */
 export function taskChangePhrase(wake: Pick<TaskWake, 'kind' | 'from' | 'to'>): string {
   const column = (status: TaskStatus | null) =>
-    status ? COLUMNS[status] : promptText('wake/task.some-column');
+    status ? COLUMNS[status] : promptText('plan/wake-task.some-column');
   switch (wake.kind) {
     case 'created':
-      return promptText('wake/task.created', { column: column(wake.to) });
+      return promptText('plan/wake-task.created', { column: column(wake.to) });
     case 'status_changed':
-      return promptText('wake/task.status-changed', {
+      return promptText('plan/wake-task.status-changed', {
         from: column(wake.from),
         to: column(wake.to),
       });
     case 'completed':
-      return promptText('wake/task.completed');
+      return promptText('plan/wake-task.completed');
     case 'reopened':
-      return promptText('wake/task.reopened', { column: column(wake.to) });
+      return promptText('plan/wake-task.reopened', { column: column(wake.to) });
     case 'blocked':
-      return promptText('wake/task.blocked');
+      return promptText('plan/wake-task.blocked');
     case 'unblocked':
-      return promptText('wake/task.unblocked');
+      return promptText('plan/wake-task.unblocked');
     case 'deleted':
-      return promptText('wake/task.deleted');
+      return promptText('plan/wake-task.deleted');
     case 'rescheduled':
-      return promptText('wake/task.rescheduled');
+      return promptText('plan/wake-task.rescheduled');
     case 'reassigned':
-      return promptText('wake/task.reassigned');
+      return promptText('plan/wake-task.reassigned');
     case 'session_linked':
-      return promptText('wake/task.session-linked');
+      return promptText('plan/wake-task.session-linked');
   }
 }
 
@@ -137,21 +137,21 @@ export function taskChangePhrase(wake: Pick<TaskWake, 'kind' | 'from' | 'to'>): 
  */
 export function taskWakeText(wake: TaskWake): string {
   const followed = wake.followedName
-    ? promptText('wake/task.followed-by-name', {
+    ? promptText('plan/wake-task.followed-by-name', {
         scope: wake.scope,
         name: wake.followedName,
         id: wake.followedId,
       })
-    : promptText('wake/task.followed-by-id', { scope: wake.scope, id: wake.followedId });
+    : promptText('plan/wake-task.followed-by-id', { scope: wake.scope, id: wake.followedId });
   const who = promptText(
     wake.byOwner
       ? wake.actor.type === 'agent'
-        ? 'wake/task.by-an-agent-for-the-person'
-        : 'wake/task.by-the-person'
-      : 'wake/task.by-someone-else',
+        ? 'plan/wake-task.by-an-agent-for-the-person'
+        : 'plan/wake-task.by-the-person'
+      : 'plan/wake-task.by-someone-else',
   );
   const lines = [
-    promptText('wake/task.headline', {
+    promptText('plan/wake-task.headline', {
       followed,
       changed: taskChangePhrase(wake),
       who,
@@ -159,13 +159,13 @@ export function taskWakeText(wake: TaskWake): string {
     }),
     fenceUntrusted('task_title', wake.title.slice(0, TITLE_QUOTE_MAX)),
   ];
-  if (wake.purpose) lines.push(promptText('wake/task.followed-to', { purpose: wake.purpose }));
+  if (wake.purpose) lines.push(promptText('plan/wake-task.followed-to', { purpose: wake.purpose }));
   lines.push(
     wake.kind === 'deleted'
-      ? promptText('wake/task.gone')
-      : promptText('wake/task.read-it', { taskId: wake.taskId }),
+      ? promptText('plan/wake-task.gone')
+      : promptText('plan/wake-task.read-it', { taskId: wake.taskId }),
   );
-  lines.push(promptText('wake/task.still-subscribed', { scope: wake.scope }));
+  lines.push(promptText('plan/wake-task.still-subscribed', { scope: wake.scope }));
   return lines.join('\n');
 }
 
@@ -176,7 +176,7 @@ export function taskWakeText(wake: TaskWake): string {
 export function taskWakePrompt(_event: BotTaskEvent, content: string): string {
   return `${eventNote(content)}
 
-${promptText('wake/task.ask')}`;
+${promptText('plan/wake-task.ask')}`;
 }
 
 /**

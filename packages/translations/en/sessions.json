@@ -328,6 +328,10 @@
     "markUnread": "Mark as unread",
     "markRead": "Mark as read",
     "unreadLabel": "Unread",
+    "mute": "Mute notifications",
+    "unmute": "Unmute notifications",
+    "mutedLabel": "Notifications muted",
+    "notifyTitle": "Notifications & read",
     "hide": "Hide",
     "show": "Show",
     "hidden": "Hidden",
@@ -352,7 +356,8 @@
     "openAtVendor": "Opens in {{vendor}}",
     "allHidden": "Every project is hidden. Show them again from the filter menu.",
     "noSessions": "No sessions yet. Start one with New session above.",
-    "noPinned": "No pinned sessions. Pin one from its menu, or turn off Pinned only in the filter menu."
+    "noPinned": "No pinned sessions. Pin one from its menu, or turn off Pinned only in the filter menu.",
+    "noSessionsPhone": "No sessions yet. Start one from the console on your computer; it shows up here."
   },
   "deleteSession": {
     "title": "Delete “{{name}}”?",
@@ -573,7 +578,7 @@
     "composer": {
       "placeholder": "Message {{agent}}",
       "placeholderAnyAgent": "Message the agent",
-      "suggestion": "{{suggestion}}  ·  Tab to use it",
+      "suggestion": "Tab to use it  ·  {{suggestion}}",
       "send": "Send",
       "stop": "Stop",
       "attach": "Attach files",
@@ -624,7 +629,8 @@
     "tasks_other": "{{done}} of {{count}} tasks done",
     "notice": {
       "interrupted": "You stopped this turn",
-      "compacted": "Context compacted"
+      "compacted": "Context compacted",
+      "model": "Model changed to <model>{{model}}</model>"
     },
     "task": {
       "completed": "Background task finished",
@@ -689,6 +695,28 @@
       "dismissed": "You dismissed the questions",
       "noAnswer": "No answer read"
     },
+    "permission": {
+      "command": "Run this command?",
+      "edit": "Make this edit?",
+      "write": "Create this file?",
+      "web": "Open this page?",
+      "tool": "Use this tool?",
+      "allowOnce": "Allow once",
+      "alwaysAllow": "Always allow",
+      "deny": "Deny",
+      "denyHint": "Stop, and tell {{agent}} what to do instead",
+      "keys": "{{first}}–{{last}} to choose · Esc to deny",
+      "withNote": "Deny with a note",
+      "note": "What should {{agent}} do instead?",
+      "noteLabel": "Your note for {{agent}}",
+      "noteHint": "Enter to send · Esc to go back",
+      "sendNote": "Deny and send",
+      "back": "Back",
+      "allowed": "Allowed · {{agent}} goes on",
+      "denied": "Denied · {{agent}} stops here",
+      "caution": "Look closely: this can delete or overwrite work",
+      "truncated": "The rest of this change is longer than the chat shows"
+    },
     "explored": {
       "title": "Explored"
     },
@@ -721,6 +749,20 @@
       "previous": "Previous match",
       "next": "Next match",
       "close": "Close find"
+    },
+    "feedback": {
+      "label": "Drafted feedback",
+      "review": "Review in terminal",
+      "send": "Send",
+      "dismiss": "Dismiss",
+      "back": "Back",
+      "keep": "Keep",
+      "turnOff": "Turn off",
+      "retry": "Review and retry",
+      "reviewOrDiscard": "Review or discard",
+      "clearPrompt": "Clear the terminal's prompt to answer it.",
+      "more_one": "{{count}} more queued",
+      "more_other": "{{count}} more queued"
     }
   },
   "side": {
@@ -733,16 +775,10 @@
     "closeTab": "Close {{name}}",
     "launcher": {
       "title": "Open beside this session",
-      "description": "Keep this session in view while you work on something else.",
       "terminal": "Terminal",
-      "terminalDetail": "A shell in this session's worktree",
-      "session": "Session",
-      "sessionDetail": "Another session, on any host",
-      "bot": "Bot",
-      "botDetail": "Pick one of your bots and chat",
-      "browserDetail": "The session's dev server",
-      "simulatorDetail": "The device the session's agent drives",
-      "desktopDetail": "The host's own screen",
+      "session": "Another session",
+      "sessionDetail": "Any host",
+      "bot": "A bot",
       "back": "Back",
       "sessions": "Pick a session",
       "searchSessions": "Search sessions",
@@ -751,11 +787,12 @@
       "searchBots": "Search bots",
       "noBots": "No bot yet. Create one under Employees.",
       "noMatch": "Nothing matches “{{query}}”.",
-      "agent": "Agent",
-      "agentDetail": "Another agent in this worktree",
+      "agent": "Another agent",
+      "agentDetail": "Same worktree",
       "agents": "Pick an agent",
       "agentShares": "It works in this session's worktree, on the same files and git index as the agent already there.",
-      "noAgents": "No agent can start beside this session. Switch one on in Settings → Agents."
+      "noAgents": "No agent can start beside this session. Switch one on in Settings → Agents.",
+      "sideChats": "Side chats"
     },
     "terminal": {
       "name": "Terminal {{index}}",
@@ -782,10 +819,13 @@
     "title": "{{name}} running on this session's host",
     "connecting": "Connecting to the session's device…",
     "connectingDetail": "The screen appears once the host has started streaming it.",
+    "noPicture": "Waiting for the screen…",
     "unavailable": "No device for this session",
     "unavailableDetail": "This session's host offers no simulator or emulator, or every one is held by another session.",
     "offline": "The host is offline",
     "offlineDetail": "The device comes back when the host reconnects.",
+    "reconnecting": "Reconnecting to the device…",
+    "reconnectingDetail": "Taps from the next few seconds are sent once it’s back.",
     "ended": "The session has ended",
     "browser": "Browser",
     "address": "localhost:{{port}}",
@@ -886,5 +926,28 @@
       "agentBody": "Paste this into Claude Code, or another coding agent, in a checkout of the repository. It adds the hook and its settings, then tells you what to set in claude.ai. Your key isn’t in the prompt: you paste it into claude.ai yourself.",
       "agentLabel": "Prompt for your agent"
     }
+  },
+  "mobile": {
+    "notFound": "This session is gone. It may have been deleted from another device.",
+    "shareLink": "Share link",
+    "actions": "Session actions",
+    "answerFailed": "The answer didn't reach the agent. Try again.",
+    "needsApproval": "Needs approval",
+    "keys": "Terminal keys",
+    "replyToAgent": "Reply to the agent",
+    "reply": "Reply or run a command",
+    "starting": "Starting the session on its host…",
+    "cloud": "This session runs on {{place}}. Open it there to follow it.",
+    "openCloud": "Open in browser",
+    "failed": "The session could not be started.",
+    "connecting": "Connecting…",
+    "steps_one": "{{count}} step",
+    "steps_other": "{{count}} steps",
+    "loadFailed": "This session could not be loaded."
+  },
+  "tabs": {
+    "label": "Open sessions",
+    "new": "New session",
+    "close": "Close {{name}}"
   }
 }

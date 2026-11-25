@@ -1,4 +1,4 @@
-import { type DynamicModule, Module, type ModuleMetadata } from '@nestjs/common';
+import { type DynamicModule, Module, type ModuleMetadata, RequestMethod } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { buildPinoHttpOptions, type LoggingOptions } from './pino-http-options';
@@ -34,6 +34,10 @@ export class LoggingModule {
             // Fields added via `PinoLogger.assign` (the user context) must
             // also reach the request-completion line, not only later calls.
             assignResponse: true,
+            // Every route, written the way Nest 11's router reads it:
+            // nestjs-pino's default (`*`) made Nest log a deprecation warning
+            // and convert the path at every boot.
+            forRoutes: [{ path: '{*splat}', method: RequestMethod.ALL }],
           }),
         }),
       ],

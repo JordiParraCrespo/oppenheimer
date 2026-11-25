@@ -1,7 +1,8 @@
 'use client';
 
 import { ChevronDownIcon, ChevronUpIcon, PlusIcon, SearchIcon, XIcon } from 'lucide-react';
-import type * as React from 'react';
+import { Button as ButtonPrimitive } from '@base-ui/react/button';
+import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
@@ -14,9 +15,9 @@ import { IconButton } from './icon-button';
  *   pill, a role in muted ink), the run state, the view `tabs` (Chat ·
  *   View · Stats), then the actions (open in, terminal, diff, panels).
  * - `ChatHeaderTag`: the 22px mono pill beside the title (a branch).
- * - `ChatTabStrip` · `ChatTab`: open threads as 26px tabs on the hover wash
- *   over the header; the current one on the canvas with its close, each
- *   with the run-state dot when it has one.
+ * - `ChatTabStrip` · `ChatTab`: open things as tabs on the 28px rung, each with its
+ *   mark and the dot of what it needs from the reader; the shown one lit on
+ *   the card inside a hairline, the rest flat, a close on each.
  * - `ThreadFindBar`: ⌘F, floating top-right over the header: a 44px pill
  *   field with the close, and once there is a query, a row under it with
  *   previous, next and "2 / 7 results".
@@ -50,7 +51,8 @@ function ChatHeader({
     >
       {leading}
       <span className="flex min-w-0 flex-1 items-center gap-2">
-        <span className="truncate text-[14px] font-medium text-fg">{title}</span>
+        {/* A strip of tabs for a title fills the bar, so its tabs size against the bar and not their names. */}
+        <span className="truncate text-[14px] font-medium text-fg has-[>[data-slot=chat-tab-strip]]:flex-1">{title}</span>
         {meta}
       </span>
       {status ? <span className="flex shrink-0 items-center gap-1.5 text-[12.5px] text-fg-muted">{status}</span> : null}
@@ -78,79 +80,174 @@ function ChatHeaderTag({ icon, className, children }: { icon?: React.ReactNode; 
 function ChatTabStrip({
   onNew,
   newLabel = 'New tab',
+  label,
+  navigation = false,
   className,
   children,
-}: {
+  ...props
+}: Omit<React.ComponentProps<'nav'>, 'ref' | 'role'> & {
   onNew?: () => void;
   newLabel?: string;
+  /**
+   * What the strip holds, for a screen reader ("Open sessions"). The strip's
+   * ground is the bar's; a bar that is not the canvas names its colour in
+   * `--chat-tab-ground`, so a dot's cutout on a flat tab matches it.
+   */
+  label?: string;
+  /**
+   * The tabs are links to pages (`ChatTab`'s `render`), not panels of this
+   * view: the strip is a `nav` and the shown one is the current page.
+   */
+  navigation?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
+  const Strip = navigation ? 'nav' : 'div';
+  const ref = React.useRef<HTMLElement>(null);
+  // The shown tab is scrolled into the strip whenever the strip's tabs
+  // change: a strip drawn afresh (a new page) starts at its left edge, and
+  // tabs that arrive after it (a list that answers late) can push the shown
+  // one past its right. Only the strip scrolls, never the page around it.
+  React.useEffect(() => {
+    const strip = ref.current;
+    if (!strip) return;
+    const reveal = () => {
+      const tab = strip.querySelector<HTMLElement>('[data-slot="chat-tab"][data-active]');
+      if (!tab) return;
+      const tabBox = tab.getBoundingClientRect();
+      const stripBox = strip.getBoundingClientRect();
+      if (tabBox.right > stripBox.right) strip.scrollLeft += tabBox.right - stripBox.right;
+      else if (tabBox.left < stripBox.left) strip.scrollLeft -= stripBox.left - tabBox.left;
+    };
+    reveal();
+    const watch = new MutationObserver(reveal);
+    watch.observe(strip, { childList: true, subtree: true, attributeFilter: ['data-active'] });
+    return () => watch.disconnect();
+  }, []);
   return (
-    <div
+    <Strip
+      ref={ref as React.Ref<HTMLDivElement>}
       data-slot="chat-tab-strip"
-      role="tablist"
-      className={cn('flex h-9 items-center gap-0.5 overflow-x-auto bg-hover-surface px-1.5 text-[12.5px] [scrollbar-width:none]', className)}
+      role={navigation ? undefined : 'tablist'}
+      aria-label={label}
+      className={cn('flex min-w-0 items-center gap-0.5 overflow-x-auto [scrollbar-width:none]', className)}
+      {...props}
     >
       {children}
       {onNew ? (
-        <IconButton size="sm" aria-label={newLabel} onClick={onNew}>
+        <IconButton variant="quiet" size="sm" aria-label={newLabel} onClick={onNew} className="ml-0.5 shrink-0">
           <PlusIcon />
         </IconButton>
       ) : null}
-    </div>
+    </Strip>
   );
 }
 
+/** Each kind of dot on a tab's mark, and what a screen reader hears when the caller names nothing. */
+const TAB_ATTENTION = {
+  'needs-you': { label: 'Needs input', className: 'bg-warning' },
+  done: { label: 'Done', className: 'bg-primary' },
+  unread: { label: 'Unread', className: 'bg-primary' },
+} as const;
+
+/**
+ * One open thing in a `ChatTabStrip`: its mark, its name, its close. Every
+ * tab is the same width whatever its name, the way a browser's are: 240px
+ * while the strip has room, then all shrinking alike down to 96px as more
+ * open, past which the strip scrolls; so lighting a tab never moves the
+ * strip. The close of a tab not shown takes no room until it is hovered or
+ * focused, so a narrow tab keeps its name. The shown one is lit, on the card inside a hairline, so on a strip that
+ * stands on the recessed ground it reads as part of the page under it; the rest are flat on the
+ * strip's ground with a hairline between two of them. A long name fades out (`fade-end`) rather than
+ * ending in an ellipsis; a name that fits ends before the fade. What it needs from the reader is a dot on its mark (amber
+ * `needs-you`, blue `done` and `unread`, as a sidebar row draws them), work
+ * in flight its name's shimmer. With `render` (a router `Link`) it is a link
+ * to a page, in a strip that is `navigation`.
+ */
 function ChatTab({
-  dot,
+  icon,
+  attention,
+  attentionLabel,
+  working = false,
   active = false,
   onClose,
   closeLabel = 'Close tab',
+  render,
+  title,
   className,
   children,
   ...props
 }: Omit<React.ComponentProps<'button'>, 'type'> & {
-  /** The run-state dot: `success` running, `warning` needs input. */
-  dot?: 'success' | 'warning' | 'danger';
+  /** The mark before the name: an agent's, a bot's face, a glyph. */
+  icon?: React.ReactNode;
+  attention?: keyof typeof TAB_ATTENTION;
+  attentionLabel?: string;
+  /** Whether what the tab holds is at work: the name shimmers while it is. */
+  working?: boolean;
   active?: boolean;
   onClose?: () => void;
   closeLabel?: string;
+  /** What the tab is: a link (`<Link to=… />`) instead of a button. */
+  render?: React.ReactElement;
 }) {
   return (
     <span
       data-slot="chat-tab"
       data-active={active || undefined}
+      title={title}
       className={cn(
-        'group/tab flex h-6.5 max-w-50 shrink-0 items-center gap-1.5 rounded-sm px-2.5 text-fg-muted data-active:bg-canvas data-active:text-fg',
-        onClose && active && 'pr-1',
+        'group/tab relative flex h-(--control-h-sm) min-w-24 shrink basis-60 items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-sm text-fg-muted transition-colors duration-fast',
+        'hover:bg-hover-surface hover:text-fg data-active:border-border-subtle data-active:bg-card data-active:font-medium data-active:text-fg',
+        // A hairline between two tabs that are not shown.
+        "not-first:before:absolute not-first:before:top-1/2 not-first:before:-translate-y-1/2 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
+        'data-active:before:hidden hover:before:hidden [[data-active]+&]:before:hidden [:hover+&]:before:hidden',
         className,
       )}
     >
-      <button
-        type="button"
-        role="tab"
-        aria-selected={active}
-        className="flex min-w-0 items-center gap-1.5 outline-none focus-visible:underline"
+      <ButtonPrimitive
+        role={render ? undefined : 'tab'}
+        aria-selected={render ? undefined : active}
+        aria-current={render && active ? 'page' : undefined}
+        render={render}
+        nativeButton={render === undefined}
+        className="flex h-full min-w-0 flex-1 items-center gap-2 text-current no-underline outline-none focus-visible:underline"
         {...props}
       >
-        {dot ? (
-          <span
-            aria-hidden
-            className={cn('size-1.5 shrink-0 rounded-pill', dot === 'success' ? 'bg-success' : dot === 'warning' ? 'bg-warning' : 'bg-danger')}
-          />
+        {icon || attention ? (
+          <span className="relative flex shrink-0 [&_svg]:size-3.5">
+            {icon}
+            {attention ? (
+              <span
+                role="img"
+                aria-label={attentionLabel ?? TAB_ATTENTION[attention].label}
+                className={cn(
+                  'absolute -top-0.75 -right-0.75 size-1.75 rounded-pill ring-2 ring-(--chat-tab-ground) group-data-active/tab:ring-card',
+                  !icon && 'static',
+                  TAB_ATTENTION[attention].className,
+                )}
+              />
+            ) : null}
+          </span>
         ) : null}
-        <span className="truncate">{children}</span>
-      </button>
-      {onClose && active ? (
-        <button
-          type="button"
+        <span
+          className={cn(
+            'fade-end min-w-0 flex-1 overflow-hidden text-left whitespace-nowrap',
+            working && 'motion-safe:animate-shimmer',
+          )}
+        >
+          {children}
+        </span>
+      </ButtonPrimitive>
+      {onClose ? (
+        <IconButton
+          variant="quiet"
+          size="xs"
           aria-label={closeLabel}
           onClick={onClose}
-          className="flex size-4.5 shrink-0 items-center justify-center rounded-xs text-fg-subtle outline-none hover:bg-hover-surface hover:text-fg focus-visible:ring-2 focus-visible:ring-ring"
+          className="hidden group-focus-within/tab:flex group-hover/tab:flex group-data-active/tab:flex focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <XIcon className="size-3" />
-        </button>
+          <XIcon />
+        </IconButton>
       ) : null}
     </span>
   );
@@ -282,7 +379,7 @@ function ChatTrayButton({
       type="button"
       data-slot="chat-tray-button"
       className={cn(
-        'inline-flex h-7 items-center gap-1.5 rounded-pill px-2.5 text-[13px] text-fg outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-hover-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
+        'inline-flex h-(--control-h-sm) items-center gap-1.5 rounded-pill px-2.5 text-[13px] text-fg outline-none transition-colors duration-fast hover:bg-hover-surface focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-hover-surface [&_svg]:size-3.5 [&_svg]:shrink-0',
         className,
       )}
       {...props}

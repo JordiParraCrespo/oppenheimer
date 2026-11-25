@@ -128,6 +128,20 @@ export const WHATSAPP_CHAT_GRANTS_MAX = 1_000;
 /** The most chats a number's chats list holds: the ones it saw most recently. */
 export const WHATSAPP_CHAT_ROUTES_MAX = 1_000;
 
+/**
+ * The most chats a number's device may report it can be reached in
+ * (`whatsapp.chats`): its groups and its saved contacts. Past it, a chat
+ * already known is still renamed, and a new one waits for its first message.
+ */
+export const WHATSAPP_KNOWN_CHATS_MAX = 5_000;
+
+/**
+ * How long a reported chat the device stops reporting is kept: a device
+ * reports its whole list on every connect and change, so one missing that
+ * long has left the number (a group left, a contact deleted).
+ */
+export const WHATSAPP_KNOWN_CHAT_STALE_DAYS = 7;
+
 /** The most chats one change of who answers names. */
 export const WHATSAPP_ROUTE_CHATS_MAX = 200;
 

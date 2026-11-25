@@ -1,3 +1,4 @@
+export { type ApprovalDecisionLook, approvalDecisionLooks } from './approval-decisions';
 export {
   BotDocumentEntity,
   BotDocumentRevisionEntity,
@@ -6,11 +7,13 @@ export {
   BotMemoryFactEntity,
   BotRoutineEntity,
   type BotRoutineLastRun,
+  type BotRoutineWebhook,
   BotSkillEntity,
   type ChatgptLoginEntity,
   type ChatgptLoginState,
   type CreateBotSkillInput,
   documentConflictRevision,
+  type IssuedBotRoutineWebhook,
   type SaveBotDocumentInput,
   type UpdateBotFactInput,
   type UpdateBotInput,
@@ -19,6 +22,7 @@ export {
 export {
   type BotApprovalDetails,
   BotConversationEntity,
+  type BotFormCardEntity,
   BotMessageEntity,
   type BotPlanLimits,
   type BotPlanWindow,
@@ -31,6 +35,7 @@ export {
   type WorkspaceBotApprovalEntity,
   type WorkspaceBotNoticeEntity,
 } from './bot-conversation.entity';
+export { type BotGroupSection, botGroupSections } from './bot-group-sections';
 export type {
   BotPermissionRule,
   BotPermissionsEntity,

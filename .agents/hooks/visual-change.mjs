@@ -84,7 +84,17 @@ export function branchBase(root) {
  * The visual files the branch changes, committed or not, and their
  * fingerprint; null when there are none. Throws when there is no main.
  */
-export function visualChange(root, { fetch = true } = {}) {
+export function visualChange(root, options) {
+  return changeOf(root, isVisual, options);
+}
+
+/**
+ * The files matching `matches` that the branch changes, committed or not,
+ * and their fingerprint; null when there are none. Throws when there is no
+ * main. `visualChange` is this over `isVisual`; the verification guard
+ * (`verify-guard.mjs`) asks it for its own sets of paths.
+ */
+export function changeOf(root, matches, { fetch = true } = {}) {
   if (fetch) refreshMain(root);
   const base = branchBase(root);
   const committed = git(root, 'diff', '--name-only', `${base}..HEAD`).split('\n');
@@ -92,7 +102,7 @@ export function visualChange(root, { fetch = true } = {}) {
     .split('\n')
     .filter(Boolean)
     .map((line) => line.slice(3).split(' -> ').at(-1));
-  const files = [...new Set([...committed, ...pending])].filter(isVisual).sort();
+  const files = [...new Set([...committed, ...pending])].filter(matches).sort();
   if (files.length === 0) return null;
   const hash = createHash('sha256');
   for (const file of files) {

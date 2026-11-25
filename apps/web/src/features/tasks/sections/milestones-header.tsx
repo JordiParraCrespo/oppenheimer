@@ -1,11 +1,11 @@
 import { Button, IconButton, PageHeader, PageHeaderRow } from '@oppenheimer/design-system-web';
 import { ChevronLeft, ChevronRight, Plus } from '@oppenheimer/design-system-web/icons';
+import { boardCounts } from '@oppenheimer/frontend-consumer';
 import { useTasks } from '@oppenheimer/frontend-consumer/react';
 import { useTranslation } from 'react-i18next';
 import { PlanCounts } from '../components/plan-counts';
 import { useScopeProject } from '../hooks/use-scope-project';
 import { useToday } from '../hooks/use-today';
-import { boardCounts } from '../lib/board';
 
 /**
  * The Milestones view's header (the 2026-10-13 `Tasks` frame): Milestones, the
@@ -38,13 +38,13 @@ export function MilestonesHeader({
         title={t('tasks.milestones.title')}
         actions={
           <div className="flex items-center gap-1.5">
-            <Button variant="secondary" size="sm" onClick={onToday}>
+            <Button variant="secondary" onClick={onToday}>
               {t('tasks.milestones.today')}
             </Button>
-            <IconButton size="sm" aria-label={t('tasks.milestones.earlier')} onClick={onEarlier}>
+            <IconButton aria-label={t('tasks.milestones.earlier')} onClick={onEarlier}>
               <ChevronLeft />
             </IconButton>
-            <IconButton size="sm" aria-label={t('tasks.milestones.later')} onClick={onLater}>
+            <IconButton aria-label={t('tasks.milestones.later')} onClick={onLater}>
               <ChevronRight />
             </IconButton>
             <Button className="ml-3" onClick={onNew}>

@@ -161,11 +161,11 @@ export function isQuietRoutineRun(block: ChatTurnBlock, toolCallsShown: boolean)
 
 /**
  * Whether a tool step made something the chat draws even while its tool
- * calls are hidden (`BotActivity`): a session to open, a draft's card. A new
+ * calls are hidden (`BotActivity`): a session to open, a draft's card, a visual. A new
  * thing of that kind is a line here, so a run that made one is never hidden.
  */
 function stepShowsWithToolsHidden(step: BotToolStep): boolean {
-  return Boolean(step.sessionId || step.mailDraft);
+  return Boolean(step.sessionId || step.mailDraft || step.visual);
 }
 
 /**
@@ -269,12 +269,20 @@ export function markersBefore(
   return { day, model };
 }
 
-/** The id of the newest message you sent, which a new send replaces. */
-export function newestSentId(blocks: ChatTurnBlock[]): string | undefined {
+/**
+ * The id of the newest message you sent, which a new send replaces. Only the
+ * live window's count: a message of yours in an older page the reader
+ * scrolled up into was never just sent, even where the window holds none.
+ */
+export function newestSentId(
+  blocks: ChatTurnBlock[],
+  older: ReadonlySet<string> = new Set(),
+): string | undefined {
   for (let index = blocks.length - 1; index >= 0; index--) {
     const asked = blocks[index]?.asked ?? [];
     for (let at = asked.length - 1; at >= 0; at--) {
-      if (asked[at]?.role === 'user') return asked[at]?.id;
+      const message = asked[at];
+      if (message?.role === 'user') return older.has(message.id) ? undefined : message.id;
     }
   }
   return undefined;

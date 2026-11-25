@@ -9,7 +9,7 @@ import { SectionBotsList } from '../sections/section-bots-list';
  * so the reader never leaves it, and the heading says how one gets here
  * before the first bot. A row's ellipsis hands its Hide to the heading,
  * which owns every placement write, and asks before its Delete removes the
- * bot for good. Which bots a section lists is the product package's
+ * bot for good; a right-click opens that ellipsis' menu. Which bots a section lists is the product package's
  * `useSuspenseSectionBots`, mocked here.
  */
 
@@ -109,6 +109,14 @@ describe('SectionBotsList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'bots.sidebar.rowActions' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'bots.section.hide' }));
     expect(onHide).toHaveBeenCalledWith(release);
+  });
+
+  it('opens a row’s own menu on a right-click, not the browser’s', async () => {
+    listed.bots = [bot('b7', 'Release Bot', ['pulls'])];
+    render(<SectionBotsList section="pulls" onAdd={() => {}} onHide={() => {}} />);
+    const prevented = !fireEvent.contextMenu(screen.getByRole('link'));
+    expect(prevented).toBe(true);
+    expect(await screen.findByRole('menuitem', { name: 'bots.sidebar.settings' })).toBeTruthy();
   });
 
   it('lets each row be picked up from the keyboard, while Enter still opens its chat', () => {

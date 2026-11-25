@@ -16,7 +16,13 @@ import type { DictationSlot } from './chat-composer-extras';
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 
-type ChatComposerLabels = { send: string; stop: string; attach: string };
+type ChatComposerLabels = {
+  send: string;
+  stop: string;
+  attach: string;
+  /** The field's accessible name, for a placeholder that changes or goes away. */
+  field?: string;
+};
 
 const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
   send: 'Send',
@@ -90,6 +96,7 @@ function ChatComposer({
   caption,
   attachments,
   onAttach,
+  emoji,
   allowEmpty = false,
   inputRef,
   dictation,
@@ -124,6 +131,8 @@ function ChatComposer({
   attachments?: React.ReactNode;
   /** Present: shows the paperclip, first in the foot row (`stacked`) or the row (`inline`). */
   onAttach?: () => void;
+  /** An emoji button, beside the paperclip: first in the row (`inline`), after it in the foot row (`stacked`). */
+  emoji?: React.ReactNode;
   /** Send with nothing written: what is attached is the message. */
   allowEmpty?: boolean;
   inputRef?: React.Ref<HTMLTextAreaElement>;
@@ -175,15 +184,18 @@ function ChatComposer({
       onChange={(event) => onValueChange(event.target.value)}
       onKeyDown={onKeyDown}
       placeholder={placeholder}
+      aria-label={label.field}
       disabled={disabled}
       rows={inline ? 1 : 2}
       wrapperClassName={inline ? 'flex-1' : undefined}
       // Grows with what is written, from its opening lines (`min-h`, since
-      // `field-sizing-content` overrides `rows`) to eight, then scrolls.
-      className="field-sizing-content max-h-52 resize-none bg-transparent text-fg outline-none placeholder:text-field-placeholder"
+      // `field-sizing-content` overrides `rows`) to eight, then scrolls. The
+      // placeholder keeps to one line, clipped: `field-sizing-content` sizes
+      // to it too, so a long suggestion would otherwise open a second line.
+      className="field-sizing-content max-h-52 resize-none bg-transparent text-fg outline-none placeholder:overflow-hidden placeholder:whitespace-nowrap placeholder:text-field-placeholder"
       box={cn(
         'w-full text-[15px] leading-[1.55] tracking-[-0.011em]',
-        inline ? cn('min-h-11 py-2.5 pr-0', onAttach ? 'pl-1' : 'pl-4.5') : 'min-h-18 px-5 pt-4 pb-2',
+        inline ? cn('min-h-11 py-2.5 pr-0', onAttach || emoji ? 'pl-1' : 'pl-4.5') : 'min-h-18 px-5 pt-4 pb-2',
       )}
     />
   );
@@ -276,7 +288,12 @@ function ChatComposer({
               {captioned}
               {attached}
               <div className="flex items-end">
-                {paperclip ? <span className="flex shrink-0 items-center p-1.5 pr-0">{paperclip}</span> : null}
+                {paperclip || emoji ? (
+                  <span className="flex shrink-0 items-center gap-0.5 p-1.5 pr-0">
+                    {paperclip}
+                    {emoji}
+                  </span>
+                ) : null}
                 {field}
                 <span className="flex shrink-0 items-center gap-1 p-1.5">{send}</span>
               </div>
@@ -292,9 +309,10 @@ function ChatComposer({
                 data-slot="chat-composer-foot"
                 className="gap-1 px-3 pb-3"
                 leading={
-                  paperclip ? (
+                  paperclip || emoji ? (
                     <>
                       {paperclip}
+                      {emoji}
                       {tools}
                     </>
                   ) : (

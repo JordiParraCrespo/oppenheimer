@@ -111,8 +111,8 @@ export async function insertRunWithin(
     `INSERT INTO "automation_run"
        ("id", "organizationId", "automationId", "revisionId", "triggerId", "cause", "causeKey",
         "causeSummary", "inboundEventId", "scheduledFor", "outcome", "skipReason",
-        "availableAt", "attempts", "requestedByUserId")
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+        "availableAt", "attempts", "requestedByUserId", "webhookPayload")
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
      ON CONFLICT ("automationId", "causeKey") DO NOTHING
      RETURNING "id"`,
     [
@@ -131,6 +131,7 @@ export async function insertRunWithin(
       record.availableAt,
       record.attempts,
       record.requestedByUserId,
+      record.webhookPayload,
     ],
   );
   if (inserted.length === 0) return false;

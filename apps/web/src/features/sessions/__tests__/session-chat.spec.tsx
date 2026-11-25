@@ -1,4 +1,9 @@
-import { SessionChat as Chat } from '@oppenheimer/frontend-consumer';
+import {
+  SessionChat as Chat,
+  type ChatFeedbackDraft,
+  readPermissionPrompt,
+} from '@oppenheimer/frontend-consumer';
+import { permissionPromptOf } from '@oppenheimer/shared/sessions';
 import {
   act,
   cleanup,
@@ -7,6 +12,7 @@ import {
   renderHook,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { useChatState } from '../hooks/use-session-chat';
@@ -139,6 +145,54 @@ describe('SessionChat', () => {
     expect(
       screen.queryByPlaceholderText('sessions.chat.composer.placeholder{"agent":"Claude Code"}'),
     ).toBeNull();
+  });
+
+  // The transcript has no output for a command until its result lands; the
+  // terminal's screen has its last lines. Breaks if the screen's lines never
+  // reach the running row, reach another command's, or outlive the result.
+  it('shows what a running command last printed under it, off the screen, until its result lands', () => {
+    const chat = new Chat();
+    render(<SessionChat chat={chat} agent="claude-code" readOnly />);
+    const bash = (command: string) => ({
+      type: 'tool_use',
+      id: 't1',
+      name: 'Bash',
+      input: { command },
+    });
+    act(() =>
+      chat.apply({
+        reset: true,
+        entries: [
+          entry({ type: 'user', uuid: 'u', message: { role: 'user', content: 'Build it' } }),
+          entry({ type: 'assistant', uuid: 'a', message: { content: [bash('./build.sh')] } }),
+        ],
+      }),
+    );
+    const reading = (command: string) => ({
+      verb: 'Doodling',
+      detail: '21s',
+      tail: { command, lines: ['step 20 of 40', 'step 21 of 40'] },
+    });
+    act(() => chat.setActivity(reading('./other.sh')));
+    expect(screen.queryByText('step 21 of 40')).toBeNull();
+    act(() => chat.setActivity(reading('./build.sh')));
+    expect(screen.getByText('step 21 of 40')).toBeTruthy();
+
+    act(() =>
+      chat.apply({
+        entries: [
+          entry({
+            type: 'user',
+            uuid: 'r',
+            message: {
+              role: 'user',
+              content: [{ type: 'tool_result', tool_use_id: 't1', content: 'built' }],
+            },
+          }),
+        ],
+      }),
+    );
+    expect(screen.queryByText('step 21 of 40')).toBeNull();
   });
 });
 
@@ -1415,5 +1469,258 @@ describe("the agent's suggestion", () => {
     fireEvent.change(field, { target: { value: 'something else' } });
     fireEvent.keyDown(field, { key: 'Tab' });
     expect(field.value).toBe('something else');
+  });
+});
+
+describe('feedback the agent drafted', () => {
+  const draft: ChatFeedbackDraft = {
+    kind: 'Bug report',
+    title: 'Took write actions after "View only"',
+    details: ['- What happened: wrote after the user said view only.'],
+    note: null,
+    actions: [
+      { action: 'review', kind: 'review', key: '1', opensTerminal: true },
+      { action: 'send', kind: 'send', key: '2', opensTerminal: false },
+      { action: 'dismiss', kind: 'dismiss', key: '0', opensTerminal: false },
+    ],
+    promptHoldsText: false,
+    more: 0,
+  };
+
+  function renderWithDraft() {
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    const openTerminal = vi.fn();
+    render(
+      <SessionChat
+        chat={chat}
+        agent="claude-code"
+        readOnly={false}
+        attach={{ sessionId: 's1', files: createFileHandOff() }}
+        onOpenTerminal={openTerminal}
+      />,
+    );
+    return { chat, typed, openTerminal };
+  }
+
+  // What breaks this: the draft shown only on the terminal's card, so a
+  // reader in the chat never learns it is there or how to answer it.
+  it("shows the draft over the composer, each pill typing the card's key", () => {
+    const { chat, typed, openTerminal } = renderWithDraft();
+    act(() => chat.setFeedback(draft));
+    expect(screen.getByText('Bug report')).toBeTruthy();
+    expect(screen.getByText(draft.details[0] ?? '')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.feedback.send' }));
+    expect(typed).toEqual(['2']);
+    expect(openTerminal).not.toHaveBeenCalled();
+
+    act(() =>
+      chat.setFeedback({
+        ...draft,
+        note: 'Send without reviewing (full draft + env, no transcript)?',
+        actions: [
+          { action: 'send', kind: 'send', key: '2', opensTerminal: false },
+          { action: 'back', kind: 'back', key: '\u001b', opensTerminal: false },
+        ],
+      }),
+    );
+    expect(
+      screen.getByText('Send without reviewing (full draft + env, no transcript)?'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.feedback.back' }));
+    expect(typed).toEqual(['2', '\u001b']);
+
+    act(() => chat.setFeedback(null));
+    expect(screen.queryByText('Bug report')).toBeNull();
+  });
+
+  // What breaks this: Review opening Claude Code's editor out of sight, in a
+  // terminal the reader is not looking at.
+  it('switches to the terminal on Review, where its editor opens', () => {
+    const { chat, typed, openTerminal } = renderWithDraft();
+    act(() => chat.setFeedback(draft));
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.feedback.review' }));
+    expect(typed).toEqual(['1']);
+    expect(openTerminal).toHaveBeenCalledOnce();
+  });
+
+  it('offers no key while the terminal prompt holds text, and says why', () => {
+    const { chat } = renderWithDraft();
+    act(() => chat.setFeedback({ ...draft, actions: [], promptHoldsText: true }));
+    expect(screen.getByText('sessions.chat.feedback.clearPrompt')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'sessions.chat.feedback.send' })).toBeNull();
+  });
+});
+describe('permissions the agent waits on', () => {
+  const claude = permissionPromptOf('claude-code');
+  const prompt = entry({
+    type: 'user',
+    uuid: 'u1',
+    message: { role: 'user', content: 'Clean the build' },
+  });
+  const call = entry({
+    type: 'assistant',
+    uuid: 'a1',
+    message: {
+      role: 'assistant',
+      content: [
+        {
+          type: 'tool_use',
+          id: 't1',
+          name: 'Bash',
+          input: { command: 'rm -rf dist', description: 'Remove the build output' },
+        },
+      ],
+    },
+  });
+  // Claude Code 2.1.331's dialog for it, as `tmux capture-pane` shows it.
+  const dialog = [
+    '─'.repeat(80),
+    ' Bash command',
+    '',
+    ' Remove the build output',
+    '╌'.repeat(80),
+    ' rm -rf dist',
+    '╌'.repeat(80),
+    ' Do you want to proceed?',
+    ' ❯ 1. Yes',
+    "   2. Yes, and don't ask again for rm commands in /home/runner/app",
+    '   3. Yes, and switch to auto mode · auto mode handles these prompts for you',
+    '   4. No',
+    '',
+    ' Esc to cancel · Tab to amend',
+  ];
+
+  function waiting() {
+    vi.useFakeTimers();
+    const chat = new Chat();
+    const typed: string[] = [];
+    chat.connect((data) => typed.push(data));
+    chat.apply({ reset: true, entries: [prompt, call] });
+    if (!claude) throw new Error('Claude Code reads a permission dialog');
+    chat.setPermission(readPermissionPrompt(claude, dialog));
+    render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
+    return { chat, typed };
+  }
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // What breaks this: the chat says only that the agent waits, and the
+  // person has to switch to the terminal to read and answer the dialog.
+  it('takes the composer’s place with the command, and its number keys answer as in the terminal', () => {
+    const { typed } = waiting();
+    expect(
+      screen
+        .getByPlaceholderText('sessions.chat.composer.placeholder{"agent":"Claude Code"}')
+        .closest('[hidden]'),
+    ).not.toBeNull();
+    const card = document.querySelector<HTMLElement>('[data-slot="approval-panel"]');
+    if (!card) throw new Error('the card is drawn');
+    expect(within(card).getByText('sessions.chat.permission.command')).toBeTruthy();
+    expect(within(card).getByText('Remove the build output')).toBeTruthy();
+    expect(card.querySelector('[data-slot="approval-command"]')?.textContent).toBe('rm -rf dist');
+    // A recursive delete is worth a second look.
+    expect(card.getAttribute('data-tone')).toBe('caution');
+    // Switching the whole session to auto mode is the terminal's, not a row here.
+    expect(screen.queryByText(/auto mode/)).toBeNull();
+    const allow = screen.getByRole('button', { name: /sessions\.chat\.permission\.allowOnce/ });
+    expect(document.activeElement).toBe(allow);
+    fireEvent.keyDown(allow, { key: '2' });
+    act(() => vi.runAllTimers());
+    expect(typed).toEqual(['2']);
+  });
+
+  it('denies with Escape, the option the agent numbers last', () => {
+    const { typed } = waiting();
+    fireEvent.keyDown(screen.getByRole('button', { name: /allowOnce/ }), { key: 'Escape' });
+    act(() => vi.runAllTimers());
+    expect(typed).toEqual(['4']);
+  });
+
+  // What breaks this: the note typed as keys into the dialog's options, or
+  // a refusal sent without the words the person wrote for it.
+  it('denies with a note, typed into the field the agent opens on No', () => {
+    const { typed } = waiting();
+    fireEvent.click(screen.getByRole('button', { name: 'sessions.chat.permission.withNote' }));
+    const note = screen.getByLabelText(/sessions\.chat\.permission\.noteLabel/);
+    fireEvent.change(note, { target: { value: 'Only remove dist/cache' } });
+    fireEvent.keyDown(note, { key: 'Enter' });
+    act(() => vi.runAllTimers());
+    const down = '\u001b[B';
+    expect(typed).toEqual([down, down, down, '\t', 'Only remove dist/cache', '\r']);
+  });
+
+  it('holds the answer on the card, then gives the composer back once the call has its result', () => {
+    const { chat } = waiting();
+    fireEvent.click(screen.getByRole('button', { name: /allowOnce/ }));
+    act(() => chat.setPermission(null));
+    expect(screen.getByText(/sessions\.chat\.permission\.allowed/)).toBeTruthy();
+    act(() =>
+      chat.apply({
+        entries: [
+          entry({
+            type: 'user',
+            uuid: 'r1',
+            message: {
+              role: 'user',
+              content: [{ type: 'tool_result', tool_use_id: 't1', content: '' }],
+            },
+          }),
+        ],
+      }),
+    );
+    expect(screen.queryByText(/sessions\.chat\.permission\.allowed/)).toBeNull();
+    expect(
+      screen
+        .getByPlaceholderText('sessions.chat.composer.placeholder{"agent":"Claude Code"}')
+        .closest('[hidden]'),
+    ).toBeNull();
+  });
+  // What breaks this: the agent runs the same command again, its dialog's words
+  // are the same, and the card shows it as already allowed, so nothing in the
+  // chat can answer it and the agent waits on the terminal.
+  it('asks again when the same command asks again', () => {
+    const { chat, typed } = waiting();
+    fireEvent.click(screen.getByRole('button', { name: /allowOnce/ }));
+    act(() => vi.runAllTimers());
+    act(() => chat.setPermission(null));
+    const result = (uuid: string, id: string) =>
+      entry({
+        type: 'user',
+        uuid,
+        message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: id, content: '' }] },
+      });
+    act(() => chat.apply({ entries: [result('r1', 't1')] }));
+    act(() => vi.runAllTimers());
+    const again = entry({
+      type: 'assistant',
+      uuid: 'a2',
+      message: {
+        role: 'assistant',
+        content: [
+          {
+            type: 'tool_use',
+            id: 't2',
+            name: 'Bash',
+            input: { command: 'rm -rf dist', description: 'Remove the build output' },
+          },
+        ],
+      },
+    });
+    act(() => chat.apply({ entries: [again] }));
+    act(() => vi.runAllTimers());
+    act(() =>
+      chat.setPermission(readPermissionPrompt(claude as NonNullable<typeof claude>, dialog)),
+    );
+    act(() => vi.runAllTimers());
+    expect(screen.queryByText(/sessions\.chat\.permission\.allowed/)).toBeNull();
+    typed.length = 0;
+    fireEvent.click(screen.getByRole('button', { name: /allowOnce/ }));
+    act(() => vi.runAllTimers());
+    expect(typed).toEqual(['1']);
   });
 });

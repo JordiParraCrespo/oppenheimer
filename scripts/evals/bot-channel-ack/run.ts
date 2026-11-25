@@ -11,7 +11,7 @@
 //
 // Each case is one message from the owner on a channel. The runner builds
 // the bot's real system prompt and turn context (the channel's line and
-// `turn/context.as-it-goes`), serves the production session and host tools
+// `core/turn-context.as-it-goes`), serves the production session and host tools
 // over the in-memory workspace (`../bot-workspace.ts`), and runs one real
 // turn. A case with `steer` appends the person's mid-work message to that
 // tool result with production's own `steerNote`, as the engine does.
@@ -35,15 +35,18 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { ConfigService } from '@nestjs/config';
 import type { CommandBus } from '@nestjs/cqrs';
 import { BotChannelAsItGoesFactory } from '../../../apps/api/src/bots-chat/application/bot-channel-as-it-goes.factory';
 import { BotChannelReplyResolver } from '../../../apps/api/src/bots-chat/application/bot-channel-reply.resolver';
+import type { BotVoiceReplyResolver } from '../../../apps/api/src/bots-chat/application/bot-voice-reply.resolver';
 import {
   type TranscriptWrite,
   TurnTranscript,
 } from '../../../apps/api/src/bots-chat/application/turn-transcript.policy';
 import { DeliverChannelReplyCommand } from '../../../apps/api/src/bots-chat/commands/deliver-channel-reply/deliver-channel-reply.command';
 import { DeliverChannelReplyCommandHandler } from '../../../apps/api/src/bots-chat/commands/deliver-channel-reply/deliver-channel-reply.command-handler';
+import type { BotApprovalRepositoryPort } from '../../../apps/api/src/bots-chat/database/bot-approval.repository.port';
 import type {
   BotChannelChat,
   BotConversationRepositoryPort,
@@ -257,7 +260,7 @@ async function phoneOf(turn: Turn, c: Case): Promise<PhoneLine[]> {
       stored.set(write.message.id, write.message);
     if (write.kind === 'unsay') for (const id of write.messageIds) stored.delete(id);
   };
-  const write = new BotChannelAsItGoesFactory(channel).wrap(entity, store);
+  const write = await new BotChannelAsItGoesFactory(channel).wrap(entity, store);
   const transcript = new TurnTranscript(entity);
   for (const event of eventsOf(turn, c)) {
     if (event.type === 'tool.finished') callsEnded += 1;
@@ -279,9 +282,23 @@ async function phoneOf(turn: Turn, c: Case): Promise<PhoneLine[]> {
     findForRun: async () => ({ isNone: () => false, unwrap: () => entity }),
   } as unknown as BotTurnRepositoryPort;
   const messages = { findTurnLines: async () => lines } as unknown as BotMessageRepositoryPort;
-  await new DeliverChannelReplyCommandHandler(turns, messages, channel).execute(
-    new DeliverChannelReplyCommand({ turnId: entity.id }),
-  );
+  // No approval card waits in these cases, so the reply carries no link to one.
+  const approvals = {
+    findPending: async () => ({ isSome: () => false }),
+  } as unknown as BotApprovalRepositoryPort;
+  const config = { get: () => undefined } as unknown as ConfigService;
+  // Every case is the owner's own chat, which never answers by voice.
+  const voiceReplies = {
+    prepare: async (_turn: unknown, text: string) => ({ text, voice: null }),
+  } as unknown as BotVoiceReplyResolver;
+  await new DeliverChannelReplyCommandHandler(
+    turns,
+    messages,
+    approvals,
+    channel,
+    config,
+    voiceReplies,
+  ).execute(new DeliverChannelReplyCommand({ turnId: entity.id }));
   return phone;
 }
 

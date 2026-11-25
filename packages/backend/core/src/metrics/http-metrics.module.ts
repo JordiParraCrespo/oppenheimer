@@ -197,6 +197,6 @@ export class HttpMetricsModule implements NestModule {
 
   /** Ahead of the guards, so a request they refuse is still counted. */
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(HttpMetricsMiddleware).forRoutes('*');
+    consumer.apply(HttpMetricsMiddleware).forRoutes('{*splat}');
   }
 }

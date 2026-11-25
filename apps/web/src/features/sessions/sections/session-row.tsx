@@ -1,8 +1,16 @@
-import { AgentMark, SortableSessionItem } from '@oppenheimer/design-system-web';
-import { Cloud, EyeOff, Folder, SquareTerminal } from '@oppenheimer/design-system-web/icons';
+import { AgentMark, SortableSessionItem, useRowMenu } from '@oppenheimer/design-system-web';
+import {
+  BellOff,
+  Cloud,
+  EyeOff,
+  Folder,
+  SquareTerminal,
+} from '@oppenheimer/design-system-web/icons';
 import { cloudProviderLabel, type SessionEntity } from '@oppenheimer/frontend-consumer';
 import {
+  useAcknowledgeSessionReport,
   useMoveSession,
+  useMutedSessionAlerts,
   useProjectsSnapshot,
   useRenameSession,
   useSetSessionHidden,
@@ -47,10 +55,12 @@ const ATTENTION_LABEL = {
  * and the row has no room. Its pin is the sidebar's (`SessionPinsContext`),
  * which draws a pinned row under Pinned. Its unread mark is the device's
  * (`session-unread.ts`): a blue dot the reader set to come back to, which
- * opening the session takes off. It subscribes to one boolean for being
- * the open session, not the route, so a navigation re-renders only the two rows
- * whose highlight moved; `now` is its group's one-minute clock. The row drags, up
- * or down its project or into another; the sidebar keeps where it lands.
+ * opening the session takes off. The click itself takes off its dot, that
+ * mark or a finished turn's, so it never waits on the pane or the API. It
+ * subscribes to one boolean for being the open session, not the route, so a
+ * navigation re-renders only the two rows whose highlight moved; `now` is its
+ * group's one-minute clock. The row drags, up or down its project or into
+ * another; the sidebar keeps where it lands.
  *
  * A cloud session's row leads with its vendor's mark and opens the vendor's
  * page for its agent in a tab of its own, where it is followed up and
@@ -64,14 +74,20 @@ const ATTENTION_LABEL = {
  */
 /**
  * What the row says in its age's place, first match wins: a delete the host
- * refused, a delete under way, then the eye of a hidden session. A deleted
- * row back in the list is never back as it was (`useCloseSession`).
+ * refused, a delete under way, the eye of a hidden session, then the bell of
+ * one whose notifications the reader muted. A deleted row back in the list is
+ * never back as it was (`useCloseSession`).
  */
-function rowStatus(session: SessionEntity, t: TFunction): ReactNode {
+function rowStatus(session: SessionEntity, muted: boolean, t: TFunction): ReactNode {
   if (session.closeRefusal) return t('sessions.sidebar.notDeleted');
   if (session.isClosing) return t('sessions.sidebar.deleting');
   if (session.hidden) {
     return <EyeOff role="img" aria-label={t('sessions.sidebar.hidden')} className="size-3.5" />;
+  }
+  if (muted) {
+    return (
+      <BellOff role="img" aria-label={t('sessions.sidebar.mutedLabel')} className="size-3.5" />
+    );
   }
   return undefined;
 }
@@ -97,9 +113,10 @@ export function SessionRow({
   const active = useRouterState({
     select: (state) => state.location.pathname === `/sessions/${session.id}`,
   });
-  const [menuOpen, setMenuOpen] = useState(false);
   const pin = useSessionPin(session.id);
   const unread = useSessionUnread(session.id);
+  const [mutedSessions, setSessionMuted] = useMutedSessionAlerts();
+  const muted = mutedSessions.has(session.id);
   const selection = useSessionSelected(session.id);
   const [draft, setDraft] = useState<string | null>(null);
   // The projects are read, not subscribed to: the move pane is the one thing
@@ -134,14 +151,16 @@ export function SessionRow({
     },
     onError: onWrite,
   });
+  const acknowledge = useAcknowledgeSessionReport();
   const age = compactAge(session.createdAt, now);
   const attention = rowAttentionFor(session, unread.unread);
   const glyph = sessionGlyph(session);
-  const status = rowStatus(session, t);
+  const status = rowStatus(session, muted, t);
   const cloudUrl = session.cloud?.url ?? null;
   // The row has a menu unless the list is selecting (the bar acts) or its name
   // is being typed; every way of opening the menu reads this.
   const hasMenu = !selection.selecting && draft === null;
+  const menu = useRowMenu(hasMenu);
   const statusHint = session.closeRefusal
     ? t('sessions.sidebar.notDeletedHint')
     : session.isClosing
@@ -194,32 +213,35 @@ export function SessionRow({
       // Runs before the link's own click, which stands down on a prevented one.
       onClick={(event) => {
         const how = clickPick(event, selection.selecting);
-        if (!how) return;
-        event.preventDefault();
-        selection.pick(how);
+        if (how) {
+          event.preventDefault();
+          selection.pick(how);
+          return;
+        }
+        // Opening it reads it: the dot goes on the click, not once the pane
+        // has loaded and the API has answered. The pane does the same for a
+        // session opened any other way.
+        if (cloudUrl) return;
+        if (attention === 'done') acknowledge.mutate(session.id);
+        if (unread.unread) unread.setUnread(false);
       }}
       // A right-click opens the row's own menu, not the browser's.
-      onContextMenu={
-        hasMenu
-          ? (event) => {
-              event.preventDefault();
-              setMenuOpen(true);
-            }
-          : undefined
-      }
+      onContextMenu={menu.onContextMenu}
       selected={selection.selecting ? selection.selected : undefined}
       selectedLabel={t('sessions.sidebar.selected')}
-      menuOpen={menuOpen}
+      menuOpen={menu.open}
       rename={renameField}
       action={
         hasMenu ? (
           <SessionRowMenu
-            open={menuOpen}
-            onOpenChange={setMenuOpen}
+            open={menu.open}
+            onOpenChange={menu.setOpen}
             pinned={pin.pinned}
             onPinChange={pin.setPinned}
             unread={unread.unread}
             onUnreadChange={unread.setUnread}
+            muted={muted}
+            onMutedChange={(next) => setSessionMuted(session.id, next)}
             hidden={session.hidden}
             onHiddenChange={(hidden) => visibility.mutate({ id: session.id, hidden })}
             onSelect={() => selection.pick('toggle')}
@@ -227,7 +249,7 @@ export function SessionRow({
             onMove={(projectId) => move.mutate({ id: session.id, projectId })}
             onShare={session.isCloud ? undefined : () => onShare(session)}
             onDelete={() => onDelete(session)}
-            projects={(menuOpen ? (projectsSnapshot() ?? []) : []).map((target) => ({
+            projects={(menu.open ? (projectsSnapshot() ?? []) : []).map((target) => ({
               id: target.id,
               name: target.name,
               isUnassigned: target.isUnassigned,

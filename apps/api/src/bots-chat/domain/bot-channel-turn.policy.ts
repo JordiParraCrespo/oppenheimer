@@ -1,4 +1,5 @@
 import {
+  type BotAttachment,
   type BotChannelOrigin,
   type BotTurnLane,
   type BotTurnOrigin,
@@ -25,7 +26,8 @@ export type ChannelTurnProps = Omit<
  * Words alone are sent as a steer: written while the bot works on the chat's
  * last request, they reach it at its next tool call, so it can answer in
  * between and carry on (`takesSteer`), instead of waiting for the work to
- * end. Media waits for a turn of its own, which reads it when it starts.
+ * end. Media and images wait for a turn of their own, which reads them when
+ * it starts.
  */
 export function channelTurn(
   props: ChannelTurnProps,
@@ -35,6 +37,8 @@ export function channelTurn(
     conversationId: string;
     text: string;
     pendingMedia?: BotPendingMedia | null;
+    /** The images it came with, stored already; claimed for it when the turn is queued. */
+    attachments?: readonly BotAttachment[];
     /**
      * A contact's message, in one person's chat or a group's: the turn is a
      * contact's (`turnReach`), and steers nothing.
@@ -43,13 +47,15 @@ export function channelTurn(
   },
 ): { turn: BotTurnEntity; opening: BotMessageEntity } {
   const contact = message.contact ?? null;
+  const attachments = message.attachments ?? [];
   const turn = BotTurnEntity.queue({
     ...props,
     conversationId: message.conversationId,
     origin: message.origin,
     lane: 'owner',
     sourceKey: message.sourceKey,
-    steer: contact === null && !message.pendingMedia && maySteer(true, message.text, 0),
+    steer:
+      contact === null && !message.pendingMedia && maySteer(true, message.text, attachments.length),
     contact,
   });
   const opening = BotMessageEntity.createNew({
@@ -62,6 +68,7 @@ export function channelTurn(
     steps: [],
     position: 0,
     pendingMedia: message.pendingMedia ?? null,
+    attachments,
   });
   return { turn, opening };
 }
@@ -147,20 +154,42 @@ export function contactReplyOf(turn: { status: string }, texts: readonly string[
   return [...texts].reverse().find((text) => text.trim()) ?? null;
 }
 
+/** What a channel's chat is told when its turn ended on a Needs input card, before the card's address. */
+export const APPROVAL_WAITING_LINE = 'Waiting for your approval in Oppenheimer:';
+
 /**
- * What a channel's turn (Telegram, WhatsApp) sends back when it ends: its
- * last text, or, with none, what happened to it, so the person on their
- * phone is never left without an answer.
+ * The line a channel turn owes when it ended on its own Needs input card: the
+ * card is answered in the console, never from the chat, so the line points at
+ * the bot there (`consoleOrigin`). Null when the bot's waiting card, if any,
+ * is another turn's.
+ */
+export function approvalNoticeOf(
+  turn: { id: string; botId: string },
+  waitingCard: { turnId: string } | null,
+  consoleOrigin: string,
+): string | null {
+  if (waitingCard?.turnId !== turn.id) return null;
+  return `${APPROVAL_WAITING_LINE} ${consoleOrigin.replace(/\/+$/, '')}/bots/${turn.botId}`;
+}
+
+/**
+ * What a channel's turn (Telegram, WhatsApp, Slack) sends back when it ends:
+ * its last text, or, with none, what happened to it, so the person on their
+ * phone is never left without an answer; then the `notice` it owes, if any
+ * (`approvalNoticeOf`).
  */
 export function channelReplyOf(
   turn: { status: string; error: string | null },
   texts: readonly string[],
+  notice: string | null = null,
 ): string {
   const last = [...texts].reverse().find((text) => text.trim()) ?? null;
   if (turn.status === 'failed') {
     return `I could not finish that: ${turn.error ?? 'the turn failed.'}`;
   }
+  if (last && notice) return `${last}\n\n${notice}`;
   if (last) return last;
+  if (notice) return notice;
   if (turn.status === 'cancelled') return 'Stopped.';
   return 'Done, with nothing to say here. The console has the details.';
 }

@@ -26,7 +26,8 @@
     "runsEmpty": "No runs yet. Each run appears here with the session it started.",
     "loadFailed": "Automations could not be loaded.",
     "actionFailed": "That did not go through.",
-    "actionFailedFor": "“{{name}}” was not updated"
+    "actionFailedFor": "“{{name}}” was not updated",
+    "filterNoMatch": "No automations match these filters."
   },
   "status": {
     "active": "Active",
@@ -46,6 +47,7 @@
     "paused": "Skipped: the automation was paused",
     "deleted": "Skipped: the automation was deleted",
     "own_event": "Skipped: the event was our own",
+    "own_session_event": "Skipped: a session this bot started caused it",
     "automation_rate_limited": "Skipped: this automation’s hourly limit",
     "workspace_rate_limited": "Skipped: the workspace’s hourly limit",
     "overlapping": "Skipped: a run was still going",
@@ -87,6 +89,10 @@
     "monthly": {
       "label": "Monthly",
       "desc": "On one day of the month"
+    },
+    "cron": {
+      "label": "Custom",
+      "desc": "On a schedule a bot writes for you"
     }
   },
   "event": {
@@ -153,10 +159,42 @@
     "event": "On {{event}}",
     "mail": "New mail matching “{{query}}”",
     "anyMail": "Any new mail",
+    "webhook": "Something posted to its URL",
     "more": "{{summary}} +{{count}}",
     "manual": "Manual only",
     "monFri": "Mon–Fri",
     "weekend": "Sat, Sun"
+  },
+  "cron": {
+    "sentence": "{{time}}, {{day}}",
+    "sentenceMonths": "{{time}}, {{day}}, in {{months}}",
+    "zoned": "{{sentence}} ({{zone}})",
+    "custom": "Custom schedule",
+    "at": "At {{times}}",
+    "everyMinutes": "Every {{step}} minutes",
+    "everyMinutesWindow": "Every {{step}} minutes from {{from}} to {{to}}",
+    "everyHour": "Every hour at :{{minute}}",
+    "everyHourAt": "Every hour at {{minutes}}",
+    "everyHourWindow": "Every hour at :{{minute}} from {{from}} to {{to}}",
+    "everyHours": "Every {{step}} hours at :{{minute}}",
+    "everyHoursWindow": "Every {{step}} hours at :{{minute}} from {{from}} to {{to}}",
+    "minutesPast": "At {{minutes}} past {{hours}}",
+    "everyDay": "every day",
+    "monthDays": "on day {{days}} of the month",
+    "lastDay": "on the last day of the month",
+    "lastWeekday": "on the last weekday of the month",
+    "nthWeekday": "on the {{nth}} {{day}} of the month",
+    "lastWeekdayOf": "on the last {{day}} of the month",
+    "either": "{{monthDays}} or {{weekDays}}",
+    "both": "{{monthDays}}, if that falls {{weekDays}}",
+    "bothDays": "{{monthDays}}, if that falls on {{weekDays}}",
+    "ordinal": {
+      "1": "first",
+      "2": "second",
+      "3": "third",
+      "4": "fourth",
+      "5": "fifth"
+    }
   },
   "next": {
     "onEvent": "On next event",
@@ -342,6 +380,33 @@
     "runsOn": "Runs on {{bot}}",
     "loadFailed": "Bot routines could not be loaded.",
     "empty": "A bot's routines are made in its chat, with /schedule.",
-    "emptyTitle": "No bot routines yet"
+    "emptyTitle": "No bot routines yet",
+    "filter": {
+      "allBots": "All bots",
+      "searchBots": "Search bots",
+      "noMatch": "No bot routines match these filters."
+    }
+  },
+  "filter": {
+    "all": "All",
+    "active": "Active",
+    "paused": "Paused",
+    "trigger": {
+      "any": "Any trigger",
+      "schedule": "Schedule",
+      "gmail": "Gmail",
+      "github": "GitHub",
+      "webhook": "Webhook"
+    }
+  },
+  "mobile": {
+    "empty": "No automations yet. Make one in the console on your computer.",
+    "pauseFailed": "The automation could not be paused or resumed.",
+    "runFailed": "The run could not be started.",
+    "duplicateFailed": "The automation could not be duplicated.",
+    "started": "Run started",
+    "nextRun": "Next run · {{when}}",
+    "instructions": "Instructions",
+    "recentRuns": "Recent runs"
   }
 }

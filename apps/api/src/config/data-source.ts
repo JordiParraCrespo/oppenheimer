@@ -15,6 +15,7 @@ import { AutomationRunOrmEntity } from '../automations/database/automation-run.o
 import { AutomationSettingsOrmEntity } from '../automations/database/automation-settings.orm-entity';
 import { AutomationTriggerOrmEntity } from '../automations/database/automation-trigger.orm-entity';
 import { AutomationTriggerSubjectOrmEntity } from '../automations/database/automation-trigger-subject.orm-entity';
+import { AutomationWebhookOrmEntity } from '../automations/database/automation-webhook.orm-entity';
 import { BotOrmEntity } from '../bots/database/bot.orm-entity';
 import { BotDocumentOrmEntity } from '../bots/database/bot-document.orm-entity';
 import { BotDocumentRevisionOrmEntity } from '../bots/database/bot-document-revision.orm-entity';
@@ -27,6 +28,7 @@ import { BotApprovalOrmEntity } from '../bots-chat/database/bot-approval.orm-ent
 import { BotAttachmentOrmEntity } from '../bots-chat/database/bot-attachment.orm-entity';
 import { BotConversationOrmEntity } from '../bots-chat/database/bot-conversation.orm-entity';
 import { BotConversationSummaryOrmEntity } from '../bots-chat/database/bot-conversation-summary.orm-entity';
+import { BotFormOrmEntity } from '../bots-chat/database/bot-form.orm-entity';
 import { BotGoalOrmEntity } from '../bots-chat/database/bot-goal.orm-entity';
 import { BotLoopOrmEntity } from '../bots-chat/database/bot-loop.orm-entity';
 import { BotMemoryDreamOrmEntity } from '../bots-chat/database/bot-memory-dream.orm-entity';
@@ -84,6 +86,7 @@ import { SessionTerminalWatchOrmEntity } from '../sessions/database/session-term
 import { SessionTurnOrmEntity } from '../sessions/database/session-turn.orm-entity';
 import { WorkSessionOrmEntity } from '../sessions/database/work-session.orm-entity';
 import { WorkSessionEventOrmEntity } from '../sessions/database/work-session-event.orm-entity';
+import { SlackAccountOrmEntity } from '../slack/database/slack-account.orm-entity';
 import { MilestoneOrmEntity } from '../tasks/database/milestone.orm-entity';
 import { PlanEventOrmEntity } from '../tasks/database/plan-event.orm-entity';
 import { TaskOrmEntity } from '../tasks/database/task.orm-entity';
@@ -91,8 +94,10 @@ import { TaskSessionOrmEntity } from '../tasks/database/task-session.orm-entity'
 import { TelegramAccountOrmEntity } from '../telegram/database/telegram-account.orm-entity';
 import { TelegramMessageOrmEntity } from '../telegram/database/telegram-message.orm-entity';
 import { UserOrmEntity } from '../users/database/user.orm-entity';
+import { VoiceSettingsOrmEntity } from '../voice/database/voice-settings.orm-entity';
 import { WhatsappAccountOrmEntity } from '../whatsapp/database/whatsapp-account.orm-entity';
 import { WhatsappChatGrantOrmEntity } from '../whatsapp/database/whatsapp-chat-grant.orm-entity';
+import { WhatsappKnownChatOrmEntity } from '../whatsapp/database/whatsapp-known-chat.orm-entity';
 import { WhatsappMessageOrmEntity } from '../whatsapp/database/whatsapp-message.orm-entity';
 
 /**
@@ -146,6 +151,8 @@ export default new DataSource({
     AutomationTriggerSubjectOrmEntity,
     AutomationRunOrmEntity,
     AutomationSettingsOrmEntity,
+    AutomationWebhookOrmEntity,
+    VoiceSettingsOrmEntity,
     TaskOrmEntity,
     MilestoneOrmEntity,
     PlanEventOrmEntity,
@@ -157,7 +164,9 @@ export default new DataSource({
     WhatsappAccountOrmEntity,
     WhatsappMessageOrmEntity,
     WhatsappChatGrantOrmEntity,
+    WhatsappKnownChatOrmEntity,
     TelegramAccountOrmEntity,
+    SlackAccountOrmEntity,
     TelegramMessageOrmEntity,
     SessionCloudRunOrmEntity,
     CloudAgentCredentialOrmEntity,
@@ -186,6 +195,7 @@ export default new DataSource({
     InboxReportOrmEntity,
     BotApprovalOrmEntity,
     BotQuestionOrmEntity,
+    BotFormOrmEntity,
     BotToolPermissionOrmEntity,
     BotPermissionRuleOrmEntity,
     BotConversationSummaryOrmEntity,

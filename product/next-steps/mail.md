@@ -402,3 +402,17 @@ as a channel (`channels.md` §7.3).
   what arrives in the inbox, one with a query on what its query matches.
   The runs a rate limit refuses in one clock hour are one line in the bot's
   chat, not one per run (note 26 §4).
+- 2026-11-23: a bot that can read your mail and save routines **offers to
+  watch your inbox** when you talk about email, once, in one line, unless one
+  of its routines already watches it (then `system/watching-mail.md`). On a yes it
+  saves one routine with a Gmail trigger per connected account, whose runs
+  tell you in two to four sentences only what needs you (what it is, what to
+  do, a link to the mail, and that nothing was changed) and stay quiet for
+  the rest. A no is not offered again, and is remembered when the bot can.
+- 2026-11-23, later the same day: the offer is a built-in skill,
+  `watch-inbox` (`prompts/mail/skill-watch-inbox.md`), instead of a section of
+  every such turn's system prompt. The prompt lists it by one line to a turn
+  that can read the mail and save the routine; the bot reads it with
+  `use_skill` when the person asks about their email. The
+  `bot-capability-skills` eval holds the behavior (an offer when mail comes
+  up, none when a routine already watches, a routine per account on a yes).

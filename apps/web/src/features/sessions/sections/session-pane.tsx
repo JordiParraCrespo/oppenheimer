@@ -1,14 +1,11 @@
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
-import {
-  useRestartSession,
-  useSessionOpening,
-  useSuspenseSession,
-} from '@oppenheimer/frontend-consumer/react';
+import { useSessionOpening, useSuspenseSession } from '@oppenheimer/frontend-consumer/react';
 import { useDeploymentCapabilities, useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert, PageBar } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { lazy, type ReactNode, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ChatViewIcons } from '../components/chat-view-icons';
 import { ChatViewToggle } from '../components/chat-view-toggle';
 import { CloudSessionAway } from '../components/cloud-session-away';
 import { PreviewFrame } from '../components/preview-frame';
@@ -16,12 +13,12 @@ import { PreviewToggle } from '../components/preview-toggle';
 import { SessionClosed } from '../components/session-closed';
 import { usePreviewPane } from '../hooks/use-preview-pane';
 import { useReadOnOpen } from '../hooks/use-read-on-open';
+import { useRestartOnOpen } from '../hooks/use-restart-on-open';
 import { useChatReading, useSessionChat } from '../hooks/use-session-chat';
 import { useClearUnreadOnOpen } from '../hooks/use-session-unread';
 import { DEFAULT_SESSION_VIEW, type PaneReading, type SessionView } from '../lib/chat-blocks';
 import { createFileHandOff } from '../lib/file-hand-off';
 import type { PreviewTab } from '../lib/preview-open';
-import { LatencyReadout } from './latency-readout';
 import { SessionBar } from './session-bar';
 import { SessionChat } from './session-chat';
 import { SessionCloud } from './session-cloud';
@@ -54,12 +51,20 @@ const SessionSidePane = lazy(() =>
  */
 export function SessionPane({
   sessionId,
+  restartOnOpen = false,
   closed,
   bar,
   terminal,
   side,
 }: {
   sessionId: string;
+  /**
+   * Restart a session that is stopped when the pane opens. The caller
+   * decides: the session's own page does, the side pane (which a stored
+   * layout reopens beside another session) and a run's own stopped pane do
+   * not.
+   */
+  restartOnOpen?: boolean;
   /**
    * The live terminal, once the session has one: the screen composes it, with
    * whatever its status bar carries. `reading` is the session's chat and how
@@ -69,8 +74,11 @@ export function SessionPane({
    * and Share when there is no bar to hold them, else nothing.
    */
   terminal: (session: SessionEntity, reading: PaneReading, status: ReactNode) => ReactNode;
-  /** Present: the pane draws the session's bar, led by `back` ("Back to task"). */
-  bar?: { back?: ReactNode };
+  /**
+   * Present: the pane draws the session's bar, led by `back` ("Back to task"),
+   * with the open tabs (`open`) for its title under Sessions.
+   */
+  bar?: { back?: ReactNode; open?: ReactNode };
   /**
    * What the side pane draws for another session and for a bot's chat, from
    * the screen: the first is this pane, which cannot import itself, the second
@@ -132,6 +140,7 @@ export function SessionPane({
         agent={session.agent}
         readOnly={false}
         attach={{ sessionId, files }}
+        onOpenTerminal={() => setView('terminal')}
       />
     ),
     files,
@@ -140,7 +149,8 @@ export function SessionPane({
   const { offered: chatOffered } = useChatReading(reading);
   // The way back from a stopped session. Held here because this screen is the
   // one that branches on the lifecycle; the pane below it takes props only.
-  const restart = useRestartSession();
+  const comeback = useRestartOnOpen(session, restartOnOpen);
+  const restarting = comeback.status.kind === 'restarting';
   // A start watched here stays on its pane until the agent is running, not
   // just until the host made the terminal it will run in.
   const opening = useSessionOpening(session);
@@ -148,14 +158,18 @@ export function SessionPane({
   // The view switch and Share have one home, decided here once: the session's
   // bar when the route lets this pane draw one, else the terminal's status
   // line. Nothing below chooses again; each place takes what it is handed.
-  const viewToggle = chatOffered ? <ChatViewToggle view={view} onViewChange={setView} /> : null;
   const { head, statusItems } = bar
     ? {
         head: (
           <SessionBar
             session={session}
             back={bar.back}
-            tabs={session.isLive ? viewToggle : null}
+            open={bar.open}
+            tabs={
+              session.isLive && chatOffered ? (
+                <ChatViewIcons view={view} onViewChange={setView} />
+              ) : null
+            }
             preview={
               session.isLive && sideOffered ? (
                 <PreviewToggle open={preview.open} onToggle={() => preview.toggle(!preview.open)} />
@@ -169,8 +183,7 @@ export function SessionPane({
         head: null,
         statusItems: (
           <>
-            <LatencyReadout sessionId={session.id} />
-            {viewToggle}
+            {chatOffered ? <ChatViewToggle view={view} onViewChange={setView} /> : null}
             <SessionShareButton sessionId={session.id} place="status" />
           </>
         ),
@@ -184,11 +197,13 @@ export function SessionPane({
 
   // A cloud session launched at its vendor has no host and no terminal of
   // ours to attach to or start: it is followed at the vendor. Its bar is its
-  // name alone, with none of a host session's Share or latency.
+  // name alone, with none of a host session's Share.
   if (session.cloud) {
     return (
       <>
-        {bar ? <PageBar title={session.name} /> : null}
+        {bar ? (
+          <PageBar title={bar.open ?? session.name} tone={bar.open ? 'chrome' : 'page'} />
+        ) : null}
         <ErrorAlert error={error} fallback={t('sessions.screen.loadFailed')} />
         <CloudSessionAway session={session} />
       </>
@@ -242,8 +257,8 @@ export function SessionPane({
           {closed({
             name: session.name,
             branch,
-            restart: () => restart.mutate(session.id),
-            restarting: restart.isPending,
+            restart: comeback.restart,
+            restarting,
           })}
         </>
       );
@@ -251,6 +266,11 @@ export function SessionPane({
     return (
       <>
         {alert}
+        {comeback.status.kind === 'timed-out' ? (
+          <ErrorAlert message={t('sessions.closed.restartFailed')} />
+        ) : comeback.status.kind === 'failed' ? (
+          <ErrorAlert error={comeback.status.error} fallback={t('sessions.closed.restartFailed')} />
+        ) : null}
         <SessionClosed
           name={session.name}
           copy={
@@ -262,9 +282,7 @@ export function SessionPane({
           }
           branch={branch}
           newSession={<Link to="/sessions/new" />}
-          {...(session.isResolved
-            ? {}
-            : { onRestart: () => restart.mutate(session.id), restarting: restart.isPending })}
+          {...(session.isResolved ? {} : { onRestart: comeback.restart, restarting })}
         />
       </>
     );

@@ -19,6 +19,14 @@ func TestOnlyUnattendedAgentUpdatersAreRun(t *testing.T) {
 		{domain.ToolGrok, true},
 		{domain.ToolPi, true},
 		{domain.ToolOmp, true},
+		// agy updates itself as it runs; the runner leaves it alone.
+		{domain.ToolAgy, false},
+		{domain.ToolHermes, true},
+		// Muse's launcher updates itself; the runner leaves it alone.
+		{domain.ToolMuse, false},
+		// `qwen update` on an npm install prints how to update and exits 0;
+		// Qwen updates itself at launch.
+		{domain.ToolQwen, false},
 		{domain.ToolGit, false},
 		{domain.ToolTmux, false},
 		{domain.ToolOpenCode, true},

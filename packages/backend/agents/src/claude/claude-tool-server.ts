@@ -15,6 +15,25 @@ export function qualifiedToolName(name: string): string {
   return `${TOOL_PREFIX}${name}`;
 }
 
+/**
+ * What a bot is told about calling its tools on this engine, after its own
+ * system prompt. Everything a model reads names our tools bare
+ * (`send_to_session`): the prompt, the turn's message and wakes, the tools'
+ * descriptions and answers. Claude Code serves them only as
+ * `mcp__oppenheimer__<name>`, and a call by the bare name is answered "No
+ * such tool" without the tool running (2026-11-24: about half of a bot eval's
+ * runs). Said once rather than rewritten into those texts, which carry the
+ * person's words and the world's (`react`, `remember`, a path), and fixed for
+ * every turn, so the prompt cache holds.
+ */
+export const TOOL_NAMES_NOTE = [
+  'How to call your tools here: each one is served as',
+  `${TOOL_PREFIX}<name>. Wherever a tool is named by its plain name (in these instructions,`,
+  "a message, a tool's description or a tool's answer), call it with that prefix: send_to_session",
+  `is ${qualifiedToolName('send_to_session')}. A call by the plain name runs nothing.`,
+  'To the person, name tools plainly, without the prefix.',
+].join(' ');
+
 /** Our name for a tool Claude Code reports: the MCP prefix stripped, built-ins as they are. */
 export function botToolName(name: string): string {
   return name.startsWith(TOOL_PREFIX) ? name.slice(TOOL_PREFIX.length) : name;
@@ -44,8 +63,9 @@ export function createToolServer(
       name: tool.name,
       description: tool.description,
       inputSchema: { type: 'object' as const, ...tool.inputSchema },
-      // Never deferred behind Claude Code's tool search: a bot's tools are few.
-      _meta: { 'anthropic/alwaysLoad': true },
+      // A tool that may not wait is loaded up front; the rest Claude Code may
+      // defer behind its tool search (`claudeToolSearch`).
+      ...(tool.deferrable ? {} : { _meta: { 'anthropic/alwaysLoad': true } }),
     })),
   }));
 
@@ -70,7 +90,17 @@ export function createToolServer(
       { steering: turn.steering, signal: turn.signal, callId },
       made,
     );
-    return { content: [{ type: 'text' as const, text }], isError: result.isError };
+    return {
+      content: [
+        { type: 'text' as const, text },
+        ...(result.images ?? []).map((image) => ({
+          type: 'image' as const,
+          data: image.data,
+          mimeType: image.mimeType,
+        })),
+      ],
+      isError: result.isError,
+    };
   });
 
   return mcp;

@@ -24,7 +24,7 @@ workspace has one member today (`08-auth.md`), so "workspace-wide" is
 
 | Item | Source | Needs you when | Answer in the Inbox |
 |------|--------|----------------|---------------------|
-| **A session waiting on you** | `GET /v1/sessions`, derived group `waiting-on-you` | the agent has been `blocked` 30 s or more, the session `failed`, or it has been `starting` 60 s or more (`sessions/domain/session-group.policy.ts`) | **Open** the session. A Claude Code question is answered in its chat view (`#462`); the Inbox cannot show the question, see §3 |
+| **A session waiting on you** | `GET /v1/sessions`, derived group `waiting-on-you` | the agent has been `blocked` 30 s or more (since 2026-11-23: is `blocked` and a second report confirmed it, see "A question reaches you in seconds"), the session `failed`, or it has been `starting` 60 s or more (`sessions/domain/session-group.policy.ts`) | **Open** the session. A Claude Code question is answered in its chat view (`#462`); the Inbox cannot show the question, see §3 |
 | **A bot's approval** | `bot_approval` with `status = 'pending'`, at most one per bot | a bot stopped its turn on a tool the owner set to *ask* (`25-bots.md`) | **Approve / Deny** through the existing `POST /v1/bots/:id/approvals/:approvalId/decision` |
 | **A pull request for you** (only once shown, see "Pull requests are opt-in") | `GET /v1/pulls?scope=requested`, and `scope=mine` with `blocker = null` | a review is requested of you, or your pull request can merge | **Merge** through the existing `POST /v1/pulls/:installationId/:githubRepoId/:number/merge` for a mergeable one; **Open** opens it in Pull requests, **View on GitHub** in a new tab |
 | **An automation that failed** | `GET /v1/automation-runs?status=failed&window=24h` | a run failed in the last day | **Run again** (`POST /v1/automations/:id/run`); **Open run** |
@@ -443,6 +443,11 @@ for it to look like a mail inbox. What changed from §5 and Decided 1:
 - **You're all caught up** (2026-11-14) replaces "Nothing needs you" as the
   clear pane's heading, centred under a small line drawing of an empty
   tray; the line under it and the list's own "Nothing needs you." stay.
+- **Inbox zero** (2026-11-24) heads the list's own empty state: a check in
+  a green disc, the title, and "Nothing needs you." under it, in place of
+  the one muted row. Filters or words that match nothing show "No matches"
+  over a search-x disc. The owner asked for it; it is the icon tier in a
+  column the design system would otherwise give an inline row.
 
 ## Reports: a problem with its pictures, answered here (2026-11-09)
 
@@ -588,3 +593,241 @@ Decided by the agent that built it, for the owner to accept or change:
    held back from them until it is taken up.
 4. The name for the state is "waiting in the Inbox"; "Unassigned" stays the
    project for tasks with no project.
+
+## A question reaches you in seconds (2026-11-23)
+
+The owner asked that every time an agent needs them, a question or a
+permission, they are told. Measured before the change, a blocked session
+reached the Inbox about 55 s after its screen was drawn (the stress test's
+number above): the runner looks every 10 s, confirms a block 15 s later,
+and the control plane then waited 30 s more. Nothing announced the
+session when that wait ran out, so it showed only at the console's next
+refetch. And for two of the three agents a session can be given the
+runner's tools, it never showed at all:
+
+- **Codex** was never seen blocked. Its manifest was written from the
+  published behaviour; watched against Codex 0.171 in tmux, its approval
+  (`Would you like to run the following command?`) matched none of its
+  phrases, and its Plan-mode question also says `esc to interrupt`, so it
+  read as working.
+- **OpenCode** had no rule that said blocked. Its `Permission required`
+  dialog read as unknown.
+
+What changed:
+
+- **The manifests come from the real screens.** Codex's rules read the
+  `Action Required` it writes into the terminal title while it waits, and
+  the approval's and question's own words; OpenCode's read its
+  permission dialog and its footer. The captured screens are
+  `apps/runner/internal/sessions/adapters/manifest/testdata/screens/`, and
+  every one is classified in a test.
+- **The control plane adds no wait.** A block confirmed by a second report
+  is `waiting-on-you` at once (`session-group.policy.ts`). The debounce's
+  rule stands: one report claims nothing, and a duration is measured only
+  from a recorded transition.
+- **The runner confirms in 3 s.** The session loop looks again 3 s after it
+  sees an agent block, instead of a whole 10 s tick on and a 15 s
+  confirmation (`02-runner.md` §9).
+- **The flip is an event.** Because the group now changes on the second
+  report, a write, `session.changed` reaches the console when it happens;
+  before, crossing 30 s changed nothing anyone was told about.
+
+So a question shows 3–13 s after it is drawn: up to 10 s for the loop to
+see it, 3 s to confirm (the runner's sessions service keeps that clock, from
+when it saw the block, and tells its loop when to look). Measured on a real
+runner with the console in a second tab, never reloaded: 6–13 s.
+
+Not yet: a browser notification and the Chrome extension telling you
+about a runner session come next, as their own changes; a phone push
+is the backend's, later. OpenCode's `question` tool and Codex's
+older-release prompts were not watched.
+
+## A notification in this browser (2026-11-24)
+
+The second step of the owner's ask: the Inbox is where a wait lands, but
+only for a reader looking at it. Now a console tab the reader is not
+looking at raises a system notification for each session that comes to
+wait on them and each notice an agent sends; a click brings the tab
+forward on that session.
+
+- **Opt in, per browser.** "Notify me in this browser" in the Inbox's
+  filter menu, beside Show pull requests, kept on the device like it.
+  Turning it on is what asks the browser for permission (a browser asks
+  only on a click); a permission refused or revoked shows the item as
+  blocked rather than on.
+- **The Inbox's own items, from the session list alone.** A waiting
+  session and a session's notice, keyed as the Inbox keys them, so one
+  occurrence is told once and a new wait on the same session is told
+  again. What already waited when the console opened is remembered, not
+  announced.
+- **Only where the reader is not looking.** A hidden tab, or a window
+  without focus; the tab in front stays quiet. Every open console tab
+  hears the change through the workspace stream, so the reader's other
+  tabs are the ones that tell.
+
+Not yet: bot approvals, pull requests and failed runs are not told this
+way (they are not on the session list); the Chrome extension telling about
+runner sessions is next, and a phone push is the backend's, later.
+
+## A finished turn, a long wait, and a mute (2026-11-24)
+
+The owner asked on 2026-11-24 for the console to notify also when a
+session's dot goes blue, again once a session has been left for thirty
+minutes, and for a way to turn a session's notifications off from its row,
+the way Mark as unread is set. On top of "A notification in this browser":
+
+- **A turn that ends is told.** A session that moves into
+  `ready-for-review` (its row's blue dot) raises one notification, "<name>
+  finished its turn". Each move is one notification; a session already blue
+  when the console opened is not announced. The reader's own Mark as unread
+  is blue too but is theirs, so it is never told.
+- **A long wait is told once more.** A session still amber or blue thirty
+  minutes after it got there (by the host's `observedSince` when it moves
+  while the tab looks, else when the tab saw it; a session already waiting
+  when the console opens is reminded thirty minutes after that) raises one
+  reminder, "<name> has waited 30 minutes".
+  Once per stay: a session that moves on and comes back starts a new clock.
+  An idle or working session is never "stale". The console looks once a
+  minute, so the reminder lands within a minute of the thirty.
+- **Mute, per session, per browser.** Mute notifications in a row's menu,
+  beside Mark as unread, kept on the device like it (and followed by the
+  browser's other tabs); a muted row shows a crossed-out bell where it has
+  no dot. A muted session raises none of the four notifications (a wait, a
+  notice, a finished turn, a long wait); the Inbox and the sidebar still
+  show it.
+
+Still from the console only: with no console tab open, nothing is told.
+
+The same day the owner found the row menu long with Mute in it and asked
+for a sublevel: Mark as unread and Mute notifications moved into a
+**Notifications & read** pane, opened from the menu the way Move to project
+is. The first level keeps Pin, Rename, Move to project, Share, Select, Hide
+and Delete.
+
+## Its own page, and a deck (2026-11-24)
+
+The owner asked on 2026-11-24 for the Inbox to leave Plan and have a page of
+its own, as one of the platform's core features, keeping the mail look but
+as easy as a swipe to answer a question and move on to the next item. What
+changed from "As built: the Inbox in Plan":
+
+- **Where it is.** `/inbox`, the rail's first item again, with the tray
+  glyph, a dot while anything needs you and the count beside its name (the
+  rail reads the Inbox on every page now, where Plan's sidebar read it only
+  on Plan). `/plan/inbox` redirects there with its search. Plan's sidebar
+  drops it, and Plan opens on the view at its top: the board for a reader
+  who never dragged one. Off flag, the rail drops the item and `/inbox` goes
+  on to New session.
+- **Where the console lands.** The rail's first item: the Inbox, put at the
+  front once for a reader whose stored rail order predates it (as Decided 1
+  had it); one who then drags another item first lands there.
+- **No sidebar.** The page stands beside the rail with nothing between: its
+  list column and the deck are the whole window (a route says so with
+  `sidebar: 'none'`, which the shell reads). A first cut drew the kinds and
+  projects there as folders; the owner asked for it gone the same day. Type
+  and Project stay in the list's filter menu.
+- **The reading pane is a deck.** The item in hand is a card, with up to two
+  cards peeking under it for what is left. Its answers (a session's choices,
+  else the answer row's right side: Approve, Merge, Send answers) wear the
+  digit that presses them where there is a keyboard, and 1–9 press them; the
+  leading controls (Later, Open session) are never numbered. E marks it done
+  and the card goes off to the right, S snoozes it until tomorrow (up), L
+  deprioritizes it, J / → and K / ← go through the stack without acting. On
+  touch the card follows a sideways drag, stamped Done or Later, and past
+  96px it is put away: right is done, left is Later. A drag that starts on a
+  control, or goes more up than across, scrolls. With reduced motion nothing
+  slides.
+- **Next is the next.** Once a card is answered or put away the deck goes on
+  to the item that followed it, not back to the top, so working down from
+  the middle keeps one's place.
+- **Progress.** A hairline of primary along the toolbar's bottom edge fills
+  as the visit is cleared (done, answered, snoozed or deleted, each item
+  once), and the clear deck says how many were cleared on this visit.
+
+Decided by the agent that built it, for the owner to accept or change:
+
+1. A swipe never answers a question or approves a call: right is Mark as
+   done, left is Later. Answers stay a press (a button or its digit), so a
+   stray swipe cannot approve a command.
+2. The rail's dot is the Inbox's count, not its unread count: anything that
+   needs you lights it.
+3. The account menu, which lives in the sidebar's foot, is reached from any
+   other page; the Inbox has no sidebar to hold it.
+
+### The card's actions, reshaped (2026-11-24)
+
+Shown the first deck, the owner found the answer row busy (Later, Open task,
+Start session, Dismiss, Put on today) and asked, mock-up by mock-up, for
+fewer choices and one place for the moves every card shares. Built the same
+day:
+
+- **The bar over the deck** keeps only "3 of 12" and the progress line. Its
+  Done, Snooze, Deprioritize and Delete buttons are gone; the row menu in the
+  list keeps them all.
+- **The card shows only its answers**, as full-width rows, the main one
+  first and numbered from 1 (two side by side, more one under the other).
+  Later is gone everywhere; Done buttons on the cards are gone (the dock has
+  it); a task loses Dismiss, which Done now does, and Open task, since Start
+  session is there.
+- **The dock under the card**: Previous, Done and Next, each with its key
+  (K, E, J). Next moves on without acting, so the item stays.
+- **No Done while something waits on an answer**: a session whose agent is
+  blocked (`lifecycle` open), and a bot's approval. Done would hide the card
+  and leave the agent stuck; such a card leaves only when answered, and Open
+  session is its last answer, to answer in the terminal.
+- **A swipe**: right is Done (only where Done is offered), left is Next.
+- **A questionnaire goes one question at a time**: the bars and "Question 2
+  of 3" over it, Back; one pick of a single choice moves on by itself,
+  several picks or words of one's own move on with Next question; then the
+  answers in a list, each a way back to its question, and Send answers.
+- **Mark as done takes up a task an agent made** (it used to be a mark
+  only), as Dismiss did, so a task marked done does not come back.
+- The numbers on the answers are written by the deck on each one
+  (`data-answer-key`): a CSS counter was not recounted when the
+  questionnaire moved to its next question.
+
+This replaces, in "Its own page, and a deck" above: E, S and L (S and L are
+gone), the swipe left as Later, the keys line under the deck, and Decided 1
+(a swipe still never answers; right is Done, left is Next).
+
+## The Chrome extension tells about your hosts too (2026-11-24)
+
+The third step of the owner's ask. The extension already told about Claude
+Code cloud sessions; connected to Oppenheimer, it now also tells about the
+sessions on the person's own hosts, so a wait reaches them with no console
+tab open at all.
+
+- **The same connection.** After its report it reads the workspace's open
+  sessions with the token the person gave it (`sessions:write`, which
+  includes reading). Nothing new leaves the machine.
+- **The Inbox's occurrences.** A session waiting on you (a question, a
+  permission, a failure) and an agent's notice, keyed as the Inbox keys
+  them, each told once with a Chrome notification; the first read after
+  connecting only remembers. The badge adds the waiting sessions to the
+  cloud ones. A cloud run Oppenheimer launched is left to the claude.ai
+  tracking, so it is told once.
+- **A click opens the console** on that session, at the URL the person
+  gave in the popup or one worked out from the API's.
+- **Every minute**, the extension's own poll; the console's browser
+  notification is the one that tells within seconds.
+
+Not yet: the popup does not list the runner sessions, only counts and
+tells them.
+
+### Selecting, found at a glance (2026-11-24)
+
+The owner looked for bulk actions and did not find them: a row's checkbox
+showed only on hover. **Select** in the list's head now opens the selection
+bar with every row's checkbox shown and its actions waiting until a row is
+checked; **X** checks or unchecks the item on the deck, as in a mail
+client; Escape or the cross leaves selecting. Hover, Shift-click and the
+row menu's Select are unchanged ("Bulk actions").
+
+### Done leaves the list (2026-11-24)
+
+"As built: the console" (2026-10-26) had Show done on by default, so what
+was marked done stayed in the list for the visit, struck through. The
+owner asked that a done item leave the list: Show done is off unless the
+filter menu turns it on (`?done`, replacing `?hideDone`), and then lists
+what was marked done on this visit, as before.
+

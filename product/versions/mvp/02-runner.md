@@ -436,6 +436,26 @@ plane is what refuses the close unless the caller accepts the loss (10).
 Stop is not close: it ends the agent and the tmux session and leaves
 every checkout on disk for Restart.
 
+**The agent goes with its session** (2026-11-21). `kill-session` only
+hangs the pane up, and Claude Code was seen ignoring that hangup: on one
+host ~110 agents of closed sessions idled for ten days, ~8–10 GB, until
+the machine ran out of memory. So ending a terminal is now three steps.
+`runner pty` hangs its program's process group up when it is told to end
+(SIGHUP, SIGTERM, SIGINT, SIGQUIT) or its pane stops taking output, gives
+it 10 s to save its conversation and exit, then kills the group; a
+second SIGTERM, SIGINT or SIGQUIT kills at once (two SIGHUPs do not: a
+closing pane sends tmux's and the kernel's). Stop, close and `uninstall
+--force` then find the session's wrapper in the process table and do the
+same from outside, so `closed` means nothing of the session runs. And
+the daemon looks at boot and every 5 minutes for a wrapper whose session
+has no tmux session (closing and stopping kill it), and ends it the same
+way, logging the session and pid. The tmux session is the witness, not
+the daemon's map: `runner sessions restart` runs in a process of its own,
+and a session it restarts still reads stopped in the daemon for a while. A wrapper is this runner's only when it runs
+as this account and its command line is `pty --report <file> --` with
+the file in this runner's own `state/program-status/`: the user's own
+tmux and their other `claude` processes are never looked at.
+
 **Adoption on boot.** The runner lists tmux sessions on its socket,
 adopts those the control plane's snapshot reconciliation confirms,
 rehydrates each ring buffer from `capture-pane`, and **reports** the
@@ -449,6 +469,30 @@ kept (`runner sessions keep`, 2026-11-02) does not wait for the button: a
 runner that starts on a host booted after it last saved the session map
 restarts each kept session that was running, reopening its conversation,
 and retries a failure from 1.5 s doubling to a minute.
+
+**An idle session stops on its own** (2026-11-24,
+`research/session-resume/README.md`). Stopping costs nothing to undo:
+the agent's processes go, and its checkouts, branch and conversation stay.
+So the daemon stops, every 5 minutes, each session that has been idle
+past the window (2 h by default; `RUNNER_IDLE_STOP` sets another duration,
+or `off`). Idle means the agent is `done` or `idle`, and nobody has been
+attached to it or typed into it for that long. The window runs from the
+later of the state's last change and the last look, so a session someone
+just read or typed into is not stopped. Before each stop it looks at the
+agent afresh (the poll loop's state can be 10 s old). It never stops a
+session that is `working` or `blocked`, runs a second agent in another
+window (only window 0's is read, and a stop ends every window), has a
+terminal attached now (from the console, or
+a tmux client on the host, counted with `list-clients`), is kept, or is a
+child whose parent is live. A parent stops only when every session that
+would stop with it (its children, theirs, and on down) is idle too, so an
+idle family stops parent first. It
+never closes one. Each stop takes the stop path (the wrapper hung up, then killed, as
+above), is announced like any other stop, and is logged with slog
+("stopped an idle session"). Opening the session in the console restarts
+it (05, "A stopped session comes back when it is opened"), and a bot,
+`opp sessions restart` or the MCP server's `restart_session` restart it
+without anyone opening it (2026-11-24, note 25).
 
 **Caps.** 20 sessions per host by default, 2 MB ring buffer each, 32 KB
 PTY read buffer. Resize is coalesced once, by the console, over 50 ms;
@@ -621,7 +665,11 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
   was announced is announced once more: the control plane counts a
   state's duration only from its second report, so a question asked once
   would otherwise never make the session wait on anyone (found on
-  2026-10-26 by the Inbox's fleet spec).
+  2026-10-26 by the Inbox's fleet spec). Since 2026-11-23 that second
+  report comes 3 s after the first, not 15 s: the session loop looks again
+  that soon after it sees an agent block, and the second report is now
+  what tells the person (`29-inbox.md`, "A question reaches you in
+  seconds").
 
 ### 10. Host facts and health
 
@@ -753,6 +801,7 @@ offline. Logs never contain PTY bytes or tokens.
 | Control plane says the runner is too old | Update within the urgent delay, ignoring the safe window (09 §5) |
 | Runner killed or updated | tmux untouched; adopt on boot, rehydrate buffers, resume streams |
 | Host rebooted | Sessions stopped, worktrees intact, Restart recreates window 0; a kept session is restarted on its own (§5) |
+| A session left finished and unwatched | Stopped after `RUNNER_IDLE_STOP` (2 h), never closed; opening it restarts it (§5) |
 | `tmux` missing | Sessions refuse to start with `TMUX_001`; the UI shows the fix |
 | `claude` missing | Session starts; the terminal shows the install hint |
 | Disk nearly full | Status event and a banner before the failure, refuse new sessions under the floor |

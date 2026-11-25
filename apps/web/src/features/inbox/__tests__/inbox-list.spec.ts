@@ -18,6 +18,9 @@ const item = (key: string, kind: InboxItem['kind'], projectIds: string[] = []) =
 const visit = (patch: Partial<InboxVisit> = {}): InboxVisit => ({
   later: [],
   done: [],
+  doneItems: {},
+  cleared: [],
+  following: {},
   ...patch,
 });
 
@@ -37,6 +40,16 @@ describe('listedItems', () => {
       done[1],
     ]);
     expect(listedItems({ open, done }, visit({ done: ['now'] }), ALL, false).done).toEqual([]);
+  });
+
+  // Done on a task an agent made also takes it up, so its source drops it;
+  // Show done still lists it for the visit. A mark the server refused puts
+  // the item back in the list, and then it is not listed as done too.
+  it('keeps what Done took up under Show done, but never an item open again', () => {
+    const task = item('task:t1', 'task');
+    const taken = visit({ done: ['task:t1'], doneItems: { 'task:t1': task } });
+    expect(listedItems({ open, done: [] }, taken, ALL, true).done).toEqual([task]);
+    expect(listedItems({ open: [task], done: [] }, taken, ALL, true).done).toEqual([]);
   });
 
   it('narrows to a type and a project, No project included', () => {
@@ -90,6 +103,30 @@ describe('currentItem', () => {
     ]) {
       expect(currentItem(waiting, 'session:s1:perm-abc', settled)?.key).toBe('approval:1');
     }
+  });
+
+  // The deck goes on to the card after the one answered, not back to the top:
+  // a person working down the stack from the middle keeps their place.
+  it('moves on to the item that followed the answered one, else the first', () => {
+    const stack = [item('a', 'run'), item('c', 'run'), item('d', 'run')];
+    const answered = { answered: new Set(['b']), done: [] };
+    expect(currentItem(stack, 'b', { ...answered, following: { b: 'c' } })?.key).toBe('c');
+    expect(currentItem(stack, 'b', { ...answered, following: { b: 'gone' } })?.key).toBe('a');
+    expect(currentItem(stack, 'b', { ...answered, following: {} })?.key).toBe('a');
+  });
+
+  // Opened B in A/B/C/D, answered B, then answered C on its card: the address
+  // still names B, and the deck goes on to D, not back to A.
+  it('follows the chain past items that left one after another', () => {
+    const left = [item('a', 'run'), item('d', 'run')];
+    const settled = {
+      answered: new Set(['b', 'c']),
+      done: [],
+      following: { a: 'b', b: 'c', c: 'd' },
+    };
+    expect(currentItem(left, 'b', settled)?.key).toBe('d');
+    const loop = { ...settled, following: { b: 'c', c: 'b' } };
+    expect(currentItem(left, 'b', loop)?.key).toBe('a');
   });
 });
 

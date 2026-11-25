@@ -1,3 +1,4 @@
+import type { ConfigService } from '@nestjs/config';
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { FIELD_BOUNDS } from '@oppenheimer/shared';
@@ -5,6 +6,7 @@ import { FindHostQuery } from '../../../hosts/queries/find-host/find-host.query'
 import { AnswerSessionDecisionCommand } from '../../../sessions/commands/answer-session-decision/answer-session-decision.command';
 import { CloseSessionCommand } from '../../../sessions/commands/close-session/close-session.command';
 import { CreateSessionCommand } from '../../../sessions/commands/create-session/create-session.command';
+import { RestartSessionCommand } from '../../../sessions/commands/restart-session/restart-session.command';
 import { SendSessionPromptCommand } from '../../../sessions/commands/send-session-prompt/send-session-prompt.command';
 import { StartCloudSessionCommand } from '../../../sessions/commands/start-cloud-session/start-cloud-session.command';
 import { StopSessionCommand } from '../../../sessions/commands/stop-session/stop-session.command';
@@ -16,6 +18,7 @@ import { FindSessionQuery } from '../../../sessions/queries/find-session/find-se
 import { NO_PERMISSIONS } from '../../domain/bot-tool-permission.policy';
 import { BotTurnBudget } from '../../domain/bot-turn-budget.policy';
 import type { BotApprovalRequesterPort } from '../bot-approval-requester.port';
+import { BotSessionLinkResolver } from '../bot-session-link.resolver';
 import { BotSessionToolsFactory } from '../bot-session-tools.factory';
 import { BotSessionWaitResolver } from '../bot-session-wait.resolver';
 import type { BotSessionWatchResolver } from '../bot-session-watch.resolver';
@@ -38,10 +41,12 @@ const INSTALLATION = '44444444-4444-4444-8444-444444444444';
 const context = (
   permission: BotToolContext['permission'],
   approvals: BotApprovalRequesterPort,
+  conversationId = 'bot-1',
 ): BotToolContext => ({
   owner,
   organizationId: 'org-1',
   botId: 'bot-1',
+  conversationId,
   turnId: 'turn-1',
   homeHostId: HOME,
   timeZone: 'UTC',
@@ -201,7 +206,7 @@ function cloudSession(
   return session;
 }
 
-function setup(permission: BotToolContext['permission']) {
+function setup(permission: BotToolContext['permission'], conversationId = 'bot-1') {
   const session = blockedSession();
   const queryBus = {
     execute: vi.fn(async (query: unknown) => {
@@ -234,12 +239,16 @@ function setup(permission: BotToolContext['permission']) {
     commandBus as unknown as CommandBus,
     watches as unknown as BotSessionWatchResolver,
     new BotSessionWaitResolver(queryBus as unknown as QueryBus),
+    new BotSessionLinkResolver({ getOrThrow: () => 'https://console.example' } as Pick<
+      ConfigService,
+      'getOrThrow'
+    > as ConfigService),
   );
   const call = (name: string, input: unknown) => {
     const definition = factory.definitions().find((candidate) => candidate.name === name);
     if (!definition) throw new Error(`no tool ${name}`);
     return definition
-      .bind(context(permission, approvals))
+      .bind(context(permission, approvals, conversationId))
       .run(input, { signal: new AbortController().signal });
   };
   return { queryBus, commandBus, approvals, watches, call, session };
@@ -299,6 +308,22 @@ describe('BotSessionToolsFactory', () => {
     expect(result.content).toContain('Started session session-1');
     // The chat links to the session from this, not from the words.
     expect(result.data).toEqual({ sessionId: 'session-1' });
+  });
+
+  // The regression: a session started from WhatsApp left the person with
+  // no way in, its Open session button drawn only in the console.
+  it('gives a WhatsApp turn the started session’s console link to write; the console’s answer stays without it', async () => {
+    const inChannel = await setup('full', 'whatsapp-chat-1').call('start_session', {
+      task: 'Research',
+      project_id: PROJECT,
+    });
+    expect(inChannel.content).toContain('https://console.example/sessions/session-1');
+    expect(inChannel.data).toEqual({ sessionId: 'session-1' });
+    const inConsole = await setup('full').call('start_session', {
+      task: 'Research',
+      project_id: PROJECT,
+    });
+    expect(inConsole.content).not.toContain('https://console.example');
   });
 
   it('subscribes the bot to the session it started, and says so in its answer', async () => {
@@ -688,6 +713,66 @@ describe('BotSessionToolsFactory', () => {
     const result = await call('stop_session', { session_id: session.id });
     expect(result.content).toContain('the stop did not reach it and is not sent again');
     expect(result.content).not.toContain('when it comes back');
+  });
+
+  // What breaks this: a session stopped idle could be brought back only by the
+  // person opening it in the console, so a bot that followed it stalled there.
+  it('restarts a stopped session through the sessions’ own command, and says to prompt once it is back', async () => {
+    const { commandBus, call, session } = setup('full');
+    session.recordEvent({
+      seq: 5,
+      kind: SESSION_EVENT_KINDS.STOPPED,
+      payload: {},
+      occurredAt: new Date(),
+    });
+    const result = await call('restart_session', { session_id: session.id });
+    expect(commandBus.execute).toHaveBeenCalledWith(expect.any(RestartSessionCommand));
+    expect(commandBus.execute.mock.calls[0][0]).toMatchObject({
+      scope: owner,
+      sessionId: session.id,
+    });
+    expect(result.isError).toBeFalsy();
+    expect(result.content).toContain('send your prompt then, not before');
+  });
+
+  it('turns a prompt to a stopped session away with the way back, before any card', async () => {
+    const { commandBus, approvals, call, session } = setup('auto');
+    session.recordEvent({
+      seq: 5,
+      kind: SESSION_EVENT_KINDS.STOPPED,
+      payload: {},
+      occurredAt: new Date(),
+    });
+    const result = await call('send_to_session', { session_id: session.id, text: 'Go on' });
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain('Call restart_session to bring it back');
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a restart drops a close still owed to the host, so a bot
+  // restarting a session the person closed while its host was away undid the close.
+  it('refuses to restart a stopped session whose close is still owed, before any card', async () => {
+    const { commandBus, approvals, call, session } = setup('auto');
+    session.recordEvents([
+      { seq: 5, kind: SESSION_EVENT_KINDS.STOPPED, payload: {}, occurredAt: new Date() },
+      { seq: 6, kind: SESSION_EVENT_KINDS.CLOSE_REQUESTED, payload: {}, occurredAt: new Date() },
+    ]);
+    const result = await call('restart_session', { session_id: session.id });
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain('a restart would cancel it');
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a restart of a running session ends its agent mid-task.
+  it('refuses to restart a session that is not stopped, before any card', async () => {
+    const { commandBus, approvals, call, session } = setup('auto');
+    const result = await call('restart_session', { session_id: session.id });
+    expect(result.isError).toBe(true);
+    expect(result.content).toContain('is not stopped, so there is nothing to restart');
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
   it('asks before prompting a session, the card naming the session and the words', async () => {

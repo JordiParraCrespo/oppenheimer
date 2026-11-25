@@ -37,18 +37,20 @@ function watchScreen(page: Page): () => string {
 }
 
 /** Opens the session's terminal and runs `command` in the shim's shell. */
-async function runInSession(page: Page, screen: () => string, sessionId: string, command: string) {
+async function runInSession(page: Page, sessionId: string, command: string) {
   await page.goto(`/sessions/${sessionId}`);
-  await expect.poll(() => screen().includes('CLAUDE-SHIM argv='), { timeout: 120_000 }).toBe(true);
+  // The shim's shell prompt: its argv line may have scrolled out of what the
+  // attach replays, so the marker on it is not waited for.
+  await expect(page.locator('.xterm-rows')).toContainText('$', { timeout: 120_000 });
   await expect(linkLive(page)).toBeVisible();
   await page.locator('.xterm').first().click();
   await page.keyboard.type(command);
   await page.keyboard.press('Enter');
 }
 
-/** The session's row in the Inbox, once the API counts it as waiting on you (30 s blocked). */
+/** The session's row in the Inbox, once the API counts it as waiting on you (a confirmed block). */
 async function openInboxItem(page: Page) {
-  await page.goto('/plan/inbox');
+  await page.goto('/inbox');
   const row = page.locator('[data-slot="inbox-row"]', { hasText: 'is waiting on you' });
   await expect(async () => {
     await page.reload();
@@ -113,7 +115,6 @@ test('a permission dialog is answered from its Inbox card, and the session recei
   ].join('\\n');
   await runInSession(
     page,
-    screen,
     sessionId,
     `clear; printf '${dialog}\\n'; stty raw -echo; a=$(head -c 1); stty sane; clear; echo "GOT:$a"`,
   );
@@ -195,7 +196,6 @@ test('an agent question is answered from its Inbox card with the keys its picker
   // picker does, and prints them back in hex.
   await runInSession(
     page,
-    screen,
     sessionId,
     `clear; printf 'Claude is waiting for your input\\n'; stty raw -echo; head -c ${bytes} > /tmp/inbox-keys-$$; stty sane; clear; printf 'GOT:'; od -An -tx1 /tmp/inbox-keys-$$ | tr -d ' \\n'; echo`,
   );
@@ -206,23 +206,24 @@ test('an agent question is answered from its Inbox card with the keys its picker
   await expect(
     card.getByRole('heading', { name: /^2 questions before .+ continues$/ }),
   ).toBeVisible();
-  const questions = card.locator('[data-slot="inbox-question"]');
-  await expect(questions).toHaveCount(2);
-  await expect(questions.nth(0)).toContainText('Which screens should change?');
-  await expect(questions.nth(0)).toContainText('Wallet, Swap and Settings');
-  const send = card.getByRole('button', { name: 'Send answers' });
-  await expect(send).toBeDisabled();
-
-  await questions
-    .nth(0)
-    .getByRole('button', { name: /^Every tab/ })
-    .click();
-  await expect(send).toBeDisabled();
+  // One question at a time, then the answers in a list and Send.
+  const question = card.locator('[data-slot="inbox-question"]');
+  await expect(question).toHaveCount(1);
+  await expect(question).toContainText('Which screens should change?');
+  await expect(question).toContainText('Wallet, Swap and Settings');
+  await expect(card.getByText('Question 1 of 2')).toBeVisible();
   await photograph(page, 'inbox-question');
 
-  await questions.nth(1).getByRole('button', { name: 'iOS' }).click();
-  await questions.nth(1).getByRole('button', { name: 'Web' }).click();
-  await questions.nth(1).getByRole('textbox').fill('Linux');
+  // One pick of a single choice moves on by itself.
+  await question.getByRole('button', { name: /^Every tab/ }).click();
+  await expect(card.getByText('Question 2 of 2')).toBeVisible();
+  await question.getByRole('button', { name: 'iOS' }).click();
+  await question.getByRole('button', { name: 'Web' }).click();
+  await question.getByRole('textbox').fill('Linux');
+  await card.getByRole('button', { name: 'Next question' }).click();
+
+  await expect(card.getByText('Ready to send')).toBeVisible();
+  const send = card.getByRole('button', { name: 'Send answers' });
   await expect(send).toBeEnabled();
   await send.click();
   await expect(card).toHaveCount(0);
@@ -241,7 +242,7 @@ test('an agent question is answered from its Inbox card with the keys its picker
       },
     ]),
   ]);
-  await page.goto('/plan/inbox');
+  await page.goto('/inbox');
   const row = page.locator('[data-slot="inbox-row"]', { hasText: 'is waiting on you' });
   await expect(async () => {
     await page.reload();

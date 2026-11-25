@@ -11,6 +11,7 @@ import {
 import { ownerLacksPermission } from '../domain/bot-owner-permission.policy';
 import type { BotPromptTool } from '../domain/bot-prompt.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
+import { BOT_BUILT_IN_SKILLS } from '../domain/bot-skill.policy';
 import {
   BotSkillNudge,
   carrySkillNudge,
@@ -19,10 +20,15 @@ import {
 import { type BotPermissions, toolDecision } from '../domain/bot-tool-permission.policy';
 import { BotAutomationToolsFactory } from './bot-automation-tools.factory';
 import { BotPeerToolsFactory } from './bot-bots-tools.factory';
+import { BotBrowserToolsFactory } from './bot-browser-tools.factory';
+import { BotCheckBackToolsFactory } from './bot-check-back-tools.factory';
+import { BotComputerToolsFactory } from './bot-computer-tools.factory';
+import { BotFormToolsFactory } from './bot-form-tools.factory';
 import { BotGithubToolsFactory } from './bot-github-tools.factory';
 import { BotGoalToolsFactory } from './bot-goal-tools.factory';
 import { BotGuideToolsFactory } from './bot-guide-tools.factory';
 import { BotHostCommandToolsFactory } from './bot-host-command-tools.factory';
+import { BotHostSettingsToolsFactory } from './bot-host-settings-tools.factory';
 import { BotHostToolsFactory } from './bot-host-tools.factory';
 import { BotIssueToolsFactory } from './bot-issue-tools.factory';
 import { BotLoopToolsFactory } from './bot-loop-tools.factory';
@@ -53,6 +59,7 @@ import {
   ownersOwnTurn,
   raisedCard,
 } from './bot-tool.factory';
+import { BotVisualToolsFactory } from './bot-visual-tools.factory';
 import { BotWatchToolsFactory } from './bot-watch-tools.factory';
 import { BotWebToolsFactory } from './bot-web-tools.factory';
 import { BotWhatsappGrantToolsFactory } from './bot-whatsapp-grant-tools.factory';
@@ -74,7 +81,10 @@ export class BotToolboxFactory {
     hosts: BotHostToolsFactory,
     sessions: BotSessionToolsFactory,
     hostCommands: BotHostCommandToolsFactory,
+    hostSettings: BotHostSettingsToolsFactory,
     terminals: BotTerminalToolsFactory,
+    computers: BotComputerToolsFactory,
+    browsers: BotBrowserToolsFactory,
     sessionFiles: BotSessionFileToolsFactory,
     watches: BotWatchToolsFactory,
     plan: BotPlanToolsFactory,
@@ -93,12 +103,15 @@ export class BotToolboxFactory {
     telegram: BotTelegramToolsFactory,
     peers: BotPeerToolsFactory,
     web: BotWebToolsFactory,
+    visuals: BotVisualToolsFactory,
     subagents: BotSubagentToolsFactory,
     goals: BotGoalToolsFactory,
     loops: BotLoopToolsFactory,
     questions: BotQuestionToolsFactory,
+    forms: BotFormToolsFactory,
     notices: BotNoticeToolsFactory,
     planWatches: BotPlanWatchToolsFactory,
+    checkBacks: BotCheckBackToolsFactory,
   ) {
     this.areas = [
       self,
@@ -106,12 +119,17 @@ export class BotToolboxFactory {
       guide,
       goals,
       loops,
+      checkBacks,
       questions,
+      forms,
       notices,
       hosts,
       sessions,
       hostCommands,
+      hostSettings,
       terminals,
+      computers,
+      browsers,
       sessionFiles,
       watches,
       plan,
@@ -131,6 +149,7 @@ export class BotToolboxFactory {
       telegram,
       peers,
       web,
+      visuals,
       subagents,
     ];
   }
@@ -203,11 +222,13 @@ export class BotToolboxFactory {
     context: BotToolContext,
     held: HeldScopes,
   ): BotEngineTool[] {
+    const loaded = alwaysLoaded(this.areas);
     return definitions.map((definition) => {
       const tool = definition.bind(context);
       // The permission comes before asking: a refused tool raises no card.
       return {
         ...tool,
+        deferrable: !loaded.has(definition.name),
         run: async (input, options) =>
           (await refusalFor(definition, held)) ?? tool.run(input, options),
       };
@@ -234,7 +255,7 @@ export class BotToolboxFactory {
     const definition = this.definitions(null).find((candidate) => candidate.name === call.tool);
     if (!definition)
       return {
-        content: promptText('tools/toolbox.run-approved-content-run-longer-tool', {
+        content: promptText('core/tools-toolbox.run-approved-content-run-longer-tool', {
           tool: call.tool,
         }),
         isError: true,
@@ -242,7 +263,7 @@ export class BotToolboxFactory {
     // Turned Off while the card waited: the owner's latest word stands.
     if (toolDecision(standing.permissions, definition.traits, standing.preset) === 'off') {
       return {
-        content: promptText('tools/toolbox.run-approved-content-run-turned-off', {
+        content: promptText('core/tools-toolbox.run-approved-content-run-turned-off', {
           tool: call.tool,
         }),
         isError: true,
@@ -250,7 +271,7 @@ export class BotToolboxFactory {
     }
     if (granted !== null && !expandScopes(granted).has(definition.scope)) {
       return {
-        content: promptText('tools/toolbox.approved-not-covered-by-credential', {
+        content: promptText('core/tools-toolbox.approved-not-covered-by-credential', {
           scope: definition.scope,
         }),
         isError: true,
@@ -310,6 +331,23 @@ function nudging(tools: readonly BotEngineTool[], nudge: BotSkillNudge): BotEngi
   }));
 }
 
+/**
+ * The tools never left waiting behind the tool search (2026-11-23): the
+ * bot's own (memory, skills, questions, notices), which it reaches for
+ * unprompted, and every tool a built-in skill's steps call. An eval found a
+ * bot that read `watch-inbox` and skipped its first step, the check with
+ * `update_routine`, when that tool was deferred, then offered a watch that
+ * already ran. Any other tool is a capability's and may wait.
+ */
+export function alwaysLoaded(areas: readonly BotToolArea[]): ReadonlySet<string> {
+  return new Set([
+    ...areas
+      .filter((area) => area.group === 'self')
+      .flatMap((area) => area.definitions().map((definition) => definition.name)),
+    ...BOT_BUILT_IN_SKILLS.flatMap((skill) => skill.needsTools),
+  ]);
+}
+
 /** Where a bot's tools stand: its preset and what its owner set. */
 export interface BotStanding {
   preset: BotPermission;
@@ -346,7 +384,7 @@ export type HeldScopes = () => Promise<ReadonlySet<Scope>>;
 async function refusalFor(
   definition: BotToolDefinition,
   held: HeldScopes,
-): Promise<BotToolResult | null> {
+): Promise<{ content: string; isError: true } | null> {
   if ((await held()).has(definition.scope)) return null;
   return { content: ownerLacksPermission(definition.name, definition.scope), isError: true };
 }

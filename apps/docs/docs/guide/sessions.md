@@ -16,8 +16,8 @@ Open **Sessions → New session**. The page is one box ("What should we work on?
 | Where it runs (one chip with the host, e.g. "mac-studio · New worktree") | **New worktree**: clone a repository onto a fresh branch. **Folder on host**: open a directory already on the host as it is; nothing is cloned. **Cloud**: Claude Code's or Codex's cloud started from a host, or Cursor's cloud (below). |
 | Host | Your hosts with their online state. An offline host is allowed: the session waits as Queued. |
 | Repositories | For a new worktree, one to five repositories, each on its own base branch. The agent starts in the first. "Manage repository access" opens the GitHub App's settings. |
-| Agent and model | Claude Code, Codex, OpenCode, Grok, Pi, Oh My Pi, or **Blank terminal** (a login shell, nothing launched). Each agent lists its models; older ones are under More models. Star a model to keep it under Favourites. |
-| Permission level | **Ask for approval** (the agent asks before it runs anything), **Approve for me** (edits and safe commands run, the rest asks; the default), **Full access** (nothing is asked; it can change the machine unattended). Hidden for a blank terminal. |
+| Agent and model | Claude Code, Codex, OpenCode, Grok, Pi, Oh My Pi, Antigravity, ZCode, fx, Hermes, Muse, Qwen Code, or **Blank terminal** (a login shell, nothing launched). Muse takes no task at launch: type the first one in its terminal. Each agent lists its models; older ones are under More models. Star a model to keep it under Favourites. Hermes lists none: it runs the model you set with `hermes model` on the host, and `/model` switches it in the session. Hermes is off until you switch it on in Settings → Agents, and so is Qwen Code, which takes no effort level and whose models are the ones the provider you connected with `/auth` on the host offers. |
+| Permission level | **Ask for approval** (the agent asks before it runs anything), **Approve for me** (edits and safe commands run, the rest asks; the default), **Full access** (nothing is asked; it can change the machine unattended). Hidden for a blank terminal and Hermes, which runs as its own configuration says. |
 | Effort | How long the agent may think, where the model supports levels. |
 
 Write the first task and press Send. You can attach files to the first task (images, PDFs, text files, up to 5 MB each). For a blank terminal the text only names the session.
@@ -30,7 +30,7 @@ A **folder session** works in your own folder, on whatever branch it is on, with
 
 ## The sidebar
 
-The Sessions sidebar lists sessions under their projects, with **Pinned** at the top, a search, filters (project, repository, agent, host) and a sort. The repository filter takes several repositories at once and lists a session that checks out any of them; each one shows as its own chip. A session is named from its first task, and named once more after the agent has answered your second prompt, when the conversation says more about what it is for. Renaming it yourself keeps your name for good. A row's menu has **Rename**, **Hide**, **Move to project…**, **Pin**, **Share…** and **Delete**; Select acts on several rows at once.
+The Sessions sidebar lists sessions under their projects, with **Pinned** at the top, a search, filters (project, repository, agent, host) and a sort. The repository and host filters each take several values at once: the repository filter lists a session that checks out any of the picked repositories, the host filter a session on any of the picked hosts, and each pick shows as its own chip. A session is named from its first task, and named once more after the agent has answered your second prompt, when the conversation says more about what it is for. Renaming it yourself keeps your name for good. A row's menu has **Rename**, **Hide**, **Move to project…**, **Pin**, **Share…** and **Delete**; Select acts on several rows at once.
 
 ### Hidden sessions
 
@@ -56,7 +56,7 @@ Sessions that need input, failed, or have not started after a minute also appear
 The session pane has a bar with the name, the state, **Terminal / Chat**, the preview toggle and **Share**.
 
 - **Terminal** (the default) is the agent's real terminal. Type into it as you would locally. A plain drag selects and copies text. Paste or drop files onto it and their paths land in the agent's prompt.
-- **Chat** shows the same conversation read from the agent's transcript on the host: your messages, the agent's replies, its tool calls grouped ("read 3 files, ran 2 commands"), images it read, and files it shared. You can write to the agent and attach files from the chat's composer. After a turn, when Claude Code suggests your next message in its own input box, the chat's empty composer shows that suggestion; press **Tab** to put it in the composer, then edit it or send it. Chat works for Claude Code, Codex, OpenCode and Grok; Pi and Oh My Pi are terminal only for now, and a blank terminal has none.
+- **Chat** shows the same conversation read from the agent's transcript on the host: your messages, the agent's replies, its tool calls grouped ("read 3 files, ran 2 commands"), images it read, and files it shared. You can write to the agent and attach files from the chat's composer. After a turn, when Claude Code suggests your next message in its own input box, the chat's empty composer shows that suggestion; press **Tab** to put it in the composer, then edit it or send it. Chat works for Claude Code, Codex, OpenCode, Grok, ZCode, Hermes (read from Hermes' own database, `~/.hermes/state.db`) and Qwen Code (from its conversation files, `~/.qwen/projects/`); Pi, Oh My Pi and Antigravity are terminal only for now, and a blank terminal has none.
 
 The console shows window 0, the agent's window. Extra shell windows can be made from the host with `runner sessions window`, but the console has no tab strip for them yet.
 
@@ -78,7 +78,8 @@ The preview toggle opens a pane beside the terminal:
 
 ## Stopping, restarting, deleting
 
-- **Stopped**: the agent and terminal end, the checkout stays. **Restart** brings the agent back in the same folder, resuming its conversation.
+- **Stopped**: the agent and terminal end, the checkout stays. Opening its page restarts it (**Restarting**) on its conversation; the sidebar and side pane never do. If its host is offline or that fails, **Restart** and the reason show.
+- **Idle**: a session finished or at its prompt for 2 hours, unwatched, is stopped (never deleted). Working, waiting, attached and kept sessions are left alone. `RUNNER_IDLE_STOP`, set before `runner install`, changes the wait (`4h`) or turns it `off`.
 - **Delete** stops the session, pushes each checkout's branch if it has commits, removes the worktree and session folder from the host, and drops the transcript. Commits already pushed stay on the remote. If there is work that is not pushed, delete stops unless you tick **Also discard work that is not pushed**. Oppenheimer never commits for you.
 - Deleting a folder session only ends its terminal; the folder stays. If the host is offline, the session is removed when the host is back.
 
@@ -98,4 +99,4 @@ A cloud session needs a task and has no terminal here. Follow-ups go to the vend
 
 ## Child sessions and in-session tools
 
-An agent inside a session has a `runner` command (its manual is `runner --skill`). With it the agent can start helper agents on the same host as **child sessions** (`runner sessions run`), message and wait on them, show you a file in the session's chat (`send-file`), send you a line in the Inbox (`notify`), be woken when its pull request's checks finish or it is reviewed (`watch-pr`), and set a wake-up up to 7 days ahead (`wake-in`). Child sessions run on the host, end when their parent ends unless started with `--outlive-parent`, and are not shown in the console's sidebar; the parent agent manages and closes them. To start work on another host, an agent uses `opp` ([CLI and MCP](./cli-and-mcp.md)).
+An agent inside a session has a `runner` command (its manual is `runner --skill`). With it the agent can start helper agents on the same host as **child sessions** (`runner sessions run`), message and wait on them, show you a file (`send-file`) or a chart or table (`show`) in its chat, send you a line in the Inbox (`notify`), be woken when its pull request's checks finish or it is reviewed (`watch-pr`), and set a wake-up up to 7 days ahead (`wake-in`). In Claude Code, Codex and OpenCode the same commands are also tools of the `oppenheimer` MCP server the runner gives the agent, and the agent is told how its session is set up. Child sessions run on the host, end when their parent ends unless started with `--outlive-parent`, and are not shown in the console's sidebar; the parent agent manages and closes them. To start work on another host, an agent uses `opp` ([CLI and MCP](./cli-and-mcp.md)).

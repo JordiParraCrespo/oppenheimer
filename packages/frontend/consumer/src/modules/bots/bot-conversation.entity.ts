@@ -3,6 +3,8 @@ import type {
   BotApprovalReach,
   BotApprovalStatus,
   BotAttachment,
+  BotFormSpec,
+  BotFormStatus,
   BotMessageEvent,
   BotMessageRole,
   BotProvider,
@@ -13,6 +15,7 @@ import type {
   BotTurnStatus,
 } from '@oppenheimer/shared/schemas/bot';
 import type { BotMailDraft, MailPlan } from '@oppenheimer/shared/schemas/mail';
+import type { Visual } from '@oppenheimer/shared/schemas/visual';
 
 /** One tool call in an activity line: what the bot asked for and what came back. */
 export interface BotToolStep {
@@ -31,6 +34,8 @@ export interface BotToolStep {
   allowedBy: string | null;
   /** The draft a mail call saved in Gmail, for the chat's card; `null` for any other call. */
   mailDraft: BotMailDraft | null;
+  /** The visual a `show_visual` call drew, for the chat's card; `null` for any other call. */
+  visual: Visual | null;
   /** The system that was limiting our requests when the call ended, and until when; `null` when none. */
   rateLimit: BotToolRateLimit | null;
 }
@@ -60,7 +65,32 @@ export class BotMessageEntity {
     public readonly event: BotMessageEvent | null = null,
     /** The images a message of yours carries, in the order you attached them; none on any other. */
     public readonly attachments: readonly BotAttachment[] = [],
+    /** Your reaction to it, one emoji; `null` for none. Only your messages and the bot's words take one. */
+    public readonly reaction: string | null = null,
+    /** The bot's reaction to a message of yours (its `react` tool); `null` for none. */
+    public readonly botReaction: string | null = null,
   ) {}
+
+  /** Whether you may react to it: a message of yours, or the bot's words. */
+  get reactable(): boolean {
+    return this.role === 'user' || this.role === 'assistant';
+  }
+
+  /** The same line with `emoji` as your reaction, or none. */
+  withReaction(emoji: string | null): BotMessageEntity {
+    return new BotMessageEntity(
+      this.id,
+      this.turnId,
+      this.role,
+      this.content,
+      this.steps,
+      this.createdAt,
+      this.event,
+      this.attachments,
+      emoji,
+      this.botReaction,
+    );
+  }
 }
 
 /** What the model's context held: the tokens, against its window when the engine knew it. */
@@ -152,7 +182,28 @@ export class BotConversationEntity {
     public readonly messageCount: number,
     /** For each turn still queued or running, how many blocks of text it has stored in all. */
     private readonly textBlocksStored: Readonly<Record<string, number>> = {},
+    /** The chat holds messages older than these, a page read before the first. */
+    public readonly hasOlder = false,
+    /**
+     * Where the live window starts in `messages`: those before it are older
+     * pages the reader scrolled up into, never something just sent.
+     */
+    public readonly windowStart = 0,
   ) {}
+
+  /** The same chat with `emoji` as your reaction to message `messageId`, or none. */
+  withReaction(messageId: string, emoji: string | null): BotConversationEntity {
+    return new BotConversationEntity(
+      this.messages.map((message) =>
+        message.id === messageId ? message.withReaction(emoji) : message,
+      ),
+      this.turns,
+      this.messageCount,
+      this.textBlocksStored,
+      this.hasOlder,
+      this.windowStart,
+    );
+  }
 
   /** When the newest message was written; `null` for an empty chat. */
   get lastMessageAt(): Date | null {
@@ -257,8 +308,17 @@ export class BotConversationEntity {
     messages: readonly BotMessageEntity[],
     turns: readonly BotTurnEntity[],
     messageCount: number,
+    hasOlder = this.hasOlder,
+    windowStart = this.windowStart,
   ): BotConversationEntity {
-    return new BotConversationEntity(messages, turns, messageCount, this.textBlocksStored);
+    return new BotConversationEntity(
+      messages,
+      turns,
+      messageCount,
+      this.textBlocksStored,
+      hasOlder,
+      windowStart,
+    );
   }
 }
 
@@ -340,6 +400,26 @@ export class BotQuestionCardEntity {
     public readonly status: BotQuestionStatus,
     public readonly createdAt: Date,
   ) {}
+}
+
+/**
+ * A form a bot asked its owner to fill (`ask_form`): submitted or dismissed,
+ * never approved, and nothing runs on it. A card of its own beside approvals
+ * and questions; a bot has one card up at a time of any kind.
+ */
+export class BotFormCardEntity {
+  constructor(
+    public readonly id: string,
+    public readonly turnId: string,
+    public readonly spec: BotFormSpec,
+    public readonly status: BotFormStatus,
+    public readonly createdAt: Date,
+  ) {}
+
+  /** The form's line in the chat: its title. */
+  get title(): string {
+    return this.spec.title;
+  }
 }
 
 /**

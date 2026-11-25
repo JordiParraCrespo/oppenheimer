@@ -85,6 +85,7 @@ import { SendCloudReplyCommandHandler } from './commands/send-cloud-reply/send-c
 import { SendCloudReplyHttpController } from './commands/send-cloud-reply/send-cloud-reply.http.controller';
 import { SendSessionPromptCommandHandler } from './commands/send-session-prompt/send-session-prompt.command-handler';
 import { SendSessionPromptHttpController } from './commands/send-session-prompt/send-session-prompt.http.controller';
+import { SetHostSettingsCommandHandler } from './commands/set-host-settings/set-host-settings.command-handler';
 import { SetSessionSharePeopleCommandHandler } from './commands/set-session-share-people/set-session-share-people.command-handler';
 import { SetSessionSharePeopleHttpController } from './commands/set-session-share-people/set-session-share-people.http.controller';
 import { SetSessionVisibilityCommandHandler } from './commands/set-session-visibility/set-session-visibility.command-handler';
@@ -98,6 +99,8 @@ import { StopSessionShareHttpController } from './commands/stop-session-share/st
 import { UnwatchSessionTerminalCommandHandler } from './commands/unwatch-session-terminal/unwatch-session-terminal.command-handler';
 import { UploadSessionAttachmentCommandHandler } from './commands/upload-session-attachment/upload-session-attachment.command-handler';
 import { UploadSessionAttachmentHttpController } from './commands/upload-session-attachment/upload-session-attachment.http.controller';
+import { UseHostBrowserCommandHandler } from './commands/use-host-browser/use-host-browser.command-handler';
+import { UseHostComputerCommandHandler } from './commands/use-host-computer/use-host-computer.command-handler';
 import { WakeCloudSessionCommandHandler } from './commands/wake-cloud-session/wake-cloud-session.command-handler';
 import { WatchSessionTerminalCommandHandler } from './commands/watch-session-terminal/watch-session-terminal.command-handler';
 import { SessionCheckoutOrmEntity } from './database/session-checkout.orm-entity';
@@ -118,6 +121,7 @@ import { CloudReplyWakesProcessor } from './infrastructure/cloud-reply-wakes.pro
 import { OutboxSessionWakesAdapter } from './infrastructure/outbox-session-wakes.adapter';
 import { SessionWakesProcessor } from './infrastructure/session-wakes.processor';
 import { StorageCloudFilesAdapter } from './infrastructure/storage-cloud-files.adapter';
+import { FindBranchSessionBotsQueryHandler } from './queries/find-branch-session-bots/find-branch-session-bots.query-handler';
 import { FindCloudChatHttpController } from './queries/find-cloud-chat/find-cloud-chat.http.controller';
 import { FindCloudChatQueryHandler } from './queries/find-cloud-chat/find-cloud-chat.query-handler';
 import { FindCloudFileHttpController } from './queries/find-cloud-file/find-cloud-file.http.controller';
@@ -248,6 +252,9 @@ const commandHandlers: Provider[] = [
   DeliverSessionWakeCommandHandler,
   WakeCloudSessionCommandHandler,
   RunHostCommandCommandHandler,
+  SetHostSettingsCommandHandler,
+  UseHostComputerCommandHandler,
+  UseHostBrowserCommandHandler,
   DriveSessionTerminalCommandHandler,
   UploadSessionAttachmentCommandHandler,
   RecordSessionEventsCommandHandler,
@@ -269,6 +276,7 @@ const queryHandlers: Provider[] = [
   FindCloudFileQueryHandler,
   FindCloudChatQueryHandler,
   SearchSessionsQueryHandler,
+  FindBranchSessionBotsQueryHandler,
 ];
 
 const adapters: Provider[] = [

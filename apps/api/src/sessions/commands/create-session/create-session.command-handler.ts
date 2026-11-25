@@ -76,6 +76,7 @@ export class CreateSessionCommandHandler
       name: input.name,
       idempotencyKey: command.idempotencyKey,
       origin: command.origin,
+      botId: command.botId,
     });
 
     for (const checkout of input.checkouts) {

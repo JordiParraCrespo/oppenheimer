@@ -10,14 +10,28 @@ import type {
   BotConversationRepositoryPort,
 } from './bot-conversation.repository.port';
 
+type ChatOf<K extends BotChannelChat['kind']> = Extract<BotChannelChat, { kind: K }>;
+
 /**
- * Each channel's account column, and the partial unique on its chats
- * (`UQ_bot_conversation_<kind>_chat`), whose predicate `ON CONFLICT` names.
+ * Each channel's account, in one place: its column, which names the partial
+ * unique on its chats (`UQ_bot_conversation_<kind>_chat`) that `ON CONFLICT`
+ * names, and the chat's id for it. A channel is a row here.
  */
-const ACCOUNT_COLUMN = {
-  telegram: '"telegramAccountId"',
-  whatsapp: '"whatsappAccountId"',
-} as const satisfies Record<BotChannelChat['kind'], string>;
+const CHANNEL_ACCOUNT: {
+  [K in BotChannelChat['kind']]: { column: string; of: (chat: ChatOf<K>) => string };
+} = {
+  telegram: { column: '"telegramAccountId"', of: (chat) => chat.telegramAccountId },
+  whatsapp: { column: '"whatsappAccountId"', of: (chat) => chat.whatsappAccountId },
+  slack: { column: '"slackAccountId"', of: (chat) => chat.slackAccountId },
+};
+
+/** The chat's channel account: its column and its id. */
+function accountOf<K extends BotChannelChat['kind']>(
+  chat: ChatOf<K>,
+): { column: string; id: string } {
+  const account = CHANNEL_ACCOUNT[chat.kind as K];
+  return { column: account.column, id: account.of(chat) };
+}
 
 @Injectable()
 export class BotConversationRepository implements BotConversationRepositoryPort {
@@ -27,8 +41,8 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
   ) {}
 
   async conversationAt(chat: BotChannelChat, startsAt: string, messageId: string): Promise<string> {
-    const account = ACCOUNT_COLUMN[chat.kind];
-    const params = [chat.organizationId, accountIdOf(chat), chat.chatId];
+    const { column: account, id: accountId } = accountOf(chat);
+    const params = [chat.organizationId, accountId, chat.chatId];
     // UQ_bot_conversation_<kind>_chat's leading columns: a chat's starts are a handful.
     const [latest]: ChannelConversationStart[] = await this.dataSource.query(
       `SELECT id, "botId", "startsAtMessageId"::text AS "startsAt" FROM bot_conversation
@@ -62,7 +76,7 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
   ): Promise<BotChannelChat | null> {
     // PK_bot_conversation.
     const [row]: BotConversationChatRecord[] = await this.dataSource.query(
-      `SELECT "organizationId", "botId", kind, "telegramAccountId", "whatsappAccountId", "chatId"
+      `SELECT "organizationId", "botId", kind, "telegramAccountId", "whatsappAccountId", "slackAccountId", "chatId"
          FROM bot_conversation
         WHERE "organizationId" = $1 AND id = $2 AND kind <> 'console'`,
       [organizationId, conversationId],
@@ -84,6 +98,10 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
     );
     await manager.query(
       `DELETE FROM bot_question WHERE "organizationId" = $1 AND "botId" = $2`,
+      params,
+    );
+    await manager.query(
+      `DELETE FROM bot_form WHERE "organizationId" = $1 AND "botId" = $2`,
       params,
     );
     // A channel chat's conversations with no turn at work, their turns and
@@ -108,8 +126,4 @@ export class BotConversationRepository implements BotConversationRepositoryPort 
       params,
     );
   }
-}
-
-function accountIdOf(chat: BotChannelChat): string {
-  return chat.kind === 'telegram' ? chat.telegramAccountId : chat.whatsappAccountId;
 }

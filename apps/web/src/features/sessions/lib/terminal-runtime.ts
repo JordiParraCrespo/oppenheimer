@@ -1,8 +1,11 @@
 import {
   type ChatActivity,
+  type ChatFeedbackDraft,
+  type ChatPermissionPrompt,
   createResizeCoalescer,
   type SessionStream,
 } from '@oppenheimer/frontend-consumer';
+import type { PermissionPromptSpec } from '@oppenheimer/shared/sessions';
 import { ClipboardAddon, type IClipboardProvider } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
@@ -11,6 +14,8 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { type ILinkHandler, Terminal } from '@xterm/xterm';
 import { bindAgentActivity } from './agent-activity';
 import { CursorFrames } from './cursor-frames';
+import { bindFeedbackDraft } from './feedback-draft';
+import { bindPermissionPrompt } from './permission-prompt';
 import { bindPromptSuggestion } from './prompt-suggestion';
 import { createSnapshotHandover } from './snapshot-handover';
 import { bindTerminalEcho } from './terminal-echo';
@@ -69,8 +74,6 @@ export interface SessionTerminalOptions {
   snapshot?: string;
   /** Hands the pane's picture over as it unmounts, to be the next `snapshot`. */
   keepSnapshot?: (snapshot: string) => void;
-  /** The key the echo readout is published under, for the session's bar. */
-  latencyKey?: string;
   /**
    * What the agent's spinner line says as the screen changes, for the chat
    * drawn over the grid (`bindAgentActivity`); none once it is gone.
@@ -81,6 +84,21 @@ export interface SessionTerminalOptions {
    * composer to offer (`bindPromptSuggestion`); none once it is gone.
    */
   onSuggestion?: (suggestion: string | null) => void;
+  /**
+   * The feedback the agent drafted, off the card over its input box, for the
+   * chat to answer (`bindFeedbackDraft`); none once it is gone.
+   */
+  onFeedback?: (feedback: ChatFeedbackDraft | null) => void;
+  /**
+   * The permission dialog the agent draws before a tool runs, read with its
+   * spec, for the chat to answer (`bindPermissionPrompt`); none once it is
+   * gone. Without it, for an agent whose dialog the console does not read,
+   * nothing is read.
+   */
+  permission?: {
+    spec: PermissionPromptSpec;
+    onPermission: (permission: ChatPermissionPrompt | null) => void;
+  };
 }
 
 /** How much scrollback a kept picture carries: enough to look like the pane. */
@@ -149,8 +167,6 @@ export function mountSessionTerminal(
     readOnly: options.readOnly ?? false,
     typeahead: options.typeahead ?? (() => false),
     renderer: () => renderer,
-    onPath: stream.onPath?.bind(stream),
-    latencyKey: options.latencyKey,
   });
   const send = echo.send;
 
@@ -346,10 +362,18 @@ export function mountSessionTerminal(
   const unbindSuggestion = options.onSuggestion
     ? bindPromptSuggestion(term, options.onSuggestion)
     : undefined;
+  const unbindFeedback = options.onFeedback
+    ? bindFeedbackDraft(term, options.onFeedback)
+    : undefined;
+  const unbindPermission = options.permission
+    ? bindPermissionPrompt(term, options.permission.spec, options.permission.onPermission)
+    : undefined;
 
   return () => {
     unbindActivity?.();
     unbindSuggestion?.();
+    unbindFeedback?.();
+    unbindPermission?.();
     if (wheelFrame !== null) cancelAnimationFrame(wheelFrame);
     if (frame !== null) cancelAnimationFrame(frame);
     unbindFiles();

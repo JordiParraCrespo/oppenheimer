@@ -328,6 +328,10 @@
     "markUnread": "Marcar como no leída",
     "markRead": "Marcar como leída",
     "unreadLabel": "No leída",
+    "mute": "Silenciar notificaciones",
+    "unmute": "Activar notificaciones",
+    "mutedLabel": "Notificaciones silenciadas",
+    "notifyTitle": "Notificaciones y lectura",
     "hide": "Ocultar",
     "show": "Mostrar",
     "hidden": "Oculta",
@@ -352,7 +356,8 @@
     "openAtVendor": "Se abre en {{vendor}}",
     "allHidden": "Todos los proyectos están ocultos. Vuelve a mostrarlos desde el menú de filtros.",
     "noSessions": "Todavía no hay sesiones. Empieza una con Nueva sesión, arriba.",
-    "noPinned": "No hay sesiones fijadas. Fija una desde su menú, o desactiva Solo fijadas en el menú de filtros."
+    "noPinned": "No hay sesiones fijadas. Fija una desde su menú, o desactiva Solo fijadas en el menú de filtros.",
+    "noSessionsPhone": "Aún no hay sesiones. Empieza una desde la consola en tu ordenador; aparecerá aquí."
   },
   "deleteSession": {
     "title": "¿Eliminar «{{name}}»?",
@@ -460,6 +465,7 @@
     "writeWarningTitle": "{{who}} actuará como tú en {{host}}",
     "writeWarningCount_one": "{{count}} persona",
     "writeWarningCount_other": "{{count}} personas",
+    "writeWarningCount_many": "{{count}} personas",
     "writeWarningBody": "Todo lo que envíen se ejecuta con tus credenciales y tu token de GitHub. Pueden hacer push, borrar archivos y gastar tu cuota.",
     "writeAck": "Entiendo que actúan como yo en este host",
     "ackRequired": "Confirma que lo entiendes antes de dar acceso de escritura.",
@@ -577,7 +583,7 @@
     "composer": {
       "placeholder": "Escribe a {{agent}}",
       "placeholderAnyAgent": "Escribe al agente",
-      "suggestion": "{{suggestion}}  ·  Tab para usarlo",
+      "suggestion": "Tab para usarlo  ·  {{suggestion}}",
       "send": "Enviar",
       "stop": "Detener",
       "attach": "Adjuntar archivos",
@@ -625,11 +631,14 @@
     "failed_many": "{{count}} fallaron",
     "files_one": "{{count}} archivo adjunto",
     "files_other": "{{count}} archivos adjuntos",
+    "files_many": "{{count}} archivos adjuntos",
     "tasks_one": "{{done}} de {{count}} tarea hecha",
     "tasks_other": "{{done}} de {{count}} tareas hechas",
+    "tasks_many": "{{done}} de {{count}} tareas hechas",
     "notice": {
       "interrupted": "Detuviste este turno",
-      "compacted": "Contexto compactado"
+      "compacted": "Contexto compactado",
+      "model": "Modelo cambiado a <model>{{model}}</model>"
     },
     "task": {
       "completed": "Tarea en segundo plano terminada",
@@ -654,24 +663,34 @@
     "summary": {
       "read_one": "leyó {{count}} archivo",
       "read_other": "leyó {{count}} archivos",
+      "read_many": "leyó {{count}} archivos",
       "search_one": "buscó {{count}} patrón",
       "search_other": "buscó {{count}} patrones",
+      "search_many": "buscó {{count}} patrones",
       "web_one": "consultó {{count}} página",
       "web_other": "consultó {{count}} páginas",
+      "web_many": "consultó {{count}} páginas",
       "edit_one": "editó {{count}} archivo",
       "edit_other": "editó {{count}} archivos",
+      "edit_many": "editó {{count}} archivos",
       "write_one": "escribió {{count}} archivo",
       "write_other": "escribió {{count}} archivos",
+      "write_many": "escribió {{count}} archivos",
       "command_one": "ejecutó {{count}} comando",
       "command_other": "ejecutó {{count}} comandos",
+      "command_many": "ejecutó {{count}} comandos",
       "agent_one": "lanzó {{count}} subagente",
       "agent_other": "lanzó {{count}} subagentes",
+      "agent_many": "lanzó {{count}} subagentes",
       "mcp_one": "llamó {{count}} herramienta",
       "mcp_other": "llamó {{count}} herramientas",
+      "mcp_many": "llamó {{count}} herramientas",
       "question_one": "hizo {{count}} pregunta",
       "question_other": "hizo {{count}} preguntas",
+      "question_many": "hizo {{count}} preguntas",
       "other_one": "usó {{count}} herramienta",
-      "other_other": "usó {{count}} herramientas"
+      "other_other": "usó {{count}} herramientas",
+      "other_many": "usó {{count}} herramientas"
     },
     "verbLive": {
       "command": "Ejecutando",
@@ -689,10 +708,33 @@
     "thoughtFor": "Pensó {{seconds}} s",
     "changes_one": "{{count}} archivo cambiado",
     "changes_other": "{{count}} archivos cambiados",
+    "changes_many": "{{count}} archivos cambiados",
     "question": {
       "waiting": "Esperando tu respuesta",
       "dismissed": "Descartaste las preguntas",
       "noAnswer": "No se pudo leer la respuesta"
+    },
+    "permission": {
+      "command": "¿Ejecutar este comando?",
+      "edit": "¿Hacer este cambio?",
+      "write": "¿Crear este archivo?",
+      "web": "¿Abrir esta página?",
+      "tool": "¿Usar esta herramienta?",
+      "allowOnce": "Permitir una vez",
+      "alwaysAllow": "Permitir siempre",
+      "deny": "Denegar",
+      "denyHint": "Detener y decirle a {{agent}} qué hacer en su lugar",
+      "keys": "{{first}}–{{last}} para elegir · Esc para denegar",
+      "withNote": "Denegar con una nota",
+      "note": "¿Qué debería hacer {{agent}} en su lugar?",
+      "noteLabel": "Tu nota para {{agent}}",
+      "noteHint": "Enter para enviar · Esc para volver",
+      "sendNote": "Denegar y enviar",
+      "back": "Volver",
+      "allowed": "Permitido · {{agent}} sigue",
+      "denied": "Denegado · {{agent}} se detiene aquí",
+      "caution": "Revísalo bien: puede borrar o sobrescribir trabajo",
+      "truncated": "El resto de este cambio es más largo de lo que muestra el chat"
     },
     "explored": {
       "title": "Explorado"
@@ -704,6 +746,7 @@
     "subagents": {
       "count_one": "{{count}} subagente",
       "count_other": "{{count}} subagentes",
+      "count_many": "{{count}} subagentes",
       "running": "{{count}} en marcha",
       "failed_one": "{{count}} fallido",
       "failed_other": "{{count}} fallidos",
@@ -711,6 +754,7 @@
       "untitled": "Subagente",
       "calls_one": "{{count}} llamada",
       "calls_other": "{{count}} llamadas",
+      "calls_many": "{{count}} llamadas",
       "tokens": "{{tokens}} tokens",
       "state": {
         "running": "En marcha",
@@ -727,6 +771,21 @@
       "previous": "Coincidencia anterior",
       "next": "Coincidencia siguiente",
       "close": "Cerrar búsqueda"
+    },
+    "feedback": {
+      "label": "Comentario redactado",
+      "review": "Revisar en la terminal",
+      "send": "Enviar",
+      "dismiss": "Descartar",
+      "back": "Atrás",
+      "keep": "Mantener",
+      "turnOff": "Desactivar",
+      "retry": "Revisar y reintentar",
+      "reviewOrDiscard": "Revisar o descartar",
+      "clearPrompt": "Vacía el prompt de la terminal para responder.",
+      "more_one": "{{count}} más en cola",
+      "more_many": "{{count}} más en cola",
+      "more_other": "{{count}} más en cola"
     }
   },
   "side": {
@@ -739,16 +798,10 @@
     "closeTab": "Cerrar {{name}}",
     "launcher": {
       "title": "Abrir junto a esta sesión",
-      "description": "Mantén esta sesión a la vista mientras trabajas en otra cosa.",
       "terminal": "Terminal",
-      "terminalDetail": "Una shell en el worktree de esta sesión",
-      "session": "Sesión",
-      "sessionDetail": "Otra sesión, en cualquier host",
-      "bot": "Bot",
-      "botDetail": "Elige uno de tus bots y chatea",
-      "browserDetail": "El servidor de desarrollo de la sesión",
-      "simulatorDetail": "El dispositivo que maneja el agente de la sesión",
-      "desktopDetail": "La pantalla del propio host",
+      "session": "Otra sesión",
+      "sessionDetail": "Cualquier host",
+      "bot": "Un bot",
       "back": "Atrás",
       "sessions": "Elige una sesión",
       "searchSessions": "Buscar sesiones",
@@ -757,11 +810,12 @@
       "searchBots": "Buscar bots",
       "noBots": "Aún no hay bots. Crea uno en Empleados.",
       "noMatch": "Nada coincide con «{{query}}».",
-      "agent": "Agente",
-      "agentDetail": "Otro agente en este worktree",
+      "agent": "Otro agente",
+      "agentDetail": "Mismo worktree",
       "agents": "Elige un agente",
       "agentShares": "Trabaja en el worktree de esta sesión, sobre los mismos archivos e índice de git que el agente que ya está allí.",
-      "noAgents": "Ningún agente puede iniciarse junto a esta sesión. Activa uno en Ajustes → Agentes."
+      "noAgents": "Ningún agente puede iniciarse junto a esta sesión. Activa uno en Ajustes → Agentes.",
+      "sideChats": "Chats laterales"
     },
     "terminal": {
       "name": "Terminal {{index}}",
@@ -788,10 +842,13 @@
     "title": "{{name}} ejecutándose en el host de esta sesión",
     "connecting": "Conectando con el dispositivo de la sesión…",
     "connectingDetail": "La pantalla aparece cuando el host empieza a transmitirla.",
+    "noPicture": "Esperando la pantalla…",
     "unavailable": "Esta sesión no tiene dispositivo",
     "unavailableDetail": "El host de esta sesión no ofrece simulador ni emulador, o todos los tiene otra sesión.",
     "offline": "El host está desconectado",
     "offlineDetail": "El dispositivo vuelve cuando el host se reconecte.",
+    "reconnecting": "Reconectando con el dispositivo…",
+    "reconnectingDetail": "Los toques de los próximos segundos se enviarán cuando vuelva.",
     "ended": "La sesión ha terminado",
     "browser": "Navegador",
     "address": "localhost:{{port}}",
@@ -894,5 +951,29 @@
       "agentBody": "Pega esto en Claude Code, u otro agente de código, en una copia del repositorio. Añade el hook y su configuración, y luego te dice qué configurar en claude.ai. Tu clave no va en el prompt: la pegas tú en claude.ai.",
       "agentLabel": "Prompt para tu agente"
     }
+  },
+  "mobile": {
+    "notFound": "Esta sesión ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+    "shareLink": "Compartir enlace",
+    "actions": "Acciones de la sesión",
+    "answerFailed": "La respuesta no llegó al agente. Vuelve a intentarlo.",
+    "needsApproval": "Necesita aprobación",
+    "keys": "Teclas del terminal",
+    "replyToAgent": "Responde al agente",
+    "reply": "Responde o ejecuta un comando",
+    "starting": "Iniciando la sesión en su host…",
+    "cloud": "Esta sesión se ejecuta en {{place}}. Ábrela allí para seguirla.",
+    "openCloud": "Abrir en el navegador",
+    "failed": "No se pudo iniciar la sesión.",
+    "connecting": "Conectando…",
+    "steps_one": "{{count}} paso",
+    "steps_other": "{{count}} pasos",
+    "steps_many": "{{count}} pasos",
+    "loadFailed": "No se pudo cargar esta sesión."
+  },
+  "tabs": {
+    "label": "Sesiones abiertas",
+    "new": "Nueva sesión",
+    "close": "Cerrar {{name}}"
   }
 }

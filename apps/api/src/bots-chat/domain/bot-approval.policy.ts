@@ -40,12 +40,12 @@ export function grantedLine(subjectLabel: string): string {
 
 /** What the model reads when its call became a card: nothing ran, and its turn should end. */
 export function askedForApproval(summary: string): string {
-  return promptText('tools/approval.asked-for-approval', { summary });
+  return promptText('core/tools-approval.asked-for-approval', { summary });
 }
 
 /** What the model reads when an earlier card still waits: one at a time. */
 export function waitingForApproval(pendingSummary: string): string {
-  return promptText('tools/approval.waiting-for-approval', { pendingSummary });
+  return promptText('core/tools-approval.waiting-for-approval', { pendingSummary });
 }
 
 /** How far a yes reaches; null for a no. */
@@ -68,16 +68,18 @@ export function reachOf(decision: BotApprovalDecision): BotApprovalReach | null 
  * the bot reads this and says it is on it (`approvalAsk`).
  */
 export function approvalStartedWords(approval: BotApprovalEntity, by: string): string {
-  return promptText('wake/approval.started', { who: who(by), summary: approval.summary });
+  return promptText('core/wake-approval.started', { who: who(by), summary: approval.summary });
 }
 
 /** The words that open the turn reporting an approved call: what it was, and its answer. */
 export function approvalFinishedWords(approval: BotApprovalEntity, by: string): string {
-  return promptText('wake/approval.finished', {
+  return promptText('core/wake-approval.finished', {
     who: who(by),
     summary: approval.summary,
     answer: promptText(
-      approval.status === 'failed' ? 'wake/approval.it-ran-and-failed' : 'wake/approval.it-ran',
+      approval.status === 'failed'
+        ? 'core/wake-approval.it-ran-and-failed'
+        : 'core/wake-approval.it-ran',
     ),
     result: approval.result ?? '',
   });
@@ -85,7 +87,7 @@ export function approvalFinishedWords(approval: BotApprovalEntity, by: string): 
 
 /** The words that open the turn a no gives the bot: what was refused, and the note. */
 export function deniedWords(approval: BotApprovalEntity, by: string): string {
-  return denialWords(approval, 'wake/approval.denied', by);
+  return denialWords(approval, 'core/wake-approval.denied', by);
 }
 
 /**
@@ -95,7 +97,7 @@ export function deniedWords(approval: BotApprovalEntity, by: string): string {
  */
 export function approvalAsk(stage: BotApprovalEventStage | undefined): string {
   return promptText(
-    stage === 'started' ? 'wake/approval.ask-started' : 'wake/approval.ask-decided',
+    stage === 'started' ? 'core/wake-approval.ask-started' : 'core/wake-approval.ask-decided',
   );
 }
 
@@ -115,18 +117,18 @@ export function approvalStartedBy(
 
 /** Who decided, by name, as the bot is told; "The person" when the name is unknown. */
 function who(by: string): string {
-  return by.trim() || promptText('wake/approval.the-person');
+  return by.trim() || promptText('core/wake-approval.the-person');
 }
 
 /** A no in words: what was refused, then the person's note when they added one. */
 function denialWords(
   approval: BotApprovalEntity,
-  lead: 'wake/approval.denied' | 'wake/approval.denied-and-stopped',
+  lead: 'core/wake-approval.denied' | 'core/wake-approval.denied-and-stopped',
   by: string,
 ): string {
   return [
     promptText(lead, { who: who(by), summary: approval.summary }),
-    approval.note ? promptText('wake/approval.their-note', { note: approval.note }) : null,
+    approval.note ? promptText('core/wake-approval.their-note', { note: approval.note }) : null,
   ]
     .filter(Boolean)
     .join('\n');
@@ -193,7 +195,7 @@ export function stoppedLine(approval: BotApprovalEntity, by: string): BotMessage
     botId: approval.botId,
     turnId: null,
     role: 'event',
-    content: denialWords(approval, 'wake/approval.denied-and-stopped', by),
+    content: denialWords(approval, 'core/wake-approval.denied-and-stopped', by),
     event: { ...approvalEventOf(approval), outcome: 'stopped' },
     steps: [],
     position: 0,

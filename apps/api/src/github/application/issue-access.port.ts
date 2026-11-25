@@ -19,7 +19,8 @@ export type IssueAddress = RepositoryAddress & { number: number };
  * the workspace's installations, scoped like every other repository read and
  * never mirrored; writes through the caller's own GitHub user token, so what
  * GitHub records is what that person did. With no user token a write is
- * `GITHUB_012`.
+ * `GITHUB_012`. The one write made as the App is a bot's answer to an ask on
+ * GitHub (`addAppComment`).
  */
 export interface IssueAccessPort {
   /** One repository's issues, newest updated first, at most `limit`; pull requests left out. */
@@ -45,6 +46,16 @@ export interface IssueAccessPort {
   addComment(
     scope: AccessScope,
     userId: string,
+    address: InstallationAddress & { number: number },
+    body: string,
+  ): Promise<{ htmlUrl: string }>;
+  /**
+   * A comment on an issue's or a pull request's conversation, as Oppenheimer's
+   * App: a bot's answer to an ask on GitHub. The App's own comments wake no
+   * routine and no bot (`loopGuard`), so an answer never asks again.
+   */
+  addAppComment(
+    scope: AccessScope,
     address: InstallationAddress & { number: number },
     body: string,
   ): Promise<{ htmlUrl: string }>;

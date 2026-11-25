@@ -66,50 +66,129 @@ function useAnsweredKeys(): ReadonlySet<string> {
 }
 
 /**
+ * An on/off switch kept on this device, off until the reader turns it on. One
+ * value for the page, so every reader agrees the moment it flips, and every
+ * other open tab of this browser follows through the `storage` event; a
+ * browser that refuses storage keeps it in memory for the visit.
+ */
+function deviceSwitch(key: string): () => [on: boolean, setOn: (on: boolean) => void] {
+  let value: boolean | undefined;
+  const listeners = new Set<() => void>();
+  const read = (): boolean => {
+    if (value === undefined) {
+      try {
+        value = globalThis.localStorage?.getItem(key) === 'true';
+      } catch {
+        value = false;
+      }
+    }
+    return value;
+  };
+  const set = (on: boolean): void => {
+    if (read() === on) return;
+    value = on;
+    try {
+      globalThis.localStorage?.setItem(key, String(on));
+    } catch {
+      // Kept in memory above; storage refused it.
+    }
+    for (const listener of listeners) listener();
+  };
+  // Another tab wrote it: take its value, so turning it off anywhere stops it everywhere.
+  const fromAnotherTab = (event: StorageEvent) => {
+    if (event.key !== key) return;
+    value = event.newValue === 'true';
+    for (const listener of listeners) listener();
+  };
+  const subscribe = (listener: () => void) => {
+    if (listeners.size === 0) globalThis.addEventListener?.('storage', fromAnotherTab);
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+      if (listeners.size === 0) globalThis.removeEventListener?.('storage', fromAnotherTab);
+    };
+  };
+  return () => [useSyncExternalStore(subscribe, read, () => false), set];
+}
+
+/**
+ * A set of ids kept on this device, empty until the reader adds one. Like
+ * {@link deviceSwitch}: one value for the page, and every other open tab of
+ * this browser follows through the `storage` event; a browser that refuses
+ * storage keeps it in memory for the visit.
+ */
+function deviceSet(
+  key: string,
+): () => [ids: ReadonlySet<string>, setListed: (id: string, listed: boolean) => void] {
+  const EMPTY: ReadonlySet<string> = new Set();
+  let value: ReadonlySet<string> | undefined;
+  const listeners = new Set<() => void>();
+  const read = (): ReadonlySet<string> => {
+    if (value === undefined) {
+      try {
+        const stored: unknown = JSON.parse(globalThis.localStorage?.getItem(key) ?? '[]');
+        value = new Set(
+          Array.isArray(stored) ? stored.filter((id): id is string => typeof id === 'string') : [],
+        );
+      } catch {
+        value = EMPTY;
+      }
+    }
+    return value;
+  };
+  const setListed = (id: string, listed: boolean): void => {
+    const current = read();
+    if (current.has(id) === listed) return;
+    const next = new Set(current);
+    if (listed) next.add(id);
+    else next.delete(id);
+    value = next;
+    try {
+      globalThis.localStorage?.setItem(key, JSON.stringify([...next]));
+    } catch {
+      // Kept in memory above; storage refused it.
+    }
+    for (const listener of listeners) listener();
+  };
+  const fromAnotherTab = (event: StorageEvent) => {
+    if (event.key !== key && event.key !== null) return;
+    value = undefined;
+    for (const listener of listeners) listener();
+  };
+  const subscribe = (listener: () => void) => {
+    if (listeners.size === 0) globalThis.addEventListener?.('storage', fromAnotherTab);
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+      if (listeners.size === 0) globalThis.removeEventListener?.('storage', fromAnotherTab);
+    };
+  };
+  return () => [useSyncExternalStore(subscribe, read, () => EMPTY), setListed];
+}
+
+/**
+ * The sessions whose system notifications the reader turned off on this
+ * device (a row's Mute notifications): none of their waits, notices, finished
+ * turns or stale reminders is told. The Inbox and the sidebar still show them.
+ */
+export const useMutedSessionAlerts = deviceSet('oppenheimer.sessions.muted');
+
+/**
  * Whether the Inbox lists pull requests (a review asked of you, yours ready to
  * merge), kept on this device. Off unless the reader turns it on: the agents
  * open pull requests under the reader's account, so every one of them would
- * wait here as theirs to merge. Off, their two reads are not made at all. One
- * value for the page, so the list and every count agree the moment it flips.
+ * wait here as theirs to merge. Off, their two reads are not made at all.
  */
-const PULLS_KEY = 'oppenheimer.inbox.pulls';
-let pullsShown: boolean | undefined;
-const pullsListeners = new Set<() => void>();
+export const useInboxPullsShown = deviceSwitch('oppenheimer.inbox.pulls');
 
-function readPullsShown(): boolean {
-  if (pullsShown === undefined) {
-    try {
-      pullsShown = globalThis.localStorage?.getItem(PULLS_KEY) === 'true';
-    } catch {
-      pullsShown = false;
-    }
-  }
-  return pullsShown;
-}
-
-function setPullsShown(shown: boolean): void {
-  if (readPullsShown() === shown) return;
-  pullsShown = shown;
-  try {
-    globalThis.localStorage?.setItem(PULLS_KEY, String(shown));
-  } catch {
-    // Kept in memory above; storage refused it.
-  }
-  for (const listener of pullsListeners) listener();
-}
-
-/** Whether the Inbox lists pull requests, and the switch the filter menu flips. */
-export function useInboxPullsShown(): [shown: boolean, setShown: (shown: boolean) => void] {
-  const shown = useSyncExternalStore(
-    (listener) => {
-      pullsListeners.add(listener);
-      return () => pullsListeners.delete(listener);
-    },
-    readPullsShown,
-    () => false,
-  );
-  return [shown, setPullsShown];
-}
+/**
+ * Whether this browser tells the reader, with a system notification, when a
+ * session comes to wait on them, sends a notice, ends a turn or has waited
+ * thirty minutes, kept on this device. Off
+ * until the reader turns it on, since turning it on is what asks the browser
+ * for permission.
+ */
+export const useInboxAlertsOn = deviceSwitch('oppenheimer.inbox.alerts');
 
 function useInboxMarksQuery() {
   const app = useConsumerApp();

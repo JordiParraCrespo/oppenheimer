@@ -191,8 +191,93 @@ var launchCatalog = map[string]launchMap{
 		prompt:             []string{"<prompt>"},
 		conversationResume: []string{"--continue"},
 	},
+	"antigravity": {
+		command:      "agy",
+		model:        []string{"--model", "<model>"},
+		defaultModel: "gemini-4-neon",
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--mode", "default"}},
+			"auto": {argv: []string{"--mode", "accept-edits"}},
+			"full": {argv: []string{"--dangerously-skip-permissions"}},
+		},
+		effort: launchLevel{argv: []string{"--effort", "<effort>"}},
+		effortLevels: map[string][]string{
+			"gemini-4-neon":     {"low", "medium", "high", "xhigh"},
+			"gemini-4-carbon":   {"low", "medium", "high", "xhigh"},
+			"gemini-4-argon":    {"low", "medium", "high", "xhigh"},
+			"gemini-4-hydrogen": {"low", "medium", "high", "xhigh"},
+			"gemini-3.8-flash":  {"low", "medium", "high"},
+		},
+		prompt:             []string{"--prompt-interactive", "<prompt>"},
+		conversationResume: []string{"--continue"},
+	},
+	"zcode": {
+		command: "zcode",
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--mode", "build"}},
+			"auto": {argv: []string{"--mode", "edit"}},
+			"full": {argv: []string{"--mode", "yolo"}},
+		},
+	},
+	"fx": {
+		command:      "fx",
+		model:        []string{"--provider", "gateway", "--model", "<model>"},
+		defaultModel: "spacexai/grok-4.7",
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--permission-mode", "ask"}},
+			"auto": {argv: []string{"--permission-mode", "auto"}},
+			"full": {argv: []string{"--permission-mode", "full-access"}},
+		},
+		effort: launchLevel{argv: []string{"--effort", "<effort>"}},
+		effortLevels: map[string][]string{
+			"spacexai/grok-4.7":         {"low", "medium", "high", "xhigh"},
+			"openai/gpt-6-astra":        {"low", "medium", "high", "xhigh", "max"},
+			"openai/gpt-6-sol":          {"low", "medium", "high", "xhigh", "max"},
+			"anthropic/claude-sonnet-5": {"low", "medium", "high", "xhigh", "max"},
+		},
+		prompt:             []string{"<prompt>"},
+		conversationResume: []string{"--continue"},
+	},
+	"hermes": {
+		command:            "hermes",
+		always:             []string{"chat"},
+		model:              []string{"--model", "<model>"},
+		prompt:             []string{"--query", "<prompt>"},
+		conversationResume: []string{"--continue"},
+	},
+	"muse": {
+		command:      "muse",
+		model:        []string{"--model", "<model>"},
+		defaultModel: "muse-spark-1.2",
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--approval-mode", "untrusted"}},
+			"auto": {argv: []string{"--approval-mode", "on-request"}},
+			"full": {argv: []string{"--yolo"}},
+		},
+		effort: launchLevel{argv: []string{"--reasoning-effort", "<effort>"}},
+		effortLevels: map[string][]string{
+			"muse-spark-1.3": {"minimal", "low", "medium", "high", "xhigh", "max", "ultra"},
+			"muse-spark-1.2": {"minimal", "low", "medium", "high", "xhigh", "max", "ultra"},
+			"muse-ember-1.0": {"minimal", "low", "medium", "high", "xhigh", "max", "ultra"},
+		},
+	},
+	"qwen": {
+		command:      "qwen",
+		model:        []string{"--model", "<model>"},
+		defaultModel: "qwen3.8-max",
+		permission: map[string]launchLevel{
+			"ask":  {argv: []string{"--approval-mode", "default"}},
+			"auto": {argv: []string{"--approval-mode", "auto"}},
+			"full": {argv: []string{"--approval-mode", "yolo"}},
+		},
+		prompt:             []string{"--prompt-interactive=<prompt>"},
+		conversationCreate: []string{"--session-id", "<conversation>"},
+		conversationResume: []string{"--continue"},
+		conversationReopen: []string{"--resume", "<conversation>"},
+	},
 	"shell": {
-		command: "",
+		command:    "",
+		taskIsNote: true,
 	},
 }
 
@@ -206,11 +291,15 @@ var loginTargets = map[string][]LoginTarget{
 	"grok":        {{Host: "accounts.x.ai"}, {Host: "auth.x.ai"}},
 	"pi":          {{Host: "claude.ai"}, {Host: "auth.openai.com"}, {Host: "github.com", Path: "/login/device"}},
 	"omp":         {{Host: "claude.ai"}, {Host: "auth.openai.com"}, {Host: "github.com", Path: "/login/device"}},
+	"fx":          {{Host: "auth.openai.com"}, {Host: "accounts.x.ai"}, {Host: "auth.x.ai"}},
+	"hermes":      {{Host: "auth.openai.com"}},
 }
 
 // inputCatalog is each agent's `input` entry of the catalog: the keys that
-// send and interrupt a message typed into it, and the pause between a
-// paste and its submit, in milliseconds.
+// send and interrupt a message typed into it, the pause between a paste
+// and its submit, in milliseconds, the keys that empty its prompt first
+// with the wait after them, and what is typed before its terminal is
+// ended.
 var inputCatalog = map[string]agentInput{
 	"claude-code": {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"codex":       {submit: "\r", stop: "\u001b", pasteGapMs: 200},
@@ -218,4 +307,10 @@ var inputCatalog = map[string]agentInput{
 	"grok":        {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"pi":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
 	"omp":         {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"antigravity": {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"zcode":       {submit: "\r", stop: "\u001b", pasteGapMs: 200, clear: "\u0015", clearSettleMs: 100},
+	"fx":          {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"hermes":      {submit: "\r", stop: "\u001b", pasteGapMs: 200, quit: []string{"/stop", "/quit"}},
+	"muse":        {submit: "\r", stop: "\u001b", pasteGapMs: 200},
+	"qwen":        {submit: "\r", stop: "\u001b", pasteGapMs: 200, clear: "\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015\u0005\u001bd\u0015", clearSettleMs: 50},
 }

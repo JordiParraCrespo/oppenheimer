@@ -4,9 +4,10 @@ import {
   ChatTranscript,
   TranscriptDivider,
 } from '@oppenheimer/design-system-web';
-import { Cpu } from '@oppenheimer/design-system-web/icons';
+import { Cpu, LoaderCircle } from '@oppenheimer/design-system-web/icons';
 import {
   useBotLive,
+  useReactToBotMessage,
   useSendBotMessage,
   useSuspenseBotConversation,
 } from '@oppenheimer/frontend-consumer/react';
@@ -19,6 +20,7 @@ import { ApprovalEventLine } from '@/features/bots/components/approval-event-lin
 import { ApprovedCallLive } from '@/features/bots/components/approved-call-live';
 import { BotEventLine } from '@/features/bots/components/bot-event-line';
 import { BotTurn } from '@/features/bots/components/bot-turn';
+import { useOlderOnScrollUp } from '@/features/bots/hooks/use-older-on-scroll-up';
 import { useSentGlide } from '@/features/bots/hooks/use-sent-glide';
 import { useToolCallsShownInChat } from '@/features/bots/hooks/use-tool-calls-shown';
 import { runningApprovedCalls } from '@/features/bots/lib/approval-event';
@@ -43,7 +45,9 @@ import { BotMessageImages } from '@/features/bots/sections/bot-message-images';
  * is held under the turn its yes opened. Once the newest turn has ended,
  * Retry sends your last message again. While the tool calls are hidden, a
  * routine run that did nothing else is left out (`isQuietRoutineRun`). What
- * you send glides to the top of the pane, the answer beneath it.
+ * you send glides to the top of the pane, the answer beneath it. Scrolled to
+ * the top, the history older than the chat's window is read a page at a time
+ * and laid above, your place kept (`useOlderOnScrollUp`).
  */
 export function BotTranscript({
   botId,
@@ -58,6 +62,7 @@ export function BotTranscript({
   const { data: conversation, error } = useSuspenseBotConversation(botId);
   const live = useBotLive(botId);
   const retry = useSendBotMessage();
+  const react = useReactToBotMessage();
   const navigate = useNavigate();
   const toolCallsShown = useToolCallsShownInChat();
   const all = chatTurns(conversation);
@@ -73,7 +78,16 @@ export function BotTranscript({
   // Retry follows the newest turn, drawn or not: a run hidden after your turn takes it away.
   const again = retryContent(all);
   const newest = newestTurn(all)?.turnId;
-  useSentGlide(newestSentId(blocks));
+  const older = new Set(
+    conversation.messages.slice(0, conversation.windowStart).map((message) => message.id),
+  );
+  const sentId = newestSentId(blocks, older);
+  useSentGlide(sentId);
+  const {
+    top,
+    loading,
+    error: olderError,
+  } = useOlderOnScrollUp(botId, conversation.hasOlder, conversation.messages[0]?.id);
   const day = dateFormatter(locale, { dateStyle: 'medium' });
 
   return (
@@ -82,75 +96,87 @@ export function BotTranscript({
       {all.length === 0 ? (
         hello
       ) : (
-        <ChatTranscript>
-          {blocks.map((block, index) => {
-            const markers = markersBefore(blocks, index);
-            return (
-              <Fragment key={block.key}>
-                {markers.day ? (
-                  <TranscriptDivider>{day.format(markers.day)}</TranscriptDivider>
-                ) : null}
-                {markers.model ? (
-                  <ChatMarker icon={<Cpu aria-hidden />}>
-                    <Trans
-                      i18nKey="bots.chat.switchedModel"
-                      values={{
-                        model:
-                          botModelOf(markers.model.provider, markers.model.model)?.label ??
-                          markers.model.model,
-                      }}
-                      components={{ model: <strong /> }}
-                    />
-                  </ChatMarker>
-                ) : null}
-                {block.turnId === null ? (
-                  block.asked.map((message) => (
-                    <BotEventLine
-                      key={message.id}
-                      message={message}
-                      action={
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          render={<Link to="/bots/$botId/settings/routines" params={{ botId }} />}
-                        >
-                          {t('bots.chat.event.openRoutines')}
-                        </Button>
+        <>
+          {conversation.hasOlder ? <div ref={top} aria-hidden /> : null}
+          {/* The newest send it counts, for following the chat down to its answer. */}
+          <ChatTranscript data-newest-sent={sentId}>
+            {loading ? (
+              <ChatMarker icon={<LoaderCircle aria-hidden className="motion-safe:animate-spin" />}>
+                {t('bots.chat.loadingOlder')}
+              </ChatMarker>
+            ) : null}
+            <ErrorAlert error={olderError} fallback={t('bots.chat.olderFailed')} />
+            {blocks.map((block, index) => {
+              const markers = markersBefore(blocks, index);
+              return (
+                <Fragment key={block.key}>
+                  {markers.day ? (
+                    <TranscriptDivider>{day.format(markers.day)}</TranscriptDivider>
+                  ) : null}
+                  {markers.model ? (
+                    <ChatMarker icon={<Cpu aria-hidden />}>
+                      <Trans
+                        i18nKey="bots.chat.switchedModel"
+                        values={{
+                          model:
+                            botModelOf(markers.model.provider, markers.model.model)?.label ??
+                            markers.model.model,
+                        }}
+                        components={{ model: <strong /> }}
+                      />
+                    </ChatMarker>
+                  ) : null}
+                  {block.turnId === null ? (
+                    block.asked.map((message) => (
+                      <BotEventLine
+                        key={message.id}
+                        message={message}
+                        action={
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            render={<Link to="/bots/$botId/settings/routines" params={{ botId }} />}
+                          >
+                            {t('bots.chat.event.openRoutines')}
+                          </Button>
+                        }
+                      />
+                    ))
+                  ) : (
+                    <BotTurn
+                      block={block}
+                      live={live.text[block.turnId]}
+                      current={block.turnId === current}
+                      working={working.get(block.turnId)}
+                      waitingOn={live.retrying[block.turnId]}
+                      subagents={live.subagents}
+                      images={(attachments) => (
+                        <BotMessageImages botId={botId} attachments={attachments} />
+                      )}
+                      onRetry={
+                        again !== null && block.turnId === newest
+                          ? () => retry.mutate({ id: botId, content: again })
+                          : undefined
                       }
+                      retrying={retry.isPending}
+                      onReact={(messageId, emoji) => react.mutate({ id: botId, messageId, emoji })}
+                      onOpenProviders={() => navigate({ to: '/settings/model-providers' })}
                     />
-                  ))
-                ) : (
-                  <BotTurn
-                    block={block}
-                    live={live.text[block.turnId]}
-                    current={block.turnId === current}
-                    working={working.get(block.turnId)}
-                    waitingOn={live.retrying[block.turnId]}
-                    subagents={live.subagents}
-                    images={(attachments) => (
-                      <BotMessageImages botId={botId} attachments={attachments} />
-                    )}
-                    onRetry={
-                      again !== null && block.turnId === newest
-                        ? () => retry.mutate({ id: botId, content: again })
-                        : undefined
-                    }
-                    retrying={retry.isPending}
-                    onOpenProviders={() => navigate({ to: '/settings/model-providers' })}
-                  />
-                )}
-              </Fragment>
-            );
-          })}
-          {live.resolved.map((event) => (
-            <ApprovalEventLine key={event.approvalId} event={event} />
-          ))}
-          <ErrorAlert
-            error={retry.error}
-            fallback={t('bots.chat.sendFailed')}
-            onDismiss={() => retry.reset()}
-          />
-        </ChatTranscript>
+                  )}
+                </Fragment>
+              );
+            })}
+            {live.resolved.map((event) => (
+              <ApprovalEventLine key={event.approvalId} event={event} />
+            ))}
+            <ErrorAlert error={react.error} fallback={t('common.chat.emoji.reactFailed')} />
+            <ErrorAlert
+              error={retry.error}
+              fallback={t('bots.chat.sendFailed')}
+              onDismiss={() => retry.reset()}
+            />
+          </ChatTranscript>
+        </>
       )}
     </>
   );

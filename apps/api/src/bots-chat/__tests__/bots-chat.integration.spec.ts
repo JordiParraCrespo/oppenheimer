@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
-import type { PlanTaskEventKind } from '@oppenheimer/shared';
+import { botFormSpecSchema, type PlanTaskEventKind } from '@oppenheimer/shared';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import type { ChatgptCredentialResolver } from '../../bots/application/chatgpt-credential.resolver';
@@ -47,12 +47,14 @@ import { BotTurnChannelPolicy } from '../application/bot-turn-channel.policy';
 import { BotTurnContextResolver } from '../application/bot-turn-context.resolver';
 import { BotTurnHoldPolicy } from '../application/bot-turn-hold.policy';
 import { BotTurnOpeningResolver } from '../application/bot-turn-opening.resolver';
+import type { BotVoiceReplyResolver } from '../application/bot-voice-reply.resolver';
 import { failureKindOf, TurnTranscript } from '../application/turn-transcript.policy';
 import { TurnWriteFactory } from '../application/turn-write.factory';
 import { BotApprovalMapper } from '../bot-approval.mapper';
 import { BotAttachmentMapper } from '../bot-attachment.mapper';
 import { BotConversationMapper } from '../bot-conversation.mapper';
 import { BotConversationSummaryMapper } from '../bot-conversation-summary.mapper';
+import { BotFormMapper } from '../bot-form.mapper';
 import { BotGoalMapper } from '../bot-goal.mapper';
 import { BotLoopMapper } from '../bot-loop.mapper';
 import { BotMessageMapper } from '../bot-message.mapper';
@@ -69,6 +71,8 @@ import { BotAttachmentRepository } from '../database/bot-attachment.repository';
 import { BotConversationRepository } from '../database/bot-conversation.repository';
 import { BotConversationSummaryOrmEntity } from '../database/bot-conversation-summary.orm-entity';
 import { BotConversationSummaryRepository } from '../database/bot-conversation-summary.repository';
+import { BotFormOrmEntity } from '../database/bot-form.orm-entity';
+import { BotFormRepository } from '../database/bot-form.repository';
 import { BotGoalOrmEntity } from '../database/bot-goal.orm-entity';
 import { BotGoalRepository } from '../database/bot-goal.repository';
 import { BotLoopOrmEntity } from '../database/bot-loop.orm-entity';
@@ -88,6 +92,7 @@ import { BotApprovalEntity } from '../domain/bot-approval.entity';
 import { stoppedLine } from '../domain/bot-approval.policy';
 import { BotAttachmentEntity } from '../domain/bot-attachment.entity';
 import { BotConversationSummaryEntity } from '../domain/bot-conversation-summary.entity';
+import { BotFormEntity } from '../domain/bot-form.entity';
 import { BotGoalEntity } from '../domain/bot-goal.entity';
 import { goalContinuationTurn, goalEndLine, goalPauseLine } from '../domain/bot-goal.policy';
 import { BotLoopEntity } from '../domain/bot-loop.entity';
@@ -147,6 +152,7 @@ describe('bots chat (integration)', () => {
   let messages: BotMessageRepository;
   let approvals: BotApprovalRepository;
   let questions: BotQuestionRepository;
+  let forms: BotFormRepository;
   let summaries: BotConversationSummaryRepository;
   let attachments: BotAttachmentRepository;
   let subscriptions: BotSubscriptionRepository;
@@ -182,6 +188,7 @@ describe('bots chat (integration)', () => {
         BotMessageOrmEntity,
         BotApprovalOrmEntity,
         BotQuestionOrmEntity,
+        BotFormOrmEntity,
         BotConversationSummaryOrmEntity,
         BotAttachmentOrmEntity,
         BotSubscriptionOrmEntity,
@@ -245,6 +252,13 @@ describe('bots chat (integration)', () => {
     questions = new BotQuestionRepository(
       dataSource.getRepository(BotQuestionOrmEntity),
       new BotQuestionMapper(),
+      new OutboxService(dataSource),
+      new BotTurnMapper(),
+      new BotMessageMapper(),
+    );
+    forms = new BotFormRepository(
+      dataSource.getRepository(BotFormOrmEntity),
+      new BotFormMapper(),
       new OutboxService(dataSource),
       new BotTurnMapper(),
       new BotMessageMapper(),
@@ -1325,6 +1339,42 @@ describe('bots chat (integration)', () => {
     });
   });
 
+  // What breaks this: a WhatsApp image the turn fetched that the chat cannot
+  // show afterwards (unclaimed, then swept), or the message saved without it.
+  it('keeps the image a turn read from a WhatsApp image, claimed by the message', async () => {
+    const bot = await create('Image Bot');
+    const photo = sent(bot, '[image]');
+    const pending = BotMessageEntity.create({
+      id: photo.message.id,
+      props: { ...photo.message.getProps(), pendingMedia: { kind: 'whatsapp_image' } },
+    });
+    await turns.enqueue(photo.turn, pending, null);
+    const opening = (await messages.findOpening(organizationId, photo.turn.id)) as BotMessageEntity;
+    const image = BotAttachmentEntity.upload(
+      {
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        uploadedByUserId: null,
+        mimeType: 'image/jpeg',
+        sizeBytes: 4096,
+        name: 'whatsapp-image.jpg',
+      },
+      'jpg',
+    );
+    await attachments.insert(image);
+
+    opening.read('', [image.toMessageAttachment()]);
+    await messages.saveReading(opening);
+
+    expect(await messages.findOpening(organizationId, photo.turn.id)).toMatchObject({
+      content: '',
+      pendingMedia: null,
+      attachments: [image.toMessageAttachment()],
+    });
+    const claimed = await attachments.findForMessage(organizationId, opening.id);
+    expect(claimed.map((stored) => stored.id)).toEqual([image.id]);
+  });
+
   // What breaks this: a voice note's words read but lost, so the next turn's history reads
   // "[voice note]"; the note read again on a retry; or the words written onto another
   // workspace's message.
@@ -1340,7 +1390,7 @@ describe('bots chat (integration)', () => {
     expect(opening.pendingMedia).toEqual({ kind: 'whatsapp_voice_note' });
 
     opening.read('[voice note, 0:12] Call the bank');
-    await messages.saveContent(opening);
+    await messages.saveReading(opening);
 
     expect(await messages.findOpening(organizationId, note.turn.id)).toMatchObject({
       content: '[voice note, 0:12] Call the bank',
@@ -1351,7 +1401,7 @@ describe('bots chat (integration)', () => {
       id: opening.id,
       props: { ...opening.getProps(), organizationId: other, content: 'not theirs' },
     });
-    await messages.saveContent(stranger);
+    await messages.saveReading(stranger);
     expect(await messages.findOpening(organizationId, note.turn.id)).toMatchObject({
       content: '[voice note, 0:12] Call the bank',
     });
@@ -1688,6 +1738,11 @@ describe('bots chat (integration)', () => {
     const chatgpt = {} as ChatgptCredentialResolver;
     // An owner who is no longer a member: the turn still runs, reading no hosts.
     const owners = { resolve: async () => null } as unknown as BotOwnerScopeResolver;
+    const files = {
+      store: async () => undefined,
+      read: async (key: string) => Buffer.from(key),
+      remove: async () => undefined,
+    };
     const hosts: OwnerHostsPort = { hostsOf: vi.fn(async () => []) };
     // The owner wrote nothing about themselves: the prompt has no such section.
     const people: PersonMemoryRepositoryPort = {
@@ -1721,13 +1776,9 @@ describe('bots chat (integration)', () => {
       new BotTurnOpeningResolver(
         messages,
         attachments,
-        {
-          store: async () => undefined,
-          read: async (key) => Buffer.from(key),
-          remove: async () => undefined,
-        },
+        files,
         new BotAttachmentMapper(),
-        new BotOpeningMediaResolver(messages, []),
+        new BotOpeningMediaResolver(messages, attachments, files, []),
       ),
       { create: () => ({ run: async () => [] }) } as unknown as BotSubagentRunnerFactory,
       { forBot: async () => NO_PERMISSIONS } as unknown as BotPermissionsResolver,
@@ -1736,6 +1787,8 @@ describe('bots chat (integration)', () => {
       } as unknown as BotRuleReviewerFactory,
       new BotApprovalStartedPolicy(approvals),
       new BotTurnHoldPolicy(turns),
+      // No turn here is a contact's on WhatsApp, so none is offered a voice reply.
+      { maxChars: async () => null } as unknown as BotVoiceReplyResolver,
     );
   }
 
@@ -1930,6 +1983,73 @@ describe('bots chat (integration)', () => {
     expect(
       (await questions.findOne(scopeOf(await insertOrganization()), bot.id, card.id)).isNone(),
     ).toBe(true);
+  });
+
+  /** A form on the bot's turn, waiting for its owner. */
+  async function formed(bot: BotEntity, title = 'Release details') {
+    const { turn, message } = sent(bot, 'Release it');
+    await turns.enqueue(turn, message, null);
+    return BotFormEntity.ask({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      turnId: turn.id,
+      spec: botFormSpecSchema.parse({
+        title,
+        fields: [
+          { id: 'version', kind: 'text', label: 'Version', required: true },
+          { id: 'replicas', kind: 'number', label: 'Replicas', min: 1, max: 5 },
+        ],
+      }),
+    });
+  }
+
+  it('stores a form submitted, its spec and values read back whole, and refuses one submitted without values', async () => {
+    const bot = await create('Former');
+    const form = await formed(bot);
+    expect(await forms.insertPending(form)).toBe('inserted');
+    const stored = (await forms.findPending(organizationId, bot.id)).unwrap();
+    expect(stored.spec).toEqual(form.spec);
+    expect(await forms.findPendingBotIds(scope())).toContain(bot.id);
+    stored.submit(userId, new Date(), { version: 'v2.4.0', replicas: '3' });
+    expect(await forms.saveTransition(stored)).toBe(true);
+    expect((await forms.findOne(scope(), bot.id, form.id)).unwrap()).toMatchObject({
+      status: 'submitted',
+      values: { version: 'v2.4.0', replicas: 3 },
+    });
+    expect(await forms.findPendingBotIds(scope())).not.toContain(bot.id);
+    // The loser of a race writes nothing.
+    form.expire(new Date());
+    expect(await forms.saveTransition(form)).toBe(false);
+    await expect(
+      dataSource.query(`UPDATE bot_form SET "values" = NULL WHERE id = $1`, [form.id]),
+    ).rejects.toThrow(/CHK_bot_form_values/);
+    // Another workspace cannot read it.
+    expect(
+      (await forms.findOne(scopeOf(await insertOrganization()), bot.id, form.id)).isNone(),
+    ).toBe(true);
+  });
+
+  it('keeps one card up per bot across all three kinds: a form waits on questions, and questions on a form', async () => {
+    const bot = await create('Three kinds');
+    expect(await questions.insertPending(await questioned(bot, 'Which branch?'))).toBe('inserted');
+    expect(await forms.insertPending(await formed(bot))).toEqual({ waiting: 'Which branch?' });
+    const pending = (await questions.findPending(organizationId, bot.id)).unwrap();
+    pending.expire(new Date());
+    expect(await questions.saveTransition(pending)).toBe(true);
+    expect(await forms.insertPending(await formed(bot, 'Deploy details'))).toBe('inserted');
+    expect(await questions.insertPending(await questioned(bot))).toEqual({
+      waiting: 'Deploy details',
+    });
+    expect(await approvals.insertPending(await asked(bot, 'Merge it'))).toEqual({
+      waiting: 'Deploy details',
+    });
+
+    const racer = await create('Racing forms');
+    const outcomes = await Promise.all([
+      questions.insertPending(await questioned(racer, 'Which one?')),
+      forms.insertPending(await formed(racer)),
+    ]);
+    expect(outcomes.filter((outcome) => outcome === 'inserted')).toHaveLength(1);
   });
 
   it('keeps one card up per bot across both kinds: questions wait on an approval, and the other way round', async () => {
@@ -2627,6 +2747,31 @@ describe('bots chat (integration)', () => {
     const other = await insertOrganization();
     expect(await messages.countConversation(scopeOf(other), bot.id)).toBe(0);
     expect(await messages.findExportPage(scopeOf(other), bot.id, null, 3)).toEqual([]);
+  });
+
+  // What breaks this: a page boundary that skips or repeats a message (a
+  // cursor on time alone, where a question and its answer share a
+  // millisecond), so a chat scrolled up loses history or draws it twice.
+  it('reads the chat backwards a page at a time before a message, each page oldest first', async () => {
+    const bot = await create('Scrolled');
+    await talked(bot, 10);
+    const read: string[] = [];
+    let page = await messages.findConversation(scope(), bot.id, 3);
+    while (page.length > 0) {
+      read.unshift(...page.map((message) => message.content));
+      page = await messages.findConversation(scope(), bot.id, 3, page[0]?.id);
+    }
+    expect(read).toEqual(
+      [0, 2, 4, 6, 8].flatMap((index) => [`Question ${index}`, `Answer ${index}`]),
+    );
+
+    // A cursor is only ever this chat's, in this workspace.
+    const [newest] = await messages.findConversation(scope(), bot.id, 1);
+    const elsewhere = await create('Elsewhere');
+    await talked(elsewhere, 2);
+    expect(await messages.findConversation(scope(), elsewhere.id, 3, newest?.id)).toEqual([]);
+    const other = await insertOrganization();
+    expect(await messages.findConversation(scopeOf(other), bot.id, 3, newest?.id)).toEqual([]);
   });
 
   /** A turn `asking` queues on `target` through `message_bot` or `ask_bot`. */

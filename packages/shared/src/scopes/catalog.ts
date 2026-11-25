@@ -31,6 +31,7 @@ export const SCOPE_RESOURCES = [
   'mail',
   'whatsapp',
   'telegram',
+  'slack',
   'cloud-agents',
   'pulls',
   'repositories',
@@ -581,6 +582,30 @@ export const PERMISSION_GROUPS: readonly PermissionGroup[] = [
           { action: 'create', subject: 'Telegram' },
           { action: 'update', subject: 'Telegram' },
           { action: 'delete', subject: 'Telegram' },
+        ],
+      },
+    },
+  },
+  {
+    resource: 'slack',
+    label: 'Slack',
+    description:
+      'The Slack apps the caller connected for their bots, each answering in Slack as its bot.',
+    levels: {
+      read: {
+        scope: 'slack:read',
+        label: 'Read',
+        description: 'List the caller’s own connected Slack apps.',
+        policies: [{ action: 'read', subject: 'Slack' }],
+      },
+      write: {
+        scope: 'slack:write',
+        label: 'Edit',
+        description: 'Connect and disconnect the caller’s own bots’ Slack apps.',
+        policies: [
+          { action: 'create', subject: 'Slack' },
+          { action: 'update', subject: 'Slack' },
+          { action: 'delete', subject: 'Slack' },
         ],
       },
     },

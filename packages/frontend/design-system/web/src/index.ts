@@ -37,6 +37,7 @@ export type {
 export { AvatarColorPicker, AvatarPicker, BotAvatar } from './components/avatar-picker';
 export { Badge, badgeVariants } from './components/badge';
 export { BotFacePicker } from './components/bot-face-picker';
+export { BotFaceItem, BotFaces } from './components/bot-faces';
 export { BotItem, BotItemSkeleton, BotList, SortableBotItem } from './components/bot-item';
 export type { BrandGlyphName } from './components/brand-glyph';
 /* ── MVP design system ──────────────────────────────────────────────────── */
@@ -76,6 +77,7 @@ export type { ProposedPlanLabels, SubagentState } from './components/chat-cards'
 export {
   AnsweredQuestions,
   BotExchange,
+  BotExchangeFoldTurn,
   BotExchangeTurn,
   ChangedFileRow,
   ChangedFilesCard,
@@ -162,13 +164,20 @@ export {
   TraceOutput,
   TraceStep,
 } from './components/chat-trace';
-export type { TurnHeaderLabels, TurnState } from './components/chat-transcript';
+export type {
+  ChatReactionBarLabels,
+  TurnHeaderLabels,
+  TurnState,
+} from './components/chat-transcript';
 export {
   ChatAttachment,
   ChatCommand,
   ChatCommandText,
   ChatMention,
+  ChatReaction,
+  ChatReactionBar,
   ChatReply,
+  ChatTable,
   ChatTranscript,
   ChatUserMessage,
   MessageTrail,
@@ -183,6 +192,7 @@ export {
   ToolCallLive,
   ToolCallOutput,
   ToolCallRow,
+  ToolCallTail,
 } from './components/chat-work';
 export { Checkbox } from './components/checkbox';
 export type { ChipProps } from './components/chip';
@@ -209,7 +219,7 @@ export {
   ChipSelectTrigger,
 } from './components/chip-select';
 export type { CodeBlockTab } from './components/code-block';
-export { CodeBlock } from './components/code-block';
+export { CodeBlock, codeBlockTabVariants } from './components/code-block';
 export {
   Command,
   CommandDialog,
@@ -350,7 +360,11 @@ export { IconButton, iconButtonVariants } from './components/icon-button';
 export type { CarouselSlide } from './components/image-carousel';
 export { ImageCarousel } from './components/image-carousel';
 export {
+  InboxAnswerSummary,
   InboxClear,
+  InboxDeck,
+  type InboxDeckExit,
+  InboxDock,
   InboxItem,
   InboxItemSkeleton,
   InboxList,
@@ -363,10 +377,13 @@ export {
   InboxQuestion,
   InboxQuestionOption,
   InboxQuestionOptions,
+  InboxQuestionSteps,
   InboxQuestions,
   InboxSelectionHead,
   InboxSnoozedRow,
+  type InboxSwipe,
   InboxToolbar,
+  inboxDeckAnswer,
 } from './components/inbox';
 export {
   AddRow,
@@ -382,6 +399,7 @@ export { Input, inputVariants } from './components/input';
 export type { JsonTreeAnnotate } from './components/json-tree';
 export { JsonTree } from './components/json-tree';
 export { Kbd } from './components/kbd';
+export { Launcher, LauncherHeading, LauncherItem } from './components/launcher';
 export { Link } from './components/link';
 export { MergePath } from './components/merge-path';
 export { MilestoneCard, MilestoneGrid } from './components/milestone-card';
@@ -556,6 +574,7 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   SortableSidebarProjectGroup,
+  SortableSidebarSection,
   sortableProjectId,
   useSidebar,
 } from './components/sidebar';
@@ -624,5 +643,6 @@ export { useDebouncedValue } from './hooks/use-debounced-value';
 export { useFileDrag } from './hooks/use-file-drag';
 export { useIsMobile } from './hooks/use-mobile';
 export { useNow } from './hooks/use-now';
+export { useRowMenu } from './hooks/use-row-menu';
 export { useStickToBottom } from './hooks/use-stick-to-bottom';
 export { cn } from './lib/utils';

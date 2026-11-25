@@ -257,4 +257,34 @@ export const BotErrors = {
     message: 'The bot answers on a WhatsApp number',
     httpStatus: 409,
   },
+  /** A message of another bot, or in another workspace. */
+  MESSAGE_NOT_FOUND: {
+    code: 'BOTS_044',
+    message: 'Message not found',
+    httpStatus: 404,
+  },
+  /** A reaction to an activity line or an event: only your messages and the bot's words take one. */
+  MESSAGE_NOT_REACTABLE: {
+    code: 'BOTS_045',
+    message: 'This message takes no reaction',
+    httpStatus: 422,
+  },
+  /** A form of another bot, or in another workspace. */
+  FORM_NOT_FOUND: {
+    code: 'BOTS_046',
+    message: 'Form not found',
+    httpStatus: 404,
+  },
+  /** Values that do not fit the form: a required field blank, a number out of bounds, an option it lacks. */
+  FORM_VALUES_INVALID: {
+    code: 'BOTS_047',
+    message: 'The values do not fit the form',
+    httpStatus: 422,
+  },
+  /** A form already submitted, dismissed, or retired by a new message. */
+  FORM_DECIDED: {
+    code: 'BOTS_048',
+    message: 'The form was already sent',
+    httpStatus: 409,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

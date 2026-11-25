@@ -175,7 +175,7 @@ You are {name}. You are becoming someone, not a chatbot.
 - **Trustworthy.** Do what you are asked, fully. Never pretend a step finished when it did not. Ask before anything public or hard to undo that nobody asked for.
 
 ## Vibe
-Brief when that is enough, thorough when it matters. Not a corporate drone, not a sycophant.
+Brief when that is enough, thorough when it matters. Not a corporate drone, not a sycophant. On a phone you text like a person, not a help desk: short, natural, never repeating their words back.
 
 ## This file
 It is yours to evolve: as you learn who you are, update it with \`edit_soul\`, and tell the person when you do.
@@ -648,6 +648,27 @@ export interface BotQuestionEvent {
   answers: BotAnsweredQuestion[];
 }
 
+/** How a form was decided: submitted, or dismissed. */
+export const BOT_FORM_OUTCOMES = ['submitted', 'dismissed'] as const;
+export type BotFormOutcome = (typeof BOT_FORM_OUTCOMES)[number];
+
+/** A form decided (`ask_form`): how, its title, and what was sent, field by field. */
+export interface BotFormEvent {
+  kind: 'form';
+  outcome: BotFormOutcome;
+  /** The form's title, its line in the chat. */
+  title: string;
+  /** Each field's label and the value sent, in words; empty when dismissed. */
+  values: BotSubmittedFormValue[];
+}
+
+/** One field of a submitted form, as the chat shows it: its label and what was sent. */
+export interface BotSubmittedFormValue {
+  label: string;
+  /** What was sent, in words; empty when an optional field was left blank. */
+  value: string;
+}
+
 /** One answered question of an `ask_user` card, as the chat shows it. */
 export interface BotAnsweredQuestion {
   question: string;
@@ -762,6 +783,36 @@ export interface BotPullRequestEvent {
   number: number;
   /** What happened on it. */
   event: PullRequestWakeEvent;
+}
+
+/**
+ * How the owner asked a bot on GitHub: `@oppenheimer <bot>` in a comment or a
+ * review, or the label `bot:<bot>` on an issue or a pull request.
+ */
+export const BOT_GITHUB_ASK_VIAS = ['mention', 'label'] as const;
+export type BotGithubAskVia = (typeof BOT_GITHUB_ASK_VIAS)[number];
+
+/**
+ * The owner asked the bot on GitHub, and its last words are posted back there
+ * by Oppenheimer's GitHub App. Where it was asked, never what was written:
+ * the words reach the bot as outside data, in the turn's prompt alone.
+ */
+export interface BotGithubAskEvent {
+  kind: 'github_ask';
+  via: BotGithubAskVia;
+  /** The installation the answer is posted through, and the bot's tools read with. */
+  installationId: string;
+  /** GitHub's repository id, as a string: it is a bigint. */
+  githubRepoId: string;
+  /** `owner/name`. */
+  repository: string;
+  number: number;
+  /** Whether `number` is a pull request's; null when GitHub did not say. */
+  isPullRequest: boolean | null;
+  /** The comment, review or issue the ask was made on; null when GitHub sent none. */
+  url: string | null;
+  /** The GitHub login that asked: the owner's. */
+  actorLogin: string;
 }
 
 /**
@@ -907,6 +958,27 @@ export interface BotLoopEvent {
   reason: string | null;
 }
 
+/** The longest `about` a `check_back` call takes: what it waits on, in a sentence or two. */
+export const BOT_CHECK_BACK_ABOUT_MAX = 300;
+
+/**
+ * A bot checking back on something it delegated or waits on, from its own
+ * `check_back` call (`27-bot-subscriptions.md` §7.3): one line opening the
+ * turn of each look. A chain is the looks at one thing, step 0 first, each
+ * look's call setting the next while the thing is still pending.
+ */
+export interface BotCheckBackEvent {
+  kind: 'check_back';
+  /** The looks at one thing: the id of the first look's call. */
+  chainId: string;
+  /** Which look of the chain this is, from 0. */
+  step: number;
+  /** When the chain's first look was set (ISO 8601): it stops 24 hours later. */
+  chainStartedAt: string;
+  /** What the bot is waiting on and what to look at, in its own words. */
+  about: string;
+}
+
 /** A bot's loop as the console reads it: `GET /bots/:id/loop`. */
 export interface BotLoop {
   id: string;
@@ -989,9 +1061,11 @@ export interface BotGoal {
 /**
  * Why a bot turn exists: a message (yours or another bot's), an approval's
  * decision, a card of questions answered or dismissed, a routine's run, a
- * session the bot is subscribed to, a goal it set itself, a loop's run, or a
- * message of yours to the bot on a channel: your Telegram bot, or your spare
- * WhatsApp number.
+ * session the bot is subscribed to, a goal it set itself, a loop's run, a
+ * message of yours to the bot on a channel (your Telegram bot, or your spare
+ * WhatsApp number), or your ask of it on GitHub: a mention in a comment, or a
+ * `bot:<name>` label; or a look the bot asked for with `check_back`, at work
+ * it delegated or waits on.
  */
 export const BOT_TURN_ORIGINS = [
   'message',
@@ -1003,12 +1077,15 @@ export const BOT_TURN_ORIGINS = [
   'loop',
   'telegram',
   'whatsapp',
+  'slack',
+  'github',
+  'check_back',
 ] as const;
 export type BotTurnOrigin = (typeof BOT_TURN_ORIGINS)[number];
 
 /**
  * The turns a person is waiting on: one they started by writing (in the
- * console, on Telegram or on WhatsApp), or by deciding a card. A routine's
+ * console, on Telegram, WhatsApp or Slack), or by deciding a card. A routine's
  * run, a wake and a goal's continuation run with nobody there, so a tool
  * that needs someone to answer is not offered on them.
  */
@@ -1018,6 +1095,7 @@ export const BOT_ATTENDED_ORIGINS = [
   'question',
   'telegram',
   'whatsapp',
+  'slack',
 ] as const satisfies readonly BotTurnOrigin[];
 
 /**
@@ -1028,6 +1106,7 @@ export const BOT_ATTENDED_ORIGINS = [
 export const BOT_CHANNEL_ORIGINS = [
   'telegram',
   'whatsapp',
+  'slack',
 ] as const satisfies readonly BotTurnOrigin[];
 export type BotChannelOrigin = (typeof BOT_CHANNEL_ORIGINS)[number];
 
@@ -1151,14 +1230,17 @@ export interface BotCompactionEvent {
 export type BotMessageEvent =
   | BotApprovalEvent
   | BotQuestionEvent
+  | BotFormEvent
   | BotRoutineEvent
   | BotPeerMessageEvent
   | BotPeerReplyEvent
   | BotSessionEvent
   | BotPullRequestEvent
+  | BotGithubAskEvent
   | BotTaskEvent
   | BotGoalEvent
   | BotLoopEvent
+  | BotCheckBackEvent
   | BotDreamEvent
   | BotCompactionEvent;
 
@@ -1166,14 +1248,17 @@ export type BotMessageEvent =
 export const BOT_MESSAGE_EVENT_KINDS = [
   'approval',
   'question',
+  'form',
   'routine',
   'bot_message',
   'bot_reply',
   'session',
   'pull_request',
+  'github_ask',
   'task',
   'goal',
   'loop',
+  'check_back',
   'dream',
   'compaction',
 ] as const;
@@ -1242,7 +1327,11 @@ export const sendBotMessageSchema = z
   });
 export type SendBotMessageDto = z.infer<typeof sendBotMessageSchema>;
 
-/** `GET /bots/:id/conversation`: the newest `limit` messages, oldest first. */
+/**
+ * `GET /bots/:id/conversation`: the newest `limit` messages, oldest first; with
+ * `before`, the `limit` messages just older than that one, for a chat
+ * scrolled up past its window.
+ */
 export const findBotConversationSchema = z.object({
   limit: z.coerce
     .number()
@@ -1250,16 +1339,44 @@ export const findBotConversationSchema = z.object({
     .min(1)
     .max(BOT_CONVERSATION_PAGE_MAX)
     .default(BOT_CONVERSATION_PAGE_DEFAULT),
+  /** A message of the chat, the oldest the reader holds: the page ends just before it. */
+  before: z.string().uuid().optional(),
 });
 export type FindBotConversationDto = z.infer<typeof findBotConversationSchema>;
 
+/** A routine's name and prompt, as long as the bot's own `update_routine` tool takes them. */
+export const BOT_ROUTINE_NAME_MAX = 200;
+export const BOT_ROUTINE_PROMPT_MAX = 8_000;
+
 /**
- * `PATCH /bots/:id/routines/:routineId`: the Routines tab's switch. The tab
- * changes whether a routine runs, never what it is: that is the chat's, through
- * the bot's own tool.
+ * The Routines tab's Edit dialog: the two fields a person types. When it runs
+ * (its triggers) is still the chat's, through the bot's own tool.
  */
-export const updateBotRoutineSchema = z.object({ enabled: z.boolean() });
+export const botRoutineTaskSchema = z.object({
+  name: z.string().trim().min(1).max(BOT_ROUTINE_NAME_MAX),
+  prompt: z.string().trim().min(1).max(BOT_ROUTINE_PROMPT_MAX),
+});
+export type BotRoutineTaskDto = z.infer<typeof botRoutineTaskSchema>;
+
+/**
+ * `PATCH /bots/:id/routines/:routineId`: the Routines tab's switch and its
+ * Edit dialog. Any of the three, at least one; what is absent stays as it is.
+ */
+export const updateBotRoutineSchema = botRoutineTaskSchema
+  .partial()
+  .extend({ enabled: z.boolean().optional() })
+  .refine(
+    (body) => body.enabled !== undefined || body.name !== undefined || body.prompt !== undefined,
+    { path: ['enabled'], params: { i18nKey: 'validation.required' } },
+  );
 export type UpdateBotRoutineDto = z.infer<typeof updateBotRoutineSchema>;
+
+/**
+ * A new URL for a routine's webhook, from its Routines tab: `signed` also
+ * issues a signing secret every request must then be signed with.
+ */
+export const issueRoutineWebhookSchema = z.object({ signed: z.boolean().default(false) });
+export type IssueRoutineWebhookDto = z.infer<typeof issueRoutineWebhookSchema>;
 
 /**
  * A Needs input card: one call of an asking tool, waiting for the owner.
@@ -1386,6 +1503,189 @@ export const dismissBotQuestionSchema = z.object({
   note: z.string().trim().max(BOT_APPROVAL_NOTE_MAX).optional(),
 });
 export type DismissBotQuestionDto = z.infer<typeof dismissBotQuestionSchema>;
+
+/**
+ * A form a bot asked its owner to fill (`ask_form`): `pending` until they
+ * submit it or dismiss it, `expired` when they wrote to the bot instead.
+ * Nothing runs on it; the values go to the bot.
+ */
+export const BOT_FORM_STATUSES = ['pending', 'submitted', 'dismissed', 'expired'] as const;
+export type BotFormStatus = (typeof BOT_FORM_STATUSES)[number];
+
+/** What a field takes: a line, a paragraph, a number, one of a list, an address, a day. */
+export const BOT_FORM_FIELD_KINDS = [
+  'text',
+  'textarea',
+  'number',
+  'select',
+  'email',
+  'date',
+] as const;
+export type BotFormFieldKind = (typeof BOT_FORM_FIELD_KINDS)[number];
+
+/** How many fields one form holds. */
+export const BOT_FORM_FIELDS_MIN = 1;
+export const BOT_FORM_FIELDS_MAX = 8;
+export const BOT_FORM_TITLE_MAX = 120;
+export const BOT_FORM_DESCRIPTION_MAX = 500;
+export const BOT_FORM_SUBMIT_LABEL_MAX = 32;
+/** A field's id: what the bot reads its value by (`repo`, `due_date`). */
+export const BOT_FORM_FIELD_ID_PATTERN = /^[a-z][a-z0-9_]{0,31}$/;
+export const BOT_FORM_FIELD_LABEL_MAX = 80;
+export const BOT_FORM_FIELD_PLACEHOLDER_MAX = 120;
+/** How many options a `select` offers, at least and at most. */
+export const BOT_FORM_SELECT_OPTIONS_MIN = 2;
+export const BOT_FORM_SELECT_OPTIONS_MAX = 12;
+export const BOT_FORM_SELECT_OPTION_MAX = 80;
+/** How long a `text` or `email` value may be, and a `textarea`'s. */
+export const BOT_FORM_TEXT_MAX = 300;
+export const BOT_FORM_TEXTAREA_MAX = 2_000;
+/** A `date` field's value: a calendar day, `YYYY-MM-DD`. */
+export const BOT_FORM_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const botFormFieldBase = {
+  id: z.string().regex(BOT_FORM_FIELD_ID_PATTERN),
+  label: z.string().trim().min(1).max(BOT_FORM_FIELD_LABEL_MAX),
+  placeholder: z.string().trim().max(BOT_FORM_FIELD_PLACEHOLDER_MAX).nullable().default(null),
+  required: z.boolean().default(false),
+};
+
+/**
+ * One field of a form, by what it takes. A `number` may bound its value; a
+ * `select` lists its options, and its value is one of them. A default fills
+ * the field before the person edits it. Whether the ids are distinct, the
+ * bounds in order and the default a value the field takes is the API's to
+ * answer, over the whole form.
+ */
+export const botFormFieldSchema = z.discriminatedUnion('kind', [
+  z.object({
+    ...botFormFieldBase,
+    kind: z.literal('text'),
+    default: z.string().trim().max(BOT_FORM_TEXT_MAX).nullable().default(null),
+  }),
+  z.object({
+    ...botFormFieldBase,
+    kind: z.literal('textarea'),
+    default: z.string().trim().max(BOT_FORM_TEXTAREA_MAX).nullable().default(null),
+  }),
+  z.object({
+    ...botFormFieldBase,
+    kind: z.literal('email'),
+    default: z.string().trim().max(BOT_FORM_TEXT_MAX).nullable().default(null),
+  }),
+  z.object({
+    ...botFormFieldBase,
+    kind: z.literal('date'),
+    default: z.string().regex(BOT_FORM_DATE_PATTERN).nullable().default(null),
+  }),
+  z.object({
+    ...botFormFieldBase,
+    kind: z.literal('number'),
+    min: z.number().finite().nullable().default(null),
+    max: z.number().finite().nullable().default(null),
+    default: z.number().finite().nullable().default(null),
+  }),
+  z.object({
+    ...botFormFieldBase,
+    kind: z.literal('select'),
+    options: z
+      .array(z.string().trim().min(1).max(BOT_FORM_SELECT_OPTION_MAX))
+      .min(BOT_FORM_SELECT_OPTIONS_MIN)
+      .max(BOT_FORM_SELECT_OPTIONS_MAX),
+    default: z.string().trim().max(BOT_FORM_SELECT_OPTION_MAX).nullable().default(null),
+  }),
+]);
+export type BotFormField = z.output<typeof botFormFieldSchema>;
+
+/** A form as the bot asked it: a title, what it is for, its fields, and the button's word. */
+export const botFormSpecSchema = z.object({
+  title: z.string().trim().min(1).max(BOT_FORM_TITLE_MAX),
+  description: z.string().trim().max(BOT_FORM_DESCRIPTION_MAX).nullable().default(null),
+  fields: z.array(botFormFieldSchema).min(BOT_FORM_FIELDS_MIN).max(BOT_FORM_FIELDS_MAX),
+  submitLabel: z.string().trim().max(BOT_FORM_SUBMIT_LABEL_MAX).nullable().default(null),
+});
+export type BotFormSpec = z.output<typeof botFormSpecSchema>;
+
+/** One field's value as sent: words, a number, or nothing for a field left blank. */
+export const botFormValueSchema = z.union([
+  z.string().max(BOT_FORM_TEXTAREA_MAX),
+  z.number().finite(),
+  z.null(),
+]);
+export type BotFormValue = z.output<typeof botFormValueSchema>;
+
+/** A form's values, by field id. */
+export type BotFormValues = Record<string, BotFormValue>;
+
+/**
+ * `POST /bots/:id/forms/:formId/submit`: a value per field id. Whether each
+ * fits its field (required, bounds, an option it lists) is the API's to
+ * answer against the form.
+ */
+export const submitBotFormSchema = z.object({
+  values: z.record(z.string().regex(BOT_FORM_FIELD_ID_PATTERN), botFormValueSchema),
+});
+export type SubmitBotFormDto = z.infer<typeof submitBotFormSchema>;
+
+/** Whether words read as a number a form takes. */
+function isFormNumber(text: string): boolean {
+  return text !== '' && Number.isFinite(Number(text));
+}
+
+/**
+ * One field's input as a person types it (always words, `''` for nothing),
+ * checked the way the API reads the value it becomes: required, a number
+ * within its bounds, an option it lists, an address, a day. The API decides
+ * again on what is sent; this is what lets the form say so before.
+ */
+function formFieldInputSchema(field: BotFormField): z.ZodType<string, z.ZodTypeDef, string> {
+  const base = z.string().trim();
+  const filled = field.required ? base.min(1) : base;
+  switch (field.kind) {
+    case 'text':
+      return filled.pipe(z.string().max(BOT_FORM_TEXT_MAX));
+    case 'textarea':
+      return filled.pipe(z.string().max(BOT_FORM_TEXTAREA_MAX));
+    case 'email':
+      return filled.pipe(z.union([z.literal(''), z.string().max(BOT_FORM_TEXT_MAX).email()]));
+    case 'date':
+      return filled.refine((text) => text === '' || BOT_FORM_DATE_PATTERN.test(text), {
+        params: { i18nKey: 'validation.date' },
+      });
+    case 'select':
+      return filled.refine((text) => text === '' || field.options.includes(text), {
+        params: { i18nKey: 'validation.choice' },
+      });
+    case 'number': {
+      const { min, max } = field;
+      return filled
+        .refine((text) => text === '' || isFormNumber(text), {
+          params: { i18nKey: 'validation.invalid' },
+        })
+        .refine((text) => text === '' || min === null || Number(text) >= min, {
+          params: { i18nKey: 'validation.min', min },
+        })
+        .refine((text) => text === '' || max === null || Number(text) <= max, {
+          params: { i18nKey: 'validation.max', max },
+        });
+    }
+  }
+}
+
+/** A form's inputs as the person fills them: one entry of words per field id. */
+export function botFormInputSchema(
+  spec: BotFormSpec,
+): z.ZodObject<Record<string, z.ZodType<string, z.ZodTypeDef, string>>> {
+  return z.object(
+    Object.fromEntries(spec.fields.map((field) => [field.id, formFieldInputSchema(field)])),
+  );
+}
+
+/** `POST /bots/:id/forms/:formId/dismiss`: why not, optionally. */
+export const dismissBotFormSchema = z.object({
+  note: z.string().trim().max(BOT_APPROVAL_NOTE_MAX).optional(),
+});
+export type DismissBotFormDto = z.infer<typeof dismissBotFormSchema>;
 
 /**
  * `POST /bots/:id/approvals/:approvalId/decision`: one of the card's
@@ -1584,6 +1884,12 @@ export const botStreamEventSchema = z.discriminatedUnion('type', [
     questionId: z.string(),
     status: z.enum(BOT_QUESTION_STATUSES),
   }),
+  /** A form (`ask_form`) was raised, submitted, dismissed or retired. */
+  z.object({
+    type: z.literal('form'),
+    formId: z.string(),
+    status: z.enum(BOT_FORM_STATUSES),
+  }),
   /**
    * Where each child of a running `delegate` call is, the whole set each
    * time one moves; `callId` is the call's step. Never stored: the call's
@@ -1612,3 +1918,27 @@ export const updatePersonAboutSchema = z.object({
   about: z.string().trim().max(PERSON_ABOUT_MAX),
 });
 export type UpdatePersonAboutDto = z.infer<typeof updatePersonAboutSchema>;
+
+/** The most UTF-16 code units a reaction holds: the longest family or flag sequence, with room. */
+export const BOT_REACTION_MAX = 32;
+
+/** One pictograph, with what joins and modifies it (skin tones, ZWJ sequences, flags, subdivision flags, keycaps). */
+const SINGLE_EMOJI =
+  /^(?:\p{Regional_Indicator}{2}|[#*0-9]️?⃣|\p{Extended_Pictographic}️?\p{Emoji_Modifier}?(?:[\u{E0020}-\u{E007E}]+\u{E007F})?(?:‍\p{Extended_Pictographic}️?\p{Emoji_Modifier}?)*)$/u;
+
+/**
+ * Whether `text` is one emoji, as a reaction must be: a word, two emoji or
+ * an emoji with text around it is not.
+ */
+export function isReactionEmoji(text: string): boolean {
+  return text.length > 0 && text.length <= BOT_REACTION_MAX && SINGLE_EMOJI.test(text);
+}
+
+/**
+ * `PUT /bots/:id/messages/:messageId/reaction`: your reaction to a message
+ * of yours or of the bot's, one at a time; null takes it back.
+ */
+export const reactToBotMessageSchema = z.object({
+  emoji: z.string().refine(isReactionEmoji, { message: 'A reaction is one emoji' }).nullable(),
+});
+export type ReactToBotMessageDto = z.infer<typeof reactToBotMessageSchema>;

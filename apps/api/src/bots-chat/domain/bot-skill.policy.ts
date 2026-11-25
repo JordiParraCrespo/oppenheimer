@@ -1,50 +1,38 @@
 import {
   BOT_OPPENHEIMER_SKILL,
   BOT_RECAP_SKILL,
-  type BotBuiltInSkillName,
   type BotSlashCommand,
   botGoalCommandOf,
   botLoopCommandOf,
   botScheduleCommandOf,
   builtInSkillsBeside,
 } from '@oppenheimer/shared';
+import { BOT_CAPABILITIES } from './bot-capability.policy';
 import { goalSetPrompt } from './bot-goal.policy';
 import { loopSetPrompt } from './bot-loop-message.factory';
 import { promptText } from './bot-prompt-text.policy';
 import { scheduleSetPrompt } from './bot-routine.policy';
+import type { BotBuiltInSkill, BotSkillView } from './bot-skill.types';
 import { BOT_SKILL_NUDGE_AFTER_STEPS, SKILL_NUDGE_TAG } from './bot-skill-learning.policy';
-
-/** What the prompt and the tools read of a skill. */
-export interface BotSkillView {
-  name: string;
-  description: string;
-  body: string;
-  userInvocable: boolean;
-  modelInvocable: boolean;
-}
-
-/** A skill the product ships to every bot, listed while the tool it follows with is offered. */
-export interface BotBuiltInSkill extends BotSkillView {
-  /** One of `BOT_BUILT_IN_SKILL_NAMES`, which no skill of a bot's may be given. */
-  name: BotBuiltInSkillName;
-  /** The tool the skill's steps call: without it the skill has nothing to follow with. */
-  needsTool: string;
-}
 
 /** {@link BOT_OPPENHEIMER_SKILL}, followed with Oppenheimer's own guide. */
 export const OPPENHEIMER_SKILL: BotBuiltInSkill = {
   ...BOT_OPPENHEIMER_SKILL,
-  needsTool: 'read_oppenheimer_docs',
+  needsTools: ['read_oppenheimer_docs'],
 };
 
 /** {@link BOT_RECAP_SKILL}, which starts from the person's sessions. */
 export const RECAP_SKILL: BotBuiltInSkill = {
   ...BOT_RECAP_SKILL,
-  needsTool: 'list_sessions',
+  needsTools: ['list_sessions'],
 };
 
 /** Every skill the product ships to every bot, in the order the prompt would list them. */
-export const BOT_BUILT_IN_SKILLS: readonly BotBuiltInSkill[] = [OPPENHEIMER_SKILL, RECAP_SKILL];
+export const BOT_BUILT_IN_SKILLS: readonly BotBuiltInSkill[] = [
+  OPPENHEIMER_SKILL,
+  RECAP_SKILL,
+  ...BOT_CAPABILITIES.flatMap((capability) => capability.skills),
+];
 
 /**
  * Every skill a bot has: its own, then each built-in whose name none of its
@@ -60,12 +48,12 @@ export function withBuiltInSkills<Skill extends BotSkillView>(
 
 /** Whether the skill is one Oppenheimer ships (`BOT_BUILT_IN_SKILLS`), not a row of the bot's. */
 export function isBuiltInSkill(skill: object): skill is BotBuiltInSkill {
-  return 'needsTool' in skill;
+  return 'needsTools' in skill;
 }
 
 /** Whether a turn offering these tools can follow the skill: a built-in needs its tool. */
 export function canFollowSkill(skill: BotSkillView, offeredTools: readonly string[]): boolean {
-  return !('needsTool' in skill) || offeredTools.includes(skill.needsTool as string);
+  return !isBuiltInSkill(skill) || skill.needsTools.every((tool) => offeredTools.includes(tool));
 }
 
 /**
@@ -88,19 +76,19 @@ export function skillsPromptSection(
   const parts: string[] = [];
   if (usable.length > 0) {
     parts.push(
-      promptText('system/skills.using-them'),
+      promptText('skills/system.using-them'),
       usable.map((skill) => `- \`${skill.name}\`: ${skill.description}`).join('\n'),
     );
   }
   if (offered.save) {
     parts.push(
-      promptText('system/skills.saving-them', {
+      promptText('skills/system.saving-them', {
         steps: String(BOT_SKILL_NUDGE_AFTER_STEPS),
         tag: SKILL_NUDGE_TAG,
       }),
     );
   }
-  return parts.length > 0 ? promptText('system/skills.body', { parts: parts.join('\n\n') }) : null;
+  return parts.length > 0 ? promptText('skills/system.body', { parts: parts.join('\n\n') }) : null;
 }
 
 /** A skill as the model reads it: its body, fenced and named. */
@@ -110,7 +98,7 @@ export function skillBlock(skill: Pick<BotSkillView, 'name' | 'body'>): string {
 
 /** The line `use_skill` opens with. */
 export function describeSkillUse(skill: Pick<BotSkillView, 'name' | 'description'>): string {
-  return promptText('tools/skills.used', {
+  return promptText('skills/tools.used', {
     name: skill.name,
     description: skill.description,
   });
@@ -128,9 +116,9 @@ export function skillInvocationPrompt(
   prompt: string,
 ): string {
   const input = promptText(
-    command.args ? 'turn/slash-command.with-input' : 'turn/slash-command.with-no-input',
+    command.args ? 'core/turn-slash-command.with-input' : 'core/turn-slash-command.with-no-input',
   );
-  const ran = promptText('turn/slash-command.ran-a-skill', { name: skill.name, input });
+  const ran = promptText('core/turn-slash-command.ran-a-skill', { name: skill.name, input });
   return `${ran}\n\n${skillBlock(skill)}\n\n${prompt}`;
 }
 
@@ -150,9 +138,9 @@ export function unknownSkillPrompt(
     .map((skill) => `/${skill.name}`)
     .sort();
   const yours = runnable.length
-    ? promptText('turn/slash-command.skills-they-can-run', { skills: runnable.join(', ') })
-    : promptText('turn/slash-command.no-skills-to-run');
-  const note = promptText('turn/slash-command.not-a-skill', { name: command.name, yours });
+    ? promptText('core/turn-slash-command.skills-they-can-run', { skills: runnable.join(', ') })
+    : promptText('core/turn-slash-command.no-skills-to-run');
+  const note = promptText('core/turn-slash-command.not-a-skill', { name: command.name, yours });
   return `${note}\n\n${prompt}`;
 }
 
@@ -162,7 +150,7 @@ export function unknownSkillPrompt(
  * reads one that came from before that rule, so the bot answers in a line.
  */
 function goalCommandPrompt(prompt: string): string {
-  return `${promptText('turn/slash-command.goal-command')}\n\n${prompt}`;
+  return `${promptText('core/turn-slash-command.goal-command')}\n\n${prompt}`;
 }
 
 /**

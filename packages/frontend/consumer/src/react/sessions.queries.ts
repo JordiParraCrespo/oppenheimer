@@ -131,9 +131,11 @@ function unwatchRestart(queryClient: QueryClient, id: string): void {
  * The sessions in the caller's workspace: the sidebar and the sessions list.
  *
  * A resolved session is a tombstone the API keeps so its directory and branch
- * are never reissued; the list leaves it out, though its detail is still
- * written for a screen that has it open. It polls while a row is starting or a
- * close this console asked for has not resolved.
+ * are never reissued; the list asks the API to leave it out
+ * (`SessionsRepository.findAll`). A close this console watched that ends with
+ * its row gone re-reads that one session's detail, for a screen that has it
+ * open. It polls while a row is starting or a close this console asked for has
+ * not resolved.
  *
  * Each row is also written to that session's detail, so opening a session from
  * the list renders on the click; a detail read after this list was asked for
@@ -184,15 +186,15 @@ export function useSessionListQuery() {
       const askedAt = Date.now();
       const sessions = await app.sessions.findAll();
       seedDetails(queryClient, sessions, sessionsKeys.detail, askedAt);
-      const unresolved = sessions.filter((session) => !session.isResolved);
       const closing = closesOf(queryClient);
       for (const id of closing.keys()) {
-        const row = unresolved.find((session) => session.id === id);
+        const row = sessions.find((session) => session.id === id);
         // Resolved, or refused by its host: either way the host has answered,
         // and a refused row comes back saying so.
         if (!row || row.closeRefusal) unwatchClose(queryClient, id);
+        if (!row) void queryClient.invalidateQueries({ queryKey: sessionsKeys.detail(id) });
       }
-      return unresolved.filter((session) => !closing.has(session.id));
+      return sessions.filter((session) => !closing.has(session.id));
     },
   };
 }
@@ -230,6 +232,15 @@ export function useSuspenseSession(id: string) {
     ...useSessionDetailQuery(id),
     ...useSessionPoll(id),
   });
+}
+
+/**
+ * One session where its read draws no loading or failure of its own: the
+ * tab of the session on screen, which the page's own read keeps fresh. It
+ * shares that read's cache, so it costs nothing once the page has it.
+ */
+export function useSession(id: string) {
+  return useQuery<SessionEntity, Error>(useSessionDetailQuery(id));
 }
 
 /**
@@ -488,13 +499,67 @@ export function useSetSessionHidden(
 }
 
 /**
- * Mark what the session's last turn left as read, as opening it does: its
- * group falls from `ready-for-review` to `idle` and the sidebar's blue dot goes.
+ * Read what a session's last turn left. The session falls to `idle` on the
+ * click, in its detail and in every list, before the API answers: the
+ * sidebar's dot goes the moment the reader opens it. A refused read puts back
+ * each row it changed that nothing has changed since, then reads them again:
+ * an API that cannot be reached cannot answer that read either, and the
+ * session must stay unread for the pane to try again.
  */
 export function useAcknowledgeSessionReport(
   options?: UseMutationOptions<SessionEntity, Error, string>,
 ) {
-  return useSessionPatch(({ sessions }, id) => sessions.acknowledgeReport(id), options);
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => app.sessions.acknowledgeReport(id),
+    ...withCacheOnSuccess(options, (session) => {
+      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      return queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+    }),
+    onMutate: async (id, context) => {
+      // A list read already in flight answers from before the read was
+      // recorded, and would put the dot back. The detail's is left to land: a
+      // pane may be suspended on it, and the answer overwrites it. A list's
+      // first read is left to land too: called off, the sidebar would wait a
+      // second round trip for rows that have no dot to put back yet.
+      await queryClient.cancelQueries({
+        queryKey: sessionsKeys.lists(),
+        predicate: (query) => query.state.data !== undefined,
+      });
+      // Each row written, and the row it replaced.
+      const written = new Map<SessionEntity, SessionEntity>();
+      const read = (row: SessionEntity) => {
+        if (row.state !== 'ready-for-review') return row;
+        const next = row.with({ state: 'idle' });
+        written.set(next, row);
+        return next;
+      };
+      queryClient.setQueryData<SessionEntity>(sessionsKeys.detail(id), (row) =>
+        row ? read(row) : row,
+      );
+      queryClient.setQueriesData<SessionEntity[]>({ queryKey: sessionsKeys.lists() }, (rows) =>
+        rows?.map((row) => (row.id === id ? read(row) : row)),
+      );
+      await options?.onMutate?.(id, context);
+      return { written };
+    },
+    onError: (error, id, context, mutation) => {
+      const written = (context as { written?: Map<SessionEntity, SessionEntity> } | undefined)
+        ?.written;
+      const back = (row: SessionEntity) => written?.get(row) ?? row;
+      queryClient.setQueryData<SessionEntity>(sessionsKeys.detail(id), (row) =>
+        row ? back(row) : row,
+      );
+      queryClient.setQueriesData<SessionEntity[]>({ queryKey: sessionsKeys.lists() }, (rows) =>
+        rows?.map(back),
+      );
+      void queryClient.invalidateQueries({ queryKey: sessionsKeys.detail(id) });
+      void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
+      return options?.onError?.(error, id, context, mutation);
+    },
+  });
 }
 
 export function useMoveSession(

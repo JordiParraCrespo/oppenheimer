@@ -40,7 +40,7 @@ export function sessionReadCost(content: string): number {
 
 /** Why no more session reads this turn, for the model to act on. */
 export function sessionReadBudgetSpentRefusal(): string {
-  return promptText('tools/sessions.read-budget-spent', {
+  return promptText('sessions/tools.read-budget-spent', {
     sessionReadCharsPerTurn: SESSION_READ_CHARS_PER_TURN.toLocaleString('en-US'),
   });
 }

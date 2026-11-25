@@ -21,11 +21,12 @@
     "check:prompt-strings": "node scripts/check-prompt-strings.mjs && node --test scripts/check-prompt-strings.test.mjs",
     "check:public-api": "node scripts/check-backend-public-api.mjs && node --test scripts/check-backend-public-api.test.mjs",
     "check:structure": "node scripts/check-frontend-structure.mjs && node --test scripts/check-frontend-structure.test.mjs scripts/query-state-slots.test.mjs scripts/skeleton-shape.test.mjs",
+    "check:control-heights": "node scripts/control-heights.mjs && node --test scripts/control-heights.test.mjs",
     "check:ui-catalog": "node scripts/ui-catalog.mjs && node --test scripts/ui-catalog.test.mjs",
     "check:compiler": "node scripts/check-react-compiler.mjs",
     "check:unused": "knip --workspace apps/web --workspace packages/frontend/core --workspace packages/frontend/consumer --workspace packages/frontend/web",
     "check:unused:backend": "knip --config knip.backend.json --workspace apps/api --workspace packages/backend/agents --workspace packages/backend/authz --workspace packages/backend/cache --workspace packages/backend/core --workspace packages/backend/ddd --workspace packages/backend/email --workspace packages/backend/i18n --workspace packages/backend/llm --workspace packages/backend/storage",
-    "check:hooks": "node --test .agents/hooks/git-guard.test.mjs .agents/hooks/screenshot-guard.test.mjs .agents/hooks/shell-hooks.test.mjs .agents/hooks/arch-check.test.mjs",
+    "check:hooks": "node --test .agents/hooks/git-guard.test.mjs .agents/hooks/screenshot-guard.test.mjs .agents/hooks/verify-guard.test.mjs .agents/hooks/shell-hooks.test.mjs .agents/hooks/arch-check.test.mjs",
     "check:changesets": "node scripts/check-changesets.mjs",
     "check:bootstrap": "node --test scripts/dev/bootstrap.test.mjs",
     "check:singletons": "node scripts/check-singletons.mjs && node --test scripts/check-singletons.test.mjs",
@@ -52,16 +53,21 @@
     "migration:new": "pnpm --filter @oppenheimer/api migration:new",
     "generate:api-client": "pnpm generate:openapi && pnpm --filter @oppenheimer/api-client generate",
     "generate:guide": "pnpm --filter @oppenheimer/docs generate:guide",
+    "eval:bot-capability-skills": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-capability-skills/run.ts",
     "eval:bot-channel-ack": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-channel-ack/run.ts",
+    "eval:agentic-ui:bots": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/agentic-ui/bots.ts",
+    "eval:agentic-ui:sessions": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/agentic-ui/sessions.ts",
+    "eval:bot-check-back": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-check-back/run.ts",
     "eval:bot-blocked-run": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-blocked-run/run.ts",
-    "eval:bot-first-chat": "tsx scripts/evals/bot-first-chat/run.ts",
-    "eval:bot-memory": "tsx scripts/evals/bot-memory/run.ts",
+    "eval:bot-first-chat": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-first-chat/run.ts",
+    "eval:bot-memory": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-memory/run.ts",
     "eval:bot-session-follow": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-session-follow/run.ts",
-    "eval:bot-session-search": "tsx scripts/evals/bot-session-search/run.ts",
-    "eval:bot-session-unblock": "tsx scripts/evals/bot-session-unblock/run.ts",
-    "eval:bot-skills": "tsx scripts/evals/bot-skills/run.ts",
-    "eval:bot-suggestion": "tsx scripts/evals/bot-suggestion/run.ts",
-    "eval:session-title": "tsx scripts/evals/session-title/run.ts",
+    "eval:bot-session-restart": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-session-restart/run.ts",
+    "eval:bot-session-search": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-session-search/run.ts",
+    "eval:bot-session-unblock": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-session-unblock/run.ts",
+    "eval:bot-skills": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-skills/run.ts",
+    "eval:bot-suggestion": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-suggestion/run.ts",
+    "eval:session-title": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/session-title/run.ts",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset publish"
@@ -82,11 +88,24 @@
     "overrides": {
       "react": "19.2.3",
       "react-dom": "19.2.3",
+      "react-native": "0.86.3",
       "@types/react": "19.2.14",
       "@tanstack/query-core": "5.102.8",
       "@tanstack/react-query": "5.102.8",
       "@nestjs/swagger": "11.4.2",
       "@types/node": "22.20.1"
+    },
+    "packageExtensions": {
+      "react-native-css-interop": {
+        "dependencies": {
+          "tailwindcss": "^3.4.19"
+        }
+      },
+      "nativewind": {
+        "dependencies": {
+          "tailwindcss": "^3.4.19"
+        }
+      }
     },
     "patchedDependencies": {
       "nestjs-zod@4.3.1": "patches/nestjs-zod@4.3.1.patch",

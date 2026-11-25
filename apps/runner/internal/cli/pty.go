@@ -38,7 +38,13 @@ func programStatusDir(paths Paths) string {
 // linkRunner points `<bin>/path/runner` at this binary, best effort: a
 // session without it still runs, its agent just cannot call `runner` by name.
 func linkRunner(paths Paths) {
-	executable := runnerExecutable()
+	pointRunnerAt(paths, runnerExecutable())
+}
+
+// pointRunnerAt points `<bin>/path/runner` at executable. A runner started
+// through the link itself leaves it alone: macOS names a binary by the path
+// it was started by, and pointing the link there would point it at itself.
+func pointRunnerAt(paths Paths, executable string) {
 	if executable == "" {
 		return
 	}
@@ -50,11 +56,31 @@ func linkRunner(paths Paths) {
 	if target, err := os.Readlink(link); err == nil && target == executable {
 		return
 	}
+	if self, err := os.Lstat(executable); err == nil {
+		if existing, err := os.Lstat(link); err == nil && os.SameFile(self, existing) {
+			return
+		}
+	}
 	tmp := link + ".new"
 	_ = os.Remove(tmp)
 	if os.Symlink(executable, tmp) == nil {
 		_ = os.Rename(tmp, link)
 	}
+}
+
+// runnerPATH is path with the directory of `runner` appended, for the
+// runner's own process: tmux gives a pane the PATH of the client that made
+// it, the runner, and drops one set on the session with `-e`.
+func runnerPATH(path string, paths Paths) string {
+	return WithDir(path, paths.Commands())
+}
+
+// sessionTools is the command that starts the runner's MCP server for a
+// session's agent. The runner by its path, not its name: an agent looks the
+// command up on its own PATH, which may not reach `runner`, or may find
+// another program by that name first.
+func sessionTools(paths Paths, session string) []string {
+	return []string{filepath.Join(paths.Commands(), "runner"), "mcp", "--session", session, "--socket", paths.Socket()}
 }
 
 // runnerExecutable is this binary, for the commands a session runs back

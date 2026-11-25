@@ -79,4 +79,14 @@ export class IssueAccessResolver implements IssueAccessPort {
     const writer = await this.access.writeCredential(userId, address);
     return this.github.createIssueComment(writer, repository.fullName, address.number, body);
   }
+
+  async addAppComment(
+    scope: AccessScope,
+    address: InstallationAddress & { number: number },
+    body: string,
+  ): Promise<{ htmlUrl: string }> {
+    const repository = await this.access.repositoryOf(scope, address);
+    const app = await this.access.appCredential(scope, address);
+    return this.github.createIssueComment(app, repository.fullName, address.number, body);
+  }
 }

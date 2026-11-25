@@ -23,6 +23,7 @@ import {
   type RepositoryView,
   UNTRUSTED_NOTE,
 } from '../bot-github-tool.mapper';
+import { NOT_ON_A_GITHUB_ASK } from '../domain/bot-github-ask.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
 import { cut, formatToolList } from '../domain/bot-tool-text.policy';
 import {
@@ -36,12 +37,12 @@ import {
 
 /** The two ids a repository is named by, as list_repositories gives them. */
 const repository = {
-  installation_id: z.uuid().describe(promptText('tools/issue.repository-installation-id')),
+  installation_id: z.uuid().describe(promptText('github/tools-issue.repository-installation-id')),
   github_repo_id: z
     .number()
     .int()
     .positive()
-    .describe(promptText('tools/issue.repository-github-repo-id')),
+    .describe(promptText('github/tools-issue.repository-github-repo-id')),
 };
 
 const issue = {
@@ -88,7 +89,7 @@ export class BotIssueToolsFactory implements BotToolArea {
       name: 'list_issues',
       readOnly: true,
       scope: 'pulls:read',
-      description: promptText('tools/issue.list-issues', {
+      description: promptText('github/tools-issue.list-issues', {
         issuesLimitMax: String(ISSUES_LIMIT_MAX),
       }),
       input: z.object({
@@ -98,9 +99,9 @@ export class BotIssueToolsFactory implements BotToolArea {
           .array(LABEL)
           .max(10)
           .default([])
-          .describe(promptText('tools/issue.list-issues-labels')),
-        assignee: LOGIN.optional().describe(promptText('tools/issue.list-issues-assignee')),
-        author: LOGIN.optional().describe(promptText('tools/issue.list-issues-author')),
+          .describe(promptText('github/tools-issue.list-issues-labels')),
+        assignee: LOGIN.optional().describe(promptText('github/tools-issue.list-issues-assignee')),
+        author: LOGIN.optional().describe(promptText('github/tools-issue.list-issues-author')),
         limit: z.number().int().min(1).max(ISSUES_LIMIT_MAX).default(20),
       }),
       run: async (input, context) => {
@@ -127,7 +128,7 @@ export class BotIssueToolsFactory implements BotToolArea {
         );
         return issues.length < input.limit
           ? listing
-          : promptText('tools/issue.list-issues-first-shown-there', {
+          : promptText('github/tools-issue.list-issues-first-shown-there', {
               listing,
               limit: String(input.limit),
             });
@@ -140,7 +141,7 @@ export class BotIssueToolsFactory implements BotToolArea {
       name: 'get_issue',
       readOnly: true,
       scope: 'pulls:read',
-      description: promptText('tools/issue.get-issue', {
+      description: promptText('github/tools-issue.get-issue', {
         issueCommentsShown: String(ISSUE_COMMENTS_SHOWN),
       }),
       input: z.object(issue),
@@ -165,11 +166,12 @@ export class BotIssueToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'create_issue',
       scope: 'pulls:write',
+      notOn: NOT_ON_A_GITHUB_ASK,
       asks: true,
       sharesOutside: true,
       subject: async (input, context) =>
         repositorySubject(input, await this.repositoryName(context, input).catch(() => null)),
-      description: promptText('tools/issue.create-issue'),
+      description: promptText('github/tools-issue.create-issue'),
       input: z.object({
         ...repository,
         title: z.string().trim().min(1).max(TITLE_LIMIT),
@@ -212,11 +214,12 @@ export class BotIssueToolsFactory implements BotToolArea {
     return defineBotTool({
       name: 'comment_on_issue',
       scope: 'pulls:write',
+      notOn: NOT_ON_A_GITHUB_ASK,
       asks: true,
       sharesOutside: true,
       subject: async (input, context) =>
         repositorySubject(input, await this.repositoryName(context, input).catch(() => null)),
-      description: promptText('tools/issue.comment-on-issue'),
+      description: promptText('github/tools-issue.comment-on-issue'),
       input: z.object({
         ...issue,
         body: z.string().trim().min(1).max(REVIEW_COMMENT_MAX).describe('The comment (Markdown).'),
@@ -274,7 +277,7 @@ export class BotIssueToolsFactory implements BotToolArea {
     const found = repositories.find((candidate) => candidate.githubRepoId === input.github_repo_id);
     if (!found) {
       throw new BotToolRefusal(
-        promptText('tools/issue.installation-lacks-repository', {
+        promptText('github/tools-issue.installation-lacks-repository', {
           installationId: input.installation_id,
           githubRepoId: String(input.github_repo_id),
         }),
@@ -282,7 +285,7 @@ export class BotIssueToolsFactory implements BotToolArea {
     }
     if (found.archived) {
       throw new BotToolRefusal(
-        promptText('tools/issue.repository-name-archived-github-takes', {
+        promptText('github/tools-issue.repository-name-archived-github-takes', {
           fullName: found.fullName,
         }),
       );
