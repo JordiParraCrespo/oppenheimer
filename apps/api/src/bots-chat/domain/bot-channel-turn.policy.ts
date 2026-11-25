@@ -6,6 +6,7 @@ import {
   isChannelOrigin,
 } from '@oppenheimer/shared';
 import { BotMessageEntity, type BotPendingMedia } from './bot-message.entity';
+import { peelReplyMarks } from './bot-reply-mark.policy';
 import { maySteer } from './bot-steer.policy';
 import { type BotContactChat, BotTurnEntity } from './bot-turn.entity';
 
@@ -145,13 +146,16 @@ export const CONTACT_FAILED_LINE = 'Sorry, I can’t answer that right now.';
 
 /**
  * What a contact's turn sends back when it ends: its last text, a fixed line
- * when it failed, and nothing when it ended with nothing to say. A contact,
- * or a whole group, never reads why a turn failed (a key refused, a provider
- * or database error) nor a pointer to the owner's console.
+ * when it failed, and nothing when it ended with nothing to say or kept out
+ * (it opens with `SILENT_REPLY_MARK`, read by `peelReplyMarks`; an aside
+ * after the mark was never written for the group either). A contact, or a
+ * whole group, never reads why a turn failed (a key refused, a provider or
+ * database error) nor a pointer to the owner's console.
  */
 export function contactReplyOf(turn: { status: string }, texts: readonly string[]): string | null {
   if (turn.status === 'failed') return CONTACT_FAILED_LINE;
-  return [...texts].reverse().find((text) => text.trim()) ?? null;
+  const last = [...texts].reverse().find((text) => text.trim()) ?? null;
+  return last === null || peelReplyMarks(last).silent ? null : last;
 }
 
 /** What a channel's chat is told when its turn ended on a Needs input card, before the card's address. */
