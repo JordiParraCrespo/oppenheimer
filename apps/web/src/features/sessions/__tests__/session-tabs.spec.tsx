@@ -21,13 +21,15 @@ const lists = vi.hoisted(() => ({
   sessions: [] as { id: string }[],
   bots: [] as { id: string }[],
   detail: null as unknown,
+  sessionsPending: false,
 }));
 const navigate = vi.hoisted(() => vi.fn());
 
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  useSessions: ({ select }: { select: (list: { id: string }[]) => unknown }) => ({
-    data: select(lists.sessions),
-  }),
+  useSessions: ({ select }: { select: (list: { id: string }[]) => unknown }) =>
+    lists.sessionsPending
+      ? { data: undefined, isPending: true }
+      : { data: select(lists.sessions), isPending: false },
   // The session on screen, as the page reads it: from the list's copy when
   // it holds one, else from what this test sets as the detail.
   useSession: (id: string) => ({
@@ -50,6 +52,7 @@ afterEach(() => {
   window.localStorage.clear();
   navigate.mockReset();
   lists.detail = null;
+  lists.sessionsPending = false;
 });
 
 const noBot = () => null;
@@ -139,5 +142,16 @@ describe('the tabs over Sessions', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'sessions.tabs.close' }));
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('holds the place of a tab whose list is still loading, so the strip does not reflow when it lands', () => {
+    lists.detail = sessionEntity({ id: 'a', name: 'Fix login' });
+    lists.sessionsPending = true;
+    openFirst('a', 'b', 'c');
+    const { container } = render(<SessionTabs shown={{ kind: 'session', id: 'a' }} bot={noBot} />);
+
+    // The shown tab from the session itself, and one placeholder for each of the others.
+    expect(screen.getAllByRole('link').map((link) => link.textContent)).toEqual(['Fix login']);
+    expect(container.querySelectorAll('[data-slot="chat-tab"]')).toHaveLength(3);
   });
 });

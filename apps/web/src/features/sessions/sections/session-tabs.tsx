@@ -1,4 +1,4 @@
-import { ChatTab, ChatTabStrip } from '@oppenheimer/design-system-web';
+import { ChatTab, ChatTabSkeleton, ChatTabStrip } from '@oppenheimer/design-system-web';
 import { PlusIcon } from '@oppenheimer/design-system-web/icons';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Fragment, type ReactNode } from 'react';
@@ -20,7 +20,9 @@ import { ShownSessionTab } from './shown-session-tab';
  * there steps aside while it shows, and leaving the page leaves no tab.
  *
  * A tab whose session or bot is gone (deleted here or on another device)
- * is left off once the list it belongs to has answered without it; the page
+ * is left off once the list it belongs to has answered without it; until a
+ * list answers, its tabs hold their places as placeholders, so the strip
+ * does not reflow when it lands; the page
  * on screen keeps its tab whatever the lists say, drawn from the session
  * itself (`ShownSessionTab`): one deleted and opened from an old link, one
  * just created, or any while the list loads or has failed. A bot's tab is
@@ -58,7 +60,10 @@ export function SessionTabs({
     const session = sessions?.get(id);
     return session ? (
       <SessionOpenTab key={key} session={session} active={false} onClose={() => close(key)} />
-    ) : null;
+    ) : (
+      // The list has not answered yet: the tab holds its place.
+      <ChatTabSkeleton key={key} />
+    );
   };
 
   return (
