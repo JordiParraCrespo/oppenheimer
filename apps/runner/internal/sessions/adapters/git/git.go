@@ -769,6 +769,14 @@ type command struct {
 	dir string
 	// repo names the repository in a credential failure's detail.
 	repo string
+	// stdout keeps stdout alone: what is parsed (a diff, a list) must not
+	// carry git's warnings on stderr.
+	stdout bool
+	// limit, when positive, bounds what is kept of the output, and cut, when
+	// set, learns whether it was cut: a diff nobody bounded could hold the
+	// runner's memory.
+	limit int
+	cut   *bool
 }
 
 // run executes git. Every invocation is non-interactive: a git that stops to
@@ -794,6 +802,10 @@ func (c *Client) run(ctx context.Context, how command, args ...string) (string, 
 	}
 	full = append(full, args...)
 
+	output := execx.Combined
+	if how.stdout {
+		output = execx.Stdout
+	}
 	res, err := execx.Run(ctx, execx.Spec{
 		Name: c.binary,
 		Args: full,
@@ -812,9 +824,13 @@ func (c *Client) run(ctx context.Context, how command, args ...string) (string, 
 		// still holding that output is not waited for past waitDelay.
 		KillGroup: true,
 		WaitDelay: waitDelay,
-		Output:    execx.Combined,
+		Output:    output,
+		Limit:     how.limit,
 	})
 	text := res.Out
+	if how.cut != nil {
+		*how.cut = res.OutTruncated
+	}
 	if err != nil {
 		verb := strings.Join(args, " ")
 		// TimedOut and Canceled read the context git ran under, so a deadline

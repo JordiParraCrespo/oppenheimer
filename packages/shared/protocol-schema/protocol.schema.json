@@ -3488,6 +3488,154 @@
         "next",
         "atEnd"
       ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.changes.read"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "base",
+            "uncommitted"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "scope"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "session.changes"
+        },
+        "commandId": {
+          "$ref": "#/$defs/commandId"
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sessionId"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "base",
+            "uncommitted"
+          ]
+        },
+        "checkouts": {
+          "maxItems": 16,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "repo": {
+                "$ref": "#/$defs/gitRef"
+              },
+              "checkoutId": {
+                "$ref": "#/$defs/checkoutId"
+              },
+              "baseBranch": {
+                "$ref": "#/$defs/gitRef"
+              },
+              "base": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"
+              },
+              "approximate": {
+                "type": "boolean"
+              },
+              "files": {
+                "maxItems": 500,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    "oldPath": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "added",
+                        "modified",
+                        "deleted",
+                        "renamed",
+                        "copied",
+                        "type_changed",
+                        "untracked"
+                      ]
+                    },
+                    "additions": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "deletions": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "binary": {
+                      "type": "boolean"
+                    },
+                    "patch": {
+                      "type": "string",
+                      "maxLength": 65536
+                    },
+                    "patchOmitted": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "status",
+                    "additions",
+                    "deletions"
+                  ]
+                }
+              },
+              "omittedFiles": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "repo",
+              "files"
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "commandId",
+        "sessionId",
+        "scope",
+        "checkouts"
+      ]
     }
   ],
   "$defs": {
@@ -3873,6 +4021,7 @@
       "computer.use",
       "browser.use",
       "session.windows.list",
+      "session.changes.read",
       "session.window.agent",
       "host.settings"
     ],
@@ -3884,6 +4033,9 @@
     "execOutputMaxBytes": 32768,
     "terminalScreenMaxBytes": 32768,
     "computerScreenMaxEdge": 1280,
-    "computerScreenshotMaxBytes": 262144
+    "computerScreenshotMaxBytes": 262144,
+    "sessionChangesMaxFiles": 500,
+    "sessionChangesFilePatchMaxBytes": 65536,
+    "sessionChangesPatchMaxBytes": 262144
   }
 }

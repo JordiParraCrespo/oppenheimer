@@ -17,6 +17,7 @@ export * from './messages.js';
 export * from './ports.js';
 export * from './primitives.js';
 export * from './runner-files.js';
+export * from './session-changes.js';
 export * from './session-file.js';
 export * from './session-step.js';
 export * from './shared-files.js';
