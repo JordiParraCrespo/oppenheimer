@@ -19,6 +19,8 @@ const FACE_GAP = 4;
  * bleed never covers what stands beside it, a Retry before the faces.
  */
 const FACE_BLEED = 4;
+/** How far apart the faces start their entrance, left to right. */
+const FACE_STAGGER_MS = 30;
 
 /** How many 20px faces, 4px apart, fit in a row `width` wide, its bleed included. */
 function facesThatFit(width: number): number {
@@ -32,7 +34,9 @@ function facesThatFit(width: number): number {
  * last place is a `+N` chip (`moreLabel` names it) that calls `onMore`, which
  * unfolds the list. It sits in `SidebarListHead`'s `summary`, where a press
  * on a face or the chip never picks a sortable section up; the space
- * between them still does.
+ * between them still does. When it mounts (as the list folds, or on a load
+ * that finds it folded) the faces rise into the heading one after another,
+ * left to right; reduced motion shows them at once.
  */
 function BotFaces({
   moreLabel,
@@ -73,12 +77,23 @@ function BotFaces({
     >
       {faces.slice(0, shown).map((face, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: each face is keyed by its caller; this wrapper only lists it
-        <span key={index} role="listitem" className="pointer-events-auto flex shrink-0" onPointerDown={stopPress}>
+        <span
+          key={index}
+          role="listitem"
+          className="pointer-events-auto flex shrink-0 motion-safe:animate-appear"
+          style={{ animationDelay: `${index * FACE_STAGGER_MS}ms` }}
+          onPointerDown={stopPress}
+        >
           {face}
         </span>
       ))}
       {hidden > 0 ? (
-        <span role="listitem" className="pointer-events-auto flex shrink-0" onPointerDown={stopPress}>
+        <span
+          role="listitem"
+          className="pointer-events-auto flex shrink-0 motion-safe:animate-appear"
+          style={{ animationDelay: `${shown * FACE_STAGGER_MS}ms` }}
+          onPointerDown={stopPress}
+        >
           <button
             type="button"
             aria-label={moreLabel(hidden)}
