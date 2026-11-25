@@ -2,7 +2,7 @@
 /**
  * Grades the sandboxes setup.mjs built, after an agent has worked each one:
  *
- *   node .agents/skills/ship/evals/grade.mjs <out-dir> [case ...]
+ *   node .agents/skills/land/evals/grade.mjs <out-dir> [case ...]
  *
  * Prints a Markdown table, one row per expectation, and exits non-zero when
  * any fails. It reads only the remote, the simulated GitHub's state and its
@@ -51,7 +51,7 @@ for (const c of cases.filter((c) => only.length === 0 || only.includes(c.id))) {
       }
     },
     testsPass(sha) {
-      const tmp = mkdtempSync(join(tmpdir(), 'ship-grade-'));
+      const tmp = mkdtempSync(join(tmpdir(), 'land-grade-'));
       try {
         execFileSync('sh', ['-c', `git --git-dir "${origin}" archive ${sha} | tar -x -C "${tmp}"`]);
         return spawnSync('node', ['test.mjs'], { cwd: tmp }).status === 0;

@@ -39,7 +39,7 @@ const fail = (status, message) => {
 };
 
 function testsAt(commit) {
-  const dir = mkdtempSync(join(tmpdir(), 'ship-eval-'));
+  const dir = mkdtempSync(join(tmpdir(), 'land-eval-'));
   try {
     execFileSync('sh', ['-c', `git --git-dir "${origin}" archive ${commit} | tar -x -C "${dir}"`]);
     return spawnSync('node', ['test.mjs'], { cwd: dir, encoding: 'utf8' });

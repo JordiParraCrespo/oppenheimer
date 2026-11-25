@@ -1,23 +1,23 @@
 ---
-name: ship
-description: Finish a fix and merge it without asking, or merge a pull request the user has accepted. When it conflicts, merges its target in, resolves, reruns local CI and babysits it until it merges. Labels the pull request `ship`, drives it with the steward skill, has a fresh agent verify it, babysits it, and merges it. Use only when the user invokes /ship.
+name: land
+description: Finish a fix and merge it without asking, or merge a pull request the user has accepted. When it conflicts, merges its target in, resolves, reruns local CI and babysits it until it merges. Labels the pull request `land`, drives it with the steward skill, has a fresh agent verify it, babysits it, and merges it. Use only when the user invokes /land.
 disable-model-invocation: true
 argument-hint: "[what to fix, or a pull request number]"
 ---
 
-# Ship
+# Land
 
-`/ship` is the user's approval to merge **this one pull request**. The merge
+`/land` is the user's approval to merge **this one pull request**. The merge
 protocol (the three labels and what each one waits for) is
-`.agents/skills/steward/SKILL.md`, "Merging"; this skill is the `ship` lane.
+`.agents/skills/steward/SKILL.md`, "Merging"; this skill is the `land` lane.
 
 Two ways in:
 
-- **`/ship <task>`**: a fix. Do the work, then everything below.
-- **`/ship` on a `propose` pull request** (in its session, or with its
-  number): the user accepted it. Swap the label `propose` for `ship` and go
+- **`/land <task>`**: a fix. Do the work, then everything below.
+- **`/land` on a `propose` pull request** (in its session, or with its
+  number): the user accepted it. Swap the label `propose` for `land` and go
   to step 4; its verdict stands if the code has not changed since.
-- **`/ship` on any other open pull request**: the user wants it merged. Go to
+- **`/land` on any other open pull request**: the user wants it merged. Go to
   step 4 with it as it is; one with no `PASS` gets step 3 first.
 
 ## 1. Fix it
@@ -29,7 +29,7 @@ Two ways in:
   the description as a follow-up.
 - Take the steps in the order `steward` writes down ("The order").
 
-A `/ship <task>` becomes a `/propose` (label `propose`, wait for the user),
+A `/land <task>` becomes a `/propose` (label `propose`, wait for the user),
 and you say why, when the work turns out to need:
 
 - new behavior, an endpoint, a schema or a migration (it is a feature);
@@ -38,7 +38,7 @@ and you say why, when the work turns out to need:
 
 ## 2. Open it
 
-Open the pull request ready, with the `ship` label, and subscribe to its
+Open the pull request ready, with the `land` label, and subscribe to its
 activity.
 
 ## 3. Verify it

@@ -5,7 +5,7 @@ question, apply it and say which line you applied; ask only when the
 situation differs from what the line covers, and say how.
 
 When the user answers a question that could come up again, add a line in
-the pull request the task opens, or in a one-line `ship` pull request of
+the pull request the task opens, or in a one-line `land` pull request of
 its own when the task opens none. Keep the user's meaning and the source;
 a later answer replaces the line it contradicts, with the new date.
 

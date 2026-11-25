@@ -20,7 +20,7 @@ reply alone. Write in the `bro` voice.
   remember their last message and nothing after it.
 - **`/ketchup all`**: every open pull request an agent opened in this
   repository, read from GitHub by its label (the protocol is `steward`,
-  "Merging"). `propose` pull requests wait on them. A `ship` or `research`
+  "Merging"). `propose` pull requests wait on them. A `land` or `research`
   pull request that is not merging is stuck: say why, from its threads,
   its report and its mergeability. Add what merged since the last
   `/ketchup all` in this chat, or in the last day, one line each.
@@ -33,7 +33,7 @@ you will mention, and each number you will show against where it comes
 from; say so when you correct one.
 
 An **action item** is a call only the user can make: a product choice, an
-approval (`/ship` on a `propose` pull request), something that cannot be
+approval (`/land` on a `propose` pull request), something that cannot be
 undone, access you lack. Include any still waiting on them, even one raised
 before their last message. Work you can still do yourself is not an action
 item, and never make one up to fill the reply.
