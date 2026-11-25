@@ -239,3 +239,24 @@ func TestAPatchReadsItsPathLiterally(t *testing.T) {
 		t.Fatalf("the patch matched another file as a glob:\n%s", patch)
 	}
 }
+
+// An untracked file whose first NUL lies past 4 KiB but inside the 8000
+// bytes git looks at is binary when counted as when patched: the counting
+// reader's buffer is as long as the sniff. The regression: a default 4 KiB
+// buffer counted it as text lines while its patch was refused as binary.
+func TestABinaryUntrackedFileIsBinaryWhereverItsFirstNULIsInTheSniff(t *testing.T) {
+	_, worktree := changedWorktree(t)
+	c, _ := client(t)
+	content := []byte(strings.Repeat("a\n", 3000))
+	content[5000] = 0
+	if err := os.WriteFile(filepath.Join(worktree, "late-nul.bin"), content, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	changes, err := c.Changes(context.Background(), worktree, "main", true, 500)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f := byPath(changes.Files)["late-nul.bin"]; !f.Binary || f.Additions != 0 {
+		t.Fatalf("late-nul.bin = %+v; want binary, uncounted", f)
+	}
+}

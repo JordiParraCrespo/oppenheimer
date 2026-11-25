@@ -298,7 +298,7 @@ func countUntracked(ctx context.Context, root, name string) (lines int, binary b
 		return 0, false, false
 	}
 	defer func() { _ = f.Close() }()
-	reader := bufio.NewReader(f)
+	reader := bufio.NewReaderSize(f, binarySniff)
 	head, _ := reader.Peek(binarySniff)
 	if bytes.IndexByte(head, 0) >= 0 {
 		return 0, true, true
