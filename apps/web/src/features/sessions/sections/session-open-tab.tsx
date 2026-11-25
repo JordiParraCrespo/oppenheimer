@@ -5,6 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { useSessionUnread } from '../hooks/use-session-unread';
 import { agentNoteFor, isWorking, rowAttentionFor } from '../lib/session-run-state';
 
+/** The dot's accessible name, the same words the sidebar row's dot reads. */
+const ATTENTION_LABEL = {
+  'needs-you': 'sessions.filters.statuses.needs-you',
+  done: 'sessions.filters.statuses.done',
+  unread: 'sessions.sidebar.unreadLabel',
+} as const;
+
 /**
  * A session open as a tab over Sessions: its agent's mark, its name and its
  * close, with the dot its sidebar row draws (amber while it waits on you,
@@ -40,7 +47,7 @@ export function SessionOpenTab({
       active={active}
       icon={<AgentMark agent={session.agent} />}
       attention={attention}
-      attentionLabel={attention === 'unread' ? t('sessions.sidebar.unreadLabel') : undefined}
+      attentionLabel={attention ? t(ATTENTION_LABEL[attention]) : undefined}
       working={isWorking(session)}
       title={[session.name, where, state].filter(Boolean).join('\n')}
       render={<Link to="/sessions/$sessionId" params={{ sessionId: session.id }} />}
