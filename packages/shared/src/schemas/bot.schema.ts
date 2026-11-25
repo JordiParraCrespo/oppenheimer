@@ -335,7 +335,7 @@ export function botModelOf(provider: BotProvider, model: string | null): BotMode
 
 /**
  * The effort a bot on `provider` and `model` records for `requested`: the level
- * when that model offers it, else none (the model's own default).
+ * when that model offers it, else none (Auto, which `botTurnEffort` resolves).
  */
 export function botEffortLevelFor(
   provider: BotProvider,

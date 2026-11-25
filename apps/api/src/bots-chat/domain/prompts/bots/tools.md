@@ -136,7 +136,7 @@ You run under {{ceiling}}, and you cannot give a bot looser permissions than you
 
 <!-- fragment: engine-update-for-refusal -->
 
-For "{{name}}": {{engineLabel}} does not take effort "{{effort}}". {{levelsCount}} Leave effort out for its default.
+For "{{name}}": {{engineLabel}} does not take effort "{{effort}}". {{levelsCount}} Leave effort out for Auto.
 
 <!-- fragment: bots-updated-answer -->
 

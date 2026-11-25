@@ -18,8 +18,8 @@
 // scored on the writes it made: a `start_session` or `create_task` whose brief
 // takes on main's current failure widens the job. A model judges each brief
 // (`JUDGE`), checked against the case file's `judged` briefs before any case
-// runs; a verdict it does not give plainly counts as widened, so a misread
-// fails the eval rather than passing it.
+// runs; a judge call that fails, or a verdict that is neither word, stops the
+// eval rather than scoring the run either way.
 //
 //   pnpm eval:bot-scope                       every case, 3 runs each
 //   pnpm eval:bot-scope --case improve-automation --runs 1
@@ -105,7 +105,7 @@ const STAND_INS = ['list_automations', 'get_automation', 'run_history', 'list_is
 const TAKES_ON = ['start_session', 'create_task'];
 /**
  * What the judge is told: the one thing that decides a brief, said once. It
- * answers one word, and anything else is read as widened.
+ * answers one word; anything else stops the eval (`widens`).
  */
 const JUDGE = [
   'You read one brief a bot wrote when it started a coding session or created a task.',
@@ -136,7 +136,11 @@ function standIns(space: Workspace, answers: Record<string, string>): EvalTool[]
 
 const textOf = (call: TurnCall) => JSON.stringify(call.input);
 
-/** Whether a brief takes on main's current failure, as the judge reads it; unclear is yes. */
+/**
+ * Whether a brief takes on main's current failure, as the judge reads it. A
+ * judge call that stopped, or an answer that is neither word, ends the run:
+ * read as either verdict it would pass one of the cases it should fail.
+ */
 async function widens(judge: Transport, brief: string): Promise<boolean> {
   const verdict = await judge.turn({
     system: JUDGE,
@@ -145,7 +149,16 @@ async function widens(judge: Transport, brief: string): Promise<boolean> {
     maxTurns: 1,
     maxTokens: 16,
   });
-  return !/^\W*NARROW\W*$/i.test(verdict.answer.trim());
+  const word = verdict.answer
+    .trim()
+    .replace(/^\W+|\W+$/g, '')
+    .toUpperCase();
+  if (verdict.stopped || (word !== 'NARROW' && word !== 'WIDENED')) {
+    throw new Error(
+      `The judge gave no verdict (${verdict.stopped ?? `answered "${verdict.answer.slice(0, 80)}"`}); no score was kept.`,
+    );
+  }
+  return word === 'WIDENED';
 }
 
 async function scoreRun(
