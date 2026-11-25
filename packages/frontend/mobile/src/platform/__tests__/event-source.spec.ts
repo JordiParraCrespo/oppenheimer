@@ -2,6 +2,23 @@ import { ServerEventStream, type ServerEventStreamStatus } from '@oppenheimer/fr
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEventSourceFactory } from '../lib/event-source';
 
+/** The app's foreground state, as far as the adapter listens to it. */
+const appState = vi.hoisted(() => {
+  const listeners = new Set<(state: string) => void>();
+  return {
+    listeners,
+    addEventListener(_type: 'change', listener: (state: string) => void) {
+      listeners.add(listener);
+      return { remove: () => listeners.delete(listener) };
+    },
+    become(state: string) {
+      for (const listener of listeners) listener(state);
+    },
+  };
+});
+
+vi.mock('react-native', () => ({ AppState: appState }));
+
 /**
  * React Native's `XMLHttpRequest` as far as `react-native-sse` drives it: the
  * real library runs on top, so its redial rules are the ones under test.
@@ -59,9 +76,11 @@ const READY = 'event: ready\ndata: {}\n\n';
  * signed-out cookie) stays closed rather than redialling every few seconds
  * forever, a dropped one reads as down and is redialled until the server
  * answers, however long the outage, and each dial carries the cookie the app
- * holds at that moment. What breaks if this drifts: a phone that hammers the
+ * holds at that moment; a drop that waits to redial redials at once when the
+ * app comes back to the foreground. What breaks if this drifts: a phone that hammers the
  * API with a dead cookie, a feed that never comes back after the API was down
- * for longer than one redial, or one that redials with a cookie rotated away.
+ * for longer than one redial, one that redials with a cookie rotated away, or
+ * one that sits down for a redial interval after the phone is unlocked.
  */
 describe('the React Native event source', () => {
   let statuses: ServerEventStreamStatus[];
@@ -151,6 +170,28 @@ describe('the React Native event source', () => {
     latest().finish();
     vi.advanceTimersByTime(5000);
     expect(latest().headers.Cookie).toBe('session=again');
+  });
+
+  it('redials a connection dropped in the background the moment the app is back', () => {
+    latest().stream(200, READY);
+    latest().fail();
+    appState.become('active');
+    vi.advanceTimersByTime(0);
+    expect(FakeXhr.dials).toHaveLength(2);
+    latest().stream(200, READY);
+    expect(statuses.at(-1)).toBe('live');
+  });
+
+  it('leaves a live stream alone when the app comes back', () => {
+    latest().stream(200, READY);
+    appState.become('active');
+    vi.advanceTimersByTime(60_000);
+    expect(FakeXhr.dials).toHaveLength(1);
+  });
+
+  it('stops listening for the foreground once disposed', () => {
+    stream.dispose();
+    expect(appState.listeners.size).toBe(0);
   });
 
   it('stops redialling once the stream is disposed', () => {

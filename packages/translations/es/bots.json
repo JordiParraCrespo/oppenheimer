@@ -973,5 +973,18 @@
     "more_one": "{{count}} bot más: mostrar la lista",
     "more_many": "{{count}} bots más: mostrar la lista",
     "more_other": "{{count}} bots más: mostrar la lista"
+  },
+  "mobile": {
+    "search": "Buscar empleados",
+    "loadFailed": "No se pudieron cargar tus empleados.",
+    "ungrouped": "Sin grupo",
+    "noMatches": "Ningún empleado se llama «{{query}}».",
+    "empty": "Aún no hay empleados. Crea uno desde la consola en tu ordenador.",
+    "notFound": "Este empleado ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+    "chatFailed": "No se pudo cargar el chat.",
+    "actions": "Acciones del empleado",
+    "decideFailed": "La decisión no llegó al bot. Vuelve a intentarlo.",
+    "answerFailed": "La respuesta no llegó al bot. Vuelve a intentarlo.",
+    "botLoadFailed": "No se pudo cargar este empleado."
   }
 }

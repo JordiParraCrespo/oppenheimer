@@ -952,6 +952,25 @@
       "agentLabel": "Prompt para tu agente"
     }
   },
+  "mobile": {
+    "notFound": "Esta sesión ya no existe. Puede que se haya eliminado desde otro dispositivo.",
+    "shareLink": "Compartir enlace",
+    "actions": "Acciones de la sesión",
+    "answerFailed": "La respuesta no llegó al agente. Vuelve a intentarlo.",
+    "needsApproval": "Necesita aprobación",
+    "keys": "Teclas del terminal",
+    "replyToAgent": "Responde al agente",
+    "reply": "Responde o ejecuta un comando",
+    "starting": "Iniciando la sesión en su host…",
+    "cloud": "Esta sesión se ejecuta en {{place}}. Ábrela allí para seguirla.",
+    "openCloud": "Abrir en el navegador",
+    "failed": "No se pudo iniciar la sesión.",
+    "connecting": "Conectando…",
+    "steps_one": "{{count}} paso",
+    "steps_other": "{{count}} pasos",
+    "steps_many": "{{count}} pasos",
+    "loadFailed": "No se pudo cargar esta sesión."
+  },
   "tabs": {
     "label": "Sesiones abiertas",
     "new": "Nueva sesión",

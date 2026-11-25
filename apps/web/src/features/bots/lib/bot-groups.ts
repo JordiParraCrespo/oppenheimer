@@ -1,81 +1,9 @@
-import type { BotEntity, BotGroupEntity } from '@oppenheimer/frontend-consumer';
-
-/**
- * One section of the Employees sidebar: a group and its bots, or the
- * Ungrouped section (`group: null`), drawn last unless the reader dragged it
- * somewhere else among the groups.
- */
-export interface BotSection {
-  /** The group's id; `null` for Ungrouped. */
-  id: string | null;
-  group: BotGroupEntity | null;
-  bots: BotEntity[];
-  /** How many of its bots are hidden and so not among `bots`. */
-  hiddenCount: number;
-}
-
-/**
- * The sidebar's sections for a settled search: the groups in their order,
- * each with its bots by position, and Ungrouped above the group
- * `ungroupedBefore` names, or last when it names none or a group that is
- * gone. While a search narrows the
- * list a section with no match is left out; without one, every group stays
- * (an empty group is still somewhere to move a bot), and Ungrouped is drawn
- * only when it holds a bot, or with `keepUngrouped` (a drag held, for which
- * it is somewhere to drop one). A bot's group the groups read does not have
- * yet (a refetch in flight) counts as Ungrouped rather than vanishing. A bot
- * in `hidden` is left out, unless a search names it: a search is how a
- * hidden bot is found again.
- */
-export function botSections(
-  bots: readonly BotEntity[],
-  groups: readonly BotGroupEntity[],
-  query: string,
-  {
-    keepUngrouped = false,
-    hidden = [],
-    ungroupedBefore,
-  }: { keepUngrouped?: boolean; hidden?: readonly string[]; ungroupedBefore?: string } = {},
-): BotSection[] {
-  const term = query.trim().toLowerCase();
-  const matches = (bot: BotEntity) =>
-    term ? bot.name.toLowerCase().includes(term) : !hidden.includes(bot.id);
-  const known = new Set(groups.map((group) => group.id));
-  const hiddenIn = (groupId: string | null) =>
-    term
-      ? 0
-      : bots.filter(
-          (bot) =>
-            hidden.includes(bot.id) &&
-            (groupId === null
-              ? bot.groupId === null || !known.has(bot.groupId)
-              : bot.groupId === groupId),
-        ).length;
-  const byPosition = (a: BotEntity, b: BotEntity) => a.position - b.position;
-
-  const sections: BotSection[] = [...groups]
-    .sort((a, b) => a.position - b.position)
-    .map((group) => ({
-      id: group.id,
-      group,
-      bots: bots.filter((bot) => bot.groupId === group.id && matches(bot)).sort(byPosition),
-      hiddenCount: hiddenIn(group.id),
-    }));
-  const ungrouped = bots
-    .filter((bot) => (bot.groupId === null || !known.has(bot.groupId)) && matches(bot))
-    .sort(byPosition);
-  const at = sections.findIndex((section) => section.id === ungroupedBefore);
-  sections.splice(at === -1 ? sections.length : at, 0, {
-    id: null,
-    group: null,
-    bots: ungrouped,
-    hiddenCount: hiddenIn(null),
-  });
-
-  return sections.filter((section) =>
-    term || (section.group === null && !keepUngrouped) ? section.bots.length > 0 : true,
-  );
-}
+import {
+  type BotEntity,
+  type BotGroupEntity,
+  type BotGroupSection,
+  botGroupSections,
+} from '@oppenheimer/frontend-consumer';
 
 /**
  * The bot the sidebar draws first: the top pinned one (`pins`, in pin order),
@@ -91,14 +19,14 @@ export function firstBot(
   const pinned = pins.flatMap((id) => bots.find((bot) => bot.id === id) ?? [])[0];
   return (
     pinned ??
-    botSections(bots, groups, '', { ungroupedBefore }).flatMap((section) => section.bots)[0]
+    botGroupSections(bots, groups, '', { ungroupedBefore }).flatMap((section) => section.bots)[0]
   );
 }
 
 /** The key a section is dragged and folded by; Ungrouped has no id of its own. */
 export const UNGROUPED = 'ungrouped';
 
-export function sectionKey(section: BotSection): string {
+export function sectionKey(section: BotGroupSection): string {
   return section.id ?? UNGROUPED;
 }
 
@@ -108,14 +36,14 @@ export function groupIdOf(key: string): string | null {
 }
 
 /** Each section's bot ids, by its key: the value the drag layer moves. */
-export function sectionOrder(sections: readonly BotSection[]): Record<string, string[]> {
+export function sectionOrder(sections: readonly BotGroupSection[]): Record<string, string[]> {
   return Object.fromEntries(
     sections.map((section) => [sectionKey(section), section.bots.map((bot) => bot.id)]),
   );
 }
 
 /** The sections' keys in the order they are drawn, Ungrouped's among the groups'. */
-export function groupOrder(sections: readonly BotSection[]): string[] {
+export function groupOrder(sections: readonly BotGroupSection[]): string[] {
   return sections.map(sectionKey);
 }
 
@@ -148,10 +76,10 @@ export function groupPosition(keys: readonly string[], id: string): number {
  * that no section draws (the pinned ones, dragged out of Pinned).
  */
 export function inOrder(
-  sections: readonly BotSection[],
+  sections: readonly BotGroupSection[],
   order: Readonly<Record<string, readonly string[]>>,
   also: readonly BotEntity[] = [],
-): BotSection[] {
+): BotGroupSection[] {
   const byId = new Map(
     [...also, ...sections.flatMap((section) => section.bots)].map((bot) => [bot.id, bot]),
   );
@@ -170,18 +98,18 @@ export function inOrder(
  * group made since, or Ungrouped drawn only now) keeps the place it had.
  */
 export function inGroupOrder(
-  sections: readonly BotSection[],
+  sections: readonly BotGroupSection[],
   keys: readonly string[],
-): BotSection[] {
+): BotGroupSection[] {
   // The named sections' slots, in the order they are drawn, take the named sections in `keys`' order.
-  const isNamed = (section: BotSection) => keys.includes(sectionKey(section));
+  const isNamed = (section: BotGroupSection) => keys.includes(sectionKey(section));
   const ordered = sections
     .filter(isNamed)
     .sort((a, b) => keys.indexOf(sectionKey(a)) - keys.indexOf(sectionKey(b)));
   const slots = sections.flatMap((section, at) => (isNamed(section) ? [at] : []));
   const drawn = [...sections];
   slots.forEach((at, nth) => {
-    drawn[at] = ordered[nth] as BotSection;
+    drawn[at] = ordered[nth] as BotGroupSection;
   });
   return drawn;
 }
@@ -191,7 +119,7 @@ export function inGroupOrder(
  * under Pinned, `pinnedHere` of them), that they are hidden, or that it has
  * none.
  */
-export function emptyGroupLine(section: BotSection, pinnedHere: number) {
+export function emptyGroupLine(section: BotGroupSection, pinnedHere: number) {
   if (pinnedHere > 0) return { key: 'bots.sidebar.allPinned' } as const;
   return section.hiddenCount > 0
     ? ({ key: 'bots.sidebar.allHidden', count: section.hiddenCount } as const)

@@ -2109,3 +2109,7 @@ earlier note:
   put Mute notifications beside Mark as unread on a session row's menu.
   The same day the owner asked for a sublevel: both moved into a
   Notifications & read pane.
+- `next-steps/0.5-mobile.md` ("A shell first", 2026-11-14) had each of the
+  phone's five sections fill in a slice of its own. On 2026-11-18 the owner
+  postponed the Pull requests tab: it stays a placeholder while the other
+  four are built ("The Pull requests tab waits").

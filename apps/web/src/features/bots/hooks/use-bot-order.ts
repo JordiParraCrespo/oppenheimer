@@ -4,10 +4,10 @@ import {
   useSortableGroups,
 } from '@oppenheimer/design-system-web';
 import type { BotEntity, BotGroupEntity } from '@oppenheimer/frontend-consumer';
+import { botGroupSections } from '@oppenheimer/frontend-consumer';
 import { useMoveBotGroup, useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { useState } from 'react';
 import {
-  botSections,
   groupIdOf,
   groupOrder,
   groupPosition,
@@ -67,7 +67,7 @@ export function useBotOrder(
   const moveGroup = useMoveBotGroup();
   const split = splitPinnedBots(bots, pins.pins, term);
   const shownPins = term ? split.pinned : split.pinned.filter((bot) => !hidden.includes(bot.id));
-  const sections = botSections(split.rest, groups, term, {
+  const sections = botGroupSections(split.rest, groups, term, {
     keepUngrouped: dragging,
     hidden,
     ungroupedBefore: ungrouped.before,

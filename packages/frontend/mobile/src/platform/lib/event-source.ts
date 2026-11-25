@@ -1,4 +1,5 @@
 import type { EventSourceFactory, EventSourceLike } from '@oppenheimer/frontend-core';
+import { AppState, type NativeEventSubscription } from 'react-native';
 import RNEventSource from 'react-native-sse';
 
 const CONNECTING = 0;
@@ -18,7 +19,9 @@ const REDIAL_MS = 5000;
  * What the browser does on a failure is kept: a refusal (any 4xx, a 401 for a
  * signed-out session among them) closes for good and is never redialled; a
  * dropped connection, an unreachable server or a 5xx reads as connecting and
- * is redialled until it answers, however long that takes.
+ * is redialled until it answers, however long that takes, and at once when
+ * the app comes back to the foreground, where a locked phone or a backgrounded
+ * app leaves a dropped stream.
  */
 export function createEventSourceFactory(
   headers: () => Record<string, string>,
@@ -56,6 +59,7 @@ class NativeEventSource implements EventSourceLike {
   onerror: ((event: Event) => void) | null = null;
   private readonly source: Dialler;
   private redial: ReturnType<typeof setTimeout> | null = null;
+  private readonly foreground: NativeEventSubscription;
 
   constructor(url: string, headers: () => Record<string, string>) {
     this.source = new Dialler(url, headers, () => this.dialling());
@@ -77,6 +81,9 @@ class NativeEventSource implements EventSourceLike {
       }
       this.onerror?.(event as unknown as Event);
     });
+    this.foreground = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && this.redial) this.scheduleRedial(0);
+    });
   }
 
   addEventListener(type: string, listener: (event: MessageEvent<string>) => void): void {
@@ -90,6 +97,7 @@ class NativeEventSource implements EventSourceLike {
   close(): void {
     this.readyState = CLOSED;
     this.clearRedial();
+    this.foreground.remove();
     this.source.close();
   }
 
@@ -101,12 +109,12 @@ class NativeEventSource implements EventSourceLike {
     this.onerror?.({ type: 'error' } as Event);
   }
 
-  private scheduleRedial(): void {
+  private scheduleRedial(ms = REDIAL_MS): void {
     this.clearRedial();
     this.redial = setTimeout(() => {
       this.redial = null;
       if (this.readyState !== CLOSED) this.source.open();
-    }, REDIAL_MS);
+    }, ms);
   }
 
   private clearRedial(): void {
