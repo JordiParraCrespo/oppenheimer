@@ -1,11 +1,12 @@
 import { Button, IconButton, Skeleton, StatusDot } from '@oppenheimer/design-system-web';
 import { Play, X } from '@oppenheimer/design-system-web/icons';
 import type { TaskEntity } from '@oppenheimer/frontend-consumer';
+import { sessionStateOf } from '@oppenheimer/frontend-consumer';
 import { useHosts, useSessions, useUnlinkTaskSession } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, RelativeTime } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { SESSION_STATUS, sessionStateOf } from '../lib/session-state';
+import { SESSION_STATUS } from '../lib/session-state';
 import { LinkSessionPicker } from './link-session-picker';
 
 /**

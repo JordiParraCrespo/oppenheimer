@@ -101,7 +101,7 @@ When you add a file that mentions an optional app (CI, compose,
   `.github/workflows/ci.yml` runs `pnpm ci:local --all` on `main` on a
   schedule; a red run opens a `main-red` issue, which comes before new work.
   Driving a pull request, and the order of its steps, is the `/steward` skill.
-  Every agent pull request is `/ship` (a fix, merged on its own once a fresh
+  Every agent pull request is `/go` (a fix, merged on its own once a fresh
   agent verifies it), `/propose` (merged once the user accepts) or
   `/research` (merged once green), and carries that label. **Every task that
   changes the repository starts with `/cook`**, typed or not: it picks the
@@ -121,6 +121,19 @@ When you add a file that mentions an optional app (CI, compose,
   how to take them is the `/local-stack` skill ("Show a visual change"); the
   pull request's `## Screenshots` section is `/steward`. A change there that
   is not visual records why with `pnpm screens --not-visual "<why>"`.
+- **In a cloud session, a change is run on the local stack before it is
+  pushed.** The SessionStart hook brings the stack up in the background
+  (`scripts/stack/cloud-warmup.sh`); check the change on it with the
+  `/local-stack` skill, then `node scripts/stack/stack.mjs verified "<what you
+  ran and saw>"`. What counts is `CHECKS` in `.agents/hooks/verification.mjs`,
+  held by `.agents/hooks/verify-guard.mjs`; a change nothing running can show
+  records why with `node scripts/stack/stack.mjs skip "<why>"`.
+- **An agentic change is evaluated before it is pushed, on any machine.**
+  What a model is shown or can call (the bots' prompts, tools and policies,
+  the agent engines, the LLM package, every `domain/prompts/`) runs through the
+  evals that cover it, and a new tool or rule gets a failing case first
+  (`scripts/evals/README.md`). A green eval records itself; a change no eval
+  can see records why with `node scripts/evals/record.mjs --skip "<why>"`.
 - **One `.env`, at the repo root.** The root `.env.example` documents every
   variable with a note; a new variable goes there. Never add a per-package
   `.env`. Node apps load it through `@oppenheimer/env` (real env vars win),

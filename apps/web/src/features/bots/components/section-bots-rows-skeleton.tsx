@@ -19,7 +19,7 @@ export function SectionBotsRowsSkeleton({ count }: { count: number | null }) {
     );
   const rows = Array.from({ length: Math.min(count ?? UNKNOWN, MOST) }, (_, row) => `row-${row}`);
   return (
-    <BotList aria-busy className="mx-1.5">
+    <BotList aria-busy className="mx-3">
       {rows.map((key, row) => (
         <BotItemSkeleton key={key} index={row} />
       ))}

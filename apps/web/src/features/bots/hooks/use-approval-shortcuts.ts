@@ -1,6 +1,7 @@
+import type { ApprovalDecisionLook } from '@oppenheimer/frontend-consumer';
 import type { BotApprovalDecision } from '@oppenheimer/shared/schemas/bot';
 import { useEffect, useEffectEvent } from 'react';
-import { type ApprovalDecisionLook, decisionForKey } from '@/features/bots/lib/approval-decisions';
+import { decisionForKey } from '@/features/bots/lib/approval-decisions';
 
 /** Whether a key press lands where someone writes: then it is a letter, not a decision. */
 function inField(target: EventTarget | null): boolean {

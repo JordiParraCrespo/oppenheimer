@@ -63,7 +63,7 @@ opp sessions close <id>
 | `opp login \| logout \| whoami` | The credential, and what it can actually do |
 | `opp hosts list \| get` | Your machines, and which are online |
 | `opp projects list` | Projects: repositories, default host and agent |
-| `opp sessions list \| get \| run \| send \| wait \| stop \| close` | Sessions on your hosts |
+| `opp sessions list \| get \| run \| send \| wait \| stop \| restart \| close` | Sessions on your hosts |
 | `opp sessions run --hidden`, `opp sessions hide \| show <id>` | Keep a session out of the console's sidebar, or show it again; it runs the same |
 | `opp automations list \| create \| run \| pause \| resume \| delete` | Tasks that start a session on a schedule |
 | `opp bots list \| chat` | Your bots (the console's Employees): `chat` waits for the answer |
@@ -82,7 +82,7 @@ marks what you may grant. What each command needs:
 | --- | --- |
 | `sessions run` | `sessions:write`, `hosts:read`, `projects:read`, and `repositories:read` for a repository no project holds |
 | `sessions transcript` | `sessions:read` |
-| `sessions send \| stop \| close` | `sessions:write` |
+| `sessions send \| stop \| restart \| close` | `sessions:write` |
 | `automations create` | `automations:write`, `hosts:read`, `projects:read` |
 | `bots chat` | `bots:write` |
 | `tasks add \| move` | `tasks:write` |

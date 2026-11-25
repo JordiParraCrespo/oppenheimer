@@ -5,8 +5,9 @@ import {
   RunsListFoot,
   RunsListHead,
 } from '@oppenheimer/design-system-web';
+import { runState } from '@oppenheimer/frontend-consumer';
 import { useSuspenseAutomationRuns } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
+import { clock, ErrorAlert, useLocale } from '@oppenheimer/frontend-web';
 import { RUN_WINDOWS } from '@oppenheimer/shared/automations';
 import { useNavigate } from '@tanstack/react-router';
 import { useDeferredValue } from 'react';
@@ -15,9 +16,9 @@ import { ChoiceToken } from '../components/choice-token';
 import { FilterClear } from '../components/filter-clear';
 import { FilterRow } from '../components/filter-row';
 import { RUNS_PAGE_SIZE, useRunsFilters } from '../hooks/use-runs-filters';
-import { runState, runTitle } from '../lib/automation-view';
+import { runTitle } from '../lib/automation-view';
 import { RUN_STATUS_TABS } from '../lib/runs-search';
-import { clock, monthDay } from '../lib/time';
+import { monthDay } from '../lib/time';
 import { RunsFacets } from './runs-facets';
 
 /**

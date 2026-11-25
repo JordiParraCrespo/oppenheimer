@@ -305,11 +305,22 @@ export const sessionTools = [
     name: 'stop_session',
     title: 'Stop a session',
     description:
-      'Stop a session’s agent. Its worktree and branch stay; the person can restart it from the console.',
+      'Stop a session’s agent. Its worktree and branch stay; restart_session brings it back.',
     requiredScopes: ['sessions:write'],
     inputSchema: z.object({ session_id: sessionId }),
     annotations: { idempotentHint: true },
     handler: ({ session_id }, { client }) => client.post(`/sessions/${session_id}/stop`),
+  }),
+
+  defineTool({
+    name: 'restart_session',
+    title: 'Restart a stopped session',
+    description:
+      'Bring a stopped session back: its agent starts again in the worktree it has, continuing its conversation. A session stops on its own after hours idle and unwatched, and when its host reboots; a stopped one takes no prompt until restarted. Use it on a stopped session only. It is back once its host brings the terminal up (usually within a minute): get_session shows it no longer stopped, then send_to_session.',
+    requiredScopes: ['sessions:write'],
+    inputSchema: z.object({ session_id: sessionId }),
+    annotations: { idempotentHint: true },
+    handler: ({ session_id }, { client }) => client.post(`/sessions/${session_id}/restart`),
   }),
 
   defineTool({

@@ -136,6 +136,7 @@ export {
   ChatHeader,
   ChatHeaderTag,
   ChatTab,
+  ChatTabSkeleton,
   ChatTabStrip,
   ChatTrayButton,
   ThreadFindBar,
@@ -574,6 +575,7 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   SortableSidebarProjectGroup,
+  SortableSidebarSection,
   sortableProjectId,
   useSidebar,
 } from './components/sidebar';

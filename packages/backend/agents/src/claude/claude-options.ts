@@ -4,7 +4,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BotTurnRequest } from '../bot-engine';
 import { BOT_COMPACTION_PERCENT, compactionThreshold } from '../bot-engine';
 import { type MessagePart, messageParts } from '../turn';
-import { qualifiedToolName, TOOL_SERVER_NAME } from './claude-tool-server';
+import { qualifiedToolName, TOOL_NAMES_NOTE, TOOL_SERVER_NAME } from './claude-tool-server';
 
 /** z.ai's Anthropic-compatible endpoint, the default for provider `glm`. */
 export const GLM_BASE_URL = 'https://api.z.ai/api/anthropic';
@@ -240,6 +240,16 @@ export function claudeToolSearch(
   return waiting > DEFER_TOOLS_ABOVE_CHARS;
 }
 
+/** The bot's system prompt, and how to call its tools on this engine when it has any. */
+export function claudeSystemPrompt(request: {
+  systemPrompt: string;
+  tools: readonly unknown[];
+}): string {
+  return request.tools.length > 0
+    ? `${request.systemPrompt}\n\n${TOOL_NAMES_NOTE}`
+    : request.systemPrompt;
+}
+
 export function claudeOptions(
   request: BotTurnRequest,
   dirs: ScratchDirs,
@@ -252,7 +262,7 @@ export function claudeOptions(
     request.engineTools === false ? [] : [...BUILT_IN_TOOLS, ...(search ? [TOOL_SEARCH_TOOL] : [])];
   return {
     model: request.model,
-    systemPrompt: request.systemPrompt,
+    systemPrompt: claudeSystemPrompt(request),
     cwd: dirs.cwd,
     env: { ...claudeEnv(request, dirs), ENABLE_TOOL_SEARCH: search ? 'true' : 'false' },
     tools: builtIns,

@@ -134,24 +134,36 @@ export function verdict(root, options) {
   ].join(' ');
 }
 
-function main() {
+/**
+ * A publishing guard's PreToolUse entry point: reads the hook's input, and
+ * for each checkout the call publishes from (`publishes`) asks
+ * `verdict(root)` why it may not be published; the first answer refuses the
+ * call. `off` names the variable that stands the guard down. A checkout with
+ * no main to compare against (a shallow clone), or none at all, passes.
+ * This guard and the verification guard (`verify-guard.mjs`) are each a
+ * verdict on it.
+ */
+export function runGuard(verdict, off) {
   let input = {};
   try {
     input = JSON.parse(readFileSync(0, 'utf8') || '{}');
   } catch {}
   const cwd = input.cwd ?? process.cwd();
   const targets = publishes(input.tool_name, input.tool_input, cwd);
-  if (targets.length === 0) return;
-  // A run that photographs nothing by design (the audit eval's worktrees).
-  if (process.env.OPPENHEIMER_SCREENSHOT_GUARD === 'off') return;
+  if (targets.length === 0 || process.env[off] === 'off') return;
   for (const { action, directory } of targets) {
-    const reason = refusal(directory);
-    if (!reason) continue;
+    const root = checkoutRoot(directory);
+    if (!root) continue;
+    let text = null;
+    try {
+      text = verdict(root);
+    } catch {}
+    if (!text) continue;
     const output = {
       hookSpecificOutput: {
         hookEventName: 'PreToolUse',
         permissionDecision: 'deny',
-        permissionDecisionReason: `This call ${action} from ${reason.root}. ${reason.text}`,
+        permissionDecisionReason: `This call ${action} from ${root}. ${text}`,
       },
     };
     process.stdout.write(`${JSON.stringify(output)}\n`);
@@ -159,26 +171,18 @@ function main() {
   }
 }
 
-/** Why publishing the checkout at `directory` is refused, or null. */
-function refusal(directory) {
-  let root;
+/** The top of the checkout at `directory`, or null when it is none (the command itself will fail). */
+function checkoutRoot(directory) {
   try {
-    root = execFileSync('git', ['rev-parse', '--show-toplevel'], {
+    return execFileSync('git', ['rev-parse', '--show-toplevel'], {
       cwd: directory,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
   } catch {
-    // Not a checkout (or not there): the command itself will fail.
-    return null;
-  }
-  try {
-    const text = verdict(root);
-    return text ? { root, text } : null;
-  } catch {
-    // No main to compare against (a shallow clone): nothing to check.
     return null;
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] === fileURLToPath(import.meta.url))
+  runGuard((root) => verdict(root), 'OPPENHEIMER_SCREENSHOT_GUARD');

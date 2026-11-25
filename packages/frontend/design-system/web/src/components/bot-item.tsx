@@ -26,6 +26,11 @@ function BotList({ className, ...props }: React.ComponentProps<'div'>) {
  * dot: both set `data-attention`, which carries the weight. 32px, the nav
  * radius, rows 1px apart in a `BotList`; the open chat's row is a gray wash.
  *
+ * The row keeps the sidebar's nav grid (`RoutineItem`, `SessionItem`): its
+ * 7px inset and 6px gap put the photo's centre on a 14px glyph's centre and
+ * the name on their names' column, so a Bots heading's rows line up with the
+ * views above them. The list around it takes the same 12px inset as theirs.
+ *
  * `action` is the row's ellipsis, shown on hover the way `SessionItem`'s is,
  * hiding the dots while it shows.
  */
@@ -84,7 +89,7 @@ function BotItem({
       render={render}
       nativeButton={nativeButton ?? render === undefined}
       className={cn(
-        'group/bot flex h-8 w-full items-center gap-2.5 rounded-nav px-2.5 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface data-active:hover:bg-active-surface',
+        'group/bot flex h-8 w-full items-center gap-1.5 rounded-nav px-1.75 text-left text-fg outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring data-active:bg-active-surface data-active:hover:bg-active-surface',
         withAction && ROW_BUTTON_WITH_ACTION,
         className,
       )}
@@ -154,7 +159,7 @@ function BotItemSkeleton({ index = 0, className, ...props }: React.ComponentProp
     <div
       aria-hidden
       data-slot="bot-item-skeleton"
-      className={cn('flex h-8 items-center gap-2.5 px-2.5', className)}
+      className={cn('flex h-8 items-center gap-1.5 px-1.75', className)}
       {...props}
     >
       <Skeleton shape="sm" className="size-5 shrink-0 rounded-xs" />

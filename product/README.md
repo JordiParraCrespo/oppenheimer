@@ -1772,6 +1772,14 @@ earlier note:
   is not kept. The bar is 45px with its controls on the medium rung, on the
   page's own ground rather than the grey band §3's contrast pass first gave
   it.
+- `versions/mvp/33-session-tabs.md` §1 then put the 45px tab bar on the
+  page's own ground (the terminal's grey on a session, the canvas's black
+  on New session). Later on 2026-11-24 the owner asked for the grey
+  everywhere ("I liked that the tabs have the gray color", "never full
+  black"): the bar stands on the terminal's ground on New session too, so it
+  does not change when a session is created. Only the
+  tabs stay on the medium rung; the bar's other controls go back to the
+  small one.
 - `versions/mvp/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
   a job over four tiles (next-step pills once it had instructions), over the
   stacked composer. On 2026-11-16 the owner found it loud in the side pane
@@ -1956,6 +1964,12 @@ earlier note:
   swipe: it is the rail's first item again at `/inbox` (the Plan address
   redirects), with a dot and a count, and no sidebar, Plan opens on its board, and the reading pane is a deck of cards
   answered by number keys or a swipe ("Its own page, and a deck").
+- `05-screens.md` said only opening a stopped session in the console
+  brings it back (2026-11-24), so a bot whose session stopped idle had to ask
+  the person to open it. The same day, after a bot did exactly that, a bot
+  restarts a stopped session itself with `restart_session` (note 25), and
+  `opp sessions restart` and the MCP server's `restart_session` expose the
+  API's restart to people and agents elsewhere.
 - `27-bot-subscriptions.md` §4.2 had a bot's look at a task it handed off
   stay quiet (`nothing_to_report`) while the task was on track, so the chat
   showed only "Checked on session". On 2026-11-23, after the owner had to
@@ -2103,3 +2117,7 @@ earlier note:
   put Mute notifications beside Mark as unread on a session row's menu.
   The same day the owner asked for a sublevel: both moved into a
   Notifications & read pane.
+- `next-steps/0.5-mobile.md` ("A shell first", 2026-11-14) had each of the
+  phone's five sections fill in a slice of its own. On 2026-11-18 the owner
+  postponed the Pull requests tab: it stays a placeholder while the other
+  four are built ("The Pull requests tab waits").
