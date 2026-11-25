@@ -43,8 +43,10 @@ recording), and add a `pnpm eval:<name>` script.
 | Check-backs, loops, waiting on async work | `pnpm eval:bot-check-back` |
 | A routine's run meeting a blocker | `pnpm eval:bot-blocked-run` |
 | Channels (Telegram, WhatsApp): answer first, then the work | `pnpm eval:bot-channel-ack` |
+| A WhatsApp group: who a line is for, answering or keeping out (`core/turn-context.contact-group*`, `contactReplyOf`) | `pnpm eval:bot-group-chat` |
 | Getting started, a new bot's first reply | `pnpm eval:bot-first-chat` |
 | The composer's suggested next message | `pnpm eval:bot-suggestion` |
+| Approve for me's reviewer: `bot-auto-review.policy.ts`, `core/job-auto-review.md` | `pnpm eval:bot-auto-review` |
 | The core system prompt, the toolbox, the agent engines | the bot evals nearest the change, `--runs 1` each; the whole set before a large change |
 | Session titles: `session-name.policy.ts`, `prompts/system/title.md` | `pnpm eval:session-title` |
 | The voice polish | `node scripts/evals/voice/run.mjs` (needs recorded clips; its README) |

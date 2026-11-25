@@ -69,8 +69,10 @@ import {
   ChatTab,
   ChatTabStrip,
   ChatTrayButton,
+  SortableChatTab,
   ThreadFindBar,
 } from '@oppenheimer/design-system-web/chat-header';
+import { DragProvider, SortableGroup, useSortableGroups } from '@oppenheimer/design-system-web/drag';
 import {
   ChatErrorAction,
   ChatErrorBanner,
@@ -1072,22 +1074,52 @@ function ChatComposerExtrasBody() {
 
 /* ── Header, find and empty state ────────────────────────────────────────── */
 
+const DEMO_TABS = {
+  cancel: { agent: 'claude-code', attention: 'needs-you', working: false, name: 'Wire run cancel through the agent gateway' },
+  quota: { agent: 'claude-code', attention: undefined, working: true, name: 'Quota warning at 90%' },
+  retry: { agent: 'codex', attention: 'unread', working: false, name: 'Retry policy' },
+} as const;
+type DemoTabId = keyof typeof DEMO_TABS;
+
+/** The strip with its tabs in a sortable group: drag one into another place. */
+function DemoTabStrip() {
+  const [order, setOrder] = React.useState<readonly string[]>(['cancel', 'quota', 'retry']);
+  const drag = useSortableGroups({ tabs: order }, (next) => setOrder(next.tabs ?? []));
+  const tab = (id: string) => {
+    const one = DEMO_TABS[id as DemoTabId];
+    return (
+      <ChatTab
+        active={id === 'cancel'}
+        icon={<AgentMark agent={one.agent} />}
+        attention={one.attention}
+        working={one.working}
+        onClose={() => {}}
+      >
+        {one.name}
+      </ChatTab>
+    );
+  };
+  return (
+    <ChatTabStrip onNew={() => {}} label="Open sessions" className="px-1.5">
+      <DragProvider {...drag} overlay={(active) => tab(active.id)}>
+        <SortableGroup id="tabs" items={order} orientation="horizontal" accepts={['chat-tab']} className="contents">
+          {order.map((id) => (
+            <SortableChatTab key={id} id={id} label={DEMO_TABS[id as DemoTabId].name}>
+              {tab(id)}
+            </SortableChatTab>
+          ))}
+        </SortableGroup>
+      </DragProvider>
+    </ChatTabStrip>
+  );
+}
+
 function ChatChromeBody() {
   const [query, setQuery] = React.useState('abort');
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="overflow-hidden rounded-lg border border-border-subtle">
-        <ChatTabStrip onNew={() => {}} label="Open sessions" className="px-1.5">
-          <ChatTab active icon={<AgentMark agent="claude-code" />} attention="needs-you" onClose={() => {}}>
-            Wire run cancel through the agent gateway
-          </ChatTab>
-          <ChatTab icon={<AgentMark agent="claude-code" />} working onClose={() => {}}>
-            Quota warning at 90%
-          </ChatTab>
-          <ChatTab icon={<AgentMark agent="codex" />} attention="unread" onClose={() => {}}>
-            Retry policy
-          </ChatTab>
-        </ChatTabStrip>
+        <DemoTabStrip />
         <ChatHeader
           title="Wire run cancel through the agent gateway"
           meta={<ChatHeaderTag icon={<GitBranchIcon />}>acme/cancel-path</ChatHeaderTag>}

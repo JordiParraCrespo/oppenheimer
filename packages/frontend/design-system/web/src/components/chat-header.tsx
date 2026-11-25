@@ -5,6 +5,7 @@ import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { dragIgnore, useSortableControl } from './drag';
 import { IconButton } from './icon-button';
 import { Skeleton } from './skeleton';
 
@@ -19,7 +20,8 @@ import { Skeleton } from './skeleton';
  * - `ChatTabStrip` · `ChatTab`: open things as tabs on the 28px rung, each with its
  *   mark and the dot of what it needs from the reader; the shown one lit on
  *   the card inside a hairline, the rest flat, a close on each.
- *   `ChatTabSkeleton` stands for a tab whose name is still loading.
+ *   `ChatTabSkeleton` stands for a tab whose name is still loading, and
+ *   `SortableChatTab` makes the tab inside it one the reader can drag.
  * - `ThreadFindBar`: ⌘F, floating top-right over the header: a 44px pill
  *   field with the close, and once there is a query, a row under it with
  *   previous, next and "2 / 7 results".
@@ -148,6 +150,33 @@ function ChatTabStrip({
   );
 }
 
+/**
+ * The drag contract of the `SortableChatTab` around a tab, which its frame
+ * and its link wear, and where the tab tells it the name it draws.
+ */
+const TabSort = React.createContext<
+  (ReturnType<typeof useSortableControl> & { setName: (name: string | undefined) => void }) | null
+>(null);
+
+/**
+ * Makes the `ChatTab` (or `ChatTabSkeleton`) inside it a sortable item, on
+ * the drag layer: put the tabs in a horizontal `SortableGroup` inside a
+ * `DragProvider`, in the strip. A click or Enter still opens the tab, a drag
+ * past 5px or Space picks it up; its own place is the drop slot, the lifted
+ * copy is the provider's `overlay` (a plain `ChatTab`, outside this), and
+ * the neighbours slide. Its close never picks it up, and on a touch screen
+ * a swipe along the strip scrolls it rather than dragging. It draws nothing of its own, so the strip's
+ * spacing and hairlines are the tabs' as ever. A drag is announced by the
+ * name the tab draws (its text), or `label`. Where the order is kept is
+ * the app's.
+ */
+function SortableChatTab({ id, label, children }: { id: string; label?: string; children: React.ReactNode }) {
+  // A screen reader hears the name the tab draws, unless the caller names it.
+  const [name, setName] = React.useState<string>();
+  const sortable = useSortableControl({ id, data: { type: 'chat-tab', label: label ?? name } });
+  return <TabSort.Provider value={{ ...sortable, setName }}>{children}</TabSort.Provider>;
+}
+
 /** Each kind of dot on a tab's mark, and what a screen reader hears when the caller names nothing. */
 const TAB_ATTENTION = {
   'needs-you': { label: 'Needs input', className: 'bg-warning' },
@@ -207,12 +236,25 @@ function ChatTab({
   /** What the tab is: a link (`<Link to=… />`) instead of a button. */
   render?: React.ReactElement;
 }) {
+  const sortable = React.useContext(TabSort);
+  const setName = sortable?.setName;
+  const name = typeof children === 'string' ? children : undefined;
+  // Tells the `SortableChatTab` around it the name a drag of it is announced by.
+  React.useEffect(() => setName?.(name), [setName, name]);
   return (
     <span
       data-slot="chat-tab"
       data-active={active || undefined}
       title={title}
-      className={cn(TAB_FRAME, 'hover:bg-hover-surface hover:text-fg hover:before:hidden [:hover+&]:before:hidden', className)}
+      {...sortable?.node}
+      className={cn(
+        TAB_FRAME,
+        'hover:bg-hover-surface hover:text-fg hover:before:hidden [:hover+&]:before:hidden',
+        sortable?.node.className,
+        // On a touch screen a swipe along the strip scrolls it rather than lifting the tab.
+        sortable && 'touch-pan-x',
+        className,
+      )}
     >
       <ButtonPrimitive
         role={render ? undefined : 'tab'}
@@ -222,6 +264,7 @@ function ChatTab({
         nativeButton={render === undefined}
         className="flex h-full min-w-0 flex-1 items-center gap-2 text-current no-underline outline-none focus-visible:underline"
         {...props}
+        {...sortable?.control}
       >
         {icon || attention ? (
           <span className="relative flex shrink-0 [&_svg]:size-3.5">
@@ -254,6 +297,7 @@ function ChatTab({
           size="xs"
           aria-label={closeLabel}
           onClick={onClose}
+          {...(sortable ? dragIgnore : {})}
           className="hidden group-focus-within/tab:flex group-hover/tab:flex group-data-active/tab:flex focus-visible:ring-2 focus-visible:ring-ring"
         >
           <XIcon />
@@ -270,12 +314,15 @@ function ChatTab({
  * page on screen.
  */
 function ChatTabSkeleton({ active = false, className }: { active?: boolean; className?: string }) {
+  // In a sortable strip a placeholder is a tab like the others: it holds its slot and drags by its frame.
+  const sortable = React.useContext(TabSort);
   return (
     <span
       data-slot="chat-tab"
       data-active={active || undefined}
       aria-hidden
-      className={cn(TAB_FRAME, className)}
+      {...sortable?.node}
+      className={cn(TAB_FRAME, sortable?.node.className, sortable && 'touch-pan-x', className)}
     >
       <Skeleton shape="sm" className="size-3.5 shrink-0" />
       <Skeleton className="h-2.5 w-20 min-w-0" />
@@ -421,5 +468,15 @@ function ChatTrayButton({
   );
 }
 
-export { ChatEmptyState, ChatHeader, ChatHeaderTag, ChatTab, ChatTabSkeleton, ChatTabStrip, ChatTrayButton, ThreadFindBar };
+export {
+  ChatEmptyState,
+  ChatHeader,
+  ChatHeaderTag,
+  ChatTab,
+  ChatTabSkeleton,
+  ChatTabStrip,
+  ChatTrayButton,
+  SortableChatTab,
+  ThreadFindBar,
+};
 export type { ThreadFindLabels };

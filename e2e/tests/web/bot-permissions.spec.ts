@@ -100,3 +100,43 @@ test('a bot’s tools set and reset, and its rules written and removed', async (
 
   await owner.api.dispose();
 });
+
+/**
+ * The three levels, the sessions' own: a new bot starts at Approve for me
+ * (the reviewer), and each level says on Settings → Permissions how the
+ * tools left on their default stand. Trashing mail, which always asks, runs
+ * under Full access, which raises no card; sending mail still asks there.
+ */
+test('a bot’s three approval levels, each as Settings says it', async ({ page }) => {
+  const owner = await provisionedUser('bot-levels');
+  const bot = (await (
+    await owner.api.post('/api/v1/bots', { data: { name: 'Vera', provider: 'glm' } })
+  ).json()) as { id: string; permission: string };
+  expect(bot.permission).toBe('auto');
+  await signInAs(page, owner.user);
+
+  const tool = (name: string) => page.getByRole('group', { name: `What ${name} does` });
+  for (const [level, says] of [
+    ['ask', /follow Ask for approval/],
+    ['auto', /goes to a reviewer first/],
+    ['full', /follow Full access/],
+  ] as const) {
+    const changed = await owner.api.patch(`/api/v1/bots/${bot.id}`, {
+      data: { permission: level },
+    });
+    expect(changed.ok()).toBe(true);
+    await page.goto(`/bots/${bot.id}/settings/permissions?q=mail`);
+    await expect(page.getByText(says)).toBeVisible();
+    const trash = level === 'full' ? 'Allow' : 'Ask';
+    await expect(tool('trash_mail').getByRole('button', { name: trash })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(tool('send_mail').getByRole('button', { name: 'Ask' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  }
+
+  await owner.api.dispose();
+});

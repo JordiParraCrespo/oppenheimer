@@ -21,6 +21,11 @@ import {
   RUNNER_CAPABILITIES,
   TERMINAL_SCREEN_MAX_BYTES,
 } from './messages.js';
+import {
+  SESSION_CHANGES_FILE_PATCH_MAX_BYTES,
+  SESSION_CHANGES_MAX_FILES,
+  SESSION_CHANGES_PATCH_MAX_BYTES,
+} from './session-changes.js';
 import { PROTOCOL_VERSION } from './version.js';
 
 /**
@@ -77,6 +82,9 @@ export function toProtocolJsonSchema(): Record<string, unknown> {
       terminalScreenMaxBytes: TERMINAL_SCREEN_MAX_BYTES,
       computerScreenMaxEdge: COMPUTER_SCREEN_MAX_EDGE,
       computerScreenshotMaxBytes: COMPUTER_SCREENSHOT_MAX_BYTES,
+      sessionChangesMaxFiles: SESSION_CHANGES_MAX_FILES,
+      sessionChangesFilePatchMaxBytes: SESSION_CHANGES_FILE_PATCH_MAX_BYTES,
+      sessionChangesPatchMaxBytes: SESSION_CHANGES_PATCH_MAX_BYTES,
     },
   };
 }

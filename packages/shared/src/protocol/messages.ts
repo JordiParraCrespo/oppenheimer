@@ -48,6 +48,7 @@ import {
   windowAgentSchema,
   windowIndexSchema,
 } from './primitives.js';
+import { sessionChangesReadSchema, sessionChangesSchema } from './session-changes.js';
 import {
   attachedFilesAreValid,
   SESSION_CREATE_MAX_FILES,
@@ -286,6 +287,13 @@ export const RUNNER_CAPABILITIES = [
    * word back.
    */
   'session.windows.list',
+  /**
+   * Answers `session.changes.read` with `session.changes`: the files a
+   * session's checkouts changed since the branch left its base, or not
+   * committed yet, with their counts and patches, read with git on the host
+   * for the console's Review. A runner without it is never asked.
+   */
+  'session.changes.read',
   /**
    * Takes `agent` on `session.window.open`: the new window starts that coding
    * agent in the session's worktree, beside the session's own in window 0. A
@@ -1868,6 +1876,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   sharedPreviewSchema,
   transcriptReadSchema,
   transcriptPageSchema,
+  sessionChangesReadSchema,
+  sessionChangesSchema,
 ]);
 
 export type ProtocolMessage = z.infer<typeof protocolMessageSchema>;

@@ -151,6 +151,7 @@ export function BotTurn({
         ) : (
           <ChatUserMessage
             key={message.id}
+            tone="wash"
             data-message-id={message.id}
             time={time.format(message.createdAt)}
             actions={

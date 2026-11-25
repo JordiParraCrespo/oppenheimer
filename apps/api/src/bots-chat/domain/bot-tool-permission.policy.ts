@@ -47,18 +47,23 @@ export interface BotToolTraits {
   asks: boolean;
   /** Every call is decided on its own: no Allow in Settings, no standing grant. */
   perCallOnly: boolean;
-  /** It asks under every preset, Full access included, until the owner allows it (trashing mail). */
+  /** It asks under Approve for me too, past the reviewer, until the owner allows it (trashing mail). */
   always?: boolean;
+  /** It runs only from a yes on its card, under Full access too (sending mail: keyed on the approval). */
+  cardOnly?: boolean;
 }
 
 /**
  * What the catalog says for a tool on its own, under the bot's preset: one
- * that reaches outside Oppenheimer asks under Approve for me and runs under
- * Full access; one that always asks does so under both, until the owner
- * allows it; one that stays inside runs.
+ * that reaches outside Oppenheimer asks under Ask for approval and Approve
+ * for me (where the reviewer reads the call before its card,
+ * `autoReviews`); one that stays inside runs. Full access runs every tool,
+ * the ones that always ask under the other two included: it is the bots'
+ * "skip permissions", and raises no card the owner did not set themselves,
+ * but for a tool that runs only from its card (`cardOnly`).
  */
 export function defaultDecision(tool: BotToolTraits, preset: BotPermission): 'allow' | 'ask' {
-  return tool.asks && (tool.always || preset !== 'full') ? 'ask' : 'allow';
+  return tool.asks && (preset !== 'full' || tool.cardOnly) ? 'ask' : 'allow';
 }
 
 /**

@@ -1,4 +1,8 @@
-import { SidebarFoldLabel, SidebarListHead } from '@oppenheimer/design-system-web';
+import {
+  SidebarFoldLabel,
+  SidebarFoldPanel,
+  SidebarListHead,
+} from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
@@ -23,7 +27,7 @@ import { SectionBotsMenu } from './section-bots-menu';
  * says when one fails. `saving` holds the placements in flight, by bot,
  * until each settles. The heading needs no read and stays in every state;
  * the rows are read under Suspense. The label folds the rows away
- * (`useFoldedBots`), and a fold leaves the bots' faces beside the label
+ * (`useFoldedBots`), the panel closing on its height, and a fold leaves the bots' faces beside the label
  * (`SectionBotFaces`), the plus and its alerts.
  */
 export function SectionBots({ section }: { section: BotSection }) {
@@ -82,7 +86,7 @@ export function SectionBots({ section }: { section: BotSection }) {
         onDismiss={() => place.reset()}
         className="mx-3 mb-2"
       />
-      {fold.open ? (
+      <SidebarFoldPanel open={fold.open}>
         <QueryState>
           <QueryState.Pending>
             <SectionBotsRowsSkeleton count={rememberedBotCount(section)} />
@@ -96,7 +100,7 @@ export function SectionBots({ section }: { section: BotSection }) {
             />
           </QueryState.Data>
         </QueryState>
-      ) : null}
+      </SidebarFoldPanel>
     </section>
   );
 }

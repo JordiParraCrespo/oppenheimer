@@ -37,7 +37,7 @@ import {
   `"avatarFace" IS NULL OR ("avatarFace" ->> 'hat' IN ('fedora', 'porkpie', 'bowler', 'tophat', 'cap', 'beanie') AND "avatarFace" ->> 'eyes' IN ('dots', 'happy', 'wink', 'big') AND "avatarFace" ->> 'mouth' IN ('smile', 'grin', 'o')) IS TRUE`,
 )
 @Check('CHK_bot_position', `"position" >= 0`)
-@Check('CHK_bot_permission', `"permission" IN ('auto', 'full')`)
+@Check('CHK_bot_permission', `"permission" IN ('ask', 'auto', 'full')`)
 @Check('CHK_bot_provider', `"provider" IN ('anthropic', 'glm', 'openai', 'chatgpt', 'xai')`)
 @Check(
   'CHK_bot_sections',

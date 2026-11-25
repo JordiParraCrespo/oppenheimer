@@ -2304,6 +2304,83 @@ export type SessionWindowsResponseDto = {
     windows: Array<SessionTerminalWindowDto>;
 };
 
+export type SessionChangedFileDto = {
+    /**
+     * Relative to the checkout’s root, `/`-separated.
+     */
+    path: string;
+    /**
+     * Where a renamed or copied file came from.
+     */
+    oldPath: string | null;
+    /**
+     * `untracked` is new and never added to git.
+     */
+    status: 'added' | 'modified' | 'deleted' | 'renamed' | 'copied' | 'type_changed' | 'untracked';
+    /**
+     * Lines added; 0 for a binary file.
+     */
+    additions: number;
+    /**
+     * Lines removed; 0 for a binary file.
+     */
+    deletions: number;
+    binary: boolean;
+    /**
+     * The file’s unified diff from its `diff --git` line; null when binary or left out.
+     */
+    patch: string | null;
+    /**
+     * The patch was left out: too long for one read, or not read in time.
+     */
+    patchOmitted: boolean;
+};
+
+export type SessionCheckoutChangesDto = {
+    /**
+     * `owner/name`.
+     */
+    repository: string;
+    checkoutId: string | null;
+    /**
+     * What the session’s branch was cut from.
+     */
+    baseBranch: string | null;
+    /**
+     * The commit compared with; null when the branch has no commit yet.
+     */
+    base: string | null;
+    /**
+     * The branch’s history did not reach its base yet (the host is still fetching it), so the base branch’s tip stood in: what the base gained since shows reversed.
+     */
+    approximate: boolean;
+    files: Array<SessionChangedFileDto>;
+    /**
+     * Files past the bound of one read, counted and left out.
+     */
+    omittedFiles: number;
+    /**
+     * Lines added across `files`.
+     */
+    additions: number;
+    /**
+     * Lines removed across `files`.
+     */
+    deletions: number;
+};
+
+export type SessionChangesResponseDto = {
+    /**
+     * `listed`: `checkouts` is what the host read now. `host_offline`: the host has no link. `not_supported`: its runner cannot read changes, or the session is not on it.
+     */
+    state: 'listed' | 'host_offline' | 'not_supported';
+    scope: 'base' | 'uncommitted';
+    /**
+     * One entry per checkout, the first checkout first; none for a folder session.
+     */
+    checkouts: Array<SessionCheckoutChangesDto>;
+};
+
 export type OpenSessionWindowRequest = {
     model?: string;
     permission?: 'ask' | 'auto' | 'full';
@@ -4241,7 +4318,7 @@ export type BotResponseDto = {
     /**
      * How far a turn may go without asking.
      */
-    permission: 'auto' | 'full';
+    permission: 'ask' | 'auto' | 'full';
     /**
      * The bot that created it (`create_bot`); null when it was made in the console, or once that bot is deleted.
      */
@@ -4295,7 +4372,7 @@ export type UpdateBotRequest = {
     provider?: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
     model?: string | null;
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
-    permission?: 'auto' | 'full';
+    permission?: 'ask' | 'auto' | 'full';
     learnAutomatically?: boolean;
     sections?: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
 };
@@ -5227,7 +5304,7 @@ export type BotUsageBackgroundResponseDto = {
     /**
      * Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory.
      */
-    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream' | 'suggestion';
+    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream' | 'suggestion' | 'auto_review';
     calls: number;
 };
 
@@ -5659,7 +5736,7 @@ export type BotPermissionsResponseDto = {
     /**
      * The preset every tool with no setting follows.
      */
-    preset: 'auto' | 'full';
+    preset: 'ask' | 'auto' | 'full';
     tools: Array<BotToolPermissionDto>;
     /**
      * Newest first.
@@ -12156,6 +12233,53 @@ export type OpenSessionWindowResponses = {
 };
 
 export type OpenSessionWindowResponse = OpenSessionWindowResponses[keyof OpenSessionWindowResponses];
+
+export type FindSessionChangesData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        /**
+         * What to compare with; `base` when absent
+         */
+        scope?: 'base' | 'uncommitted';
+    };
+    url: '/api/v1/sessions/{id}/changes';
+};
+
+export type FindSessionChangesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * HOSTS_001 — Host not found
+     *
+     * SESSIONS_001 — Session not found
+     */
+    404: ProblemDetailsDto;
+    /**
+     * SESSIONS_005 — That session is closed
+     */
+    409: ProblemDetailsDto;
+    /**
+     * SESSIONS_031 — No answer in time
+     */
+    504: ProblemDetailsDto;
+};
+
+export type FindSessionChangesError = FindSessionChangesErrors[keyof FindSessionChangesErrors];
+
+export type FindSessionChangesResponses = {
+    200: SessionChangesResponseDto;
+};
+
+export type FindSessionChangesResponse = FindSessionChangesResponses[keyof FindSessionChangesResponses];
 
 export type CloseSessionWindowData = {
     body?: never;

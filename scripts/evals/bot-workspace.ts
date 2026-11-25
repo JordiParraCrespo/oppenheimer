@@ -99,8 +99,11 @@ export interface WorkspaceSpec {
   sessions?: SessionSpec[];
   /** The bot's home host, by name. */
   home?: string;
-  /** The bot's permission level (default `auto`, Approve for me: every write raises a card). */
-  permission?: 'auto' | 'full';
+  /**
+   * The bot's permission level (default `ask`, Ask for approval: every write
+   * raises a card; `auto` passes no reviewer here, so it raises the card too).
+   */
+  permission?: 'ask' | 'auto' | 'full';
   /**
    * What a write does once it runs (under Full access): given the command and
    * the folded sessions, its result. Without it every write throws.
@@ -403,7 +406,7 @@ export function workspace(spec: WorkspaceSpec): Workspace {
     turnId: 'turn-1',
     homeHostId: home?.id ?? null,
     timeZone: 'Europe/Madrid',
-    permission: spec.permission ?? 'auto',
+    permission: spec.permission ?? 'ask',
     permissions: NO_PERMISSIONS,
     budget: new BotTurnBudget(),
     credentialScopes: null,

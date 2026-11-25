@@ -28,7 +28,7 @@ export function BotChatSkeleton({ tabs }: { tabs?: ReactNode }) {
     <div aria-busy className="flex min-h-0 flex-1 flex-col">
       <LoadingStatus />
       <PageBar
-        tone={tabs ? 'chrome' : 'page'}
+        tone={tabs ? 'chrome' : 'ground'}
         leading={tabs ? null : <Skeleton shape="pill" className="size-6.5" />}
         title={
           tabs ?? (

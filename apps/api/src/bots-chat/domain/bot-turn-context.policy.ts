@@ -108,6 +108,8 @@ const CONTACT_LINES: readonly ContextLine[] = [
         : 'core/turn-context.contact-direct',
     ),
   ({ input }) =>
+    input.contact === 'group' ? promptText('core/turn-context.contact-group-who') : null,
+  ({ input }) =>
     input.voiceReplyMaxChars
       ? promptText('core/turn-context.contact-voice-reply', {
           speechTextMaxChars: String(input.voiceReplyMaxChars),

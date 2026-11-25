@@ -289,7 +289,7 @@ describe('BotProjectToolsFactory', () => {
       command: () => project(WEBSITE_ID, 'Website', { archivedAt: new Date() }),
     });
 
-    it.each(['auto', 'full'] as const)(
+    it.each(['ask', 'auto'] as const)(
       'asks the person first under %s, archiving nothing until they say yes',
       async (permission) => {
         const { commandBus, context, call } = setup(
@@ -310,6 +310,19 @@ describe('BotProjectToolsFactory', () => {
         expect(commandBus.execute).not.toHaveBeenCalled();
       },
     );
+
+    it('archives at once under Full access, which raises no card', async () => {
+      const { commandBus, context, call } = setup(
+        answers([session({ state: 'resolved' })]),
+        'full',
+      );
+
+      const result = await call('archive_project', { project_id: WEBSITE_ID });
+
+      expect(result.isError).toBeFalsy();
+      expect(context.approvals.request).not.toHaveBeenCalled();
+      expect(commandBus.execute).toHaveBeenCalledWith(expect.any(ArchiveProjectCommand));
+    });
 
     it('archives once the person approved, through the projects’ own command', async () => {
       const { commandBus, runApproved } = setup(answers([]));
