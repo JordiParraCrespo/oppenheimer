@@ -53,10 +53,16 @@ export const BOT_DOCUMENT_NAMES = ['soul', 'instructions'] as const;
 export type BotDocumentName = (typeof BOT_DOCUMENT_NAMES)[number];
 
 /**
- * How far a bot's turns may go without asking. `ask` is left out: a headless
- * turn with no prompt tool would refuse every tool.
+ * How far a bot's turns may go without asking, strictest first, the sessions'
+ * three levels: `ask` (Ask for approval: what reaches outside Oppenheimer
+ * raises a card), `auto` (Approve for me: a reviewer reads each such call
+ * first and lets it run or raises the card), `full` (Full access: no card).
  */
-export const BOT_PERMISSIONS = ['auto', 'full'] as const satisfies readonly SessionPermission[];
+export const BOT_PERMISSIONS = [
+  'ask',
+  'auto',
+  'full',
+] as const satisfies readonly SessionPermission[];
 export type BotPermission = (typeof BOT_PERMISSIONS)[number];
 
 /**
@@ -1032,6 +1038,7 @@ export const BOT_MODEL_CALL_PURPOSES = [
   'rule_review',
   'dream',
   'suggestion',
+  'auto_review',
 ] as const;
 export type BotModelCallPurpose = (typeof BOT_MODEL_CALL_PURPOSES)[number];
 

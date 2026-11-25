@@ -1,5 +1,7 @@
 # Results
 
+The skill was called `ship` until 2026-11-25, now `go`; the runs below keep that name.
+
 ## 2026-11-09: first run, against the `ship` step 4 and `steward` of #751
 
 Nine fresh agents, one per case, given the brief in README.md. Graded by

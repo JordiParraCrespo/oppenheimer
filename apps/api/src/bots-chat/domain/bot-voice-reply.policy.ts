@@ -1,16 +1,10 @@
 import type { BotPermission } from '@oppenheimer/shared';
+import { peelReplyMarks } from './bot-reply-mark.policy';
 import { rulesToReview } from './bot-rule-review.policy';
 import { type BotPermissions, grantFor, toolDecision } from './bot-tool-permission.policy';
 
 /** The tool whose permission a spoken reply rides on: what speaks for the owner in a chat. */
 export const VOICE_REPLY_TOOL = 'send_whatsapp_voice_note';
-
-/**
- * What a contact turn's reply opens with when the bot means it to be heard
- * (`core/turn-context.contact-voice-reply`). Stripped before anything is sent,
- * spoken or not.
- */
-export const VOICE_REPLY_MARK = '[voice]';
 
 /**
  * Whether a contact's turn in this chat may answer as a voice note: exactly
@@ -49,7 +43,8 @@ const READ_NOT_HEARD = /https?:\/\/|www\.|`|^\s*(?:[-*•]|\d+[.)])\s/m;
 
 /**
  * How a contact turn's reply goes out: spoken only when the bot opened it
- * with `VOICE_REPLY_MARK`, the chat allows it (`voiceReplyAllowed`), and the
+ * with `VOICE_REPLY_MARK` (`peelReplyMarks`), the chat allows it
+ * (`voiceReplyAllowed`), and the
  * words are short enough to speak and meant to be heard. Anything else is
  * text, the mark taken off, so a refused or unspeakable voice reply still
  * reaches the chat once, as words.
@@ -59,9 +54,7 @@ export function voiceReplyChoice(
   allowed: boolean,
   maxChars: number,
 ): VoiceReplyChoice {
-  const trimmed = reply.trimStart();
-  const marked = trimmed.toLowerCase().startsWith(VOICE_REPLY_MARK);
-  const text = marked ? trimmed.slice(VOICE_REPLY_MARK.length).trim() : reply;
+  const { voice: marked, text } = peelReplyMarks(reply);
   const speakable =
     text.length > 0 && Array.from(text).length <= maxChars && !READ_NOT_HEARD.test(text);
   return { text, spoken: marked && allowed && speakable };

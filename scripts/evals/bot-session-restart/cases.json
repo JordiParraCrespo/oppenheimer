@@ -67,7 +67,7 @@
     {
       "id": "approve-for-me",
       "bot": "milo",
-      "permission": "auto",
+      "permission": "ask",
       "project": "Website",
       "name": "Fix the login test",
       "task": "Fix the failing login test in the Website's auth package and make the suite green.",

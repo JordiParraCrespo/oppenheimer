@@ -15,7 +15,7 @@ export class CreateBotCommand extends CommandBase {
   readonly model?: string | null;
   /** Kept only when the model offers it. */
   readonly effort?: SessionEffort | null;
-  /** Approve for me when unset; never looser than `creatorBotId`'s when that is set. */
+  /** Approve for me (the reviewer) when unset; never looser than `creatorBotId`'s when that is set. */
   readonly permission?: BotPermission;
   /** Its `SOUL.md`; the template that says its name when unset. */
   readonly soul?: string;

@@ -95,7 +95,8 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   for agent, model and effort (a tab per agent and one of starred
   Favourites, a search across every agent, the effort slider at its foot;
   picking a model picks its agent, so the pair is always valid), mic, send.
-  `EffortPicker` stays for a surface with no engine button (a bot's chat).
+  A bot's chat uses the same button; `EffortPicker` is for a surface with no
+  engine button.
   All of them hang from `ComposerToolButton`. Full access is the one setting
   allowed the warning tone, because it can change a machine unattended. New
   session is `ComposerPill` (2026-10-25 export): one line with Add files,

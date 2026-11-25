@@ -1823,10 +1823,43 @@ the tools of §4 grouped as there, each **Allow**, **Ask** or **Off**:
   on from, *Deny and stop* gives it none.
 - **Off** removes the tool; the model never sees it.
 
-The composer's approval chip is a preset over the list: **Ask for
-approval** (the catalog's defaults), **Approve for me** (everything inside
-Oppenheimer allowed, what reaches outside it asks: merging, commenting,
-calendar, creating bots, sessions), **Full access** (everything allowed).
+The composer's approval chip is a preset over the list, the sessions'
+three levels since 2026-11-25 (`BOT_PERMISSIONS`, strictest first):
+
+- **Ask for approval** (`ask`): everything inside Oppenheimer allowed,
+  what reaches outside it asks: merging, commenting, calendar, creating
+  bots, sessions. Until 2026-11-25 this was **Approve for me**, and every
+  bot stored at `auto` moved to `ask` with it, keeping what it did.
+- **Approve for me** (`auto`, a new bot's default): a call that would ask
+  is read first by a **reviewer**, the bots' auto mode, built from
+  Claude Code's auto mode and Codex's auto review
+  (`research/auto-mode.md`). One completion on the bot's own model and key,
+  no tools, 30 s, counted in `/usage` as `auto_review`. It reads only the
+  owner's own words (their messages in the console chat on a turn of the
+  owner lane, newest twelve, and the bot's `INSTRUCTIONS.md`) and the
+  call, fenced as data; never the bot's text or what a tool returned, so
+  content the bot read cannot argue for the call it planted. It rates the
+  call's risk (low, medium, high, critical) and how far the owner asked for
+  it (none, low, medium, high); low runs, medium needs medium, high needs
+  high, critical never runs, and the code holds that threshold whatever
+  the model answers (`AUTO_REVIEW_THRESHOLD`). A call it clears runs and
+  its line says "Auto-approved: …"; any other, and every call whose review
+  fails or cannot be read, raises the card it would have raised, with the
+  reviewer's reason. A refusal is never the end, so there is no counter of
+  refusals as in Claude Code: the owner decides on the card. The owner's
+  word goes past it: a standing grant or allow rule runs the call, and a
+  tool the owner set to Ask, an ask rule, a tool that always asks and a
+  call that escalates raise their card without a review. A turn of another
+  bot, a background wake or a channel has no words of the owner's, so the
+  reviewer clears only what is low risk there.
+- **Full access** (`full`): the bots' "skip permissions". Everything runs,
+  the tools that always ask (trashing mail, archiving a project) and the
+  calls that escalate (a session at full access, a destructive dialog)
+  included. What still asks: what the owner set to Ask or an ask rule
+  names, and the tools that run only from a yes on their card (`asks:
+  'card'`: sending and scheduling mail, which are carried out once, keyed
+  on the approval).
+
 A tool changed by hand makes the chip read **Custom**. Only the rows that
 differ from the catalog are stored, so a tool added later reaches every
 bot with its default. No setting lets a bot exceed its owner's own
@@ -2669,3 +2702,12 @@ The decisions it produced:
   `set_host_settings` writes the browser, screen and exec switches the
   `runner` commands write, on the owner's own turns only, one card per call
   under Approve for me.
+- 2026-11-25: **three levels, and Approve for me is a reviewer** (§5). The
+  owner asked for the bots to have an auto mode and a "dangerously skip
+  permissions" mode, after the research in `research/auto-mode.md`, and
+  chose three levels: Ask, Auto with the reviewer, and skip. The levels are
+  the sessions' own: what was Approve for me is Ask for approval (stored
+  bots moved, unchanged), Approve for me is the reviewer, and Full access no
+  longer raises the cards it kept (trashing mail, archiving a project, a
+  session at full access). Sending and scheduling mail still ask, since
+  they run only from their card.

@@ -1,11 +1,11 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useOpenTabs } from '../hooks/use-open-tabs';
-import { openTabOf, tabAfterClosing } from '../lib/open-tabs';
+import { openTabOf, tabAfterClosing, withPlaceholdersCapped } from '../lib/open-tabs';
 
 /**
  * The tabs over Sessions are this device's, kept across a reload, in the
- * order they were opened. Arriving on a page opens its tab without moving
+ * order they were opened or dragged into. Arriving on a page opens its tab without moving
  * the others; closing the one on screen shows its neighbour, the way a
  * browser closes a tab; another browser tab's change is drawn here too.
  */
@@ -26,6 +26,52 @@ describe('open tabs', () => {
 
     const reloaded = renderHook(() => useOpenTabs('session:a'));
     expect(reloaded.result.current.keys).toEqual(['session:a', 'bot:b']);
+  });
+
+  it('keeps the order the reader dragged the tabs into across a reload, a tab the strip did not draw in its place', () => {
+    window.localStorage.setItem(
+      'oppenheimer.sessions.tabs',
+      JSON.stringify(['session:a', 'session:gone', 'session:b', 'bot:c']),
+    );
+    const strip = renderHook(() => useOpenTabs('session:a'));
+    // The strip drew three of them; the reader dragged the bot to the front.
+    act(() => strip.result.current.reorder(['bot:c', 'session:a', 'session:b']));
+    strip.unmount();
+
+    const reloaded = renderHook(() => useOpenTabs('session:b'));
+    // The one the strip left out stays after the tab it followed.
+    expect(reloaded.result.current.keys).toEqual([
+      'bot:c',
+      'session:a',
+      'session:gone',
+      'session:b',
+    ]);
+  });
+
+  it('keeps the page on screen where it was dropped, even before its tab was kept', () => {
+    window.localStorage.setItem(
+      'oppenheimer.sessions.tabs',
+      JSON.stringify(['session:a', 'session:b']),
+    );
+    const strip = renderHook(() => useOpenTabs('session:new'));
+    // Another browser tab closed it, so the page on screen is drawn but not kept.
+    act(() => strip.result.current.close('session:new'));
+    act(() => strip.result.current.reorder(['session:a', 'session:new', 'session:b']));
+    expect(window.localStorage.getItem('oppenheimer.sessions.tabs')).toBe(
+      JSON.stringify(['session:a', 'session:new', 'session:b']),
+    );
+  });
+
+  it('leaves closed a tab another browser tab closed while the drag was held', () => {
+    window.localStorage.setItem(
+      'oppenheimer.sessions.tabs',
+      JSON.stringify(['session:a', 'session:b']),
+    );
+    const strip = renderHook(() => useOpenTabs('session:a'));
+    act(() => strip.result.current.close('session:b'));
+    // The drop names the tabs as they stood when it was picked up.
+    act(() => strip.result.current.reorder(['session:b', 'session:a']));
+    expect(strip.result.current.keys).toEqual(['session:a']);
   });
 
   it('shows the neighbour after the tab that closed, the one before at the end, and nothing after the last', () => {
@@ -53,6 +99,21 @@ describe('open tabs', () => {
       window.dispatchEvent(new StorageEvent('storage', { key: 'oppenheimer.sessions.tabs' }));
     });
     expect(strip.result.current.keys).toEqual(['session:a', 'session:z']);
+  });
+
+  it('draws no more placeholders while the lists load than the strip drew last time', () => {
+    // Stored tabs can still name sessions deleted since; each would draw a placeholder.
+    const tabs = [
+      { key: 'session:a', placeholder: true },
+      { key: 'session:shown', placeholder: false },
+      { key: 'session:gone', placeholder: true },
+      { key: 'session:gone-too', placeholder: true },
+    ];
+    const keys = (last: number | null) => withPlaceholdersCapped(tabs, last).map((one) => one.key);
+    expect(keys(2)).toEqual(['session:a', 'session:shown']);
+    expect(keys(1)).toEqual(['session:shown']);
+    // A device that never drew the strip holds every stored tab's place.
+    expect(keys(null)).toEqual(tabs.map((one) => one.key));
   });
 
   it('reads only what a tab can be: a session or a bot, with an id', () => {

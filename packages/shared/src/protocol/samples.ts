@@ -503,6 +503,42 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
   },
   'session.window.close': { type: 'session.window.close', commandId, sessionId, window: 1 },
   'session.windows.list': { type: 'session.windows.list', commandId, sessionId },
+  'session.changes.read': { type: 'session.changes.read', commandId, sessionId, scope: 'base' },
+  'session.changes': {
+    type: 'session.changes',
+    commandId,
+    sessionId,
+    scope: 'base',
+    checkouts: [
+      {
+        repo: 'acme/web',
+        checkoutId,
+        baseBranch: 'main',
+        base: '4b825dc642cb6eb9a060e54bf8d69288fbee4904',
+        approximate: true,
+        files: [
+          {
+            path: 'src/login.ts',
+            status: 'modified',
+            additions: 3,
+            deletions: 1,
+            patch:
+              'diff --git a/src/login.ts b/src/login.ts\n--- a/src/login.ts\n+++ b/src/login.ts\n@@ -1 +1,3 @@\n-old\n+new\n+one\n+two\n',
+          },
+          {
+            path: 'src/auth.ts',
+            oldPath: 'src/session.ts',
+            status: 'renamed',
+            additions: 0,
+            deletions: 0,
+            binary: true,
+            patchOmitted: true,
+          },
+        ],
+        omittedFiles: 2,
+      },
+    ],
+  },
   'session.windows': {
     type: 'session.windows',
     commandId,

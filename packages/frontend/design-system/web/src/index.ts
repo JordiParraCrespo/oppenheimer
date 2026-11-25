@@ -139,6 +139,7 @@ export {
   ChatTabSkeleton,
   ChatTabStrip,
   ChatTrayButton,
+  SortableChatTab,
   ThreadFindBar,
 } from './components/chat-header';
 export {
@@ -579,7 +580,7 @@ export {
   sortableProjectId,
   useSidebar,
 } from './components/sidebar';
-export { SidebarFoldLabel } from './components/sidebar-fold-label';
+export { SidebarFoldLabel, SidebarFoldPanel } from './components/sidebar-fold-label';
 export { Skeleton } from './components/skeleton';
 export type { SlugStatus } from './components/slug-input';
 export { SlugInput } from './components/slug-input';

@@ -319,20 +319,23 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		t.Fatal(err)
 	}
 	scalars := map[string]any{
-		"protocolVersion":            link.ProtocolVersion,
-		"refusalHeader":              link.RefusalHeader,
-		"frameHeaderBytes":           link.FrameHeader,
-		"creditWindowBytes":          link.CreditWindow,
-		"maxFrameBytes":              link.MaxFrameBytes,
-		"maxEventPayloadBytes":       link.MaxEventPayloadBytes,
-		"chatEntryMaxBytes":          link.ChatEntryMaxBytes,
-		"chatBatchMaxEntries":        link.ChatBatchMaxEntries,
-		"chatCommandsMax":            link.ChatCommandsMax,
-		"execOutputMaxBytes":         link.ExecOutputMaxBytes,
-		"terminalScreenMaxBytes":     link.TerminalScreenMaxBytes,
-		"computerScreenMaxEdge":      link.ComputerScreenMaxEdge,
-		"computerScreenshotMaxBytes": link.ComputerScreenshotMaxBytes,
-		"helloCapabilitiesMax":       link.HelloCapabilitiesMax,
+		"protocolVersion":                 link.ProtocolVersion,
+		"refusalHeader":                   link.RefusalHeader,
+		"frameHeaderBytes":                link.FrameHeader,
+		"creditWindowBytes":               link.CreditWindow,
+		"maxFrameBytes":                   link.MaxFrameBytes,
+		"maxEventPayloadBytes":            link.MaxEventPayloadBytes,
+		"chatEntryMaxBytes":               link.ChatEntryMaxBytes,
+		"chatBatchMaxEntries":             link.ChatBatchMaxEntries,
+		"chatCommandsMax":                 link.ChatCommandsMax,
+		"execOutputMaxBytes":              link.ExecOutputMaxBytes,
+		"terminalScreenMaxBytes":          link.TerminalScreenMaxBytes,
+		"sessionChangesMaxFiles":          link.SessionChangesMaxFiles,
+		"sessionChangesFilePatchMaxBytes": link.SessionChangesFilePatchMaxBytes,
+		"sessionChangesPatchMaxBytes":     link.SessionChangesPatchMaxBytes,
+		"computerScreenMaxEdge":           link.ComputerScreenMaxEdge,
+		"computerScreenshotMaxBytes":      link.ComputerScreenshotMaxBytes,
+		"helloCapabilitiesMax":            link.HelloCapabilitiesMax,
 	}
 	compounds := []string{"closeCodes", "closeReasons", "refusals", "capabilities"}
 	for key := range schema.Constants {
@@ -409,6 +412,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		link.CapabilityComputerUse,
 		link.CapabilityBrowserUse,
 		link.CapabilitySessionWindowsList,
+		link.CapabilitySessionChangesRead,
 		link.CapabilitySessionWindowAgent,
 		link.CapabilityHostSettings,
 	}) {

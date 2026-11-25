@@ -114,8 +114,8 @@ describe('BotMailOrganizeToolsFactory', () => {
     expect(result.content).toContain('gone');
   });
 
-  it('asks before trashing under Full access, on a card a yes can make standing, and never before bringing threads back', async () => {
-    const { request, commands, tool } = setup('full');
+  it('asks before trashing under Approve for me, on a card a yes can make standing, and never before bringing threads back', async () => {
+    const { request, commands, tool } = setup('auto');
 
     await tool('trash_mail').run({ account: 'Personal', thread_ids: ['t1'] }, { signal });
     expect(request).toHaveBeenCalledWith(
@@ -129,6 +129,17 @@ describe('BotMailOrganizeToolsFactory', () => {
 
     await tool('untrash_mail').run({ account: 'Personal', thread_ids: ['t1'] }, { signal });
     expect(commands).toHaveBeenCalledWith(expect.objectContaining({ trash: false }));
+  });
+
+  it('trashes without a card under Full access, which skips every card', async () => {
+    const { request, commands, tool } = setup('full');
+
+    await tool('trash_mail').run({ account: 'Personal', thread_ids: ['t1'] }, { signal });
+
+    expect(request).not.toHaveBeenCalled();
+    expect(commands).toHaveBeenCalledWith(
+      expect.objectContaining({ threadIds: ['t1'], trash: true }),
+    );
   });
 
   it('trashes without a card once the owner has allowed it', async () => {

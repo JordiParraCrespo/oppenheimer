@@ -59,9 +59,9 @@ function ChatUserMessage({
   attachments?: React.ReactNode;
   /**
    * The bubble's fill, chosen by the ground it stands on: `card` lifts off a
-   * bot's recessed chat; `wash` (the chat's grey wash, a code block's) is
-   * for a chat on a card-coloured ground, a session's, where a card would
-   * vanish; `accent` is the selected blue wash.
+   * recessed ground; `wash` (the chat's grey wash, a code block's) is for a
+   * chat on a card-coloured ground, a session's or a bot's, where a card
+   * would vanish; `accent` is the selected blue wash.
    */
   tone?: 'card' | 'wash' | 'accent';
   /** A `ChatReaction`, on the bubble's lower edge, the way a reaction sits on a message. */

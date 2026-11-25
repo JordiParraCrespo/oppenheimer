@@ -1,6 +1,6 @@
 import { sessionEntity } from '@oppenheimer/frontend-consumer/testing';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionTabs } from '../sections/session-tabs';
 
 /**
@@ -46,6 +46,16 @@ vi.mock('@tanstack/react-router', () => ({
   ),
   useNavigate: () => navigate,
 }));
+
+beforeEach(() => {
+  // The drag layer asks whether the reader prefers reduced motion; jsdom has no media queries.
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }));
+});
 
 afterEach(() => {
   cleanup();
