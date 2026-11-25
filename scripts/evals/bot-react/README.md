@@ -25,7 +25,15 @@ pnpm eval:bot-react                       # every case, 3 runs each
 pnpm eval:bot-react --case okeys --runs 1
 ```
 
-`BOT_REACT_EVAL_MODEL` picks the model (default `claude-sonnet-5-5`).
+`BOT_REACT_EVAL_MODEL` picks the model (default `claude-sonnet-5-5`). Any
+Anthropic-compatible endpoint works through `ANTHROPIC_BASE_URL`; GLM on Z.ai,
+in a cloud session where the proxy holds the key:
+
+```bash
+ANTHROPIC_API_KEY=dummy ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic \
+NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt \
+BOT_REACT_EVAL_MODEL=glm-5.2 pnpm eval:bot-react --runs 5
+```
 
 ## Results
 
@@ -33,8 +41,10 @@ pnpm eval:bot-react --case okeys --runs 1
 | --- | --- | --- | --- |
 | 2026-11-25 | claude-sonnet-5-5 | before | 15/15 |
 | 2026-11-25 | claude-sonnet-5-5 | after | 15/15 |
+| 2026-11-25 | glm-5.2 | before | 25/25 |
+| 2026-11-25 | glm-5.2 | after | 25/25 |
 
-Sonnet never left a lone emoji, even before the change. The report came from
+Neither Sonnet nor GLM left a lone emoji, even before the change. The report came from
 a bot on GPT-6.2 Sol, which this eval cannot run without an OpenAI
 transport, so it guards the rule on Claude rather than reproducing the
 report.
