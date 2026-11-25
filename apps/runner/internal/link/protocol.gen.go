@@ -79,6 +79,16 @@ const ExecOutputMaxBytes = 32768
 // carries: the last bytes.
 const TerminalScreenMaxBytes = 32768
 
+// The bounds of one `session.changes`: the files one checkout names, the
+// bytes one file's patch carries, and the bytes the patches of one answer
+// add up to. Past them a file keeps its counts and loses its patch, and the
+// files past the first are counted and left out.
+const (
+	SessionChangesMaxFiles          = 500
+	SessionChangesFilePatchMaxBytes = 65536
+	SessionChangesPatchMaxBytes     = 262144
+)
+
 // ComputerScreenMaxEdge is the long edge, in pixels, of the image
 // `computer.screen` carries; `computer.act` points in that image.
 const ComputerScreenMaxEdge = 1280

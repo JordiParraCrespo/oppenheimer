@@ -4033,6 +4033,9 @@
     "execOutputMaxBytes": 32768,
     "terminalScreenMaxBytes": 32768,
     "computerScreenMaxEdge": 1280,
-    "computerScreenshotMaxBytes": 262144
+    "computerScreenshotMaxBytes": 262144,
+    "sessionChangesMaxFiles": 500,
+    "sessionChangesFilePatchMaxBytes": 65536,
+    "sessionChangesPatchMaxBytes": 262144
   }
 }

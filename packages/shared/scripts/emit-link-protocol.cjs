@@ -186,6 +186,12 @@ const CONSTANT_DOCS = {
     'TerminalScreenMaxBytes is how much of a captured screen `terminal.screen`',
     'carries: the last bytes.',
   ],
+  sessionChanges: [
+    'The bounds of one `session.changes`: the files one checkout names, the',
+    "bytes one file's patch carries, and the bytes the patches of one answer",
+    'add up to. Past them a file keeps its counts and loses its patch, and the',
+    'files past the first are counted and left out.',
+  ],
   computerScreenMaxEdge: [
     'ComputerScreenMaxEdge is the long edge, in pixels, of the image',
     '`computer.screen` carries; `computer.act` points in that image.',
@@ -459,6 +465,13 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     '',
     ...comment(CONSTANT_DOCS.terminalScreenMaxBytes),
     `const TerminalScreenMaxBytes = ${constants.terminalScreenMaxBytes}`,
+    '',
+    ...comment(CONSTANT_DOCS.sessionChanges),
+    ...constGroup([
+      ['SessionChangesMaxFiles', constants.sessionChangesMaxFiles],
+      ['SessionChangesFilePatchMaxBytes', constants.sessionChangesFilePatchMaxBytes],
+      ['SessionChangesPatchMaxBytes', constants.sessionChangesPatchMaxBytes],
+    ]),
     '',
     ...comment(CONSTANT_DOCS.computerScreenMaxEdge),
     `const ComputerScreenMaxEdge = ${constants.computerScreenMaxEdge}`,

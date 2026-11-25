@@ -12,11 +12,11 @@ import (
 // each runs git over a checkout and may fetch blobs as it reads.
 const laneChangesRead = "changes:read"
 
-// The bounds of one `session.changes`, the protocol's
-// SESSION_CHANGES_MAX_FILES, SESSION_CHANGES_FILE_PATCH_MAX_BYTES and
-// SESSION_CHANGES_PATCH_MAX_BYTES
-// (`packages/shared/src/protocol/session-changes.ts`).
-var sessionChangesBounds = domain.ChangesBounds{Files: 500, FilePatch: 64 << 10, Patches: 256 << 10}
+// The bounds of one `session.changes`, generated from the protocol.
+var sessionChangesBounds = domain.ChangesBounds{
+	Files: link.SessionChangesMaxFiles, FilePatch: link.SessionChangesFilePatchMaxBytes,
+	Patches: link.SessionChangesPatchMaxBytes,
+}
 
 // changesRead answers `session.changes.read` with what the session's
 // checkouts changed: since each branch left its base, or with `uncommitted`

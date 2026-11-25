@@ -142,31 +142,63 @@ func (c *Client) Patch(ctx context.Context, path, base string, file domain.Chang
 	return patch, true, nil
 }
 
-// parseNameStatus reads `git diff --name-status -z`: a status, then one path,
-// or for a rename or a copy the old path and the new one.
-func parseNameStatus(out string) []domain.ChangedFile {
+// zRecord is one record of a `-z` diff listing: its leading field (a
+// status, or numstat's `added\tdeleted\t`), its path, and for a rename or a
+// copy the path it came from.
+type zRecord struct {
+	head, path, oldPath string
+}
+
+// zRecords walks a `-z` diff listing. A record is its leading field and a
+// path, or, for a rename or a copy, its leading field, the old path and the
+// new one: `--name-status` says so by an R or C status, `--numstat` by a
+// leading field whose path is empty. One walk for both listings, so the
+// two can never part on where a record ends.
+func zRecords(out string, renamed func(head string) bool) []zRecord {
 	fields := strings.Split(out, "\x00")
-	var files []domain.ChangedFile
+	var records []zRecord
 	for i := 0; i < len(fields); i++ {
-		code := fields[i]
-		if code == "" {
+		head := fields[i]
+		if head == "" {
 			continue
 		}
-		file := domain.ChangedFile{Status: statusOf(code[0])}
-		if code[0] == 'R' || code[0] == 'C' {
+		if renamed(head) {
 			if i+2 >= len(fields) {
 				break
 			}
-			file.OldPath, file.Path = fields[i+1], fields[i+2]
+			records = append(records, zRecord{head: head, oldPath: fields[i+1], path: fields[i+2]})
 			i += 2
-		} else {
-			if i+1 >= len(fields) {
-				break
-			}
-			file.Path = fields[i+1]
-			i++
+			continue
 		}
-		files = append(files, file)
+		if path, ok := inlinePath(head); ok {
+			records = append(records, zRecord{head: head, path: path})
+			continue
+		}
+		if i+1 >= len(fields) {
+			break
+		}
+		records = append(records, zRecord{head: head, path: fields[i+1]})
+		i++
+	}
+	return records
+}
+
+// inlinePath is the path numstat writes on the record's own field
+// (`added\tdeleted\tpath`); a name-status field holds no path.
+func inlinePath(head string) (string, bool) {
+	parts := strings.SplitN(head, "\t", 3)
+	if len(parts) == 3 && parts[2] != "" {
+		return parts[2], true
+	}
+	return "", false
+}
+
+// parseNameStatus reads `git diff --name-status -z`: a status, then one path,
+// or for a rename or a copy the old path and the new one.
+func parseNameStatus(out string) []domain.ChangedFile {
+	var files []domain.ChangedFile
+	for _, r := range zRecords(out, func(head string) bool { return head[0] == 'R' || head[0] == 'C' }) {
+		files = append(files, domain.ChangedFile{Status: statusOf(r.head[0]), Path: r.path, OldPath: r.oldPath})
 	}
 	return files
 }
@@ -198,20 +230,15 @@ type lineCounts struct {
 // new one for a rename): `added\tdeleted\tpath`, or for a rename
 // `added\tdeleted\t` then the old and new paths; `-` for a binary file.
 func parseNumstat(out string) map[string]lineCounts {
-	fields := strings.Split(out, "\x00")
 	counts := map[string]lineCounts{}
-	for i := 0; i < len(fields); i++ {
-		parts := strings.SplitN(fields[i], "\t", 3)
+	renamed := func(head string) bool {
+		parts := strings.SplitN(head, "\t", 3)
+		return len(parts) == 3 && parts[2] == ""
+	}
+	for _, r := range zRecords(out, renamed) {
+		parts := strings.SplitN(r.head, "\t", 3)
 		if len(parts) != 3 {
 			continue
-		}
-		path := parts[2]
-		if path == "" {
-			if i+2 >= len(fields) {
-				break
-			}
-			path = fields[i+2]
-			i += 2
 		}
 		var line lineCounts
 		if parts[0] == "-" && parts[1] == "-" {
@@ -220,7 +247,7 @@ func parseNumstat(out string) map[string]lineCounts {
 			line.additions, _ = strconv.Atoi(parts[0])
 			line.deletions, _ = strconv.Atoi(parts[1])
 		}
-		counts[path] = line
+		counts[r.path] = line
 	}
 	return counts
 }
