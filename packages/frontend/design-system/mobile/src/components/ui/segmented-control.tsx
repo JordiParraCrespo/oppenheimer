@@ -1,5 +1,4 @@
-import { SegmentedControl as NativeSegmentedControl } from '@expo/ui/community/segmented-control';
-import { useNativeScheme } from '../../lib/native-scheme';
+import { NativeSegmented } from '../../lib/native-segmented';
 import type { Option } from './select';
 
 export type SegmentedControlProps<T extends string> = {
@@ -13,8 +12,9 @@ export type SegmentedControlProps<T extends string> = {
 /**
  * One of two to four short, mutually exclusive views, side by side, as the
  * platform draws them: `UISegmentedControl` on iOS (Liquid Glass on iOS 26),
- * Material 3's segmented buttons on Android. More options, or long labels,
- * are a `Select`.
+ * Material 3's segmented buttons on Android. It is as wide as its segments,
+ * like the other native controls, so a caller places it and never sizes it.
+ * More options, or long labels, are a `Select`.
  */
 export function SegmentedControl<T extends string>({
   value,
@@ -23,18 +23,15 @@ export function SegmentedControl<T extends string>({
   disabled,
   testID,
 }: SegmentedControlProps<T>) {
-  const scheme = useNativeScheme();
-
   return (
-    <NativeSegmentedControl
-      values={options.map((option) => option.label)}
+    <NativeSegmented
+      labels={options.map((option) => option.label)}
       selectedIndex={options.findIndex((option) => option.value === value)}
-      onChange={({ nativeEvent }) => {
-        const picked = options[nativeEvent.selectedSegmentIndex];
+      onSelect={(index) => {
+        const picked = options[index];
         if (picked) onValueChange(picked.value);
       }}
-      enabled={!disabled}
-      appearance={scheme}
+      disabled={disabled}
       testID={testID}
     />
   );

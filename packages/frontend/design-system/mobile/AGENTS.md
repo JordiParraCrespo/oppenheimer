@@ -44,8 +44,10 @@ src/
   | tab bar, back button | expo-router's `NativeTabs`, the native stack header |
 
   A new `@expo/ui` control is drawn inside `NativeHost` (`src/lib/native-scheme`),
-  which sizes it to its content and gives it the app's light or dark; a control
-  that takes an appearance prop reads `useNativeScheme()`.
+  which sizes it to its content and gives it the app's light or dark, so a caller
+  places a native control and never gives it a pixel width. A control that needs
+  each platform's own primitives splits into `src/lib/<name>.ios.tsx` and
+  `.android.tsx` (Metro picks one), as `native-segmented` does.
   A native control takes no `className`: lay it out from the view around it,
   and give one with no visible label an `accessibilityLabel`. NativeWind draws
   only what is the app's own (cards, rows, the chat, the terminal).

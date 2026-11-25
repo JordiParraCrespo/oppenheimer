@@ -68,16 +68,14 @@ export function SessionPane({ session }: { session: SessionEntity }) {
           {status ? <Text variant="caption">{status}</Text> : null}
         </View>
         {chatOffered ? (
-          <View style={{ width: 150 }}>
-            <SegmentedControl
-              value={view}
-              options={[
-                { value: 'terminal', label: t('sessions.chat.view.terminal') },
-                { value: 'chat', label: t('sessions.chat.view.chat') },
-              ]}
-              onValueChange={setPicked}
-            />
-          </View>
+          <SegmentedControl
+            value={view}
+            options={[
+              { value: 'terminal', label: t('sessions.chat.view.terminal') },
+              { value: 'chat', label: t('sessions.chat.view.chat') },
+            ]}
+            onValueChange={setPicked}
+          />
         ) : null}
       </View>
       <View className="flex-1">
