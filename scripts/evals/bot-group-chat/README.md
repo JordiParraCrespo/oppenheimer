@@ -49,18 +49,40 @@ reply goes to `reports/`.
 Marks: `A` answered, `S` kept out, `a` answered a line that was not for it,
 `s` kept out of a line that was, `-` the turn failed.
 
+## Cases
+
+24 cases, 14 where the bot should keep out and 10 where it should answer,
+in Spanish, Catalan and English, with four people in the group:
+
+- **Keep out:** the incident's correction ("Se lo decia a Adri haha"), a
+  remark about the bot to the others, plans between friends, a question
+  for Maria the person, a thanks or a 👍 after the bot's answer, a
+  ResetOwl question asked of Jordi by name, a joke about the bot, laughing
+  emojis, the group moved on to dinner since the bot last spoke, an open
+  question about padel, one person answering another's question, chatter
+  in Catalan.
+- **Answer:** asked by name (in all three languages, with an `@` too),
+  called "bot", greeted by name, a follow-up to what the bot said, the
+  answer to the bot's question with other chatter in between, an open
+  question only the bot can answer, and someone pointed at the bot with a
+  ResetOwl bug (a judgement call: stepping in is its job).
+
 ## Results
 
-2026-11-25, `claude-sonnet-5-5` through Claude Code:
+2026-11-25, `claude-sonnet-5-5` through Claude Code, 3 runs each:
 
-- `--control`, 1 run each: 3/8. The bot answered all five lines that were
-  not for it, the incident's line included ("Ah, vale, era para Adri 😄").
-- with the line, 3 runs each: 23/24, every case passing; the one miss is
-  `remark-about-the-bot` ("Vale, anotado: ahora funciono sobre
-  Oppenheimer 👍").
+| | Runs right | Cases failed |
+| --- | --- | --- |
+| `--control` (no group line) | 33/72 | 13/24: every keep-out case |
+| with the line | 72/72 | 0/24 |
+
+Without the line the bot answered every line that was not for it, the
+incident's included ("Ah, vale, era para Adri 😄"). With it, the one case
+that has missed in earlier runs is `remark-about-the-bot` (1 of 3 once:
+"Vale, anotado: ahora funciono sobre Oppenheimer 👍").
 
 A case first written as Adrian asking "la Maria del grupo sigue siendo el
 bot de openclaw?" and Jordi answering him was answered by the bot 3 of 3
 times even with the line: a question about the bot reads to it as a
 question to it. It was replaced by the incident's own shape (Jordi's remark
-with no question before it), which keeps out 4 of 5.
+with no question before it).

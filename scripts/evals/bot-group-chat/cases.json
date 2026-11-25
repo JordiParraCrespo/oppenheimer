@@ -18,6 +18,10 @@
     "maria": {
       "name": "Maria",
       "phone": "+34600555666"
+    },
+    "laia": {
+      "name": "Laia",
+      "phone": "+34600777888"
     }
   },
   "cases": [
@@ -166,6 +170,290 @@
       "message": {
         "from": "maria",
         "text": "Y si es de la app de iPhone también te lo paso aquí?"
+      },
+      "expect": "answer"
+    },
+    {
+      "id": "resetowl-question-for-jordi",
+      "why": "A question in the bot's own area, but asked of Jordi by name.",
+      "history": [
+        {
+          "from": "adrian",
+          "text": "He visto que ResetOwl tiene nueva pantalla de suscripciones"
+        }
+      ],
+      "message": {
+        "from": "adrian",
+        "text": "Jordi, cuándo sacas la nueva versión de ResetOwl?"
+      },
+      "expect": "silent"
+    },
+    {
+      "id": "joke-about-the-bot",
+      "why": "Adrian teases Jordi about the bot; said about it, not to it.",
+      "history": [
+        {
+          "from": "maria",
+          "text": "Maria Agent, cómo reporto un fallo?"
+        },
+        {
+          "from": "bot",
+          "text": "Cuéntamelo aquí: qué pasó y qué esperabas. Se lo paso a Jordi."
+        }
+      ],
+      "message": {
+        "from": "adrian",
+        "text": "jaja Jordi el bot contesta más rápido que tú"
+      },
+      "expect": "silent"
+    },
+    {
+      "id": "thumbs-up-from-someone-else",
+      "why": "Jordi acknowledges the bot's answer to Adrian with an emoji.",
+      "history": [
+        {
+          "from": "adrian",
+          "text": "Maria Agent, los bugs de la web también te los paso?"
+        },
+        {
+          "from": "bot",
+          "text": "Sí, también los de la web: qué pasó, en qué página y qué esperabas."
+        }
+      ],
+      "message": {
+        "from": "jordi",
+        "text": "👍"
+      },
+      "expect": "silent"
+    },
+    {
+      "id": "laughing-emojis",
+      "why": "A reaction to a friend's joke.",
+      "history": [
+        {
+          "from": "adrian",
+          "text": "Ayer me quedé dormido en el metro y acabé en la última parada"
+        },
+        {
+          "from": "laia",
+          "text": "jajajaja clásico"
+        }
+      ],
+      "message": {
+        "from": "maria",
+        "text": "😂😂😂"
+      },
+      "expect": "silent"
+    },
+    {
+      "id": "conversation-moved-on",
+      "why": "The bot answered Maria earlier; since then the group moved on to dinner plans.",
+      "history": [
+        {
+          "from": "maria",
+          "text": "Maria Agent, la app de ResetOwl me pide pagar otra vez, qué hago?"
+        },
+        {
+          "from": "bot",
+          "text": "Cuéntame qué pantalla te sale y cuándo pagaste la última vez, sin datos de la tarjeta, y se lo paso a Jordi."
+        },
+        {
+          "from": "adrian",
+          "text": "Cenamos hoy en casa de Laia?"
+        },
+        {
+          "from": "laia",
+          "text": "Sí! Traed bebida"
+        },
+        {
+          "from": "adrian",
+          "text": "Jordi tú pides las pizzas?"
+        }
+      ],
+      "message": {
+        "from": "jordi",
+        "text": "Vale, pido yo la pizza"
+      },
+      "expect": "silent"
+    },
+    {
+      "id": "english-group-plans",
+      "why": "An open question to the group that is about plans, not for the bot.",
+      "history": [
+        {
+          "from": "laia",
+          "text": "I'm finally free this weekend"
+        }
+      ],
+      "message": {
+        "from": "adrian",
+        "text": "Anyone up for padel tomorrow at 10?"
+      },
+      "expect": "silent"
+    },
+    {
+      "id": "pointed-at-the-bot-with-a-bug",
+      "why": "Adrian has a ResetOwl bug and Laia points him at the bot: the bot's own job, so it steps in (a judgement call, asked of the owner on the pull request).",
+      "history": [
+        {
+          "from": "adrian",
+          "text": "Me ha vuelto a fallar ResetOwl, qué rabia"
+        }
+      ],
+      "message": {
+        "from": "laia",
+        "text": "Adri, has probado a preguntarle a Maria Agent?"
+      },
+      "expect": "answer"
+    },
+    {
+      "id": "answer-between-people",
+      "why": "Laia answers a question Adrian asked Maria (the person).",
+      "history": [
+        {
+          "from": "adrian",
+          "text": "Maria, a qué hora era la reserva?"
+        }
+      ],
+      "message": {
+        "from": "laia",
+        "text": "A las 21:30, me lo dijo ella ayer"
+      },
+      "expect": "silent"
+    },
+    {
+      "id": "catalan-chatter",
+      "why": "Friends chat in Catalan about a match.",
+      "history": [
+        {
+          "from": "jordi",
+          "text": "Heu vist el partit d'ahir?"
+        }
+      ],
+      "message": {
+        "from": "laia",
+        "text": "Sí, quin gol al final!"
+      },
+      "expect": "silent"
+    },
+    {
+      "id": "greeting-by-name",
+      "why": "Laia greets the bot by name.",
+      "history": [
+        {
+          "from": "adrian",
+          "text": "Buenos días a todos"
+        }
+      ],
+      "message": {
+        "from": "laia",
+        "text": "Hola Maria Agent! Bienvenida al grupo"
+      },
+      "expect": "answer"
+    },
+    {
+      "id": "called-bot",
+      "why": "Called 'bot' rather than by name.",
+      "history": [
+        {
+          "from": "jordi",
+          "text": "Os he metido un bot para los fallos de ResetOwl"
+        }
+      ],
+      "message": {
+        "from": "adrian",
+        "text": "Bot, qué necesitas para reportar un fallo?"
+      },
+      "expect": "answer"
+    },
+    {
+      "id": "answer-after-chatter-in-between",
+      "why": "The bot asked Maria a question; others chatted; Maria now answers it.",
+      "history": [
+        {
+          "from": "maria",
+          "text": "Maria Agent, ResetOwl me ha cancelado la suscripción sola"
+        },
+        {
+          "from": "bot",
+          "text": "Vaya. ¿Cuándo pasó y qué esperabas ver? Sin datos de pago."
+        },
+        {
+          "from": "adrian",
+          "text": "Alguien tiene el número del fontanero?"
+        },
+        {
+          "from": "laia",
+          "text": "Te lo paso por privado"
+        }
+      ],
+      "message": {
+        "from": "maria",
+        "text": "Fue ayer por la noche, esperaba que se renovara sola como cada mes"
+      },
+      "expect": "answer"
+    },
+    {
+      "id": "follow-up-question-to-bot",
+      "why": "Maria follows on from the bot's answer to her, with no name.",
+      "history": [
+        {
+          "from": "maria",
+          "text": "Maria Agent, cómo reporto un fallo de ResetOwl?"
+        },
+        {
+          "from": "bot",
+          "text": "Cuéntamelo aquí: qué pasó y qué esperabas que pasara, sin datos de pago."
+        }
+      ],
+      "message": {
+        "from": "maria",
+        "text": "Y si me pasa en Android también vale?"
+      },
+      "expect": "answer"
+    },
+    {
+      "id": "group-question-only-bot-can-answer",
+      "why": "An open question that the bot is clearly the one to answer, since Jordi said it handles bug reports.",
+      "history": [
+        {
+          "from": "jordi",
+          "text": "Los fallos de ResetOwl ahora los recoge el bot del grupo"
+        }
+      ],
+      "message": {
+        "from": "laia",
+        "text": "Alguien sabe qué hay que poner para reportar un fallo de ResetOwl?"
+      },
+      "expect": "answer"
+    },
+    {
+      "id": "catalan-asked-by-name",
+      "why": "Asked by name, in Catalan.",
+      "history": [
+        {
+          "from": "laia",
+          "text": "Bon dia!"
+        }
+      ],
+      "message": {
+        "from": "laia",
+        "text": "Maria Agent, què necessites per reportar un error de ResetOwl?"
+      },
+      "expect": "answer"
+    },
+    {
+      "id": "english-asked-by-name",
+      "why": "Asked by name, in English.",
+      "history": [
+        {
+          "from": "adrian",
+          "text": "Morning"
+        }
+      ],
+      "message": {
+        "from": "adrian",
+        "text": "@Maria Agent what info do you need for a ResetOwl bug?"
       },
       "expect": "answer"
     }
