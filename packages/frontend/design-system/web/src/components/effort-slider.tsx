@@ -31,8 +31,9 @@ const KNOB = 30;
  * progress the button holds the value the drag started from: it changes width
  * with every stop, and the popover is anchored to it, so a live label would
  * shift the composer's foot row and the popover with it. It catches up when
- * the drag ends or the popover closes. The button is as wide as its longest
- * stop, so the label changing never moves it.
+ * the drag ends or the popover closes. The button hugs the stop it shows,
+ * as the composer's other chips do; the popover is anchored to its end, the
+ * edge that stays put when its width changes.
  */
 function EffortSlider<V extends string>({
   stops,
@@ -195,18 +196,7 @@ function EffortPicker<V extends string>({
       <PopoverTrigger
         render={
           <ComposerToolButton tone="muted" open={open} disabled={disabled} className={className} aria-label={label}>
-            {/* Every stop in one cell: the cell is as wide as the longest, only the shown one paints. */}
-            <span className="grid">
-              {stops.map((stop) => (
-                <span
-                  key={stop.value}
-                  aria-hidden={stop.value !== shown?.value}
-                  className={cn('col-start-1 row-start-1', stop.value !== shown?.value && 'invisible')}
-                >
-                  {stop.label}
-                </span>
-              ))}
-            </span>
+            {shown?.label}
           </ComposerToolButton>
         }
       />
