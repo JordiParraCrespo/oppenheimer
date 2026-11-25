@@ -17,6 +17,9 @@ import { useSortableControl } from './drag';
  * its name. `lastRun` puts a 6px dot before the meta for how the last run
  * ended (red failed, green running, grey otherwise), named on hover.
  *
+ * The glyph sits in a 14px box, centred, so a narrower one (`MilestoneGlyph`)
+ * keeps the names on one column.
+ *
  * `action` is the row's ellipsis, as on a `SessionItem`: the trigger of a
  * `DropdownMenu` with Run now, Edit, Pause, Duplicate and Delete, shown on
  * hover, focus or while open (`menuOpen`), hiding the meta while it shows.
@@ -76,7 +79,7 @@ function RoutineItem({
       <span
         aria-hidden
         className={cn(
-          'flex shrink-0',
+          'flex size-3.5 shrink-0 items-center justify-center',
           running
             ? 'text-success'
             : 'text-fg-subtle [&_[data-brand=github]]:text-fg [&_[data-brand=github]]:opacity-80',

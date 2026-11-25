@@ -160,7 +160,7 @@ function FoldedBots({ width, count }: { width: string; count: number }) {
         </IconButton>
       </SidebarListHead>
       <SidebarFoldPanel open={open}>
-        <BotList className="mx-1.5">
+        <BotList className="mx-3">
           {bots.map(({ color, ...bot }) => (
             <BotItem key={bot.id} {...bot} face={{ color, seed: bot.id }} active={bot.id === active} onClick={() => setActive(bot.id)} />
           ))}
