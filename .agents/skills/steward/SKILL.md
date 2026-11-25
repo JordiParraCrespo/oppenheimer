@@ -121,7 +121,9 @@ is never an approval: the bot reviews post from the user's account. The
 lanes are the `land`, `propose` and `research` skills; all three merge
 through `land` step 4, which also resolves conflicts with the target.
 The `land` lane was called `ship` until Claude Code shipped a `/ship` skill
-of its own; a pull request still labelled `ship` is a `land` one.
+of its own; a pull request still labelled `ship` is a `land` one. So the
+labels that mark an agent pull request, the set to query by, are `land`,
+`propose`, `research` and `ship`, until no open pull request carries `ship`.
 
 ## Babysitting
 

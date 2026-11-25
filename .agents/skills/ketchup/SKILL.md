@@ -19,8 +19,9 @@ reply alone. Write in the `bro` voice.
   Notifications and subagent results are not their messages. Assume they
   remember their last message and nothing after it.
 - **`/ketchup all`**: every open pull request an agent opened in this
-  repository, read from GitHub by its label (the protocol is `steward`,
-  "Merging"). `propose` pull requests wait on them. A `land` or `research`
+  repository, read from GitHub by the labels `steward`, "Merging", lists
+  (`ship` among them, the old `land`). `propose` pull requests wait on them.
+  A `land` (or `ship`) or `research`
   pull request that is not merging is stuck: say why, from its threads,
   its report and its mergeability. Add what merged since the last
   `/ketchup all` in this chat, or in the last day, one line each.
