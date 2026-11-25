@@ -27,13 +27,11 @@ const KNOB = 30;
  * `EffortPicker` is the composer's form of it: a muted tool button reading
  * the current stop, opening a 268px popover with the "Effort · Medium"
  * header, an info glyph explaining the trade, "Faster" and "Smarter" at the
- * ends, and the slider. The header follows the knob, but while a drag is in
- * progress the button holds the value the drag started from: it changes width
- * with every stop, and the popover is anchored to it, so a live label would
- * shift the composer's foot row and the popover with it. It catches up when
- * the drag ends or the popover closes. The button hugs the stop it shows,
- * as the composer's other chips do; the popover is anchored to its end, the
- * edge that stays put when its width changes.
+ * ends, and the slider. The button hugs the stop it shows, as the composer's
+ * other chips do, so its width changes with the stop; the popover is anchored
+ * to it, and a live label would shift the foot row and the popover under the
+ * pointer. So while the popover is open the header follows the knob and the
+ * button holds the value it opened on, catching up when it closes.
  */
 function EffortSlider<V extends string>({
   stops,
@@ -179,7 +177,7 @@ function EffortPicker<V extends string>({
   className?: string;
 }) {
   const [open, setOpen] = React.useState(false);
-  // The value a drag started from, shown by the button until it ends.
+  // The value the popover opened on, shown by the button until it closes.
   const [held, setHeld] = React.useState<V | null>(null);
   const hintId = React.useId();
   const current = stops.find((stop) => stop.value === value) ?? stops[0];
@@ -187,7 +185,7 @@ function EffortPicker<V extends string>({
 
   function onOpenChange(next: boolean) {
     setOpen(next);
-    if (!next) setHeld(null);
+    setHeld(next ? value : null);
     onOpenChangeProp?.(next);
   }
 
@@ -229,7 +227,6 @@ function EffortPicker<V extends string>({
             stops={stops}
             value={value}
             onValueChange={onValueChange}
-            onDraggingChange={(dragging) => setHeld(dragging ? value : null)}
             aria-label={label}
             aria-describedby={hintId}
           />
