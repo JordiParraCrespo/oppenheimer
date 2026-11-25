@@ -136,6 +136,7 @@ export {
   ChatHeader,
   ChatHeaderTag,
   ChatTab,
+  ChatTabSkeleton,
   ChatTabStrip,
   ChatTrayButton,
   ThreadFindBar,

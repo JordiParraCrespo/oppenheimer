@@ -58,7 +58,7 @@ function TranscriptDivider({
     >
       <span
         className={cn(
-          'inline-flex items-center gap-2 [&_svg]:size-3.5 [&_svg]:shrink-0',
+          'inline-flex min-w-0 items-center gap-2 [&_svg]:size-3.5 [&_svg]:shrink-0',
           tone === 'danger' ? 'text-danger' : 'text-fg-muted',
         )}
       >

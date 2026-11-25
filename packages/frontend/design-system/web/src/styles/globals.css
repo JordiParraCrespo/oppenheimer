@@ -441,6 +441,12 @@
        the owner's call on 2026-11-24, a calm band around the 28px tabs and
        controls it holds rather than the 48px page bar. */
     --tab-bar-h: 45px;
+    /* The room the end of a bar of tabs keeps, whatever the page puts there:
+       the widest set any page draws, a session's Terminal / Chat pill, the
+       divider, the side pane and Share, about five small controls. The tabs
+       size against what is left, so they keep their widths moving between a
+       session and a bot, and while a page's controls load. */
+    --tab-bar-end: calc(var(--control-h-sm) * 5);
     --control-pad-sm: 12px;
     --control-pad-md: 16px;
     --control-pad-lg: 22px;
