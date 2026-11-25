@@ -83,9 +83,8 @@ export function SessionBar({
       }
       // On the terminal's ground with a hairline under it, whichever view is
       // on screen, so switching views changes no colour: the tab bar's own
-      // with tabs, a guest's (no tabs) named here.
-      tone={open ? 'chrome' : 'page'}
-      className={open ? undefined : 'border-b border-border-subtle bg-term-bg'}
+      // with tabs, a guest's (no tabs) the `ground` tone.
+      tone={open ? 'chrome' : 'ground'}
     />
   );
 }
