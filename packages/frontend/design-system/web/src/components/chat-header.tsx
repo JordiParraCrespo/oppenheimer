@@ -6,6 +6,7 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
+import { Skeleton } from './skeleton';
 
 /**
  * The chat's chrome (Chat Components, Header, find and empty state).
@@ -18,6 +19,7 @@ import { IconButton } from './icon-button';
  * - `ChatTabStrip` · `ChatTab`: open things as tabs on the 28px rung, each with its
  *   mark and the dot of what it needs from the reader; the shown one lit on
  *   the card inside a hairline, the rest flat, a close on each.
+ *   `ChatTabSkeleton` stands for a tab whose name is still loading.
  * - `ThreadFindBar`: ⌘F, floating top-right over the header: a 44px pill
  *   field with the close, and once there is a query, a row under it with
  *   previous, next and "2 / 7 results".
@@ -56,8 +58,11 @@ function ChatHeader({
         {meta}
       </span>
       {status ? <span className="flex shrink-0 items-center gap-1.5 text-[12.5px] text-fg-muted">{status}</span> : null}
-      {tabs}
-      {actions ? <span className="flex shrink-0 items-center gap-0.5">{actions}</span> : null}
+      {/* What closes the bar, one group so a bar of tabs can keep it one width on every page. */}
+      <span data-slot="chat-header-end" className="flex shrink-0 items-center justify-end gap-2.5 empty:hidden">
+        {tabs}
+        {actions ? <span className="flex shrink-0 items-center gap-0.5">{actions}</span> : null}
+      </span>
     </header>
   );
 }
@@ -151,6 +156,18 @@ const TAB_ATTENTION = {
 } as const;
 
 /**
+ * A tab's frame: one width that shrinks to fit the strip, on the small rung
+ * (the bar of tabs points it at the medium one), the shown one lit on its card
+ * inside a hairline, and a hairline between two tabs that are not shown.
+ */
+const TAB_FRAME = cn(
+  'group/tab relative flex h-(--control-h-sm) min-w-24 shrink basis-60 items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-sm text-fg-muted transition-colors duration-fast',
+  'data-active:border-border-subtle data-active:bg-(--chat-tab-lit) data-active:font-medium data-active:text-fg',
+  "not-first:before:absolute not-first:before:top-1/2 not-first:before:-translate-y-1/2 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
+  'data-active:before:hidden [[data-active]+&]:before:hidden',
+);
+
+/**
  * One open thing in a `ChatTabStrip`: its mark, its name, its close. Every
  * tab is the same width whatever its name, the way a browser's are: 240px
  * while the strip has room, then all shrinking alike down to 96px as more
@@ -195,14 +212,7 @@ function ChatTab({
       data-slot="chat-tab"
       data-active={active || undefined}
       title={title}
-      className={cn(
-        'group/tab relative flex h-(--control-h-sm) min-w-24 shrink basis-60 items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-sm text-fg-muted transition-colors duration-fast',
-        'hover:bg-hover-surface hover:text-fg data-active:border-border-subtle data-active:bg-(--chat-tab-lit) data-active:font-medium data-active:text-fg',
-        // A hairline between two tabs that are not shown.
-        "not-first:before:absolute not-first:before:top-1/2 not-first:before:-translate-y-1/2 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
-        'data-active:before:hidden hover:before:hidden [[data-active]+&]:before:hidden [:hover+&]:before:hidden',
-        className,
-      )}
+      className={cn(TAB_FRAME, 'hover:bg-hover-surface hover:text-fg hover:before:hidden [:hover+&]:before:hidden', className)}
     >
       <ButtonPrimitive
         role={render ? undefined : 'tab'}
@@ -249,6 +259,26 @@ function ChatTab({
           <XIcon />
         </IconButton>
       ) : null}
+    </span>
+  );
+}
+
+/**
+ * A tab whose name has not arrived yet (its list is still loading), on the
+ * tab's own frame, so the strip has its tabs' widths from the first paint
+ * and nothing moves when the name lands. `active` when it stands for the
+ * page on screen.
+ */
+function ChatTabSkeleton({ active = false, className }: { active?: boolean; className?: string }) {
+  return (
+    <span
+      data-slot="chat-tab"
+      data-active={active || undefined}
+      aria-hidden
+      className={cn(TAB_FRAME, className)}
+    >
+      <Skeleton shape="sm" className="size-3.5 shrink-0" />
+      <Skeleton className="h-2.5 w-20 min-w-0" />
     </span>
   );
 }
@@ -391,5 +421,5 @@ function ChatTrayButton({
   );
 }
 
-export { ChatEmptyState, ChatHeader, ChatHeaderTag, ChatTab, ChatTabStrip, ChatTrayButton, ThreadFindBar };
+export { ChatEmptyState, ChatHeader, ChatHeaderTag, ChatTab, ChatTabSkeleton, ChatTabStrip, ChatTrayButton, ThreadFindBar };
 export type { ThreadFindLabels };

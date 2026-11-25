@@ -55,7 +55,8 @@ const STACK_UP = 'services/stack up';
  *   filters, lintOnly (the changed files only the lint job reads), apiSuites
  *   (false when the API is affected only through copy it never reads)
  * @param {object} options  dirty: lint only, on uncommitted work; skip: jobs
- *   left out; env: the environment (`CI_EXTENSION_IN_DOCKER`)
+ *   left out; env: the environment (`CI_EXTENSION_IN_DOCKER`, and
+ *   `GITHUB_ACTIONS`, which caps the unit tests' concurrency)
  */
 export function plan(
   { scope, packages, filters, lintOnly = [], apiSuites = true },
@@ -293,7 +294,20 @@ export function plan(
     // The go job runs every Go module's tests once; Turborepo would run them again.
     const notGo = goTouched ? ['--filter=!@oppenheimer/go-*', '--filter=!@oppenheimer/runner'] : [];
     // oppenheimer:end runner
-    add('test', 'turbo test', 'pnpm', ['turbo', 'run', 'test', ...filters, ...notGo]);
+    // On GitHub's VM, two packages' tests at a time rather than Turborepo's
+    // ten: each runs its own pool of workers, and ten at once starved the VM
+    // until a test on the real clock ran past its timeout and the runner was
+    // lost (main-red #1066, as #595 was for every job at once). A
+    // contributor's machine keeps the default.
+    const testConcurrency = env.GITHUB_ACTIONS ? ['--concurrency=2'] : [];
+    add('test', 'turbo test', 'pnpm', [
+      'turbo',
+      'run',
+      'test',
+      ...filters,
+      ...notGo,
+      ...testConcurrency,
+    ]);
     // oppenheimer:begin extension
     // The built extension in Chromium against a fake claude.ai: the page
     // tap, the poll, the badge, the notifications and the popup.

@@ -1,3 +1,4 @@
+import { ChatTabSkeleton } from '@oppenheimer/design-system-web';
 import { useBot } from '@oppenheimer/frontend-consumer/react';
 import { BotTab } from './bot-tab';
 
@@ -7,6 +8,7 @@ import { BotTab } from './bot-tab';
  * fails.
  */
 export function ShownBotTab({ botId, onClose }: { botId: string; onClose: () => void }) {
-  const { data: bot } = useBot(botId);
-  return bot ? <BotTab bot={bot} active onClose={onClose} /> : null;
+  const { data: bot, isPending } = useBot(botId);
+  if (bot) return <BotTab bot={bot} active onClose={onClose} />;
+  return isPending ? <ChatTabSkeleton active /> : null;
 }

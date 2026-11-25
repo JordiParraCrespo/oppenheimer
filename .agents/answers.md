@@ -5,7 +5,7 @@ question, apply it and say which line you applied; ask only when the
 situation differs from what the line covers, and say how.
 
 When the user answers a question that could come up again, add a line in
-the pull request the task opens, or in a one-line `ship` pull request of
+the pull request the task opens, or in a one-line `go` pull request of
 its own when the task opens none. Keep the user's meaning and the source;
 a later answer replaces the line it contradicts, with the new date.
 
@@ -40,3 +40,4 @@ Product decisions (what the product does) live in `product/README.md`,
 | 2026-11-24 | Should a bot's change to a host's switches (browser, screen, exec) ask for confirmation even under Full access, since content the bot reads could prompt it? | No. Under Full access it runs at once; under Approve for me each call is its own card. The person's word is enough: no guardrail that makes them repeat themselves. | JordiParraCrespo/oppenheimer#1036 |
 | 2026-11-24 | How strict is running a change on the local stack in a cloud session? | Near mandatory: the session starts the stack, and a push of code that runs waits until it was checked there (`stack.mjs verified`), or a reason is recorded (`stack.mjs skip`). | this file's pull request |
 | 2026-11-24 | Must a change to the bots, or anything agentic, be evaluated? | Yes, on any machine: whatever a model is shown or can call runs through the evals that cover it before a push, a new tool or rule with a case of its own; a reason (`record.mjs --skip`) answers a change no eval can see. | this file's pull request |
+| 2026-11-25 | Claude Code now has its own `/ship`: what is our merge-without-asking lane called? | `go`: the skill, the command (`/go <fix>`, `/go 42`) and the label. | JordiParraCrespo/oppenheimer#1070 |
