@@ -41,6 +41,9 @@ src/
   | actions on a thing | `MenuView` from `@expo/ui/community/menu` |
   | confirm or report a failure | `Alert.alert` from `react-native` |
   | a sheet | a `presentation: 'formSheet'` route, or `@expo/ui`'s `BottomSheet` |
+  | search over a list | `SearchField` (Material 3's docked search bar on Android; a field with the system clear button on iOS) |
+  | something on its way | `LoadingIndicator` (Material 3 Expressive's morphing indicator on Android, the system spinner on iOS), never `ActivityIndicator` |
+  | the screen's one primary action | `HeroAction` (Expressive extended FAB on Android, a pill in Liquid Glass on iOS) |
   | tab bar, back button | expo-router's `NativeTabs`, the native stack header |
 
   A new `@expo/ui` control is drawn inside `NativeHost` (`src/lib/native-scheme`),
@@ -48,6 +51,13 @@ src/
   places a native control and never gives it a pixel width. A control that needs
   each platform's own primitives splits into `src/lib/<name>.ios.tsx` and
   `.android.tsx` (Metro picks one), as `native-segmented` does.
+  On Android every control is Material 3 Expressive (`@expo/ui`'s host wraps
+  it in `MaterialExpressiveTheme`), seeded with the brand accent `MobileRoot`
+  is given, so its palette is ours and not the wallpaper's. Expressive's
+  "hero moment" is used sparingly: a screen has at most one `HeroAction`, and
+  only where that action is the point of the screen (Run now on an
+  automation).
+
   A native control takes no `className`: lay it out from the view around it,
   and give one with no visible label an `accessibilityLabel`. NativeWind draws
   only what is the app's own (cards, rows, the chat, the terminal).

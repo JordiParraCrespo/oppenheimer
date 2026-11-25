@@ -1,5 +1,6 @@
 import { useNow } from '@oppenheimer/design-system-mobile';
 import { Button } from '@oppenheimer/design-system-mobile/button';
+import { LoadingIndicator } from '@oppenheimer/design-system-mobile/loading-indicator';
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import { cardView, type TaskEntity, taskSessionsOf } from '@oppenheimer/frontend-consumer';
 import {
@@ -12,7 +13,7 @@ import { todayIn } from '@oppenheimer/frontend-core';
 import { RecordState } from '@oppenheimer/frontend-mobile';
 import { Link } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { DetailCard } from '../components/detail-card';
 import { DetailLine } from '../components/detail-line';
 import { SessionChip } from '../components/session-chip';
@@ -120,7 +121,7 @@ export function TaskDetail({ task }: { task: TaskEntity }) {
       <DetailCard title={t('tasks.mobile.sessions')}>
         {sessionsState === 'pending' ? (
           <View className="items-start px-4 py-3" aria-busy>
-            <ActivityIndicator />
+            <LoadingIndicator />
           </View>
         ) : sessionsState === 'failed' ? (
           <View className="items-start gap-3 px-4 py-3">

@@ -1,6 +1,7 @@
 import MenuView from '@expo/ui/community/menu';
 import { Icon } from '@oppenheimer/design-system-mobile/icon';
 import { Ellipsis } from '@oppenheimer/design-system-mobile/icons';
+import { LoadingIndicator } from '@oppenheimer/design-system-mobile/loading-indicator';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import {
   useDeleteAutomation,
@@ -10,7 +11,7 @@ import {
 } from '@oppenheimer/frontend-consumer/react';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, View } from 'react-native';
+import { Alert, View } from 'react-native';
 
 /**
  * The automation's ··· in the navigation bar, the system's own menu, as the
@@ -103,11 +104,7 @@ export function AutomationActions({
         accessibilityState={{ busy }}
         className="size-9 items-center justify-center"
       >
-        {busy ? (
-          <ActivityIndicator size="small" />
-        ) : (
-          <Icon as={Ellipsis} size={22} className="text-foreground" />
-        )}
+        {busy ? <LoadingIndicator /> : <Icon as={Ellipsis} size={22} className="text-foreground" />}
       </View>
     </MenuView>
   );

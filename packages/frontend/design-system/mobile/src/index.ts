@@ -57,11 +57,16 @@ export { EmptyState } from './components/ui/empty-state';
 export type { ExpoImageProps } from './components/ui/expo-image';
 export { ExpoImage } from './components/ui/expo-image';
 export { Glass, type GlassProps, liquidGlass } from './components/ui/glass';
+export { HeroAction, type HeroActionProps } from './components/ui/hero-action';
 export { Icon } from './components/ui/icon';
 export { Input } from './components/ui/input';
 export { Label } from './components/ui/label';
 export type { LegendListProps, LegendListRef } from './components/ui/legend-list';
 export { LegendList } from './components/ui/legend-list';
+export {
+  LoadingIndicator,
+  type LoadingIndicatorProps,
+} from './components/ui/loading-indicator';
 export { MailboxChip, MailboxTag } from './components/ui/mailbox-tag';
 export { MessageList, MessageListItem } from './components/ui/message-list';
 export {
@@ -84,6 +89,7 @@ export {
 } from './components/ui/overlay';
 export { Progress } from './components/ui/progress';
 export { ReplyBox } from './components/ui/reply-box';
+export { SearchField, type SearchFieldProps } from './components/ui/search-field';
 export {
   SegmentedControl,
   type SegmentedControlProps,

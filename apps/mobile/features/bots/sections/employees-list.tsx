@@ -2,8 +2,8 @@ import { useDebouncedValue, useNow } from '@oppenheimer/design-system-mobile';
 import { Button } from '@oppenheimer/design-system-mobile/button';
 import { EmptyState } from '@oppenheimer/design-system-mobile/empty-state';
 import { Icon } from '@oppenheimer/design-system-mobile/icon';
-import { Bot, Search } from '@oppenheimer/design-system-mobile/icons';
-import { Input } from '@oppenheimer/design-system-mobile/input';
+import { Bot } from '@oppenheimer/design-system-mobile/icons';
+import { SearchField } from '@oppenheimer/design-system-mobile/search-field';
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import { botGroupSections } from '@oppenheimer/frontend-consumer';
 import { useBotGroups, useBots } from '@oppenheimer/frontend-consumer/react';
@@ -36,20 +36,7 @@ export function EmployeesList() {
 
   const search = (
     <View className="px-4 pt-3">
-      <View className="h-11 flex-row items-center gap-2 rounded-md border border-border-default bg-card px-3">
-        <Icon as={Search} size={16} className="text-ink-400" />
-        <Input
-          className="h-full flex-1 border-0 bg-transparent px-0"
-          value={typed}
-          onChangeText={setTyped}
-          placeholder={t('bots.mobile.search')}
-          accessibilityLabel={t('bots.mobile.search')}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-          clearButtonMode="while-editing"
-        />
-      </View>
+      <SearchField value={typed} onChangeText={setTyped} placeholder={t('bots.mobile.search')} />
     </View>
   );
 

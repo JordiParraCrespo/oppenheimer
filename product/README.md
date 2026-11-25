@@ -2129,3 +2129,8 @@ earlier note:
   system's JavaScript look-alikes (dialogs, popovers, dropdown and context
   menus, tabs, toggle groups, radio groups, the @gorhom bottom sheet) were
   deleted.
+- The same day the owner asked for Material 3 Expressive on Android (Google's
+  "Start building with Material 3 Expressive"): the native controls take the
+  brand accent instead of the wallpaper's colours, the list searches become
+  Material's search bar, waits become the Expressive loading indicator, and
+  Run now becomes the one hero action, an extended FAB.

@@ -44,7 +44,10 @@
     "./text": "./src/components/ui/text.tsx",
     "./textarea": "./src/components/ui/textarea.tsx",
     "./tool-call": "./src/components/ui/tool-call.tsx",
-    "./utils": "./src/lib/utils.ts"
+    "./utils": "./src/lib/utils.ts",
+    "./hero-action": "./src/components/ui/hero-action.tsx",
+    "./loading-indicator": "./src/components/ui/loading-indicator.tsx",
+    "./search-field": "./src/components/ui/search-field.tsx"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
