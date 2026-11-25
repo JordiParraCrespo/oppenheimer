@@ -1,3 +1,4 @@
+import { ChatTabSkeleton } from '@oppenheimer/design-system-web';
 import { useSession } from '@oppenheimer/frontend-consumer/react';
 import { SessionOpenTab } from './session-open-tab';
 
@@ -14,6 +15,7 @@ export function ShownSessionTab({
   sessionId: string;
   onClose: () => void;
 }) {
-  const { data: session } = useSession(sessionId);
-  return session ? <SessionOpenTab session={session} active onClose={onClose} /> : null;
+  const { data: session, isPending } = useSession(sessionId);
+  if (session) return <SessionOpenTab session={session} active onClose={onClose} />;
+  return isPending ? <ChatTabSkeleton active /> : null;
 }
