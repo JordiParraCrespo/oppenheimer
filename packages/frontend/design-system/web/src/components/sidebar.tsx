@@ -356,6 +356,9 @@ function SidebarSearch({
   );
 }
 
+/** Keeps a press on a control inside a sortable section's head from lifting the section. */
+const stopPress = (event: React.PointerEvent) => event.stopPropagation();
+
 /**
  * SidebarListHead — the line over a grouped list: the list's name as a muted
  * uppercase label, its count in mono, then any actions (New project, the
@@ -403,8 +406,8 @@ function SidebarListHead({
         <span className="figures text-micro leading-(--leading-body) tracking-normal text-fg-muted">{count}</span>
       ) : null}
       {sortable && children ? (
-        // The head's actions never pick its section up.
-        <span {...dragIgnore} className="flex shrink-0 items-center gap-2">
+        // A press on the head's actions never picks its section up.
+        <span onPointerDown={stopPress} className="flex shrink-0 items-center gap-2">
           {children}
         </span>
       ) : (
@@ -438,9 +441,12 @@ function SortableSidebarSection({
   disabled?: boolean;
 }) {
   const { node, control } = useSortableControl({ id, data: { type: 'sidebar-section', label }, disabled });
-  const { onPointerDown, onKeyDown, ref, style, className: slot, ...rest } = node;
+  // Only the pointer lifts from the head: Space on the fold label (the
+  // control) lifts from the keyboard, so no key the head's buttons see is
+  // ever stopped, Escape and the console's shortcuts included.
+  const { onPointerDown, onKeyDown: _keys, ref, style, className: slot, ...rest } = node;
   return (
-    <SidebarSectionHandle.Provider value={{ handle: { onPointerDown, onKeyDown }, control }}>
+    <SidebarSectionHandle.Provider value={{ handle: { onPointerDown }, control }}>
       <div
         ref={ref}
         style={style}

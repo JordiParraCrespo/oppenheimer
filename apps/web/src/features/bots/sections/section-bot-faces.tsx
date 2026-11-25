@@ -39,6 +39,8 @@ export function SectionBotFaces({
       aria-label={label}
       title={label}
       onClick={() => refetch()}
+      // A press on Retry never lifts the Bots section its heading moves.
+      onPointerDown={(event) => event.stopPropagation()}
     >
       <RotateCw />
     </IconButton>

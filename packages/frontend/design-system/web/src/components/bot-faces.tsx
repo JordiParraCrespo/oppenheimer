@@ -7,6 +7,9 @@ import { BotAvatar, type BotFaceSpec } from './avatar-picker';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
 const FACE_SIZE = 20;
+
+/** A press on a face or the chip opens or unfolds; it never lifts the section around them. */
+const stopPress = (event: React.PointerEvent) => event.stopPropagation();
 const FACE_GAP = 4;
 
 /** How many 20px faces, 4px apart, fit in `width`. */
@@ -19,7 +22,9 @@ function facesThatFit(width: number): number {
  * `BotFaceItem`s 4px apart, so the list folds away and the people in it
  * stay. It fills the space it is given and shows as many as that holds; when they do not all fit, the
  * last place is a `+N` chip (`moreLabel` names it) that calls `onMore`, which
- * unfolds the list. It sits in `SidebarListHead`'s `summary`.
+ * unfolds the list. It sits in `SidebarListHead`'s `summary`, where a press
+ * on a face or the chip never picks a sortable section up; the space
+ * between them still does.
  */
 function BotFaces({
   moreLabel,
@@ -60,12 +65,12 @@ function BotFaces({
     >
       {faces.slice(0, shown).map((face, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: each face is keyed by its caller; this wrapper only lists it
-        <span key={index} role="listitem" className="flex shrink-0">
+        <span key={index} role="listitem" className="flex shrink-0" onPointerDown={stopPress}>
           {face}
         </span>
       ))}
       {hidden > 0 ? (
-        <span role="listitem" className="flex shrink-0">
+        <span role="listitem" className="flex shrink-0" onPointerDown={stopPress}>
           <button
             type="button"
             aria-label={moreLabel(hidden)}
