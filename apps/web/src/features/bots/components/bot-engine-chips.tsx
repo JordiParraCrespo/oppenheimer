@@ -1,7 +1,7 @@
 import { AgentModelSelect } from '@oppenheimer/design-system-web';
 import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { BotProvider } from '@oppenheimer/shared/schemas/bot';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   botEffort,
@@ -20,6 +20,9 @@ import {
  * caller saves it. The effort is held here while the popup is open and handed
  * over once, when it closes: each pick is a save, and sliding across the
  * stops would otherwise be a burst of them that the API's rate limit refuses.
+ * A model picked in the same popup drops that pending effort: the pick closes
+ * the popup, and a second save sent beside the model's would write back the
+ * old model with it (the API writes provider, model and effort together).
  */
 export function BotEngineChips({
   provider,
@@ -42,6 +45,8 @@ export function BotEngineChips({
   const levels = botEffort(provider, model, effort);
   // The pick while the popover is open, not yet saved.
   const [draft, setDraft] = useState<SessionEffort | null>(null);
+  // Set when a model is picked, so the close that follows saves no effort.
+  const modelPicked = useRef(false);
 
   return (
     <AgentModelSelect
@@ -50,7 +55,9 @@ export function BotEngineChips({
       onValueChange={(next) => {
         const picked = providerOfMark(next.agent);
         // A mark no provider is drawn with is no pick: nothing to save.
-        if (picked) onModelChange({ provider: picked, model: next.model });
+        if (!picked) return;
+        modelPicked.current = true;
+        onModelChange({ provider: picked, model: next.model });
       }}
       effort={
         levels
@@ -72,8 +79,10 @@ export function BotEngineChips({
       }
       onOpenChange={(open) => {
         if (open) return;
-        if (levels && draft !== null && draft !== levels.value) onEffortChange(draft);
+        const dropped = modelPicked.current;
+        modelPicked.current = false;
         setDraft(null);
+        if (!dropped && levels && draft !== null && draft !== levels.value) onEffortChange(draft);
       }}
       disabled={disabled}
       aria-label={t('bots.chat.model')}

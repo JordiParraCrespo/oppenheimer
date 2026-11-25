@@ -962,7 +962,7 @@ export default function Page() {
         code={`<Composer value={v} onValueChange={setV} onSubmit={start} onAttach={pick}
   scope={<><ChipSelect variant="tab" … /><RepositorySelect variant="tab" … /></>}
   tools={<PermissionMenu options={levels} value={level} onValueChange={setLevel} />}
-  engine={<><AgentModelSelect agents={harnesses} value={engine} onValueChange={setEngine} /><EffortPicker stops={levels} value={effort} onValueChange={setEffort} /></>} />`}
+  engine={<AgentModelSelect agents={harnesses} value={engine} onValueChange={setEngine} effort={{ stops: levels, value: effort, onValueChange: setEffort }} />} />`}
       >
         <ComposerDemo />
         <ComposerDemo full />

@@ -39,4 +39,32 @@ describe('the bot’s effort, in its model picker', () => {
     expect(onEffortChange).toHaveBeenCalledTimes(1);
     expect(onEffortChange).toHaveBeenCalledWith('high');
   });
+
+  it('saves no effort beside a model picked in the same popup', () => {
+    // What breaks this: a draft flushed on the pick's close is a second save
+    // sent beside the model's, and the API writes back the old model with it.
+    const onModelChange = vi.fn();
+    const onEffortChange = vi.fn();
+    render(
+      <BotEngineChips
+        provider="anthropic"
+        configured={['anthropic']}
+        model="claude-fable-5-1"
+        effort="low"
+        onModelChange={onModelChange}
+        onEffortChange={onEffortChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'bots.chat.model' }));
+    fireEvent.keyDown(screen.getByRole('slider'), { key: 'ArrowRight' });
+    const other = screen
+      .getAllByRole('option')
+      .find((row) => !row.getAttribute('aria-selected')?.includes('true'));
+    if (!other) throw new Error('no other model to pick');
+    fireEvent.click(other);
+
+    expect(onModelChange).toHaveBeenCalledTimes(1);
+    expect(onEffortChange).not.toHaveBeenCalled();
+  });
 });
