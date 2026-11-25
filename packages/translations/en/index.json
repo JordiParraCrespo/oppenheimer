@@ -178,7 +178,6 @@
     "comingToMobile": {
       "title": "Coming to mobile",
       "pullRequests": "Review the pull requests that need you.",
-      "automations": "See your automations and how their runs went.",
       "plan": "Your tasks, milestones and calendar, from here."
     },
     "projectFilter": {
@@ -3196,6 +3195,16 @@
         "github": "GitHub",
         "webhook": "Webhook"
       }
+    },
+    "mobile": {
+      "empty": "No automations yet. Make one in the console on your computer.",
+      "pauseFailed": "The automation could not be paused or resumed.",
+      "runFailed": "The run could not be started.",
+      "duplicateFailed": "The automation could not be duplicated.",
+      "started": "Run started",
+      "nextRun": "Next run · {{when}}",
+      "instructions": "Instructions",
+      "recentRuns": "Recent runs"
     }
   },
   "pullRequests": {

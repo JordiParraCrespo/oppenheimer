@@ -5,11 +5,12 @@ import {
   RoutineRunsEmpty,
 } from '@oppenheimer/design-system-web';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
+import { runState } from '@oppenheimer/frontend-consumer';
 import { formatAge } from '@oppenheimer/frontend-web';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { TriggerGlyph } from '../components/trigger-glyph';
-import { runState, sidebarMeta } from '../lib/automation-view';
+import { sidebarMeta } from '../lib/automation-view';
 
 /**
  * One automation in the sidebar and, while it is the selected one, its last

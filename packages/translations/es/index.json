@@ -181,7 +181,6 @@
     "comingToMobile": {
       "title": "Próximamente en el móvil",
       "pullRequests": "Revisa las pull requests que te necesitan.",
-      "automations": "Consulta tus automatizaciones y cómo han ido sus ejecuciones.",
       "plan": "Tus tareas, hitos y calendario, desde aquí."
     },
     "projectFilter": {
@@ -3269,6 +3268,16 @@
         "github": "GitHub",
         "webhook": "Webhook"
       }
+    },
+    "mobile": {
+      "empty": "Aún no hay automatizaciones. Crea una desde la consola en tu ordenador.",
+      "pauseFailed": "No se pudo pausar ni reanudar la automatización.",
+      "runFailed": "No se pudo iniciar la ejecución.",
+      "duplicateFailed": "No se pudo duplicar la automatización.",
+      "started": "Ejecución iniciada",
+      "nextRun": "Próxima ejecución · {{when}}",
+      "instructions": "Instrucciones",
+      "recentRuns": "Ejecuciones recientes"
     }
   },
   "pullRequests": {

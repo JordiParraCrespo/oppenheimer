@@ -7,16 +7,7 @@ import { wallTimeAt } from '@oppenheimer/shared/automations';
  * are a schedule's own, which it keeps in the zone it was set in.
  */
 
-const MINUTE = 60_000;
-const DAY = 24 * 60 * MINUTE;
-
 const pad2 = (value: number) => String(value).padStart(2, '0');
-
-/** "08:30", 24-hour, in the viewer's zone (or the one given). */
-export function clock(at: Date, timeZone = viewerTimeZone()): string {
-  const wall = wallTimeAt(at.getTime(), timeZone);
-  return `${pad2(wall.hour)}:${pad2(wall.minute)}`;
-}
 
 export { pad2 };
 
@@ -29,13 +20,4 @@ export function monthDay(at: Date, locale: string, timeZone = viewerTimeZone()):
 export function localDate(at: number, timeZone: string): string {
   const wall = wallTimeAt(at, timeZone);
   return `${wall.year}-${pad2(wall.month)}-${pad2(wall.day)}`;
-}
-
-/** Whole local days from `now`'s date to `at`'s: 0 today, 1 tomorrow, -1 yesterday. */
-export function dayOffset(at: number, now: number, timeZone: string): number {
-  const toUtcMidnight = (instant: number) => {
-    const wall = wallTimeAt(instant, timeZone);
-    return Date.UTC(wall.year, wall.month - 1, wall.day);
-  };
-  return Math.round((toUtcMidnight(at) - toUtcMidnight(now)) / DAY);
 }
