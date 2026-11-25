@@ -79,7 +79,7 @@ With the judge, 3 runs per case:
 
 **The incident did not reproduce on Claude.** Before the change, neither
 Sonnet 5.5 nor Haiku 5.5 widened the job on the old prompt, with or without
-the chat before it (with the earlier regex scorer as well: 16 more runs of
+the chat before it (with the earlier regex scorer as well: 29 more runs of
 `improve-automation` across the two models, none widened). The failure is the
 GPT bot at `low` effort, which this harness cannot drive. So this eval does
 not prove the rule fixes the incident. What it holds is that the rule changes
