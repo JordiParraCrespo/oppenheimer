@@ -489,6 +489,7 @@ describe('DeliverChannelReplyCommandHandler', () => {
       ['the mark alone', '[silent]'],
       ['the mark with an aside on why', '[SILENT] (that was for Adri)'],
       ['the mark after a voice mark', '[voice] [silent]'],
+      ['the mark before a voice mark', '[silent][VOICE] for Adri'],
     ])('sends nothing to the group for %s, spoken or written', async (_case, reply) => {
       const { bus, deliver, speech } = setup(groupTurn(), groupChat, said(reply), null, allowed);
       await deliver();
