@@ -1071,7 +1071,7 @@ describe('the queue and the context', () => {
     render(<SessionChat chat={chat} agent="claude-code" readOnly={false} />);
     // Counted off the transcript until the status line says otherwise.
     const meter = screen.getByRole('button', { name: /common\.chat\.usage\.open/ });
-    expect(meter.textContent).toContain('25%');
+    expect(meter.getAttribute('aria-label')).toContain('"percent":25');
 
     act(() =>
       chat.apply({
@@ -1087,7 +1087,7 @@ describe('the queue and the context', () => {
         ],
       }),
     );
-    expect(meter.textContent).toContain('32%');
+    expect(meter.getAttribute('aria-label')).toContain('"percent":32');
     fireEvent.click(meter);
     expect(screen.getByText('common.chat.usage.plan')).toBeTruthy();
     expect(screen.getByText('common.chat.usage.fiveHour')).toBeTruthy();
