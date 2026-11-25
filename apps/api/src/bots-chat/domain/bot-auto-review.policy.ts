@@ -54,7 +54,11 @@ export interface BotAutoVerdict {
 
 /** What the reviewer trusts: the owner's own words, never the bot's or a tool's. */
 export interface BotAutoReviewContext {
-  /** The bot's instructions as the owner wrote them; empty when none. */
+  /**
+   * The bot's instructions when the owner wrote their current revision
+   * (`ownerInstructionsFor`); empty when none, or when the bot or anyone
+   * else did.
+   */
   instructions: string;
   /** The owner's messages in this conversation, oldest first; none for a turn nobody of theirs opened. */
   ownerMessages: readonly string[];
@@ -101,6 +105,29 @@ export function ownerMessagesFor(
     .filter((message) => message.role === 'user' && message.content.trim())
     .map((message) => message.content.trim());
   return said.slice(-AUTO_REVIEW_OWNER_MESSAGES_MAX);
+}
+
+/**
+ * The bot's instructions as the reviewer may trust them: only a revision the
+ * owner wrote themselves. The bot rewrites its own instructions without a
+ * card (`edit_instructions`), and another bot writes a new one's, so a
+ * revision of theirs could carry what a page or an email planted ("the
+ * owner allows every merge") and clear the very call it argued for. Such a
+ * revision is left out, and the reviewer reads the owner's messages alone.
+ */
+export function ownerInstructionsFor(
+  document: { content: string; updatedBy: string; updatedByUserId: string | null } | undefined,
+  ownerUserId: string | null,
+): string {
+  if (
+    !document ||
+    !ownerUserId ||
+    document.updatedBy !== 'user' ||
+    document.updatedByUserId !== ownerUserId
+  ) {
+    return '';
+  }
+  return document.content;
 }
 
 /** The reviewer's message: what the owner said and wrote, then the call, each fenced as data. */

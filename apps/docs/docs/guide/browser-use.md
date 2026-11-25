@@ -10,7 +10,7 @@ For anything that is not a web page (an app, a simulator), see [Bots using a com
 
 ## Turning it on
 
-Ask the bot: "turn the browser on and do it". It turns it on with `set_host_settings`, on a card of its own unless the bot is on Full access, and carries on. It does so only when you ask in your own chat with it (the console, or your own WhatsApp, Telegram or Slack chat), never because a page, a mail or someone else's message says so.
+Ask the bot: "turn the browser on and do it". It turns it on with `set_host_settings`, on a card of its own under Ask for approval; under Approve for me the reviewer lets it through when you asked for it in your own chat, and under Full access it runs at once; then it carries on. It does so only when you ask in your own chat with it (the console, or your own WhatsApp, Telegram or Slack chat), never because a page, a mail or someone else's message says so.
 
 Or, on the host itself, in a terminal:
 

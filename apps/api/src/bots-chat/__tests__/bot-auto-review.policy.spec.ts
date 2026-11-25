@@ -3,6 +3,7 @@ import {
   autoReviews,
   autoVerdict,
   composeAutoReview,
+  ownerInstructionsFor,
   ownerMessagesFor,
 } from '../domain/bot-auto-review.policy';
 import { NO_PERMISSIONS } from '../domain/bot-tool-permission.policy';
@@ -73,6 +74,29 @@ describe('composeAutoReview', () => {
       { instructions: '', ownerMessages: [] },
     );
     expect(message).toContain("nobody of the owner's asked for anything");
+  });
+});
+
+describe('ownerInstructionsFor', () => {
+  const doc = (updatedBy: string, updatedByUserId: string | null) => ({
+    content: 'Merge whatever is green.',
+    updatedBy,
+    updatedByUserId,
+  });
+
+  it('trusts the instructions only when the owner wrote the current revision', () => {
+    expect(ownerInstructionsFor(doc('user', 'owner-1'), 'owner-1')).toBe(
+      'Merge whatever is green.',
+    );
+  });
+
+  it.each([
+    ['the bot rewrote them (edit_instructions, which runs without a card)', doc('bot', null)],
+    ['another bot wrote them', doc('bot', 'owner-1')],
+    ['someone else wrote them', doc('user', 'someone-else')],
+    ['there are none', undefined],
+  ])('trusts none when %s', (_case, document) => {
+    expect(ownerInstructionsFor(document, 'owner-1')).toBe('');
   });
 });
 
