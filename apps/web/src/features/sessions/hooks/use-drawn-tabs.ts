@@ -27,5 +27,5 @@ export function useDrawnTabs(shownKey: string | null) {
     if (tab.kind === 'bot' && !botsPending && !botIds?.has(tab.id)) return [];
     return [{ key, tab }];
   });
-  return { drawn, sessions, close: tabs.close };
+  return { drawn, sessions, close: tabs.close, reorder: tabs.reorder };
 }
