@@ -13261,6 +13261,106 @@
         ]
       }
     },
+    "/api/v1/sessions/{id}/changes": {
+      "get": {
+        "description": "What each of the session's checkouts changed, read with git on its host now: every changed file with its status, its line counts and its unified diff. `base` (the default) is everything since the branch left its base, commits and edits not committed yet; `uncommitted` only the edits not committed yet. Untracked files are included. A read is bounded: past 500 files a checkout counts the rest, and patches stop at 64 KiB a file and 256 KiB a read, the files keeping their counts. Nothing is cached.",
+        "operationId": "findSessionChanges",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "description": "What to compare with; `base` when absent",
+            "schema": {
+              "enum": [
+                "base",
+                "uncommitted"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionChangesResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "HOSTS_001 — Host not found\n\nSESSIONS_001 — Session not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_005 — That session is closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "SESSIONS_031 — No answer in time",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read a session's changes",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
     "/api/v1/sessions/{id}/windows/{window}": {
       "delete": {
         "description": "Closes one of the session's shells (a tmux window from 1 up) on its host, and answers with the windows left. Window 0 is the agent and is refused: close the session instead.",
@@ -34770,6 +34870,153 @@
         "required": [
           "state",
           "windows"
+        ]
+      },
+      "SessionChangedFileDto": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Relative to the checkout’s root, `/`-separated."
+          },
+          "oldPath": {
+            "type": "string",
+            "nullable": true,
+            "description": "Where a renamed or copied file came from."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "added",
+              "modified",
+              "deleted",
+              "renamed",
+              "copied",
+              "type_changed",
+              "untracked"
+            ],
+            "description": "`untracked` is new and never added to git."
+          },
+          "additions": {
+            "type": "number",
+            "description": "Lines added; 0 for a binary file."
+          },
+          "deletions": {
+            "type": "number",
+            "description": "Lines removed; 0 for a binary file."
+          },
+          "binary": {
+            "type": "boolean"
+          },
+          "patch": {
+            "type": "string",
+            "nullable": true,
+            "description": "The file’s unified diff from its `diff --git` line; null when binary or left out."
+          },
+          "patchOmitted": {
+            "type": "boolean",
+            "description": "The patch was left out: too long for one read, or not read in time."
+          }
+        },
+        "required": [
+          "path",
+          "oldPath",
+          "status",
+          "additions",
+          "deletions",
+          "binary",
+          "patch",
+          "patchOmitted"
+        ]
+      },
+      "SessionCheckoutChangesDto": {
+        "type": "object",
+        "properties": {
+          "repository": {
+            "type": "string",
+            "description": "`owner/name`."
+          },
+          "checkoutId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "baseBranch": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the session’s branch was cut from."
+          },
+          "base": {
+            "type": "string",
+            "nullable": true,
+            "description": "The commit compared with; null when the branch has no commit yet."
+          },
+          "approximate": {
+            "type": "boolean",
+            "description": "The branch’s history did not reach its base yet (the host is still fetching it), so the base branch’s tip stood in: what the base gained since shows reversed."
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionChangedFileDto"
+            }
+          },
+          "omittedFiles": {
+            "type": "number",
+            "description": "Files past the bound of one read, counted and left out."
+          },
+          "additions": {
+            "type": "number",
+            "description": "Lines added across `files`."
+          },
+          "deletions": {
+            "type": "number",
+            "description": "Lines removed across `files`."
+          }
+        },
+        "required": [
+          "repository",
+          "checkoutId",
+          "baseBranch",
+          "base",
+          "approximate",
+          "files",
+          "omittedFiles",
+          "additions",
+          "deletions"
+        ]
+      },
+      "SessionChangesResponseDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "listed",
+              "host_offline",
+              "not_supported"
+            ],
+            "description": "`listed`: `checkouts` is what the host read now. `host_offline`: the host has no link. `not_supported`: its runner cannot read changes, or the session is not on it."
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "base",
+              "uncommitted"
+            ]
+          },
+          "checkouts": {
+            "description": "One entry per checkout, the first checkout first; none for a folder session.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionCheckoutChangesDto"
+            }
+          }
+        },
+        "required": [
+          "state",
+          "scope",
+          "checkouts"
         ]
       },
       "OpenSessionWindowRequest": {

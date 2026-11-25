@@ -122,6 +122,23 @@ runner does with it and point back.
   plane waits for the answer like a folder listing and stores nothing: the
   host is the record of a session's windows. A runner without the
   capability is not sent window commands at all.
+- **`session.changes` answers `session.changes.read`** (since 2026-11-25,
+  33 §5): a runner whose `hello` names `session.changes.read` reads what
+  the session's checkouts changed with git and answers under the command's
+  id, one entry per checkout (its repository, checkout id, base branch, the
+  commit it compared with) with every changed file: its status, its line
+  counts and its unified diff. `scope: base` is everything since the branch
+  left its base (where it meets `origin/<base>`), commits and edits not
+  committed yet; `uncommitted` only the latter. Untracked files are listed,
+  counted from the file, and one that is not a regular file inside the
+  checkout is never read. While the store is still fetching the branch's
+  history the base's tip stands in, and the checkout says `approximate`.
+  The answer stays under the frame: 500 files a checkout (the rest
+  counted), 64 KiB a patch and 256 KiB of patches a read, and a patch past
+  a bound, or not read within the runner's 12s, is left out whole, never
+  cut, its counts kept. Refusals are `command.failed` (`SESS_001`). The
+  control plane waits 15s for it and stores nothing; a runner without the
+  capability is never asked.
 - **`session.window.open` may name a second agent** (since 2026-11-16):
   an optional `agent`, any catalog coding-agent id but `shell`, starts that
   agent in the new window, in the session's worktree. Structured like

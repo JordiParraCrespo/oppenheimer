@@ -8,6 +8,7 @@ import type {
   HostExecResultMessage,
   HostSettingsMessage,
   PortListingMessage,
+  SessionChangesMessage,
   SessionWindowsMessage,
   SharedPreviewMessage,
   TelegramSentMessage,
@@ -20,7 +21,7 @@ import type {
 /**
  * A runner's answer to a command the control plane is waiting on: the reply
  * frame itself, or its refusal: `fs.listing`, `fs.found`, `port.listing`,
- * `session.windows`,
+ * `session.windows`, `session.changes`,
  * `cloud.replied`, `whatsapp.sent`, `whatsapp.media`, `telegram.sent`, `shared.preview`,
  * `transcript.page`, `host.exec.result`, `host.settings` or `terminal.screen`.
  */
@@ -29,6 +30,7 @@ export type LinkReply =
   | FsFoundMessage
   | PortListingMessage
   | SessionWindowsMessage
+  | SessionChangesMessage
   | CloudRepliedMessage
   | WhatsappSentMessage
   | WhatsappMediaMessage

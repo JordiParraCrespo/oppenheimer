@@ -409,6 +409,7 @@ func TestConstantsMatchTheSchema(t *testing.T) {
 		link.CapabilityComputerUse,
 		link.CapabilityBrowserUse,
 		link.CapabilitySessionWindowsList,
+		link.CapabilitySessionChangesRead,
 		link.CapabilitySessionWindowAgent,
 		link.CapabilityHostSettings,
 	}) {

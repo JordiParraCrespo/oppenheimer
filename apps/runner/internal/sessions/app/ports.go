@@ -126,6 +126,14 @@ type Worktrees interface {
 	Exists(path string) bool
 	// Dirty reports uncommitted changes in a worktree.
 	Dirty(ctx context.Context, path string) (bool, error)
+	// Changes lists the files a worktree changed against where its branch
+	// meets origin/<baseBranch>, or with uncommitted against its last
+	// commit, untracked files included, without their patches.
+	Changes(ctx context.Context, path, baseBranch string, uncommitted bool) (domain.CheckoutChanges, error)
+	// Patch reads one changed file's unified diff against base, and reports
+	// false when it is longer than limit bytes: it is then not returned at
+	// all, never cut.
+	Patch(ctx context.Context, path, base string, file domain.ChangedFile, limit int) (patch string, ok bool, err error)
 	// Push publishes the branch, and reports whether there was anything to
 	// push at all.
 	Push(ctx context.Context, path, branch string) (pushed bool, err error)

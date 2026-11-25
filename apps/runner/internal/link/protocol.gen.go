@@ -123,6 +123,7 @@ const (
 	CapabilityComputerUse              = "computer.use"
 	CapabilityBrowserUse               = "browser.use"
 	CapabilitySessionWindowsList       = "session.windows.list"
+	CapabilitySessionChangesRead       = "session.changes.read"
 	CapabilitySessionWindowAgent       = "session.window.agent"
 	CapabilityHostSettings             = "host.settings"
 )
@@ -219,6 +220,8 @@ const (
 	TypeSharedPreview           = "shared.preview"
 	TypeTranscriptRead          = "transcript.read"
 	TypeTranscriptPage          = "transcript.page"
+	TypeSessionChangesRead      = "session.changes.read"
+	TypeSessionChanges          = "session.changes"
 )
 
 // MessageTypes is every message type on the link, in the schema's order.
@@ -313,6 +316,8 @@ var MessageTypes = []string{
 	TypeSharedPreview,
 	TypeTranscriptRead,
 	TypeTranscriptPage,
+	TypeSessionChangesRead,
+	TypeSessionChanges,
 }
 
 // NewMessage returns a pointer to a new struct for a message type, and false
@@ -499,6 +504,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(TranscriptRead), true
 	case TypeTranscriptPage:
 		return new(TranscriptPage), true
+	case TypeSessionChangesRead:
+		return new(SessionChangesRead), true
+	case TypeSessionChanges:
+		return new(SessionChanges), true
 	}
 	return nil, false
 }
@@ -1452,6 +1461,46 @@ type TranscriptPage struct {
 	Restarted    bool     `json:"restarted,omitempty"`
 	Dropped      int      `json:"dropped,omitempty"`
 	Partial      bool     `json:"partial,omitempty"`
+}
+
+// SessionChangesRead is the `session.changes.read` message.
+type SessionChangesRead struct {
+	Type      string `json:"type"`
+	CommandID string `json:"commandId"`
+	SessionID string `json:"sessionId"`
+	Scope     string `json:"scope"`
+}
+
+// SessionChanges is the `session.changes` message.
+type SessionChanges struct {
+	Type      string            `json:"type"`
+	CommandID string            `json:"commandId"`
+	SessionID string            `json:"sessionId"`
+	Scope     string            `json:"scope"`
+	Checkouts []CheckoutChanges `json:"checkouts"`
+}
+
+// CheckoutChanges is SessionChanges.Checkouts.
+type CheckoutChanges struct {
+	Repo         string        `json:"repo"`
+	CheckoutID   string        `json:"checkoutId,omitempty"`
+	BaseBranch   string        `json:"baseBranch,omitempty"`
+	Base         string        `json:"base,omitempty"`
+	Approximate  bool          `json:"approximate,omitempty"`
+	Files        []ChangedFile `json:"files"`
+	OmittedFiles int           `json:"omittedFiles,omitempty"`
+}
+
+// ChangedFile is CheckoutChanges.Files.
+type ChangedFile struct {
+	Path         string `json:"path"`
+	OldPath      string `json:"oldPath,omitempty"`
+	Status       string `json:"status"`
+	Additions    int    `json:"additions"`
+	Deletions    int    `json:"deletions"`
+	Binary       bool   `json:"binary,omitempty"`
+	Patch        string `json:"patch,omitempty"`
+	PatchOmitted bool   `json:"patchOmitted,omitempty"`
 }
 
 // SessionSnapshot is `#/$defs/sessionSnapshot`.

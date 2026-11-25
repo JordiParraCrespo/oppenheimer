@@ -343,7 +343,7 @@ func (h *linkHandler) capabilities() []string {
 		link.CapabilitySessionWatch, link.CapabilitySessionTeleport,
 		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec, link.CapabilityTerminalDrive,
 		link.CapabilityComputerUse, link.CapabilityBrowserUse, link.CapabilityHostSettings,
-		link.CapabilitySessionWindowsList, link.CapabilitySessionWindowAgent,
+		link.CapabilitySessionWindowsList, link.CapabilitySessionWindowAgent, link.CapabilitySessionChangesRead,
 	}
 	if h.direct != nil {
 		named = append(named, link.CapabilityAttachmentDirect, link.CapabilityAttachmentDirectProof)
@@ -770,6 +770,11 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 		var m link.TranscriptRead
 		if msg.Decode(&m) == nil {
 			h.lanes.run(laneTranscriptRead, func() { h.transcriptRead(m) })
+		}
+	case link.TypeSessionChangesRead:
+		var m link.SessionChangesRead
+		if msg.Decode(&m) == nil {
+			h.lanes.run(laneChangesRead, func() { h.changesRead(h.life, m) })
 		}
 	case "host.update":
 		var m link.HostUpdate

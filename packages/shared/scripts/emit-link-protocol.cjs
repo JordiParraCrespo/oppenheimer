@@ -78,6 +78,9 @@ const INTEGER_TYPES = {
   'transcript.page.from': 'int64',
   'transcript.page.next': 'int64',
   'transcript.page.dropped': 'int',
+  'session.changes.checkouts[].files[].additions': 'int',
+  'session.changes.checkouts[].files[].deletions': 'int',
+  'session.changes.checkouts[].omittedFiles': 'int',
   'session.attach.cols': 'int',
   'session.attach.rows': 'int',
   'session.resize.cols': 'int',
@@ -116,6 +119,8 @@ const NESTED_NAMES = {
   'session.create.launch': 'LaunchOptions',
   'session.create.checkouts[]': 'Checkout',
   'port.listing.ports[]': 'ListedPort',
+  'session.changes.checkouts[]': 'CheckoutChanges',
+  'session.changes.checkouts[].files[]': 'ChangedFile',
   'whatsapp.messages.messages[]': 'WhatsappInbound',
   'whatsapp.chats.chats[]': 'WhatsappKnownChat',
 };

@@ -432,6 +432,13 @@ type Worktrees struct {
 	PushedFor []string
 	// Fetched records the ref each Ensure was asked to fetch, in order.
 	Fetched []string
+	// Changed is what Changes answers for a worktree, by path.
+	Changed map[string]domain.CheckoutChanges
+	// Patches is the patch Patch answers for a file, by worktree path and
+	// file path; a file with none has no patch.
+	Patches map[string]map[string]string
+	// ChangesAsked records each Changes call, as `path base uncommitted`.
+	ChangesAsked []string
 }
 
 // FetchedRefs is Fetched, read under the lock.
@@ -512,6 +519,27 @@ func (w *Worktrees) Dirty(_ context.Context, path string) (bool, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return w.DirtyPaths[path], nil
+}
+
+// Changes implements app.Worktrees.
+func (w *Worktrees) Changes(_ context.Context, path, baseBranch string, uncommitted bool) (domain.CheckoutChanges, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.ChangesAsked = append(w.ChangesAsked, fmt.Sprintf("%s %s %t", path, baseBranch, uncommitted))
+	changed := w.Changed[path]
+	changed.Files = slices.Clone(changed.Files)
+	return changed, nil
+}
+
+// Patch implements app.Worktrees.
+func (w *Worktrees) Patch(_ context.Context, path, _ string, file domain.ChangedFile, limit int) (string, bool, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	patch, ok := w.Patches[path][file.Path]
+	if !ok || len(patch) > limit {
+		return "", false, nil
+	}
+	return patch, true, nil
 }
 
 // Push implements app.Worktrees.
