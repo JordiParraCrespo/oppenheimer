@@ -15,6 +15,8 @@ const FACE_GAP = 4;
  * The room the row keeps on each side of its faces, inside its own clip, for
  * what a face draws past its edge: the open chat's ring (2px), the focus
  * outline (4px), the state dot (3px). The row's `-mx-1 px-1` is this number.
+ * The row itself takes no press (only its faces and the chip do), so the
+ * bleed never covers what stands beside it, a Retry before the faces.
  */
 const FACE_BLEED = 4;
 
@@ -66,17 +68,17 @@ function BotFaces({
       ref={ref}
       data-slot="bot-faces"
       role="list"
-      className={cn('-mx-1 flex h-7 min-w-0 flex-1 items-center gap-1 overflow-hidden px-1', className)}
+      className={cn('pointer-events-none -mx-1 flex h-7 min-w-0 flex-1 items-center gap-1 overflow-hidden px-1', className)}
       {...props}
     >
       {faces.slice(0, shown).map((face, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: each face is keyed by its caller; this wrapper only lists it
-        <span key={index} role="listitem" className="flex shrink-0" onPointerDown={stopPress}>
+        <span key={index} role="listitem" className="pointer-events-auto flex shrink-0" onPointerDown={stopPress}>
           {face}
         </span>
       ))}
       {hidden > 0 ? (
-        <span role="listitem" className="flex shrink-0" onPointerDown={stopPress}>
+        <span role="listitem" className="pointer-events-auto flex shrink-0" onPointerDown={stopPress}>
           <button
             type="button"
             aria-label={moreLabel(hidden)}
