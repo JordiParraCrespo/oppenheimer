@@ -1,5 +1,5 @@
 import { SegmentedControl as NativeSegmentedControl } from '@expo/ui/community/segmented-control';
-import { useColorScheme } from 'nativewind';
+import { useNativeScheme } from '../../lib/native-scheme';
 import type { Option } from './select';
 
 export type SegmentedControlProps<T extends string> = {
@@ -23,7 +23,7 @@ export function SegmentedControl<T extends string>({
   disabled,
   testID,
 }: SegmentedControlProps<T>) {
-  const { colorScheme } = useColorScheme();
+  const scheme = useNativeScheme();
 
   return (
     <NativeSegmentedControl
@@ -34,7 +34,7 @@ export function SegmentedControl<T extends string>({
         if (picked) onValueChange(picked.value);
       }}
       enabled={!disabled}
-      appearance={colorScheme === 'dark' ? 'dark' : 'light'}
+      appearance={scheme}
       testID={testID}
     />
   );

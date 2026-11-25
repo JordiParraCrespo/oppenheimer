@@ -1,6 +1,6 @@
-import { Host, Switch as NativeSwitch } from '@expo/ui';
-import { useColorScheme } from 'nativewind';
+import { Switch as NativeSwitch } from '@expo/ui';
 import { nativeLabel } from '../../lib/native-label';
+import { NativeHost } from '../../lib/native-scheme';
 
 export type SwitchProps = {
   checked: boolean;
@@ -17,10 +17,8 @@ export type SwitchProps = {
  * the haptic tick are the system's; nothing here paints them.
  */
 export function Switch({ checked, onCheckedChange, disabled, accessibilityLabel, testID }: SwitchProps) {
-  const { colorScheme } = useColorScheme();
-
   return (
-    <Host matchContents colorScheme={colorScheme === 'dark' ? 'dark' : 'light'}>
+    <NativeHost>
       <NativeSwitch
         value={checked}
         onValueChange={onCheckedChange}
@@ -28,6 +26,6 @@ export function Switch({ checked, onCheckedChange, disabled, accessibilityLabel,
         testID={testID}
         modifiers={nativeLabel(accessibilityLabel)}
       />
-    </Host>
+    </NativeHost>
   );
 }

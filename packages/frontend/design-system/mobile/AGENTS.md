@@ -43,6 +43,9 @@ src/
   | a sheet | a `presentation: 'formSheet'` route, or `@expo/ui`'s `BottomSheet` |
   | tab bar, back button | expo-router's `NativeTabs`, the native stack header |
 
+  A new `@expo/ui` control is drawn inside `NativeHost` (`src/lib/native-scheme`),
+  which sizes it to its content and gives it the app's light or dark; a control
+  that takes an appearance prop reads `useNativeScheme()`.
   A native control takes no `className`: lay it out from the view around it,
   and give one with no visible label an `accessibilityLabel`. NativeWind draws
   only what is the app's own (cards, rows, the chat, the terminal).

@@ -1,6 +1,6 @@
-import { Host, Checkbox as NativeCheckbox } from '@expo/ui';
-import { useColorScheme } from 'nativewind';
+import { Checkbox as NativeCheckbox } from '@expo/ui';
 import { nativeLabel } from '../../lib/native-label';
+import { NativeHost } from '../../lib/native-scheme';
 
 export type CheckboxProps = {
   checked: boolean;
@@ -18,10 +18,8 @@ export type CheckboxProps = {
  * Apple's guidance gives a binary setting there.
  */
 export function Checkbox({ checked, onCheckedChange, label, disabled, accessibilityLabel, testID }: CheckboxProps) {
-  const { colorScheme } = useColorScheme();
-
   return (
-    <Host matchContents colorScheme={colorScheme === 'dark' ? 'dark' : 'light'}>
+    <NativeHost>
       <NativeCheckbox
         value={checked}
         onValueChange={onCheckedChange}
@@ -30,6 +28,6 @@ export function Checkbox({ checked, onCheckedChange, label, disabled, accessibil
         testID={testID}
         modifiers={nativeLabel(accessibilityLabel)}
       />
-    </Host>
+    </NativeHost>
   );
 }
