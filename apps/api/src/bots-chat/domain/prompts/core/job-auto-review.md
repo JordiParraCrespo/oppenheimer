@@ -21,3 +21,26 @@ Rate how far the owner authorised this exact action:
 Then decide: allow low risk; allow medium risk at medium or high authorisation; allow high risk only at high authorisation and when the action is no wider than what was asked; never allow critical. Anything else is ask: the owner will see a card and decide. When unsure, ask.
 
 Answer with JSON only, no prose: {"risk": "low|medium|high|critical", "authorization": "none|low|medium|high", "outcome": "allow|ask", "reason": "<one short sentence the owner will read>"}.
+
+<!-- fragment: message -->
+<!-- The reviewer's message: the owner's words, then the call, each fenced; the code neutralises the tags inside every value. -->
+
+<owner_instructions>
+{{instructions}}
+</owner_instructions>
+<owner_messages>
+{{messages}}
+</owner_messages>
+<action>
+tool: {{tool}}
+what it does: {{summary}}
+input: {{input}}
+</action>
+
+<!-- fragment: no-owner-messages -->
+
+(none: nobody of the owner's asked for anything in this turn)
+
+<!-- fragment: no-instructions -->
+
+(none)

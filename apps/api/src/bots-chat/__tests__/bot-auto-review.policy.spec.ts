@@ -72,7 +72,7 @@ describe('composeAutoReview', () => {
       { tool: 'start_session', summary: 'Start', input: {} },
       { instructions: '', ownerMessages: [] },
     );
-    expect(message).toContain('nobody of the owner’s asked for anything');
+    expect(message).toContain("nobody of the owner's asked for anything");
   });
 });
 

@@ -116,16 +116,17 @@ export function composeAutoReview(call: BotReviewedCall, context: BotAutoReviewC
     ? context.ownerMessages
         .map((text) => `<message>\n${fenced(text, AUTO_REVIEW_MESSAGE_CHARS)}\n</message>`)
         .join('\n')
-    : '(none: nobody of the owner’s asked for anything in this turn)';
-  return [
-    `<owner_instructions>\n${fenced(context.instructions.trim() || '(none)', AUTO_REVIEW_INSTRUCTIONS_CHARS)}\n</owner_instructions>`,
-    `<owner_messages>\n${messages}\n</owner_messages>`,
-    '<action>',
-    `tool: ${call.tool}`,
-    `what it does: ${fenced(call.summary, AUTO_REVIEW_MESSAGE_CHARS)}`,
-    `input: ${fenced(input, AUTO_REVIEW_INPUT_CHARS)}`,
-    '</action>',
-  ].join('\n');
+    : promptText('core/job-auto-review.no-owner-messages');
+  const instructions = context.instructions.trim()
+    ? fenced(context.instructions.trim(), AUTO_REVIEW_INSTRUCTIONS_CHARS)
+    : promptText('core/job-auto-review.no-instructions');
+  return promptText('core/job-auto-review.message', {
+    instructions,
+    messages,
+    tool: fenced(call.tool, AUTO_REVIEW_MESSAGE_CHARS),
+    summary: fenced(call.summary, AUTO_REVIEW_MESSAGE_CHARS),
+    input: fenced(input, AUTO_REVIEW_INPUT_CHARS),
+  });
 }
 
 /**
