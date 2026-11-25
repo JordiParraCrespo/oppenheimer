@@ -8,6 +8,7 @@ import {
 import { BotMessageEntity, type BotPendingMedia } from './bot-message.entity';
 import { maySteer } from './bot-steer.policy';
 import { type BotContactChat, BotTurnEntity } from './bot-turn.entity';
+import { VOICE_REPLY_MARK } from './bot-voice-reply.policy';
 
 /** What a channel turn takes from the bot it wakes: everything but where it runs. */
 export type ChannelTurnProps = Omit<
@@ -143,15 +144,31 @@ export class SaidAsItGoes {
 /** What a contact is told when their turn failed: never why, which is the owner's to read. */
 export const CONTACT_FAILED_LINE = 'Sorry, I can’t answer that right now.';
 
+/** What a group turn replies to keep out of a line that was not for it (`core/turn-context.contact-group-who`). */
+export const SILENT_REPLY_MARK = '[silent]';
+
+/**
+ * Whether a contact turn's reply is the bot keeping out: it opens with the
+ * mark (after a voice mark, if any). Whatever follows the mark, an aside on
+ * why, is not sent either: it was never written for the group.
+ */
+export function isSilentReply(reply: string): boolean {
+  let rest = reply.trim().toLowerCase();
+  if (rest.startsWith(VOICE_REPLY_MARK)) rest = rest.slice(VOICE_REPLY_MARK.length).trim();
+  return rest.startsWith(SILENT_REPLY_MARK);
+}
+
 /**
  * What a contact's turn sends back when it ends: its last text, a fixed line
- * when it failed, and nothing when it ended with nothing to say. A contact,
- * or a whole group, never reads why a turn failed (a key refused, a provider
- * or database error) nor a pointer to the owner's console.
+ * when it failed, and nothing when it ended with nothing to say or kept out
+ * (`isSilentReply`). A contact, or a whole group, never reads why a turn
+ * failed (a key refused, a provider or database error) nor a pointer to the
+ * owner's console.
  */
 export function contactReplyOf(turn: { status: string }, texts: readonly string[]): string | null {
   if (turn.status === 'failed') return CONTACT_FAILED_LINE;
-  return [...texts].reverse().find((text) => text.trim()) ?? null;
+  const last = [...texts].reverse().find((text) => text.trim()) ?? null;
+  return last === null || isSilentReply(last) ? null : last;
 }
 
 /** What a channel's chat is told when its turn ended on a Needs input card, before the card's address. */

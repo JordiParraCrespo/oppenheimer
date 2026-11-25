@@ -482,6 +482,35 @@ describe('DeliverChannelReplyCommandHandler', () => {
       });
     });
 
+    // The reported bug (2026-11-25): the owner wrote "Se lo decia a Adri
+    // haha" in a group, a line for someone else, and the bot cut in with
+    // "Jaja, perdona, me colé". A reply that keeps out reaches no one.
+    it.each([
+      ['the mark alone', '[silent]'],
+      ['the mark with an aside on why', '[SILENT] (that was for Adri)'],
+      ['the mark after a voice mark', '[voice] [silent]'],
+    ])('sends nothing to the group for %s, spoken or written', async (_case, reply) => {
+      const { bus, deliver, speech } = setup(groupTurn(), groupChat, said(reply), null, allowed);
+      await deliver();
+      expect(speech.execute).not.toHaveBeenCalled();
+      expect(sent(bus)).toHaveLength(0);
+    });
+
+    // Breaks if the check matches the word anywhere: a reply that talks
+    // about silence is still an answer.
+    it('sends a reply that only mentions the mark further in', async () => {
+      const { bus, deliver } = setup(
+        groupTurn(),
+        groupChat,
+        said('Ok, I will stay [silent] then 🤐'),
+        null,
+        allowed,
+      );
+      await deliver();
+      expect(sent(bus)).toHaveLength(1);
+      expect(sent(bus)[0]).toMatchObject({ text: 'Ok, I will stay [silent] then 🤐' });
+    });
+
     // Breaks if a contact's turn can speak for the owner where the voice
     // tool would have asked: no grant, a grant on another chat or number,
     // the tool switched off, or a workspace that cannot speak.

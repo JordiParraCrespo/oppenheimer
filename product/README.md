@@ -2053,6 +2053,12 @@ earlier note:
   as the note and never also as text, falling back to text when it cannot
   be spoken or sent (`next-steps/whatsapp.md`, 2026-11-24). It still gets
   no tools.
+- `next-steps/answering-on-telegram-and-whatsapp.md` (2026-11-21) had
+  every line with words in an allowed group wake its bot, and the bot
+  answered every one, lines meant for others included. On 2026-11-25 the
+  bot reads the group's last messages, works out who the new line is for,
+  and keeps out of what is not for it by replying `[silent]`, which is
+  sent to no one (§5, 2026-11-25). Every line still wakes it.
 - The Chrome extension (`apps/extension`) told only about Claude Code cloud
   sessions, and sent Oppenheimer their states without reading anything
   back. On 2026-11-24, connected to Oppenheimer, it also reads the

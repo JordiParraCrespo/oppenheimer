@@ -1,0 +1,173 @@
+{
+  "now": "2026-11-25T09:48:00+01:00",
+  "group": "Terminators",
+  "bot": {
+    "name": "Maria Agent",
+    "description": "Jordi's assistant in his friends' group, and the first stop for ResetOwl bug reports",
+    "instructions": "You help in Jordi's group of friends. People may report bugs in ResetOwl, Jordi's app, especially with subscriptions: ask what happened and what they expected, without payment or customer details, and say you will pass it on. Otherwise answer what you are asked, briefly, in the language of the chat."
+  },
+  "people": {
+    "jordi": {
+      "name": "Jordi",
+      "phone": "+34600111222"
+    },
+    "adrian": {
+      "name": "Adrian",
+      "phone": "+34600333444"
+    },
+    "maria": {
+      "name": "Maria",
+      "phone": "+34600555666"
+    }
+  },
+  "cases": [
+    {
+      "id": "correction-for-someone-else",
+      "why": "The incident: Jordi says the line before was for Adri. Nothing in it is for the bot.",
+      "history": [
+        {
+          "from": "jordi",
+          "text": "Maria ahora usa oppenheimer x detras ya no es openclaw"
+        },
+        {
+          "from": "bot",
+          "text": "Gracias por avisar, Jordi. Para lo de María, entonces, la referencia es Oppenheimer, no OpenClaw 👍"
+        },
+        {
+          "from": "jordi",
+          "text": "Si tienes bugs de ResetOwl lo de las subscripciones si los puedes reportar x aqui mejor"
+        },
+        {
+          "from": "bot",
+          "text": "Sí, Jordi, te los paso por aquí. De momento no tengo ningún fallo de suscripciones de ResetOwl confirmado. Si habéis visto alguno, pasadme qué pasó y qué esperabais que pasara, sin datos de pago ni de clientes, y lo reviso."
+        }
+      ],
+      "message": {
+        "from": "jordi",
+        "text": "Se lo decia a Adri haha"
+      },
+      "expect": "silent"
+    },
+    {
+      "id": "remark-about-the-bot",
+      "why": "As in the incident: Jordi tells the group the bot now runs on Oppenheimer. News about it for the others, not a question to it.",
+      "history": [
+        {
+          "from": "adrian",
+          "text": "Si no worries luego lo vemos"
+        },
+        {
+          "from": "jordi",
+          "text": "Vale, lo dejamos para luego"
+        }
+      ],
+      "message": {
+        "from": "jordi",
+        "text": "Maria ahora usa oppenheimer x detras ya no es openclaw"
+      },
+      "expect": "silent"
+    },
+    {
+      "id": "plans-between-friends",
+      "why": "Two friends settle a time; the bot has nothing to add.",
+      "history": [
+        {
+          "from": "adrian",
+          "text": "Jordi, al final quedamos a las 7?"
+        }
+      ],
+      "message": {
+        "from": "jordi",
+        "text": "Sí, a las 7 en el bar de siempre"
+      },
+      "expect": "silent"
+    },
+    {
+      "id": "same-name-as-a-person",
+      "why": "Adrian asks Maria the person, not Maria Agent.",
+      "history": [
+        {
+          "from": "maria",
+          "text": "Este finde no sé si podré, tengo lío"
+        }
+      ],
+      "message": {
+        "from": "adrian",
+        "text": "Maria, al final vienes el sábado o no?"
+      },
+      "expect": "silent"
+    },
+    {
+      "id": "thanks-after-an-answer",
+      "why": "A thanks that needs nothing back.",
+      "history": [
+        {
+          "from": "maria",
+          "text": "Maria Agent, cómo reporto un fallo de ResetOwl?"
+        },
+        {
+          "from": "bot",
+          "text": "Cuéntamelo aquí: qué pasó y qué esperabas que pasara, sin datos de pago. Se lo paso a Jordi."
+        }
+      ],
+      "message": {
+        "from": "maria",
+        "text": "Vale, gracias!"
+      },
+      "expect": "silent"
+    },
+    {
+      "id": "asked-by-name",
+      "why": "Maria names the bot and asks it something.",
+      "history": [
+        {
+          "from": "adrian",
+          "text": "Qué frío hace hoy"
+        }
+      ],
+      "message": {
+        "from": "maria",
+        "text": "Maria Agent, qué hago si ResetOwl me cobra dos veces la suscripción?"
+      },
+      "expect": "answer"
+    },
+    {
+      "id": "follow-up-to-the-bot",
+      "why": "Adrian answers the question the bot asked him.",
+      "history": [
+        {
+          "from": "adrian",
+          "text": "Creo que he encontrado un bug en ResetOwl con las suscripciones"
+        },
+        {
+          "from": "bot",
+          "text": "Gracias, Adrian. ¿Qué pasó y qué esperabas que pasara? Sin datos de pago, porfa."
+        }
+      ],
+      "message": {
+        "from": "adrian",
+        "text": "Me cobró dos veces este mes y solo tengo una suscripción"
+      },
+      "expect": "answer"
+    },
+    {
+      "id": "question-for-the-bot-without-its-name",
+      "why": "Right after the bot asked for bug reports, a question only it can answer.",
+      "history": [
+        {
+          "from": "jordi",
+          "text": "Si tenéis bugs de ResetOwl reportadlos aquí al bot"
+        },
+        {
+          "from": "bot",
+          "text": "Eso, pasádmelos por aquí: qué pasó y qué esperabais, sin datos de pago."
+        }
+      ],
+      "message": {
+        "from": "maria",
+        "text": "Y si es de la app de iPhone también te lo paso aquí?"
+      },
+      "expect": "answer"
+    }
+  ]
+}
