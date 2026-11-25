@@ -62,3 +62,42 @@ export function tabAfterClosing(
   const rest = keys.filter((one) => one !== key);
   return rest[Math.min(at, rest.length - 1)] ?? null;
 }
+
+/**
+ * How many tabs the strip drew the last time both lists answered on this
+ * device. The stored tabs can hold some whose session or bot is gone, which
+ * only the lists can tell, so while they load the strip draws no more
+ * placeholders than this, the count it ended with last time.
+ */
+const DRAWN_TABS_KEY = 'oppenheimer.sessions.tabs.drawn';
+
+export function readDrawnTabCount(): number | null {
+  try {
+    const stored = Number.parseInt(window.localStorage.getItem(DRAWN_TABS_KEY) ?? '', 10);
+    return Number.isInteger(stored) && stored >= 0 ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeDrawnTabCount(count: number): void {
+  try {
+    window.localStorage.setItem(DRAWN_TABS_KEY, String(count));
+  } catch {
+    // Storage refused (private browsing, a full quota): the next load draws every placeholder.
+  }
+}
+
+/**
+ * `tabs` with no more placeholders than `last` leaves room for beside the
+ * tabs already drawn, keeping the first ones in order; all of them when
+ * there is no `last` (a device that has not drawn the strip yet).
+ */
+export function withPlaceholdersCapped<T extends { placeholder: boolean }>(
+  tabs: readonly T[],
+  last: number | null,
+): T[] {
+  if (last === null) return [...tabs];
+  let room = last - tabs.filter((one) => !one.placeholder).length;
+  return tabs.filter((one) => !one.placeholder || room-- > 0);
+}

@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useOpenTabs } from '../hooks/use-open-tabs';
-import { openTabOf, tabAfterClosing } from '../lib/open-tabs';
+import { openTabOf, tabAfterClosing, withPlaceholdersCapped } from '../lib/open-tabs';
 
 /**
  * The tabs over Sessions are this device's, kept across a reload, in the
@@ -99,6 +99,21 @@ describe('open tabs', () => {
       window.dispatchEvent(new StorageEvent('storage', { key: 'oppenheimer.sessions.tabs' }));
     });
     expect(strip.result.current.keys).toEqual(['session:a', 'session:z']);
+  });
+
+  it('draws no more placeholders while the lists load than the strip drew last time', () => {
+    // Stored tabs can still name sessions deleted since; each would draw a placeholder.
+    const tabs = [
+      { key: 'session:a', placeholder: true },
+      { key: 'session:shown', placeholder: false },
+      { key: 'session:gone', placeholder: true },
+      { key: 'session:gone-too', placeholder: true },
+    ];
+    const keys = (last: number | null) => withPlaceholdersCapped(tabs, last).map((one) => one.key);
+    expect(keys(2)).toEqual(['session:a', 'session:shown']);
+    expect(keys(1)).toEqual(['session:shown']);
+    // A device that never drew the strip holds every stored tab's place.
+    expect(keys(null)).toEqual(tabs.map((one) => one.key));
   });
 
   it('reads only what a tab can be: a session or a bot, with an id', () => {
