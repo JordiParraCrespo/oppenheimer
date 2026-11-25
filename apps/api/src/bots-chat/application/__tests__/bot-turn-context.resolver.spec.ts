@@ -29,6 +29,7 @@ import { whatsappContactTurn } from '../../domain/bot-whatsapp-turn.policy';
 import type { OwnerHostsPort } from '../../infrastructure/owner-hosts.port';
 import type { BotApprovalRequestFactory } from '../bot-approval-request.factory';
 import { BotApprovalStartedPolicy } from '../bot-approval-started.policy';
+import type { BotAutoReviewerFactory } from '../bot-auto-reviewer.factory';
 import { BotModelAccessResolver } from '../bot-model-access.resolver';
 import type { BotOwnerPermissionsResolver } from '../bot-owner-permissions.resolver';
 import type { BotOwnerScopeResolver } from '../bot-owner-scope.resolver';
@@ -173,6 +174,9 @@ function setup(
     {
       create: () => ({ review: async () => ({ effect: 'none' }) }),
     } as unknown as BotRuleReviewerFactory,
+    {
+      create: () => ({ review: async () => ({ outcome: 'ask', reason: 'unused' }) }),
+    } as unknown as BotAutoReviewerFactory,
     new BotApprovalStartedPolicy({
       findForRun: async () =>
         Some({ running: conversation.approval !== 'ran' } as BotApprovalEntity),

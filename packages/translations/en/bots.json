@@ -200,13 +200,17 @@
     "noModel": "No model matches “{{query}}”.",
     "permission": {
       "label": "Approval level",
+      "ask": {
+        "label": "Ask for approval",
+        "description": "Asks you before anything that reaches outside Oppenheimer."
+      },
       "auto": {
         "label": "Approve for me",
-        "description": "Edits files and runs commands without asking."
+        "description": "A reviewer lets what you asked for run; anything risky still asks."
       },
       "full": {
         "label": "Full access",
-        "description": "Everything, unattended, on the bot’s home host."
+        "description": "Never asks. Everything runs, unattended."
       }
     },
     "saveFailed": "Could not change the bot.",
@@ -433,6 +437,8 @@
         "summary_other": "{{count}} summaries",
         "ruleReview_one": "{{count}} rule review",
         "ruleReview_other": "{{count}} rule reviews",
+        "autoReview_one": "{{count}} auto review",
+        "autoReview_other": "{{count}} auto reviews",
         "dream_one": "{{count}} memory tidy",
         "dream_other": "{{count}} memory tidies",
         "suggestion_one": "{{count}} suggested reply",
@@ -780,8 +786,9 @@
         "changed_other": "{{count}} set by you"
       },
       "preset": {
-        "auto": "Tools you leave on their default follow Approve for me: anything that reaches outside Oppenheimer asks first.",
-        "full": "Tools you leave on their default follow Full access: they run without asking."
+        "ask": "Tools you leave on their default follow Ask for approval: anything that reaches outside Oppenheimer asks first.",
+        "auto": "Tools you leave on their default follow Approve for me: anything that reaches outside Oppenheimer goes to a reviewer first, which lets what you asked for run and leaves the rest to you. A tool you set to Ask always asks.",
+        "full": "Tools you leave on their default follow Full access: they run without asking, the ones that always ask included. Sending mail, and what you set to Ask or a rule asks for, still wait for your yes."
       },
       "decisions": {
         "allow": "Allow",

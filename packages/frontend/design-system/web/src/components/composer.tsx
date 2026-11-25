@@ -508,7 +508,7 @@ function ComposerToolButton({
       data-popup-open={open ? '' : undefined}
       aria-expanded={open}
       className={cn(
-        'flex h-(--control-h-sm) shrink-0 items-center gap-[7px] rounded-sm px-2.5 text-sm tracking-[-0.006em] whitespace-nowrap outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring aria-expanded:bg-hover-surface data-popup-open:bg-hover-surface disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0',
+        'flex h-(--control-h-sm) shrink-0 items-center gap-1.5 rounded-sm px-2 text-sm tracking-[-0.006em] whitespace-nowrap outline-none transition-colors duration-fast ease-standard hover:bg-hover-surface focus-visible:outline-2 focus-visible:outline-ring aria-expanded:bg-hover-surface data-popup-open:bg-hover-surface disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0',
         tone === 'default' && 'text-fg',
         tone === 'muted' && 'text-fg-muted',
         tone === 'warning' && 'text-warning',

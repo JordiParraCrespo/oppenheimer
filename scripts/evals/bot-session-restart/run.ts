@@ -49,7 +49,7 @@ interface Bot {
 interface Case {
   id: string;
   bot: string;
-  permission: 'auto' | 'full';
+  permission: 'ask' | 'auto' | 'full';
   project: string;
   name: string;
   task: string;

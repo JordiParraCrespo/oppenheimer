@@ -325,6 +325,22 @@ per-chat "Always allow" for sends are unchanged.
    5,000, a chat it stops reporting forgotten after 7 days), so Settings
    lists them before anyone writes. People lists the owner first, fixed on
    the default bot.*
+   *Then, 2026-11-25 (the owner, from a group where they wrote "Se lo decia
+   a Adri haha", saying their line before was for Adri, and the bot cut in
+   with "Jaja, perdona, me colé": "when it's a group, review the earlier
+   messages to understand who is being talked to, since several people may
+   be talking, and know when to answer"): every line still wakes the bot,
+   but the bot decides whether it is for it. A group's turn is told to read
+   the last messages and work out who the new one is for, to answer only
+   what names it, follows on from what it said, asks it something or asks
+   the group something it is clearly the one to answer, to keep out of the
+   rest (their chat, a remark about it to the others, a question about it
+   someone already answered, a correction aimed at someone else, a thanks
+   that needs nothing back), and to keep out when it cannot tell. It keeps
+   out by replying only `[silent]`, which is sent to no one; the turn and
+   its reply stay in the conversation, so the next turn reads that it kept
+   out. Measured by `scripts/evals/bot-group-chat`: without the line the bot
+   answered 5 of 5 lines that were not for it.*
 6. **Voice notes**, transcribed through voice's providers, on both.
 
 ## Open questions

@@ -24,6 +24,7 @@ const PURPOSE_KEYS = {
   rule_review: 'bots.chat.usage.purpose.ruleReview',
   dream: 'bots.chat.usage.purpose.dream',
   suggestion: 'bots.chat.usage.purpose.suggestion',
+  auto_review: 'bots.chat.usage.purpose.autoReview',
 } as const;
 
 /**

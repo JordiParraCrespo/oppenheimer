@@ -42,9 +42,13 @@ describe('composeTurnContext', () => {
     for (const owned of ['pop-os', 'Ibercaja', 'older fact', 'their own number', 'On it']) {
       expect(group).not.toContain(owned);
     }
-    expect(composeTurnContext({ ...owners, contact: 'direct' })).toContain(
-      'someone who is not your owner',
-    );
+    // A group's turn is told to read who each line is for and how to keep
+    // out; a person's chat, where every line is for the bot, is not.
+    expect(group).toContain('work out who the new one is for');
+    expect(group).toContain('[silent]');
+    const direct = composeTurnContext({ ...owners, contact: 'direct' });
+    expect(direct).toContain('someone who is not your owner');
+    expect(direct).not.toContain('[silent]');
     expect(composeTurnContext(owners)).toContain('pop-os');
   });
 

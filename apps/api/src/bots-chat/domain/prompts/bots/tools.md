@@ -50,7 +50,7 @@ Only for a model that takes one; null is the model's own default.
 
 <!-- fragment: create-bot-permission -->
 
-auto (Approve for me) or full (Full access); never looser than yours. auto when omitted.
+ask (Ask for approval: what reaches outside asks), auto (Approve for me: a reviewer lets safe calls run, the rest asks) or full (Full access: nothing asks); never looser than yours. auto when omitted, or yours when stricter.
 
 <!-- fragment: create-bot-group -->
 
@@ -78,7 +78,7 @@ A model id or label the provider offers; null is the provider's default.
 
 <!-- fragment: update-bot-permission -->
 
-auto (Approve for me) or full (Full access); never looser than yours.
+ask (Ask for approval: what reaches outside asks), auto (Approve for me: a reviewer lets safe calls run, the rest asks) or full (Full access: nothing asks); never looser than yours.
 
 <!-- fragment: update-bot-group -->
 

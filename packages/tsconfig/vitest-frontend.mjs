@@ -17,6 +17,10 @@
  * pays that per file, a VM context per file on a long-lived worker pays the
  * jsdom once per worker and still gives each file its own modules, document,
  * storage and globals, so `vi.mock` and a leftover tree stay inside the file.
+ * Those contexts pile up in the worker until it is recycled, by default at the
+ * machine's memory over its CPU count: `apps/web` reached 8.7GB, and on the CI
+ * VM other packages' tests stalled for 20 to 70 seconds beside it (main-red
+ * #1066). {@link VM_MEMORY_LIMIT} recycles a worker sooner.
  * Inside a VM context jsdom behaves more like a browser than it does under
  * `forks`: `window.location` cannot be redefined, and Node's globals that jsdom
  * does not implement (`ReadableStream`) are absent.
@@ -29,17 +33,21 @@
 /** Specs whose subject is what a component *costs*, not what it shows. */
 const RENDER_BUDGET = 'src/**/*-render.spec.tsx';
 const ALL_SPECS = ['src/**/*.spec.ts', 'src/**/*.spec.tsx'];
+/** Per worker: `apps/web` peaks at 5.1GB with it, 8.7GB without, and runs no slower. */
+const VM_MEMORY_LIMIT = '1GB';
 
 /**
  * @param {object} options
  * @param {(config?: unknown) => unknown} options.react the package's `@vitejs/plugin-react`
  * @param {Record<string, string>} [options.alias] `resolve.alias`, for an app's `@/`
- * @returns {{ projects: unknown[] }} the `test` block for `defineConfig`
+ * @returns {{ vmMemoryLimit: string, projects: unknown[] }} the `test` block for `defineConfig`
  */
 export function frontendVitestProjects({ react, alias }) {
   const resolve = alias ? { alias } : undefined;
 
   return {
+    // Read from the root only: set inside a project, vitest ignores it.
+    vmMemoryLimit: VM_MEMORY_LIMIT,
     projects: [
       {
         plugins: [react({ compiler: true })],

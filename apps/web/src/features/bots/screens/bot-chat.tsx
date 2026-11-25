@@ -10,8 +10,9 @@ import { BotChat } from '@/features/bots/sections/bot-chat';
  * this draws the chat's shape until it can and the failure (a bot that is
  * gone, a request that did not land) if the first read fails. The route
  * draws its own bar (`bar: 'own'`), so each state here keeps one, the
- * sidebar toggle in it. The pane is the console's recessed grey, the
- * chat's own wash, so its code, tables and inline code take the card there.
+ * sidebar toggle in it. The pane stands on a session chat's ground
+ * (`--chat-ground`, the terminal's), so a bot and a session read as one
+ * surface, and its code, tables and inline code take the chat's own wash.
  *
  * With `tabs` (inside Sessions, from the route) every state's bar is the
  * open tabs, the bot's own among them, in place of its face and name.
@@ -20,7 +21,7 @@ export function BotChatScreen({ botId, tabs }: { botId: string; tabs?: ReactNode
   const { t } = useTranslation();
 
   return (
-    <div className="contents [--chat-wash:var(--card)]">
+    <div className="flex min-h-0 flex-1 flex-col bg-chat-ground">
       <QueryState>
         <QueryState.Pending>
           <BotChatSkeleton tabs={tabs} />
@@ -28,7 +29,7 @@ export function BotChatScreen({ botId, tabs }: { botId: string; tabs?: ReactNode
         <QueryState.Error>
           {(error, retry) => (
             <>
-              <PageBar title={tabs ?? null} tone={tabs ? 'chrome' : 'page'} />
+              <PageBar title={tabs ?? null} tone={tabs ? 'chrome' : 'ground'} />
               <ErrorAlert
                 error={error}
                 fallback={t('bots.chat.loadFailed')}

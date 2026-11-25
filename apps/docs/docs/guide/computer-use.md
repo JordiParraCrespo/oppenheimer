@@ -10,7 +10,7 @@ For websites, a bot's own browser is faster and more exact, and does not touch y
 
 ## Turning it on
 
-Ask the bot: "turn the screen on and do it". It turns it on with `set_host_settings`, on a card of its own under Approve for me, and carries on. It does so only when you ask in your own chat with it (the console, or your own WhatsApp, Telegram or Slack chat), never because a page, a mail or someone else's message says so.
+Ask the bot: "turn the screen on and do it". It turns it on with `set_host_settings`, on a card of its own under Ask for approval; under Approve for me the reviewer lets it through when you asked for it in your own chat, and under Full access it runs at once; then it carries on. It does so only when you ask in your own chat with it (the console, or your own WhatsApp, Telegram or Slack chat), never because a page, a mail or someone else's message says so.
 
 Or, on the host itself, in a terminal:
 
@@ -31,7 +31,7 @@ The bot has one tool, `use_computer`. Each call does one thing (look, move the p
 
 Ask in the chat: "Open the simulator on my Mac and check the sign-up screen", naming the host if it is not the bot's home host.
 
-- **Permission.** Under **Approve for me** the first step raises a **Needs input** card. **Always allow for** the screen of that host lets the rest of the task run without a card per click; **Approve once** covers one step, after which the bot has to look at the screen again, which asks again. In **Settings → Permissions**, `use_computer` can be set to Allow, Ask or Off like any tool.
+- **Permission.** Under **Ask for approval** the first step raises a **Needs input** card; under **Approve for me** the reviewer may let a step you asked for run, and raises the card otherwise. On the card, **Always allow for** the screen of that host lets the rest of the task run without a card per click; **Approve once** covers one step, after which the bot has to look at the screen again, which asks again. In **Settings → Permissions**, `use_computer` can be set to Allow, Ask or Off like any tool.
 - **Models.** The bot's model must read images: Claude, GPT and Grok do, GLM does not, and a bot on GLM says so instead of trying.
 - **What you see.** The chat shows a line per step. The screenshots go to the model only; they are not stored and not shown in the chat.
 

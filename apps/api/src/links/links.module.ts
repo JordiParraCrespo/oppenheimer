@@ -6,6 +6,7 @@ import {
   HOST_EXEC,
   HOST_FOLDERS,
   HOST_SETTINGS,
+  SESSION_CHANGES,
   SESSION_DISPATCH,
   SESSION_PORTS,
   SESSION_SHARED_FILES,
@@ -25,6 +26,7 @@ import { RelayHostComputerAdapter } from './infrastructure/relay-host-computer.a
 import { RelayHostExecAdapter } from './infrastructure/relay-host-exec.adapter';
 import { RelayHostFoldersAdapter } from './infrastructure/relay-host-folders.adapter';
 import { RelayHostSettingsAdapter } from './infrastructure/relay-host-settings.adapter';
+import { RelaySessionChangesAdapter } from './infrastructure/relay-session-changes.adapter';
 import { RelaySessionPortsAdapter } from './infrastructure/relay-session-ports.adapter';
 import { RelaySessionSharedFilesAdapter } from './infrastructure/relay-session-shared-files.adapter';
 import { RelaySessionTerminalAdapter } from './infrastructure/relay-session-terminal.adapter';
@@ -58,6 +60,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     { provide: HOST_SETTINGS, useClass: RelayHostSettingsAdapter },
     { provide: SESSION_PORTS, useClass: RelaySessionPortsAdapter },
     { provide: SESSION_WINDOWS, useClass: RelaySessionWindowsAdapter },
+    { provide: SESSION_CHANGES, useClass: RelaySessionChangesAdapter },
     { provide: SESSION_SHARED_FILES, useClass: RelaySessionSharedFilesAdapter },
     { provide: SESSION_TRANSCRIPT, useClass: RelaySessionTranscriptAdapter },
     { provide: SESSION_TERMINAL, useClass: RelaySessionTerminalAdapter },
@@ -78,6 +81,7 @@ import { LINK_REGISTRY, LINK_REPLIES, PARKED_FILES, STAGED_FILE_READER } from '.
     HOST_SETTINGS,
     SESSION_PORTS,
     SESSION_WINDOWS,
+    SESSION_CHANGES,
     SESSION_SHARED_FILES,
     SESSION_TRANSCRIPT,
     SESSION_TERMINAL,

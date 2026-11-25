@@ -227,7 +227,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
   private scheduleMail(): BotToolDefinition {
     return defineBotTool({
       name: 'schedule_mail',
-      asks: 'always',
+      asks: 'card',
       perCallOnly: true,
       scope: 'mail:write',
       description: promptText('mail/tools-write.schedule-mail', {
@@ -327,7 +327,7 @@ export class BotMailWriteToolsFactory implements BotToolArea {
   }): BotToolDefinition {
     return defineBotTool({
       name: tool.name,
-      asks: 'always',
+      asks: 'card',
       perCallOnly: true,
       scope: 'mail:write',
       description: tool.description,

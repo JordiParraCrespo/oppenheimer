@@ -34,6 +34,7 @@ import type { ProviderKeySealerPort } from '../../bots/infrastructure/provider-k
 import { ModelProviderCredentialMapper } from '../../bots/model-provider-credential.mapper';
 import type { BotApprovalRequestFactory } from '../application/bot-approval-request.factory';
 import { BotApprovalStartedPolicy } from '../application/bot-approval-started.policy';
+import type { BotAutoReviewerFactory } from '../application/bot-auto-reviewer.factory';
 import { BotChannelWakeResolver } from '../application/bot-channel-wake.resolver';
 import { BotModelAccessResolver } from '../application/bot-model-access.resolver';
 import { BotOpeningMediaResolver } from '../application/bot-opening-media.resolver';
@@ -1785,6 +1786,9 @@ describe('bots chat (integration)', () => {
       {
         create: () => ({ review: async () => ({ effect: 'none' }) }),
       } as unknown as BotRuleReviewerFactory,
+      {
+        create: () => ({ review: async () => ({ outcome: 'ask', reason: 'unused' }) }),
+      } as unknown as BotAutoReviewerFactory,
       new BotApprovalStartedPolicy(approvals),
       new BotTurnHoldPolicy(turns),
       // No turn here is a contact's on WhatsApp, so none is offered a voice reply.

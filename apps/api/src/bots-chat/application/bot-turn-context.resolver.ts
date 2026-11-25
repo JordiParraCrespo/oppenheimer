@@ -31,6 +31,7 @@ import {
 import type { BotConversationSummaryRepositoryPort } from '../database/bot-conversation-summary.repository.port';
 import type { BotMessageRepositoryPort } from '../database/bot-message.repository.port';
 import type { BotTurnRepositoryPort } from '../database/bot-turn.repository.port';
+import { ownerInstructionsFor, ownerMessagesFor } from '../domain/bot-auto-review.policy';
 import { sendsAsItGoes } from '../domain/bot-channel-turn.policy';
 import { BOT_HISTORY_READ_MAX, botHistory } from '../domain/bot-history.policy';
 import { withEarlierImages } from '../domain/bot-image.policy';
@@ -44,6 +45,7 @@ import { turnReach } from '../domain/bot-turn-reach.policy';
 import type { OwnerHost, OwnerHostsPort } from '../infrastructure/owner-hosts.port';
 import { BotApprovalRequestFactory } from './bot-approval-request.factory';
 import { BotApprovalStartedPolicy, type BotTurnShape } from './bot-approval-started.policy';
+import { BotAutoReviewerFactory } from './bot-auto-reviewer.factory';
 import { BotModelAccessResolver } from './bot-model-access.resolver';
 import { BotOwnerPermissionsResolver } from './bot-owner-permissions.resolver';
 import { BotOwnerScopeResolver } from './bot-owner-scope.resolver';
@@ -100,6 +102,7 @@ export class BotTurnContextResolver {
     private readonly subagents: BotSubagentRunnerFactory,
     private readonly settings: BotPermissionsResolver,
     private readonly reviewers: BotRuleReviewerFactory,
+    private readonly autoReviewers: BotAutoReviewerFactory,
     private readonly approvalStarted: BotApprovalStartedPolicy,
     private readonly hold: BotTurnHoldPolicy,
     private readonly voiceReplies: BotVoiceReplyResolver,
@@ -175,6 +178,20 @@ export class BotTurnContextResolver {
             organizationId: turn.organizationId,
             botId: bot.id,
           }),
+        }),
+        // Approve for me: the reviewer reads the owner's own words, never the bot's.
+        ...(bot.permission === 'auto' && {
+          autoReviewer: this.autoReviewers.create(
+            model,
+            { organizationId: turn.organizationId, botId: bot.id },
+            {
+              instructions: ownerInstructionsFor(
+                documents.find((document) => document.name === 'instructions'),
+                bot.createdByUserId,
+              ),
+              ownerMessages: ownerMessagesFor(turn, earlier, message),
+            },
+          ),
         }),
       };
       // A child runs on the turn's model and key, with the turn's read-only

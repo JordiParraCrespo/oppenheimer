@@ -98,7 +98,7 @@ test('a bot with no card lists none, and a decision on a card that is not its ow
   await api.dispose();
 });
 
-test('a start_session under Approve for me waits on a card, and a denial is reported back', async () => {
+test('a start_session under Ask for approval waits on a card, and a denial is reported back', async () => {
   const key = process.env.GLM_API_KEY;
   test.skip(!key, 'GLM_API_KEY is not set: the live turn needs a real key');
   const { api } = await signedUpContext('botapprovalsglm');
@@ -109,6 +109,9 @@ test('a start_session under Approve for me waits on a card, and a denial is repo
     await api.post('/api/v1/bots', { data: { name: 'Asker', provider: 'glm' } })
   ).json()) as { id: string; permission: string };
   expect(bot.permission).toBe('auto');
+  // Approve for me's reviewer would clear a call asked for this plainly: Ask for approval cards it.
+  const asks = await api.patch(`/api/v1/bots/${bot.id}`, { data: { permission: 'ask' } });
+  expect(asks.status(), await asks.text()).toBe(200);
 
   const sent = await api.post(`/api/v1/bots/${bot.id}/messages`, {
     data: {
@@ -178,6 +181,8 @@ test('approving a card answers at once, runs the call in its job, and the bot re
   const bot = (await (
     await api.post('/api/v1/bots', { data: { name: 'Asker', provider: 'glm' } })
   ).json()) as { id: string };
+  const asks = await api.patch(`/api/v1/bots/${bot.id}`, { data: { permission: 'ask' } });
+  expect(asks.status(), await asks.text()).toBe(200);
   const sent = await api.post(`/api/v1/bots/${bot.id}/messages`, {
     data: {
       content:

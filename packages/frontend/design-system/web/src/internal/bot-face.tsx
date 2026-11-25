@@ -2,6 +2,8 @@ import type { AvatarColor } from '../components/avatar-picker';
 import { cn } from '../lib/utils';
 
 const INK = 'var(--avatar-ink)';
+/** A moving part turns about its own box, not the svg's origin. */
+const MOVES = '[transform-box:fill-box]';
 const EDGE = '#fff';
 
 /** One shape of a hat and what it is made of: ink, a felt in the face's colour, or the blue band. */
@@ -176,7 +178,9 @@ function Mouth({ mouth }: { mouth: Face['mouth'] }) {
  * darker shade of the same colour. The hat, the eyes and the mouth are the
  * `parts` its owner picked, or else come from `seed`, so a bot keeps its face
  * for as long as it keeps its seed. Flat
- * colour only; it fills its box (`size-full`, so a slot's own svg sizing
+ * colour only. It idles: the eyes blink and glance about now and then and the hat sways,
+ * each started part-way by `seed` so a row of faces moves out of step, and
+ * both stop under reduced motion. It fills its box (`size-full`, so a slot's own svg sizing
  * passes it by) and lets the avatar clip it.
  */
 function BotFace({
@@ -193,6 +197,11 @@ function BotFace({
 }) {
   const face = parts ?? faceFor(seed);
   const fill = `var(--avatar-${color})`;
+  // Started part-way through by its seed, so a row of faces does not blink as one.
+  const offset = hash(seed);
+  const blink = { animationDelay: `calc(var(--bot-blink-beat) * -${(offset % 1000) / 1000})` };
+  const sway = { animationDelay: `calc(var(--bot-hat-beat) * -${((offset >>> 13) % 1000) / 1000})` };
+  const glance = { animationDelay: `calc(var(--bot-glance-beat) * -${((offset >>> 22) % 1000) / 1000})` };
   return (
     <svg
       data-slot="bot-face"
@@ -204,11 +213,19 @@ function BotFace({
       <rect width="64" height="64" fill={`color-mix(in oklch, ${fill} 70%, black)`} />
       <g transform="translate(5.5 6.5) scale(.83)">
         <circle cx="32" cy="40" r="20" fill={EDGE} stroke={EDGE} strokeWidth={7} />
-        <Hat hat={face.hat} color={fill} edge />
+        <g className={cn(MOVES, 'origin-bottom motion-safe:animate-bot-hat')} style={sway}>
+          <Hat hat={face.hat} color={fill} edge />
+        </g>
         <circle cx="32" cy="40" r="20" fill={fill} />
-        <Eyes eyes={face.eyes} />
+        <g className={cn(MOVES, 'origin-center motion-safe:animate-bot-blink')} style={blink}>
+          <g className="motion-safe:animate-bot-glance" style={glance}>
+            <Eyes eyes={face.eyes} />
+          </g>
+        </g>
         <Mouth mouth={face.mouth} />
-        <Hat hat={face.hat} color={fill} />
+        <g className={cn(MOVES, 'origin-bottom motion-safe:animate-bot-hat')} style={sway}>
+          <Hat hat={face.hat} color={fill} />
+        </g>
       </g>
     </svg>
   );

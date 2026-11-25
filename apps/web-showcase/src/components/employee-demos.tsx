@@ -33,7 +33,7 @@ import {
   SidebarProjectGroup,
   SidebarProjectHeader,
 } from '@oppenheimer/design-system-web/sidebar';
-import { SidebarFoldLabel } from '@oppenheimer/design-system-web/sidebar-fold-label';
+import { SidebarFoldLabel, SidebarFoldPanel } from '@oppenheimer/design-system-web/sidebar-fold-label';
 import { Switch } from '@oppenheimer/design-system-web/switch';
 import { Textarea } from '@oppenheimer/design-system-web/textarea';
 
@@ -159,13 +159,13 @@ function FoldedBots({ width, count }: { width: string; count: number }) {
           <PlusIcon />
         </IconButton>
       </SidebarListHead>
-      {open ? (
+      <SidebarFoldPanel open={open}>
         <BotList className="mx-3">
           {bots.map(({ color, ...bot }) => (
             <BotItem key={bot.id} {...bot} face={{ color, seed: bot.id }} active={bot.id === active} onClick={() => setActive(bot.id)} />
           ))}
         </BotList>
-      ) : null}
+      </SidebarFoldPanel>
     </div>
   );
 }
@@ -472,7 +472,7 @@ export function EmployeesSection() {
         id="botfaces"
         title="BotFaces · BotFaceItem"
         meta="bot-faces.tsx"
-        desc="A folded Bots heading keeps its bots: SidebarListHead's summary holds a row of 20px faces, 4px apart, in the list's order. Each face opens the bot's chat; the state its row would show rides on its corner as a 7px dot cut out of the sidebar (amber when it needs you, blue when unread), and a working bot's face breathes. The open chat's face is ringed in ink. The tooltip is the name over the last message. When the faces do not all fit, the last place is a +N chip that unfolds the list."
+        desc="A folded Bots heading keeps its bots: SidebarListHead's summary holds a row of 20px faces, 4px apart, in the list's order. Each face opens the bot's chat; the state its row would show rides on its corner as a 7px dot cut out of the sidebar (amber when it needs you, blue when unread), and a working bot's face breathes. The open chat's face is ringed in ink. The tooltip is the name over the last message. When the faces do not all fit, the last place is a +N chip that unfolds the list. The list folds on its own height in a SidebarFoldPanel, fading as it goes, and the faces rise into the heading one after another; reduced motion keeps the jump."
         code={`<SidebarListHead label={fold} summary={<BotFaces moreLabel={more} onMore={unfold}><BotFaceItem name="Deploy Bot" label="Deploy Bot, needs you" initials="DB" needsInput render={<Link … />} /></BotFaces>}>{plus}</SidebarListHead>`}
       >
         <BotFacesDemo />

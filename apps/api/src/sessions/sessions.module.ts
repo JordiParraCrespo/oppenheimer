@@ -131,6 +131,8 @@ import { FindHostFoldersQueryHandler } from './queries/find-host-folders/find-ho
 import { FindLatestSessionEventsQueryHandler } from './queries/find-latest-session-events/find-latest-session-events.query-handler';
 import { FindSessionHttpController } from './queries/find-session/find-session.http.controller';
 import { FindSessionQueryHandler } from './queries/find-session/find-session.query-handler';
+import { FindSessionChangesHttpController } from './queries/find-session-changes/find-session-changes.http.controller';
+import { FindSessionChangesQueryHandler } from './queries/find-session-changes/find-session-changes.query-handler';
 import { FindSessionEventsHttpController } from './queries/find-session-events/find-session-events.http.controller';
 import { FindSessionEventsQueryHandler } from './queries/find-session-events/find-session-events.query-handler';
 import { FindSessionPortsHttpController } from './queries/find-session-ports/find-session-ports.http.controller';
@@ -212,6 +214,7 @@ const httpControllers = [
   SearchHostFoldersHttpController,
   FindSessionPortsHttpController,
   FindSessionWindowsHttpController,
+  FindSessionChangesHttpController,
   OpenSessionWindowHttpController,
   CloseSessionWindowHttpController,
   // `cloud-files/:token`: what a cloud session's agent downloads, with no credential.
@@ -271,6 +274,7 @@ const queryHandlers: Provider[] = [
   SearchHostFoldersQueryHandler,
   FindSessionPortsQueryHandler,
   FindSessionWindowsQueryHandler,
+  FindSessionChangesQueryHandler,
   FindSessionSharedPreviewQueryHandler,
   FindSessionTranscriptQueryHandler,
   FindCloudFileQueryHandler,
