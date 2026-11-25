@@ -178,7 +178,7 @@ function Mouth({ mouth }: { mouth: Face['mouth'] }) {
  * darker shade of the same colour. The hat, the eyes and the mouth are the
  * `parts` its owner picked, or else come from `seed`, so a bot keeps its face
  * for as long as it keeps its seed. Flat
- * colour only. It idles: the eyes blink now and then and the hat sways,
+ * colour only. It idles: the eyes blink and glance about now and then and the hat sways,
  * each started part-way by `seed` so a row of faces moves out of step, and
  * both stop under reduced motion. It fills its box (`size-full`, so a slot's own svg sizing
  * passes it by) and lets the avatar clip it.
@@ -201,6 +201,7 @@ function BotFace({
   const offset = hash(seed);
   const blink = { animationDelay: `calc(var(--bot-blink-beat) * -${(offset % 1000) / 1000})` };
   const sway = { animationDelay: `calc(var(--bot-hat-beat) * -${((offset >>> 13) % 1000) / 1000})` };
+  const glance = { animationDelay: `calc(var(--bot-glance-beat) * -${((offset >>> 22) % 1000) / 1000})` };
   return (
     <svg
       data-slot="bot-face"
@@ -217,7 +218,9 @@ function BotFace({
         </g>
         <circle cx="32" cy="40" r="20" fill={fill} />
         <g className={cn(MOVES, 'origin-center motion-safe:animate-bot-blink')} style={blink}>
-          <Eyes eyes={face.eyes} />
+          <g className="motion-safe:animate-bot-glance" style={glance}>
+            <Eyes eyes={face.eyes} />
+          </g>
         </g>
         <Mouth mouth={face.mouth} />
         <g className={cn(MOVES, 'origin-bottom motion-safe:animate-bot-hat')} style={sway}>

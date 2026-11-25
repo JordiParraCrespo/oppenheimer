@@ -475,6 +475,7 @@
     /* A bot face's idle beats; `BotFace` starts each face part-way through them. */
     --bot-blink-beat: 5.2s;
     --bot-hat-beat: 7s;
+    --bot-glance-beat: 9s;
     /* A dragged item picked up: tilted and a touch larger, as a card off a table. */
     --drag-lift: rotate(1.6deg) scale(1.025);
     --transition-control:
@@ -870,6 +871,7 @@
      on a longer beat. Behind `motion-safe:` like the chat's. */
   --animate-bot-blink: op-bot-blink var(--bot-blink-beat) ease-in-out infinite;
   --animate-bot-hat: op-bot-hat var(--bot-hat-beat) ease-in-out infinite;
+  --animate-bot-glance: op-bot-glance var(--bot-glance-beat) ease-in-out infinite;
   --ease-out: var(--ease-out);
   --ease-in: var(--ease-in);
   /* `duration-*` reads Tailwind's `--transition-duration-*` namespace. */
@@ -1253,6 +1255,25 @@
   }
   75% {
     transform: translateY(-0.5px) rotate(3deg);
+  }
+}
+
+/* The eyes look one way, back, the other way, back, holding each look. */
+@keyframes op-bot-glance {
+  0%,
+  22%,
+  48%,
+  72%,
+  100% {
+    transform: translate(0, 0);
+  }
+  27%,
+  43% {
+    transform: translate(-2.5px, 0.5px);
+  }
+  77%,
+  93% {
+    transform: translate(2.5px, -0.5px);
   }
 }
 
