@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/domain"
@@ -43,8 +44,45 @@ func (h *linkHandler) changesRead(ctx context.Context, m link.SessionChangesRead
 			Base: c.Base, Approximate: c.Approximate, Files: files, OmittedFiles: c.OmittedFiles,
 		})
 	}
-	_ = h.client.Send(link.SessionChanges{
+	_ = h.client.Send(fitFrame(link.SessionChanges{
 		Type: link.TypeSessionChanges, CommandID: m.CommandID, SessionID: m.SessionID,
 		Scope: m.Scope, Checkouts: checkouts,
-	})
+	}, link.MaxFrameBytes-changesFrameHeadroom))
+}
+
+// changesFrameHeadroom is what an answer leaves of the link's frame, so a
+// count that grows a digit never tips it over.
+const changesFrameHeadroom = 1 << 10
+
+// fitFrame holds an answer to limit bytes as the link encodes it. The
+// read's bounds count raw bytes, and JSON writes some of them as six (`<`,
+// `>` and `&`, a control byte, a byte that is not UTF-8), as long paths
+// across many checkouts can also add up: an answer over the frame is not
+// sent at all, and the control plane would wait it out. Past limit, patches
+// are left out from the last file back, then whole files, counted as
+// omitted, until it fits.
+func fitFrame(answer link.SessionChanges, limit int) link.SessionChanges {
+	size := func(v any) int {
+		body, _ := json.Marshal(v)
+		return len(body)
+	}
+	total := size(answer)
+	for c := len(answer.Checkouts) - 1; c >= 0 && total > limit; c-- {
+		files := answer.Checkouts[c].Files
+		for i := len(files) - 1; i >= 0 && total > limit; i-- {
+			if files[i].Patch != "" {
+				before := size(files[i])
+				files[i].Patch, files[i].PatchOmitted = "", true
+				total -= before - size(files[i])
+			}
+		}
+		for len(files) > 0 && total > limit {
+			// The file and the comma before it.
+			total -= size(files[len(files)-1]) + 1
+			files = files[:len(files)-1]
+			answer.Checkouts[c].OmittedFiles++
+		}
+		answer.Checkouts[c].Files = files
+	}
+	return answer
 }

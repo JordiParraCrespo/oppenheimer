@@ -52,3 +52,43 @@ func TestTheHelloOffersSessionChangesRead(t *testing.T) {
 		t.Fatalf("capabilities = %v, missing %s", got, link.CapabilitySessionChangesRead)
 	}
 }
+
+// An answer whose patches fit the read's bounds in raw bytes can still pass
+// the link's frame once encoded: JSON writes `<` as six bytes. It is fitted
+// before it is sent, patches left out from the end first, then files,
+// counted; the regression is a frame the link refuses, which the control
+// plane waits out until it times out.
+func TestAnAnswerIsFittedToTheFrameAsItIsEncoded(t *testing.T) {
+	jsx := strings.Repeat("<", 60<<10)
+	files := make([]link.ChangedFile, 0, 8)
+	for range 8 {
+		files = append(files, link.ChangedFile{Path: "page.tsx", Status: "modified", Additions: 1, Patch: jsx})
+	}
+	answer := link.SessionChanges{
+		Type: link.TypeSessionChanges, CommandID: "c", SessionID: "s", Scope: "base",
+		Checkouts: []link.CheckoutChanges{{Repo: "acme/web", Files: files}},
+	}
+	const limit = 512 << 10
+	fitted := fitFrame(answer, limit)
+	body, _ := json.Marshal(fitted)
+	if len(body) > limit {
+		t.Fatalf("fitted answer is %d bytes, over %d", len(body), limit)
+	}
+	kept := fitted.Checkouts[0].Files
+	if len(kept) != 8 || kept[0].Patch == "" || !kept[7].PatchOmitted || kept[7].Patch != "" {
+		t.Fatalf("want every file kept, the first patch kept and the last left out; got %d files", len(kept))
+	}
+
+	long := strings.Repeat("d/", 2000) + "f.go"
+	many := make([]link.ChangedFile, 0, 500)
+	for range 500 {
+		many = append(many, link.ChangedFile{Path: long, Status: "added"})
+	}
+	crowded := fitFrame(link.SessionChanges{Checkouts: []link.CheckoutChanges{{Files: many}}}, limit)
+	if body, _ := json.Marshal(crowded); len(body) > limit {
+		t.Fatalf("crowded answer is %d bytes", len(body))
+	}
+	if c := crowded.Checkouts[0]; c.OmittedFiles == 0 || len(c.Files)+c.OmittedFiles != 500 {
+		t.Fatalf("files %d + omitted %d; want the cut counted", len(c.Files), c.OmittedFiles)
+	}
+}
