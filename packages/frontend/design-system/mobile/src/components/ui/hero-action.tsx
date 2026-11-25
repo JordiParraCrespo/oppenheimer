@@ -1,7 +1,8 @@
 import { NativeHero } from '../../lib/native-hero';
-import type { NativeHeroProps } from '../../lib/native-hero.types';
+import type { HeroIcon, NativeHeroProps } from '../../lib/native-hero.types';
 
 export type HeroActionProps = NativeHeroProps;
+export type { HeroIcon };
 
 /**
  * A screen's one primary action, floating over its content: Material 3

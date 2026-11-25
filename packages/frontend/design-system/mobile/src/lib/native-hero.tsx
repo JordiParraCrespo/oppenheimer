@@ -2,7 +2,7 @@ import { ActivityIndicator, Pressable } from 'react-native';
 import { Glass } from '../components/ui/glass';
 import { Icon } from '../components/ui/icon';
 import { Text } from '../components/ui/text';
-import type { NativeHeroProps } from './native-hero.types';
+import { HERO_ICONS, type NativeHeroProps } from './native-hero.types';
 
 /** On iOS, a full-width primary pill in Liquid Glass, floating over the content. */
 export function NativeHero({ label, onPress, busy, icon }: NativeHeroProps) {
@@ -18,7 +18,7 @@ export function NativeHero({ label, onPress, busy, icon }: NativeHeroProps) {
         {busy ? (
           <ActivityIndicator size="small" />
         ) : (
-          <Icon as={icon} size={16} className="text-primary-foreground" />
+          <Icon as={HERO_ICONS[icon].lucide} size={16} className="text-primary-foreground" />
         )}
         <Text className="text-[17px] font-medium text-primary-foreground">{label}</Text>
       </Pressable>

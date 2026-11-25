@@ -57,7 +57,7 @@ export { EmptyState } from './components/ui/empty-state';
 export type { ExpoImageProps } from './components/ui/expo-image';
 export { ExpoImage } from './components/ui/expo-image';
 export { Glass, type GlassProps, liquidGlass } from './components/ui/glass';
-export { HeroAction, type HeroActionProps } from './components/ui/hero-action';
+export { HeroAction, type HeroActionProps, type HeroIcon } from './components/ui/hero-action';
 export { Icon } from './components/ui/icon';
 export { Input } from './components/ui/input';
 export { Label } from './components/ui/label';

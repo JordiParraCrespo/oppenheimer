@@ -36,7 +36,7 @@ export function EmployeesList() {
 
   const search = (
     <View className="px-4 pt-3">
-      <SearchField value={typed} onChangeText={setTyped} placeholder={t('bots.mobile.search')} />
+      <SearchField onQueryChange={setTyped} placeholder={t('bots.mobile.search')} />
     </View>
   );
 

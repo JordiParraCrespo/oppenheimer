@@ -1,5 +1,5 @@
 export type NativeSearchProps = {
-  value: string;
-  onChangeText: (text: string) => void;
+  /** Every change to the text, and `''` once when the field mounts. */
+  onQueryChange: (query: string) => void;
   placeholder: string;
 };

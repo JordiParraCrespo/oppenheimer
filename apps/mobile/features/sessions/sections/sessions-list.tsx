@@ -56,11 +56,7 @@ export function SessionsList() {
 
   const search = (
     <View className="px-4 pt-3">
-      <SearchField
-        value={typed}
-        onChangeText={setTyped}
-        placeholder={t('sessions.sidebar.search')}
-      />
+      <SearchField onQueryChange={setTyped} placeholder={t('sessions.sidebar.search')} />
     </View>
   );
 

@@ -1,12 +1,9 @@
 import { Glass } from '@oppenheimer/design-system-mobile';
 import { HeroAction } from '@oppenheimer/design-system-mobile/hero-action';
-import { Play } from '@oppenheimer/design-system-mobile/icons';
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { useRunNow } from '../hooks/use-run-now';
-
-const PLAY_SYMBOL = require('../../../assets/symbols/play_arrow.xml');
 
 /**
  * Run now, the automation page's one primary action, floating at its foot:
@@ -42,8 +39,7 @@ export function RunNow({
         label={run.started ? t('automations.mobile.started') : t('automations.detail.runNow')}
         onPress={run.start}
         busy={run.pending}
-        icon={Play}
-        materialIcon={PLAY_SYMBOL}
+        icon="play"
       />
     </View>
   );

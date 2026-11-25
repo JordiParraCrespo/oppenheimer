@@ -41,9 +41,9 @@ src/
   | actions on a thing | `MenuView` from `@expo/ui/community/menu` |
   | confirm or report a failure | `Alert.alert` from `react-native` |
   | a sheet | a `presentation: 'formSheet'` route, or `@expo/ui`'s `BottomSheet` |
-  | search over a list | `SearchField` (Material 3's docked search bar on Android; a field with the system clear button on iOS) |
+  | search over a list | `SearchField` (Material 3's docked search bar on Android; a field with the system clear button on iOS). It owns its text and reports it with `onQueryChange`, `''` on every mount; there is no `value` |
   | something on its way | `LoadingIndicator` (Material 3 Expressive's morphing indicator on Android, the system spinner on iOS), never `ActivityIndicator` |
-  | the screen's one primary action | `HeroAction` (Expressive extended FAB on Android, a pill in Liquid Glass on iOS) |
+  | the screen's one primary action | `HeroAction` (Expressive extended FAB on Android, a pill in Liquid Glass on iOS). Its `icon` is a name in `HERO_ICONS`, which maps it to Lucide and to a Material Symbol |
   | tab bar, back button | expo-router's `NativeTabs`, the native stack header |
 
   A new `@expo/ui` control is drawn inside `NativeHost` (`src/lib/native-scheme`),
