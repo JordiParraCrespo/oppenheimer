@@ -60,8 +60,11 @@ function setup(
     approvals,
     ...extra,
   });
-  const call = (input: unknown, extra?: Partial<BotToolContext>) =>
-    tool.bind(context(extra)).run(input, { signal: new AbortController().signal });
+  const call = (
+    input: unknown,
+    extra?: Partial<BotToolContext>,
+    signal: AbortSignal = new AbortController().signal,
+  ) => tool.bind(context(extra)).run(input, { signal });
   return { run, approvals, call };
 }
 
@@ -359,11 +362,10 @@ describe('defineBotTool, Approve for me’s reviewer', () => {
     const { run, approvals, call } = setup();
     const auto = reviewer(async () => allow);
     const result = await call({ task: 'deploy' }, { permission: 'auto', autoReviewer: auto });
-    expect(auto.review).toHaveBeenCalledWith({
-      tool: 'start_thing',
-      summary: 'Start deploy',
-      input: { task: 'deploy' },
-    });
+    expect(auto.review).toHaveBeenCalledWith(
+      { tool: 'start_thing', summary: 'Start deploy', input: { task: 'deploy' } },
+      expect.any(AbortSignal),
+    );
     expect(run).toHaveBeenCalledTimes(1);
     expect(approvals.request).not.toHaveBeenCalled();
     expect(result.data).toMatchObject({ allowedBy: 'Auto-approved: You asked to deploy.' });
@@ -378,6 +380,23 @@ describe('defineBotTool, Approve for me’s reviewer', () => {
         reviewNote: 'Approve for me left this to you: Nothing you said asks for this.',
       }),
     );
+  });
+
+  it('neither runs the call nor raises its card when the turn was stopped during the review', async () => {
+    const { run, approvals, call } = setup();
+    const stop = new AbortController();
+    const auto = reviewer(async () => {
+      stop.abort();
+      return allow;
+    });
+    const result = await call(
+      { task: 'deploy' },
+      { permission: 'auto', autoReviewer: auto },
+      stop.signal,
+    );
+    expect(run).not.toHaveBeenCalled();
+    expect(approvals.request).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ isError: true });
   });
 
   it('raises the card when the review fails, never running the call unreviewed', async () => {

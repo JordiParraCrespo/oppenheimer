@@ -22,7 +22,8 @@ const AUTO_REVIEW_TIME_LIMIT_MS = 30_000;
 
 /** Decides, under Approve for me, whether a call runs without the owner; throws when it cannot say, and the call then asks. */
 export interface BotAutoReviewer {
-  review(call: BotReviewedCall): Promise<BotAutoVerdict>;
+  /** `signal` is the turn's: a turn stopped mid-review stops the review with it. */
+  review(call: BotReviewedCall, signal?: AbortSignal): Promise<BotAutoVerdict>;
 }
 
 /**
@@ -42,14 +43,16 @@ export class BotAutoReviewerFactory {
     trusted: BotAutoReviewContext,
   ): BotAutoReviewer {
     return {
-      review: async (call) => {
+      review: async (call, signal) => {
         const answer = await this.completions.complete(
           {
             ...model,
             effort: reviewEffort(model),
             systemPrompt: BOT_AUTO_REVIEWER_PROMPT,
             message: composeAutoReview(call, trusted),
-            signal: AbortSignal.timeout(AUTO_REVIEW_TIME_LIMIT_MS),
+            signal: signal
+              ? AbortSignal.any([signal, AbortSignal.timeout(AUTO_REVIEW_TIME_LIMIT_MS)])
+              : AbortSignal.timeout(AUTO_REVIEW_TIME_LIMIT_MS),
           },
           { ...bot, purpose: 'auto_review' },
         );

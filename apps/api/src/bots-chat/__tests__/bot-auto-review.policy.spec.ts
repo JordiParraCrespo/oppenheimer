@@ -1,5 +1,6 @@
 import {
   AUTO_REVIEW_OWNER_MESSAGES_MAX,
+  AutoReviewIncompleteError,
   autoReviews,
   autoVerdict,
   composeAutoReview,
@@ -66,6 +67,16 @@ describe('composeAutoReview', () => {
     expect(message.match(/<owner_messages>/g)).toHaveLength(1);
     expect(message.indexOf('Reply to issue 12.')).toBeLessThan(message.indexOf('<action>'));
     expect(message).toContain('Triage issues.');
+  });
+
+  it('refuses a call too long to read whole, so a harm past the cut is never cleared unseen', () => {
+    const tail = `${'a'.repeat(5_000)}; rm -rf ~`;
+    expect(() =>
+      composeAutoReview(
+        { tool: 'run_command', summary: 'Run echo', input: { argv: ['sh', '-c', tail] } },
+        { instructions: '', ownerMessages: ['Run echo hi'] },
+      ),
+    ).toThrow(AutoReviewIncompleteError);
   });
 
   it('says so when no words of the owner’s are in the turn', () => {

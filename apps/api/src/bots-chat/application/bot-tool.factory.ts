@@ -22,7 +22,9 @@ import {
   waitingForApproval,
 } from '../domain/bot-approval.policy';
 import {
+  AUTO_TOO_LONG_NOTE,
   AUTO_UNCHECKED_NOTE,
+  AutoReviewIncompleteError,
   autoAllowedLine,
   autoPausedNote,
   autoReviews,
@@ -527,7 +529,9 @@ function decidedFirst<Input extends z.ZodType>(
           }
         }
         if (auto) {
-          const verdict = await autoReviewOf(auto, spec, context, call);
+          const verdict = await autoReviewOf(auto, spec, context, call, options.signal);
+          // A turn stopped while its review ran neither runs the call nor raises its card.
+          options.signal.throwIfAborted();
           if (verdict.outcome === 'allow') return allowedRun(tool, input, options, verdict.line);
           reviewNote = verdict.note;
         }
@@ -583,16 +587,19 @@ async function autoReviewOf<Input extends z.ZodType>(
   spec: BotToolSpec<Input>,
   context: BotToolCallContext,
   input: z.output<Input>,
+  signal: AbortSignal,
 ): Promise<{ outcome: 'allow'; line: string } | { outcome: 'ask'; note: string }> {
   try {
     const summary = spec.summarize ? await spec.summarize(input, context) : spec.name;
-    const verdict = await reviewer.review({ tool: spec.name, summary, input });
+    const verdict = await reviewer.review({ tool: spec.name, summary, input }, signal);
     return verdict.outcome === 'allow'
       ? { outcome: 'allow', line: autoAllowedLine(verdict.reason) }
       : { outcome: 'ask', note: autoPausedNote(verdict.reason) };
   } catch (error) {
     // A call the tool would refuse raises no card, as in `summaryOf`.
     if (error instanceof BotToolRefusal) throw error;
+    if (error instanceof AutoReviewIncompleteError)
+      return { outcome: 'ask', note: AUTO_TOO_LONG_NOTE };
     return { outcome: 'ask', note: AUTO_UNCHECKED_NOTE };
   }
 }

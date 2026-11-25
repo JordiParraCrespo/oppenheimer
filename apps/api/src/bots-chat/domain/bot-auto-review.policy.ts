@@ -136,7 +136,16 @@ export function composeAutoReview(call: BotReviewedCall, context: BotAutoReviewC
   try {
     input = JSON.stringify(call.input ?? {});
   } catch {
-    input = '{}';
+    throw new AutoReviewIncompleteError();
+  }
+  // A verdict on part of a call would let the rest run unseen (a long
+  // command with its harm past the cut): a call that does not fit whole is
+  // never reviewed, and asks.
+  if (
+    Array.from(input).length > AUTO_REVIEW_INPUT_CHARS ||
+    Array.from(call.summary).length > AUTO_REVIEW_MESSAGE_CHARS
+  ) {
+    throw new AutoReviewIncompleteError();
   }
   const fenced = (text: string, max: number) => neutraliseTags(cut(text, max), TAGS);
   const messages = context.ownerMessages.length
@@ -194,6 +203,17 @@ export function autoAllowedLine(reason: string): string {
 export function autoPausedNote(reason: string): string {
   return `Approve for me left this to you: ${reason}`;
 }
+
+/** A call too long for the reviewer to read whole: it asks, never reviewed in part. */
+export class AutoReviewIncompleteError extends Error {
+  constructor() {
+    super('Too long to review');
+  }
+}
+
+/** A call too long to review whole, as its card says it. */
+export const AUTO_TOO_LONG_NOTE =
+  'Approve for me cannot read all of this call at once, so it asks.';
 
 /** A call whose review failed: it asks, and its card says why. */
 export const AUTO_UNCHECKED_NOTE = 'Approve for me could not review this just now, so it asks.';
