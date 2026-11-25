@@ -33,6 +33,8 @@ export function BotChat({ botId, tabs }: { botId: string; tabs?: ReactNode }) {
         }
         title={tabs ?? bot.name}
         tone={tabs ? 'chrome' : 'page'}
+        // A session bar's ground and edge, so a bot and a session share one surface.
+        className={tabs ? undefined : 'border-b border-border-subtle bg-term-bg'}
         actions={
           <>
             <ToolCallsToggle shown={toolCalls.shown} onShownChange={toolCalls.setShown} />

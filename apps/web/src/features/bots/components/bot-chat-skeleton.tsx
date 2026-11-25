@@ -29,6 +29,7 @@ export function BotChatSkeleton({ tabs }: { tabs?: ReactNode }) {
       <LoadingStatus />
       <PageBar
         tone={tabs ? 'chrome' : 'page'}
+        className={tabs ? undefined : 'border-b border-border-subtle bg-term-bg'}
         leading={tabs ? null : <Skeleton shape="pill" className="size-6.5" />}
         title={
           tabs ?? (
