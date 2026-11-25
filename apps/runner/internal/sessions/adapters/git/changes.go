@@ -260,7 +260,7 @@ func countUntracked(root, name string) (lines int, binary bool, ok bool) {
 	if !ok {
 		return 0, false, false
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	reader := bufio.NewReader(f)
 	head, _ := reader.Peek(binarySniff)
 	if bytes.IndexByte(head, 0) >= 0 {
@@ -270,9 +270,10 @@ func countUntracked(root, name string) (lines int, binary bool, ok bool) {
 	buf := make([]byte, 32*1024)
 	for {
 		n, err := reader.Read(buf)
-		lines += bytes.Count(buf[:n], []byte{'\n'})
-		if n > 0 {
-			last = buf[n-1]
+		chunk := buf[:n]
+		lines += bytes.Count(chunk, []byte{'\n'})
+		if len(chunk) > 0 {
+			last = chunk[len(chunk)-1]
 		}
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
@@ -294,7 +295,7 @@ func untrackedPatch(root, name string, limit int) (string, bool, error) {
 	if !ok {
 		return "", false, nil
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	content, err := io.ReadAll(io.LimitReader(f, int64(limit)+1))
 	if err != nil || len(content) > limit || bytes.IndexByte(content[:min(len(content), binarySniff)], 0) >= 0 {
 		return "", false, nil //nolint:nilerr // an unreadable file has no patch; its row stays
