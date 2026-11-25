@@ -13,12 +13,14 @@ import {
   BUILT_IN_TOOLS,
   claudeEnv,
   claudeOptions,
+  claudeSystemPrompt,
   DEFER_TOOLS_ABOVE_CHARS,
   DISALLOWED_TOOLS,
   MODEL_VARIABLES,
   pinAllModels,
   scratchDirs,
 } from '../claude-options';
+import { TOOL_NAMES_NOTE } from '../claude-tool-server';
 
 describe('pinAllModels', () => {
   it('sets every model variable to the model and leaves the rest alone', () => {
@@ -130,5 +132,30 @@ describe('claudeOptions', () => {
     expect(completion.tools).toEqual([]);
     expect(completion.allowedTools).toEqual([]);
     expect(completion.disallowedTools).toEqual(DISALLOWED_TOOLS);
+  });
+});
+
+// What breaks this: everything a bot reads names its tools bare
+// (`send_to_session`) while Claude Code serves them as
+// `mcp__oppenheimer__<name>`, so a call by the name it read was answered "No
+// such tool" and ran nothing: about half of a bot eval's runs (2026-11-24).
+// Rewriting the names into that text instead corrupted the person's words and
+// the world's (`import React from "react"`), so the bot is told once.
+describe('claudeSystemPrompt', () => {
+  const tool = { name: 'send_to_session' };
+
+  it('tells a bot with tools how to call them here, after its own prompt, word for word', () => {
+    const prompt = claudeSystemPrompt({
+      systemPrompt: 'Remember to react: import React from "react".',
+      tools: [tool],
+    });
+    expect(prompt).toBe(`Remember to react: import React from "react".\n\n${TOOL_NAMES_NOTE}`);
+    expect(TOOL_NAMES_NOTE).toContain('mcp__oppenheimer__send_to_session');
+  });
+
+  it('adds nothing to a turn with no tools', () => {
+    expect(claudeSystemPrompt({ systemPrompt: 'You are a bot.', tools: [] })).toBe(
+      'You are a bot.',
+    );
   });
 });
