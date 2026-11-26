@@ -70,3 +70,41 @@ test('a session shared as a link opens for a signed-in guest, and stops once sha
   await expect(guest.getByText('This session isn’t shared')).toBeVisible();
   await guestContext.close();
 });
+
+/**
+ * Inviting someone to a share that can already write gives them a shell on
+ * the host as the sharer, so the invite line says so and Invite waits until
+ * the sharer ticks that they understand.
+ */
+test('inviting someone to a share that can write asks to be understood first', async ({ page }) => {
+  test.slow();
+  const owner = await provisionedUser('sharer');
+  const hostId = await pairHost(owner.api, 'Shared box');
+  const installationId = await connectInstallation(owner.api);
+  const sessionId = await createSession(owner.api, hostId, installationId);
+  await query(`UPDATE "work_session" SET "state" = 'open' WHERE "id" = $1`, [sessionId]);
+  const put = await owner.api.put(`/api/v1/sessions/${sessionId}/share`, {
+    data: { audience: 'people', access: 'write', people: ['ada@example.com'], lifetime: '1h' },
+  });
+  expect(put.status(), await put.text()).toBe(200);
+
+  await signInAs(page, owner.user);
+  await page.goto(`/sessions/${sessionId}`);
+  await page.getByRole('button', { name: /Shared · can write/ }).click();
+  const panel = page.getByRole('dialog');
+  const field = panel.getByPlaceholder('Add people by email');
+  await field.fill('bob@example.com');
+  await field.press('Enter');
+
+  await expect(panel.getByText('bob@example.com will act as you on Shared box.')).toBeVisible();
+  const invite = panel.getByRole('button', { name: 'Invite' });
+  await expect(invite).toBeDisabled();
+  await panel.getByRole('checkbox', { name: 'I understand' }).click();
+  await invite.click();
+
+  await expect(panel.getByRole('listitem').filter({ hasText: 'bob@example.com' })).toBeVisible();
+  const { share } = (await (await owner.api.get(`/api/v1/sessions/${sessionId}/share`)).json()) as {
+    share: { people: string[] };
+  };
+  expect(share.people).toEqual(['ada@example.com', 'bob@example.com']);
+});

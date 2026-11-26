@@ -1,78 +1,66 @@
 import { Button } from '@oppenheimer/design-system-web';
-import type { SessionShare } from '@oppenheimer/frontend-consumer';
-import { usePutSessionShare, useSetSessionSharePeople } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SharePeoplePicker } from '../components/share-people-picker';
-import { namedPeople, type ShareSettings, settingsOf, shareInput } from '../lib/share-session';
+import { ShareWriteWarning } from '../components/share-write-warning';
+import { namedPeople } from '../lib/share-session';
 
 /**
  * Share's first line: people to invite, by email, and Invite. It owns what
- * is being typed, so a keystroke redraws this line and not the list below.
+ * is being typed, so a keystroke redraws this line and not the list below;
+ * the write is the panel's, so no other change to the share can run beside
+ * it (`busy`).
  *
- * On a session not yet shared, Invite shares it with them as `draft` says;
- * on a share for specific people it adds them, keeping what they may do and
- * until when; on a link it limits the link to them (the address stays).
- * `ready` is false while write access waits to be understood.
+ * Inviting people to a share that can write gives them a shell on the host
+ * as the sharer, so while anyone is typed in for one (`writeHost`) the line
+ * says so and asks to be understood before Invite. `ready` is false while a
+ * share not yet made waits on the panel's own warning.
  */
 export function ShareInvite({
-  sessionId,
-  share,
-  draft,
+  listed,
+  busy,
+  inviting,
   ready,
-  onShared,
+  writeHost,
+  linkShared,
+  onInvite,
 }: {
-  sessionId: string;
-  share: SessionShare | null;
-  /** How a session not yet shared is about to be. */
-  draft: ShareSettings;
+  /** People already on the share. */
+  listed: readonly string[];
+  busy: boolean;
+  /** An invite of this line's is in flight. */
+  inviting: boolean;
   ready: boolean;
-  /** Told once the people are on the share. */
-  onShared: () => void;
+  /** The host's name when the people invited will be able to write, else null. */
+  writeHost: string | null;
+  /** Inviting to a link limits the link to the people invited. */
+  linkShared: boolean;
+  /** Share with these people; `done` clears the line once it landed. */
+  onInvite: (people: string[], done: () => void) => void;
 }) {
   const { t } = useTranslation();
-  const put = usePutSessionShare();
-  const add = useSetSessionSharePeople();
   const [people, setPeople] = useState<string[]>([]);
   const [typed, setTyped] = useState('');
-  const listed = share?.people ?? [];
+  const [ack, setAck] = useState(false);
   const adding = namedPeople({ people, typed }).filter((email) => !listed.includes(email));
-  const pending = put.isPending || add.isPending;
-
-  function invite() {
-    const done = {
-      onSuccess: () => {
-        setPeople([]);
-        setTyped('');
-        onShared();
-      },
-    };
-    if (!share) put.mutate({ sessionId, input: shareInput(draft, adding) }, done);
-    else if (share.audience === 'people')
-      add.mutate({ sessionId, people: [...share.people, ...adding] }, done);
-    else
-      put.mutate(
-        {
-          sessionId,
-          input: shareInput({ ...settingsOf(share, Date.now()), audience: 'people' }, adding),
-        },
-        done,
-      );
-  }
+  const warn = writeHost !== null && adding.length > 0;
+  const who =
+    adding.length === 1
+      ? adding[0]
+      : t('sessions.share.writeWarningCount', { count: adding.length });
 
   return (
     <div className="flex flex-col gap-2">
-      <ErrorAlert
-        error={put.error ?? add.error}
-        fallback={share ? t('sessions.share.updateFailed') : t('sessions.share.failed')}
-      />
       <form
         noValidate
         className="flex items-start gap-2"
         onSubmit={(event) => {
           event.preventDefault();
-          invite();
+          onInvite(adding, () => {
+            setPeople([]);
+            setTyped('');
+            setAck(false);
+          });
         }}
       >
         <div className="min-w-0 flex-1">
@@ -85,14 +73,15 @@ export function ShareInvite({
         </div>
         <Button
           type="submit"
-          disabled={adding.length === 0 || !ready}
-          pending={pending}
+          disabled={busy || adding.length === 0 || !ready || (warn && !ack)}
+          pending={inviting}
           pendingLabel={t('sessions.share.inviting')}
         >
           {t('sessions.share.inviteSubmit')}
         </Button>
       </form>
-      {share?.audience === 'link' ? (
+      {warn ? <ShareWriteWarning who={who} host={writeHost} ack={ack} onAck={setAck} /> : null}
+      {linkShared ? (
         <p className="text-[12px] text-fg-subtle">{t('sessions.share.inviteNarrows')}</p>
       ) : null}
     </div>

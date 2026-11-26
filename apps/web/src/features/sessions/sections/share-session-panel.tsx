@@ -79,9 +79,13 @@ export function ShareSessionPanel({
   const stop = useStopSessionShare();
   const busy = put.isPending || narrow.isPending || stop.isPending;
   const [draft, setDraft] = useState<ShareSettings>(SHARE_DEFAULTS);
-  // Write access asked of a live share, held until it is understood.
-  const [asked, setAsked] = useState<ShareSettings | null>(null);
+  // Write access asked of a live share, held until it is understood. It
+  // asks nothing once the share is gone (stopped here or elsewhere).
+  const [askedOf, setAsked] = useState<ShareSettings | null>(null);
+  const asked = share ? askedOf : null;
   const [ack, setAck] = useState(false);
+  // What Invite sent last, so its button alone says it is sending.
+  const [invited, setInvited] = useState(false);
 
   const host = hosts.find((row) => row.id === session.hostId)?.name ?? t('sessions.share.thisHost');
   // What the menus show: a live share's lifetime as it was picked, its time
@@ -96,8 +100,13 @@ export function ShareSessionPanel({
     return asked ?? (share ? settingsOf(share, Date.now()) : draft);
   }
 
-  function change(next: ShareSettings) {
+  function change(picked: ShareSettings) {
     put.reset();
+    // A lifetime the access cannot have (write for 7 days) is never shown
+    // and then sent shorter: it becomes write's shortest here.
+    const next = lifetimeAllowed(effectiveAccess(picked.audience, picked.access), picked.lifetime)
+      ? picked
+      : { ...picked, lifetime: '1h' as const };
     if (!share) {
       if (next.access !== draft.access) setAck(false);
       setDraft(next);
@@ -112,11 +121,44 @@ export function ShareSessionPanel({
     put.mutate({ sessionId, input: shareInput(next, share.people) });
   }
 
+  /**
+   * Invite: share a session not yet shared with them, as the menus say; add
+   * them to a share for people, keeping the rest; or limit a link to them.
+   */
+  function invite(people: string[], done: () => void) {
+    put.reset();
+    narrow.reset();
+    setInvited(true);
+    const settle = { onSuccess: done, onSettled: () => setInvited(false) };
+    if (!share) {
+      put.mutate(
+        { sessionId, input: shareInput(draft, people) },
+        {
+          ...settle,
+          onSuccess: () => {
+            setAck(false);
+            done();
+          },
+        },
+      );
+    } else if (share.audience === 'people') {
+      narrow.mutate({ sessionId, people: [...share.people, ...people] }, settle);
+    } else {
+      put.mutate(
+        {
+          sessionId,
+          input: shareInput({ ...settingsOf(share, Date.now()), audience: 'people' }, people),
+        },
+        settle,
+      );
+    }
+  }
+
   function remove(email: string) {
     if (!share) return;
     const people = share.people.filter((person) => person !== email);
     if (people.length) narrow.mutate({ sessionId, people });
-    else stop.mutate({ sessionId });
+    else stop.mutate({ sessionId }, { onSuccess: () => setAsked(null) });
   }
 
   const audienceOptions = [
@@ -187,11 +229,13 @@ export function ShareSessionPanel({
         />
         {share || shown.audience === 'people' ? (
           <ShareInvite
-            sessionId={sessionId}
-            share={share}
-            draft={draft}
-            ready={!share ? access !== 'write' || ack : true}
-            onShared={() => setAck(false)}
+            listed={share?.people ?? []}
+            busy={busy}
+            inviting={invited && busy}
+            ready={Boolean(share) || access !== 'write' || ack}
+            writeHost={share?.access === 'write' ? host : null}
+            linkShared={share?.audience === 'link'}
+            onInvite={invite}
           />
         ) : null}
         {share ? (
