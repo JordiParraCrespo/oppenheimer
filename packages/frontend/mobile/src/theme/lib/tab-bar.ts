@@ -13,10 +13,11 @@ export function withAlpha(hsl: string, alpha: number): string {
 }
 
 /**
- * The Android tab bar (Material's navigation bar) in the app's own scheme and
- * blue, not Material's stock purple: the selected tab is the primary blue on a
- * pale pill of it. Passed whole, so the bar follows the app's light or dark
- * choice and not only the phone's.
+ * The Android tab bar (Material's navigation bar), quiet and in the app's own
+ * scheme rather than Material's stock purple: icons only, on the screen's own
+ * background, the selected one in ink on a soft pill of it and the rest grey.
+ * The brand blue stays on the controls and actions above it. Passed whole, so
+ * the bar follows the app's light or dark choice and not only the phone's.
  */
 export const TAB_BAR = {
   light: tabBar(THEME.light),
@@ -25,12 +26,10 @@ export const TAB_BAR = {
 
 function tabBar(theme: (typeof THEME)['light' | 'dark']) {
   return {
-    background: theme.card,
+    background: theme.background,
     icon: theme.mutedForeground,
-    iconSelected: theme.primary,
-    label: theme.mutedForeground,
-    labelSelected: theme.foreground,
-    indicator: withAlpha(theme.primary, 0.15),
-    ripple: withAlpha(theme.primary, 0.12),
+    iconSelected: theme.foreground,
+    indicator: withAlpha(theme.foreground, 0.08),
+    ripple: withAlpha(theme.foreground, 0.08),
   };
 }

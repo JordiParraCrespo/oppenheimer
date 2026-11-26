@@ -9,9 +9,10 @@ import { Platform } from 'react-native';
  * Automations, Pull requests. The bar is the system's own (`UITabBar`,
  * Material's navigation bar on Android), so iOS 26 draws it in Liquid Glass,
  * shrinks it on scroll and keeps its haptics. Each icon is the SF Symbol, or
- * the Material symbol, nearest the rail's glyph. Both are tinted the brand
- * blue; on Android the whole bar takes the app's scheme (`TAB_BAR`), since
- * the system's follows the phone's light or dark and Material's stock purple.
+ * the Material symbol, nearest the rail's glyph. On iOS the selected one is
+ * tinted the brand blue; on Android the bar is quiet, icons only in ink and
+ * grey on the screen's background (`TAB_BAR`), coloured whole because the
+ * system's follows the phone's light or dark and Material's stock purple.
  * Five is as many as the bar holds before it folds the rest into More, which
  * is why Account is the avatar at the top of every tab and not a sixth.
  */
@@ -60,7 +61,7 @@ export default function TabsLayout() {
       {...(Platform.OS === 'android' && {
         backgroundColor: bar.background,
         iconColor: { default: bar.icon, selected: bar.iconSelected },
-        labelStyle: { default: { color: bar.label }, selected: { color: bar.labelSelected } },
+        labelVisibilityMode: 'unlabeled' as const,
         indicatorColor: bar.indicator,
         rippleColor: bar.ripple,
       })}
