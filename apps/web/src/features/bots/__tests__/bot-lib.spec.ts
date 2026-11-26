@@ -161,6 +161,13 @@ describe('botModel and botEffort', () => {
     expect(botEffort('anthropic', 'claude-fable-5-1', 'ultra')?.value).toBe('high');
   });
 
+  // What breaks this: the chip says Low for a bot on Auto on GPT-6.2 Sol while
+  // its turns run at medium, the bot floor.
+  it('shows what a bot on Auto runs at: the floor above a low default, the model’s default otherwise', () => {
+    expect(botEffort('chatgpt', 'gpt-6.2-sol', null)?.value).toBe('medium');
+    expect(botEffort('anthropic', 'claude-fable-5-2', null)?.value).toBe('high');
+  });
+
   it('draws no effort for a model that takes none', () => {
     expect(botEffort('anthropic', 'claude-haiku-4-5', 'medium')).toBeNull();
   });

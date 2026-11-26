@@ -42,6 +42,7 @@ recording), and add a `pnpm eval:<name>` script.
 | Following, searching and unblocking sessions | `pnpm eval:bot-session-follow`, `eval:bot-session-search`, `eval:bot-session-unblock` |
 | Check-backs, loops, waiting on async work | `pnpm eval:bot-check-back` |
 | A routine's run meeting a blocker | `pnpm eval:bot-blocked-run` |
+| Doing what was asked and nothing more (the scope bullet in "How a turn goes") | `pnpm eval:bot-scope` |
 | Channels (Telegram, WhatsApp): answer first, then the work | `pnpm eval:bot-channel-ack` |
 | A WhatsApp group: who a line is for, answering or keeping out (`core/turn-context.contact-group*`, `contactReplyOf`) | `pnpm eval:bot-group-chat` |
 | Getting started, a new bot's first reply | `pnpm eval:bot-first-chat` |

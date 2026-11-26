@@ -36,6 +36,7 @@ import {
   SendBotPeerMessageCommand,
   type SendBotPeerMessageResult,
 } from '../commands/send-bot-peer-message/send-bot-peer-message.command';
+import { describeBotEffort } from '../domain/bot-effort.policy';
 import { NOT_ON_A_GITHUB_ASK } from '../domain/bot-github-ask.policy';
 import { BOT_PEER_MESSAGES_PER_TURN } from '../domain/bot-peer-message.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
@@ -445,7 +446,7 @@ export class BotPeerToolsFactory implements BotToolArea {
           engineLabel: engineLabelOf(bot.provider, bot.model),
           provider: bot.provider,
           model: bot.model ?? 'default',
-          effort: bot.effort ?? 'default',
+          effort: describeBotEffort(bot),
           permission: BOT_PERMISSION_LABELS[bot.permission],
           permission2: bot.permission,
           groupLabel: groupLabelOf(bot, groups),

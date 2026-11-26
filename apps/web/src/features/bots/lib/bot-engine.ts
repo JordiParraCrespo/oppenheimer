@@ -5,6 +5,7 @@ import {
   BOT_PROVIDERS,
   type BotProvider,
   botModelOf,
+  botTurnEffort,
   preferredKeyedProvider,
 } from '@oppenheimer/shared/schemas/bot';
 
@@ -94,20 +95,25 @@ export function botModel(provider: BotProvider, model: string | null): string | 
 
 /**
  * What the effort slider draws for a bot's model: its levels and the bot's
- * level when the model offers it, the model's default otherwise. `null` when
- * the model takes no effort, and the slider is not drawn.
+ * level when the model offers it; on Auto the level its turns run at, the
+ * bot floor on a model whose own default is below it (`botTurnEffort`), the
+ * model's default otherwise. `null` when the model takes no effort, and the
+ * slider is not drawn.
  */
 export function botEffort(
   provider: BotProvider,
   model: string | null,
-  /** Null runs the model at its own default. */
+  /** Null is Auto. */
   effort: SessionEffort | null,
 ): { levels: readonly SessionEffort[]; value: SessionEffort } | null {
   const offered = botModelOf(provider, model)?.effort;
   if (!offered) return null;
   return {
     levels: offered.levels,
-    value: effort !== null && offered.levels.includes(effort) ? effort : offered.default,
+    value:
+      effort !== null && offered.levels.includes(effort)
+        ? effort
+        : (botTurnEffort(provider, model, null) ?? offered.default),
   };
 }
 
