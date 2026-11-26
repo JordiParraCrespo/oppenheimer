@@ -2147,6 +2147,8 @@ earlier note:
   deleted.
 - The same day the owner asked for Material 3 Expressive on Android (Google's
   "Start building with Material 3 Expressive"): the native controls take the
-  brand accent instead of the wallpaper's colours, the list searches become
-  Material's search bar, waits become the Expressive loading indicator, and
+  exact brand blue (#0071E3, kept exact by a patch to `@expo/ui`) instead of
+  the wallpaper's colours, the list searches become Material's search bar,
+  waits become Expressive's wavy circular indicator (not the shape-morphing
+  one, which the owner did not like), and
   Run now becomes the one hero action, an extended FAB.

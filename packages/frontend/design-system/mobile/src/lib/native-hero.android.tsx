@@ -1,7 +1,7 @@
 import {
+  CircularWavyProgressIndicator,
   ExtendedFloatingActionButton,
   Icon,
-  LoadingIndicator,
   Text,
 } from '@expo/ui/jetpack-compose';
 import { size } from '@expo/ui/jetpack-compose/modifiers';
@@ -18,7 +18,7 @@ export function NativeHero({ label, onPress, busy, icon }: NativeHeroProps) {
       <ExtendedFloatingActionButton expanded onClick={busy ? undefined : onPress}>
         <ExtendedFloatingActionButton.Icon>
           {busy ? (
-            <LoadingIndicator modifiers={[size(24, 24)]} />
+            <CircularWavyProgressIndicator modifiers={[size(24, 24)]} />
           ) : (
             <Icon source={HERO_ICONS[icon].material} size={24} />
           )}

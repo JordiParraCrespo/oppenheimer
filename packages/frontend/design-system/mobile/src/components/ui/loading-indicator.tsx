@@ -9,7 +9,7 @@ export type LoadingIndicatorProps = {
 
 /**
  * Something is on its way, as the platform shows it: Material 3 Expressive's
- * shape-morphing indicator on Android, the system spinner on iOS. For a wait
+ * wavy circular indicator on Android, the system spinner on iOS. For a wait
  * with no known length; a known one is `Progress`.
  */
 export function LoadingIndicator({ size = 'small', accessibilityLabel }: LoadingIndicatorProps) {
