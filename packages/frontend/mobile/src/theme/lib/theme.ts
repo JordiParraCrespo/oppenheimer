@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, type Theme } from '@react-navigation/native';
 
 import { THEME } from './theme-values';
 
+export { TAB_BAR, withAlpha } from './tab-bar';
 export { THEME };
 
 export const NAV_THEME: Record<'light' | 'dark', Theme> = {

@@ -1,5 +1,5 @@
-import { Host, Picker } from '@expo/ui';
-import { useColorScheme } from 'nativewind';
+import { Picker } from '@expo/ui';
+import { NativeHost } from '../../lib/native-scheme';
 
 export type Option<T extends string | number = string> = { label: string; value: T };
 
@@ -24,10 +24,8 @@ export function Select<T extends string | number>({
   disabled,
   testID,
 }: SelectProps<T>) {
-  const { colorScheme } = useColorScheme();
-
   return (
-    <Host matchContents colorScheme={colorScheme === 'dark' ? 'dark' : 'light'}>
+    <NativeHost>
       <Picker
         selectedValue={value}
         onValueChange={onValueChange}
@@ -39,6 +37,6 @@ export function Select<T extends string | number>({
           <Picker.Item key={String(option.value)} label={option.label} value={option.value} />
         ))}
       </Picker>
-    </Host>
+    </NativeHost>
   );
 }

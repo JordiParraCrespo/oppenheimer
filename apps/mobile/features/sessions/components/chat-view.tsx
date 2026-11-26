@@ -1,8 +1,9 @@
 import { EmptyState } from '@oppenheimer/design-system-mobile/empty-state';
+import { LoadingIndicator } from '@oppenheimer/design-system-mobile/loading-indicator';
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import type { SessionChat } from '@oppenheimer/frontend-consumer';
 import { useStickToBottom } from '@oppenheimer/frontend-mobile';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useChatState } from '../hooks/use-chat-state';
 import { ChatTurn } from './chat-turn';
 
@@ -34,7 +35,7 @@ export function ChatView({
   if (!state.available || state.loading) {
     return (
       <View className="flex-1 items-center justify-center gap-3" aria-busy>
-        <ActivityIndicator />
+        <LoadingIndicator />
         <Text variant="caption">{labels.loading}</Text>
       </View>
     );

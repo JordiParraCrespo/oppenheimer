@@ -2137,6 +2137,23 @@ earlier note:
   for run and leaves the rest on the card (`research/auto-mode.md`), and
   Full access raises no card but the owner's own Ask, an ask rule and
   sending mail ("three levels, and Approve for me is a reviewer").
+- `next-steps/0.5-mobile.md` ("Native Liquid Glass, wherever the platform
+  has it", 2026-11-15) named the tab bar, selects, back buttons and floating
+  glass as the platform's. On 2026-11-25 the owner widened it to every
+  control the platform has: switches, checkboxes, segmented controls, menus,
+  alerts and sheets are SwiftUI's or Material 3's too, and the design
+  system's JavaScript look-alikes (dialogs, popovers, dropdown and context
+  menus, tabs, toggle groups, radio groups, the @gorhom bottom sheet) were
+  deleted.
+- The same day the owner asked for Material 3 Expressive on Android (Google's
+  "Start building with Material 3 Expressive"): the native controls take the
+  exact brand blue (#0071E3, kept exact by a patch to `@expo/ui`) instead of
+  the wallpaper's colours, the list searches become Material's search bar,
+  waits become Expressive's wavy circular indicator (not the shape-morphing
+  one, which the owner did not like), the Android tab bar is quiet (icons
+  only, ink on a soft grey pill) in the app's light or dark instead of
+  Material's stock purple, and
+  Run now becomes the one hero action, an extended FAB.
 - Note 21 drew Share as a dialog that opened on Share session (who,
   permission, for how long) and switched to Sharing once shared, and the
   guest page as a narrow card under the wordmark. Share is now one panel,

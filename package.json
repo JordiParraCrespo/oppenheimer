@@ -61,6 +61,7 @@
     "eval:bot-check-back": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-check-back/run.ts",
     "eval:bot-blocked-run": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-blocked-run/run.ts",
     "eval:bot-first-chat": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-first-chat/run.ts",
+    "eval:bot-react": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-react/run.ts",
     "eval:bot-memory": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-memory/run.ts",
     "eval:bot-session-follow": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-session-follow/run.ts",
     "eval:bot-session-restart": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-session-restart/run.ts",
@@ -112,7 +113,8 @@
     "patchedDependencies": {
       "nestjs-zod@4.3.1": "patches/nestjs-zod@4.3.1.patch",
       "@xterm/addon-webgl@0.19.0": "patches/@xterm__addon-webgl@0.19.0.patch",
-      "@novnc/novnc@1.7.0": "patches/@novnc__novnc@1.7.0.patch"
+      "@novnc/novnc@1.7.0": "patches/@novnc__novnc@1.7.0.patch",
+      "@expo/ui@57.0.26": "patches/@expo__ui@57.0.26.patch"
     }
   }
 }

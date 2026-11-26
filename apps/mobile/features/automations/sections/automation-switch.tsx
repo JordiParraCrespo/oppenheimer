@@ -1,7 +1,8 @@
+import { Switch } from '@oppenheimer/design-system-mobile/switch';
 import type { AutomationEntity } from '@oppenheimer/frontend-consumer';
 import { useSetAutomationPaused } from '@oppenheimer/frontend-consumer/react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Switch } from 'react-native';
+import { Alert } from 'react-native';
 
 /**
  * The system's switch that pauses or resumes one automation: on while it
@@ -17,11 +18,10 @@ export function AutomationSwitch({ automation }: { automation: AutomationEntity 
 
   return (
     <Switch
-      value={on}
+      checked={on}
       disabled={pause.isPending}
-      onValueChange={(next) => pause.mutate({ id: automation.id, paused: !next })}
+      onCheckedChange={(next) => pause.mutate({ id: automation.id, paused: !next })}
       accessibilityLabel={on ? t('automations.detail.pause') : t('automations.detail.resume')}
-      accessibilityState={{ busy: pause.isPending, checked: on }}
     />
   );
 }

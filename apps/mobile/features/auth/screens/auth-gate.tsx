@@ -1,9 +1,10 @@
 import { Button } from '@oppenheimer/design-system-mobile/button';
+import { LoadingIndicator } from '@oppenheimer/design-system-mobile/loading-indicator';
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import { useAuthState, useSessionRestore } from '@oppenheimer/frontend-core/react';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 export function AuthGate() {
   const { t } = useTranslation();
@@ -42,7 +43,7 @@ export function AuthGate() {
 
       {isLoading ? (
         <View className="absolute inset-0 z-50 items-center justify-center bg-background">
-          <ActivityIndicator size="large" />
+          <LoadingIndicator size="large" />
         </View>
       ) : null}
     </>

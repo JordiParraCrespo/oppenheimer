@@ -34,11 +34,14 @@ depend on the monorepo layout.
 
 ## What's inside
 
-- `src/components/ui/*` — Accordion, AlertDialog, Avatar, BrandMark, Button,
-  Card, Dialog, DropdownMenu, Glass, Select, Tabs, Tooltip, Text, and more — each
-  with its own export. `Glass` is Apple's Liquid Glass on iOS 26 (the system
-  blur elsewhere); `Select` is the platform's own menu picker (`@expo/ui`).
-- `src/lib/utils` — `cn()` (clsx + tailwind-merge).
+- `src/components/ui/*` — the platform's controls and the app's own content,
+  each with its own export. The controls are native, never drawn here:
+  `Switch`, `Checkbox`, `Select` and `SegmentedControl` are `@expo/ui`
+  (SwiftUI on iOS, Material 3's Compose on Android), and `Glass` is Apple's
+  Liquid Glass on iOS 26 (the system blur elsewhere). The content is
+  NativeWind: Accordion, Avatar, Badge, BrandMark, Button, Card, Text and more.
+- `src/lib/utils` — `cn()` (clsx + tailwind-merge); `src/lib/native-label` —
+  a native control's screen-reader name.
 - `tailwind.config.js` — the NativeWind preset and design-system source glob.
 
 Styling uses NativeWind (Tailwind for React Native). The `@rn-primitives/*`

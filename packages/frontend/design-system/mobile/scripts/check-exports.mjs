@@ -34,16 +34,10 @@ const packagePath = join(root, 'package.json');
  * only as `@oppenheimer/design-system-mobile/icons`, which is how `apps/mobile`
  * already imports icons.
  */
-const NOT_IN_BARREL = new Set(['icons.tsx', 'native-only-animated-view.tsx']);
+const NOT_IN_BARREL = new Set(['icons.tsx']);
 
-/**
- * The one component that is genuinely internal. It exists so the nine overlay
- * components can wrap their content in a Reanimated view on native and a plain
- * one on web; it has no standalone use and no app imports it. It cannot simply
- * stop exporting itself — its siblings import it by name — so it is named here
- * instead, and is exempt from the subpath rule as well as the barrel one.
- */
-const NOT_PUBLISHED = new Set(['native-only-animated-view']);
+/** Components that are internal and ship under no subpath. None today. */
+const NOT_PUBLISHED = new Set();
 
 /**
  * Two export forms the barrel cannot express, flagged by name so the failure

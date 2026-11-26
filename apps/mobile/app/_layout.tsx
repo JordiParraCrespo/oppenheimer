@@ -30,7 +30,7 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary fallback={() => <AppErrorFallback />}>
-      <MobileRoot>
+      <MobileRoot accent={NAV_THEME[colorScheme ?? 'light'].colors.primary}>
         <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
           <OppenheimerProvider app={app}>
             <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>

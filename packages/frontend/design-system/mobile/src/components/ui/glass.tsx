@@ -1,7 +1,8 @@
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { cssInterop, useColorScheme } from 'nativewind';
+import { cssInterop } from 'nativewind';
 import type { ViewProps } from 'react-native';
+import { useNativeScheme } from '../../lib/native-scheme';
 import { cn } from '../../lib/utils';
 
 cssInterop(GlassView, { className: 'style' });
@@ -29,8 +30,7 @@ export type GlassProps = ViewProps & {
  * Android get the platform's chrome blur, the nearest material they have.
  */
 export function Glass({ className, interactive, tint, children, ...props }: GlassProps) {
-  const { colorScheme } = useColorScheme();
-  const dark = colorScheme === 'dark';
+  const scheme = useNativeScheme();
 
   if (liquidGlass) {
     return (
@@ -38,7 +38,7 @@ export function Glass({ className, interactive, tint, children, ...props }: Glas
         glassEffectStyle="regular"
         isInteractive={interactive}
         tintColor={tint}
-        colorScheme={dark ? 'dark' : 'light'}
+        colorScheme={scheme}
         className={cn('overflow-hidden', className)}
         {...props}
       >
@@ -49,7 +49,7 @@ export function Glass({ className, interactive, tint, children, ...props }: Glas
 
   return (
     <BlurView
-      tint={dark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+      tint={scheme === 'dark' ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
       intensity={80}
       blurMethod="dimezisBlurViewSdk31Plus"
       className={cn('overflow-hidden border border-border-subtle', className)}

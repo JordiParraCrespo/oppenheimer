@@ -1,0 +1,32 @@
+diff --git a/android/src/main/java/expo/modules/ui/colors/MaterialColors.kt b/android/src/main/java/expo/modules/ui/colors/MaterialColors.kt
+index 9b3a8b3a72f727cc382d84de4541dff74e24b8da..9d7c7e9b1a80dcf1dcde3b31cee85d768a50456e 100644
+--- a/android/src/main/java/expo/modules/ui/colors/MaterialColors.kt
++++ b/android/src/main/java/expo/modules/ui/colors/MaterialColors.kt
+@@ -10,7 +10,7 @@ import androidx.compose.ui.graphics.toArgb
+ import com.google.android.material.color.utilities.DynamicScheme
+ import com.google.android.material.color.utilities.Hct
+ import com.google.android.material.color.utilities.MaterialDynamicColors
+-import com.google.android.material.color.utilities.SchemeTonalSpot
++import com.google.android.material.color.utilities.SchemeFidelity
+ import expo.modules.kotlin.records.Field
+ import expo.modules.kotlin.records.Record
+ import expo.modules.kotlin.types.OptimizedRecord
+@@ -41,12 +41,15 @@ internal fun Context.isSystemInDarkTheme(): Boolean {
+  */
+ @SuppressLint("RestrictedApi")
+ internal fun seedColorScheme(seedArgb: Int, isDark: Boolean): ColorScheme {
+-  val scheme: DynamicScheme = SchemeTonalSpot(Hct.fromInt(seedArgb), isDark, 0.0)
++  // Oppenheimer: SchemeFidelity keeps the seed's chroma (TonalSpot mutes a brand
++  // colour), and the seed itself is `primary`, so controls show the brand colour.
++  val seed = Hct.fromInt(seedArgb)
++  val scheme: DynamicScheme = SchemeFidelity(seed, isDark, 0.0)
+   val m = MaterialDynamicColors()
+   fun argb(dc: com.google.android.material.color.utilities.DynamicColor): Color = Color(dc.getArgb(scheme))
+   return ColorScheme(
+-    primary = argb(m.primary()),
+-    onPrimary = argb(m.onPrimary()),
++    primary = Color(seedArgb),
++    onPrimary = if (seed.tone < 60) Color.White else Color.Black,
+     primaryContainer = argb(m.primaryContainer()),
+     onPrimaryContainer = argb(m.onPrimaryContainer()),
+     inversePrimary = argb(m.inversePrimary()),
