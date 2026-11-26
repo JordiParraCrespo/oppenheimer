@@ -232,11 +232,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 			return err
 		}
 		launch.Server = session.Launch.Server
-		launch.StatusLine = s.statusLine(session.ID)
-		launch.RemoteControl = s.remoteControlName(session)
-		launch.Wrap = s.observer.wrap(session.ID)
-		s.brief(&launch, session.Agent, session)
-		s.trustFolder(session.Agent, session.Cwd())
+		s.decorate(&launch, session.Agent, session, true)
 		defer s.holdLaunch(ctx, session.Agent)()
 		if err := s.terminals.Launch(ctx, session.Target(0), session.Cwd(), launch.CommandLine(session.Agent)); err != nil {
 			s.discardFiles(session.ID)

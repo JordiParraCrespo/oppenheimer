@@ -322,13 +322,7 @@ func (s *Service) OpenWindow(ctx context.Context, id string, in WindowInput) (do
 func (s *Service) launchInWindow(ctx context.Context, session domain.Session, index int, in WindowInput) error {
 	agent := in.Agent
 	launch := windowLaunch(session, in)
-	// The runner's status line keeps what Claude Code hands it under the
-	// conversation's own id, so a second Claude's figures never reach the
-	// session's chat, which reads window 0's conversation; and it names no
-	// session, so this agent's conversation never becomes the session's.
-	launch.StatusLine = s.statusLine("")
-	s.brief(&launch, agent, session)
-	s.trustFolder(agent, session.Cwd())
+	s.decorate(&launch, agent, session, false)
 	defer s.holdLaunch(ctx, agent)()
 	return s.terminals.Launch(ctx, session.Target(index), session.Cwd(), launch.CommandLine(agent))
 }
@@ -697,6 +691,26 @@ func (s *Service) statusLine(session string) string {
 	return s.statusLines(session)
 }
 
+// decorate sets what this host adds to a launch of agent in one of
+// session's windows, and trusts its folder: the briefing, and the status
+// line for every window. Only window 0's agent is the session's own: its
+// status line names the session, it runs under the observer's wrapper, and
+// it registers with Remote Control. Another window's status line names no
+// session, so a second Claude's figures never reach the session's chat and
+// its conversation never becomes the session's; it gets no wrapper, and no
+// Remote Control, which would register the session twice.
+func (s *Service) decorate(launch *domain.Launch, agent domain.Agent, session domain.Session, windowZero bool) {
+	if windowZero {
+		launch.StatusLine = s.statusLine(session.ID)
+		launch.RemoteControl = s.remoteControlName(session)
+		launch.Wrap = s.observer.wrap(session.ID)
+	} else {
+		launch.StatusLine = s.statusLine("")
+	}
+	s.brief(launch, agent, session)
+	s.trustFolder(agent, session.Cwd())
+}
+
 // remoteControlName is the name window 0's agent of session registers with
 // Remote Control: the session's name on this host (`<repository>/<slug>`;
 // the console's title is the control plane's), else its id; "" when the
@@ -772,11 +786,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 	if s.transcripts != nil {
 		launch.Saved = s.transcripts.SavedConversation(session)
 	}
-	launch.StatusLine = s.statusLine(session.ID)
-	launch.RemoteControl = s.remoteControlName(session)
-	launch.Wrap = s.observer.wrap(session.ID)
-	s.brief(&launch, session.Agent, session)
-	s.trustFolder(session.Agent, session.Cwd())
+	s.decorate(&launch, session.Agent, session, true)
 	release := s.holdLaunch(ctx, session.Agent)
 	err = s.terminals.Create(ctx, session.TmuxName(), session.Cwd(), launch.CommandLine(session.Agent), s.sessionEnv(session))
 	release()
