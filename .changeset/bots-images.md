@@ -10,7 +10,7 @@
 "@oppenheimer/translations": patch
 ---
 
-Bots read images (`product/versions/mvp/25-bots.md` §3.1, issue #426).
+Bots read images (`product/design/bots/25-bots.md` §3.1, issue #426).
 
 - `@oppenheimer/shared`: `BOT_IMAGE_MIME_TYPES`, `BOT_IMAGE_MAX_BYTES`,
   `BOT_MESSAGE_IMAGES_MAX`, `BotAttachment`, `botTakesImages` and the

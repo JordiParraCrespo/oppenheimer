@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { productSyncProblems } from './check-product-sync.mjs';
 
-const note = 'product/versions/mvp/25-bots.md';
+const note = 'product/design/bots/25-bots.md';
 
 test('a branch that touches no note has nothing to sync', () => {
   assert.deepEqual(productSyncProblems({ changed: ['apps/api/x.ts'], messages: [''] }), []);
@@ -36,8 +36,8 @@ test('a note changed with both is in sync', () => {
   );
 });
 
-test('the next steps and the top-level notes count; research does not', () => {
-  for (const path of ['product/next-steps/answering-on-telegram.md', 'product/15-review.md']) {
+test('the design, the roadmap and the archive count; research does not', () => {
+  for (const path of ['product/roadmap.md', 'product/archive/07-mvp.md']) {
     assert.equal(productSyncProblems({ changed: [path], messages: [''] }).length, 1, path);
   }
   assert.deepEqual(

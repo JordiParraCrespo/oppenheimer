@@ -7,7 +7,7 @@ pushes" and send the October table after, and nothing woke it: it had only
 read that session, which it had not started. A bot now says it will come
 back to a session only when something will wake it, and `watch_session`s
 any other before its turn ends, with `check_in_minutes` for a time it names
-(`product/versions/mvp/27-bot-subscriptions.md` §4.2).
+(`product/design/bots/27-bot-subscriptions.md` §4.2).
 
 ## The cases
 

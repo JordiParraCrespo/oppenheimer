@@ -4,12 +4,12 @@
 > #43, which was closed on 2026-10-10 without merging. Its proposal of
 > 2026-09-22 never became a decision: libvirt first, Firecracker later (note 08) and the sleep tiers of note
 > 10 still stand. What governs today:
-> [`03-machines-and-vm-provisioning.md`](../03-machines-and-vm-provisioning.md),
-> [`08-reuse-gha-runner.md`](../08-reuse-gha-runner.md) and
-> [`10-sleep-wake-and-pricing.md`](../10-sleep-wake-and-pricing.md) for
+> [`archive/03-machines-and-vm-provisioning.md`](../archive/03-machines-and-vm-provisioning.md),
+> [`archive/08-reuse-gha-runner.md`](../archive/08-reuse-gha-runner.md) and
+> [`archive/10-sleep-wake-and-pricing.md`](../archive/10-sleep-wake-and-pricing.md) for
 > VMs and cloud hosts,
-> [`versions/mvp/00-scope.md`](../versions/mvp/00-scope.md) for what the
-> MVP runs, and [`next-steps/README.md`](../next-steps/README.md), where
+> [`design/foundations/00-scope.md`](../design/foundations/00-scope.md) for what the
+> MVP runs, and [`roadmap.md`](../roadmap.md), where
 > VMs are not yet placed in the order after the MVP. Its numbered
 > cross-references (`02 §14`, `03 §Cloud hosts` and the like) point at
 > sections that pull request proposed and that the current notes do not
@@ -28,7 +28,7 @@ It would have changed three earlier decisions, none of which
 changed: note 08's "libvirt first, Firecracker later"; `ephemeral-cloud-machines.md`'s
 "one provider VM per session, paired as a host"; and note 10's three
 sleep tiers, which collapse to two states for a microVM session. The
-design was to land in the MVP notes that own each piece — `versions/mvp/02`
+design was to land in the MVP notes that own each piece — `design/runner/02-runner.md`
 §14 (the runtime), `04` (the image), `03` §Cloud hosts (the port, the
 policy), `10` (the columns), `07` (the findings) — and this note was
 the research behind them.
@@ -69,7 +69,7 @@ documentation.
 **A session is a microVM.** On a host with KVM, the runner boots one
 Firecracker VM per session from a prebaked root image, on a disk that
 belongs to the session. The VM runs while the session is active. When
-the session is idle (the control plane's call, `versions/mvp/03`), the
+the session is idle (the control plane's call, `design/foundations/03-control-plane.md`), the
 guest agent syncs and unmounts, the VM is killed, and the disk stays.
 The next message boots a new VM on that disk: tmux comes up, the agent
 is relaunched with its own resume flag, the terminal shows the tail of
@@ -126,12 +126,12 @@ running ◄──── resume: boot on the kept disk, agent --resume ─┤
   hands it the session: ids, the layout, the launch, the first task.
   The guest clones through the proxy (§4), runs the setup, starts tmux,
   launches the agent. The boot-trace rows are the same events as
-  `versions/mvp/03`.
+  `design/foundations/03-control-plane.md`.
 - **Active.** PTY bytes, resize, window open and close, and the screen
   manifest ride vsock between the guest agent and the host runner; the
   runner relays them on the link exactly as it relays a tmux on the
   host today. The wire between browser, control plane and host does not
-  change (`versions/mvp/01`).
+  change (`design/foundations/01-protocol.md`).
 - **Stop.** The control plane sends `session.stop` with `push: true`
   (already decided); the guest pushes, `sync`s, unmounts, and reports;
   the runner kills the VM. The disk keeps its ext4 journal, so a VM
@@ -139,7 +139,7 @@ running ◄──── resume: boot on the kept disk, agent --resume ─┤
   booting "unchecked".
 - **Resume.** `session.restart` boots a VM on the kept disk; the guest
   relaunches tmux window 0 with the agent's own resume flag and the
-  session id recorded continuously (`versions/mvp/02` §5 and §9), and
+  session id recorded continuously (`design/runner/02-runner.md` §5 and §9), and
   the fresh repository token arrives over vsock before the prompt is
   live (note 10 §3).
 - **Delete.** `session.close`, then the disk file is removed (F18). The
@@ -186,7 +186,7 @@ reach, the host identifies the VM by the CID it assigned, and the
 runner's own host key is the identity on the link. Nothing is injected
 on the kernel command line but the boot arguments.
 
-**The image** is `versions/mvp/04`: Ubuntu 24.04 from a Dockerfile,
+**The image** is `design/foundations/04-guest-image.md`: Ubuntu 24.04 from a Dockerfile,
 exported to a raw ext4, with git, tmux, Node, Claude Code, Codex,
 Docker, the common toolchains, `chrony`, the proxy CA, and the guest
 agent as `init`. Signed with the offline key, the rootfs half of F26.
@@ -339,7 +339,7 @@ still one to five percent of a task (note 10 §8).
 
 ## 10. Order of work
 
-1. **The image and the guest agent** (`versions/mvp/04`, `02` §14): a
+1. **The image and the guest agent** (`design/foundations/04-guest-image.md`, `02` §14): a
    Dockerfile to a raw ext4, the guest agent as `init` with the vsock
    control channel, the PTY bridge, the proxy forwarder, the CA. Done
    means: `firecracker` on the Hetzner box boots it to a tmux prompt

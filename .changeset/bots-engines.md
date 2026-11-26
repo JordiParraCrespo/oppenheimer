@@ -2,7 +2,7 @@
 "@oppenheimer/backend-agents": minor
 ---
 
-New package: the engines a bot's turn runs on (`product/versions/mvp/25-bots.md`
+New package: the engines a bot's turn runs on (`product/design/bots/25-bots.md`
 §2, slice 2).
 
 - One `BotEngine` port and `createBotEngine()`, which routes by provider:

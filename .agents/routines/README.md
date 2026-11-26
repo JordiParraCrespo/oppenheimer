@@ -33,7 +33,7 @@ fixture no longer compiles.
 
 A routine that needs a person's call sends a report to Oppenheimer's Inbox
 with the pictures that show it, and reads the answer at the start of its
-next run (`product/versions/mvp/29-inbox.md`, "Reports"; the commands are in
+next run (`product/design/console/29-inbox.md`, "Reports"; the commands are in
 `apps/docs/docs/guide/inbox.md`). It needs two things in its cloud
 environment, set by the owner: the deployment's host in the allowed domains,
 and an API token with `inbox-reports:read` and `inbox-reports:write`, pinned

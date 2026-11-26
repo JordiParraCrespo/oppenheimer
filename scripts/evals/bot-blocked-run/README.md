@@ -6,7 +6,7 @@ sense?
 On 2026-11-12 the owner saw Oppie answer its half-hourly Sentry check with
 "the designated session is still closed" for hours, and asked: "if the
 session is closed create a new one, no?". Since then
-(`product/versions/mvp/25-bots.md` §1, `26-bot-routines.md` §4):
+(`product/design/bots/25-bots.md` §1, `26-bot-routines.md` §4):
 
 - a blocker is the bot's to solve before it is the bot's to report: it asks
   what the blocked step was for and reaches that end another way, when the

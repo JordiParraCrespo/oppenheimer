@@ -4,7 +4,7 @@
 
 ### Minor Changes
 
-- fc0e75d: The hosts backend for the Settings page (`product/versions/mvp/14-hosts-settings.md`).
+- fc0e75d: The hosts backend for the Settings page (`product/design/runner/14-hosts-settings.md`).
 
   - `@oppenheimer/api`: a host read carries a derived `status` (`running`, `idle`,
     `offline`, `unpaired`) and `runningSessionCount`, counted by `sessions/`
@@ -19,7 +19,7 @@
   - `@oppenheimer/runner`: the facts report the logical CPU count as `cpus`.
   - `@oppenheimer/api`: host metadata tables (`host_inventory`, `host_presence`,
     `host_network`, `host_event`), backfilled from `host`; the old columns stay
-    until the code switches over (`product/versions/mvp/15-host-metadata.md`).
+    until the code switches over (`product/design/runner/15-host-metadata.md`).
   - `@oppenheimer/api`: heartbeats write `host_presence` and, only when the
     machine changed, `host_inventory`, with the change on the host's timeline;
     host responses carry `machine`, `vitals` and `network`;

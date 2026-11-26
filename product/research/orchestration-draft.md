@@ -4,12 +4,12 @@
 > #43, which was closed on 2026-10-10 without merging. It was drafted as
 > `versions/mvp/17-orchestration.md`; that number is now Plan. Its
 > "What it proposed" list was never adopted: the control plane today is
-> [`versions/mvp/03-control-plane.md`](../versions/mvp/03-control-plane.md)
+> [`design/foundations/03-control-plane.md`](../design/foundations/03-control-plane.md)
 > and
-> [`10-api-modules-and-data-model.md`](../versions/mvp/10-api-modules-and-data-model.md),
+> [`10-api-modules-and-data-model.md`](../design/foundations/10-api-modules-and-data-model.md),
 > and the runner is
-> [`versions/mvp/02-runner.md`](../versions/mvp/02-runner.md). Bare
-> numbers in it name `versions/mvp/` notes. Its numbered
+> [`design/runner/02-runner.md`](../design/runner/02-runner.md). Bare
+> numbers in it name `design/` notes. Its numbered
 > cross-references (`02 §14`, `03 §Cloud hosts` and the like) point at
 > sections that pull request proposed and that the current notes do not
 > have. Paths in backticks are relative to `product/`.

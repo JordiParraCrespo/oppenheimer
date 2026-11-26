@@ -8,7 +8,7 @@
 "@oppenheimer/translations": patch
 ---
 
-Bots on a ChatGPT subscription (`product/versions/mvp/25-bots.md` §2): a fourth
+Bots on a ChatGPT subscription (`product/design/bots/25-bots.md` §2): a fourth
 provider, `chatgpt`, signed in rather than given a key, the way OpenClaw and the
 Codex CLI do it.
 

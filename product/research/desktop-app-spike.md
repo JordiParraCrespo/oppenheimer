@@ -4,7 +4,7 @@ Asked for on 2026-10-18: a desktop app where a session on your own machine
 is a terminal straight to it, as in Orca, and where everything still works
 out of the box away from home. This note is the spike and what it measured;
 it decides nothing. The plan is for the owner to settle, and the decisions
-will go to a numbered note under `versions/mvp/` with a line in
+will go to a numbered note under `design/` with a line in
 `../README.md` (note 00 rejected Electron because "state must live
 server-side"; this shape keeps it there, since the window is the hosted
 console).
@@ -14,7 +14,7 @@ console).
 - **Electron, loading the hosted console.** One window on the console's
   origin, every other link to the system browser, a sandboxed renderer with
   context isolation, and one bridge in the preload
-  (`window.oppenheimerDesktop`). Code: `desktop-spike/src/`.
+  (`window.oppenheimerDesktop`). Code: `spikes/desktop-spike/src/`.
 - **The runner's local socket carries the terminal.** The runner already
   listens on `~/.oppenheimer/run/runner.sock`, 0600 in a 0700 directory, for
   the credential helper. The spike adds `GET /v1/sessions/{id}/attach`

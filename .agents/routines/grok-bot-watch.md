@@ -2,7 +2,7 @@
 
 xAI's Grok Bot is the product our bots learn the most from:
 `product/research/lessons-from-grok-bot.md` reads it version by version
-(0.18, 0.71.2, 0.78.1), and notes 25, 26 and 27 in `product/versions/mvp/`
+(0.18, 0.71.2, 0.78.1), and notes 25, 26 and 27 in `product/design/bots/`
 took most of what they built from those reads. Every day you check whether
 a new version or a change to its published docs has appeared. When one has,
 you read it the way §9 of that note read 0.78.1, write what changed into the
@@ -37,7 +37,7 @@ Read:
 - `product/research/lessons-from-grok-bot.md` in full; §9 is the shape of a read;
 - `product/research/README.md` and `product/README.md` (how a research note
   is written, and the "decisions that changed" list);
-- `product/versions/mvp/25-bots.md`, `26-bot-routines.md` and
+- `product/design/bots/25-bots.md`, `26-bot-routines.md` and
   `27-bot-subscriptions.md`, so you know what ours already does;
 - `.agents/skills/research/SKILL.md`, `.agents/skills/propose/SKILL.md` and
   `.agents/skills/steward/SKILL.md`.

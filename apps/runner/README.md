@@ -1,12 +1,12 @@
 # @oppenheimer/runner
 
-The host agent from `product/versions/mvp/02-runner.md`: one static Go
+The host agent from `product/design/runner/02-runner.md`: one static Go
 binary that will own the worktrees, the tmux sessions and the PTY stream on
 a host you own. The NestJS API is the control plane; this service is the
 thing that runs on the machine.
 
 How it is installed on that machine and how it updates itself afterwards are
-`product/versions/mvp/09-runner-install-and-update.md`.
+`product/design/runner/09-runner-install-and-update.md`.
 
 **What works today**: a macOS, Debian or Ubuntu machine pairs with a
 workspace, installs itself as a user service, keeps itself on the current
@@ -27,7 +27,7 @@ typed into it, is stopped (never closed) to free its processes. Working,
 blocked, attached (from the console or a tmux client on the host) and kept
 sessions are never stopped this way, nor a child whose parent is live, nor a
 parent with a child that is not idle too. `RUNNER_IDLE_STOP` sets the window (`90m`, `4h`)
-or turns it `off` (`product/versions/mvp/02-runner.md` §5).
+or turns it `off` (`product/design/runner/02-runner.md` §5).
 
 `runner run` holds one outbound WebSocket to the control plane: sessions are
 driven from the console over it, and the git credential helper answers with
@@ -35,7 +35,7 @@ installation tokens the control plane mints on it. `runner sessions …` drives
 the same lifecycle from the host itself.
 
 A bot can run one program on the host over the link (`host.exec`,
-`product/versions/mvp/25-bots.md` §4.2, "Commands on a host"), but only what
+`product/design/bots/25-bots.md` §4.2, "Commands on a host"), but only what
 `runner exec` allows here: off by default, an allowlist of programs, or
 everything. The policy lives in `~/.oppenheimer/exec.json` and is read on every
 call. It is written here, or by a bot over the link when the person asked it
@@ -85,7 +85,7 @@ does. The choice lives in `~/.oppenheimer/desktop.json`, is read on every
 open, and is never written by the control plane
 (`product/research/device-streaming.md`, "A host's desktop").
 
-A host can hold one WhatsApp linked device (`product/next-steps/whatsapp.md`):
+A host can hold one WhatsApp linked device (`product/design/channels/whatsapp.md`):
 it pairs by QR from the console, keeps what arrives in an on-disk outbox
 until the control plane acks it, and sends inside the host's own budget (20
 a minute, 300 a day). A reply quotes the message it answers when the control
@@ -151,13 +151,13 @@ mark and colours wherever a person meets it.
 | `runner uninstall [--keep-identity] [--force]` | stops the service, revokes the host, erases the identity. Refuses while the runner's sessions run unless `--force`, which ends them (checkouts stay). When the control plane could not unpair the host it says why and how to finish, and exits 7. Never touches the workspaces directory |
 | `runner sessions ls\|create\|attach\|window\|restart\|close` | the worktree-plus-tmux lifecycle, from the host itself; a session made here lives under the work folder's `local/local/` |
 | `runner sessions run\|send\|wait\|report\|children\|keep` | from inside a session, through the running daemon's socket: start a child session with a task (`--repo`, `--outlive-parent`, `--quiet`, `--keep`), type a message into an agent, wait for children to settle, report to the parent, list children, keep a session across reboots. `SESS_012` is an agent not up after 30 s, `HOST_012` no daemon on the socket |
-| `runner sessions send-file <path> [--caption "line"]` | from inside a session: shows the person a file in the session's chat, an image as a JPEG preview and a text file of 32 KB or less as its text; the file stays on the host (`product/next-steps/agent-tools.md` §1). With a link it also logs `file.shared` (name, type, size, caption; never the path), and answers a bot's `shared.preview.get` with the image's preview (§7). It answers `transcript.read` too, a page of a session's conversation read off the agent's transcript, as the chat view's entries (§8; `SESS_018` for an agent with no transcript file, OpenCode's and ZCode's). `SESS_013` is a path that is not a readable regular file |
+| `runner sessions send-file <path> [--caption "line"]` | from inside a session: shows the person a file in the session's chat, an image as a JPEG preview and a text file of 32 KB or less as its text; the file stays on the host (`product/design/sessions/agent-tools.md` §1). With a link it also logs `file.shared` (name, type, size, caption; never the path), and answers a bot's `shared.preview.get` with the image's preview (§7). It answers `transcript.read` too, a page of a session's conversation read off the agent's transcript, as the chat view's entries (§8; `SESS_018` for an agent with no transcript file, OpenCode's and ZCode's). `SESS_013` is a path that is not a readable regular file |
 | `runner sessions show <spec.json \| ->` | from inside a session: shows the person a visual in the session's chat, a title and typed blocks (figures, charts, a table, a checklist, progress and more) the console draws with its own charts; the spec is `@oppenheimer/shared/schemas/visual`. The runner checks its shape and refuses one it cannot draw with each fault by its path (`SESS_023`); the entry is kept beside the session's shared files, so the chat follows it the same way. The MCP server offers it as `show_visual` |
-| `runner sessions notify "line"` | from inside a session: tells the person a line, at most 500 bytes, which the console's Inbox lists until it is marked done (`product/next-steps/agent-tools.md` §2). `SESS_014` is a runner with no link to the control plane |
-| `runner sessions watch-pr <n> [--repo owner/name] [--off]` | from inside a session: be woken when the pull request's checks finish, it is reviewed or commented on, or it merges; a line is typed in once the agent is at its prompt (`product/next-steps/agent-tools.md` §3). `SESS_015` is a runner with no link to the control plane |
-| `runner sessions wake-in <30m\|2h\|1d> "note"` | from inside a session: be woken then with the note, a minute to seven days away, once the agent is at its prompt; the control plane holds the wake (`product/next-steps/agent-tools.md` §4). `SESS_015` is a runner with no link to the control plane |
+| `runner sessions notify "line"` | from inside a session: tells the person a line, at most 500 bytes, which the console's Inbox lists until it is marked done (`product/design/sessions/agent-tools.md` §2). `SESS_014` is a runner with no link to the control plane |
+| `runner sessions watch-pr <n> [--repo owner/name] [--off]` | from inside a session: be woken when the pull request's checks finish, it is reviewed or commented on, or it merges; a line is typed in once the agent is at its prompt (`product/design/sessions/agent-tools.md` §3). `SESS_015` is a runner with no link to the control plane |
+| `runner sessions wake-in <30m\|2h\|1d> "note"` | from inside a session: be woken then with the note, a minute to seven days away, once the agent is at its prompt; the control plane holds the wake (`product/design/sessions/agent-tools.md` §4). `SESS_015` is a runner with no link to the control plane |
 | `runner --skill` | the manual an agent in a session reads for the commands above; every session's note points at it |
-| `runner mcp` | the same commands as an MCP server on stdio (`start_session`, `send_to_session`, `list_children`, `wait_for_children`, `report_to_parent`, `notify`, `send_file`, `watch_pull_request`, `wake_in`), which each session's agent is given at launch as `runner mcp --session <id> --socket <path>` (arguments, since Codex does not pass its environment to an MCP server): Claude Code as `--mcp-config`, Codex as a `-c mcp_servers.oppenheimer` override, OpenCode in `OPENCODE_CONFIG_CONTENT`, each beside the person's own servers. Codex is also told where the session note is (`developer_instructions`, after the value of the key the override would replace, the checkout's `.codex/config.toml` or else the person's own) and, like OpenCode, allowed 31 minutes a tool call, for a wait and OpenCode reads it (`instructions`), since neither looks in the session's folder above the checkout (`product/next-steps/agent-tools.md` §10) |
+| `runner mcp` | the same commands as an MCP server on stdio (`start_session`, `send_to_session`, `list_children`, `wait_for_children`, `report_to_parent`, `notify`, `send_file`, `watch_pull_request`, `wake_in`), which each session's agent is given at launch as `runner mcp --session <id> --socket <path>` (arguments, since Codex does not pass its environment to an MCP server): Claude Code as `--mcp-config`, Codex as a `-c mcp_servers.oppenheimer` override, OpenCode in `OPENCODE_CONFIG_CONTENT`, each beside the person's own servers. Codex is also told where the session note is (`developer_instructions`, after the value of the key the override would replace, the checkout's `.codex/config.toml` or else the person's own) and, like OpenCode, allowed 31 minutes a tool call, for a wait and OpenCode reads it (`instructions`), since neither looks in the session's folder above the checkout (`product/design/sessions/agent-tools.md` §10) |
 | `runner pty [--report F] -- CMD` | what window 0 runs the agent under: a PTY of its own that answers OSC 7501's probe, keeps the agent's reports in F and passes every other byte through |
 | `runner credential-helper get` | git's credential protocol, answered over the local socket |
 | `runner status` | platform, pairing, key fingerprint, service, tools, disk. Exits 0 whenever it can print the table, ready or not: read the lines, not the exit code |
@@ -211,7 +211,7 @@ telling an agent where its checkout is and what not to touch. The runner
 rewrites both on every create and close and when it starts; a file at that
 path it did not write is left alone.
 
-The layout is `product/versions/mvp/24-session-places.md` §2. The two
+The layout is `product/design/sessions/24-session-places.md` §2. The two
 directories that hold checkouts end in `.noindex`, which Spotlight skips:
 indexing a host's sessions costs it more CPU than the agents use. Every level is
 named by an id that never changes, and only a folder whose marker names the

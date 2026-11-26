@@ -9,7 +9,7 @@ refactor ours.
 
 This note is that read. It decides nothing: §4 is a proposal and §5 its
 order of work, each slice a pull request of its own under `/propose`. The
-design that governs today is `versions/mvp/25-bots.md`. Code paths are from
+design that governs today is `design/bots/25-bots.md`. Code paths are from
 the repository root.
 
 What is measured and what is inferred:
@@ -436,7 +436,7 @@ the loop and the provider, which we have behind a port and which is not
 where our trouble is; what is tangled here (the prompt, the catalog, the
 permission layer, the modules) every one of them leaves to the
 application, by its own documentation. Adopting one would also cost what
-`versions/mvp/25-bots.md` §2 chose the vendors' SDKs for (Claude Code's
+`design/bots/25-bots.md` §2 chose the vendors' SDKs for (Claude Code's
 loop and folding; a ChatGPT sign-in through the Codex backend), and the
 AI SDK in particular is ESM-only on Node 22 where the API compiles to
 CommonJS, with a major version every six months. The projects whose
@@ -695,6 +695,6 @@ every turn already stores what it read from the provider's cache
   catalog with `apps/mcp`), slice 5's destination is different: the
   areas would move to that server, not to the modules.
 - If `bots-chat` is to leave the API process for a worker of its own
-  (`versions/mvp/25-bots.md` §8 keeps that open), contribution through
+  (`design/bots/25-bots.md` §8 keeps that open), contribution through
   Nest's injector (slice 5) binds the runtime to the API's modules more
   tightly than calling them over HTTP would.

@@ -3,7 +3,7 @@
 Do not replay these. They are what one delta sync needed that the workflow
 did not predict; the next export will differ.
 
-- Export: the 2026-10-13 sync of `product/versions/mvp/design/`. Four new
+- Export: the 2026-10-13 sync of `product/mockups/`. Four new
   frames (`ShareSession`, `Bots`, `BotSettings`, `Chat Components`) and
   deltas on Plan, Pull requests, Add a host and Settings. The user asked for
   the new components only, built in batches with a capture of each, so the

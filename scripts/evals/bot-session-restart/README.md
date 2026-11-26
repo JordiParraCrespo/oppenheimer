@@ -7,7 +7,7 @@ On 2026-11-24 a bot told its owner that the session it had delegated to "is
 stopped and accepts no instructions: open it with the button above". A
 session stops on its own after two hours idle and unwatched, and every
 session stops when its host reboots. Since then a bot restarts a stopped
-session with `restart_session` (`product/versions/mvp/25-bots.md`), and
+session with `restart_session` (`product/design/bots/25-bots.md`), and
 `send_to_session` on a stopped session is refused with the way back.
 
 ## The cases

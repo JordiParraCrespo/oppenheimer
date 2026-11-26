@@ -4,7 +4,7 @@
 ---
 
 Bots save and fix their own skills, from Hermes Agent's learning loop
-(`product/versions/mvp/25-bots.md` §4.1, Skills).
+(`product/design/bots/25-bots.md` §4.1, Skills).
 
 - `@oppenheimer/api`: the prompt says when to save a skill unasked; a turn
   someone waits on that has run 6 tool calls with no skill used or saved is

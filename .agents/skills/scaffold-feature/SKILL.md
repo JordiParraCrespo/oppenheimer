@@ -62,7 +62,7 @@ new feature. Before creating anything, answer these:
   that fill something in steps (New project, Add host) are `EditorPage`s under
   the `_editor` layout. The console's sidebar *is* the session list. Workspaces
   are personal: there is no roster, invitation or team UI to build, whatever
-  the API serves (`product/versions/mvp/08-auth.md`).
+  the API serves (`product/design/foundations/08-auth.md`).
 - **Does the API serve it?** Look for the endpoint in `apps/api/openapi.json`
   and the generated client in `packages/frontend/api-client`. If it isn't
   there, the backend comes first (`/scaffold-module`, then
@@ -86,7 +86,7 @@ new feature. Before creating anything, answer these:
 
 When something here changes the design and cannot be inferred, ask. Otherwise
 state your assumption in the summary and move on. When a design export
-exists for the screen (`product/versions/mvp/design/`), it is the layout;
+exists for the screen (`product/mockups/`), it is the layout;
 port its values onto the design system (`/design-export-port`), never around
 it.
 

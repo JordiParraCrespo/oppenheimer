@@ -6,22 +6,22 @@ for the detail and sources.
 
 | # | Note | What it settles |
 |---|------|-----------------|
-| 00 | [Vision and plan](00-vision-and-plan.md) | What we build, lessons from OpenClaw and Orca, layers, domain model, stack |
-| 01 | [Terminal first](01-terminal-first.md) | The core primitive is a persistent PTY in the browser; how Orca's relay does it; subscription logins done legitimately |
-| 02 | [Targets and GitHub auth](02-targets-and-github-auth.md) | Direct-machine vs isolated-VM targets; proxy-injected GitHub tokens as Claude Code on the web does it |
-| 03 | [Machines and VM provisioning](03-machines-and-vm-provisioning.md) | herdr, the Actions runner registration design, Actuated, the Firecracker provisioner, service split, Go runner |
-| 04 | [Security review](04-security-review.md) | 28 findings by trust boundary, Tailscale as an optional perimeter, the measured reference VM spec |
-| 05 | [GitHub experience](05-github-experience.md) | Connect, start, review, PR, auto-fix, routines, environments, and what each piece costs |
-| 06 | [Multiple accounts](06-multi-account.md) | How Orca handles several Claude, Codex, Kimi, OpenCode accounts and usage meters; our account model; macOS resolved |
-| 07 | [MVP](07-mvp.md) | A personal workspace of sessions, each a KVM guest on the Hetzner host, each just a terminal; Codex first; hosted web control plane |
-| 08 | [Reuse the GHA runner host](08-reuse-gha-runner.md) | The existing Go runner controller is most of the provisioner; what sessions add; libvirt first, Firecracker later; website and runners in different places over the tailnet |
-| 09 | [GitHub App install](09-github-app-install.md) | Install the App, choose all or selected repositories; the installation is the access control; narrowed one-hour tokens per session |
-| 10 | [Sleep, wake, and pricing](10-sleep-wake-and-pricing.md) | Suspend and hibernate tiers on libvirt and on AWS, GCP, Azure, Fly, Hetzner Cloud; what an AX42 host holds; sleeping sessions are free; pricing shape |
-| 11 | [Workspace layout](11-workspace-layout.md) | One fixed place per repo (§1 superseded by `versions/mvp/10`: one store per repo per workspace, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
-| 15 | [Reviewing at the speed agents write](15-reviewing-at-agent-speed.md) | Review is the bottleneck: every PR in a lane (Auto, Quick, Deep); auto-merge by a readable policy, proven in a dry run on your history; a review session prepared on your host with the context pack, the checks run and a brief waiting |
+| 00 | [Vision and plan](archive/00-vision-and-plan.md) | What we build, lessons from OpenClaw and Orca, layers, domain model, stack |
+| 01 | [Terminal first](archive/01-terminal-first.md) | The core primitive is a persistent PTY in the browser; how Orca's relay does it; subscription logins done legitimately |
+| 02 | [Targets and GitHub auth](archive/02-targets-and-github-auth.md) | Direct-machine vs isolated-VM targets; proxy-injected GitHub tokens as Claude Code on the web does it |
+| 03 | [Machines and VM provisioning](archive/03-machines-and-vm-provisioning.md) | herdr, the Actions runner registration design, Actuated, the Firecracker provisioner, service split, Go runner |
+| 04 | [Security review](archive/04-security-review.md) | 28 findings by trust boundary, Tailscale as an optional perimeter, the measured reference VM spec |
+| 05 | [GitHub experience](archive/05-github-experience.md) | Connect, start, review, PR, auto-fix, routines, environments, and what each piece costs |
+| 06 | [Multiple accounts](archive/06-multi-account.md) | How Orca handles several Claude, Codex, Kimi, OpenCode accounts and usage meters; our account model; macOS resolved |
+| 07 | [MVP](archive/07-mvp.md) | A personal workspace of sessions, each a KVM guest on the Hetzner host, each just a terminal; Codex first; hosted web control plane |
+| 08 | [Reuse the GHA runner host](archive/08-reuse-gha-runner.md) | The existing Go runner controller is most of the provisioner; what sessions add; libvirt first, Firecracker later; website and runners in different places over the tailnet |
+| 09 | [GitHub App install](archive/09-github-app-install.md) | Install the App, choose all or selected repositories; the installation is the access control; narrowed one-hour tokens per session |
+| 10 | [Sleep, wake, and pricing](archive/10-sleep-wake-and-pricing.md) | Suspend and hibernate tiers on libvirt and on AWS, GCP, Azure, Fly, Hetzner Cloud; what an AX42 host holds; sleeping sessions are free; pricing shape |
+| 11 | [Workspace layout](archive/11-workspace-layout.md) | One fixed place per repo (§1 superseded by `design/foundations/10-api-modules-and-data-model.md`: one store per repo per workspace, checkouts under sessions); three runtimes: Shared workspace VM, Clean VM, This machine (the Mac Studio with simulators) |
+| 15 | [Reviewing at the speed agents write](research/reviewing-at-agent-speed.md) | Review is the bottleneck: every PR in a lane (Auto, Quick, Deep); auto-merge by a readable policy, proven in a dry run on your history; a review session prepared on your host with the context pack, the checks run and a brief waiting |
 | research/ | [Research](research/README.md) | Reads of other products, measurements and proposals that were not adopted; they decide nothing. Notes 12 (Grok Bot), 13 (herdr), 14 (session boot time) and 16 (developer-tools landscape) live there, and its index maps the old numbers |
-| versions/mvp/ | [MVP design](versions/mvp/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
-| next-steps/ | [Next steps](next-steps/README.md) | The versions after the MVP, one document each; its README is the list and holds the order |
+| design/ | [MVP design](design/README.md) | In-depth design of the MVP, one document per area, with its own decision log |
+| roadmap.md | [Next steps](roadmap.md) | The versions after the MVP, one document each; its README is the list and holds the order |
 
 Decisions that changed along the way, so nobody is confused by an
 earlier note:
@@ -62,17 +62,17 @@ earlier note:
   framework open with a recommendation for a Vite + React SPA; Next.js
   used as a client app is also fine. The firm point is only that the
   console is a real-time client, not a server-rendered site.
-- Note 07's VM-based MVP is superseded by `versions/mvp/00-scope.md`: the MVP
+- Note 07's VM-based MVP is superseded by `design/foundations/00-scope.md`: the MVP
   is Orca on the web without VMs, sessions directly on your own hosts,
   Claude Code first. The VM design is the slice after, not deleted.
 - Sign-in was GitHub-only; it is now GitHub, Google, and email plus
   password on day one, with Connect GitHub as a separate step
-  (`versions/mvp/00-scope.md`).
-- Notes 00 and 07 and `versions/mvp/03-control-plane.md` said Hono plus
+  (`design/foundations/00-scope.md`).
+- Notes 00 and 07 and `design/foundations/03-control-plane.md` said Hono plus
   Drizzle for the control plane. The code started from the Flama
   starter, so the control plane is NestJS plus TypeORM on Postgres, with
   Better Auth for identity. The modules and the data model are unchanged;
-  only the framework is (`versions/mvp/03-control-plane.md`).
+  only the framework is (`design/foundations/03-control-plane.md`).
 - The codebase keeps every app the starter ships (admin, mobile, CLI,
   MCP, showcases, Helm) from day one, so later slices need no porting.
   Only `api`, `web`, `runner`, `docs` and `e2e` are the MVP; the rest is
@@ -80,36 +80,36 @@ earlier note:
 - The personal workspace is a row in the starter's `organization` table
   with the account as its single owner member, created at sign-up. No
   roster, no invitations, no teams are exposed in the MVP
-  (`versions/mvp/08-auth.md`).
-- Signed self-update moved from `versions/mvp/00-scope.md`'s out-list
+  (`design/foundations/08-auth.md`).
+- Signed self-update moved from `design/foundations/00-scope.md`'s out-list
   into the MVP. What changed is *when*, not what: F26 always said signed
   updates the control plane cannot forge. Design in
-  `versions/mvp/09-runner-install-and-update.md`; F26 is now on the 07
+  `design/runner/09-runner-install-and-update.md`; F26 is now on the 07
   checklist.
 - Note 03 cited herdr from its website. Note 13 reads its source: the
   architecture matches ours, but herdr owns the PTYs, so its agents do not
   survive a restart. Our tmux layer is what buys that, at the cost of
   terminal fidelity — recorded as a trade, not a win.
-- `versions/mvp/00-scope.md` and `05-screens.md` said onboarding was four
+- `design/foundations/00-scope.md` and `05-screens.md` said onboarding was four
   screens ending on New session and a session was one repository. The
   version-1 frames, walked with the owner on 2026-09-19, changed both:
   onboarding names the workspace and lands on a Ready summary, and a
   session may span several repositories, one worktree each. Recorded in
   00, 05, 08 and the MVP decision log.
-- `versions/mvp/00-scope.md` and `05-screens.md` said, from 2026-09-19, that a
+- `design/foundations/00-scope.md` and `05-screens.md` said, from 2026-09-19, that a
   session may span several repositories. The runner makes one worktree per
   session, and a two-repository session was accepted, refused by the host and
   left spinning (#56); on 2026-09-23 the owner set the MVP to one repository
   per session. The model keeps checkouts as a list with a primary, so several
   repositories returns with the runner slice that makes several worktrees.
   Recorded in 00, 05, 10 and the MVP decision log.
-- `versions/mvp/10-api-modules-and-data-model.md` said a session has zero or
+- `design/foundations/10-api-modules-and-data-model.md` said a session has zero or
   more checkouts, zero being a session with no git. The runner makes a
   session from exactly one repository, so a session with none was recorded,
   then failed on the host. On 2026-09-27 the owner set the create body to
   exactly one checkout, and the console's composer stays disabled until a
   repository is picked. Recorded in 00, 10 and the MVP decision log.
-- `versions/mvp/08-auth.md` said first-run's gate is the claimed address
+- `design/foundations/08-auth.md` said first-run's gate is the claimed address
   off step 2. That still ends step 2, and it cannot end the flow: two
   steps run after the claim, so every legitimate arrival at the Ready
   landing is finished too. The landing asks instead whether the
@@ -119,13 +119,13 @@ earlier note:
   machine in its own dialog rather than sending readers into step 4.
   Connect GitHub is not gated, because New session's repository chip
   still sends a finished account there to install the App
-  (`versions/mvp/05-screens.md`).
+  (`design/console/05-screens.md`).
 - Note 02's open question about screen manifests is answered by note 13:
   lifecycle hooks are authoritative where an agent has them, screen reading
   is the fallback, and rules carry a priority and negative guards rather than
-  being a chain of ifs (`versions/mvp/02-runner.md` §9).
+  being a chain of ifs (`design/runner/02-runner.md` §9).
 - The control-plane modules and data model *have* now changed, where the
-  line above said only the framework had. `versions/mvp/10-api-modules-and-data-model.md`
+  line above said only the framework had. `design/foundations/10-api-modules-and-data-model.md`
   replaces note 03's seven modules and its first-cut table list with
   five modules — `hosts`, `github`, `projects`, `sessions`, `relay` —
   and eight tables, held to the shape of the starter's own Better Auth
@@ -140,7 +140,7 @@ earlier note:
   the same noun as "repositories" — the App installation is a boundary
   GitHub already enforces.
 - Note 11 said one worktree per session under
-  `workspaces/<repo>/main`. `versions/mvp/10-api-modules-and-data-model.md`
+  `workspaces/<repo>/main`. `design/foundations/10-api-modules-and-data-model.md`
   supersedes its §1: a session may check out **several** repositories,
   those checkouts live under the session rather than under the repo, and
   one bare store per repository serves the workspace. The store is a
@@ -150,14 +150,14 @@ earlier note:
   2026-09-26, when a project became a saved scope a person creates and
   metadata only, so a session can move between projects without anything
   on disk moving. Note 11 §2 onward still stands.
-- `versions/mvp/08-auth.md` said hosts belong to the workspace that
-  paired them, then to a workspace and an owner. `versions/mvp/10` now
+- `design/foundations/08-auth.md` said hosts belong to the workspace that
+  paired them, then to a workspace and an owner. `design/foundations/10-api-modules-and-data-model.md` now
   makes a host the person's, borrowed by every workspace they are in,
   the way Better Auth hangs devices and logins off `user`; the on-disk
   layout gains a `workspaces/<org>/` level. Note 06's
   per-account config directories remain the answer to several logins on
   one machine, and remain a later slice.
-- `versions/mvp/10` first mirrored every installation's repository set
+- `design/foundations/10-api-modules-and-data-model.md` first mirrored every installation's repository set
   with webhooks and a resync. It now lists repositories live from GitHub
   and keeps a row only for repositories a session has checked out. Note
   09's "the installation is the access control" is unchanged; what
@@ -165,7 +165,7 @@ earlier note:
 - The same note then dropped the repository table entirely: a checkout
   carries GitHub's ids inline and the runner owns the store on disk.
   Seven new tables, not eight.
-- `versions/mvp/05-screens.md` described a settings drawer holding
+- `design/console/05-screens.md` described a settings drawer holding
   hosts, and the console kept the starter's Settings and Profile pages
   underneath it. The version-1 frames of 2026-09-21 drew neither, so the
   console became one screen — sidebar plus pane — and both pages were
@@ -174,7 +174,7 @@ earlier note:
   beside the console — `/settings`, opened from the account menu, with
   Profile and Hosts as its sections and the console's pairing page behind
   Add host — and 05 records that page; the drawer is gone (2026-09-26).
-- `versions/mvp/10-api-modules-and-data-model.md` said a model was a
+- `design/foundations/10-api-modules-and-data-model.md` said a model was a
   launch option "recorded in the log, not a column", and made the
   promotion conditional on a reader needing it per row. `restart` is that
   reader, so the note now records the promotion as decided: the three
@@ -183,7 +183,7 @@ earlier note:
   rather than a backfill. "No table, no endpoint" is unchanged, and the
   flag strings each permission level maps to are catalog data beside
   `command`, not a column per agent. The surface itself is in the notes
-  that own it — `versions/mvp/03-control-plane.md` for the route and the
+  that own it — `design/foundations/03-control-plane.md` for the route and the
   fold, `01-protocol.md` for the wire.
 - The coding-agent catalog seeded Claude Code with the aliases its CLI
   documents (`opus`, `sonnet`, `fable`) and gave Codex no models at all,
@@ -192,74 +192,74 @@ earlier note:
   CLI documents, keyed by the model's full name, because the engine
   button shows a person a *generation* and an alias that moves under a
   versioned label is a pair that goes out of step on the host with
-  nothing on screen saying so. `versions/mvp/05-screens.md` keeps "the
+  nothing on screen saying so. `design/console/05-screens.md` keeps "the
   model list is the harness's own" and holds no roster; the list lives
   in `CODING_AGENTS`. The probe (05, open question 6) is still open, and
   pinning raises what it is worth.
-- `versions/mvp/01-protocol.md` said the epoch was "a counter bumped on
+- `design/foundations/01-protocol.md` said the epoch was "a counter bumped on
   every successful connect". The in-process counter restarted at 1 with
   the API. The runner refuses an epoch that is not newer than its last,
   so after a deploy a host needed dozens of redials to get back on. The
   epoch's floor is now the control plane's clock in milliseconds. The
   same note now also says that PTY bytes are never dropped, how the
   runner's writer orders frames, and that liveness is ping/pong.
-- `versions/mvp/00-scope.md` now lists five catalog agents; Grok is the
+- `design/foundations/00-scope.md` now lists five catalog agents; Grok is the
   fifth (2026-09-25).
-- `versions/mvp/05-screens.md`: the repository chip's foot row was
+- `design/console/05-screens.md`: the repository chip's foot row was
   "Connect a repository…", back to the onboarding step. It is now
   "Manage repository access", a new-tab link to the GitHub App's
   installation page (2026-09-26).
-- `versions/mvp/10-api-modules-and-data-model.md` said the MVP never shows
+- `design/foundations/10-api-modules-and-data-model.md` said the MVP never shows
   a project chip. The 2026-09-26 export puts one first on New session, with
   a New project page behind it; 05 and 10 now carry the chip, the page and
   the model (2026-09-26). The chip starts on the workspace's Unassigned
   project, where a session that names none is listed.
-- `versions/mvp/05-screens.md`: the project dialog and the Add host dialog
+- `design/console/05-screens.md`: the project dialog and the Add host dialog
   are pages over the main column (`/projects/new`, `/projects/{id}`,
   `/hosts/new`) since the 2026-09-26 evening export, and the second rail
   item reads Automations. A project needs a repository to be saved from the
   console (2026-09-26).
-- `versions/mvp/05-screens.md` and `13-automations.md`: those pages went
+- `design/console/05-screens.md` and `13-automations.md`: those pages went
   back to dialogs over the console with the 2026-09-27 export — New
   project and Project settings, the console's Add a host, the automation
   editor as a three-step wizard — while Settings keeps its Add a host
   page. Add a host copies first and shows the instruction behind a fold,
   in the console and in onboarding (2026-09-27).
-- `versions/mvp/00-scope.md` kept routines out of the MVP whole. The
+- `design/foundations/00-scope.md` kept routines out of the MVP whole. The
   console's automations list and its pages have their routes now, so the
   rail is whole; the automation itself — scheduler, trigger, runs — stays
-  after (`versions/mvp/13-automations.md`, 2026-09-26).
+  after (`design/automations/13-automations.md`, 2026-09-26).
 - The order after the MVP was VMs with sleep tiers, the accounts model,
-  then note 05's GitHub pieces (`brief.html`, `versions/mvp/00-scope.md`).
+  then note 05's GitHub pieces (`brief.html`, `design/foundations/00-scope.md`).
   On 2026-09-26 the owner set a new order: 0.2 Git/GitHub, 0.3 Kanban,
   0.4 Slack, 0.5 Mobile, 0.6 MCP/CLI/agent, 0.7 terminal and chat
   display. Multi-account (note 06) is on the list with no version yet.
-  VMs are not placed. See `next-steps/README.md`.
-- `versions/mvp/05-screens.md` said version 1 has no settings page and
+  VMs are not placed. See `roadmap.md`.
+- `design/console/05-screens.md` said version 1 has no settings page and
   that hosts would be listed later in a drawer. The 2026-09-26 frames
   draw a Settings page with a Hosts section, and
-  `versions/mvp/14-hosts-settings.md` designs its backend. Two host
+  `design/runner/14-hosts-settings.md` designs its backend. Two host
   behaviours changed with it: removing a host now stops the sessions
   running on it (it used to close the link and leave them `open`), and
   `GET /hosts` leaves unpaired hosts out unless `include=unpaired`
   (2026-09-26).
-- `versions/mvp/10-api-modules-and-data-model.md` kept a host's
+- `design/foundations/10-api-modules-and-data-model.md` kept a host's
   metadata on the `host` row: `hostname`, `os`, `arch`, `runnerVersion`,
   a `capabilities` jsonb and `lastSeenAt`, rewritten whole on every
-  heartbeat. `versions/mvp/15-host-metadata.md` splits it by rate of
+  heartbeat. `design/runner/15-host-metadata.md` splits it by rate of
   change into `host_inventory`, `host_presence`, `host_network` and
   `host_event`; the old columns go in a later contract step (2026-09-26).
-- `versions/mvp/05-screens.md` had Settings → Hosts open the console's
+- `design/console/05-screens.md` had Settings → Hosts open the console's
   Add a host page with `?from=settings`. It now opens the same screen
   inside Settings, at `/settings/hosts/new`, with the settings sidebar
   beside it, and the host menu drops Copy host ID for now (2026-09-26).
-- `versions/mvp/14-hosts-settings.md` left the host card's region or
+- `design/runner/14-hosts-settings.md` left the host card's region or
   "local" open. It shows the city and country code of the host's
   connecting address, from DB-IP Lite, instead of a cloud region
   (2026-09-26).
-- `versions/mvp/00-scope.md` kept automations out of the MVP, and
-  `versions/mvp/13-automations.md` built only their console routes. They
-  are in the MVP now, designed in `versions/mvp/16-automations-architecture.md`:
+- `design/foundations/00-scope.md` kept automations out of the MVP, and
+  `design/automations/13-automations.md` built only their console routes. They
+  are in the MVP now, designed in `design/automations/16-automations-architecture.md`:
   headless runs for any agent, an inbound-events hub for GitHub and later
   Slack, schedules fired by a tick, a run acting as its owner. Note 05 §7's
   API `POST /fire` trigger, its regex PR filters and its `claude/` branch
@@ -303,7 +303,7 @@ earlier note:
   `RATE_LIMIT_*`), with the product's numbers as the defaults (2026-09-29).
 - 05's composer drew a paperclip wired to nothing; it now attaches images
   to the first task (03) (2026-09-28).
-- `versions/mvp/02-runner.md` had the runner build a session's tmux session
+- `design/runner/02-runner.md` had the runner build a session's tmux session
   last, after the stores and the worktree, and `session.started` therefore
   meant "the agent is up". Every second of the clone was then a spinner, and
   the console's attach either waited for the whole create or was refused. On
@@ -313,7 +313,7 @@ earlier note:
   it while the agent boots. Recorded in 01, 02, 05 and the MVP decision log.
 
 
-- `versions/mvp/02-runner.md` had a store's first clone be blobless
+- `design/runner/02-runner.md` had a store's first clone be blobless
   (`--filter=blob:none`) and the whole of a create's network work happen
   after Send. On 2026-10-02 the first clone became shallow at the base and
   deepened in the background into the same blobless store, and New session
@@ -323,30 +323,30 @@ earlier note:
 - 03, 01 and 05 let a session take images only; on 2026-10-04 it takes files
   (images, PDF, text) judged by their bytes, and a runner that does not
   announce `session.files` is still sent images only (01, 02, 03, 05, 07).
-- `next-steps/` placed a kanban board in 0.3. On 2026-10-05 the design
+- `roadmap.md` placed a kanban board in 0.3. On 2026-10-05 the design
   export drew it as Plan (tasks, goals, a calendar) and the owner put it
-  in the MVP (`versions/mvp/17-plan.md`); 0.2 with pull requests is next.
+  in the MVP (`design/plan/17-plan.md`); 0.2 with pull requests is next.
 - 17 and 19 put Plan behind a `plan` release flag, with a task summary
   endpoint, a `'task'` session origin and an automation occurrences
   endpoint. The first version shipped with none of them: no flag, the
   board's one read serves every count, a task's session is a person's and
   its link records the task, and the console computes automation runs
-  (`versions/mvp/17-plan.md`, "As built").
+  (`design/plan/17-plan.md`, "As built").
 - 17 to 19 named Plan's grouping of tasks **goals**. The 2026-10-13
   export renamed them milestones, and the owner had the rename go all the
-  way down, tables and routes included (`versions/mvp/23-plan-milestones-stats-accounts.md`).
+  way down, tables and routes included (`design/plan/23-plan-milestones-stats-accounts.md`).
 - Note 23 first gave Plan's console a Stats view, a project overview, a
   project list in the sidebar, a Blocked row on tasks and a toggle per
   Google account. The owner had the console match the 2026-10-13 `Tasks`
   frame instead (2026-10-13): Tasks, Milestones (the timeline alone) and
   Calendar, nothing more. The API pieces stay for the agents' Projects
-  section (`versions/mvp/23-plan-milestones-stats-accounts.md`, "Settled since").
+  section (`design/plan/23-plan-milestones-stats-accounts.md`, "Settled since").
 - Note 20 had a Google event open read-only with only "Open in Google
   Calendar". Since 2026-10-20 a Google event that is a video meeting
   (Meet, or Zoom, Teams or Webex through an add-on or a link pasted
   in the location or description) also offers
   Join meeting from the calendar; the layer is still read-only
-  (`versions/mvp/20-plan-calendar.md` §1, §5).
+  (`design/plan/20-plan-calendar.md` §1, §5).
 - Note 15's first version proposed protecting the reviewer and the
   evening: a WIP limit on agent PRs, quiet hours, overnight holds. The
   owner rejected it the same day (2026-09-27): the product is for people
@@ -363,25 +363,25 @@ earlier note:
   the PR waits.
 - `globals.css` made the console's ground white. Since 2026-10-06 it is
   the export's grey under every page, and the shell, not the screen, draws
-  each page at the route's measure (`versions/mvp/README.md`).
-- `versions/mvp/05-screens.md` had the console learn of every change it
+  each page at the route's measure (`design/README.md`).
+- `design/console/05-screens.md` had the console learn of every change it
   does not cause by polling. On 2026-10-06 a workspace event stream was
   added, behind the `workspace_event_stream` flag, and the polls it covers
   stand down while it is live and poll again when it drops
-  (`versions/mvp/03-control-plane.md`, 05). Issue #239 asked which version
+  (`design/foundations/03-control-plane.md`, 05). Issue #239 asked which version
   it belongs to: the MVP, since the polls it speeds up are the MVP's own.
-- `next-steps/0.2-pull-requests.md` had the queue read every repository
+- `design/pull-requests/pull-requests.md` had the queue read every repository
   the installation reaches, so your pull requests and the reviews asked
   of you came from anywhere while Watching stayed opt-in. It now reads
   what the reader watches and nothing wider; the wider reach returns as
   one search rather than a listing per repository. That note holds the
   rule and what the reach cost (issue #247).
-- `versions/mvp/08-auth.md` had a terminal open only to a member of the
+- `design/foundations/08-auth.md` had a terminal open only to a member of the
   session's workspace. Since 2026-10-08 a member can share one with a
   link, to watch or to type, for anyone, any account or named people
-  (`versions/mvp/21-session-share-links.md`). The link's ticket is judged
+  (`design/sessions/21-session-share-links.md`). The link's ticket is judged
   as its creator's, so it opens nothing they could not.
-- `versions/mvp/21-session-share-links.md` built sharing on 2026-10-08 as
+- `design/sessions/21-session-share-links.md` built sharing on 2026-10-08 as
   bearer links (anyone signed out, any account, or named people; the
   secret shown once). On 2026-10-13 it was rebuilt to the `ShareSession`
   design: one share per session at one address, named people or anyone
@@ -393,7 +393,7 @@ earlier note:
   says so in a correction under that paragraph, and its rule that the
   platform never reads the credential file is now a deliberate
   difference from Orca (`research/orca-web-auth-and-cross-host-logins.md`).
-- `next-steps/0.2-pull-requests.md` §6 said a repository the App is not
+- `design/pull-requests/pull-requests.md` §6 said a repository the App is not
   installed on does not appear in the queue. On 2026-10-08 the owner
   pointed at organisations where it never will be: such a repository's
   PRs now fill the same queue row by a search on the person's own
@@ -401,33 +401,33 @@ earlier note:
   notifications as the wake-up; private repositories take a second,
   read-only token (§6.1). The App stays the main path; sessions and note
   09 are unchanged (#271).
-- `versions/mvp/01-protocol.md` said the browser never reaches the runner
+- `design/foundations/01-protocol.md` said the browser never reaches the runner
   directly, every byte going through the relay. On 2026-10-11 the owner
-  made the session's latency the priority: `versions/mvp/22-direct-terminal-path.md`
+  made the session's latency the priority: `design/runner/22-direct-terminal-path.md`
   adds a WebRTC data channel from browser to runner, started after the
   relay path and falling back to it (built the same day, behind the
   `terminal_direct_path` flag), and the console now draws predictable keys
   before their echo. The relay still admits every attachment.
-- `versions/mvp/22-direct-terminal-path.md` bound the direct channel to the
+- `design/runner/22-direct-terminal-path.md` bound the direct channel to the
   DTLS fingerprints in the signalling, which the control plane relays, so a
   compromised control plane could sit in the middle of it. On 2026-10-31 the
   owner asked for as much peer to peer as possible and a handshake to harden
-  it: `versions/mvp/31-peer-to-peer-and-the-host-proof.md` has the host sign
+  it: `design/runner/31-peer-to-peer-and-the-host-proof.md` has the host sign
   both fingerprints with its pairing key on every channel, the browser pin
   the key per host, and orders what moves off the control plane next.
-- `versions/mvp/05-screens.md` said a deleted session's row stays until
+- `design/console/05-screens.md` said a deleted session's row stays until
   the host confirms the close. On 2026-10-11 the owner asked for delete
   to feel immediate: the row leaves on the click and comes back only if
   the close cannot happen. A session removed on its host (by hand, or by
   `runner sessions close`) now closes on Delete or Restart instead of
   being stuck for ever.
-- `versions/mvp/05-screens.md` said selecting text needs Shift-drag
+- `design/console/05-screens.md` said selecting text needs Shift-drag
   (Option-drag on macOS), because tmux owns plain drags. On 2026-10-11
   the owner could not copy a plain-drag highlight: tmux copied it to its
   own buffer and the console dropped the OSC 52 that carried it out. tmux
   now runs with `set-clipboard on` and the console writes OSC 52 to the
   clipboard (writes only, never reads), so a plain drag copies on release.
-- `versions/mvp/05-screens.md` had onboarding's Add a host step and the
+- `design/console/05-screens.md` had onboarding's Add a host step and the
   console's Add a host dialog lead with Copy install command and Copy
   agent prompt, the instruction behind an Inspect fold and one status
   line. Since 2026-10-13 both lead with the agent prompt (Copy prompt, the
@@ -435,7 +435,7 @@ earlier note:
   and show a Connection list: Runner installed, then Host connected. The
   export's Tools on PATH row waits for the wire to carry a host's tools.
   Settings' Add a host page keeps the panel with both forms.
-- `next-steps/0.2-pull-requests.md` (version 1 scope, 2026-10-05) put a
+- `design/pull-requests/pull-requests.md` (version 1 scope, 2026-10-05) put a
   summary agent's brief on every pull request, and the 2026-10-05 frames
   opened one on a Briefing with a lane switcher and a review session. On
   2026-10-13 the owner took the 2026-10-13 frames without their chat,
@@ -449,7 +449,7 @@ earlier note:
   merge**, which turns on GitHub's auto-merge when it cannot merge yet;
   the activity timeline, the Briefing and the Merge confidence
   score are gone; watched repositories are set in Settings only
-  (`next-steps/0.2-pull-requests.md`, "The screens as built").
+  (`design/pull-requests/pull-requests.md`, "The screens as built").
   On 2026-10-14 the review session came back without the review agent:
   a pull request's **Chat** tab starts Claude Code on one of the reader's
   hosts, in a worktree of the head branch, on a prompt that opens with a
@@ -457,37 +457,37 @@ earlier note:
   input line under it; review sessions are listed under **For review** in
   the Pull requests sidebar and never under Sessions. That is §4's *Check
   out in a session* decided as 0.2.
-- `versions/mvp/10-api-modules-and-data-model.md` held a project to at
+- `design/foundations/10-api-modules-and-data-model.md` held a project to at
   least one repository, and the console would not save one without (the
   2026-09-26 line above). On 2026-10-14 the owner allowed a project with
   no repository: it is a place for tasks, milestones, memory and sessions,
   and folder and terminal sessions need none. A project that holds
   repositories still offers a default among them (`PROJECTS_006`). The
   Unassigned project keeps that name.
-- `versions/mvp/05-screens.md` opened New session on the `full`
+- `design/console/05-screens.md` opened New session on the `full`
   permission level every visit and never remembered it. On 2026-10-14 the
   owner made it open on `auto` and remember the last level picked, like
   the other chips.
-- `versions/mvp/05-screens.md` never remembered New session's repository
+- `design/console/05-screens.md` never remembered New session's repository
   and branch, and let the landing project's default host, agent and
   repository replace the last visit's choices. On 2026-10-22 the owner made
   every chip open on its last choice: the scope is remembered, and the
   landing project fills only the chips the memory left empty. Picking a
   project on the screen, or naming one in the address, still applies all
   its defaults.
-- `versions/mvp/00-scope.md` made every session a worktree, the blank
+- `design/foundations/00-scope.md` made every session a worktree, the blank
   terminal included, under `~/oppenheimer-ai/workspaces/<repo>/`. On
   2026-10-14 the owner made the place a choice, a new worktree or a folder
   already on the host, and moved the runner's work to `~/oppenheimer/`
   as `<account>/<workspace>/{repos, agents, sessions}`
-  (`versions/mvp/24-session-places.md`). The same day the account level's
+  (`design/sessions/24-session-places.md`). The same day the account level's
   name was settled as the id the runner receives when it is paired
   (`POST /hosts/register` answers it), so `session.create` and
   `repository.prepare` carry the workspace only (24 §2, §5).
 - The agent catalog mapped Claude Code's `auto` level to
   `--permission-mode acceptEdits`, which prompts on every shell command,
   and review sessions launched at `ask` (both left open in
-  `versions/mvp/16-automations-architecture.md` and
+  `design/automations/16-automations-architecture.md` and
   `research/headless-runs-draft.md`). On 2026-10-15 the owner made `auto`
   Claude Code's own auto mode (`--permission-mode auto`), which checks each
   action before it runs, and made it the level review sessions start at.
@@ -497,8 +497,8 @@ earlier note:
   does; `full` stays a choice in the new-session form.
 - On 2026-10-16 the owner dropped the review session's input row, which
   doubled the agent's own prompt; the Chat tab is now the plain session
-  pane (`next-steps/0.2-pull-requests.md`).
-- `versions/mvp/25-bots.md` ran a bot as a headless turn on its home host;
+  pane (`design/pull-requests/pull-requests.md`).
+- `design/bots/25-bots.md` ran a bot as a headless turn on its home host;
   on 2026-10-15 its loop moved into Oppenheimer (25, "Decided").
 - Note 25 let a bot keep Claude Code's `WebFetch` and subagents. On
   2026-10-15 both were turned off: the fetch reached the server's private
@@ -543,12 +543,12 @@ earlier note:
   ("Juno", "Milo"…), and its first chat walks it through learning one
   job, writing its own INSTRUCTIONS.md and description, and offering a
   first task (25 §1, "Decided"; `research/lessons-from-grok-bot.md` §6).
-- `versions/mvp/23-plan-milestones-stats-accounts.md` ran a project's
+- `design/plan/23-plan-milestones-stats-accounts.md` ran a project's
   milestone bar on to ten days past its last milestone, which read as the
   bar overshooting the dates. On 2026-10-15 the owner had it end on the last
   milestone's day, as a timeline bar does in Notion; the three-week lead-in
   before the first milestone or today stays (23 §1).
-- `versions/mvp/02-runner.md` §10 said an agent CLI that is not installed is
+- `design/runner/02-runner.md` §10 said an agent CLI that is not installed is
   left alone and that OpenCode is never updated, because its updater asks.
   On 2026-10-12 the runner learned to install agent CLIs and `gh` when the
   person asks (`runner agents install`, `runner tools install gh`), user-level
@@ -556,10 +556,10 @@ earlier note:
   the hourly updates, told its install method so it does not ask. `git` and
   `tmux` stay with the package manager. The host installer now asks which
   agent CLIs to install, defaulting to Claude Code and gh, so the Add host
-  command leaves a host ready to run a session (`versions/mvp/09` §2).
+  command leaves a host ready to run a session (`design/runner/09-runner-install-and-update.md` §2).
   Developing Oppenheimer itself on a new machine is one command,
   `scripts/dev/bootstrap.sh`, with `mise.toml` pinning the toolchain.
-- `versions/mvp/02-runner.md` §10 (2026-10-12) installed Claude Code and
+- `design/runner/02-runner.md` §10 (2026-10-12) installed Claude Code and
   OpenCode by running their vendors' install scripts, fetched to a file
   first but checked by nothing. On 2026-10-17 Claude Code installs from its
   latest release binary instead, verified against the SHA-256 in that
@@ -567,19 +567,19 @@ earlier note:
   `gh` shares the same check; no Claude Code script runs. OpenCode keeps
   its script for now, because its releases publish no checksum for the CLI
   (02 open question 11).
-- `next-steps/voice.md` planned slice 3 as the task dialog, the terminal
+- `design/console/voice.md` planned slice 3 as the task dialog, the terminal
   paste, a hotkey and a dictionary, and said the recorder's `AudioWorklet`
   would come when it moved to the kit. On 2026-10-17 the owner asked for
   dictation in every prose input as one shared piece: the fields shipped
   first (the kit's `dictation` concern), the rest stays for later, and the
   recorder kept `ScriptProcessorNode` ("Dictate everywhere as built").
-- `next-steps/voice.md` said the polish is skipped when the raw transcript
+- `design/console/voice.md` said the polish is skipped when the raw transcript
   is clean and short, and that the ChatGPT route's names reach it only
   through the polish. On 2026-10-18 (#393) every clip is polished, with a
   light-touch brief modelled on Wispr Flow, and the names also go to an
   OpenAI-compatible speech server as its `prompt` ("Dictation quality,
   first pass").
-- `next-steps/voice.md` shipped `voice_dictation` as a release flag,
+- `design/console/voice.md` shipped `voice_dictation` as a release flag,
   default off. On 2026-10-18 it became an `ops` flag defaulting to `true`,
   the feature's kill switch.
 - Note 09 had `runner uninstall` exit 0 when the control plane could not
@@ -589,7 +589,7 @@ earlier note:
   failure, and points at Settings → Hosts → Remove or
   `DELETE /api/v1/hosts/{id}`; `register` on a paired host names both
   origins and the commands that move it (09 §4).
-- `versions/mvp/14-hosts-settings.md` had removing a host only stop its
+- `design/runner/14-hosts-settings.md` had removing a host only stop its
   sessions, every checkout kept. On 2026-10-18 the owner, testing on a
   host, asked for a way to stop everything and start again: the remove
   dialog has an "Also delete everything on this machine" box, and an
@@ -609,7 +609,7 @@ earlier note:
   pane that was gone. On 2026-10-31 the key is the run and the link's epoch,
   and the entry is written only while the row is still open and not stopped
   under its lock (03, "Hello reconciliation").
-- `versions/mvp/25-bots.md`: a bot with no provider named, or on one with
+- `design/bots/25-bots.md`: a bot with no provider named, or on one with
   no key, fell back to the first keyed provider in catalog order, so a
   workspace with GLM and ChatGPT opened its bots on GLM. On 2026-10-18 the
   owner asked for ChatGPT instead: the fallback order is Anthropic,
@@ -621,7 +621,7 @@ earlier note:
   on each other. The sender is recorded rather than claimed, messages
   holding a credential are refused, and the chain is decided under a lock,
   from `research/agent-coordination-experiments.md` (25 §4.6, "Decided").
-- `versions/mvp/02-runner.md` §10 (2026-10-17) kept OpenCode on
+- `design/runner/02-runner.md` §10 (2026-10-17) kept OpenCode on
   `opencode.ai/install`, which checks nothing, and its hourly update on
   `upgrade --method curl`, which reruns that script. On 2026-10-18 the
   owner, answering the review's "verify downloaded vendor installers",
@@ -631,7 +631,7 @@ earlier note:
   npm pointed at the prefix the executable lives under; an OpenCode in
   `~/.opencode/bin` is left to its own autoupdate (02 open question 11,
   "Decided").
-- `versions/mvp/26-bot-routines.md` decided on 2026-10-16 that bot
+- `design/bots/26-bot-routines.md` decided on 2026-10-16 that bot
   routines had no spend guard: the run budget and the overlap guard held
   the cost. On 2026-10-18 the owner asked routines to behave as Grok
   Bot's do, and the guard is back: a nudge, then a pause of every routine
@@ -645,20 +645,20 @@ earlier note:
   "Routines in this change" group yet, and a routine turn that failed is
   shown by its turn rather than by a second `failed` notice (26 §4 "In the
   chat", "Decided").
-- `versions/mvp/25-bots.md` §4.4 (2026-10-15) built the GitHub reads only,
+- `design/bots/25-bots.md` §4.4 (2026-10-15) built the GitHub reads only,
   and a bot told its owner it could not merge a pull request it had
   reported ready. On 2026-10-20 the asking writes of the table were built
   (comment, review, merge, review session), and issues were added to the
   table: `list_issues`, `get_issue`, and the asking `create_issue` and
   `comment_on_issue`, under the `pulls:*` scopes and the App's new Issues
   permission. A bot's merge is pinned to the head its card showed.
-- `versions/mvp/25-bots.md` §4 said a bot "can never do more than the
+- `design/bots/25-bots.md` §4 said a bot "can never do more than the
   person who owns it may do", but no tool checked the owner's roles: only
   a token's scopes narrowed a turn. On 2026-10-20, after the review of the
   pull request writes, the owner's live roles are checked on every call
   and every approved run; a tool they lack stays offered and its call is
   refused, naming the permission to ask for (25 §4).
-- `versions/mvp/02-runner.md` §5 (2026-10-18) marked a session's folder
+- `design/runner/02-runner.md` §5 (2026-10-18) marked a session's folder
   trusted in Claude Code only for a launch at Approve for me or Full
   access, leaving Ask on "do you trust this folder?". On 2026-10-20 the
   owner asked for every session to start pre-trusted: the runner marks
@@ -670,12 +670,12 @@ earlier note:
   the agent still runs unmodified in tmux, and the chat is read off the
   agent's own transcript, which the runner follows while a browser is
   attached; nothing drives the agent but the PTY
-  (`next-steps/0.7-terminal-and-chat.md`, "Proof of concept").
-- `versions/mvp/25-bots.md` §7 listed attachments as not built. On
+  (`design/sessions/terminal-and-chat.md`, "Proof of concept").
+- `design/bots/25-bots.md` §7 listed attachments as not built. On
   2026-10-21 (issue #426) images were built (§3.1): a bot on Anthropic,
   OpenAI or ChatGPT reads PNG, JPEG, GIF and WebP sent with a message; GLM
   refuses them. Other files stay unbuilt.
-- `versions/mvp/25-bots.md` §1 (2026-10-15) gave a bot a closed list
+- `design/bots/25-bots.md` §1 (2026-10-15) gave a bot a closed list
   ending "no shell, no files … say so and stop", so a bot asked to run a
   build turned it down though `start_session` would do it. On 2026-10-21
   a turn that may start a session gets a "Working on code through
@@ -690,37 +690,37 @@ earlier note:
   `terminal_direct_path` and `session_chat_view` now serve on until
   targeting turns them off or narrows them. `scripts/evals/feature-flags/`
   checks that an agent launching a feature follows it.
-- `next-steps/0.4-slack.md` was the Slack integration on its own. On
-  2026-10-22 bots gained channels (`next-steps/channels.md`): WhatsApp,
+- `design/channels/slack-sessions.md` was the Slack integration on its own. On
+  2026-10-22 bots gained channels (`design/channels/channels.md`): WhatsApp,
   Slack and email behind one interface, with WhatsApp first as a linked
   device of a number the owner has. Slack as a way to reach a bot is now
   that note's Slack channel; 0.4 keeps its questions about sessions.
-- `next-steps/channels.md` bound each channel account to one bot; on
-  2026-10-24 routes replaced that (`next-steps/customers-and-routes.md`).
-- `next-steps/channels.md` put WhatsApp first and email as a mailbox you
+- `design/channels/channels.md` bound each channel account to one bot; on
+  2026-10-24 routes replaced that (`design/channels/customers-and-routes.md`).
+- `design/channels/channels.md` put WhatsApp first and email as a mailbox you
   own; on 2026-10-29 email came first, as an address of the bot's own,
   and the same day reading your own mailboxes went ahead of every channel
-  (`next-steps/mail.md`), narrowed to Gmail with drafts and sends.
-- `next-steps/mail.md` §3.4 planned a send's files from the bot's chat,
+  (`design/channels/mail.md`), narrowed to Gmail with drafts and sends.
+- `design/channels/mail.md` §3.4 planned a send's files from the bot's chat,
   its documents and its turn as well as from mail; slice 2 (2026-10-29)
   sends files from mail only, and a draft is answered in the chat as text
   with its Gmail link rather than a card (mail.md, "Decided"). The same day
   the chat's images became attachable and the draft got its card; the
   bot's documents and a turn's files stay out (mail.md, "Decided").
-- `versions/mvp/25-bots.md` §4.7 planned `delegate` as a subagent for a
+- `design/bots/25-bots.md` §4.7 planned `delegate` as a subagent for a
   long job whose result arrived later as a message. On 2026-10-22 (issue
   #444) it was built as subagents inside the turn: up to 4 read-only
   children in parallel, bounded and stopped with the turn, whose answers
   the bot reads as data and answers from in the same reply (25, "Decided").
-- `versions/mvp/26-bot-routines.md` decided on 2026-10-16 that "when a
+- `design/bots/26-bot-routines.md` decided on 2026-10-16 that "when a
   session ends" reaches a bot only as a routine's trigger, with no watch
   table. On 2026-10-22 (issue #445) the owner asked for a bot to subscribe
   to the sessions it delegates, as Grok Bot's watchers do, and to be woken
   when they finish, fail, are stopped or need input. A
   `bot_subscription` now follows one session for the bot that started or
   watched it, and every wake is still a queued turn
-  (`versions/mvp/27-bot-subscriptions.md`, 26 §5).
-- `next-steps/0.7-terminal-and-chat.md` had the relay never send the chat
+  (`design/bots/27-bot-subscriptions.md`, 26 §5).
+- `design/sessions/terminal-and-chat.md` had the relay never send the chat
   through a share link, so a guest saw only the terminal. On 2026-10-23
   the owner asked for the shared page to have the chat view too: the
   relay judges the flag as the sharer, and the guest gets Terminal / Chat,
@@ -729,14 +729,14 @@ earlier note:
   first in the rail. On 2026-10-25 Employees moved to the top of the
   rail's default order, and the console opens on the rail's first item,
   so a reader who drags another item to the top opens there instead
-  (`versions/mvp/05-screens.md`, `25-bots.md`).
+  (`design/console/05-screens.md`, `25-bots.md`).
 - New session's chips used to sit in a grey band fused to the top of a
   tall composer, under a line saying what sending would do. On
   2026-10-26 it became one box at the pane's foot with a row of choices
   under it and the project over it, and a session's name, state, Terminal
   / Chat and Share moved from the terminal's status line to a bar over it
-  (`versions/mvp/05-screens.md`).
-- `versions/mvp/28-bots-in-sections.md` decided on 2026-10-26 that only
+  (`design/console/05-screens.md`).
+- `design/bots/28-bots-in-sections.md` decided on 2026-10-26 that only
   Pull requests opens a bot's chat inside the section, and that Sessions,
   Automations and Plan send the reader to Employees, as the export's frames
   link them. Later that day the owner, clicking a bot in Sessions, asked to
@@ -746,8 +746,8 @@ earlier note:
   asked for the export's one chip, the host and where on it ("mac-studio ·
   New worktree", the hosts and a Start in pane per host); the box took a
   session chat's height, and the models dropped "Claude" from their names
-  ("Opus 5.5") (`versions/mvp/05-screens.md`).
-- `versions/mvp/00-scope.md` said, from 2026-09-23 (#56), that a session
+  ("Opus 5.5") (`design/console/05-screens.md`).
+- `design/foundations/00-scope.md` said, from 2026-09-23 (#56), that a session
   checks out one repository, because the runner made one worktree per
   session and refused a create with two. On 2026-10-26 the owner lifted the
   cap: the runner makes one worktree per checkout, each in its own directory
@@ -763,17 +763,17 @@ earlier note:
   session's host offers simulators and emulators (`RUNNER_DEVICES`), each
   session holds one, its agent drives it through Argent and the reader
   watches and taps it in the pane, its screen relayed over the link as one
-  more attachment kind (`versions/mvp/05-screens.md`,
+  more attachment kind (`design/console/05-screens.md`,
   `research/device-streaming.md`). The Browser tab is still not built.
-- `versions/mvp/29-inbox.md` §4 had the cross-bot approvals read list the
+- `design/console/29-inbox.md` §4 had the cross-bot approvals read list the
   bots the caller may update. Built on 2026-10-26, it lists the bots the
   caller may read, as the per-bot read it mirrors does; deciding a card
   still asks `update`.
-- `versions/mvp/29-inbox.md` §3 keyed a session by `observedSince`, which
+- `design/console/29-inbox.md` §3 keyed a session by `observedSince`, which
   only a blocked agent has. Built on 2026-10-26, a failed or stuck launch is
   keyed by its lifecycle's change count (`stateSeq`) instead, and the API
   added both fields to a session and `headSha` to a pull request row.
-- `versions/mvp/29-inbox.md` §5 and Decided 1 made the Inbox the rail's
+- `design/console/29-inbox.md` §5 and Decided 1 made the Inbox the rail's
   first item at `/inbox`, with its list in the console's sidebar and the
   item in hand as a card under a greeting and a log. The 2026-10-29 export
   moved it into Plan, and on 2026-10-29 the owner asked for it to look
@@ -782,39 +782,39 @@ earlier note:
   and the pane is a list column (search, unread rows with sender, subject
   and a line of body) beside a reading pane (a toolbar, the item as a
   message). The log is gone with the greeting; Show done is the record.
-- `next-steps/0.2-pull-requests.md` §6.1 (2026-10-08) pictured one
+- `design/pull-requests/pull-requests.md` §6.1 (2026-10-08) pictured one
   notifications token and one optional token for private repositories. On
   2026-10-26 the owner asked for several organisations and, inside one, a
   token per repository if need be: a person adds any number of tokens, each
   opens whatever repositories GitHub says it does, and each repository is
   read with one key chosen at read time (the App, else a pinned token, else
   the narrowest). The notifications wake-up is left for later (§6.2).
-- Preview URLs were parked after the MVP (`07-mvp.md` §9). On 2026-10-27
+- Preview URLs were parked after the MVP (`archive/07-mvp.md` §9). On 2026-10-27
   the owner asked for the Browser tab, through "tunnel technology like
   Cloudflare, Vercel or ngrok"; offered the runner's own link as that
   tunnel, they chose it, asking that an app with an API work. A preview is
   an origin per session and port on a preview domain of its own, served by
   the relay through the link, the app seeing `localhost` and its API behind
   the dev server's proxy; cloudflared and ngrok wait for public share links
-  (`versions/mvp/30-session-previews.md`).
+  (`design/sessions/30-session-previews.md`).
 - `research/cloud-agents.md` §5 proposed a cloud session as a third
   place of `work_session`. On 2026-10-26 Cursor's cloud agents landed as
   their own module and table instead, since a vendor's agent has no host,
-  terminal or checkout to fold (`next-steps/cloud-agents.md`), and F23
+  terminal or checkout to fold (`design/sessions/cloud-agents.md`), and F23
   gained a line saying a vendor API key the control plane uses itself is
-  not the subscription sign-in it forbids (`04-security-review.md`). On
+  not the subscription sign-in it forbids (`archive/04-security-review.md`). On
   2026-10-27 the owner asked for cloud sessions where the other sessions
   are, chosen in New session's place picker, and §5 came back: a cloud
   session is a `work_session` in place `cloud` with no host, its vendor
   run beside it in `session_cloud_run`, its row in the sidebar opening
-  the vendor (`next-steps/cloud-agents.md`, `versions/mvp/24-session-places.md`).
+  the vendor (`design/sessions/cloud-agents.md`, `design/sessions/24-session-places.md`).
   On 2026-10-28, with Claude Code's cloud on `main` as the same place
   started by a host, the owner kept both: two kinds of the one `cloud`
   place, with a host or without, and Grok's to come
-  (`next-steps/cloud-agents.md`, "Two kinds of cloud session").
+  (`design/sessions/cloud-agents.md`, "Two kinds of cloud session").
 - Bots ran on Anthropic, GLM, OpenAI and ChatGPT. On 2026-10-26 Grok (xAI)
-  joined them on the OpenAI engine (`versions/mvp/25-bots.md`).
-- `versions/mvp/25-bots.md` §4.2 planned `read_session` as "a session's
+  joined them on the OpenAI engine (`design/bots/25-bots.md`).
+- `design/bots/25-bots.md` §4.2 planned `read_session` as "a session's
   recent output". Built on 2026-10-27 (issue #493), it reads the session's
   event log in words, never the terminal or the agent's conversation, which
   stay on the host; `send_to_session` came with it, gated on the agent
@@ -824,28 +824,28 @@ earlier note:
   the sessions it follows itself. That day a destructive approval was first
   always a card; the owner then made it the bot's preset's call: Full access
   acts on its own with its reasoning, Approve for me asks
-  (`versions/mvp/25-bots.md`).
+  (`design/bots/25-bots.md`).
 - `research/cloud-agents.md` §5B ordered cloud places Cursor first, then
   Claude, and said Claude would give no status. On 2026-10-27 the owner
   asked for Claude end to end first: a `cloud` place started by the host's
   runner with `claude --cloud`, and its status reported from claude.ai by
-  `apps/extension` (`versions/mvp/24-session-places.md` §7,
-  `next-steps/cloud-agents.md`).
-- `versions/mvp/05-screens.md` had an empty project show in the sidebar
+  `apps/extension` (`design/sessions/24-session-places.md` §7,
+  `design/sessions/cloud-agents.md`).
+- `design/console/05-screens.md` had an empty project show in the sidebar
   with an empty row and a link to start a session. On 2026-10-28 the owner
   asked for the sidebar to list only projects that hold sessions: an empty
   project is not drawn (New session and the project filter still reach
   it), and a sidebar with projects but no session says so in one line.
-- `versions/mvp/28-bots-in-sections.md` had a section's Bots plus make a
+- `design/bots/28-bots-in-sections.md` had a section's Bots plus make a
   blank bot placed there, and placing or hiding any other bot happen in its
   Settings → Profile. On 2026-10-28 the owner asked to manage each page's
   bots from the page: the plus opens a menu with New bot and a check per
   bot for this section, and a row's ellipsis hides it from the section
   (slice D).
-- `versions/mvp/24-session-places.md` §7 had Claude Code's cloud only as a
+- `design/sessions/24-session-places.md` §7 had Claude Code's cloud only as a
   place in a host's Start in pane. It is now also the Claude Code row under
   Cloud, which picks a host that can start it (2026-10-28).
-- `versions/mvp/24-session-places.md` §7's Claude Code row picked the host
+- `design/sessions/24-session-places.md` §7's Claude Code row picked the host
   for the reader. It now opens a *Start from* pane where the reader picks
   any host that can, and the engine button offers only Claude Code's models
   in that place (2026-10-28).
@@ -854,22 +854,22 @@ earlier note:
   2026-10-28 the owner asked for a better Grok catalogue: sessions offer
   4.7, 4.6 and 4.5 and bots add 4.6 and 4.5, each with the levels its own
   menu has (grok 1.0.70 refuses the rest; 4.5 stops at high), `high` the
-  default everywhere (`versions/mvp/05-screens.md`,
-  `versions/mvp/25-bots.md`).
+  default everywhere (`design/console/05-screens.md`,
+  `design/bots/25-bots.md`).
 - 2026-10-28 the owner asked for images in the chats to look and open the
   way Claude's own chat shows them: a bot's images open in a viewer over
   the chat instead of a new tab, and a session's chat, which only counted
   pasted images, now shows them and the screenshots the agent reads, from
   a preview the runner sends within the link's entry bound
-  (`next-steps/0.7-terminal-and-chat.md`, `versions/mvp/25-bots.md`).
-- `next-steps/cloud-agents.md` had cloud sessions start from New session
+  (`design/sessions/terminal-and-chat.md`, `design/bots/25-bots.md`).
+- `design/sessions/cloud-agents.md` had cloud sessions start from New session
   alone. On 2026-10-29 the owner asked for them in Plan's tasks and in the
   automations: Start session and an automation's revision pick where the
   session runs (on a host, Claude Code's cloud from a host, Cursor's with no
   host), and a run with no key for its vendor pauses the automation
-  (`cloud_key_missing`; `versions/mvp/24-session-places.md`,
-  `versions/mvp/18-plan-product.md`, `versions/mvp/13-automations.md`).
-- `next-steps/cloud-agents.md` had a Claude Code cloud session take a task
+  (`cloud_key_missing`; `design/sessions/24-session-places.md`,
+  `design/plan/18-plan-product.md`, `design/automations/13-automations.md`).
+- `design/sessions/cloud-agents.md` had a Claude Code cloud session take a task
   and nothing else: a first task's files are saved on the host, which the
   cloud never sees, so the console dropped them. On 2026-10-29 the owner
   asked for them to reach the cloud's agent. The API keeps them in its
@@ -877,12 +877,12 @@ earlier note:
   on a short, day-long link served by the API
   (`GET /v1/cloud-files/{token}`), minted again on every launch; the
   environment's network policy has to allow the API's host
-  (`next-steps/cloud-agents.md`, "Files for a cloud session").
+  (`design/sessions/cloud-agents.md`, "Files for a cloud session").
 - 2026-10-28 the owner asked for bots to send images back: `show_image`
   fetches an image from the web by its address (the only images a bot,
   which has no files, can reach), stores it as the chat's own and draws it
-  in the bot's answer (`versions/mvp/25-bots.md` §4.7).
-- `versions/mvp/24-session-places.md` §2 put a workspace's stores and
+  in the bot's answer (`design/bots/25-bots.md` §4.7).
+- `design/sessions/24-session-places.md` §2 put a workspace's stores and
   sessions in `repos/` and `sessions/`, and kept Spotlight out with
   `.metadata_never_index` at the work folder's root. The MVP decision log
   had already measured that marker as not working (2026-10-01), and the
@@ -897,7 +897,7 @@ earlier note:
   §9), it keeps its start and its end within that, since a session's
   error is at the end; and a failed turn records a kind, so the chat no
   longer offers Retry where the same message fails again
-  (`versions/mvp/25-bots.md` §2–§4).
+  (`design/bots/25-bots.md` §2–§4).
 - A bot's permissions are set in Settings → Permissions, tool by tool, and a
   yes on a card can reach past its call: *Always allow for* the repository,
   project or session it acts on, or *Always allow* for the tool; merging
@@ -905,26 +905,26 @@ earlier note:
   own model before an asking call, an ask rule winning and a failed review
   asking. 2026-10-29, from Grok Bot's approvals
   (`research/lessons-from-grok-bot.md` §9 rows 6 and 7;
-  `versions/mvp/25-bots.md` §5).
+  `design/bots/25-bots.md` §5).
 - 2026-10-29 the owner asked to see a bot's subagents while they work:
   "Running 3 subagents" now has a line per child under it (its task,
   waiting or running with its clock or how it ended, the tools it has
   called so far), from frames the bot's stream sends each time one moves,
-  until the stored line replaces them (`versions/mvp/25-bots.md` §4.7).
+  until the stored line replaces them (`design/bots/25-bots.md` §4.7).
 - 2026-11-06 the owner asked to see a session's subagents the way the
   terminal's footer lists them: Claude Code's, Codex's and OpenCode's
   subagents now send their own work beside the transcript, and the chat
   hangs each under the call that started it, a row with its task, kind,
   model, clock, tokens and what it is doing, that opens to its work.
-  Grok's stay a row with no work under it (`next-steps/0.7-terminal-and-chat.md`,
+  Grok's stay a row with no work under it (`design/sessions/terminal-and-chat.md`,
   "Subagents").
 - 2026-10-29 the owner asked for Codex cloud tasks the way Claude Code's
   cloud works, though the research note put Codex cloud last: a Codex row
   under Cloud starts the task from a host with `codex cloud exec`, and the
   host, not the browser extension, reports its status off
   `codex cloud list --json`, since Codex's CLI answers it
-  (`next-steps/cloud-agents.md`, `versions/mvp/24-session-places.md` §7).
-- `next-steps/cloud-agents.md` had a Codex environment named neither for
+  (`design/sessions/cloud-agents.md`, `design/sessions/24-session-places.md` §7).
+- `design/sessions/cloud-agents.md` had a Codex environment named neither for
   the repository's full name nor its bare name be the CLI's refusal, in its
   words (`SESS_009`). On 2026-10-31 starts failed "not found" on
   environments made in ChatGPT Settings → Codex Cloud, which codex-cli
@@ -934,18 +934,18 @@ earlier note:
   partial; the failed start's pane explains it with a link to Settings →
   Codex Cloud. The place picker does not mark the Codex row for it, since
   a partial list would hide starts that work
-  (`next-steps/cloud-agents.md`, "Environments the CLI cannot reach").
+  (`design/sessions/cloud-agents.md`, "Environments the CLI cannot reach").
 - A bot's watch woke it only on a task's state. On 2026-10-29, from Grok
   Bot's shell watches (`research/lessons-from-grok-bot.md` §9 rows 8 and
   9), it can also wake on a line the terminal prints that matches a
   pattern. The runner matches it on the host and sends only a count, so
   pane text still never reaches Postgres. A bot can also wait up to 120 s
   inside its turn, and read a session's log from the entry its own input
-  followed (`versions/mvp/27-bot-subscriptions.md` §2,
-  `versions/mvp/25-bots.md` §4.2).
+  followed (`design/bots/27-bot-subscriptions.md` §2,
+  `design/bots/25-bots.md` §4.2).
 - Row 10 of `research/lessons-from-grok-bot.md` §9 placed goals in note 26
   as a routine the bot sets on itself. On 2026-10-29 they were built
-  instead as a goal of their own in `versions/mvp/25-bots.md` §4.1. A
+  instead as a goal of their own in `design/bots/25-bots.md` §4.1. A
   routine's run is a schedule's slot, but a goal goes on when the bot's
   last turn ends. So it is a bounded count of continuation turns, at most
   10, keyed in the turn queue like a wake, with Stop above the composer.
@@ -953,16 +953,16 @@ earlier note:
   Bot's memory (`research/lessons-from-grok-bot.md` §9 row 11), a fact
   gained a tier (in the prompt, or looked up with `recall`) and a scope
   (the bot's, or about the person and read by all their bots), on the same
-  table (`versions/mvp/25-bots.md` §4.1). Project memory stays in §7.
+  table (`design/bots/25-bots.md` §4.1). Project memory stays in §7.
 - Note 25 §4.7 listed `ask_user` as a question card with no design. On
   2026-10-29, from Grok Bot's form cards (`research/lessons-from-grok-bot.md`
   §9 row 12), it was built as a card of up to four questions, a card of its
   own beside approvals that is answered or dismissed and never approved,
-  with one card of either kind up per bot (`versions/mvp/25-bots.md` §3.2).
+  with one card of either kind up per bot (`design/bots/25-bots.md` §3.2).
 - Row 14 of `research/lessons-from-grok-bot.md` §9 placed CI findings in
   the review session's result. On 2026-10-29 they were built as a bot's
   tool, `record_ci_findings`, filed on the pull request's head and shown
-  with its checks (`next-steps/0.2-pull-requests.md`, "CI findings"). A
+  with its checks (`design/pull-requests/pull-requests.md`, "CI findings"). A
   review session has no channel back to the control plane yet
   (`review.report` is unbuilt).
 - 2026-10-29 the owner asked for bots to be dragged into order on every page
@@ -972,8 +972,8 @@ earlier note:
   group when a neighbour is in it), so every heading follows. The bots list
   the API serves is that order (groups by position, then Ungrouped); it had
   been Ungrouped first with groups by id, so a heading's order differed from
-  Employees' (`versions/mvp/28-bots-in-sections.md`, Decided).
-- `versions/mvp/27-bot-subscriptions.md` §2 had `queued` and `in_progress`
+  Employees' (`design/bots/28-bots-in-sections.md`, Decided).
+- `design/bots/27-bot-subscriptions.md` §2 had `queued` and `in_progress`
   never wake a bot, so a delegated task stuck before it began (its host
   offline, its agent at a folder-trust or sign-in prompt) left the bot
   silent until somebody asked. On 2026-10-29 the owner asked for it to
@@ -982,7 +982,7 @@ earlier note:
   check: five minutes after `start_session` or `send_to_session`, a job
   reads the task and wakes the bot once, as `stalled`, only if it never
   started or its agent was never seen working (27 §4.1).
-- `versions/mvp/25-bots.md` §4.1 (2026-10-29) had a goal end only when the
+- `design/bots/25-bots.md` §4.1 (2026-10-29) had a goal end only when the
   bot called `end_goal`, the owner stopped it, a turn of it failed or its 5
   continuations (up to 10) ran out. On 2026-11-02 the owner asked for bots
   to come with basic commands like Claude Code's `/goal`, in the order
@@ -992,19 +992,19 @@ earlier note:
   model judges it after every turn (met, not met, impossible), as Claude
   Code's evaluator does; a person's goal takes up to 20 continuations, a
   bot's 5 unless it asks for up to 20 (25 §4.1, "Built-in commands").
-- `versions/mvp/26-bot-routines.md` §4 (2026-10-18) had every routine
+- `design/bots/26-bot-routines.md` §4 (2026-10-18) had every routine
   save by the bot ask the owner first, except on the Routines tab. On
   2026-11-03 `/schedule <request>` was built (25 §4.1): the bot saves the
   routine the person's command asks for, and that one create raises no
   card, since the command is the consent. Changes, deletes and runs still
   ask.
-- `versions/mvp/25-bots.md` §4.1 (2026-11-02) planned `/loop` or
+- `design/bots/25-bots.md` §4.1 (2026-11-02) planned `/loop` or
   `/schedule` as a routine of the bot's (26). On 2026-11-03 the owner chose
   `/loop`, and it is its own built-in instead: routines run on a calendar
   and last until deleted, while a loop runs every few minutes (1 minute to
   1 day, or when the bot chooses), belongs to the chat it was typed in and
   expires after 3 days. `/schedule` stays planned as a routine (25 §4.1).
-- `versions/mvp/25-bots.md` §4.1 (2026-11-02) drew `/usage` as three lines
+- `design/bots/25-bots.md` §4.1 (2026-11-02) drew `/usage` as three lines
   of this chat's figures and left the context and plan windows to the
   composer's meter. On 2026-11-03 the owner asked for a card like Claude
   Code's small usage card, and smaller: the command as a bubble, then a
@@ -1012,8 +1012,8 @@ earlier note:
   figures in a grid and the tokens' breakdown (25 §4.1).
 - 2026-10-31: the owner took the six chat slices drawn from a read of Codex
   and Grok (`research/lessons-from-codex-and-grok-chat.md`); they are listed
-  in `next-steps/0.7-chat-protocol.md`.
-- `versions/mvp/25-bots.md` §5 (2026-10-15) had every no on a Needs input
+  in `design/sessions/chat-protocol.md`.
+- `design/bots/25-bots.md` §5 (2026-10-15) had every no on a Needs input
   card give the bot a turn that tells it, so it always carried on. On
   2026-10-31 the card took Codex's `available_decisions`: the API chooses
   the decisions a card offers (approve, approve for its subject, always
@@ -1022,67 +1022,67 @@ earlier note:
   line outside any turn, and stops the asking turn if it still runs. Every
   decision is broadcast as `approval_resolved`, so every open tab takes the
   card down at once (25 §5).
-- `versions/mvp/25-bots.md` §5 (2026-10-15) gave the bot one turn after a
+- `design/bots/25-bots.md` §5 (2026-10-15) gave the bot one turn after a
   yes, once the approved call had run, so the chat was silent for the
   call's whole run and the model's first token after it. On 2026-11-02 the
   owner asked for the bot to answer first, as a person does: a yes now
   queues a short "on it" turn at once, the chat shows the call running
   under it, and the report is its own turn after, drawn "Done: …" (25 §5).
-- `versions/mvp/25-bots.md` §3 had a message written while a bot works
+- `design/bots/25-bots.md` §3 had a message written while a bot works
   wait over the composer for the turn after. On 2026-10-31, from Codex's
   `turn/steer`, Enter steers the running turn instead: the turn takes the
   message at its next tool call, and one it never reaches runs as its own
   turn; Alt+Enter still queues it for after
-  (`next-steps/0.7-terminal-and-chat.md`, "Steer in the bots chat").
+  (`design/sessions/terminal-and-chat.md`, "Steer in the bots chat").
 - The bot stream was lossy by design: text published while the browser was
   away was gone, and the console matched what it streamed against stored
   text to avoid drawing it twice. On 2026-10-31 a running turn's unstored
   text is kept beside the channel and sent as a snapshot when the browser
   connects, and the console reconciles by block and sequence number, the
-  stored message being the authority (`versions/mvp/25-bots.md` §2,
-  `next-steps/0.7-chat-protocol.md` slice 2).
+  stored message being the authority (`design/bots/25-bots.md` §2,
+  `design/sessions/chat-protocol.md` slice 2).
 - Note 25 §7 listed slash commands among what bots did not have yet. On
   2026-10-31 the owner asked how OpenClaw and Grok Bot support skills
   (`research/lessons-from-openclaw-and-grok-bot-skills.md`) and for slash
   commands; they were built as a bot's skills: one row each, listed by name
   and description in every prompt and read with `use_skill` when used,
   saved by the bot with `save_skill` or by hand in Settings → Skills, and
-  run by the person as `/<name>` (`versions/mvp/25-bots.md` §4.1, Skills).
-- `next-steps/channels.md` placed WhatsApp third among the channels, after
+  run by the person as `/<name>` (`design/bots/25-bots.md` §4.1, Skills).
+- `design/channels/channels.md` placed WhatsApp third among the channels, after
   email and contacts, and as a channel (people write to a bot). On
   2026-10-30 the owner asked for it first, the way OpenClaw does it, so that
   bots can see and talk with people: it was built as a connector in mail's
   shape on the channels note's runner transport, and the control plane now
   keeps the messages a linked number sees for 90 days
-  (`next-steps/whatsapp.md`). The channel comes after, on the same device.
+  (`design/channels/whatsapp.md`). The channel comes after, on the same device.
 - Codex cloud sessions named their environment by guessing its label from
-  the repository (`next-steps/cloud-agents.md`, "Codex is built"). On
+  the repository (`design/sessions/cloud-agents.md`, "Codex is built"). On
   2026-10-31 a session failed on an environment labelled otherwise, and
   the owner asked to improve environment management: the host now lists
   the ChatGPT account's environments and starts the task in the one linked
   to the repository, and New session has an Environment chip to pick
-  another, kept with the session's launch (`next-steps/cloud-agents.md`,
+  another, kept with the session's launch (`design/sessions/cloud-agents.md`,
   "Which Codex environment"). To list them the host reads the Codex CLI's
   sign-in, which "Environments the CLI cannot reach", decided the same day,
   had ruled out; which holds is open, for the owner.
-- `next-steps/cloud-agents.md` started Codex cloud sessions with
+- `design/sessions/cloud-agents.md` started Codex cloud sessions with
   `codex cloud exec`, which reaches only the environments ChatGPT now calls
   Codex Cloud (Legacy). On 2026-11-12, for issue 835, the owner asked for no
   legacy: the runner now starts and follows a thread on Codex's current
   cloud service itself, with the host's ChatGPT sign-in, in Codex's default
   environment with the repository or an environment id pasted from ChatGPT
   Settings; the host no longer lists legacy environments
-  (`next-steps/cloud-agents.md`, "On Codex's current cloud"). It reads the
+  (`design/sessions/cloud-agents.md`, "On Codex's current cloud"). It reads the
   CLI's token to do so, which "Environments the CLI cannot reach" had ruled
   out.
-- `next-steps/mail.md` §3.5 kept `trash_mail` asking every time, Full
+- `design/channels/mail.md` §3.5 kept `trash_mail` asking every time, Full
   access included, with no Allow and no "always" on its card. On
   2026-11-02 the owner, cleaning a mailbox a batch of 25 at a time, asked
   that it can run on its own once they grant it: it still asks under every
   preset until then, and Always allow on its card or Allow in Settings
   makes it standing. Sends (§3.4) still ask every time and cannot be
   allowed.
-- `next-steps/0.7-terminal-and-chat.md` opened a session on Terminal, with
+- `design/sessions/terminal-and-chat.md` opened a session on Terminal, with
   Chat a tab beside it (only a pull request's review session opened on
   Chat). On 2026-11-02 the owner made Chat the default view of every
   session, a member's and a guest's: the terminal shows until the
@@ -1094,7 +1094,7 @@ earlier note:
   opening on Chat meant waiting on a session that was already on screen.
   Chat stays a press away. A pull request's review session opens on
   Terminal too, as `0.2-pull-requests.md` says its tab does.
-- `next-steps/0.7-terminal-and-chat.md` sent a session's whole transcript,
+- `design/sessions/terminal-and-chat.md` sent a session's whole transcript,
   from its first line, on every attach (`reset` and the history). On
   2026-11-04 a Claude Code session's attach sends its last 40 turns
   instead, with `before`, the offset they start at, and the console asks
@@ -1108,18 +1108,18 @@ earlier note:
   its probe; tmux does not. On 2026-11-02 the agent's own report became the
   first source of a session's state, above the screen manifests, through
   the runner's `runner pty` wrapper (`research/lessons-from-herdr.md` §4,
-  `versions/mvp/02-runner.md` §9).
-- `versions/mvp/02-runner.md` §5 and §12 said a reboot leaves every session
+  `design/runner/02-runner.md` §9).
+- `design/runner/02-runner.md` §5 and §12 said a reboot leaves every session
   stopped until someone presses Restart. On 2026-11-02 a session marked
   kept (`runner sessions keep`) is restarted on its own after a reboot,
   reopening its conversation; the rest still wait for Restart.
-- `next-steps/0.6-mcp-cli-and-agent.md` placed delegation (`spawn_task`,
+- `design/clients/mcp-cli-and-agent.md` placed delegation (`spawn_task`,
   `wait_task`, `send_message`) behind an MCP server in the 0.6 slice. On
   2026-11-02 the host-side half landed in the runner instead, ported from
   herdr-core: an agent in a session starts, tells and waits on child
   sessions with `runner sessions run|send|wait|report` (`runner --skill`).
   The control-plane half, a child the console lists, is still 0.6's.
-- `next-steps/0.7-chat-protocol.md` kept the agent's transcript file the
+- `design/sessions/chat-protocol.md` kept the agent's transcript file the
   one source of the session chat, and `0.7-terminal-and-chat.md` named a
   second file reader as how another agent joins. OpenCode keeps no such
   file: its conversations are in a database whose tables move between its
@@ -1128,44 +1128,44 @@ earlier note:
   a password of the session's, and follows the conversation through that
   API, writing each finished part as a line in the transcript shape the
   console already reads. Claude Code still reads its file.
-- `versions/mvp/25-bots.md` §4.1 stopped a goal when any turn of it
+- `design/bots/25-bots.md` §4.1 stopped a goal when any turn of it
   failed, since a failure would only fail again. A turn stopped at the
   4-minute limit for one turn is the exception, decided on 2026-11-02 after
   a mail-cleaning goal stopped at its first long turn: the goal is the way
   past that limit, so that turn is reviewed and the next continuation goes
   on, told to take a smaller step.
-- `versions/mvp/05-screens.md` listed Claude Code's models as the newest
+- `design/console/05-screens.md` listed Claude Code's models as the newest
   of each line, Haiku 4.5 among them. On 2026-11-02 the owner asked for
   the list Claude's own picker shows: Opus 5.5, Fable 5.1, Sonnet 5.5 and
   Haiku 5.5, then Haiku 4.5, Sonnet 5, Opus 5, Fable 5, Opus 4.8, 4.7, 4.6
   and Sonnet 4.6 behind "More models" — the catalog's `legacy` models.
-- `versions/mvp/29-inbox.md` built the Inbox only from what the system
+- `design/console/29-inbox.md` built the Inbox only from what the system
   already knew, with no way for an agent to post into it. Since 2026-11-02
   an agent in a session can: `runner sessions notify "line"` keeps the line
   on its session, and the Inbox lists it until it is marked done
-  (`next-steps/agent-tools.md` §2). Since 2026-11-03 a bot can too, with
+  (`design/sessions/agent-tools.md` §2). Since 2026-11-03 a bot can too, with
   its `notify` tool: its latest line is a `botNotice` item, and the Type
   facet's "Bot approvals" is "Bots" (§5).
-- `next-steps/agent-tools.md` §1 kept a shared file between the host and
+- `design/sessions/agent-tools.md` §1 kept a shared file between the host and
   the browser attached to the session's chat; the control plane never
   heard of it. Since 2026-11-03 the runner also logs `file.shared` with
   the file's metadata (never its path or bytes), the session keeps the
   last 20, and a bot lists them and shows an image's preview, asked of
-  the host over the link (`next-steps/agent-tools.md` §7).
-- `versions/mvp/27-bot-subscriptions.md` §1 had every wake re-read what it
+  the host over the link (`design/sessions/agent-tools.md` §7).
+- `design/bots/27-bot-subscriptions.md` §1 had every wake re-read what it
   follows as the bot's owner and wake for what holds now, and §7 planned
   pull requests from the pull-requests module's webhooks. Built on
   2026-11-03, a bot following a pull request (`watch_pull_request`) is woken
   by the inbound-events hub's GitHub events instead, and its wake is the
   event's metadata alone, never a re-read: the pull request is GitHub's, not
   ours to re-read on every event. A close without a merge makes no event
-  yet, so only a merge ends it (27 §7.1, `next-steps/agent-tools.md` §6).
-- `versions/mvp/27-bot-subscriptions.md` §3 ended every subscription at
+  yet, so only a merge ends it (27 §7.1, `design/sessions/agent-tools.md` §6).
+- `design/bots/27-bot-subscriptions.md` §3 ended every subscription at
   20 wakes. On 2026-11-14 a bot following a project or a milestone
   (`watch_project`, `watch_milestone`) has no wake limit: it follows the
   plan for as long as it is worked on. What bounds it instead is that a
   change the bot made itself never wakes it (27 §7.2).
-- `versions/mvp/25-bots.md` treated text from tools as information, not
+- `design/bots/25-bots.md` treated text from tools as information, not
   instructions, and left every tool to the turn that reads it. On
   2026-11-03 a pull request watch made that text a stranger's comment
   starting an unattended turn, and Codex's review asked for narrower tools
@@ -1173,13 +1173,13 @@ earlier note:
   every tool, and the prompt carries the defence, each GitHub author named
   as a collaborator or as outside the repository and a rule against putting
   private information where outside text points (27 §7.1).
-- `versions/mvp/25-bots.md` (2026-10-21) told a bot that a session was
+- `design/bots/25-bots.md` (2026-10-21) told a bot that a session was
   "the expected way, not a last resort" for code work, so bots opened one
   for questions the web could answer. On 2026-11-05 the owner asked for
   research first: a bot answers with its own tools, web search and
   `web_fetch` when it can, and starts a session only for work that needs a
   shell or a checkout, or when asked.
-- `next-steps/cloud-agents.md` had a cloud session followed up only at its
+- `design/sessions/cloud-agents.md` had a cloud session followed up only at its
   vendor (`SESSIONS_039` for Cursor's). Since 2026-11-05 a Cursor session
   takes a follow-up through Oppenheimer as a new run of its agent, on the
   launcher's key and only once its last run ended; Claude Code's and
@@ -1188,67 +1188,67 @@ earlier note:
   which reached only a browser attached to the chat. Since 2026-11-05 a
   bot, `opp` and MCP read it a page at a time off the host, redacted, with
   a status that says how complete each page is; a cloud session's is
-  unsupported, with its vendor's link (`next-steps/agent-tools.md` §8).
-- `next-steps/agent-tools.md` §2's notice reached the Inbox only. Since
+  unsupported, with its vendor's link (`design/sessions/agent-tools.md` §8).
+- `design/sessions/agent-tools.md` §2's notice reached the Inbox only. Since
   2026-11-05 it also wakes every bot that follows the session, once per
   notice (§9).
-- `versions/mvp/25-bots.md` §2 sent a turn the newest messages that fit
+- `design/bots/25-bots.md` §2 sent a turn the newest messages that fit
   its history budget, and the OpenAI engine named no conversation to the
   provider. On 2026-11-03, after `/usage` showed a bot on GPT and Grok at a
   1% cache hit rate, each request carries the bot's id as its
   `prompt_cache_key`, and the history loses its oldest messages a block of
   about 6,000 tokens at a time, so each turn's request starts as the last
   one's did.
-- `versions/mvp/25-bots.md` §4.3 listed `create_project` and
+- `design/bots/25-bots.md` §4.3 listed `create_project` and
   `update_project` as asking first. On 2026-11-03 (issue #647) they were
   built to run under Approve for me like the task writes, since a project is
   metadata and an edit can be put back; `archive_project`, which cannot be
   undone, asks under every preset, one call at a time. `move_session` was
   added, and the workspace stream gained `project.changed`.
-- `versions/mvp/10-api-modules-and-data-model.md` kept an archived project
+- `design/foundations/10-api-modules-and-data-model.md` kept an archived project
   for ever with no way back ("there is no un-archive"). On 2026-11-03 the
   owner asked for restore: `POST /projects/{id}/restore` and the bot's
   `restore_project` bring the same row back with its slug, so a slug is
   still never reissued. The automations its archive paused stay paused.
-- `versions/mvp/29-inbox.md` §1 ordered the Inbox most blocked first:
+- `design/console/29-inbox.md` §1 ordered the Inbox most blocked first:
   approvals and waiting sessions oldest wait first, then requested
   reviews, ready merges and failed runs. On 2026-11-03 the owner asked for
   the most recent first, so the list is newest first across every kind,
   Low items still last; the order is held by the consumer's
   `composeInbox` test, no longer by the fleet stress suite.
-- `versions/mvp/29-inbox.md` §1 listed pull requests for you (a review
+- `design/console/29-inbox.md` §1 listed pull requests for you (a review
   asked of you, yours ready to merge) in the Inbox. On 2026-11-10 the
   owner asked to stop: agents open pull requests under the owner's account,
   so each one waited there as theirs to merge. They are off by default
   and come back with Show pull requests in the Inbox's filter menu, kept
   on the device (the note's "Pull requests are opt-in").
-- `next-steps/0.6-mcp-cli-and-agent.md` asked whether the CLI is a new app
+- `design/clients/mcp-cli-and-agent.md` asked whether the CLI is a new app
   or `runner` grows user commands, and noted the starter's CLI and MCP apps
   were pruned. On 2026-11-02 both came back as their own apps, `apps/cli`
   (`opp`) and `apps/mcp`, clients of the API on scoped tokens: they reach
   automations, bots and tasks, which are not the runner's to forward. The
   runner keeps the same-host verbs.
-- `next-steps/cloud-agents.md` left bringing a Claude Code cloud session
+- `design/sessions/cloud-agents.md` left bringing a Claude Code cloud session
   back as a command to copy, with no button that opens a worktree session.
   On 2026-11-03 the owner asked to pick the host from the session's pane:
   *Continue on a host* starts a worktree session there whose agent runs
   `claude --teleport <id>` (`teleport` on the create, runner capability
   `session.teleport`). Codex's `codex apply` stays a command.
-- `next-steps/mail.md` §5's build log (2026-10-29) had an account start
+- `design/channels/mail.md` §5's build log (2026-10-29) had an account start
   from the moment a routine *first* watched it, so a mark kept through a
   pause or a revoked grant replayed the gap's mail as new. On 2026-11-04 an
   account the poll does not read loses its mark and starts again from now;
   mail older than two days, spam, trash and chats never wake a routine, an
   any-mail trigger takes only the inbox, and rate-limited runs are one chat
   line a routine an hour.
-- `versions/mvp/09-runner-install-and-update.md` §2 said a
+- `design/runner/09-runner-install-and-update.md` §2 said a
   quarantine-stripped bare binary was all macOS needed, with no
   notarization. It ran, but each release was a new program to macOS (an
   ad-hoc signature in a new file per version), so every Mac asked for its
   permissions again after every update. On 2026-11-04 the runner became a
   Developer ID signed, notarized `OppenheimerRunner.app` at one fixed path
   on macOS, swapped in place by updates (09 §2, §5).
-- `versions/mvp/05-screens.md` had the Sessions sidebar make projects (a
+- `design/console/05-screens.md` had the Sessions sidebar make projects (a
   plus in its head) and edit them (a settings glyph on each project's
   header). On 2026-11-05 the owner moved project management to Plan: a
   **Projects** view in Plan's sidebar (`/plan/projects`) lists the
@@ -1259,13 +1259,13 @@ earlier note:
   project. On 2026-11-07 the owner asked for one back, in the filter menu:
   the Project facet's list ends in **New project…**, opening the project
   dialog (`05-screens.md`). Editing projects stays in Plan.
-- `versions/mvp/18-plan-product.md` drew Plan's board as Later, To do, In
+- `design/plan/18-plan-product.md` drew Plan's board as Later, To do, In
   progress and Done. On 2026-11-05 the owner dropped **Later** and added
   **In review** between In progress and Done, for finished work waiting to
   be looked at. Tasks that were in Later moved to the end of To do
   (migration `ReplaceLaterWithReviewColumn`); attaching a session still
   moves only a task in To do to In progress.
-- `versions/mvp/25-bots.md` §4.1 (2026-10-29) kept a bot's facts as
+- `design/bots/25-bots.md` §4.1 (2026-10-29) kept a bot's facts as
   `profile` by default, the newest 60 in every prompt, `log` facts only
   through `recall`, and refused a save past 200. Bots saved almost nothing
   after their first chat. On 2026-11-06, after a read of Grok Bot 0.79.2
@@ -1275,7 +1275,7 @@ earlier note:
   entries (2,000, dated), so a save leaves the prompt cache warm, the turn's
   rules tell it to save what it learns without asking, and a full memory
   of 500 drops its oldest log fact instead of refusing.
-- `versions/mvp/26-bot-routines.md` §6 (2026-10-16) said a bot gets a
+- `design/bots/26-bot-routines.md` §6 (2026-10-16) said a bot gets a
   heartbeat only when asked for one in chat, through `update_routine`. On
   2026-11-06 the owner asked for bots to be proactive by default, the way
   OpenClaw's are: a bot is now given a **Heartbeat** routine as soon as it
@@ -1285,7 +1285,7 @@ earlier note:
   A beat with nothing to say calls `nothing_to_report`, offered only on
   turns nobody is waiting on. Bots that had a job before get none until
   asked (26 §6, "Decided").
-- `versions/mvp/26-bot-routines.md` §6 (2026-10-18) designed the routines'
+- `design/bots/26-bot-routines.md` §6 (2026-10-18) designed the routines'
   spend guard as a nudge card, then a pause with a card to resume, and a
   per-bot "don't ask again". On 2026-11-07 the owner asked for it to work
   like an agent that stops watching a pull request: it stops on its own and
@@ -1296,7 +1296,7 @@ earlier note:
   cards; the thresholds are workspace automation settings, and a per-bot
   "Pause while you're away" switch turns it off (26 §6, "Changed
   2026-11-07").
-- `versions/mvp/25-bots.md` §4.1 (2026-10-29) left what a bot knows about
+- `design/bots/25-bots.md` §4.1 (2026-10-29) left what a bot knows about
   its owner spread across their bots: each `person` fact was edited on the
   bot that learned it, read only on the others, and the owner had no place
   of their own. On 2026-11-07 the owner asked for one page, the way
@@ -1305,13 +1305,13 @@ earlier note:
   `AddPersonMemory`), in every bot's system prompt and never written by a
   bot, and lists every `person` fact their bots learned, each still the row
   of the bot that keeps it and changed there.
-- `next-steps/cloud-agents.md` ("Follow-ups to a cloud agent") said a
+- `design/sessions/cloud-agents.md` ("Follow-ups to a cloud agent") said a
   Claude Code cloud session's conversation is not ours to read, so the
   console only linked to claude.ai. On 2026-11-07 the owner asked for its
   chat in the console: two hooks in the session's repository send its
   transcript to the API and collect replies typed in the console ("The chat
-  of a cloud session"; `research/cloud-chat-bridge/`).
-- `versions/mvp/25-bots.md` §7 (2026-10-14) made a bot's avatar its
+  of a cloud session"; `research/spikes/cloud-chat-bridge/`).
+- `design/bots/25-bots.md` §7 (2026-10-14) made a bot's avatar its
   initials on one of eight colours. On 2026-11-07 the owner asked for
   better avatars: each bot now has a drawn face, a hatted face in its
   colour cut out like a sticker, generated from its id. The same day the
@@ -1321,7 +1321,7 @@ earlier note:
   name alone), replacing the starter's asterisk, the rail's "O" and the
   three-part hat favicon. A bot's owner can also pick its face in Profile
   (hat, eyes, mouth).
-- `versions/mvp/25-bots.md` §1 had a bot report a failed session and stop
+- `design/bots/25-bots.md` §1 had a bot report a failed session and stop
   ("do not start it again unless the person asked you to retry such
   failures"). On 2026-11-08 the owner asked for bots as proactive as
   OpenClaw's: a bot whose session failed on the default host because
@@ -1334,7 +1334,7 @@ earlier note:
   is never overridden, a watched session or a task that fails on its own
   merits is still reported, not retried, and a person's "no" is never
   routed around.
-- `versions/mvp/25-bots.md` §2 (2026-10-29) told a bot to report only what
+- `design/bots/25-bots.md` §2 (2026-10-29) told a bot to report only what
   a tool confirmed, which left the checking to the bot's judgement. On
   2026-11-07 a bot started a cloud session that could not start and said
   so only when asked, and the owner asked bots to always check. The prompt
@@ -1342,39 +1342,39 @@ earlier note:
   is read, then read back where a tool can, a failure is said first and
   unasked, and a coding agent's report is a claim checked against its
   evidence.
-- `versions/mvp/25-bots.md` §4.2 (2026-10-30) left `start_cloud_session`
+- `design/bots/25-bots.md` §4.2 (2026-10-30) left `start_cloud_session`
   unwatched, since a cloud session is followed at its vendor, and §2's
   closed list quoted each tool's first sentence. On 2026-11-07, after a
   review of every prompt, a cloud or review session is watched like any
   other (a failed cloud start had gone unreported), and the list names the
   tools by area: quoting them made it 62% of the system prompt.
-- `versions/mvp/25-bots.md` §2 (2026-10-15) bounded a turn by 20 round trips
+- `design/bots/25-bots.md` §2 (2026-10-15) bounded a turn by 20 round trips
   and 4 minutes but failed it only past the time; one that used its steps
   ended completed, with nothing said. On 2026-11-08 it fails with
   `step_limit`, saying so, and goals and loops go on past it as past the
   time limit (`TURN_LIMIT_FAILURES`).
-- `versions/mvp/25-bots.md` §2 (2026-10-15) folded a bot's chat into its
+- `design/bots/25-bots.md` §2 (2026-10-15) folded a bot's chat into its
   summary past 1.5 times the history budget, while the history dropped old
   messages at the budget, so up to about 12,000 tokens were in neither. On
   2026-11-08 the fold starts below the budget, with room for the longest
   summary and the notes on earlier images (`BOT_SUMMARY_TRIGGER_TOKENS`).
-- `versions/mvp/20-plan-calendar.md` (2026-10-13) drew the calendar as a
+- `design/plan/20-plan-calendar.md` (2026-10-13) drew the calendar as a
   month only and asked whether a week view came before Google
   write-back. On 2026-11-08, after that day's `Tasks` frame, it opens on
   Day, with Week and Month beside it, a task due at a time standing on
   the hours at that time, and Plan gains To do, one day's tasks (§6).
-- `versions/mvp/25-bots.md` §2 (2026-10-15) left a turn's tool calls out of
+- `design/bots/25-bots.md` §2 (2026-10-15) left a turn's tool calls out of
   the history, as the bot's own working, so a later turn knew what its
   tools did only from what it had said. On 2026-11-08 they come back as a
   short record from Oppenheimer, fenced as data and bounded per call and
   per turn (`activityText`), and the summary and the goal reviewer read the
   same record.
-- `versions/mvp/25-bots.md` §2 (2026-10-29) told a bot how full its context
+- `design/bots/25-bots.md` §2 (2026-10-29) told a bot how full its context
   was only against a known window, so a bot on the OpenAI engines, which
   report none, was never told. On 2026-11-08 it is told its tokens, and
   asked for narrow reads from `BOT_CONTEXT_TIGHT_TOKENS`; the note no
   longer says every engine compacts on its own.
-- `versions/mvp/25-bots.md` (2026-10-15) gave bots no shell at all: code
+- `design/bots/25-bots.md` (2026-10-15) gave bots no shell at all: code
   work and scripts went to a coding agent in a session. On 2026-11-07 the
   owner asked for bots that run scripts themselves, without a sandbox per
   bot: `run_command` runs one program on a paired host, through its runner,
@@ -1389,26 +1389,26 @@ earlier note:
   runner finds Argent's `simulator-server` beside the `argent` on its
   PATH and the tool-server Argent has running in `~/.argent`. Naming
   devices still works; `off` offers none.
-- `versions/mvp/25-bots.md` §2 said a bot "delegates a complete task and
+- `design/bots/25-bots.md` §2 said a bot "delegates a complete task and
   never runs a terminal". On 2026-11-08 the owner asked for bots that drive
   bash and ssh themselves: `open_terminal`, `type_in_terminal` and
   `read_terminal` type into a blank-terminal session and read its screen,
   only on a host whose `runner exec` mode is `full`. A coding agent is still
   given a task, never typed at.
-- `versions/mvp/25-bots.md` §2 said the engines' computer tools are off and
+- `design/bots/25-bots.md` §2 said the engines' computer tools are off and
   `research/lessons-from-grok-bot.md` left computer use out. On 2026-11-09
   the owner asked that a bot can use a computer on a host remotely:
   `use_computer` looks at a host's screen and uses its mouse and keyboard
   through the runner, on a Mac's own desktop or a Linux X display (a virtual
   one where there is none), only after `runner computer on` on that host.
   Nothing runs on the control plane, which is what §2 was protecting.
-- `versions/mvp/25-bots.md` gave a bot the web through fetching a public
+- `design/bots/25-bots.md` gave a bot the web through fetching a public
   page only. On 2026-11-11 the owner asked for browser use beside computer
   use: `use_browser` drives a browser of the bot's own on a host through the
   runner, reading a page as elements with refs and acting on a ref, only
   after `runner browser on` on that host. Fetching stays for a public page a
   bot only reads.
-- `versions/mvp/25-bots.md` §4.1 (2026-10-29) let a bot file a fact as
+- `design/bots/25-bots.md` §4.1 (2026-10-29) let a bot file a fact as
   "about the person (their name, their role, their preferences)", read by
   all their bots. Bots filed their job there: Facturas read another bot's
   XRP Mobile project and pull request notification setting. On 2026-11-08
@@ -1416,13 +1416,13 @@ earlier note:
   bot: `remember` takes `memory: 'yours' | 'general'`, the prompt names
   *Your memory* and *General memory*, and general takes only what a bot
   with a completely different job would need (`scripts/evals/bot-memory`).
-- `versions/mvp/02-runner.md` §5 said a base that is not a branch on the
+- `design/runner/02-runner.md` §5 said a base that is not a branch on the
   remote fails the create. On 2026-11-08 a project on an empty GitHub
   repository could not start its first session for that reason, so an
   empty repository (no ref at all) is the exception: the create pushes an
   empty `Initial commit` to the base and cuts the session from it. A
   prepare leaves it empty; a repository with other branches still fails.
-- `versions/mvp/25-bots.md` §2 bounded a bot's turn at 20 model round
+- `design/bots/25-bots.md` §2 bounded a bot's turn at 20 model round
   trips and 4 minutes, and §4.1 a goal at 20 continuations with a reviewer
   after each turn. On 2026-11-09 the owner asked for tasks that run for
   hours: Codex, Grok Bot and OpenClaw cap neither
@@ -1431,18 +1431,18 @@ earlier note:
   a silent model or the loop guard; a goal has no limit, the bot says when
   it is done and the reviewer checks that claim, and a goal that goes
   wrong pauses for the owner to resume instead of ending.
-- `versions/mvp/25-bots.md` §4.1 paused a goal on a provider's usage limit
+- `design/bots/25-bots.md` §4.1 paused a goal on a provider's usage limit
   for the owner to resume. On 2026-11-09, where the provider says when the
   limit ends, the goal waits for that time and goes on by itself; it pauses
   only when no time is known.
-- `versions/mvp/11-api-implementation-plan.md` (GitHub slice) had the
+- `design/foundations/11-api-implementation-plan.md` (GitHub slice) had the
   webhook read `request.rawBody`, the copy Better Auth's app-wide JSON
   parser kept, so it needed no bootstrap change. That parser's 100 kB
   default refused ordinary `push` and `pull_request` deliveries with a 500
   (Sentry OPPENHEIMER-API-2, 2026-11-09). The webhook now reads its own body
   raw, up to GitHub's documented 25 MB cap, ahead of the app-wide parsers;
   a larger body is a 413, and the `rawBody` copy is gone.
-- `versions/mvp/18-plan-product.md` §1 (2026-11-05) listed Plan's Projects
+- `design/plan/18-plan-product.md` §1 (2026-11-05) listed Plan's Projects
   as a row per project with its settings. On 2026-11-08, following that
   day's `Tasks` artboards, each project is a card (its repositories, and
   Needs input, Running or Idle from its sessions) that opens the project's
@@ -1452,35 +1452,35 @@ earlier note:
   per-project statistics yet.
 - The 2026-11-08 line above left the project page's Stats unbuilt, saying
   there were no per-project statistics; `GET /plan/stats?projectId=`
-  (`versions/mvp/23-plan-milestones-stats-accounts.md` §4) had them. On
+  (`design/plan/23-plan-milestones-stats-accounts.md` §4) had them. On
   2026-11-09 the owner asked for it: the page switches between Overview and
   Stats, which reads that endpoint over a period. Pull requests stay off it
   until the endpoint carries them (23, decided 4).
-- `versions/mvp/25-bots.md` (2026-11-08) made `recap` something the person
+- `design/bots/25-bots.md` (2026-11-08) made `recap` something the person
   asks for: `/recap` in a bot's chat, "recall" in a session. On 2026-11-09
   the owner asked for it at the end of every finished task as well: a bot's
   wake for a finished session ends with a recap of it, a session's agent
   ends each task it finishes with one, and so do agents working in this
   repository (the `recap` skill).
-- `versions/mvp/19-plan-tasks-and-goals.md` gave a task no priority. On
+- `design/plan/19-plan-tasks-and-goals.md` gave a task no priority. On
   2026-11-17 the owner asked for a few levels after looking at Linear and
   ClickUp: a task has an optional priority, Urgent, High, Medium or Low,
   drawn with Linear's icons (the "!" square for Urgent), that never
   reorders a column (§9, "Priority").
-- `versions/mvp/29-inbox.md` gathered what needs the person from the
+- `design/console/29-inbox.md` gathered what needs the person from the
   sessions, bots, pull requests, runs and reports, and a task an agent made
   went straight onto the board with nothing to say so. On 2026-11-12 the
   owner asked that such a task wait in the Inbox for him to triage: a task
   now says who made it (`origin`) and when its person took it up
   (`triagedAt`), and waits in the Inbox until he gives it a TODO day, starts
   or links a session on it, or dismisses it (29, "Tasks an agent made").
-- `versions/mvp/20-plan-calendar.md` §6 (2026-11-08) had To do list a
+- `design/plan/20-plan-calendar.md` §6 (2026-11-08) had To do list a
   day's tasks by their due date. On 2026-11-09 the owner asked for it to be
   what they mean to work on: a task has a focus date apart from its due
   date, To do lists what is put on the day and what is due on it, keeps
   unfinished work from earlier days until it is done, and opens a task's
   dialog on To do rather than on the board (§6, "Changed on 2026-11-09").
-- `versions/mvp/20-plan-calendar.md` §6 (2026-11-09) listed every task on
+- `design/plan/20-plan-calendar.md` §6 (2026-11-09) listed every task on
   To do's day the same way, whatever its agents were doing, and "To do"
   named the view, the board's first column and the dialog's day field. On
   2026-11-12 the owner asked for To do to know about agents: a task an
@@ -1489,35 +1489,35 @@ earlier note:
   failed, ready to review, agent stopped), a row's Move puts it on another
   TODO day, and the names became TODO, Not started and TODO day, labels
   only (§6, "Changed on 2026-11-12").
-- `next-steps/channels.md` §5 and §6, `next-steps/customers-and-routes.md`
-  §5 and `next-steps/telegram.md` §2 and §3 changed on 2026-11-09, when the
+- `design/channels/channels.md` §5 and §6, `design/channels/customers-and-routes.md`
+  §5 and `design/channels/telegram.md` §2 and §3 changed on 2026-11-09, when the
   owner's `/start` went unanswered: the decision is
-  `next-steps/answering-on-telegram-and-whatsapp.md`.
-- `next-steps/answering-on-telegram-and-whatsapp.md` §1 (2026-11-09) had the
+  `design/channels/answering-on-telegram-and-whatsapp.md`.
+- `design/channels/answering-on-telegram-and-whatsapp.md` §1 (2026-11-09) had the
   spare WhatsApp number send your personal number a code you send back from
   it. On 2026-11-09, building slice 3, the code became one you enter in
   Settings → WhatsApp instead: sent back from the named number, a stranger
   who owns a mistyped number would receive it and become your line. A bot's
   reply to your own message there counts only against the host's send
-  budget, not the 100 bot sends a day (`next-steps/whatsapp.md` §4).
-- `versions/mvp/29-inbox.md` said, from 2026-10-25, that the Inbox stores
+  budget, not the 100 bot sends a day (`design/channels/whatsapp.md` §4).
+- `design/console/29-inbox.md` said, from 2026-10-25, that the Inbox stores
   nothing but your marks and that no agent posts into it. On 2026-11-09 the
   owner asked for the unattended agents to send him problems with images
   and to answer them only in the Inbox: a report is now stored
   (`inbox_report`, up to four pictures), sent by anything holding a token
   with `inbox-reports:write`, answered from its card, and read back by the
   agent that sent it (29, "Reports").
-- `versions/mvp/05-screens.md` listed Fable 5.1 among Claude Code's four
+- `design/console/05-screens.md` listed Fable 5.1 among Claude Code's four
   current models. On 2026-11-09 the owner asked for Fable 5.2 in new
   sessions and in bots: it takes Fable 5.1's place, and Fable 5.1 heads
   "More models", since Claude still serves it. OpenCode's `anthropic/` row
   moves to Fable 5.2 as well, with Fable 5.1 behind its "More models".
-- `versions/mvp/29-inbox.md`, "As built", had Plan open on its Inbox. On
+- `design/console/29-inbox.md`, "As built", had Plan open on its Inbox. On
   2026-11-09 the owner asked that Plan open on the view dragged to the top
   of its sidebar: the rail and the console's landing go through
   `/plan/open`, which redirects there (the Inbox until another is dragged
   above it).
-- `versions/mvp/25-bots.md` §4.1 (2026-10-31) had a bot save a skill only
+- `design/bots/25-bots.md` §4.1 (2026-10-31) had a bot save a skill only
   when the person asked. On 2026-11-09, from Hermes Agent's learning loop,
   a bot may save one on its own after hard work likely to come again (at
   most one a turn, never anything private), a turn someone waits on that
@@ -1525,38 +1525,38 @@ earlier note:
   `patch_skill` fixes one passage of a skill. Either tool changes a skill
   the person wrote last only when they asked, and neither touches the
   skills Oppenheimer gives every bot.
-- `versions/mvp/25-bots.md` §4.1 (2026-11-09) reminded a bot after 8 tool
+- `design/bots/25-bots.md` §4.1 (2026-11-09) reminded a bot after 8 tool
   calls, in a line it was never told about, and `use_skill` did not say
   who wrote a skill. On 2026-11-10 the skills paragraph announces the
   reminder (Oppenheimer's own `<oppenheimer_reminder>` line at the end of
   a tool's result, which a tool's output cannot forge), the reminder comes
   after 6 calls, work the person says comes back is reason enough to save,
   and `use_skill` says whether the bot or the person wrote the skill last.
-- `versions/mvp/25-bots.md` §4.2 (2026-10-27) had a bot find a session only
+- `design/bots/25-bots.md` §4.2 (2026-10-27) had a bot find a session only
   by listing them, newest first, and read one it already had the id of. On
   2026-11-09, from Hermes Agent's session search, a bot searches every
   session of the workspace, on any host and closed ones included, for words
   in its name and log (`search_sessions`); the agents' transcripts on the
   hosts are not searched. The `recap` skill searches its topic the same way.
-- `versions/mvp/25-bots.md` drew a turn's compaction as a quiet line among
+- `design/bots/25-bots.md` drew a turn's compaction as a quiet line among
   its calls, the trace at the reply's 15px in muted ink, and the live
   line's orb as `composing`. On 2026-11-09 the owner asked to stop seeing
   compactions, for quieter tool calls and for the solving and searching
   orbs: the chat draws no compaction (the export keeps it), the trace is
   13px in subtle ink, and the orb solves, or searches while the running
-  call only looks around (`versions/mvp/25-bots.md` §2 and §3).
-- `versions/mvp/18-plan-product.md` §4 had Start session always start from
+  call only looks around (`design/bots/25-bots.md` §2 and §3).
+- `design/plan/18-plan-product.md` §4 had Start session always start from
   one of the project's repositories. On 2026-11-09 the owner asked to start
   one with only a host: the Repository chip offers No repository, which on
   a host opens the session in the host's home folder.
-- `versions/mvp/27-bot-subscriptions.md` gave a task a bot hands off one
+- `design/bots/27-bot-subscriptions.md` gave a task a bot hands off one
   stall check and "no progress update", and its prompt told a bot asked to
   monitor that "checking now adds nothing". On 2026-11-10 the owner had to
   tell Facturas "you should be babysitting this" while two of its agents sat
   idle: a bot now looks at a task still running every ten minutes after the
   first check, up to an hour, staying quiet when it is on track, and checks
   at once when asked (§4.2).
-- `versions/mvp/25-bots.md` §4.2 had `start_session` launch every session
+- `design/bots/25-bots.md` §4.2 had `start_session` launch every session
   at `auto` on the host's default model, decided 2026-10-18. On 2026-11-10
   a bot told the owner it could not start a session on Opus 5.5: the tool
   now takes everything the composer offers (model by id or name, effort,
@@ -1564,7 +1564,7 @@ earlier note:
   it does, and names each choice on the card. `auto` stays the default,
   and a session at full access is approved on its own card, every time.
   An eval holds it (`scripts/evals/bot-session-launch/`).
-- `next-steps/0.2-pull-requests.md` ("The screens as built", 2026-10-13)
+- `design/pull-requests/pull-requests.md` ("The screens as built", 2026-10-13)
   left a pull request with no generated summary until the chat came, and
   the queue as a table. On 2026-11-09 the owner asked for the queue one pull
   request at a time, summarized and with its pictures, the next one coming
@@ -1578,7 +1578,7 @@ earlier note:
   through the screen-sharing server on its loopback, shared by its owner
   with `runner desktop on` (`research/device-streaming.md`, "A host's
   desktop"; the note's §11 is the read that led to it).
-- `versions/mvp/26-bot-routines.md` §6 built the routines' spend guard on
+- `design/bots/26-bot-routines.md` §6 built the routines' spend guard on
   2026-11-07: a bot's routines paused after 3 reports its owner had not seen,
   or 72 h away from its chat. On 2026-11-10 the owner asked for it to go: a
   half-hourly Sentry triage that reports "no new events" paused within hours,
@@ -1587,7 +1587,7 @@ earlier note:
   line, `POST /bots/:id/seen`); the migration resumes what it had paused.
   Routines run until paused; the run budget, the overlap guard and quiet
   turns bound the cost (26 §6, "Removed 2026-11-10").
-- `versions/mvp/26-bot-routines.md` §6 gave every bot with a job an hourly
+- `design/bots/26-bot-routines.md` §6 gave every bot with a job an hourly
   Heartbeat (2026-11-06). On 2026-11-15 the owner found it eating their
   tokens: a model turn an hour, all day, on each bot. No bot is given one by
   default any more; the migration moved every default Heartbeat to twice a
@@ -1597,13 +1597,13 @@ earlier note:
   since the last one (another routine's or a loop's turn does not count) is
   skipped as `idle` without a model turn; Run now always runs (26 §6,
   "Changed 2026-11-15").
-- `versions/mvp/05-screens.md` left plain **Ctrl+V** to the program off
+- `design/console/05-screens.md` left plain **Ctrl+V** to the program off
   the Mac, pasting only on Ctrl+Shift+V. On 2026-11-10 the owner pasted a
   screenshot into the terminal with Ctrl+V and Claude Code, reading the
   host's clipboard, said "No image found in clipboard". Ctrl+V now pastes
   off the Mac too, as ⌘V does on it, so a pasted image is uploaded to the
   host; a program that wanted a literal ^V no longer gets one from it.
-- `versions/mvp/27-bot-subscriptions.md` §4.2 looked in only on a task a bot
+- `design/bots/27-bot-subscriptions.md` §4.2 looked in only on a task a bot
   handed off itself (`start_session`, `send_to_session`). On 2026-11-10,
   the same evening, Facturas told the owner it would check a session once
   it pushed and was never woken: it had only read that session. A task a
@@ -1619,39 +1619,39 @@ earlier note:
   when it needs the owner (a run that did not happen, a pause they did not
   make), a run's turn reads as the bot writing to you, and the prompt has
   the bot write as someone on the team in every turn.
-- `next-steps/0.7-terminal-and-chat.md` ("Data reads as data") opened a
+- `design/sessions/terminal-and-chat.md` ("Data reads as data") opened a
   reply's JSON block as a tree, Tree / Raw on its band. On 2026-11-11 the
   owner asked for the text first: the block opens on Raw, Raw / Tree on its
   band, the tree one click away. A tool result's JSON still reads as a tree.
-- `versions/mvp/05-screens.md` held the sidebar's sessions and projects
+- `design/console/05-screens.md` held the sidebar's sessions and projects
   still while a filter or the search hid some of them, since a drop would
   lose the hidden ones' places. On 2026-11-11 the owner tried to reorder
   sessions with a repository filter on and could not. They drag now,
   filtered or not: the drop is merged into the whole list's order, so a
   hidden row keeps its place among the ones it was drawn with.
-- `versions/mvp/05-screens.md`'s sidebar filter menu held its picks for
+- `design/console/05-screens.md`'s sidebar filter menu held its picks for
   the visit only: a reload came back unfiltered. On 2026-11-11 the owner
   asked for them to stick, as Plan's do (`18-plan-product.md`, "Filters
   stick"): the facets and the sort are kept on the device, not the
   account, since a filter is the reader's view; a remembered pick the menu
   no longer offers reads as all and is forgotten.
-- `versions/mvp/13-automations.md`'s editor prefilled a new automation
+- `design/automations/13-automations.md`'s editor prefilled a new automation
   with a project (the one it was opened for, else the first) and all of
   that project's repositories, and picking a project picked all of its
   repositories. On 2026-11-11 the owner asked for no default repositories
   and no default project: a new automation starts with neither unless it
   was opened for a project, and picking a project picks no repository.
-- `versions/mvp/26-bot-routines.md` (§7) listed bot routines on
+- `design/bots/26-bot-routines.md` (§7) listed bot routines on
   `/automations` in a second table under the automations. On 2026-11-11
   the owner asked for them in tabs: the overview reads Automations · Bot
   routines · Runs, the routines at `/automations/routines`.
-- `versions/mvp/26-bot-routines.md` drew every routine run in its bot's
+- `design/bots/26-bot-routines.md` drew every routine run in its bot's
   chat, and the chat showed its tool calls until the reader hid them. On
   2026-11-11 the owner, scrolling a column of half-hourly "Routine ·
   Triage Sentry errors" lines that found nothing, asked for less: the
   chat now hides tool calls by default, and while they are hidden a
   routine run that only ran tools is left out. The wrench shows both.
-- `next-steps/cloud-agents.md` ("The chat of a cloud session") had a reply
+- `design/sessions/cloud-agents.md` ("The chat of a cloud session") had a reply
   typed in a Claude Code cloud session's chat reach the agent only while
   its Stop hook waited (up to two minutes); one typed later sat until a
   next turn that never came. On 2026-11-11, as decision 2 there said, a
@@ -1664,7 +1664,7 @@ earlier note:
   Back pill as well. On 2026-11-12 the owner asked for no breadcrumbs
   in the console: each such page keeps only the Back pill
   (`EditorPageBack`), and `PageHeaderCrumbs` left the design system.
-- `versions/mvp/25-bots.md` §1 (2026-11-08) sent a bot to the next route
+- `design/bots/25-bots.md` §1 (2026-11-08) sent a bot to the next route
   after a failed step, and had it "keep going until the request is done or
   you are blocked, then stop". On 2026-11-12 the owner saw a bot's
   half-hourly routine answer "the designated session is still closed" for
@@ -1675,26 +1675,26 @@ earlier note:
   loop's run is told so in the note that opens it. It is also told never
   to report the same blocker twice, which a bot with no way round still
   does (open).
-- `next-steps/cloud-agents.md` ("The console") had send in Cursor's cloud
+- `design/sessions/cloud-agents.md` ("The console") had send in Cursor's cloud
   open Cursor's agent page in a new tab, opened in the press so no popup
   blocker refused it, and go to the session. On 2026-11-12 (issue #836) the
   tab sat blank while Cursor answered and closed empty when Cursor refused
   the launch. Send now opens no tab and goes to the session, as every start
   does; the session's page ("Open in Cursor") and its row link to Cursor.
-- `versions/mvp/26-bot-routines.md` §6 ("Quiet turns", 2026-11-06) had a
+- `design/bots/26-bot-routines.md` §6 ("Quiet turns", 2026-11-06) had a
   quiet turn write no message because the bot was told to write nothing
   after `nothing_to_report`. On 2026-11-12 a bot with a blocker it could
   not get round, and its person already told, called it and wrote the
   blocker again on every run. On 2026-11-13 the silence is kept in code: a
   turn that ends on `nothing_to_report` keeps no message, whatever the
   model wrote before or after the call.
-- `versions/mvp/25-bots.md` §4.1 had the built-in skills (`oppenheimer`,
+- `design/bots/25-bots.md` §4.1 had the built-in skills (`oppenheimer`,
   `recap`) live in product code only, so Settings → Skills listed none of
   them and a bot saying it "used the `oppenheimer` skill" pointed at
   nothing the person could find. On 2026-11-12 the owner asked to see them:
   the page lists them under the bot's own in a read-only "Built in" group,
   with a view of the instructions and no edit or delete.
-- `versions/mvp/29-inbox.md` ("As built") headed the clear reading pane
+- `design/console/29-inbox.md` ("As built") headed the clear reading pane
   "Nothing needs you", left-aligned. On 2026-11-14 the owner asked for it
   to be warmer: it reads "You're all caught up", centred under a small
   drawing of an empty tray; the line under it is unchanged.
@@ -1703,31 +1703,31 @@ earlier note:
   2026-11-14 the owner started 0.5 as a native Expo app: `apps/mobile` came
   back with its kit and design system, as a shell first (sign-in and the
   five tabs, Account working), push as its own slice, and no sign-up on the
-  phone (`next-steps/0.5-mobile.md`).
+  phone (`design/clients/mobile.md`).
 - The 0.5 shell first drew the export's frosted tab bar and cards solid,
   since React Native has no blur of its own. On 2026-11-15 the owner asked
   for native Liquid Glass everywhere it exists: the tab bar, selects and
   back buttons are the platform's own controls, and floating surfaces are
   `UIGlassEffect`, so iOS 26 draws Apple's Liquid Glass
-  (`next-steps/0.5-mobile.md`).
+  (`design/clients/mobile.md`).
 - 0.5's shell left sign-up to the web, where the workspace is named. On
   2026-11-15 the owner asked for the whole auth flow on the phone: Create
   account, the workspace step, Ready, forgot and reset password, all in the
   native frame; GitHub and the first host stay the computer's
-  (`next-steps/0.5-mobile.md`).
-- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-09) had
+  (`design/clients/mobile.md`).
+- `design/channels/answering-on-telegram-and-whatsapp.md` §2 (2026-11-09) had
   the owner link opened from the console with its code never shown. On
   2026-11-15 the owner, with no Telegram app, opened it on Telegram Web,
   which drops the `start` code, and had to type `/start <code>` by hand.
   Under a link just made the console now also shows that message, with
   Copy, and opens the bot's chat on Telegram Web.
-- `versions/mvp/25-bots.md` §1 (2026-11-11) had a new bot end a reply that
+- `design/bots/25-bots.md` §1 (2026-11-11) had a new bot end a reply that
   did the work its first message asked for with its name and job
   questions. On 2026-11-13 the owner found asking its name after the task
   odd and the welcome too long: work is now just done, and the welcome is
   a few warm sentences with no list. A name or job that matches one of the
   owner's projects now says which project the bot is for.
-- `versions/mvp/25-bots.md` §1 (2026-11-08) had a bot whose own session
+- `design/bots/25-bots.md` §1 (2026-11-08) had a bot whose own session
   failed on a host it chose, for a reason that looked like the host's,
   offer the task on another host and start it only on a yes, since only
   the session's untrusted words said the host was at fault. On 2026-11-15
@@ -1735,7 +1735,7 @@ earlier note:
   and asked for bots that look for another way: the bot now starts its own
   task on another capable host, its approval level deciding whether that
   asks first, and never moves off a host the person named.
-- `versions/mvp/25-bots.md` §1 had a new bot never pick or suggest a name of
+- `design/bots/25-bots.md` §1 had a new bot never pick or suggest a name of
   its own (2026-11-10, from OpenClaw's `BOOTSTRAP.md`), say nothing about
   its name after a first task (2026-11-13), and take the next of Juno,
   Milo, Wren… in order, so every workspace's first bot was Juno. On
@@ -1753,26 +1753,26 @@ earlier note:
   per platform. Tauri is reconsidered only if download size starts to
   matter, and then measured on a Mac first. State still lives server-side.
 
-- `versions/mvp/30-session-previews.md` put the Browser and Simulator in a
+- `design/sessions/30-session-previews.md` put the Browser and Simulator in a
   preview pane of their own, as pill tabs. On 2026-11-16 the owner asked
   for side chats, terminals and bots beside a session: that pane became the
-  side pane (`versions/mvp/32-side-pane.md`), where the previews are three
+  side pane (`design/console/32-side-pane.md`), where the previews are three
   of the things the launcher opens, each a tab beside a shell, another
   session or a bot's chat.
-- `versions/mvp/32-side-pane.md` §1 listed Terminal, Agent, Session, Bot
+- `design/console/32-side-pane.md` §1 listed Terminal, Agent, Session, Bot
   and the previews as the launcher's rows, and the session's bar held its
   name, its state and the worded Terminal / Chat switch. On 2026-11-24 the
-  owner asked for tabs and a calmer layout (`versions/mvp/33-session-tabs.md`):
+  owner asked for tabs and a calmer layout (`design/console/33-session-tabs.md`):
   open sessions and bots are tabs in a one-line bar, the state moves to the
   tab's dot and tooltip, and the launcher is large rows with Agent, Session
   and Bot folded under Side chats.
-- `versions/mvp/33-session-tabs.md` §1 left New session without the tab
+- `design/console/33-session-tabs.md` §1 left New session without the tab
   strip. The same day, once it shipped, the owner asked for the tabs to stay
   there too: New session's bar is the strip with a lit New session tab that
   is not kept. The bar is 45px with its controls on the medium rung, on the
   page's own ground rather than the grey band §3's contrast pass first gave
   it.
-- `versions/mvp/33-session-tabs.md` §1 then put the 45px tab bar on the
+- `design/console/33-session-tabs.md` §1 then put the 45px tab bar on the
   page's own ground (the terminal's grey on a session, the canvas's black
   on New session). Later on 2026-11-24 the owner asked for the grey
   everywhere ("I liked that the tabs have the gray color", "never full
@@ -1780,12 +1780,12 @@ earlier note:
   does not change when a session is created. Only the
   tabs stay on the medium rung; the bar's other controls go back to the
   small one.
-- `versions/mvp/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
+- `design/bots/25-bots.md` §3 greeted an empty bot chat at 34px, asking for
   a job over four tiles (next-step pills once it had instructions), over the
   stacked composer. On 2026-11-16 the owner found it loud in the side pane
   and then on the page: the chat greets with the bot's face, its name and
   one line, over the composer's one-row layout, in both places.
-- `versions/mvp/20-plan-calendar.md` §1 drew the calendar nearly
+- `design/plan/20-plan-calendar.md` §1 drew the calendar nearly
   achromatic: busy events in ink on the control wash, free ones and
   automation runs muted, only a Google account's ring in its colour. On
   2026-11-17 the owner asked for colour, like Google Calendar's: each item
@@ -1793,11 +1793,11 @@ earlier note:
   tasks violet, each Google account its own; automation runs stay grey),
   and the first Google accounts moved off blue and violet to keep the
   legend unambiguous.
-- `versions/mvp/20-plan-calendar.md` counted every item of the view in the
+- `design/plan/20-plan-calendar.md` counted every item of the view in the
   header whatever layers were on. On 2026-11-17 the owner asked for filters
   (kind, project, status, who added a task, §7) and the counts now follow
   what the calendar shows: a hidden layer counts nothing.
-- `versions/mvp/25-bots.md` §8 put a bot's prompt files in two folders,
+- `design/bots/25-bots.md` §8 put a bot's prompt files in two folders,
   `system/` and `turn/`, with the wakes in `turn/`. On 2026-11-18 the owner
   asked to expand that with sibling folders: what opens a turn an event
   started is `wake/` now, and `turn/` keeps what a turn carries besides
@@ -1808,32 +1808,32 @@ earlier note:
 - On 2026-11-17, a runner-started Codex cloud session was confirmed complete
   while its console link opened only the Codex home page. The console now
   preserves the thread id at `https://chatgpt.com/local/<id>`
-  (`next-steps/cloud-agents.md`, "On Codex's current cloud").
-- `versions/mvp/05-screens.md` had GPT-6.1 Sol as Codex's default. On
+  (`design/sessions/cloud-agents.md`, "On Codex's current cloud").
+- `design/console/05-screens.md` had GPT-6.1 Sol as Codex's default. On
   2026-11-17 OpenAI released GPT-6.2 Sol and GPT-6.2 Astra, and the owner
   asked for both in new sessions and in bots: they lead Codex's list,
   GPT-6.2 Sol is the default, and OpenCode's `openai/` row gains both. The
   OpenAI and ChatGPT bots read Codex's list, so they follow.
-- `versions/mvp/20-plan-calendar.md` let a task leave TODO only by moving
+- `design/plan/20-plan-calendar.md` let a task leave TODO only by moving
   its TODO day, which a due date today or overdue overrides. On 2026-11-18
   the owner asked to remove a task from TODO, and chose that removing one
   keeps it off every day, its due date included, until it gets a TODO day
   again or its due date changes (`task."offTodo"`).
-- `versions/mvp/25-bots.md` §2 had a summary job delay itself until the
+- `design/bots/25-bots.md` §2 had a summary job delay itself until the
   reset on a refusal for "rate or quota", but a spent credit or a refused
   key carries no reset, so it went to the queue's eight retries and each
   job's last one was reported as an error (Sentry OPPENHEIMER-API-7,
   14–17 Nov). On 2026-11-17 a job the provider refused for the account
   (`usage_limit`, `credential`) ends without a retry or a report; the next
   turn past the threshold folds again once the account is sorted.
-- `next-steps/whatsapp.md` §3 kept a message's media on the phone, the bot
+- `design/channels/whatsapp.md` §3 kept a message's media on the phone, the bot
   told only its kind ("[audio]"). On 2026-11-18 the owner asked for bots
   that hear voice notes: the runner keeps each voice note's media key and
   path for 48 hours and hands the audio over when asked
   (`whatsapp.media.get`), and the API hears it through voice's providers
   when the turn the owner's voice note queued starts, keeping the transcript
   on the row, never the audio. Images and the bot's own voice replies come next.
-- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-09) had a
+- `design/channels/answering-on-telegram-and-whatsapp.md` §2 (2026-11-09) had a
   group, and any allowed contact, added only in the console, from a list per
   number. On 2026-11-18 the owner asked for a bot to do it too, in the
   conversation with the person who confirmed the number, and to see and
@@ -1842,8 +1842,8 @@ earlier note:
   console chat and their own chat with the number; Settings → WhatsApp lists
   the allowed chats with who allowed each, their bot and Remove. Which bots
   answer on a number is its default plus a bot per allowed chat, not a list
-  of bots per number (`next-steps/whatsapp.md`, open question 1).
-- `versions/mvp/09-runner-install-and-update.md` §5 (2026-11-04) had a Mac
+  of bots per number (`design/channels/whatsapp.md`, open question 1).
+- `design/runner/09-runner-install-and-update.md` §5 (2026-11-04) had a Mac
   that a runner from before the bundle updated run the bare binary out of
   the new archive, then reinstall itself as the bundle. That bare binary is
   the bundle's executable, sealed to the bundle by its signature, and macOS
@@ -1852,12 +1852,12 @@ earlier note:
   With one Mac on the runner, already moved by hand, the owner chose on
   2026-11-20 not to build a way across: §5 now says such a Mac is moved by
   hand. A failed stage is now deleted, and a boot sweeps old ones.
-- `versions/mvp/03-control-plane.md` named a session from its first prompt
+- `design/foundations/03-control-plane.md` named a session from its first prompt
   only, once. On 2026-11-19 the owner asked for names that follow the
   conversation: after the agent answers the person's second prompt, a
   derived name is written once more from their prompts so far
   (`source: conversation`); a name a person typed is never replaced.
-- `next-steps/answering-on-telegram-and-whatsapp.md` §4 (2026-11-09) sent a
+- `design/channels/answering-on-telegram-and-whatsapp.md` §4 (2026-11-09) sent a
   channel turn's answer once, at its end, and had a message sent meanwhile
   wait for the next turn: asked to check something, the bot went quiet for
   minutes, then answered. On 2026-11-20 the owner asked for a bot that
@@ -1875,14 +1875,14 @@ earlier note:
   device, only the bot's replies counting), the amber dot took in questions
   and failed turns, the green face dot went, and Mark as unread came in as a
   device mark like a session's.
-- `next-steps/answering-on-telegram-and-whatsapp.md` §3 (2026-11-09) gave a
+- `design/channels/answering-on-telegram-and-whatsapp.md` §3 (2026-11-09) gave a
   contact's turn the customer turn's narrow tools: answer, the bot's
   documents, memory for the conversation, `hand_off`. On 2026-11-20 the
   owner asked for WhatsApp groups and other people to be answered next; the
   first version gives a contact's turn no tools at all, and counts its limit
   of 20 turns an hour per chat rather than per person. The narrow tools
   come after.
-- `next-steps/answering-on-telegram-and-whatsapp.md` §2 (2026-11-18) had a
+- `design/channels/answering-on-telegram-and-whatsapp.md` §2 (2026-11-18) had a
   chat allowed only by asking a bot in the owner's own chat, Settings
   listing the allowed ones, at most 50 per number. On 2026-11-20 the owner,
   with 25 groups and 200 contacts in mind, asked for settings that scale
@@ -1891,7 +1891,7 @@ earlier note:
   a bot there allows the chat; a bot's settings show the chats it answers
   and add more. Only listed chats are answered (no catch-all), and a
   number allows up to 1,000.
-- `versions/mvp/02-runner.md` ("Close") ended a session with `tmux
+- `design/runner/02-runner.md` ("Close") ended a session with `tmux
   kill-session` and took its hangup to end the agent. On 2026-11-21 one
   host ran out of memory with ~110 agents of closed sessions still
   running, because Claude Code ignored the hangup: the `pty` wrapper now
@@ -1899,7 +1899,7 @@ earlier note:
   confirms its processes are gone, and the daemon ends any agent left by
   a session that is over every 5 minutes. Nothing changed about tmux
   sessions it does not recognise (still reported, not reaped).
-- `next-steps/answering-on-telegram-and-whatsapp.md` §5 (2026-11-20) woke a
+- `design/channels/answering-on-telegram-and-whatsapp.md` §5 (2026-11-20) woke a
   bot in a group only when a message @-mentioned the number or replied to
   it, and listed only the chats a number had seen a message in. On
   2026-11-21 the owner found a group set to a bot silent ("not answering")
@@ -1909,12 +1909,12 @@ earlier note:
   and its saved contacts on connect and on each change (`whatsapp.chats`),
   so Settings lists them before anyone writes. The owner's own chat is
   listed first among People, answered by the default bot.
-- `versions/mvp/26-bot-routines.md` §7 made the chat a routine's only
+- `design/bots/26-bot-routines.md` §7 made the chat a routine's only
   editor: the Routines tab's Edit put "Edit your routine: *name*" in the
   composer. On 2026-11-21 the owner asked to edit one by hand: Edit opens
   a dialog for its name and prompt, and only when it runs (its triggers)
   is still changed in the chat.
-- `next-steps/voice.md` (2026-10-17) heard dictation on the ChatGPT sign-in
+- `design/console/voice.md` (2026-10-17) heard dictation on the ChatGPT sign-in
   or the deployment's `VOICE_STT_*` server, and bots spoke voice notes only
   on `VOICE_TTS_*`, all fixed by env. On 2026-11-21 the owner asked for it to
   be configured with the keys: Settings → Model providers adds Groq and
@@ -1922,17 +1922,17 @@ earlier note:
   the transcription provider and model, the voice-note provider, model and
   voice, and the polish model or none. A choice is tried first, the old
   order after it; the env servers stay as the last provider.
-- `versions/mvp/26-bot-routines.md` §8 slice E planned a routine's webhook as
+- `design/bots/26-bot-routines.md` §8 slice E planned a routine's webhook as
   `POST /automations/webhook/{id}` with a key in `Authorization: Bearer`. Built
   on 2026-11-20 (#953) with the token in the URL instead,
   `POST /api/v1/routine-webhooks/{token}`, optionally signed with an HMAC
   secret, issued and revoked on the Routines tab, since the senders it is for
   are often given a URL and nothing else (the note's Decided, 2026-11-20).
-- `next-steps/channels.md` §7.2 had one Oppenheimer Slack app per Slack
+- `design/channels/channels.md` §7.2 had one Oppenheimer Slack app per Slack
   workspace, speaking as each bot. On 2026-11-20, asked for a way to ask a
   bot from Slack (JordiParraCrespo/oppenheimer#954), each bot got an app of
   its own instead, so it has its own name and face and nothing routes by
-  mention (`next-steps/slack-for-bots.md`): made from a manifest the console
+  mention (`design/channels/slack-for-bots.md`): made from a manifest the console
   fills in, its token and secret pasted and sealed, answering only its
   owner's Slack user in the thread asked in. A channel turn that ends on an
   approval card now says so with a link, on Telegram and WhatsApp too.
@@ -1942,7 +1942,7 @@ earlier note:
   it is told apart from what the owner wrote, and the App's comments wake
   nothing (`loopGuard`), so an answer never asks a bot again. The guide's
   "writing to a bot only in the console" stopped holding the same day.
-- `research/visuals/README.md` §6 and `research/generative-ui-in-chat.md` §6
+- `research/visuals-in-the-chat.md` §6 and `research/generative-ui-in-chat.md` §6
   proposed visuals in the chat and left them unbuilt. On 2026-11-24 the
   owner asked for all of it: Mermaid and math in every chat's Markdown, one
   typed visual format (`@oppenheimer/shared/schemas/visual`) drawn by bots
@@ -1957,7 +1957,7 @@ earlier note:
   page cannot close: a fragment's script that navigates its frame or inserts
   a frame is refused and the visual ended, but the browser looks the target's
   host up in DNS first; `visual_html` turns HTML off.
-- `versions/mvp/29-inbox.md`, "As built: the Inbox in Plan" (2026-10-29),
+- `design/console/29-inbox.md`, "As built: the Inbox in Plan" (2026-10-29),
   made the Inbox Plan's first section at `/plan/inbox`, with no rail item.
   On 2026-11-24 the owner asked for it to be one of the platform's core
   features, with its own page, and as easy to answer and move on from as a
@@ -1995,7 +1995,7 @@ earlier note:
   `use_skill` when the work comes up, as Codex and OpenClaw keep theirs:
   `watch-inbox` (mail), `use-a-computer` and `use-a-browser`. What must hold
   on every turn (ask before sending or buying, never type a password) stayed
-  in the system prompt (`next-steps/mail.md`, Decided;
+  in the system prompt (`design/channels/mail.md`, Decided;
   `research/lessons-from-codex-and-openclaw-on-context.md`).
 - Every bot tool went to Claude on every turn (`alwaysLoad`, "a bot's tools
   are few"); with every area on that is about 39,000 tokens of definitions,
@@ -2006,7 +2006,7 @@ earlier note:
   window, never deferred with a large window) and the model finds what it
   needs, while the bot's own tools (memory, skills, questions, notices)
   and the tools a built-in skill calls always load. GLM and the OpenAI engines send every tool as before.
-- `next-steps/whatsapp.md` §3 kept an image on the phone, the bot told
+- `design/channels/whatsapp.md` §3 kept an image on the phone, the bot told
   "[image]" and the caption, after voice notes became the one exception
   (2026-11-18). On 2026-11-24 the owner reported that the WhatsApp bots
   cannot see images: the runner keeps each image's media key and path for
@@ -2021,7 +2021,7 @@ earlier note:
   you at once, and the runner sends that report 3 s after the first
   ("A question reaches you in seconds"). Codex's and OpenCode's detection
   rules were rewritten from their real screens the same day.
-- `next-steps/slack-for-bots.md` §4 cut a bot's Slack answer at 3,900
+- `design/channels/slack-for-bots.md` §4 cut a bot's Slack answer at 3,900
   characters, into several messages. On 2026-11-24, copying Orca's Slack
   fixes, an answer goes in one message up to 39,000 (Slack folds it behind
   "Show more"), the owner's message carries a 👀 reaction while the bot
@@ -2029,12 +2029,12 @@ earlier note:
   Slack, and images the owner shares reach the bot (§1 said the bot reads
   only words); the manifest asks for `reactions:write`, `users:read` and
   `files:read` too.
-- `next-steps/agent-tools.md` §2 left a browser notification for later. On
+- `design/sessions/agent-tools.md` §2 left a browser notification for later. On
   2026-11-24 the console raised one, opt-in per browser from the Inbox's
   filter menu, for each session that comes to wait on the reader and each
   agent notice, in a tab they are not looking at (`29-inbox.md`, "A
   notification in this browser").
-- `versions/mvp/29-inbox.md`, "Its own page, and a deck" (2026-11-24),
+- `design/console/29-inbox.md`, "Its own page, and a deck" (2026-11-24),
   put Done, Snooze, Deprioritize and Delete over the card and Later on it,
   with E, S, L and a swipe left for Later. The same day the owner asked for
   fewer choices: the card shows only its answers, a dock under it has
@@ -2042,7 +2042,7 @@ earlier note:
   session, a bot's approval) has no Done, a questionnaire goes one question
   at a time, and Mark as done takes up a task an agent made, as Dismiss did
   ("The card's actions, reshaped").
-- `next-steps/answering-on-telegram-and-whatsapp.md` gave a contact's
+- `design/channels/answering-on-telegram-and-whatsapp.md` gave a contact's
   turn, and any turn in a group, no tools, so it could only ever answer in
   text, and a bot told to answer a group by voice never could. On
   2026-11-24 such a turn may answer as one voice note where
@@ -2051,9 +2051,9 @@ earlier note:
   rule) and the
   workspace can speak: it is told so, marks its reply, and the reply goes
   as the note and never also as text, falling back to text when it cannot
-  be spoken or sent (`next-steps/whatsapp.md`, 2026-11-24). It still gets
+  be spoken or sent (`design/channels/whatsapp.md`, 2026-11-24). It still gets
   no tools.
-- `next-steps/answering-on-telegram-and-whatsapp.md` (2026-11-21) had
+- `design/channels/answering-on-telegram-and-whatsapp.md` (2026-11-21) had
   every line with words in an allowed group wake its bot, and the bot
   answered every one, lines meant for others included. On 2026-11-25 the
   bot reads the group's last messages, works out who the new line is for,
@@ -2066,15 +2066,15 @@ earlier note:
   notification and its badge, each session on the person's hosts that comes
   to wait on them and each agent notice (`29-inbox.md`, "The Chrome
   extension tells about your hosts too").
-- `versions/mvp/05-screens.md`'s sidebar filter menu took one host. On
+- `design/console/05-screens.md`'s sidebar filter menu took one host. On
   2026-11-24 the owner, filtering to their Mac Studio, wanted a second
   machine beside it: the Host facet takes several hosts, as Repository
   does, a chip each, and lists a session on any of them.
-- `versions/mvp/29-inbox.md`, "Bulk actions" (2026-11-11), showed a row's
+- `design/console/29-inbox.md`, "Bulk actions" (2026-11-11), showed a row's
   checkbox only on hover, and the owner did not find it. On 2026-11-24
   Select in the list's head shows every checkbox, and X checks the item on
   the deck ("Selecting, found at a glance").
-- `versions/mvp/29-inbox.md`, "As built: the console" (2026-10-26), had
+- `design/console/29-inbox.md`, "As built: the console" (2026-10-26), had
   Show done on by default, so a done item stayed in the list struck
   through. On 2026-11-24 the owner asked that it leave: Show done is off
   unless turned on in the filter menu ("Done leaves the list").
@@ -2082,52 +2082,52 @@ earlier note:
   channel's conversation ("answer in words"). On 2026-11-24 the owner asked
   for the bot to decide its reactions on the channels too, keeping Slack's
   automatic 👀: it reacts on Slack as its app and on WhatsApp as the number,
-  without asking, in a chat it answers (`next-steps/slack-for-bots.md` §4,
-  `next-steps/answering-on-telegram-and-whatsapp.md` §4). Telegram still
+  without asking, in a chat it answers (`design/channels/slack-for-bots.md` §4,
+  `design/channels/answering-on-telegram-and-whatsapp.md` §4). Telegram still
   takes none.
 - `research/device-streaming.md` ("A host's desktop") left the pointer to
   the screen-sharing server, and a watched Mac showed none: Apple's Screen
   Sharing sends the cursor's shape but never where it is. On 2026-11-24 the
   runner took that over: it reads the pointer with CoreGraphics and sends
-  `desktop.pointer` while the reader watches (`versions/mvp/01-protocol.md`),
+  `desktop.pointer` while the reader watches (`design/foundations/01-protocol.md`),
   and the console draws the host's cursor there.
-- `versions/mvp/05-screens.md` drew a stopped session as a pane with a
+- `design/console/05-screens.md` drew a stopped session as a pane with a
   Restart button, and `02-runner.md` §5 kept every session running until
   someone stopped it. On 2026-11-24, after reading how Orca hibernates
-  agents (`research/session-resume/README.md`), opening a stopped session
+  agents (`research/session-resume.md`), opening a stopped session
   as its owner restarts it, and the button is the fallback for a restart
   that fails. The runner also stops, never closes, a session left `done`
   or `idle` and unwatched for two hours (`RUNNER_IDLE_STOP`).
-- `versions/mvp/29-inbox.md` ("You're all caught up", 2026-11-14) kept the
+- `design/console/29-inbox.md` ("You're all caught up", 2026-11-14) kept the
   list's empty state as one muted "Nothing needs you." row. On 2026-11-24
   the owner asked for more: the list shows "Inbox zero" over a check in a
   green disc, and "No matches" when filters match nothing ("Inbox zero").
-- `versions/mvp/25-bots.md` §4.2 kept a host's switches for bots
+- `design/bots/25-bots.md` §4.2 kept a host's switches for bots
   (`runner exec`, `runner computer`, `runner browser`) on the host alone,
   never written by the control plane. On 2026-11-24 the owner, told by a
   bot to run `runner browser on` after saying "do it yourself", did not want
   that guardrail: a bot changes them with `set_host_settings` when the
   person asks in their own chat ("The host's switches").
-- `versions/mvp/22-direct-terminal-path.md` (step 0) drew the keystroke
+- `design/runner/22-direct-terminal-path.md` (step 0) drew the keystroke
   round trip, `echo p50 / p95 ms · path`, in the session's bar when a
   `localStorage` switch was set, and gated each step on it. On 2026-11-24
   the owner did not want it in the header: it is gone, and the netsim
   bench times keydown to echo in the page instead.
-- `versions/mvp/29-inbox.md` ("A notification in this browser",
+- `design/console/29-inbox.md` ("A notification in this browser",
   2026-11-24) told only a session that comes to wait on you and an agent's
   notice. The same day the owner asked for more: a turn that ends (the
   row's blue dot) is told, a session left amber or blue for thirty minutes
   is told once more, and Mute notifications in a row's menu silences one
   session on this browser ("A finished turn, a long wait, and a mute").
-- `versions/mvp/29-inbox.md` ("A finished turn, a long wait, and a mute")
+- `design/console/29-inbox.md` ("A finished turn, a long wait, and a mute")
   put Mute notifications beside Mark as unread on a session row's menu.
   The same day the owner asked for a sublevel: both moved into a
   Notifications & read pane.
-- `next-steps/0.5-mobile.md` ("A shell first", 2026-11-14) had each of the
+- `design/clients/mobile.md` ("A shell first", 2026-11-14) had each of the
   phone's five sections fill in a slice of its own. On 2026-11-18 the owner
   postponed the Pull requests tab: it stays a placeholder while the other
   four are built ("The Pull requests tab waits").
-- `versions/mvp/25-bots.md` §5 gave a bot two levels: Approve for me (what
+- `design/bots/25-bots.md` §5 gave a bot two levels: Approve for me (what
   reaches outside Oppenheimer asks) and Full access (everything runs, but
   trashing mail, archiving a project and a session at full access still
   asked). On 2026-11-25 the owner asked for an auto mode and a "dangerously
@@ -2137,7 +2137,7 @@ earlier note:
   for run and leaves the rest on the card (`research/auto-mode.md`), and
   Full access raises no card but the owner's own Ask, an ask rule and
   sending mail ("three levels, and Approve for me is a reviewer").
-- `next-steps/0.5-mobile.md` ("Native Liquid Glass, wherever the platform
+- `design/clients/mobile.md` ("Native Liquid Glass, wherever the platform
   has it", 2026-11-15) named the tab bar, selects, back buttons and floating
   glass as the platform's. On 2026-11-25 the owner widened it to every
   control the platform has: switches, checkboxes, segmented controls, menus,

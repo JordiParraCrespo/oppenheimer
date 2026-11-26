@@ -10,7 +10,7 @@
 ---
 
 `/usage`, the second built-in command for bots: a card of what the chat has
-spent, in tokens (`product/versions/mvp/25-bots.md` §4.1).
+spent, in tokens (`product/design/bots/25-bots.md` §4.1).
 
 - `@oppenheimer/backend-agents`: the `usage` event carries `cacheReadTokens`
   and `cacheWriteTokens` (Anthropic's cache reads and writes, the Responses

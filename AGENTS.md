@@ -26,13 +26,13 @@ lifecycle from the host. `apps/runner/README.md` says what works today.
 
 All research and decisions live in `product/`; start with `product/README.md`.
 
-- The MVP scope is `product/versions/mvp/00-scope.md`, its in-depth design one
-  document per area in `product/versions/mvp/` (decision log in its README);
-  what comes after is `product/next-steps/`. `product/07-mvp.md` is
+- The MVP scope is `product/design/foundations/00-scope.md`, its in-depth design one
+  document per area in `product/design/` (decision log in its README);
+  what comes after is `product/roadmap.md`. `product/archive/07-mvp.md` is
   superseded, kept for history.
 - Workspaces are personal: the Better Auth `organization` row is the one
   workspace, created at sign-up with the account as its single owner. No
-  roster, invitations or teams in the console (`product/versions/mvp/08-auth.md`;
+  roster, invitations or teams in the console (`product/design/foundations/08-auth.md`;
   `AUTHORIZATION.md` is the starter's kernel design, kept as history).
 - When a decision changes, update the note that made it and add a line to
   the "decisions that changed" list in `product/README.md`. Do not silently
@@ -40,7 +40,7 @@ All research and decisions live in `product/`; start with `product/README.md`.
   the notes; keep it in sync when a note changes. `scripts/check-product-sync.mjs`
   fails a branch whose notes changed without both; an edit that changes no
   decision says so in a commit trailer, `Product-Sync: <why>`.
-- The runner is `product/versions/mvp/02-runner.md` and
+- The runner is `product/design/runner/02-runner.md` and
   `…/09-runner-install-and-update.md`; the wire is `…/01-protocol.md`.
 
 ## Monorepo map

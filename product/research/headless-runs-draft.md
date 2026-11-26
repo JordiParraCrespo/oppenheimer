@@ -4,9 +4,9 @@
 > #43, which was closed on 2026-10-10 without merging. It was drafted as
 > `versions/mvp/18-headless-runs.md` before automations moved into the
 > MVP. What governs is
-> [`versions/mvp/16-automations-architecture.md`](../versions/mvp/16-automations-architecture.md),
+> [`design/automations/16-automations-architecture.md`](../design/automations/16-automations-architecture.md),
 > which built on this draft; the note's own "Read with 16" says where.
-> Bare numbers in it name `versions/mvp/` notes. Its numbered
+> Bare numbers in it name `design/` notes. Its numbered
 > cross-references (`02 §14`, `03 §Cloud hosts` and the like) point at
 > sections that pull request proposed and that the current notes do not
 > have. Paths in backticks are relative to `product/`.

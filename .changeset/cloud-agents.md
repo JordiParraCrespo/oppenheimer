@@ -9,7 +9,7 @@
 
 Cloud sessions: a session can run in Cursor's cloud on the person's own
 Cursor key, chosen in New session's place picker
-(`product/next-steps/cloud-agents.md`).
+(`product/design/sessions/cloud-agents.md`).
 
 - `@oppenheimer/shared`: the `cloud` session place, `HOST_SESSION_PLACES`,
   `SESSION_AGENT_IDS`, `startCloudSessionSchema`, `CLOUD_AGENT_IDS` and the

@@ -6,7 +6,7 @@
 ---
 
 `/schedule`, the fourth built-in command for bots
-(`product/versions/mvp/25-bots.md` §4.1): the bot saves a routine from the
+(`product/design/bots/25-bots.md` §4.1): the bot saves a routine from the
 person's words, what to do and when.
 
 - `@oppenheimer/shared`: `schedule` joins `BOT_BUILT_IN_COMMANDS`;

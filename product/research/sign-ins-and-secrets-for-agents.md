@@ -167,7 +167,7 @@ Our position differs from Grok Bot's in ways that matter:
   `gcloud` and browser logins, so the "sign in once on the box" problem
   only really bites on a headless host or a VM.
 - **We already broker one credential.** The runner's git credential helper
-  (`versions/mvp/02-runner.md` §8) asks the runner over its 0600 socket
+  (`design/runner/02-runner.md` §8) asks the runner over its 0600 socket
   for a one-hour, per-session token. The token lives in memory, is never
   written to disk, and is pulled before it expires. This is the pattern to
   generalise.
@@ -186,7 +186,7 @@ What we could build, in order of value for cost:
 |---|---|---|---|
 | 1 | **`request_secret` for sessions and bots.** An agent names the variable, the host it is for and why, and the turn waits. The Inbox and the session show a form, and Slack, Telegram and WhatsApp carry only a link to it. The browser encrypts the value to the host; the runner keeps it, owner-only, and serves it through the session's environment or the credential socket. The agent hears "provided" or "declined". A bot's key is kept beside its model-provider keys in the API | §4 `secret-request` | `02-runner.md` §8, `25-bots.md` §3.2, `29-inbox.md` |
 | 2 | **Project secrets.** In project or host settings, names and values entered through the same form. Every new session's tmux starts with them set, which also fixes worktrees starting without the untracked `.env`. Reserved names and limits as in §4, and the console shows names only | §4 box secrets | `14-hosts-settings.md`, `02-runner.md` |
-| 3 | **Redact what we know.** The runner knows each injected value, so session reads, share links and bot pages can drop the exact value. That is stronger than redaction by shape (`next-steps/agent-tools.md`) | §4 `…_SECRET_NAMES` | `next-steps/agent-tools.md` |
+| 3 | **Redact what we know.** The runner knows each injected value, so session reads, share links and bot pages can drop the exact value. That is stronger than redaction by shape (`design/sessions/agent-tools.md`) | §4 `…_SECRET_NAMES` | `design/sessions/agent-tools.md` |
 | 4 | **Hand the host over.** A `request_host_help` card ("Sign in to Google on the host's browser") with Take over, I'm done and Skip. It opens the host desktop we already relay, and the hand-back resumes the turn with Grok Bot's three wordings. Sessions get it through `apps/mcp`; bots get it as the resume point `25-bots.md` §3.2 lists as not built. For a terminal login such as `gh auth login`'s device code, the session's own terminal is the takeover | §2 | `25-bots.md` §3.2, `device-streaming.md` |
 | 5 | **OAuth for connectors, "Sign in with Google".** For bots, the API holds the token, refreshes it and makes the calls, with the callback on the API's own HTTPS URL. For a session's CLI on a remote host, the hard part is the CLI's own `localhost` callback. The console would open the sign-in URL in the person's browser, catch the redirect, and relay `{code, state}` over the link to the runner, which replays it on the host's loopback port (Grok Bot's unfinished forwarder, finished) | §3 | `25-bots.md`, `02-runner.md` |
 | 6 | **1Password.** The person runs a one-time `runner secrets 1password` on the host. With their `op` and biometric approval, it mints a read-only service account for one vault ("Shared with Oppenheimer") with an expiry. The token stays on the host, and the agent reads only that vault's items. Better still, the runner resolves `op://` references into the session's environment, so the agent never holds the token | §5 | `02-runner.md` |
@@ -210,7 +210,7 @@ in chat, never scrape cookies or token files, and hand over instead.
 ## 7. Open questions
 
 1. **How the browser encrypts to a host.** A host's key is Ed25519, which
-   signs and cannot encrypt (`versions/mvp/31-peer-to-peer-and-the-host-proof.md`).
+   signs and cannot encrypt (`design/runner/31-peer-to-peer-and-the-host-proof.md`).
    Rows 1 and 2 need an X25519 key: either derived from the Ed25519 key,
    or a second key published with the host proof.
 2. **Whether the API keeps ciphertext.** If it does, a host that is

@@ -43,7 +43,7 @@ than guessing:
   and `apps/web/AGENTS.md`.
 - Packages (`packages/shared`, `packages/auth`, `packages/backend/*`): the
   package's own `AGENTS.md`; wire contracts are its schemas and the protocol
-  in `product/versions/mvp/01-protocol.md`.
+  in `product/design/foundations/01-protocol.md`.
 - `scripts/`: each `check-*.mjs` or `prune.mjs` owns its contract; its
   `*.test.mjs` runs through the root `package.json` script that calls it.
 

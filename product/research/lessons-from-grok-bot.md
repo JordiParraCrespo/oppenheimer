@@ -101,7 +101,7 @@ plane as designed, without changing a boundary.
 Sections 1 to 4 read version 0.18's connection layer. On 2026-10-15 a
 static read of version 0.71.2, built by Anysphere on Cursor's agent
 stack, looked at the bot instead of the box, for the bots design
-(`versions/mvp/25-bots.md`). It found:
+(`design/bots/25-bots.md`). It found:
 
 - **The loop moved to the vendor's servers.** The desktop app no longer
   runs the agent; it is a client of a loop that runs elsewhere.
@@ -149,7 +149,7 @@ what a person sees anyway. No code is taken.
 - **Pin, hide, duplicate, share as a template.** Duplicating copies the
   profile, skills and routines but not history or memory.
 
-What we take (`versions/mvp/25-bots.md` §1): the one focused job, the
+What we take (`design/bots/25-bots.md` §1): the one focused job, the
 description as the job, the rules a bot must never break without asking,
 and the first concrete task. What we do differently: the bot does the
 setup itself in its first chat, so nobody has to find Edit Profile, and
@@ -164,7 +164,7 @@ Cursor's download page, unpacked from its `app.asar`, for how a bot works
 when nobody writes to it. The scheduler runs on the vendor's servers, so
 this is what the client's protobuf schemas, its copy and its prompts
 show, not the scheduler itself. Ideas only; the design they fed is
-`versions/mvp/26-bot-routines.md`.
+`design/bots/26-bot-routines.md`.
 
 - **No heartbeat of its own.** A bot wakes for five reasons only: a
   message, a routine firing, a channel (Slack, GitHub, email) through a
@@ -288,7 +288,7 @@ copy, not their rules.
   `response.completed`, `.failed`, `.cancelled`, `.incomplete`, and the
   same for batches, fine-tuning jobs and eval runs.
 
-**What `versions/mvp/27-bot-subscriptions.md` takes:**
+**What `design/bots/27-bot-subscriptions.md` takes:**
 
 | From | Idea | Ours |
 |---|---|---|
@@ -382,7 +382,7 @@ rest is later.
 | 11 | **Memory with a scope and a tier.** A fact is `profile` (always in the prompt) or `log` (recalled), and scoped to the bot or to the user, so all of a person's bots share it. Shared learnings wait in a review queue | `UpdateMemory` scope `user`, tiers; `TeamReview*Change`; facts carry `learned_at_ms` | One table of facts per bot, all in the prompt | 25 §7's "project and user memory" |
 | 12 | **Cards beyond approval.** A turn can stop on a form, a sign-in to an MCP server, or "hand your computer over… instead of guessing", and resume after it, with a named failure for each resume point | `RequestUserForm`, `AuthenticateMcpServer`, `request_box_help`; "Bot failed to resume after …" | `ask_user` and the Needs input card | 25 §3, once there is more than one kind of card to resume from |
 | 13 | **Rooms where a bot may pass.** In a group chat each bot is offered a turn with a deadline and may answer `PASS`, and the chain is bounded by its root | `RequestGrokBotRoomMemberTurn{is_winding_down, deadline_ms}` → `SENT\|PASS\|SKIPPED\|TIMEOUT` | Group chats are 25 §7, not built | 25 §7 group chats, on `BotChainPolicy` |
-| 14 | **CI findings as a record.** For each failing check: root cause, how it relates to the diff, a flake verdict, the action, confidence, and the evidence for each | `RecordCiInvestigationFindings` | Review sessions report in prose | the review session's result (`next-steps/0.2-pull-requests.md`) |
+| 14 | **CI findings as a record.** For each failing check: root cause, how it relates to the diff, a flake verdict, the action, confidence, and the evidence for each | `RecordCiInvestigationFindings` | Review sessions report in prose | the review session's result (`design/pull-requests/pull-requests.md`) |
 
 ### What we leave
 
@@ -417,30 +417,30 @@ Ranked by value for cost:
 Nothing here is decided. A row someone takes is written in the note in
 its last column.
 
-**Landed (2026-10-29):** rows 1 to 5, written in `versions/mvp/25-bots.md`
+**Landed (2026-10-29):** rows 1 to 5, written in `design/bots/25-bots.md`
 §2 to §4.1, with two pieces of the chat UI that go with them: the live
 line's wait while a provider's refusal is retried, and how long a turn
-worked. Rows 6 and 7 landed the same day in `versions/mvp/25-bots.md` §5:
+worked. Rows 6 and 7 landed the same day in `design/bots/25-bots.md` §5:
 grants for one thing, merging per call, and rules read by a reviewer that
 fails closed, with Settings → Permissions and the card's reach. Rows 8
-and 9 landed the same day in `versions/mvp/27-bot-subscriptions.md` §2 and
-`versions/mvp/25-bots.md` §4.2. A watch takes a pattern that the runner
+and 9 landed the same day in `design/bots/27-bot-subscriptions.md` §2 and
+`design/bots/25-bots.md` §4.2. A watch takes a pattern that the runner
 matches on the host and reports as a count, never the text; a wait inside
 the turn is bounded at 120 seconds; and `read_session` takes `after_seq`,
 which the two tools that type into a session hand back. Row 10 landed the
-same day in `versions/mvp/25-bots.md` §4.1, as a bounded goal the bot sets
+same day in `design/bots/25-bots.md` §4.1, as a bounded goal the bot sets
 itself rather than a routine. A continuation turn is queued when a turn
 ends with the goal open: at most 5 unless the bot asks for up to 10, never
 renewed by a continuation, and stopped by its owner from the chat. Row 11
-landed the same day in `versions/mvp/25-bots.md` §4.1: a fact is
+landed the same day in `design/bots/25-bots.md` §4.1: a fact is
 `profile` or `log`, and `bot` or `person`, on the same table. A person's
 fact is read by all their bots and owned by the one that learned it. The
 review queue for shared learnings was left out. Row 12 landed the same day
-in `versions/mvp/25-bots.md` §3.2 as `ask_user`: up to four questions on a
+in `design/bots/25-bots.md` §3.2 as `ask_user`: up to four questions on a
 card of their own beside approvals, answered with the picker a session's questions use, and
 the answers open the bot's next turn. The sign-in and computer hand-over
 resume points were left out. Row 14 landed the same day in
-`next-steps/0.2-pull-requests.md` ("CI findings") as `record_ci_findings`,
+`design/pull-requests/pull-requests.md` ("CI findings") as `record_ci_findings`,
 a bot's tool rather than the review session's result: a session has no
 channel back yet. Row 13, rooms, is left for group chats.
 
@@ -478,7 +478,7 @@ something saves for it. Ours made it dear: every save went into the prompt
 by default, the tool asked for a `recall` first to avoid duplicates, a full
 memory refused, and nothing outside the tool's description asked for a save.
 
-**Landed (2026-11-06)** in `versions/mvp/25-bots.md` §4.1: `log` by
+**Landed (2026-11-06)** in `design/bots/25-bots.md` §4.1: `log` by
 default; the system prompt carries the newest profile facts and the turn
 context the newest dated log entries, by characters, so a save does not
 cost the prompt cache; "How a turn goes" asks the bot to save what it

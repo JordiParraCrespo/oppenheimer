@@ -9,7 +9,7 @@
  * and the lines the sync commits added to the export's README (its own note
  * on the delta).
  *
- *   node export-delta.mjs [--ref origin/main] [--design product/versions/mvp/design] [--version version1] [--json]
+ *   node export-delta.mjs [--ref origin/main] [--design product/mockups] [--version version1] [--json]
  *
  * Exits 0 and prints "Up to date" when no sync landed since the last port.
  * It writes nothing but the fetch; the branch you are on does not matter. The port's pull request updates
@@ -33,7 +33,7 @@ import { fileURLToPath } from 'node:url';
 import { REPO_ROOT, args } from './lib/browser.mjs';
 
 const a = args({
-  design: { default: 'product/versions/mvp/design' },
+  design: { default: 'product/mockups' },
   version: { default: 'version1' },
   json: { type: 'boolean', default: false },
   ref: { default: 'origin/main' },

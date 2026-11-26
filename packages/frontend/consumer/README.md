@@ -4,7 +4,7 @@ The consumer product's domain, on top of the kernel. `sessions` (a worktree
 with a terminal on a host), `projects` (the bodies of work sessions belong
 to, with the defaults New session is prefilled with) and `hosts` (the
 machines the user owns) are the product; `organizations` (the personal workspace only — no roster, no
-members, no invitations, see `product/versions/mvp/08-auth.md`), `profile`
+members, no invitations, see `product/design/foundations/08-auth.md`), `profile`
 and `permissions` (the catalog OAuth consent names scopes from) are the account
 chrome it keeps. Each module is an entity, an
 error catalog, a repository over `@oppenheimer/api-client` and an InversifyJS

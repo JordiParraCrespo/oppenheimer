@@ -17,7 +17,7 @@ fact. Both answers confirm the MVP's current design (00-scope, 08-auth,
 note 01 §7). The rest of this note is the detail and the vendor rules
 that bound the space. It decides nothing; §4 lists two ideas for the
 notes that own them, none adopted. Paths in backticks are relative to
-`product/`, and bare numbers name `versions/mvp/` notes.
+`product/`, and bare numbers name `design/` notes.
 
 Read from the source, not only the docs: `stablyai/orca` at
 `60c43695` (2026-09-22, v1.4.197), `src/main/runtime/` for pairing and

@@ -79,7 +79,7 @@ request for someone else, because the next reader meets the comment first.
   `ARCHITECTURE.md`, a note's `§4.7`, an issue or pull request number) is
   rewritten to stand on its own: what this code does and why, in the
   comment's own words, or cut when the code already says it.
-  `* WhatsApp number (\`product/next-steps/answering-on-telegram-and-whatsapp.md\`).`
+  `* WhatsApp number (\`product/design/channels/answering-on-telegram-and-whatsapp.md\`).`
   becomes `* WhatsApp number.`; `How one of a bot's subagents ended
   (\`25-bots.md\` §4.7, \`delegate\`): it answered, …` becomes `How one of a
   bot's subagents ended: it answered, …`. A pointer to code (`see

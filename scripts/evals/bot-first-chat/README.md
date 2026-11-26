@@ -4,7 +4,7 @@ Does a new bot's first reply do what Getting started asks?
 
 While a bot's `INSTRUCTIONS.md` is empty its prompt carries Getting started
 (`gettingStarted` in `apps/api/src/bots-chat/domain/bot-prompt.policy.ts`,
-`product/versions/mvp/25-bots.md` §1):
+`product/design/bots/25-bots.md` §1):
 
 - work the first message asks for is just done, with no name question
   after it;

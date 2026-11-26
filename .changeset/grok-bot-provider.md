@@ -7,7 +7,7 @@
 "@oppenheimer/translations": patch
 ---
 
-Grok as a bot model provider (`product/versions/mvp/25-bots.md` §2).
+Grok as a bot model provider (`product/design/bots/25-bots.md` §2).
 
 - `@oppenheimer/shared`: `xai` in `BOT_PROVIDERS`, after OpenAI and before GLM
   in `BOT_PROVIDER_PREFERENCE`, with Grok 4.7 (effort low to extra high) and

@@ -58,7 +58,7 @@
 - 79e30e5: Add `github_app` to `DEPLOYMENT_CAPABILITIES` and to the `CLIENT_CAPABILITIES` wire subset, so a console can tell "you have not connected GitHub yet" from "this deployment has no GitHub App, and Connect will refuse". It is on when all six `GITHUB_APP_*` settings are present, the App slug included, because that slug is what the install link is built from.
 - 83f3617: Add Grok to the coding-agent catalog.
 - c078d0d: `GET /health/capabilities` reports `hosts`, and the console's pairing surfaces mint no token when it is false.
-- fc0e75d: The hosts backend for the Settings page (`product/versions/mvp/14-hosts-settings.md`).
+- fc0e75d: The hosts backend for the Settings page (`product/design/runner/14-hosts-settings.md`).
 
   - `@oppenheimer/api`: a host read carries a derived `status` (`running`, `idle`,
     `offline`, `unpaired`) and `runningSessionCount`, counted by `sessions/`
@@ -73,7 +73,7 @@
   - `@oppenheimer/runner`: the facts report the logical CPU count as `cpus`.
   - `@oppenheimer/api`: host metadata tables (`host_inventory`, `host_presence`,
     `host_network`, `host_event`), backfilled from `host`; the old columns stay
-    until the code switches over (`product/versions/mvp/15-host-metadata.md`).
+    until the code switches over (`product/design/runner/15-host-metadata.md`).
   - `@oppenheimer/api`: heartbeats write `host_presence` and, only when the
     machine changed, `host_inventory`, with the change on the host's timeline;
     host responses carry `machine`, `vitals` and `network`;
@@ -125,7 +125,7 @@
 
 - ed28ce2: `createSessionSchema` takes at most one checkout (`MAX_SESSION_CHECKOUTS`): a session is one repository in the MVP.
 - 2dc27d2: Plan: a task board, goals and a calendar, the console rail's third item
-  (`product/versions/mvp/17-plan.md`).
+  (`product/design/plan/17-plan.md`).
 
   - `@oppenheimer/api`: the `tasks` module (tasks, goals, the board's order,
     starting or linking a session, the attach rule) and the `calendar` module
@@ -232,7 +232,7 @@
   then refused by the runner at launch, which makes a session as one worktree of
   one repository; it is now refused with a 400 before a row is written.
   `CreateSessionInput.checkouts` is a one-element tuple to match.
-- 3404cd3: A session's terminal can be shared with a link, to watch or to type, for anyone, any signed-in account or named people (`product/versions/mvp/21-session-share-links.md`).
+- 3404cd3: A session's terminal can be shared with a link, to watch or to type, for anyone, any signed-in account or named people (`product/design/sessions/21-session-share-links.md`).
 - bb3c4e8: `@oppenheimer/shared/protocol` gains the `session.step` and `session.failed` payload schemas; the build generates the runner's Go twin.
 - ca05d90: Cheaper runner-link traffic and a keyset session list.
 

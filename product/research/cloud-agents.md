@@ -6,7 +6,7 @@ vendors' clouds beside sessions on hosts: Claude Code's cloud sessions
 covers the remote features each vendor ships for its local CLI, because
 some of them change how we run Codex and Claude Code on hosts too.
 This note decides nothing; the proposal in §5 is what
-`next-steps/cloud-agents.md` starts from.
+`design/sessions/cloud-agents.md` starts from.
 
 Sources are the vendors' docs as served on 2026-10-22, plus the
 `openai/codex` source at `9a8a85b`. OpenAI's Codex docs moved from
@@ -135,7 +135,7 @@ from our console, with no credential crossing us.
   service would mean holding the person's ChatGPT tokens and posing as the
   CLI.
   - Bots already do something close to this for
-    `backend-api/codex/responses` (`versions/mvp/25-bots.md` §2), on a
+    `backend-api/codex/responses` (`design/bots/25-bots.md` §2), on a
     workspace sign-in.
   - A private task API is a larger exposure than that. Shelling out to
     the CLI on the host is the supported shape.
@@ -179,7 +179,7 @@ These matter more than cloud for Codex sessions on our hosts:
 - **`codex exec --json`** (with `resume` and `fork`) and the TypeScript SDK
   (which wraps `exec --experimental-json`) are the headless path for
   automations, the way `claude -p` is
-  (`versions/mvp/16-automations-architecture.md`).
+  (`design/automations/16-automations-architecture.md`).
 - **Hooks** (`features.hooks`) cover SessionStart, PreToolUse,
   PermissionRequest, Stop and SessionEnd, among others. They have to be
   trusted by hash. They are the authoritative state signal that 02 §9
@@ -293,7 +293,7 @@ These keep tmux, the runner and the per-host login exactly as they are:
 ### B. Cloud sessions: a session whose place is the vendor's cloud
 
 A third **place** beside `worktree` and `folder`
-(`versions/mvp/24-session-places.md`; the blank terminal is an agent, not
+(`design/sessions/24-session-places.md`; the blank terminal is an agent, not
 a place): **Cloud**, with a provider of Claude, Codex or Cursor. A cloud session has no PTY. It has a status, a
 chat when the vendor gives one, a branch, a pull request, and a link to
 the vendor's own page.
@@ -314,7 +314,7 @@ the vendor's own page.
     - a host must be online to start one (not to keep it running);
     - Claude gives no status at all.
 - **Cursor: the control plane, with the person's own API key.** This is
-  the bots' model-provider key precedent (`versions/mvp/25-bots.md`):
+  the bots' model-provider key precedent (`design/bots/25-bots.md`):
   stored sealed, never returned, never sent to a host.
   - It is an API key the vendor documents for exactly this purpose, not
     a subscription sign-in, so F23's reasoning (one subscription, one
@@ -464,7 +464,7 @@ and the help centre's FAQ).
 
 It is the Codex harness as a platform product, not a door into a person's
 ChatGPT Codex Cloud. Taking it would be a second Codex place with its own
-key and its own bill, the Cursor model (`next-steps/cloud-agents.md`, "What
+key and its own bill, the Cursor model (`design/sessions/cloud-agents.md`, "What
 landed"), and would not make the `oppenheimer` environment usable. That is
 a product decision and none is taken here.
 
@@ -477,7 +477,7 @@ sessions on the current cloud and to drop legacy, so the runner speaks the
 service itself: `Prewarm` with a managed environment (the picked id, or
 `asenvcfg_base` with the repository as an override, as the terminal does),
 `AddUserMessage` (start if idle), and `ListTurns` for status, over gRPC with
-the ChatGPT bearer and account id (`next-steps/cloud-agents.md`, "On Codex's
+the ChatGPT bearer and account id (`design/sessions/cloud-agents.md`, "On Codex's
 current cloud"). Unknowns it carries: whether an environment id copied from
 ChatGPT Settings is the one `Prewarm` takes, a thread's web address, and
 whether public ingress to the service is open to a client that is not

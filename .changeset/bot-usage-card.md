@@ -4,7 +4,7 @@
 ---
 
 The `/usage` card is drawn like Claude Code's small usage card
-(`product/versions/mvp/25-bots.md` §4.1).
+(`product/design/bots/25-bots.md` §4.1).
 
 - `@oppenheimer/web`: the command as a bubble, then a 384px card with Copy
   and Close: the plan's 5-hour and weekly windows as bars on a sign-in that

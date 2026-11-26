@@ -76,7 +76,7 @@ fallback** for agents without hooks, with hook authority cleared on
 process exit.
 
 Three of those land directly on our open question 2 in
-`versions/mvp/02-runner.md`:
+`design/runner/02-runner.md`:
 
 1. **Hooks beat scraping** where an agent has them. Scraping stays as
    the fallback, and the arbitration lives in one place. The open
@@ -191,7 +191,7 @@ and "Core is a runtime, not a multiplexer".
 
 ### Measured
 
-`herdr-bench/` (its README says how to run it) drives tmux as the runner's
+`spikes/herdr-bench/` (its README says how to run it) drives tmux as the runner's
 adapter does, herdr-core over its socket, and a bare PTY, on one 4-vCPU
 Linux machine (tmux 3.4, herdr-core 0.1.16). Key to echo, ms, p50 / p99:
 

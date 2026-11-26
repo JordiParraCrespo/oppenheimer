@@ -1,17 +1,17 @@
 # Agent coordination, tested
 
 > **Research, decides nothing.** Input for the Employees note that does
-> not exist yet (`versions/mvp/design/README.md` says the `Bots` and
+> not exist yet (`mockups/README.md` says the `Bots` and
 > `BotSettings` frames decide none of it) and for
-> `next-steps/0.6-mcp-cli-and-agent.md`, whose first open question is
+> `design/clients/mcp-cli-and-agent.md`, whose first open question is
 > who coordinates.
 
 The question: when several bots work for one workspace, how should they
 coordinate? The July 2026 Hugging Face intrusion is the one large record
 of agents coordinating by themselves, so the experiments use what it
 recorded as the misbehaviours to survive. Every number below comes from
-`agent-coordination/sim.mjs`, a seeded simulation: run it, and
-`agent-coordination/results.md` is what it prints.
+`spikes/agent-coordination/sim.mjs`, a seeded simulation: run it, and
+`spikes/agent-coordination/results.md` is what it prints.
 
 ```
 node product/research/agent-coordination/sim.mjs            # ~10 s, 100 seeds
@@ -177,7 +177,7 @@ Sensitivity, every assumed rate scaled at once by a random factor in
 
 ## What was built from it
 
-`message_bot` and `ask_bot` (`versions/mvp/25-bots.md` §4.6, 2026-10-18)
+`message_bot` and `ask_bot` (`design/bots/25-bots.md` §4.6, 2026-10-18)
 take two of the six controls as they are, the sender recorded by the
 server and the secret scanner on messages, and add what the incident's
 failures called for beside them: a chain bounded in depth and turns,

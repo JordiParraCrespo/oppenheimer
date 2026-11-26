@@ -1,7 +1,7 @@
 # Session boot time, measured (formerly note 14)
 
 A measurement note, cited elsewhere as note 14 of the top-level series;
-it is not `versions/mvp/14-hosts-settings.md`. It was written on 2026-09-30, after
+it is not `design/runner/14-hosts-settings.md`. It was written on 2026-09-30, after
 reports that a new session takes about 30 s to show a terminal. It records:
 
 - where that time goes, measured from the browser;

@@ -15,7 +15,7 @@ Sources: `orca.dev/bots`, `orca.dev/docs/bots`, `…/docs/bots/connectors`,
 rows below, which now cite it. Paths there are relative to Orca's `src/`.
 Claims drawn from file names, or from silence, are marked as inferred. Our side is the user guide (`apps/docs/docs/guide/bots.md`,
 `routines-and-watches.md`, `bot-skills.md`) and notes
-`versions/mvp/25-bots.md` and `26-bot-routines.md`.
+`design/bots/25-bots.md` and `26-bot-routines.md`.
 
 ## 1. The one real difference: where the bot's loop runs
 
@@ -101,7 +101,7 @@ The notes that own each area decide these.
 2. **Asking a bot from a GitHub mention or a label** (`bot:<name>`), with
    the answer in the pull request or issue. The GitHub App already receives
    these events. This is the smallest form of Orca's main reach
-   (`25-bots.md` §4.4, `next-steps/channels.md`).
+   (`25-bots.md` §4.4, `design/channels/channels.md`).
 3. **Bot templates**, created with their routines paused, which is Orca's
    safe default (`25-bots.md` §1).
 4. **cron/RRULE schedules** and a **precheck** (a cheap condition that skips

@@ -1,7 +1,7 @@
 # @oppenheimer/backend-agents
 
 The engines a bot's turn runs on. A bot is a chat agent whose loop runs in a
-BullMQ worker inside the API (`product/versions/mvp/25-bots.md` §2); this
+BullMQ worker inside the API (`product/design/bots/25-bots.md` §2); this
 package is the only code that imports the two agent SDKs, and it hides both
 behind one port.
 

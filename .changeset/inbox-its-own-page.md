@@ -8,7 +8,7 @@
 
 The Inbox leaves Plan for a page of its own, the rail's first item, and its
 reading pane becomes a deck answered by number keys or a swipe
-(`product/versions/mvp/29-inbox.md`, "Its own page, and a deck").
+(`product/design/console/29-inbox.md`, "Its own page, and a deck").
 
 - `@oppenheimer/web`: `/inbox` is the Inbox (`/plan/inbox` redirects there);
   the rail leads with it, with a dot and the count of what needs you, and the

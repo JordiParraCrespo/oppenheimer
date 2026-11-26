@@ -16,7 +16,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 /** The notes the brief and the decision list are kept in sync with. */
-const NOTE = /^product\/(versions\/.+|next-steps\/.+|\d{2}-[^/]+)\.md$/;
+const NOTE = /^product\/(design\/.+|archive\/.+|roadmap)\.md$/;
 const BRIEF = 'product/brief.html';
 const README = 'product/README.md';
 const TRAILER = /^Product-Sync:[ \t]*\S/m;

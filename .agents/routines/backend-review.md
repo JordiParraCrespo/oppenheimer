@@ -65,7 +65,7 @@ conclusions.
 - **Critical path:** `relay`, `links`, `hosts`, and how `sessions` move through
   their lifecycle. Look for races, retries that never come, unbounded
   buffers, sockets with no heartbeat, and authentication. Read
-  `product/versions/mvp/01-protocol.md` first.
+  `product/design/foundations/01-protocol.md` first.
 - **Security coverage:**
   - routes without authentication, scope, policy or throttling that the
     route meta-tests under `apps/api/src/__tests__/` do not catch;

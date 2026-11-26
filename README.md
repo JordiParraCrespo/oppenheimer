@@ -62,7 +62,7 @@ The runner only makes outbound connections. A session is a git worktree plus
 a tmux terminal, so it survives browser disconnects and runner restarts. The
 control plane coordinates access; the work stays on your machine.
 
-Read the [MVP scope](product/versions/mvp/00-scope.md) for the exact product
+Read the [MVP scope](product/design/foundations/00-scope.md) for the exact product
 boundary or the [one-page brief](product/brief.html) for the wider vision.
 
 ## Quick start

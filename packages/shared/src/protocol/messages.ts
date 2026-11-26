@@ -269,14 +269,14 @@ export const RUNNER_CAPABILITIES = [
   /**
    * Answers `computer.act` with `computer.screen`: a bot looks at this host's
    * screen and uses its mouse and keyboard, when the person on the host turned
-   * that on with `runner computer on` (`product/versions/mvp/25-bots.md` §4.2,
+   * that on with `runner computer on` (`product/design/bots/25-bots.md` §4.2,
    * "Using a computer").
    */
   'computer.use',
   /**
    * Answers `browser.act` with `browser.page`: a bot drives a browser of its
    * own on this host, when the person on the host turned that on with `runner
-   * browser on` (`product/versions/mvp/25-bots.md` §4.2, "Using a browser").
+   * browser on` (`product/design/bots/25-bots.md` §4.2, "Using a browser").
    */
   'browser.use',
   /**
@@ -304,7 +304,7 @@ export const RUNNER_CAPABILITIES = [
   /**
    * Answers `host.settings.set` with `host.settings`: a bot turns this host's
    * browser, screen or exec policy on or off when the person asked it to
-   * (`product/versions/mvp/25-bots.md` §4.2, "The host's switches").
+   * (`product/design/bots/25-bots.md` §4.2, "The host's switches").
    */
   'host.settings',
 ] as const;
@@ -1094,7 +1094,7 @@ const hostExecAllowEntrySchema = z.string().min(1).max(1_024).regex(/^\S+$/);
 
 /**
  * Change what this host lets bots do, when the person asked a bot to
- * (`product/versions/mvp/25-bots.md` §4.2, "The host's switches"): the same
+ * (`product/design/bots/25-bots.md` §4.2, "The host's switches"): the same
  * files `runner browser`, `runner computer` and `runner exec` write. Each
  * field is optional and only a field that is given changes: `browser` and
  * `computer` turn those `on` or `off`, `execMode` sets the exec mode, and
@@ -1274,7 +1274,7 @@ const computerScroll = () => z.number().int().min(-COMPUTER_SCROLL_MAX).max(COMP
 
 /**
  * Use this host's screen, mouse and keyboard, for a bot
- * (`product/versions/mvp/25-bots.md` §4.2, "Using a computer"). The runner
+ * (`product/design/bots/25-bots.md` §4.2, "Using a computer"). The runner
  * does `action`, lets the screen settle, and answers with what the screen
  * shows:
  *
@@ -1364,7 +1364,7 @@ export const BROWSER_REF_PATTERN = /^e[1-9][0-9]{0,3}$/;
 
 /**
  * Drive a browser of the bot's own on this host
- * (`product/versions/mvp/25-bots.md` §4.2, "Using a browser"). `browser`
+ * (`product/design/bots/25-bots.md` §4.2, "Using a browser"). `browser`
  * names it: one per bot, started on its first `open` with a profile of its
  * own under the runner home, never the person's. The runner does `action`
  * and answers with the page:

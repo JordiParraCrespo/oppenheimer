@@ -4,12 +4,12 @@
 > #43, which was closed on 2026-10-10 without merging. It was the
 > research behind a v0.2 that renting cloud hosts would have been; that
 > v0.2 is now Git and GitHub. What governs today:
-> [`03-machines-and-vm-provisioning.md`](../03-machines-and-vm-provisioning.md),
-> [`08-reuse-gha-runner.md`](../08-reuse-gha-runner.md) and
-> [`10-sleep-wake-and-pricing.md`](../10-sleep-wake-and-pricing.md) for
+> [`archive/03-machines-and-vm-provisioning.md`](../archive/03-machines-and-vm-provisioning.md),
+> [`archive/08-reuse-gha-runner.md`](../archive/08-reuse-gha-runner.md) and
+> [`archive/10-sleep-wake-and-pricing.md`](../archive/10-sleep-wake-and-pricing.md) for
 > VMs and cloud hosts,
-> [`versions/mvp/00-scope.md`](../versions/mvp/00-scope.md) for what the
-> MVP runs, and [`next-steps/README.md`](../next-steps/README.md), where
+> [`design/foundations/00-scope.md`](../design/foundations/00-scope.md) for what the
+> MVP runs, and [`roadmap.md`](../roadmap.md), where
 > VMs are not yet placed in the order after the MVP. Its numbered
 > cross-references (`02 §14`, `03 §Cloud hosts` and the like) point at
 > sections that pull request proposed and that the current notes do not
@@ -36,9 +36,9 @@ login gap, and the order of work — AWS first, Oracle second while the
 $300 trial is live, Alibaba when somebody needs it. The decisions it
 led to live in the MVP design notes that own them, not here: the port,
 the routes and the pause, resume, delete policy in
-[`versions/mvp/03`](../versions/mvp/03-control-plane.md) §Cloud hosts,
-the tables in `versions/mvp/10`, the wire and the runner in
-`versions/mvp/01` and `02`, the screens in `05`, the cloud-init path
+[`design/foundations/03-control-plane.md`](../design/foundations/03-control-plane.md) §Cloud hosts,
+the tables in `design/foundations/10-api-modules-and-data-model.md`, the wire and the runner in
+`design/foundations/01-protocol.md` and `02`, the screens in `05`, the cloud-init path
 in `09`.
 
 Sources are primary docs and price lists, dated where the page gives a
@@ -118,7 +118,7 @@ JIT identity. That was written before the MVP runner existed. Now that
 it does, the smaller design is:
 
 - The control plane calls the provider to create a VM whose cloud-init
-  runs **the ordinary install command** of `versions/mvp/09` §1 with a one-hour,
+  runs **the ordinary install command** of `design/runner/09-runner-install-and-update.md` §1 with a one-hour,
   single-use pairing token. The runner registers, the VM appears as a
   host owned by the person whose cloud account it is, and the session is
   dispatched to it exactly as to a Mac Studio: worktree, tmux, PTY over
@@ -135,7 +135,7 @@ it does, the smaller design is:
   *host* holding several microVM sessions; the sentence still holds.)
 
 What it changes in the control plane is written where the control plane
-is designed, `versions/mvp/03` §Cloud hosts and `10`: `hosts/` is
+is designed, `design/foundations/03-control-plane.md` §Cloud hosts and `10`: `hosts/` is
 the host factory — two person-owned rows, `cloud_account` and
 `machine`, a `MachineProviderPort` with an adapter per provider in its
 `infrastructure/`, `machine.hostId` set at registration and
@@ -162,7 +162,7 @@ hosts/     mint a pairing token bound to a new machine row
    │                anything unknown or past its TTL → destroy
    ▼
 VM boots, cloud-init as root: create user `agent`, install git tmux node claude,
-   loginctl enable-linger agent, then the installer as agent with its runtime env set (versions/mvp/09 §2)
+   loginctl enable-linger agent, then the installer as agent with its runtime env set (design/runner/09-runner-install-and-update.md §2)
    │
    ▼
 POST /api/v1/hosts/register  ──► host row created, machine.hostId set, link comes up
@@ -184,7 +184,7 @@ log, so the sidebar's boot trace is the same component.
 ## 3. What the research says the port must express
 
 The port itself — verbs, errors, routes — is named once, in
-`versions/mvp/03` §Cloud hosts, and lives in `hosts/`. What the
+`design/foundations/03-control-plane.md` §Cloud hosts, and lives in `hosts/`. What the
 provider research below fixes about it, so three drivers cannot drift:
 
 - **Idempotency is a provider primitive on all three**, and the key
@@ -451,7 +451,7 @@ changes it by region:
 | medium (default) | 4 / 16 | t4g.xlarge | A1.Flex 4 / 16 | g7a.xlarge / g8y.xlarge |
 | large | 8 / 32 | m7g.2xlarge | A1.Flex 8 / 32 | g7a.2xlarge / g8y.2xlarge |
 
-Arm first: the runner already ships `linux/arm64` (`versions/mvp/09` §2), Node and
+Arm first: the runner already ships `linux/arm64` (`design/runner/09-runner-install-and-update.md` §2), Node and
 Claude Code run on it, and it is the cheapest tier on AWS and the only
 tier on OCI's free money. `arch: 'amd64'` is a per-session override for
 a repository that needs it (Docker images built for x86, a native
@@ -466,7 +466,7 @@ demands it. Version one installs at boot from cloud-config: create the
 user's systemd manager and bus exist before `runner install` asks
 `systemctl --user` for a unit, then the installer as `agent` with
 `XDG_RUNTIME_DIR` and `DBUS_SESSION_BUS_ADDRESS` set
-(`versions/mvp/09` §2).
+(`design/runner/09-runner-install-and-update.md` §2).
 That is two to four minutes on all three clouds. Version two prebakes
 the image per provider (Packer, or EC2 Image Builder on AWS, a custom
 image from a stopped instance on OCI and Alibaba) and the cloud-config
@@ -483,7 +483,7 @@ may not: it is a real VM, so `dockerd` is in the image, which is the
 ## 6. Connecting a cloud account
 
 A cloud account is a person's, like a host (`ownerUserId`, no
-`organizationId`; note 10 in `versions/mvp`), because the bill is
+`organizationId`; note 10 in `design`), because the bill is
 theirs and the machines it makes are hosts they own. It is a row
 because it is revocable (the credentials rule in the same note). The
 credential is the first secret the API stores as a *row* rather than
@@ -526,7 +526,7 @@ that changes. Stopped compute is free on all three providers (§4), so
 the default on a cloud machine is the same as on an own host: **Keep**,
 paused when idle, resumed when opened, deleted when you say so or after
 a long sleep. Ephemeral stays as an option for one-task work. The
-policy and its routes are `versions/mvp/03` §Cloud hosts; this
+policy and its routes are `design/foundations/03-control-plane.md` §Cloud hosts; this
 section is what each verb *is* on each provider and why the policy has
 the shape it has.
 
@@ -543,15 +543,15 @@ the shape it has.
 So there are two resume paths and every driver may need the second:
 **warm** (AWS hibernate, processes intact) and **cold** (boot, relaunch,
 `--resume`). The cold path is note 10 §1's hibernate column and needs
-what `versions/mvp/02` §9 already records: the agent's native session
+what `design/runner/02-runner.md` §9 already records: the agent's native session
 id, captured continuously, never at pause time. On wake the runner
 does what note 10 §3 lists before it announces ready — mint a fresh
 repository token, let `chrony` fix the clock — and on the cold path
 the control plane's `restart` relaunches window 0 with the agent's
-own `--resume` (`versions/mvp/02` §5).
+own `--resume` (`design/runner/02-runner.md` §5).
 
 **Pause pushes.** `session.stop` carries `push: true` on a host the
-control plane can put to sleep (`versions/mvp/01`): the runner pushes
+control plane can put to sleep (`design/foundations/01-protocol.md`): the runner pushes
 every checkout's working branch before ending the agent, the push
 `close` performs without the removal. That is what makes a failed
 resume on Alibaba or a capacity miss on Oracle a nuisance rather than
@@ -569,7 +569,7 @@ the driver.
 
 **Idle is the control plane's call, and the guest never powers itself
 off.** The sidebar group already says when a session is idle
-(`versions/mvp/10`), so a session idle for thirty minutes on a cloud
+(`design/foundations/10-api-modules-and-data-model.md`), so a session idle for thirty minutes on a cloud
 host — longer than note 10 §2's ten, because a resume costs a boot on
 two of the three providers — is paused by the sweeper, which sends the
 stop and then the machine stop. The runner reports and the control
@@ -595,7 +595,7 @@ running ──(idle 30 min)──► paused ──(asleep 7 d, or Delete)──�
 
 ### Never leaking a machine
 
-The ladder in `versions/mvp/03` §Cloud hosts, and why each rung is
+The ladder in `design/foundations/03-control-plane.md` §Cloud hosts, and why each rung is
 there:
 
 1. **The event.** `session.stopped` on a cloud host is followed by the
@@ -669,7 +669,7 @@ platform a holder of vendor credentials.
 - **Apache Libcloud** (Python, 35 providers, has OCI and Aliyun
   drivers) and **pkgcloud** (Node, AWS/Azure/DigitalOcean/OpenStack/
   Rackspace, no OCI or Alibaba, stale): a generic node abstraction
-  is exactly the port of `versions/mvp/03`, and writing it over three official SDKs is
+  is exactly the port of `design/foundations/03-control-plane.md`, and writing it over three official SDKs is
   three files, each a hundred lines of mapping. A generic library buys
   the fourth provider and costs us the capability flags that make the
   first three honest.
@@ -724,7 +724,7 @@ platform a holder of vendor credentials.
   guest agent, the ordinary runner pairs with an ordinary pairing
   token, and the adapter is a machine-lifecycle port with no session
   knowledge, owned by `hosts/` rather than a sixth module.
-- The MVP design notes gain the decisions: `versions/mvp/03` the port,
+- The MVP design notes gain the decisions: `design/foundations/03-control-plane.md` the port,
   the routes and the pause, resume, delete policy; `10` the two rows;
   `01` the `push` flag on `stop`; `02` push-on-stop and the cold
   resume; `05` the host chip, the boot-trace rows and the session menu;
@@ -740,7 +740,7 @@ platform a holder of vendor credentials.
   Its teardown ladder and the boot-trace rows (§2) are new.
 - This note is the design for **v0.2**: the slice after the MVP, with
   pause, resume and delete on cloud machines as its headline.
-- `versions/mvp/00-scope.md` is unchanged: this is the slice after the
+- `design/foundations/00-scope.md` is unchanged: this is the slice after the
   MVP, not part of it. The MVP's install command and pairing token are
   what make the slice small, which is an argument for finishing them
   exactly as designed.

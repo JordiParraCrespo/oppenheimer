@@ -5,7 +5,7 @@
 > imagined products (a CRM with leads, a WMS, a support desk). Oppenheimer
 > is none of those: the MVP is a single-user terminal orchestrator with a
 > personal workspace per account, and its auth model fits on one page:
-> [`product/versions/mvp/08-auth.md`](product/versions/mvp/08-auth.md).
+> [`product/design/foundations/08-auth.md`](product/design/foundations/08-auth.md).
 > The kernel's mechanics (resource registry, fail-closed `PoliciesGuard`,
 > scopes, grants) are still what runs in `apps/api`, so this stays as the
 > reference for *how* they work. Nothing below is a product decision for

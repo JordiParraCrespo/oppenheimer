@@ -228,7 +228,7 @@ export class SessionResponseDto {
   @ApiProperty({
     enum: SESSION_PLACES,
     description:
-      "Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).",
+      "Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/design/sessions/24-session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).",
     example: 'worktree',
   })
   place!: SessionPlace;
@@ -257,7 +257,7 @@ export class SessionResponseDto {
   @ApiProperty({
     enum: SESSION_GROUPS,
     description:
-      'The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/versions/mvp/03-control-plane.md`).',
+      'The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/design/foundations/03-control-plane.md`).',
   })
   state!: (typeof SESSION_GROUPS)[number];
 
@@ -285,7 +285,7 @@ export class SessionResponseDto {
 
   @ApiPropertyOptional({
     description:
-      'When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/versions/mvp/29-inbox.md` §3).',
+      'When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/design/console/29-inbox.md` §3).',
     nullable: true,
     type: Date,
   })

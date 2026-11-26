@@ -5,7 +5,7 @@ productivity tools. This note maps five groups against Oppenheimer:
 AI code review, agent consoles, PR workflow and merge, engineering
 analytics, and dev environments. It ends with what to take and where we
 stand. It feeds the Pull requests area
-([`next-steps/0.2-pull-requests.md`](../next-steps/0.2-pull-requests.md))
+([`design/pull-requests/pull-requests.md`](../design/pull-requests/pull-requests.md))
 and note 15's lanes, auto-merge and review sessions.
 
 Numbers a vendor published about itself are marked (v). Claims found
@@ -164,7 +164,7 @@ Each item is tied to the tool it comes from and the note it changes.
    its session*, widened to any PR.
 4. **Attention states on sessions** (Superset): working, needs input,
    done, with a sound and a badge. The runner's hook-based state
-   detection already exists (`versions/mvp/02-runner.md` §9).
+   detection already exists (`design/runner/02-runner.md` §9).
 5. **One "My Work" inbox** (Copilot app, Codex review queue): sessions
    waiting on you, PRs where it is your turn and automation output, in
    one triage list. The queue's turn rules extend to sessions.
