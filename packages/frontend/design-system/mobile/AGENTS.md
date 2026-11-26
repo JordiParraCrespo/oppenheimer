@@ -44,7 +44,7 @@ src/
   | search over a list | `SearchField` (Material 3's docked search bar on Android; a field with the system clear button on iOS). It owns its text and reports it with `onQueryChange`, `''` on every mount; there is no `value` |
   | something on its way | `LoadingIndicator` (Material 3 Expressive's wavy circular indicator on Android, the system spinner on iOS), never `ActivityIndicator` |
   | the screen's one primary action | `HeroAction` (Expressive extended FAB on Android, a pill in Liquid Glass on iOS). Its `icon` is a name in `HERO_ICONS`, which maps it to Lucide and to a Material Symbol |
-  | tab bar, back button | expo-router's `NativeTabs`, the native stack header |
+  | tab bar, back button | expo-router's `NativeTabs` (on Android coloured whole from `TAB_BAR` in `@oppenheimer/frontend-mobile`, the brand blue in the app's scheme), the native stack header |
 
   A new `@expo/ui` control is drawn inside `NativeHost` (`src/lib/native-scheme`),
   which sizes it to its content and gives it the app's light or dark, so a caller
