@@ -13,37 +13,27 @@ import {
   LockIcon,
   TerminalIcon,
 } from '@oppenheimer/design-system-web/icons';
-import {
-  usePutSessionShare,
-  useSetSessionSharePeople,
-  useStopSessionShare,
-  useSuspenseSessionShare,
-} from '@oppenheimer/frontend-consumer/react';
+import { useSuspenseSessionShare } from '@oppenheimer/frontend-consumer/react';
 import { useProfile } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import type {
   SessionShareAccess,
   SessionShareAudience,
 } from '@oppenheimer/shared/schemas/session-share';
-import { type ComponentType, type ReactNode, useState } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShareLinkCopy } from '../components/share-link-copy';
 import { ShareMenuSelect } from '../components/share-menu-select';
 import { ShareSettingRow } from '../components/share-setting-row';
 import { ShareTimeLeft } from '../components/share-time-left';
 import { ShareWriteWarning } from '../components/share-write-warning';
+import { useShareSessionPanel } from '../hooks/use-share-session-panel';
 import {
-  effectiveAccess,
   initialsOf,
   lifetimeAllowed,
-  SHARE_DEFAULTS,
   SHARE_LIFETIME_CHOICES,
   type ShareLifetimeChoice,
-  type ShareSettings,
-  settingsOf,
-  shareInput,
   shareUrl,
-  withAccess,
 } from '../lib/share-session';
 import { ShareInvite } from './share-invite';
 
@@ -54,11 +44,9 @@ import { ShareInvite } from './share-invite';
  * Invite people by email on the first line. Under it, who has access (with ×
  * to take someone off, and the link as a row of its own), then the three
  * settings as quiet menus: who may open it, what they may do, and when it
- * ends. On a live share a setting applies as it is picked, keeping the
- * address; on a session not yet shared it is what Invite (or Create link)
- * will share. Write access is a shell on the host as the sharer, so picking
- * it asks to be understood first. The foot copies the link and stops
- * sharing.
+ * ends. Write access is a shell on the host as the sharer, so picking it
+ * asks to be understood first. The foot copies the link and stops sharing.
+ * What each pick does is `useShareSessionPanel`'s; this draws it.
  *
  * Read under Suspense, in `ShareSession`'s `QueryState.Data`; a refetch that
  * fails keeps the panel and says so above it.
@@ -72,94 +60,12 @@ export function ShareSessionPanel({
   Title: ComponentType<{ className?: string; children: ReactNode }>;
 }) {
   const { t } = useTranslation();
-  const { session, share, hosts, error } = useSuspenseSessionShare(sessionId);
   const me = useProfile().data?.id;
-  const put = usePutSessionShare();
-  const narrow = useSetSessionSharePeople();
-  const stop = useStopSessionShare();
-  const busy = put.isPending || narrow.isPending || stop.isPending;
-  const [draft, setDraft] = useState<ShareSettings>(SHARE_DEFAULTS);
-  // Write access asked of a live share, held until it is understood. It
-  // asks nothing once the share is gone (stopped here or elsewhere).
-  const [askedOf, setAsked] = useState<ShareSettings | null>(null);
-  const asked = share ? askedOf : null;
-  const [ack, setAck] = useState(false);
-  // What Invite sent last, so its button alone says it is sending.
-  const [invited, setInvited] = useState(false);
-
+  const { session, share, hosts, error } = useSuspenseSessionShare(sessionId);
+  const panel = useShareSessionPanel(sessionId, share);
+  const { shown, access, asked, busy } = panel;
   const host = hosts.find((row) => row.id === session.hostId)?.name ?? t('sessions.share.thisHost');
-  // What the menus show: a live share's lifetime as it was picked, its time
-  // left on the Expires button.
-  const shown = asked ?? (share ? settingsOf(share, share.updatedAt.getTime()) : draft);
-  const access = effectiveAccess(shown.audience, shown.access);
-  const writing = access === 'write' && share?.access !== 'write';
   const role = t(`sessions.share.roles.${share?.access ?? access}`);
-
-  /** What a pick changes: a live share as it is now, so its end does not move unasked. */
-  function base(): ShareSettings {
-    return asked ?? (share ? settingsOf(share, Date.now()) : draft);
-  }
-
-  function change(picked: ShareSettings) {
-    put.reset();
-    // A lifetime the access cannot have (write for 7 days) is never shown
-    // and then sent shorter: it becomes write's shortest here.
-    const next = lifetimeAllowed(effectiveAccess(picked.audience, picked.access), picked.lifetime)
-      ? picked
-      : { ...picked, lifetime: '1h' as const };
-    if (!share) {
-      if (next.access !== draft.access) setAck(false);
-      setDraft(next);
-      return;
-    }
-    if (effectiveAccess(next.audience, next.access) === 'write' && share.access !== 'write') {
-      if (!asked) setAck(false);
-      setAsked(next);
-      return;
-    }
-    setAsked(null);
-    put.mutate({ sessionId, input: shareInput(next, share.people) });
-  }
-
-  /**
-   * Invite: share a session not yet shared with them, as the menus say; add
-   * them to a share for people, keeping the rest; or limit a link to them.
-   */
-  function invite(people: string[], done: () => void) {
-    put.reset();
-    narrow.reset();
-    setInvited(true);
-    const settle = { onSuccess: done, onSettled: () => setInvited(false) };
-    if (!share) {
-      put.mutate(
-        { sessionId, input: shareInput(draft, people) },
-        {
-          ...settle,
-          onSuccess: () => {
-            setAck(false);
-            done();
-          },
-        },
-      );
-    } else if (share.audience === 'people') {
-      narrow.mutate({ sessionId, people: [...share.people, ...people] }, settle);
-    } else {
-      put.mutate(
-        {
-          sessionId,
-          input: shareInput({ ...settingsOf(share, Date.now()), audience: 'people' }, people),
-        },
-        settle,
-      );
-    }
-  }
-
-  function remove(email: string) {
-    if (!share) return;
-    const people = share.people.filter((person) => person !== email);
-    if (people.length) narrow.mutate({ sessionId, people });
-    else stop.mutate({ sessionId }, { onSuccess: () => setAsked(null) });
-  }
 
   const audienceOptions = [
     {
@@ -224,18 +130,18 @@ export function ShareSessionPanel({
       <div className="flex min-h-0 flex-col gap-3.5 overflow-y-auto px-4 pb-3.5">
         <ErrorAlert error={error} fallback={t('sessions.share.loadFailed')} />
         <ErrorAlert
-          error={put.error ?? narrow.error ?? stop.error}
+          error={panel.writeError}
           fallback={share ? t('sessions.share.updateFailed') : t('sessions.share.failed')}
         />
         {share || shown.audience === 'people' ? (
           <ShareInvite
             listed={share?.people ?? []}
             busy={busy}
-            inviting={invited && busy}
-            ready={Boolean(share) || access !== 'write' || ack}
+            inviting={panel.inviting}
+            ready={Boolean(share) || access !== 'write' || panel.ack}
             writeHost={share?.access === 'write' ? host : null}
             linkShared={share?.audience === 'link'}
-            onInvite={invite}
+            onInvite={panel.invite}
           />
         ) : null}
         {share ? (
@@ -267,7 +173,7 @@ export function ShareSessionPanel({
                 sub={t('sessions.share.anyoneRowHint')}
                 role={role}
                 removeLabel={t('sessions.share.removeAccess')}
-                onRemove={busy ? undefined : () => stop.mutate({ sessionId })}
+                onRemove={busy ? undefined : panel.stopSharing}
               />
             ) : (
               share.people.map((email) => (
@@ -278,7 +184,7 @@ export function ShareSessionPanel({
                   sub={t('sessions.share.outside')}
                   role={role}
                   removeLabel={t('sessions.share.removeAccess')}
-                  onRemove={busy ? undefined : () => remove(email)}
+                  onRemove={busy ? undefined : () => panel.remove(email)}
                 />
               ))
             )}
@@ -296,7 +202,7 @@ export function ShareSessionPanel({
                 current={t(`sessions.share.audiencesShort.${shown.audience}`)}
                 options={audienceOptions}
                 disabled={busy}
-                onChange={(audience) => change({ ...base(), audience })}
+                onChange={(audience) => panel.change({ audience })}
               />
             }
           />
@@ -311,7 +217,7 @@ export function ShareSessionPanel({
                 current={t(`sessions.share.access.${access}.label`)}
                 options={accessOptions}
                 disabled={busy}
-                onChange={(next) => change(withAccess(base(), next))}
+                onChange={panel.pickAccess}
               />
             }
           />
@@ -336,21 +242,21 @@ export function ShareSessionPanel({
                 }
                 options={lifetimeOptions}
                 disabled={busy}
-                onChange={(lifetime) => change({ ...base(), lifetime })}
+                onChange={(lifetime) => panel.change({ lifetime })}
               />
             }
           />
         </div>
-        {writing ? (
-          <ShareWriteWarning who={who} host={host} ack={ack} onAck={setAck}>
+        {panel.writing ? (
+          <ShareWriteWarning who={who} host={host} ack={panel.ack} onAck={panel.setAck}>
             {asked ? (
               <>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  disabled={put.isPending}
-                  onClick={() => setAsked(null)}
+                  disabled={panel.giving}
+                  onClick={panel.cancelWrite}
                 >
                   {t('common.cancel')}
                 </Button>
@@ -358,16 +264,10 @@ export function ShareSessionPanel({
                   type="button"
                   variant="destructive"
                   size="sm"
-                  disabled={!ack}
-                  pending={put.isPending}
+                  disabled={!panel.ack}
+                  pending={panel.giving}
                   pendingLabel={t('sessions.share.submitting')}
-                  onClick={() =>
-                    share &&
-                    put.mutate(
-                      { sessionId, input: shareInput(asked, share.people) },
-                      { onSuccess: () => setAsked(null) },
-                    )
-                  }
+                  onClick={() => share && panel.giveWrite(share, asked)}
                 >
                   {t('sessions.share.submit.write')}
                 </Button>
@@ -386,13 +286,10 @@ export function ShareSessionPanel({
               type="button"
               variant="destructive-ghost"
               size="sm"
-              pending={stop.isPending}
+              pending={panel.stopping}
               pendingLabel={t('sessions.share.stopping')}
-              disabled={narrow.isPending || put.isPending}
-              onClick={() => {
-                setAsked(null);
-                stop.mutate({ sessionId });
-              }}
+              disabled={busy && !panel.stopping}
+              onClick={panel.stopSharing}
             >
               {t('sessions.share.stop')}
             </Button>
@@ -406,9 +303,9 @@ export function ShareSessionPanel({
               <Button
                 type="button"
                 size="sm"
-                pending={put.isPending}
+                pending={panel.giving}
                 pendingLabel={t('sessions.share.submitting')}
-                onClick={() => put.mutate({ sessionId, input: shareInput(draft, []) })}
+                onClick={panel.createLink}
               >
                 {t('sessions.share.submit.link')}
               </Button>
