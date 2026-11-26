@@ -2,13 +2,16 @@
 
 Reads of other products, measurements, and proposals that were not
 adopted. A note here decides nothing: when one leads to a decision, the
-decision is written in the note that owns it (the numbered notes in
-`../`, `../design/` or `../roadmap.md`), and the change is
-logged in [`../README.md`](../README.md). Paths in backticks inside
-these notes are relative to `product/`.
+decision is written in the note that owns it (in `../design/` or
+`../roadmap.md`), and the change is logged in
+[`../decisions.md`](../decisions.md). Paths in backticks inside these notes
+are relative to `product/`. The code, benches and screenshots behind a note
+are in [`spikes/`](spikes/), one folder each.
 
-Notes 12, 13, 14 and 16 were numbered notes in `../` and are still
-cited by those numbers elsewhere; the Formerly column below maps them.
+Notes 12 to 16 were numbered notes in `../` and are still cited by those
+numbers elsewhere; the Formerly column below maps them. Two "note 15"s
+exist: the planning note on review, and the microVM proposal numbered in
+#43.
 
 ## Reads and measurements
 
@@ -52,6 +55,7 @@ that governs today.
 | Note | Formerly | What it proposed |
 |------|----------|------------------|
 | [Ephemeral cloud machines](ephemeral-cloud-machines.md) | PR #43, note 14 | One lifecycle port over AWS EC2, Oracle Cloud and Alibaba ECS: a cloud machine is a host that pairs itself; provider facts, prices and quotas as of 2026-09-22 |
+| [Reviewing at the speed agents write](reviewing-at-agent-speed.md) | note 15 | Review is the bottleneck: every pull request in a lane (Auto, Quick, Deep), auto-merge by a readable policy proven in a dry run on your history, a review session prepared on your host; the Pull requests area's version 1 left lanes, auto-merge and prepared reviews for after ([`../design/pull-requests/pull-requests.md`](../design/pull-requests/pull-requests.md)) |
 | [Sessions in microVMs](sessions-in-microvms.md) | PR #43, note 15 | A session as a Firecracker microVM on a KVM host, with the lifecycle Claude Code on the web uses: two states instead of three sleep tiers, no NIC, vsock to the host |
 | [Orchestration draft](orchestration-draft.md) | PR #43, `versions/mvp/17` | One runner per host, many hosts per person, placement as a ladder, machine jobs on BullMQ, the transcript snapshot, the sweeper |
 | [Headless runs draft](headless-runs-draft.md) | PR #43, `versions/mvp/18` | A run as a session whose window 0 is `claude -p` with stream-json; governed now by `design/automations/16-automations-architecture.md`, which built on it |

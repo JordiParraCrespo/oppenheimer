@@ -33,8 +33,7 @@ workspace has one member today (`../foundations/08-auth.md`), so "workspace-wide
 when its wait began. A deprioritized item sorts after all of them and
 reads *Low*. (Until 2026-11-03 the list ran most blocked first: approvals
 and waiting sessions oldest wait first, then requested reviews, ready
-merges and failed runs; see the "decisions that changed" list in
-`product/README.md`.)
+merges and failed runs; see `product/decisions.md`.)
 
 **Project.** Every item carries the project it belongs to, so the list
 filters by project as the frame does, with a count beside each:

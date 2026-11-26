@@ -17,7 +17,7 @@ is the `research` lane.
   Say which claims are measured, which inferred.
 - Write the note where `product/README.md` says research goes, and follow
   its rules for a note (a decision that changes another note updates that
-  note and the "decisions that changed" list).
+  note and adds a line to `product/decisions.md`).
 - A proof of concept keeps its code beside the note, in
   `product/research/<topic>/`, outside the workspace. Code that has to land
   in `apps/` or `packages/` to work is a feature: say so and stop; the user

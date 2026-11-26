@@ -79,8 +79,8 @@ reviewer is the bottleneck, so the product goes after the bottleneck.
 
 The first version of this note proposed the opposite: WIP limits on agent
 PRs, quiet hours, overnight holds, "protect the evening". The owner
-rejected that on 2026-09-27, and the change is recorded in `../README.md`'s
-decisions that changed.
+rejected that on 2026-09-27, and the change is recorded in
+`../decisions.md`.
 
 Three moves follow from it:
 

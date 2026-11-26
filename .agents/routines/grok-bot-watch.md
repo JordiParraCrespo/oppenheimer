@@ -36,7 +36,7 @@ pnpm install --frozen-lockfile
 Read:
 - `product/research/lessons-from-grok-bot.md` in full; §9 is the shape of a read;
 - `product/research/README.md` and `product/README.md` (how a research note
-  is written, and the "decisions that changed" list);
+  is written, and where a decision is logged);
 - `product/design/bots/25-bots.md`, `26-bot-routines.md` and
   `27-bot-subscriptions.md`, so you know what ours already does;
 - `.agents/skills/research/SKILL.md`, `.agents/skills/propose/SKILL.md` and
@@ -153,7 +153,7 @@ Take at most two rows from the table, the highest ranked among those that:
 Each gets its own branch, `grok-bot-watch/<yyyy-mm-dd>-<slug>`, from
 `origin/main`, and follows the `propose` skill:
 1. Write the change into the note that owns it (25, 26 or 27), and add a
-   line to the "decisions that changed" list in `product/README.md`, as §9's
+   line to `product/decisions.md`, as §9's
    "Landed" paragraph did for its rows.
 2. Build it, following the skills and rules for the code you touch, in the
    order `steward` writes down, with tests that name the behavior.
