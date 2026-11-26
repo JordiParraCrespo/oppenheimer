@@ -49,7 +49,7 @@ export function lifetimeAllowed(access: SessionShareAccess, choice: ShareLifetim
 }
 
 /** How long a lifetime is, or `null` for one that does not end. */
-export function lifetimeMs(choice: ShareLifetimeChoice): number | null {
+function lifetimeMs(choice: ShareLifetimeChoice): number | null {
   return choice === 'never' ? null : SESSION_SHARE_LIFETIME_MS[choice];
 }
 

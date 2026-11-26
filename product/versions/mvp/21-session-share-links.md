@@ -60,10 +60,12 @@ and why they changed, is under [Superseded](#superseded-links-2026-10-08).
   personal, so the people field suggests no members: a whole email offers
   "Invite …".
 - **The guest page reads like a session in the console** (changed
-  2026-11-26; it was a 760px card under the wordmark): one bar at the tab
-  bar's height on the terminal's ground — the mark, the session, its state,
-  who shared it, Ends in, View only or Can write, and Leave for someone who
-  can write — and the terminal at the page's full width. Not built from the
+  2026-11-26; it was a 760px card under the wordmark): one quiet bar at the
+  tab bar's height on the terminal's ground — the mark, the session, its
+  state and who shared it, then Terminal / Chat as the member's two icons,
+  View only or Can edit with Ends in, and Leave for someone who can write —
+  and the terminal at the page's full width, with no status line while the
+  link is live. Not built from the
   design: who else is here (presence), and the chat-style attribution of
   prompts, which a terminal cannot draw.
 - **The public page shows only the session's name, its state, the access

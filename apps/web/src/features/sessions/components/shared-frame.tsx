@@ -40,7 +40,7 @@ export function SharedFrame({
           title ? (
             <span className="flex min-w-0 items-center gap-2.5">
               <span aria-hidden className="h-4 w-px shrink-0 bg-border-subtle" />
-              <span className="truncate font-mono text-[13px]">{title}</span>
+              <span className="truncate">{title}</span>
             </span>
           ) : null
         }

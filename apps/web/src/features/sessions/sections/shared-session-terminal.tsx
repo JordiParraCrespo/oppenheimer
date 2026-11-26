@@ -10,7 +10,6 @@ import { useSharedSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ChatCover } from '../components/chat-cover';
-import { ChatViewToggle } from '../components/chat-view-toggle';
 import { TerminalColumn } from '../components/terminal-column';
 import { useChatReading } from '../hooks/use-session-chat';
 import { useTerminal } from '../hooks/use-terminal';
@@ -27,7 +26,7 @@ import type { PaneReading } from '../lib/chat-blocks';
  *
  * **Chat** (0.7): as `SessionTerminal`, the pane hands in its `reading`;
  * this stream feeds the chat and lends it its input, and once the transcript
- * arrives the status bar offers Terminal / Chat and Chat draws the pane's
+ * arrives the page's bar offers Terminal / Chat and Chat draws the pane's
  * `cover` over the grid. The relay sends the transcript only when the sharer
  * has `session_chat_view`.
  */
@@ -45,8 +44,8 @@ export function SharedSessionTerminal({
 }) {
   const { t } = useTranslation();
   const createStream = useSharedSessionStream(slug);
-  const { chat, view, onViewChange, cover } = reading;
-  const { offered: chatOffered, shown: chatShown } = useChatReading(reading);
+  const { chat, cover } = reading;
+  const { shown: chatShown } = useChatReading(reading);
   const { containerRef, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
     chat,
     agentWindow: true,
@@ -85,13 +84,13 @@ export function SharedSessionTerminal({
         </div>
       ) : null}
 
-      <TerminalStatusBar data-phase={status}>
-        {chatOffered ? <ChatViewToggle view={view} onViewChange={onViewChange} /> : null}
-        {/* The bar above says Running: Live would say it twice. */}
-        {status === 'live' ? null : (
+      {/* Live, the bar above says it all, as over a member's terminal; the
+          line comes back to say the link is connecting, away or closed. */}
+      {status === 'live' ? null : (
+        <TerminalStatusBar data-phase={status}>
           <TerminalStatusItem>{t(`sessions.shared.status.${status}`)}</TerminalStatusItem>
-        )}
-      </TerminalStatusBar>
+        </TerminalStatusBar>
+      )}
     </Terminal>
   );
 }

@@ -1,5 +1,5 @@
-import { Button, ChatHeaderTag, EmptyState, StatusDot } from '@oppenheimer/design-system-web';
-import { EyeIcon, TerminalIcon } from '@oppenheimer/design-system-web/icons';
+import { EmptyState, IconButton, StatusDot } from '@oppenheimer/design-system-web';
+import { EyeIcon, LogOutIcon, TerminalIcon } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseSharedSession } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
@@ -8,11 +8,12 @@ import { useTranslation } from 'react-i18next';
 import { SharedEndsIn } from '../components/shared-ends-in';
 import { SharedFrame } from '../components/shared-frame';
 import { useSessionChat } from '../hooks/use-session-chat';
-import { DEFAULT_SESSION_VIEW, type SessionView } from '../lib/chat-blocks';
+import { DEFAULT_SESSION_VIEW, type PaneReading, type SessionView } from '../lib/chat-blocks';
 import { shareRefusalOf } from '../lib/share-session';
 import { SessionChat } from './session-chat';
 import { SharedRefusal } from './shared-refusal';
 import { SharedSessionTerminal } from './shared-session-terminal';
+import { SharedViewSwitch } from './shared-view-switch';
 
 /**
  * A session as a guest opens it, read the way a session reads in the
@@ -42,39 +43,66 @@ export function SharedSessionPane({ slug }: { slug: string }) {
   if (refusal) return <SharedRefusal refusal={refusal} slug={slug} />;
 
   const writing = session.access === 'write';
+  const reading: PaneReading = {
+    chat,
+    view,
+    onViewChange: setView,
+    cover: (
+      <SessionChat
+        chat={chat}
+        agent={null}
+        readOnly={!writing}
+        onOpenTerminal={() => setView('terminal')}
+      />
+    ),
+  };
   return (
     <SharedFrame
       title={session.name}
       meta={
-        <StatusDot
-          state={session.state === 'stopped' ? 'paused' : 'running'}
-          density="compact"
-          className="shrink-0 text-xs text-fg-muted"
-        >
-          {t(`sessions.shared.state.${session.state}`)}
-        </StatusDot>
-      }
-      actions={
-        <span className="flex items-center gap-2.5">
+        <>
+          <StatusDot
+            state={session.state === 'stopped' ? 'paused' : 'running'}
+            density="compact"
+            className="shrink-0 text-xs text-fg-muted"
+          >
+            <span className="sr-only sm:not-sr-only">
+              {t(`sessions.shared.state.${session.state}`)}
+            </span>
+          </StatusDot>
           {session.sharedBy ? (
-            <span className="hidden truncate text-[12.5px] text-fg-muted sm:inline">
+            <span className="hidden truncate text-xs text-fg-subtle md:inline">
               {t('sessions.shared.sharedBy', { name: session.sharedBy })}
             </span>
           ) : null}
-          {session.expiresAt ? (
-            <span className="hidden font-mono text-[11.5px] text-fg-subtle sm:inline">
-              <SharedEndsIn at={session.expiresAt} />
+        </>
+      }
+      actions={
+        <>
+          {session.state === 'live' ? <SharedViewSwitch reading={reading} /> : null}
+          <span className="flex items-center gap-1.5 px-1.5 text-xs text-fg-muted [&_svg]:size-3.5">
+            {writing ? <TerminalIcon /> : <EyeIcon />}
+            <span className="sr-only sm:not-sr-only">
+              {writing ? t('sessions.shared.canWrite') : t('sessions.shared.viewOnly')}
             </span>
-          ) : null}
-          <ChatHeaderTag icon={writing ? <TerminalIcon /> : <EyeIcon />}>
-            {writing ? t('sessions.shared.canWrite') : t('sessions.shared.viewOnly')}
-          </ChatHeaderTag>
+            {session.expiresAt ? (
+              <span className="hidden text-fg-subtle sm:inline">
+                · <SharedEndsIn at={session.expiresAt} />
+              </span>
+            ) : null}
+          </span>
           {writing ? (
-            <Button variant="ghost" size="sm" render={<Link to="/" />}>
-              {t('sessions.shared.leave')}
-            </Button>
+            <IconButton
+              variant="quiet"
+              size="sm"
+              aria-label={t('sessions.shared.leave')}
+              title={t('sessions.shared.leave')}
+              render={<Link to="/" />}
+            >
+              <LogOutIcon />
+            </IconButton>
           ) : null}
-        </span>
+        </>
       }
     >
       <ErrorAlert error={error} fallback={t('sessions.screen.loadFailed')} className="m-4" />
@@ -93,19 +121,7 @@ export function SharedSessionPane({ slug }: { slug: string }) {
             slug={slug}
             readOnly={!writing}
             onEnd={() => refetch()}
-            reading={{
-              chat,
-              view,
-              onViewChange: setView,
-              cover: (
-                <SessionChat
-                  chat={chat}
-                  agent={null}
-                  readOnly={!writing}
-                  onOpenTerminal={() => setView('terminal')}
-                />
-              ),
-            }}
+            reading={reading}
           />
         </div>
       )}
