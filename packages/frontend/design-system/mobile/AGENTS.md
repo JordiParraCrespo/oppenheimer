@@ -20,7 +20,8 @@ src/
 
 - Styling is **NativeWind** (Tailwind classes on RN primitives), not Tamagui.
 - **Mirror the shadcn component API** from `@oppenheimer/design-system-web`: matching
-  prop/variant names so consumers get a consistent cross-platform API.
+  prop/variant names (`checked`/`onCheckedChange`, `value`/`onValueChange`) so
+  consumers get a consistent cross-platform API, even where the control is native.
 - Colors/spacing/typography come from the shared design tokens — don't hardcode.
 - Export new components from `index.ts`.
 - **The floating layer is the platform's glass.** What sits over the content
@@ -28,10 +29,28 @@ src/
   `UIGlassEffect` on iOS 26 and later, the system chrome blur elsewhere.
   Content (a list, a form, a card in the flow) stays solid; glass on content
   is what Apple's guidance tells you not to do.
-- **A control the platform has is the platform's.** A choice among options is
-  `Select` over `@expo/ui`'s picker, so the menu is SwiftUI's (Liquid Glass
-  on iOS 26) or Material's; the tab bar is expo-router's `NativeTabs`; a back
-  button is the native stack header's. Never redraw one of these.
+- **A control the platform has is the platform's.** Never redraw one; the
+  JavaScript look-alikes were deleted so none can be reached for:
+
+  | Need | Use |
+  | --- | --- |
+  | on/off setting | `Switch` (`@expo/ui`: SwiftUI toggle / Material 3 switch) |
+  | yes/no in a form | `Checkbox` (Material 3 checkbox; a toggle on iOS, which has none) |
+  | one of a list | `Select` (`@expo/ui` menu picker) |
+  | one of two to four short views | `SegmentedControl` (`UISegmentedControl` / M3 segmented buttons) |
+  | actions on a thing | `MenuView` from `@expo/ui/community/menu` |
+  | confirm or report a failure | `Alert.alert` from `react-native` |
+  | a sheet | a `presentation: 'formSheet'` route, or `@expo/ui`'s `BottomSheet` |
+  | tab bar, back button | expo-router's `NativeTabs`, the native stack header |
+
+  A new `@expo/ui` control is drawn inside `NativeHost` (`src/lib/native-scheme`),
+  which sizes it to its content and gives it the app's light or dark, so a caller
+  places a native control and never gives it a pixel width. A control that needs
+  each platform's own primitives splits into `src/lib/<name>.ios.tsx` and
+  `.android.tsx` (Metro picks one), as `native-segmented` does.
+  A native control takes no `className`: lay it out from the view around it,
+  and give one with no visible label an `accessibilityLabel`. NativeWind draws
+  only what is the app's own (cards, rows, the chat, the terminal).
 
 ## Commands
 
