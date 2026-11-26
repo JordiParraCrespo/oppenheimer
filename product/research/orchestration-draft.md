@@ -8,9 +8,8 @@
 > and
 > [`../design/foundations/api-modules-and-data-model.md`](../design/foundations/api-modules-and-data-model.md),
 > and the runner is
-> [`design/runner/runner.md`](../design/runner/runner.md). Bare
-> numbers in it name `design/` notes. Its numbered
-> cross-references (``../design/runner/runner.md` §14`, ``../design/foundations/control-plane.md` §Cloud hosts` and the like) point at
+> [`design/runner/runner.md`](../design/runner/runner.md). Its
+> cross-references (`design/runner/runner.md` §14, `design/foundations/control-plane.md` §Cloud hosts and the like) point at
 > sections that pull request proposed and that the current notes do not
 > have. Paths in backticks are relative to `product/`.
 

@@ -1,7 +1,7 @@
 # Runner install and update
 
 Getting the runner onto a host you own, and keeping it current
-afterwards. The runner itself is [02](runner.md); this document is
+afterwards. The runner itself is [`runner.md`](runner.md); this document is
 everything around it: what the Add host screen hands you, what runs on
 your machine, and how a new version arrives without anyone typing a
 command a second time.
@@ -283,7 +283,7 @@ putting the user's credentials on it.
   and only an artifact whose URL is on that host. Which version a host
   is offered — a percentage rollout, an allowlist, a stop — and the
   route that serves it are the control plane's, and they are specified
-  in [03](../foundations/control-plane.md) §"Runner-facing surfaces". A compromised
+  in [`control-plane.md`](../foundations/control-plane.md) §"Runner-facing surfaces". A compromised
   control plane can withhold updates; it cannot deliver code.
 - **Channels and pinning.** `stable` by default, `beta` opt-in per host
   at install (`--channel beta`) and, with the settings drawer, from the

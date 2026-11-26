@@ -10,8 +10,8 @@
 > VMs and cloud hosts,
 > [`design/foundations/scope.md`](../design/foundations/scope.md) for what the
 > MVP runs, and [`roadmap.md`](../roadmap.md), where
-> VMs are not yet placed in the order after the MVP. Its numbered
-> cross-references (``../design/runner/runner.md` §14`, ``../design/foundations/control-plane.md` §Cloud hosts` and the like) point at
+> VMs are not yet placed in the order after the MVP. Its
+> cross-references (`design/runner/runner.md` §14, `design/foundations/control-plane.md` §Cloud hosts and the like) point at
 > sections that pull request proposed and that the current notes do not
 > have. Paths in backticks are relative to `product/`.
 
@@ -29,8 +29,8 @@ changed: `../archive/reuse-gha-runner.md`'s "libvirt first, Firecracker later"; 
 "one provider VM per session, paired as a host"; and `../archive/sleep-wake-and-pricing.md`'s three
 sleep tiers, which collapse to two states for a microVM session. The
 design was to land in the MVP notes that own each piece — `design/runner/runner.md`
-§14 (the runtime), `04` (the image), `03` §Cloud hosts (the port, the
-policy), `10` (the columns), `07` (the findings) — and this note was
+§14 (the runtime), `design/foundations/guest-image.md` (the image), `design/foundations/control-plane.md` §Cloud hosts (the port, the
+policy), `design/foundations/api-modules-and-data-model.md` (the columns), `design/foundations/security-checklist.md` (the findings) — and this note was
 the research behind them.
 
 ## 1. What this session is, read off the machine
@@ -193,7 +193,7 @@ agent as `init`. Signed with the offline key, the rootfs half of F26.
 Read-only squashfs drives for things that change more often than the
 image — the agent CLIs, skills — are the trick Anthropic uses for
 skills and are worth copying the day the image rebuild becomes the
-bottleneck. Root inside the guest, as decided in `04`.
+bottleneck. Root inside the guest, as decided in `design/foundations/guest-image.md`.
 
 **Docker inside** is a real daemon in a real VM, `../archive/sleep-wake-and-pricing.md` §8's argument,
 at no extra cost.
@@ -339,13 +339,13 @@ still one to five percent of a task (`../archive/sleep-wake-and-pricing.md` §8)
 
 ## 10. Order of work
 
-1. **The image and the guest agent** (`design/foundations/guest-image.md`, `02` §14): a
+1. **The image and the guest agent** (`design/foundations/guest-image.md`, `design/runner/runner.md` §14): a
    Dockerfile to a raw ext4, the guest agent as `init` with the vsock
    control channel, the PTY bridge, the proxy forwarder, the CA. Done
    means: `firecracker` on the Hetzner box boots it to a tmux prompt
    in under two seconds and `claude` in the guest reaches the API
    through the proxy and nothing else.
-2. **The microVM runtime in the runner** (`02` §14): Firecracker over
+2. **The microVM runtime in the runner** (`design/runner/runner.md` §14): Firecracker over
    its socket, the jailer, reflinked disks on an XFS volume, boot and
    kill, reconcile on boot, `runtime: microvm` on `session.create`,
    the runner's `vm` capability only after a proven boot (F15). Done

@@ -3,8 +3,8 @@
 > **Proposal, not adopted.** Research brought over from pull request
 > #43, which was closed on 2026-10-10 without merging. It decides
 > nothing; the notes each item would change are named in it, and none of
-> them has taken an item yet. Its numbered cross-references (``../design/runner/runner.md` §14`,
-> ``../design/foundations/control-plane.md` §Cloud hosts` and the like) point at sections that pull request
+> them has taken an item yet. Its cross-references (`design/runner/runner.md` §14,
+> `design/foundations/control-plane.md` §Cloud hosts and the like) point at sections that pull request
 > proposed and that the current notes do not have. Paths in backticks
 > are relative to `product/`.
 
@@ -149,7 +149,7 @@ here.
 
 1. **Agent state from hooks, and approvals as objects.** This is the
    hook half of `design/runner/runner.md` §9 that is still to build, and it
-   answers `05` open question 2 (what "blocked" looks like).
+   answers `design/console/screens.md` open question 2 (what "blocked" looks like).
    - A `runner hook <event>` subcommand, the same shape as the
      credential helper, installed as Claude Code's hooks at launch and
      reporting to the runner's socket with the session id from the tmux
@@ -168,8 +168,8 @@ here.
    - DigitalOcean's rules come with it: first answer wins, an orphaned
      request is settled, no "always allow" we cannot honour, the source
      is recorded.
-   - Changes `02` §9, `01` (event kinds, how `input` answers an
-     approval), `03` (event kinds, the derived group), `05` (an
+   - Changes `design/runner/runner.md` §9, `design/foundations/protocol.md` (event kinds, how `input` answers an
+     approval), `design/foundations/control-plane.md` (event kinds, the derived group), `design/console/screens.md` (an
      approve/reject card in the sidebar and on the phone), the CLI and
      MCP (`sessions approve`).
 2. **A resumable event feed for the console.** `GET
@@ -179,27 +179,27 @@ here.
    route with `id: <seq>`, so a browser `EventSource` resends
    `Last-Event-ID` on its own; our gapless `seq` is a better cursor than
    their random ids. Emit `catching_up` / `live`, and put
-   backfill-then-live in the web client. Changes `03` routes, `10`'s
-   route table and `01` §Parties, which says two sockets.
-3. **A reconnect policy for the browser attach socket.** `01` has a
+   backfill-then-live in the web client. Changes `design/foundations/control-plane.md` routes, `design/foundations/api-modules-and-data-model.md`'s
+   route table and `design/foundations/protocol.md` §Parties, which says two sockets.
+3. **A reconnect policy for the browser attach socket.** `design/foundations/protocol.md` has a
    ladder and an epoch for the runner link only. Name which close codes
    are terminal (a revoked ticket, a deleted session) and which are not
    (`host_offline`), reset the budget after a healthy connection, give a
    tab a client id so a reconnecting tab replaces its own stale
    attachment (still several viewers per pane, unlike their one per
    device), and add a `replay_end` hint where the scrollback tail stops.
-   Changes `01` §Flow control and the hint vocabulary, `03` §The relay.
+   Changes `design/foundations/protocol.md` §Flow control and the hint vocabulary, `design/foundations/control-plane.md` §The relay.
 4. **Idle means between turns, and the reason is a column.** With the
    hooks above, idle becomes "the turn ended and nobody typed for N
    minutes" instead of terminal silence, and a long unattended run can
    never be called idle. A `stopReason` (`manual | idle | host_stopped
    | host_lost | reboot`) folded from `session.stopped`, passed through
-   when unknown. Changes `17` §6 and §7, `15` §3, `03` §Cloud hosts,
-   `10`.
+   when unknown. Changes `research/orchestration-draft.md` §6 and §7, `research/sessions-in-microvms.md` §3, `design/foundations/control-plane.md` §Cloud hosts,
+   `design/foundations/api-modules-and-data-model.md`.
 5. **Wake on use.** Input to a stopped session (the composer with no
    pane open, the CLI, a later port forward) resumes it first and waits
    for `session.started` before typing, and a failed send gives the
-   text back. Changes `03` and `17`.
+   text back. Changes `design/foundations/control-plane.md` and `research/orchestration-draft.md`.
 6. **For the Codex slice: a tee, not a facade.** The runner supervises
    `codex app-server` on loopback and window 0 runs `codex --remote`
    through a runner relay that forwards every frame untouched and
@@ -209,21 +209,21 @@ here.
    one client, every request answered, a pinned version and an
    `unhandled:` log. Open: whether the app-server tells a second client
    that a request was resolved, which answering from a phone needs.
-   The WebSocket transport is marked experimental. Changes `02` §5.
+   The WebSocket transport is marked experimental. Changes `design/runner/runner.md` §5.
 7. **Port forwarding as an attachment kind** (the preview slice). A
    forwarded port is one more attachment id on the link; the runner
    dials `127.0.0.1:<port>` on the host, or the guest over vsock under
-   `15`. The ticket goes in `Sec-WebSocket-Protocol`, since browsers
+   `research/sessions-in-microvms.md`. The ticket goes in `Sec-WebSocket-Protocol`, since browsers
    cannot set headers. Stricter than theirs because a host may be
    someone's laptop: ports 1024 and up, and only ports a session's own
-   processes listen on. Changes `01`, `03`, `05`, `07`.
+   processes listen on. Changes `design/foundations/protocol.md`, `design/foundations/control-plane.md`, `design/console/screens.md`, `design/foundations/security-checklist.md`.
 8. **Checkpoint, fork and rollback on reflinked disks** (after v0.2's
    first cut). Disk only: a checkpoint is a reflink of the session disk
    taken between turns after a guest `sync`, recording the log `seq`. A
    fork is a new session on a reflinked copy with its own branch, the
    agent relaunched with its resume and fork flags (to verify). A
-   rollback swaps the disk and keeps the id. Changes `15` §3, `02` §14,
-   `03`, `10` (`parentSessionId`, a checkpoint table), `17` §5 and §8.
+   rollback swaps the disk and keeps the id. Changes `research/sessions-in-microvms.md` §3, `design/runner/runner.md` §14,
+   `design/foundations/control-plane.md`, `design/foundations/api-modules-and-data-model.md` (`parentSessionId`, a checkpoint table), `research/orchestration-draft.md` §5 and §8.
 9. **Later, in their own slices.** An exec verb for the CLI and MCP
    (`session.exec`, a `sessions:exec` scope, never retried). File drop
    into a worktree with a SHA-256 at both ends, mainly for a phone
@@ -244,9 +244,9 @@ here.
   only annotate it. For the same reason Claude Code's `stream-json` is
   not our channel: it is headless print mode and replaces the TUI.
 - **One stream per device, and 409 "attached elsewhere".** A laptop and
-  a phone on the same pane is a feature (`01` attachments).
-- **Memory checkpoints, for now.** `15` chose disk-only resume. Their
-  305 ms resume is the evidence to weigh when `15` §5's snapshots come
+  a phone on the same pane is a feature (`design/foundations/protocol.md` attachments).
+- **Memory checkpoints, for now.** `research/sessions-in-microvms.md` chose disk-only resume. Their
+  305 ms resume is the evidence to weigh when `research/sessions-in-microvms.md` §5's snapshots come
   up, not a reason to change v0.2.
 - **Prepayment and metering**, a blanket `--on-hitl` auto-answer (our
   permission modes already say it), auto-rejecting file edits (their
@@ -257,16 +257,16 @@ here.
 ## 6. The one decision this raises
 
 An activity feed and approvals persist more of the agent's work than
-the rule "the transcript never leaves the host" (`02` §5, `10`)
+the rule "the transcript never leaves the host" (`design/runner/runner.md` §5, `design/foundations/api-modules-and-data-model.md`)
 allows today. The suggestion is metadata only: tool name, command,
 status and timestamps, never message text, with full items streamed
 only to an attached viewer the way the PTY is. Not decided here; when
-it is, it goes in `02` §5 and `10` and on the decisions list in the
+it is, it goes in `design/runner/runner.md` §5 and `design/foundations/api-modules-and-data-model.md` and on the decisions list in the
 README.
 
 ## 7. Verdict
 
-DigitalOcean confirms the shape of `15`: a microVM per session, idle
+DigitalOcean confirms the shape of `research/sessions-in-microvms.md`: a microVM per session, idle
 means paused, credentials outside the guest. It cannot be our runtime
 while every path is an API key. What it teaches is the layer above the
 VM that we have not designed yet: a session event log you can resume,

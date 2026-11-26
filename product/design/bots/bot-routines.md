@@ -15,7 +15,7 @@ atlas") and a session ("When a session linked to a task ends").
 
 The research is `../../research/lessons-from-grok-bot.md` §7 (Grok Bot
 0.71.2's routines, read from the shipped client on 2026-10-16) and
-OpenClaw's heartbeat (`lessons-from-synara-and-openclaw.md`). Ideas are
+OpenClaw's heartbeat (`../../research/lessons-from-synara-and-openclaw.md`). Ideas are
 taken, no code.
 
 ## 1. The shape

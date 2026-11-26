@@ -568,7 +568,7 @@ Two routes therefore delete a host and they are not the same operation:
 policies; `DELETE /hosts/self` is the machine saying it has been
 uninstalled, guarded by the assertion alone. Both set `unpairedAt` and
 neither deletes the row, and both stop the sessions running on the host
-(one `session.stopped` each, from `sessions/`, on the unpaired event; 13).
+(one `session.stopped` each, from `sessions/`, on the unpaired event; `../runner/hosts-settings.md`).
 
 **The machine's own read of its host row is unscoped, by design.** A host
 is not tenant-scoped and there is no person on that request to scope by:

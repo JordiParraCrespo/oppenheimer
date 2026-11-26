@@ -1667,7 +1667,7 @@ repository's pull requests may comment on its issues. They need the App's
 `GITHUB_017`, in words the bot passes on. A personal access token was
 considered for this and not taken: it would reach every repository the
 person can, past the installation that is the workspace's access control
-(`09`), and the App's user token already acts in the person's name.
+(`../runner/runner-install-and-update.md`), and the App's user token already acts in the person's name.
 
 ### 4.5 Automations and calendar
 | Tool | Does | Default |
@@ -1998,10 +1998,10 @@ attachments other than images (§3.1), project memory, a bot's engine running on
 Claude Code toolset.
 
 Routines, a bot waking on a schedule, an event or finished work, are
-designed in [26](bot-routines.md).
+designed in [`bot-routines.md`](bot-routines.md).
 
 Bots shown beside a section's own list (Sessions, Automations, Plan, Pull
-requests) are [28](bots-in-sections.md).
+requests) are [`bots-in-sections.md`](bots-in-sections.md).
 
 The design's avatar photos are photographs of people; until there is a
 set we may use, an avatar is the bot's initials on one of the design's

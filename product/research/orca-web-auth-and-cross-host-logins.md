@@ -383,7 +383,7 @@ are left for the notes that own them.
    and they are facts in the heartbeat `../design/runner/runner.md` §10 already defines, not a
    second inventory. On macOS the login normally lives in the Keychain,
    not in `~/.claude/.credentials.json`, so the state has to come from
-   the CLI's own status for both stores. Logging in from there is note
+   the CLI's own status for both stores. Logging in from there is
    `../archive/multi-account.md`'s Add-account flow, which waits for the accounts slice.
 
 ### Deferred, with the reason

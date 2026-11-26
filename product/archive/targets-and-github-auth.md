@@ -36,7 +36,7 @@ modes, chosen when the target is registered, and a project may use both.
 - Lifecycle: VM is created on session start, paused after idle timeout,
   destroyed after the retention window or when the session is closed.
   Home directory for CLI logins is a persistent per-target volume that is
-  attached to each VM (see `../design/foundations/protocol.md` §7), so `claude` stays logged in across
+  attached to each VM (see `terminal-first.md` §7), so `claude` stays logged in across
   fresh VMs.
 
 Hypervisor per host OS:

@@ -6,8 +6,8 @@
 > MVP. What governs is
 > [`design/automations/automations-architecture.md`](../design/automations/automations-architecture.md),
 > which built on this draft; the note's own "Read with 16" says where.
-> Bare numbers in it name `design/` notes. Its numbered
-> cross-references (``../design/runner/runner.md` §14`, ``../design/foundations/control-plane.md` §Cloud hosts` and the like) point at
+> Its
+> cross-references (`design/runner/runner.md` §14, `design/foundations/control-plane.md` §Cloud hosts and the like) point at
 > sections that pull request proposed and that the current notes do not
 > have. Paths in backticks are relative to `product/`.
 

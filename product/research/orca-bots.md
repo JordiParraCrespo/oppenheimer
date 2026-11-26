@@ -14,8 +14,8 @@ Sources: `orca.dev/bots`, `orca.dev/docs/bots`, `…/docs/bots/connectors`,
 `8e0c267e` (2026-11-20). It confirms most of the docs and corrects a few
 rows below, which now cite it. Paths there are relative to Orca's `src/`.
 Claims drawn from file names, or from silence, are marked as inferred. Our side is the user guide (`apps/docs/docs/guide/bots.md`,
-`routines-and-watches.md`, `bot-skills.md`) and notes
-`design/bots/bots.md` and `../design/bots/bot-routines.md`.
+`routines-and-watches.md`, `bot-skills.md`) and
+`design/bots/bots.md` and `design/bots/bot-routines.md`.
 
 ## 1. The one real difference: where the bot's loop runs
 

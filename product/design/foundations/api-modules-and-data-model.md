@@ -582,7 +582,7 @@ left with zero valid keys.
 `POST /hosts/register`, from the install command, before the host has a
 key to authenticate with — the path the runner already speaks
 (`apps/runner/internal/pairing/adapters/controlplane/client.go`) and
-[`protocol.md`](protocol.md) and [`09`](../runner/runner-install-and-update.md)
+[`protocol.md`](protocol.md) and [`../runner/runner-install-and-update.md`](../runner/runner-install-and-update.md)
 already name; an earlier draft of this note said `/hosts/pairing/redeem`
 and was the outlier. And `DELETE /hosts/self`, from uninstall, which
 runs with the daemon stopped and so cannot use the link. Everything
@@ -596,7 +596,7 @@ public key, which is F7 met rather than avoided.
 **Decided: the host assertion is an ordinary bearer, and the API learns
 the host credential kind.** The runner presents its boot JWT as
 `Authorization: Bearer` on `DELETE /hosts/self` and on the link's
-handshake, as [`03`](control-plane.md) always said. The problem that
+handshake, as [`control-plane.md`](control-plane.md) always said. The problem that
 raises is real and is the API's to solve: `ScopesGuard` is registered
 globally as an `APP_GUARD` and calls `CredentialScopeResolver.resolve()`
 on every HTTP route; that resolver treats any bearer value that is

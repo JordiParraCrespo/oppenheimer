@@ -10,8 +10,8 @@
 > VMs and cloud hosts,
 > [`design/foundations/scope.md`](../design/foundations/scope.md) for what the
 > MVP runs, and [`roadmap.md`](../roadmap.md), where
-> VMs are not yet placed in the order after the MVP. Its numbered
-> cross-references (``../design/runner/runner.md` §14`, ``../design/foundations/control-plane.md` §Cloud hosts` and the like) point at
+> VMs are not yet placed in the order after the MVP. Its
+> cross-references (`design/runner/runner.md` §14, `design/foundations/control-plane.md` §Cloud hosts and the like) point at
 > sections that pull request proposed and that the current notes do not
 > have. Paths in backticks are relative to `product/`.
 
@@ -38,8 +38,8 @@ led to live in the MVP design notes that own them, not here: the port,
 the routes and the pause, resume, delete policy in
 [`design/foundations/control-plane.md`](../design/foundations/control-plane.md) §Cloud hosts,
 the tables in `design/foundations/api-modules-and-data-model.md`, the wire and the runner in
-`design/foundations/protocol.md` and `02`, the screens in `05`, the cloud-init path
-in `09`.
+`design/foundations/protocol.md` and `design/runner/runner.md`, the screens in `design/console/screens.md`, the cloud-init path
+in `design/runner/runner-install-and-update.md`.
 
 Sources are primary docs and price lists, dated where the page gives a
 date; the Claude Code self-hosted runner docs are read closely because
@@ -135,7 +135,7 @@ it does, the smaller design is:
   *host* holding several microVM sessions; the sentence still holds.)
 
 What it changes in the control plane is written where the control plane
-is designed, `design/foundations/control-plane.md` §Cloud hosts and `10`: `hosts/` is
+is designed, `design/foundations/control-plane.md` §Cloud hosts and `design/foundations/api-modules-and-data-model.md`: `hosts/` is
 the host factory — two person-owned rows, `cloud_account` and
 `machine`, a `MachineProviderPort` with an adapter per provider in its
 `infrastructure/`, `machine.hostId` set at registration and
@@ -520,8 +520,8 @@ than a credential problem.
 
 The headline of v0.2 is that a session on a cloud machine can be
 **paused, resumed, and deleted later**, the way a laptop lid works,
-with the machine costing nothing but its disk while it is closed. Note
-`../design/foundations/api-modules-and-data-model.md` §10 made Ephemeral (destroy after idle) the default on cloud hosts;
+with the machine costing nothing but its disk while it is closed.
+`../archive/sleep-wake-and-pricing.md` §10 made Ephemeral (destroy after idle) the default on cloud hosts;
 that changes. Stopped compute is free on all three providers (§4), so
 the default on a cloud machine is the same as on an own host: **Keep**,
 paused when idle, resumed when opened, deleted when you say so or after
@@ -725,10 +725,10 @@ platform a holder of vendor credentials.
   token, and the adapter is a machine-lifecycle port with no session
   knowledge, owned by `hosts/` rather than a sixth module.
 - The MVP design notes gain the decisions: `design/foundations/control-plane.md` the port,
-  the routes and the pause, resume, delete policy; `10` the two rows;
-  `01` the `push` flag on `stop`; `02` push-on-stop and the cold
-  resume; `05` the host chip, the boot-trace rows and the session menu;
-  `09` the cloud-init path. This note stays research.
+  the routes and the pause, resume, delete policy; `design/foundations/api-modules-and-data-model.md` the two rows;
+  `design/foundations/protocol.md` the `push` flag on `stop`; `design/runner/runner.md` push-on-stop and the cold
+  resume; `design/console/screens.md` the host chip, the boot-trace rows and the session menu;
+  `design/runner/runner-install-and-update.md` the cloud-init path. This note stays research.
 - `../archive/sleep-wake-and-pricing.md` §6's provider order "AWS first, Fly second, GCP and Azure
   after" is now **AWS, Oracle, Alibaba** in that note's body, driven by
   where the money and the accounts are; Fly, GCP, Azure and Hetzner

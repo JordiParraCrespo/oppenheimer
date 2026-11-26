@@ -160,6 +160,6 @@ already on the wire for it.
    belongs to the account-deletion slice, not here.
 5. **The update story on the row.** 05 asks a host row to show channel,
    pin and the last update outcome, rollback included. The frame shows
-   the runner version only. The fields exist once 09's update reporting
+   the runner version only. The fields exist once `runner-install-and-update.md`'s update reporting
    lands on the link; whether the Settings row carries them is the
    screen's call.

@@ -529,7 +529,7 @@ Code's ScheduleWakeup for a bot: `check_back`.
 
 - 2026-10-22 (issue #445): **a bot's delegated session is followed by a
   subscription**, not by a routine with a `session_ended` trigger. It
-  changes 26's 2026-10-16 decision ("a trigger source, not a `bot_watch`
+  changes `bot-routines.md`'s 2026-10-16 decision ("a trigger source, not a `bot_watch`
   table") for a bot following its own work; the trigger stays for
   automations. What `bot-routines.md` wanted holds: the wake is a queued turn and the
   turn queue is the only wake path.

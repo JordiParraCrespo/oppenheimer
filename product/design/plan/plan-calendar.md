@@ -244,7 +244,7 @@ adds a task due that day from the dashed row under the list.
 > tasks) puts any open task not on the day there, its due date unchanged.
 > The task dialog has a **To do** day above **Due**. The sidebar's count
 > is what is left on today's list. Nothing is logged for a focus date:
-> planning a day is not a change Plan's log records (`23`, §4). Left for
+> planning a day is not a change Plan's log records (`plan-milestones-stats-accounts.md`, §4). Left for
 > later: a way to take a task off today from its row, and the bots' plan
 > tools setting a focus date.
 

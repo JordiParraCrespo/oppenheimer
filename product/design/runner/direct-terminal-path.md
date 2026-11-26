@@ -16,7 +16,7 @@ Every keystroke today crosses the relay twice before its echo is drawn
 control plane is one Hetzner box in Falkenstein (`deploy/dev/`), so a
 reader in Barcelona typing into a runner in Barcelona pays two round trips
 to Germany, about 80–120 ms, even when the browser and the runner are
-the same machine. 06's gate (echo under 50 ms) was written for a host in
+the same machine. `../foundations/step-one-spike.md`'s gate (echo under 50 ms) was written for a host in
 the relay's own region; a host you own is wherever you are.
 
 Nothing on the path is slow on its own. tmux runs with `escape-time 0`,

@@ -121,7 +121,7 @@ build when either stops being true.
 
 ### 4. The link to the control plane
 
-The wire is [01](../foundations/protocol.md): frame layout and the attachment id,
+The wire is [`protocol.md`](../foundations/protocol.md): frame layout and the attachment id,
 hello, heartbeat, the hint vocabulary, the command list, flow control,
 the reconnect ladder, and which three calls are ordinary HTTPS instead.
 What belongs here is what the runner does with it:

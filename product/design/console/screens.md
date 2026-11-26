@@ -366,7 +366,7 @@
   click taps, a drag swipes, typing with the screen focused types into
   it. The device is the simulator or emulator the session's host gave it,
   the one its agent drives through Argent
-  (`../research/device-streaming.md`); a host that offers none says so in
+  (`../../research/device-streaming.md`); a host that offers none says so in
   the pane. Since 2026-11-15 the device's name is a picker when the host
   offers more than one: the reader moves the session onto a free one (one
   another session holds is listed, greyed), and Refresh beside it looks at
@@ -378,7 +378,7 @@
   framed on its preview origin, and says when there is no dev server yet,
   the host is away or its runner cannot share ports. The resize handle and
   Expand are not built. The Desktop tab followed on 2026-11-09
-  (`../research/device-streaming.md`, "A host's desktop"): the session's
+  (`../../research/device-streaming.md`, "A host's desktop"): the session's
   host's own screen, watching until Take control, with Full screen; the
   same viewer is a page per host in Settings (Settings → Hosts → Desktop,
   from the host's card). A host that does not share its desktop says so and
