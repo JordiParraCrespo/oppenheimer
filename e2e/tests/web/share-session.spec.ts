@@ -7,9 +7,9 @@ import { provisionedUser, signInAs } from '../../support/web';
  * Sharing a session from the console (`ShareSession.dc.html`), and opening it
  * as a guest.
  *
- * The owner shares from the session row's menu: Share session (who,
- * permission, for how long), then Sharing (the link, who has access, Stop
- * sharing). A second account in a browser of its own is the guest: it
+ * The owner shares from the session row's menu: Share session, its general
+ * access set to the link, then Create link; the panel then lists who has
+ * access, copies the link and stops sharing. A second account in a browser of its own is the guest: it
  * signs in, sees the session and what the share lets it do, and, once the
  * owner stops sharing, that the session is not shared. The terminal itself
  * is the session screen's (`session.spec.ts`, and a real runner in
@@ -31,6 +31,8 @@ test('a session shared as a link opens for a signed-in guest, and stops once sha
   };
 
   await signInAs(page, owner.user);
+  // Signing in lands on the Inbox; the session's row is under Sessions.
+  await page.goto('/sessions');
   const row = page
     .getByRole('listitem')
     .filter({ has: page.getByRole('link', { name, exact: true }) });
@@ -40,16 +42,18 @@ test('a session shared as a link opens for a signed-in guest, and stops once sha
 
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('heading', { name: 'Share session' })).toBeVisible();
-  await dialog.getByRole('button', { name: 'Anyone with the link' }).click();
+  await dialog.getByRole('button', { name: 'General access' }).click();
+  await page.getByRole('menuitemradio', { name: /Anyone with the link/ }).click();
   // A link only watches: write is there, and off.
-  await expect(dialog.getByRole('radio', { name: /Can write/ })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Permission' }).click();
+  await expect(page.getByRole('menuitemradio', { name: /Can write/ })).toBeDisabled();
+  await page.keyboard.press('Escape');
   await dialog.getByRole('button', { name: 'Create link' }).click();
 
-  await expect(dialog.getByRole('heading', { name: 'Sharing' })).toBeVisible();
-  const address = dialog.getByText(/\/s\/[A-Za-z0-9_-]{22}$/);
-  await expect(address).toBeVisible();
-  const url = (await address.textContent())?.trim() ?? '';
-  await expect(dialog.getByText('Anyone with the link')).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Stop sharing' })).toBeVisible();
+  await expect(dialog.getByText('Anyone with the link', { exact: true })).toBeVisible();
+  const url = (await dialog.getByRole('button', { name: 'Copy link' }).getAttribute('title')) ?? '';
+  expect(url).toMatch(/\/s\/[A-Za-z0-9_-]{22}$/);
 
   const guestUser = await provisionedUser('guest');
   const guestContext = await browser.newContext();
@@ -60,7 +64,7 @@ test('a session shared as a link opens for a signed-in guest, and stops once sha
   await expect(guest.getByText('View only', { exact: true })).toBeVisible();
 
   await dialog.getByRole('button', { name: 'Stop sharing' }).click();
-  await expect(dialog).toBeHidden();
+  await expect(dialog.getByRole('button', { name: 'Create link' })).toBeVisible();
 
   await guest.reload();
   await expect(guest.getByText('This session isn’t shared')).toBeVisible();

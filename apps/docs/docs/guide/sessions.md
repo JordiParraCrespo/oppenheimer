@@ -69,12 +69,14 @@ The preview toggle opens a pane beside the terminal:
 
 ## Sharing a session
 
-**Share** (in the session bar or the row's menu) gives one address per session, `/s/…`.
+**Share** (the people icon at the right of the session bar, or **Share…** in the row's menu) opens one panel and gives one address per session, `/s/…`.
 
-- **Who**: specific people by email, or anyone with the link; either way they must sign in to Oppenheimer.
-- **Can view**: watch live, for 1 hour up to 7 days, or until you stop.
-- **Can write**: type and send prompts as you, with your credentials. Named people only, at most 24 hours, after you confirm "I understand they act as me on this host".
-- Guests see the terminal and the chat. **Stop sharing** ends access at once.
+- **Invite** people by email on the panel's first line; they must sign in to Oppenheimer with that email to open it.
+- **General access**: only the people you invite, or anyone with the link (who still has to sign in).
+- **Permission**: **Can view** watches live; **Can write** types and sends prompts as you, with your credentials, for named people only, after you confirm "I understand".
+- **Expires**: 1 hour, 8 hours, 24 hours, 7 days or never; write access lasts 24 hours at most.
+- Once shared, each change applies as you pick it and the address stays the same. The panel lists who has access (× removes someone) and has **Copy link** and **Stop sharing**, which ends access at once.
+- Guests see the session under a bar with its name, who shared it, when it ends and what they may do, the terminal and the chat.
 
 ## Stopping, restarting, deleting
 

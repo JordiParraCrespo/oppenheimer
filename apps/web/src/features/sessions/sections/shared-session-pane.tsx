@@ -1,4 +1,4 @@
-import { Badge, Button, EmptyState, SessionPaneHeader } from '@oppenheimer/design-system-web';
+import { Button, ChatHeaderTag, EmptyState, StatusDot } from '@oppenheimer/design-system-web';
 import { EyeIcon, TerminalIcon } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseSharedSession } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
@@ -15,10 +15,10 @@ import { SharedRefusal } from './shared-refusal';
 import { SharedSessionTerminal } from './shared-session-terminal';
 
 /**
- * A session as a guest opens it (kept to its simplest): under the wordmark,
- * one card — a bar with the session and its state, what the share lets them
- * do, until when, and Leave for someone who can edit — and the terminal
- * under it. Every refusal is its own answer: sign in, not shared with you,
+ * A session as a guest opens it, read the way a session reads in the
+ * console: one bar with the session and its state, who shared it, until
+ * when, what the share lets them do and Leave for someone who can edit, and
+ * the terminal under it at the page's full width. Every refusal is its own answer: sign in, not shared with you,
  * or not shared at all. When the relay closes the terminal (the owner
  * narrowed, stopped or changed the share), the page asks again, so the bar
  * and the terminal's input follow the share as it now is.
@@ -43,27 +43,41 @@ export function SharedSessionPane({ slug }: { slug: string }) {
 
   const writing = session.access === 'write';
   return (
-    <SharedFrame>
+    <SharedFrame
+      title={session.name}
+      meta={
+        <StatusDot
+          state={session.state === 'stopped' ? 'paused' : 'running'}
+          density="compact"
+          className="shrink-0 text-xs text-fg-muted"
+        >
+          {t(`sessions.shared.state.${session.state}`)}
+        </StatusDot>
+      }
+      actions={
+        <span className="flex items-center gap-2.5">
+          {session.sharedBy ? (
+            <span className="hidden truncate text-[12.5px] text-fg-muted sm:inline">
+              {t('sessions.shared.sharedBy', { name: session.sharedBy })}
+            </span>
+          ) : null}
+          {session.expiresAt ? (
+            <span className="hidden font-mono text-[11.5px] text-fg-subtle sm:inline">
+              <SharedEndsIn at={session.expiresAt} />
+            </span>
+          ) : null}
+          <ChatHeaderTag icon={writing ? <TerminalIcon /> : <EyeIcon />}>
+            {writing ? t('sessions.shared.canWrite') : t('sessions.shared.viewOnly')}
+          </ChatHeaderTag>
+          {writing ? (
+            <Button variant="ghost" size="sm" render={<Link to="/" />}>
+              {t('sessions.shared.leave')}
+            </Button>
+          ) : null}
+        </span>
+      }
+    >
       <ErrorAlert error={error} fallback={t('sessions.screen.loadFailed')} className="m-4" />
-      <SessionPaneHeader
-        name={session.name}
-        state={session.state === 'stopped' ? 'paused' : 'running'}
-        stateLabel={t(`sessions.shared.state.${session.state}`)}
-        meta={session.expiresAt ? <SharedEndsIn at={session.expiresAt} /> : undefined}
-        actions={
-          <>
-            <Badge variant="neutral">
-              {writing ? <TerminalIcon /> : <EyeIcon />}
-              {writing ? t('sessions.shared.canWrite') : t('sessions.shared.viewOnly')}
-            </Badge>
-            {writing ? (
-              <Button variant="ghost" size="sm" render={<Link to="/" />}>
-                {t('sessions.shared.leave')}
-              </Button>
-            ) : null}
-          </>
-        }
-      />
       {session.state === 'stopped' ? (
         <div className="flex flex-1 items-center justify-center p-6">
           <EmptyState>
@@ -78,7 +92,6 @@ export function SharedSessionPane({ slug }: { slug: string }) {
           <SharedSessionTerminal
             slug={slug}
             readOnly={!writing}
-            sharedBy={session.sharedBy}
             onEnd={() => refetch()}
             reading={{
               chat,

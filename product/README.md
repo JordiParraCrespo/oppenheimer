@@ -2137,3 +2137,10 @@ earlier note:
   for run and leaves the rest on the card (`research/auto-mode.md`), and
   Full access raises no card but the owner's own Ask, an ask rule and
   sending mail ("three levels, and Approve for me is a reviewer").
+- Note 21 drew Share as a dialog that opened on Share session (who,
+  permission, for how long) and switched to Sharing once shared, and the
+  guest page as a narrow card under the wordmark. Share is now one panel,
+  a popover off the session bar's Share button (the same panel in a dialog
+  from a row's menu), whose choices apply to a live share as they are
+  picked; the guest page is the session's own bar and a full-width
+  terminal ("Share as a popover").

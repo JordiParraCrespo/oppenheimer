@@ -43,18 +43,29 @@ and why they changed, is under [Superseded](#superseded-links-2026-10-08).
   one answer, `SESSIONS_021`. Signed in and not named is `SESSIONS_023`,
   which the page shows as "You don't have access". `SESSIONS_024` (too many
   links) is retired.
-- **The console.** Share opens from the session row's menu and from the
-  right end of the terminal's status line, which reads "Shared · can write
-  · 2" or "Shared · view only · link" once shared. The dialog opens on
-  Share session (who, permission, for how long) or, once shared, on Sharing
-  (the link, who has access with the time left, × per person, Stop sharing,
-  Add people, Done). Workspaces are personal, so the people field suggests
-  no members: a whole email offers "Invite …".
-- **The guest page is as simple as it can be** (asked on 2026-10-13): one
-  bar — the wordmark, the session, its state, View only or Can write, Ends
-  in, and Leave for someone who can write — and the terminal. Not built from
-  the design: who else is here (presence), and the chat-style attribution
-  of prompts, which a terminal cannot draw.
+- **The console.** Share is one panel, whatever the share: a popover off
+  the Share button that closes the session's bar, and the same panel in a
+  dialog from the session row's menu and from the right end of a review
+  session's status line, which reads "Shared · can write · 2" or "Shared ·
+  view only · link" once shared (changed 2026-11-26; it was a dialog that
+  opened on Share session, then switched to Sharing). The panel invites
+  people by email on its first line, lists who has access (× per person,
+  the link as a row of its own), and holds the three choices as quiet
+  menus: general access (people invited, or anyone with the link), the
+  permission, and when it expires. On a live share a choice applies as it
+  is picked and keeps the address, the share's end kept as it was where the
+  new choice allows; on a session not yet shared they are what Invite (or
+  Create link) shares. Write access still asks to be understood first,
+  inline. Its foot copies the link and stops sharing. Workspaces are
+  personal, so the people field suggests no members: a whole email offers
+  "Invite …".
+- **The guest page reads like a session in the console** (changed
+  2026-11-26; it was a 760px card under the wordmark): one bar at the tab
+  bar's height on the terminal's ground — the mark, the session, its state,
+  who shared it, Ends in, View only or Can write, and Leave for someone who
+  can write — and the terminal at the page's full width. Not built from the
+  design: who else is here (presence), and the chat-style attribution of
+  prompts, which a terminal cannot draw.
 - **The public page shows only the session's name, its state, the access
   the share gives and who shared it**, as before; it opens window 0 only.
 - **Sharing is `update Session` behind `sessions:write`**; reading how a

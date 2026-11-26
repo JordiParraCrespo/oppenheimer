@@ -1329,24 +1329,20 @@
     },
     "share": {
       "title": "Compartir sesión",
-      "managing": "Compartida",
       "on": "en {{host}}",
       "thisHost": "este host",
       "loadFailed": "No se pudo cargar cómo se comparte esta sesión.",
-      "who": "Con quién",
       "audiences": {
-        "people": "Personas concretas",
+        "people": "Solo personas invitadas",
         "link": "Cualquiera con el enlace"
       },
-      "peoplePlaceholder": "Nombre o correo",
+      "peoplePlaceholder": "Añade personas por email",
       "peopleLabel": "Personas con quien compartir",
       "invite": "Invitar a {{email}}",
       "inviteHint": "Fuera de este espacio · inician sesión para abrirla",
       "inviteEmpty": "Escribe un correo completo para invitar a alguien de fuera del espacio.",
       "outside": "fuera del espacio",
       "removePerson": "Quitar a {{name}}",
-      "peopleRequired": "Añade al menos una persona.",
-      "linkHint": "Quien abra el enlace e inicie sesión podrá mirar. El acceso por enlace es siempre de solo lectura.",
       "permission": "Permiso",
       "access": {
         "read": {
@@ -1358,37 +1354,28 @@
           "hint": "Envía prompts y comandos. Se ejecutan como tú."
         }
       },
-      "writeLocked": "El acceso de escritura necesita personas concretas. Cambia a «Personas concretas» para darlo.",
-      "writeWarningTitle": "{{who}} actuará como tú en {{host}}",
+      "writeLocked": "Un enlace solo permite ver. Invita a personas para que puedan escribir.",
+      "writeWarningTitle": "{{who}} actuará como tú en {{host}}.",
       "writeWarningCount_one": "{{count}} persona",
       "writeWarningCount_other": "{{count}} personas",
       "writeWarningCount_many": "{{count}} personas",
       "writeWarningBody": "Todo lo que envíen se ejecuta con tus credenciales y tu token de GitHub. Pueden hacer push, borrar archivos y gastar tu cuota.",
-      "writeAck": "Entiendo que actúan como yo en este host",
-      "ackRequired": "Confirma que lo entiendes antes de dar acceso de escritura.",
-      "duration": "Durante cuánto tiempo",
+      "writeAck": "Lo entiendo",
       "lifetimes": {
         "1h": "1 hora",
         "8h": "8 horas",
         "24h": "24 horas",
         "7d": "7 días",
-        "never": "No caduca"
+        "never": "Nunca"
       },
-      "endsRead": "Termina el {{date}}. Puedes dejar de compartir cuando quieras.",
-      "endsWrite": "Termina el {{date}}. El acceso de escritura dura 24 horas como máximo.",
-      "neverHint": "No caduca. El acceso sigue hasta que dejes de compartir.",
       "submit": {
-        "people": "Compartir",
         "link": "Crear enlace",
         "write": "Dar acceso de escritura"
       },
       "submitting": "Compartiendo…",
       "failed": "No se pudo compartir la sesión.",
-      "link": "Enlace",
       "copyLink": "Copiar enlace",
       "copied": "Copiado",
-      "linkHintLink": "Quien inicie sesión puede mirar. Nunca muestra controles de escritura.",
-      "linkHintPeople": "Solo las personas de abajo pueden abrirla. El resto ve «No tienes acceso».",
       "whoHasAccess": "Quién tiene acceso",
       "you": "{{email}} · tú",
       "roles": {
@@ -1399,15 +1386,9 @@
       "anyoneRow": "Cualquiera con el enlace",
       "anyoneRowHint": "Debe iniciar sesión para abrirla",
       "removeAccess": "Quitar acceso",
-      "expired": "terminado",
-      "never": "nunca",
+      "expired": "Terminado",
       "stop": "Dejar de compartir",
       "stopping": "Dejando de compartir…",
-      "addPeople": "Añadir personas",
-      "addTitle": "Añadir personas",
-      "addSubmit": "Añadir",
-      "addHint": "Tendrán el mismo acceso que quienes ya están: {{role}}, hasta que termine.",
-      "done": "Hecho",
       "updateFailed": "Ese cambio no se aplicó. Inténtalo de nuevo.",
       "status": {
         "share": "Compartir",
@@ -1415,7 +1396,30 @@
         "write": "Compartida · puede escribir",
         "link": "enlace"
       },
-      "statusTitle": "Compartir esta sesión"
+      "statusTitle": "Compartir esta sesión",
+      "inviteSubmit": "Invitar",
+      "inviting": "Invitando…",
+      "inviteNarrows": "Invitar a alguien limita el enlace a las personas que invites.",
+      "live": "Compartida",
+      "generalAccess": "Acceso general",
+      "audiencesShort": {
+        "people": "Solo invitados",
+        "link": "Con el enlace"
+      },
+      "audienceHints": {
+        "people": "Solo las personas que invites pueden abrirla",
+        "peopleFromLink": "Invita a alguien arriba para limitar el enlace a esas personas",
+        "link": "Cualquiera con el enlace puede verla"
+      },
+      "expires": "Caduca",
+      "expiresRead": "Puedes dejar de compartir cuando quieras",
+      "expiresWrite": "El acceso de escritura dura un día como máximo",
+      "writeWarningAnyone": "Quien invites actuará como tú en {{host}}.",
+      "notShared": "Solo tú puedes ver esta sesión.",
+      "accessHints": {
+        "read": "Ve en directo, no puede escribir",
+        "write": "Escribe en ella como tú"
+      }
     },
     "shared": {
       "viewOnly": "Solo ver",
@@ -1423,7 +1427,6 @@
       "endsIn": "Termina en {{time}}",
       "leave": "Salir",
       "sharedBy": "Compartida por {{name}}",
-      "viewOnlyBy": "Solo ver · compartida por {{name}}",
       "state": {
         "live": "En marcha",
         "stopped": "Parada"
@@ -1458,7 +1461,8 @@
       "stopped": {
         "title": "Esta sesión está parada",
         "body": "Su terminal no está en marcha. Quien la compartió puede reiniciarla, y esta página la volverá a abrir."
-      }
+      },
+      "home": "Inicio de Oppenheimer"
     },
     "screen": {
       "loadFailed": "No se ha podido actualizar esta sesión."

@@ -1,5 +1,4 @@
 import { QueryState, RouteError } from '@oppenheimer/frontend-web';
-import { SharedFrame } from '../components/shared-frame';
 import { SharedSessionSkeleton } from '../components/shared-session-skeleton';
 import { shareRefusalOf } from '../lib/share-session';
 import { SharedRefusal } from '../sections/shared-refusal';
@@ -15,9 +14,7 @@ export function SharedSessionScreen({ slug }: { slug: string }) {
   return (
     <QueryState>
       <QueryState.Pending>
-        <SharedFrame>
-          <SharedSessionSkeleton />
-        </SharedFrame>
+        <SharedSessionSkeleton />
       </QueryState.Pending>
       <QueryState.Error>
         {(error, retry) => {

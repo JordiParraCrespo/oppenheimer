@@ -1,22 +1,18 @@
 import {
-  Button,
   Dialog,
-  DialogBody,
+  DialogClose,
   DialogContent,
-  DialogHeader,
   DialogTitle,
+  IconButton,
 } from '@oppenheimer/design-system-web';
-import { usePutSessionShare } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
+import { XIcon } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
-import { ShareSessionSkeleton } from '../components/share-session-skeleton';
-import { ShareSessionPanes } from '../sections/share-session-panes';
+import { ShareSession } from '../sections/share-session';
 
 /**
- * Share a session, from the terminal's status line or a session row's menu.
- * The panes read the session and its share under Suspense; this draws the
- * dialog, its placeholder and a first failure, and owns the write, so Close
- * waits while a share is being saved.
+ * Share, from a session row's menu or the terminal's status line, where
+ * there is no Share button to open it from: the same panel as the session
+ * bar's popover, in a dialog its width, its close on the panel's title line.
  */
 export function ShareSessionDialog({
   sessionId,
@@ -26,42 +22,22 @@ export function ShareSessionDialog({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const put = usePutSessionShare();
-  const header = (
-    <DialogHeader>
-      <DialogTitle>{t('sessions.share.title')}</DialogTitle>
-    </DialogHeader>
-  );
-
   return (
-    <Dialog open onOpenChange={(open) => !open && !put.isPending && onClose()}>
-      <DialogContent size="form" closeLabel={t('common.close')}>
-        <QueryState>
-          <QueryState.Pending>
-            <ShareSessionSkeleton />
-          </QueryState.Pending>
-          <QueryState.Error>
-            {(error, retry) => (
-              <>
-                {header}
-                <DialogBody>
-                  <ErrorAlert
-                    error={error}
-                    fallback={t('sessions.share.loadFailed')}
-                    action={
-                      <Button variant="ghost" size="sm" onClick={retry}>
-                        {t('common.retry')}
-                      </Button>
-                    }
-                  />
-                </DialogBody>
-              </>
-            )}
-          </QueryState.Error>
-          <QueryState.Data>
-            <ShareSessionPanes sessionId={sessionId} put={put} onClose={onClose} />
-          </QueryState.Data>
-        </QueryState>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent size="md" showCloseButton={false} className="max-w-105 gap-0 rounded-lg p-0">
+        <ShareSession sessionId={sessionId} Title={DialogTitle} />
+        <DialogClose
+          render={
+            <IconButton
+              variant="quiet"
+              size="sm"
+              aria-label={t('common.close')}
+              className="absolute top-2.5 right-2.5"
+            />
+          }
+        >
+          <XIcon />
+        </DialogClose>
       </DialogContent>
     </Dialog>
   );
