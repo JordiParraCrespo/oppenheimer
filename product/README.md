@@ -2154,3 +2154,10 @@ earlier note:
   only, ink on a soft grey pill) in the app's light or dark instead of
   Material's stock purple, and
   Run now becomes the one hero action, an extended FAB.
+- Note 21 drew Share as a dialog that opened on Share session (who,
+  permission, for how long) and switched to Sharing once shared, and the
+  guest page as a narrow card under the wordmark. Share is now one panel,
+  a popover off the session bar's Share button (the same panel in a dialog
+  from a row's menu), whose choices apply to a live share as they are
+  picked; the guest page is the session's own bar and a full-width
+  terminal ("Share as a popover").

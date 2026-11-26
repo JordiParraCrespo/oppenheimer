@@ -1314,24 +1314,20 @@
     },
     "share": {
       "title": "Share session",
-      "managing": "Sharing",
       "on": "on {{host}}",
       "thisHost": "this host",
       "loadFailed": "Could not load how this session is shared.",
-      "who": "Who",
       "audiences": {
-        "people": "Specific people",
+        "people": "Only people invited",
         "link": "Anyone with the link"
       },
-      "peoplePlaceholder": "Name or email",
+      "peoplePlaceholder": "Add people by email",
       "peopleLabel": "People to share with",
       "invite": "Invite {{email}}",
       "inviteHint": "Outside this workspace · they sign in to open it",
       "inviteEmpty": "Type a full email address to invite someone outside the workspace.",
       "outside": "outside workspace",
       "removePerson": "Remove {{name}}",
-      "peopleRequired": "Add at least one person.",
-      "linkHint": "Anyone who opens the link and signs in can watch. Link access is always view only.",
       "permission": "Permission",
       "access": {
         "read": {
@@ -1343,36 +1339,27 @@
           "hint": "Send prompts and commands. They run as you."
         }
       },
-      "writeLocked": "Write access needs named people. Switch to “Specific people” to grant it.",
-      "writeWarningTitle": "{{who}} will act as you on {{host}}",
+      "writeLocked": "A link only watches. Invite people to let them write.",
+      "writeWarningTitle": "{{who}} will act as you on {{host}}.",
       "writeWarningCount_one": "{{count}} person",
       "writeWarningCount_other": "{{count}} people",
       "writeWarningBody": "Everything they send runs with your credentials and your GitHub token. They can push, delete files and spend your quota.",
-      "writeAck": "I understand they act as me on this host",
-      "ackRequired": "Confirm you understand before giving write access.",
-      "duration": "For how long",
+      "writeAck": "I understand",
       "lifetimes": {
         "1h": "1 hour",
         "8h": "8 hours",
         "24h": "24 hours",
         "7d": "7 days",
-        "never": "Never expires"
+        "never": "Never"
       },
-      "endsRead": "Ends {{date}}. You can stop sharing any time.",
-      "endsWrite": "Ends {{date}}. Write access lasts 24 hours at most.",
-      "neverHint": "Does not expire. Access stays until you stop sharing.",
       "submit": {
-        "people": "Share",
         "link": "Create link",
         "write": "Give write access"
       },
       "submitting": "Sharing…",
       "failed": "The session could not be shared.",
-      "link": "Link",
       "copyLink": "Copy link",
       "copied": "Copied",
-      "linkHintLink": "Anyone who signs in can watch. Never shows write controls.",
-      "linkHintPeople": "Only the people below can open it. Others see “You don’t have access”.",
       "whoHasAccess": "Who has access",
       "you": "{{email}} · you",
       "roles": {
@@ -1383,15 +1370,9 @@
       "anyoneRow": "Anyone with the link",
       "anyoneRowHint": "Must sign in to open",
       "removeAccess": "Remove access",
-      "expired": "ended",
-      "never": "never",
+      "expired": "Ended",
       "stop": "Stop sharing",
       "stopping": "Stopping…",
-      "addPeople": "Add people",
-      "addTitle": "Add people",
-      "addSubmit": "Add",
-      "addHint": "They get the same access as the people already on it: {{role}}, until the share ends.",
-      "done": "Done",
       "updateFailed": "That change did not land. Try again.",
       "status": {
         "share": "Share",
@@ -1399,7 +1380,30 @@
         "write": "Shared · can write",
         "link": "link"
       },
-      "statusTitle": "Share this session"
+      "statusTitle": "Share this session",
+      "inviteSubmit": "Invite",
+      "inviting": "Inviting…",
+      "inviteNarrows": "Inviting someone limits the link to the people you invite.",
+      "live": "Shared",
+      "generalAccess": "General access",
+      "audiencesShort": {
+        "people": "Invited only",
+        "link": "Anyone with link"
+      },
+      "audienceHints": {
+        "people": "Only the people you invite can open it",
+        "peopleFromLink": "Invite someone above to limit the link to them",
+        "link": "Anyone with the link can watch"
+      },
+      "expires": "Expires",
+      "expiresRead": "You can stop sharing any time",
+      "expiresWrite": "Write access lasts a day at most",
+      "writeWarningAnyone": "Whoever you invite will act as you on {{host}}.",
+      "notShared": "Only you can see this session.",
+      "accessHints": {
+        "read": "Watches live, can’t type",
+        "write": "Types into it as you"
+      }
     },
     "shared": {
       "viewOnly": "View only",
@@ -1407,7 +1411,6 @@
       "endsIn": "Ends in {{time}}",
       "leave": "Leave",
       "sharedBy": "Shared by {{name}}",
-      "viewOnlyBy": "View only · shared by {{name}}",
       "state": {
         "live": "Running",
         "stopped": "Stopped"
@@ -1442,7 +1445,8 @@
       "stopped": {
         "title": "This session is stopped",
         "body": "Its terminal isn’t running. Whoever shared it can restart it, and this page will open it again."
-      }
+      },
+      "home": "Oppenheimer home"
     },
     "screen": {
       "loadFailed": "Couldn’t refresh this session."

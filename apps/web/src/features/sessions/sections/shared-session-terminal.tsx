@@ -10,7 +10,6 @@ import { useSharedSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ChatCover } from '../components/chat-cover';
-import { ChatViewToggle } from '../components/chat-view-toggle';
 import { TerminalColumn } from '../components/terminal-column';
 import { useChatReading } from '../hooks/use-session-chat';
 import { useTerminal } from '../hooks/use-terminal';
@@ -21,19 +20,19 @@ import type { PaneReading } from '../lib/chat-blocks';
  * member's, with each ticket minted through the share. A `read` share's grid
  * takes no input. No host banner and no files: the host is not the guest's,
  * and nothing they drop would be theirs to send. The status line says the
- * link's state, once it is not live, and who shared it, and nothing else. `onEnd` is told when
+ * link's state, once it is not live, and nothing else: who shared it is
+ * the page's bar. `onEnd` is told when
  * the relay closes the terminal, so the page can ask what the share is now.
  *
  * **Chat** (0.7): as `SessionTerminal`, the pane hands in its `reading`;
  * this stream feeds the chat and lends it its input, and once the transcript
- * arrives the status bar offers Terminal / Chat and Chat draws the pane's
+ * arrives the page's bar offers Terminal / Chat and Chat draws the pane's
  * `cover` over the grid. The relay sends the transcript only when the sharer
  * has `session_chat_view`.
  */
 export function SharedSessionTerminal({
   slug,
   readOnly,
-  sharedBy,
   onEnd,
   reading,
 }: {
@@ -41,13 +40,12 @@ export function SharedSessionTerminal({
   /** The chat this terminal feeds, and how the pane around it reads it. */
   reading: PaneReading;
   readOnly: boolean;
-  sharedBy: string | null;
   onEnd: () => void;
 }) {
   const { t } = useTranslation();
   const createStream = useSharedSessionStream(slug);
-  const { chat, view, onViewChange, cover } = reading;
-  const { offered: chatOffered, shown: chatShown } = useChatReading(reading);
+  const { chat, cover } = reading;
+  const { shown: chatShown } = useChatReading(reading);
   const { containerRef, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
     chat,
     agentWindow: true,
@@ -86,20 +84,13 @@ export function SharedSessionTerminal({
         </div>
       ) : null}
 
-      <TerminalStatusBar data-phase={status}>
-        {chatOffered ? <ChatViewToggle view={view} onViewChange={onViewChange} /> : null}
-        {/* The header above says Running: Live would say it twice. */}
-        {status === 'live' ? null : (
+      {/* Live, the bar above says it all, as over a member's terminal; the
+          line comes back to say the link is connecting, away or closed. */}
+      {status === 'live' ? null : (
+        <TerminalStatusBar data-phase={status}>
           <TerminalStatusItem>{t(`sessions.shared.status.${status}`)}</TerminalStatusItem>
-        )}
-        {sharedBy ? (
-          <TerminalStatusItem>
-            {readOnly
-              ? t('sessions.shared.viewOnlyBy', { name: sharedBy })
-              : t('sessions.shared.sharedBy', { name: sharedBy })}
-          </TerminalStatusItem>
-        ) : null}
-      </TerminalStatusBar>
+        </TerminalStatusBar>
+      )}
     </Terminal>
   );
 }

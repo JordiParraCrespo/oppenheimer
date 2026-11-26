@@ -1,8 +1,8 @@
+import type { SessionShare } from '@oppenheimer/frontend-consumer';
 import { AppError } from '@oppenheimer/frontend-core';
 import { formatTimeAway } from '@oppenheimer/frontend-web';
 import {
   type PutSessionShareDto,
-  putSessionShareSchema,
   SESSION_SHARE_LIFETIME_MS,
   SESSION_SHARE_LIFETIMES,
   type SessionShareAccess,
@@ -13,7 +13,7 @@ import {
 import type { TFunction } from 'i18next';
 import { z } from 'zod';
 
-/** A lifetime as the dialog offers it: the API's, and "never" for no expiry. */
+/** A lifetime as Share offers it: the API's, and "never" for no expiry. */
 export type ShareLifetimeChoice = SessionShareLifetime | 'never';
 
 export const SHARE_LIFETIME_CHOICES: readonly ShareLifetimeChoice[] = [
@@ -21,20 +21,21 @@ export const SHARE_LIFETIME_CHOICES: readonly ShareLifetimeChoice[] = [
   'never',
 ];
 
-/** The Share dialog's values: who, permission, for how long. */
-export interface ShareSessionValues {
+/** How a session is shared, or is about to be: who, what they may do, for how long. */
+export interface ShareSettings {
   audience: SessionShareAudience;
-  /** Lowercased emails, in the order they were added. */
-  people: string[];
   access: SessionShareAccess;
   lifetime: ShareLifetimeChoice;
-  /** "I understand they act as me on this host", asked before write access. */
-  ack: boolean;
-  /** What is still typed in the people field: a whole address there is shared with too. */
-  typed: string;
 }
 
-/** A link only watches, whatever the form last held for access. */
+/** Where a session not yet shared starts: watching, for people you invite, for a day. */
+export const SHARE_DEFAULTS: ShareSettings = {
+  audience: 'people',
+  access: 'read',
+  lifetime: '24h',
+};
+
+/** A link only watches, whatever was last picked for access. */
 export function effectiveAccess(
   audience: SessionShareAudience,
   access: SessionShareAccess,
@@ -48,67 +49,72 @@ export function lifetimeAllowed(access: SessionShareAccess, choice: ShareLifetim
 }
 
 /** How long a lifetime is, or `null` for one that does not end. */
-export function lifetimeMs(choice: ShareLifetimeChoice): number | null {
+function lifetimeMs(choice: ShareLifetimeChoice): number | null {
   return choice === 'never' ? null : SESSION_SHARE_LIFETIME_MS[choice];
 }
 
+/**
+ * The shortest lifetime this access may have that still covers what a share
+ * has left (`null`: it does not end), so changing who or what does not cut a
+ * share short. Write never outlasts a day, so a longer share turned to write
+ * ends in one.
+ */
+export function lifetimeCovering(
+  access: SessionShareAccess,
+  remainingMs: number | null,
+): ShareLifetimeChoice {
+  const allowed = SHARE_LIFETIME_CHOICES.filter((choice) => lifetimeAllowed(access, choice));
+  if (remainingMs === null) return allowed[allowed.length - 1];
+  return (
+    allowed.find((choice) => {
+      const ms = lifetimeMs(choice);
+      return ms === null || ms >= remainingMs;
+    }) ?? allowed[allowed.length - 1]
+  );
+}
+
+/**
+ * A pick of access, made consistent: write starts on its shortest lifetime,
+ * as a share that types is a shell as its owner; watching keeps the lifetime.
+ */
+export function withAccess(settings: ShareSettings, access: SessionShareAccess): ShareSettings {
+  if (access === 'write' && settings.access !== 'write') {
+    return { ...settings, access, lifetime: '1h' };
+  }
+  return { ...settings, access };
+}
+
 /** The people named, with a whole address still typed in the field. */
-export function namedPeople(values: Pick<ShareSessionValues, 'people' | 'typed'>): string[] {
+export function namedPeople(values: { people: string[]; typed: string }): string[] {
   const typed = values.typed.trim().toLowerCase();
   return isEmail(typed) && !values.people.includes(typed)
     ? [...values.people, typed]
     : values.people;
 }
 
-/** The dialog's values as the API takes them. */
-export function shareInput(values: ShareSessionValues): PutSessionShareDto {
-  const access = effectiveAccess(values.audience, values.access);
+/** What the API takes to share as `settings`, with `people` for a share for specific people. */
+export function shareInput(settings: ShareSettings, people: string[]): PutSessionShareDto {
+  const access = effectiveAccess(settings.audience, settings.access);
+  const lifetime = lifetimeAllowed(access, settings.lifetime) ? settings.lifetime : '1h';
   return {
-    audience: values.audience,
+    audience: settings.audience,
     access,
-    ...(values.audience === 'people' ? { people: namedPeople(values) } : {}),
-    lifetime: values.lifetime === 'never' ? null : values.lifetime,
+    ...(settings.audience === 'people' ? { people } : {}),
+    lifetime: lifetime === 'never' ? null : lifetime,
   };
 }
 
-/** Where the form starts: watching, for named people, for a day. */
-export const SHARE_DEFAULTS: ShareSessionValues = {
-  audience: 'people',
-  people: [],
-  access: 'read',
-  lifetime: '24h',
-  ack: false,
-  typed: '',
-};
-
 /**
- * The form's own shape over the shared vocabulary. What the request may hold
- * is the API's own schema, asked of the request the form would send, so the
- * rules on people and on lifetime are one rule on both sides; write access
- * also has to be understood before it is given.
+ * A live share's settings, its lifetime the shortest that covers what it has
+ * left, so sharing it again with one thing changed keeps the rest.
  */
-export function shareSessionFormSchema(messages: {
-  people: string;
-  ack: string;
-}): z.ZodType<ShareSessionValues> {
-  return z
-    .object({
-      audience: z.enum(['people', 'link']),
-      people: z.array(z.string()),
-      access: z.enum(['read', 'write']),
-      lifetime: z.enum(['1h', '8h', '24h', '7d', 'never']),
-      ack: z.boolean(),
-      typed: z.string(),
-    })
-    .superRefine((values, ctx) => {
-      const parsed = putSessionShareSchema.safeParse(shareInput(values));
-      if (!parsed.success && parsed.error.issues.some((issue) => issue.path[0] === 'people')) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['people'], message: messages.people });
-      }
-      if (effectiveAccess(values.audience, values.access) === 'write' && !values.ack) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['ack'], message: messages.ack });
-      }
-    });
+export function settingsOf(share: SessionShare, now: number): ShareSettings {
+  const remaining = share.expiresAt === null ? null : share.expiresAt.getTime() - now;
+  return {
+    audience: share.audience,
+    access: share.access,
+    lifetime: lifetimeCovering(share.access, remaining),
+  };
 }
 
 /** Whether what someone typed is a whole email address. */

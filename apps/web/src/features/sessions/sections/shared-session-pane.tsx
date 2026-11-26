@@ -1,5 +1,5 @@
-import { Badge, Button, EmptyState, SessionPaneHeader } from '@oppenheimer/design-system-web';
-import { EyeIcon, TerminalIcon } from '@oppenheimer/design-system-web/icons';
+import { EmptyState, IconButton, StatusDot } from '@oppenheimer/design-system-web';
+import { EyeIcon, LogOutIcon, TerminalIcon } from '@oppenheimer/design-system-web/icons';
 import { useSuspenseSharedSession } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
@@ -8,17 +8,18 @@ import { useTranslation } from 'react-i18next';
 import { SharedEndsIn } from '../components/shared-ends-in';
 import { SharedFrame } from '../components/shared-frame';
 import { useSessionChat } from '../hooks/use-session-chat';
-import { DEFAULT_SESSION_VIEW, type SessionView } from '../lib/chat-blocks';
+import { DEFAULT_SESSION_VIEW, type PaneReading, type SessionView } from '../lib/chat-blocks';
 import { shareRefusalOf } from '../lib/share-session';
 import { SessionChat } from './session-chat';
 import { SharedRefusal } from './shared-refusal';
 import { SharedSessionTerminal } from './shared-session-terminal';
+import { SharedViewSwitch } from './shared-view-switch';
 
 /**
- * A session as a guest opens it (kept to its simplest): under the wordmark,
- * one card — a bar with the session and its state, what the share lets them
- * do, until when, and Leave for someone who can edit — and the terminal
- * under it. Every refusal is its own answer: sign in, not shared with you,
+ * A session as a guest opens it, read the way a session reads in the
+ * console: one bar with the session and its state, who shared it, until
+ * when, what the share lets them do and Leave for someone who can edit, and
+ * the terminal under it at the page's full width. Every refusal is its own answer: sign in, not shared with you,
  * or not shared at all. When the relay closes the terminal (the owner
  * narrowed, stopped or changed the share), the page asks again, so the bar
  * and the terminal's input follow the share as it now is.
@@ -42,28 +43,69 @@ export function SharedSessionPane({ slug }: { slug: string }) {
   if (refusal) return <SharedRefusal refusal={refusal} slug={slug} />;
 
   const writing = session.access === 'write';
-  return (
-    <SharedFrame>
-      <ErrorAlert error={error} fallback={t('sessions.screen.loadFailed')} className="m-4" />
-      <SessionPaneHeader
-        name={session.name}
-        state={session.state === 'stopped' ? 'paused' : 'running'}
-        stateLabel={t(`sessions.shared.state.${session.state}`)}
-        meta={session.expiresAt ? <SharedEndsIn at={session.expiresAt} /> : undefined}
-        actions={
-          <>
-            <Badge variant="neutral">
-              {writing ? <TerminalIcon /> : <EyeIcon />}
-              {writing ? t('sessions.shared.canWrite') : t('sessions.shared.viewOnly')}
-            </Badge>
-            {writing ? (
-              <Button variant="ghost" size="sm" render={<Link to="/" />}>
-                {t('sessions.shared.leave')}
-              </Button>
-            ) : null}
-          </>
-        }
+  const reading: PaneReading = {
+    chat,
+    view,
+    onViewChange: setView,
+    cover: (
+      <SessionChat
+        chat={chat}
+        agent={null}
+        readOnly={!writing}
+        onOpenTerminal={() => setView('terminal')}
       />
+    ),
+  };
+  return (
+    <SharedFrame
+      title={session.name}
+      meta={
+        <>
+          <StatusDot
+            state={session.state === 'stopped' ? 'paused' : 'running'}
+            density="compact"
+            className="shrink-0 text-xs text-fg-muted"
+          >
+            <span className="sr-only sm:not-sr-only">
+              {t(`sessions.shared.state.${session.state}`)}
+            </span>
+          </StatusDot>
+          {session.sharedBy ? (
+            <span className="hidden truncate text-xs text-fg-subtle md:inline">
+              {t('sessions.shared.sharedBy', { name: session.sharedBy })}
+            </span>
+          ) : null}
+        </>
+      }
+      actions={
+        <>
+          {session.state === 'live' ? <SharedViewSwitch reading={reading} /> : null}
+          <span className="flex items-center gap-1.5 px-1.5 text-xs text-fg-muted [&_svg]:size-3.5">
+            {writing ? <TerminalIcon /> : <EyeIcon />}
+            <span className="sr-only sm:not-sr-only">
+              {writing ? t('sessions.shared.canWrite') : t('sessions.shared.viewOnly')}
+            </span>
+            {session.expiresAt ? (
+              <span className="hidden text-fg-subtle sm:inline">
+                · <SharedEndsIn at={session.expiresAt} />
+              </span>
+            ) : null}
+          </span>
+          {writing ? (
+            <IconButton
+              variant="quiet"
+              size="sm"
+              aria-label={t('sessions.shared.leave')}
+              title={t('sessions.shared.leave')}
+              render={<Link to="/" />}
+            >
+              <LogOutIcon />
+            </IconButton>
+          ) : null}
+        </>
+      }
+    >
+      <ErrorAlert error={error} fallback={t('sessions.screen.loadFailed')} className="m-4" />
       {session.state === 'stopped' ? (
         <div className="flex flex-1 items-center justify-center p-6">
           <EmptyState>
@@ -78,21 +120,8 @@ export function SharedSessionPane({ slug }: { slug: string }) {
           <SharedSessionTerminal
             slug={slug}
             readOnly={!writing}
-            sharedBy={session.sharedBy}
             onEnd={() => refetch()}
-            reading={{
-              chat,
-              view,
-              onViewChange: setView,
-              cover: (
-                <SessionChat
-                  chat={chat}
-                  agent={null}
-                  readOnly={!writing}
-                  onOpenTerminal={() => setView('terminal')}
-                />
-              ),
-            }}
+            reading={reading}
           />
         </div>
       )}
