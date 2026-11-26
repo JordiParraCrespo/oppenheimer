@@ -5291,6 +5291,10 @@
     },
     "title": "Sesiones de Claude Code",
     "checkNow": "Comprobar ahora",
+    "checked": {
+      "now": "Comprobado ahora mismo",
+      "ago": "Comprobado hace {{age}}"
+    },
     "badge": {
       "none": "Sesiones de Claude Code",
       "needsYou_one": "{{count}} sesión de Claude Code te necesita",
@@ -5358,7 +5362,9 @@
       "runnerUnread": "No se pueden leer las sesiones de tus equipos: {{detail}}",
       "notAUrl": "Eso no es una URL.",
       "permission": "Chrome necesita tu permiso para contactar con {{origin}}.",
-      "refused": "Oppenheimer lo rechazó: {{detail}}"
+      "refused": "Oppenheimer lo rechazó: {{detail}}",
+      "connectTitle": "Conectar con Oppenheimer",
+      "connectHint": "Envía el estado de estas sesiones a tu consola y entérate de las sesiones en tus equipos."
     },
     "runner": {
       "waiting": "{{name}} te está esperando",
