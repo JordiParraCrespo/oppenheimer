@@ -1,8 +1,9 @@
 import { Button } from '@oppenheimer/design-system-mobile/button';
 import { EmptyState } from '@oppenheimer/design-system-mobile/empty-state';
+import { LoadingIndicator } from '@oppenheimer/design-system-mobile/loading-indicator';
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 /**
  * What a record's page shows while it has no record to draw: a spinner while
@@ -27,7 +28,7 @@ export function RecordState({
   if (pending) {
     return (
       <View className="flex-1 items-center justify-center" aria-busy>
-        <ActivityIndicator />
+        <LoadingIndicator />
       </View>
     );
   }

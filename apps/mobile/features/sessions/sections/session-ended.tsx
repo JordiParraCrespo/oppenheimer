@@ -1,11 +1,12 @@
 import { Button } from '@oppenheimer/design-system-mobile/button';
 import { EmptyState } from '@oppenheimer/design-system-mobile/empty-state';
+import { LoadingIndicator } from '@oppenheimer/design-system-mobile/loading-indicator';
 import { Text } from '@oppenheimer/design-system-mobile/text';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useRestartSession, useRetrySession } from '@oppenheimer/frontend-consumer/react';
 import { openBrowserAsync } from 'expo-web-browser';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 
 /**
  * A session there is no terminal to attach to, and what can be done about
@@ -21,7 +22,7 @@ export function SessionEnded({ session }: { session: SessionEntity }) {
   if (session.isProvisioning) {
     return (
       <View className="flex-1 items-center justify-center gap-3" aria-busy>
-        <ActivityIndicator />
+        <LoadingIndicator />
         <Text variant="caption">{t('sessions.mobile.starting')}</Text>
       </View>
     );

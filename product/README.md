@@ -2145,3 +2145,12 @@ earlier note:
   system's JavaScript look-alikes (dialogs, popovers, dropdown and context
   menus, tabs, toggle groups, radio groups, the @gorhom bottom sheet) were
   deleted.
+- The same day the owner asked for Material 3 Expressive on Android (Google's
+  "Start building with Material 3 Expressive"): the native controls take the
+  exact brand blue (#0071E3, kept exact by a patch to `@expo/ui`) instead of
+  the wallpaper's colours, the list searches become Material's search bar,
+  waits become Expressive's wavy circular indicator (not the shape-morphing
+  one, which the owner did not like), the Android tab bar is quiet (icons
+  only, ink on a soft grey pill) in the app's light or dark instead of
+  Material's stock purple, and
+  Run now becomes the one hero action, an extended FAB.
