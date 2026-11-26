@@ -2161,3 +2161,9 @@ earlier note:
   from a row's menu), whose choices apply to a live share as they are
   picked; the guest page is the session's own bar and a full-width
   terminal ("Share as a popover").
+- `research/cloud-agents.md` §5 A proposed Remote Control (`--rc`) for host
+  sessions and nothing ran it. Since 2026-11-26 a host's own switch,
+  `runner remote-control on`, starts its Claude Code sessions with it, so
+  they open in the Claude app too; a switch in the console is the next
+  pull request ("Remote Control for host sessions" in
+  `next-steps/cloud-agents.md`).

@@ -40,7 +40,10 @@ type Options struct {
 	// BrowserPolicies and Browsers let bots drive a browser of their own on
 	// this host (`browser.act`). Either nil refuses Browser.
 	BrowserPolicies BrowserPolicies
-	Browsers        Browsers
+	// RemoteControlPolicies keeps whether Claude Code sessions here are
+	// reachable from the Claude app too.
+	RemoteControlPolicies RemoteControlPolicies
+	Browsers              Browsers
 }
 
 // Service collects the host inventory.
@@ -61,9 +64,10 @@ type Service struct {
 	desktop   Desktop
 	// desktopTurn is held for one action and the capture after it: there is
 	// one mouse, so two bots' actions never interleave.
-	desktopTurn   chan struct{}
-	browserPolicy BrowserPolicies
-	browsers      Browsers
+	desktopTurn         chan struct{}
+	browserPolicy       BrowserPolicies
+	remoteControlPolicy RemoteControlPolicies
+	browsers            Browsers
 }
 
 // New builds the service.
@@ -75,7 +79,7 @@ func New(opts Options) *Service {
 		execSlots: make(chan struct{}, domain.MaxConcurrentExecs),
 		computers: opts.ComputerPolicies, desktop: opts.Desktop,
 		desktopTurn:   make(chan struct{}, 1),
-		browserPolicy: opts.BrowserPolicies, browsers: opts.Browsers,
+		browserPolicy: opts.BrowserPolicies, remoteControlPolicy: opts.RemoteControlPolicies, browsers: opts.Browsers,
 	}
 }
 

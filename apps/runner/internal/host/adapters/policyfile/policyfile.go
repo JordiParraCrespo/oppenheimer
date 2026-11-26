@@ -1,6 +1,6 @@
-// Package policyfile keeps the host's own switches for bots, each a small
-// JSON file under the runner home: what `runner computer` and `runner
-// browser` write and every action reads. The link writes them only through
+// Package policyfile keeps the host's own switches, each a small JSON file
+// under the runner home: what `runner computer`, `runner browser` and
+// `runner remote-control` write and every action or launch reads. The link writes them only through
 // `host.settings.set`, when the person asked a bot to change them.
 package policyfile
 
@@ -17,9 +17,23 @@ import (
 )
 
 var (
-	_ app.ComputerPolicies = Computer{}
-	_ app.BrowserPolicies  = Browser{}
+	_ app.ComputerPolicies      = Computer{}
+	_ app.BrowserPolicies       = Browser{}
+	_ app.RemoteControlPolicies = RemoteControl{}
 )
+
+// RemoteControl is app.RemoteControlPolicies at Path (`remote-control.json`).
+type RemoteControl struct {
+	Path string
+}
+
+// Load reads the policy; a file that is not there is the default, off.
+func (f RemoteControl) Load() (domain.RemoteControlPolicy, error) {
+	return load[domain.RemoteControlPolicy](f.Path)
+}
+
+// Save writes the policy.
+func (f RemoteControl) Save(policy domain.RemoteControlPolicy) error { return save(f.Path, policy) }
 
 // Computer is app.ComputerPolicies at Path (`computer.json`).
 type Computer struct {

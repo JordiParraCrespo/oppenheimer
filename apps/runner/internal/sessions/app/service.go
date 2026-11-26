@@ -49,6 +49,10 @@ type Options struct {
 	// in another window, which reports none. Nil, or an empty command,
 	// leaves the CLI's own.
 	StatusLine func(session string) string
+	// RemoteControl says whether Claude Code sessions here are reachable
+	// from the Claude app too (`runner remote-control`), read at each launch
+	// so a switch applies from the next one; nil is off.
+	RemoteControl func() bool
 	// Tools is the command of the runner's MCP server for a session's agent,
 	// registered with each agent that takes one at launch
 	// (`domain.Launch.Tools`); nil, or an empty command, registers none.
@@ -126,25 +130,26 @@ type Service struct {
 	// (idle.go).
 	presence *presence
 	// watches is each session's terminal watches (watches.go).
-	watches     *watchBook
-	terminals   Terminals
-	worktrees   Worktrees
-	store       Store
-	publisher   Publisher
-	files       Files
-	places      Places
-	layout      domain.Layout
-	env         func(domain.Session) map[string]string
-	gate        LaunchGate
-	trust       Trust
-	transcripts Transcripts
-	statusLines func(session string) string
-	tools       func(session string) []string
-	own         OwnInstructions
-	freePort    func() (int, error)
-	wrappers    Wrappers
-	clients     TerminalClients
-	now         func() time.Time
+	watches       *watchBook
+	terminals     Terminals
+	worktrees     Worktrees
+	store         Store
+	publisher     Publisher
+	files         Files
+	places        Places
+	layout        domain.Layout
+	env           func(domain.Session) map[string]string
+	gate          LaunchGate
+	trust         Trust
+	transcripts   Transcripts
+	statusLines   func(session string) string
+	remoteControl func() bool
+	tools         func(session string) []string
+	own           OwnInstructions
+	freePort      func() (int, error)
+	wrappers      Wrappers
+	clients       TerminalClients
+	now           func() time.Time
 }
 
 // New builds the service and loads the session map from disk.
@@ -169,7 +174,7 @@ func New(opts Options) (*Service, error) {
 		terminals: opts.Terminals, worktrees: opts.Worktrees,
 		store: opts.Store, publisher: publisher,
 		files: opts.Files, places: opts.Places, layout: opts.Layout, env: env, gate: opts.Gate, trust: opts.Trust,
-		transcripts: opts.Transcripts, statusLines: opts.StatusLine, tools: opts.Tools, own: opts.OwnInstructions, freePort: opts.FreePort, wrappers: opts.Wrappers, clients: opts.Clients, now: now,
+		transcripts: opts.Transcripts, statusLines: opts.StatusLine, remoteControl: opts.RemoteControl, tools: opts.Tools, own: opts.OwnInstructions, freePort: opts.FreePort, wrappers: opts.Wrappers, clients: opts.Clients, now: now,
 	}
 	if opts.Store != nil {
 		loaded, err := opts.Store.Load()
@@ -692,6 +697,20 @@ func (s *Service) statusLine(session string) string {
 	return s.statusLines(session)
 }
 
+// remoteControlName is the name window 0's agent of session registers with
+// Remote Control: the session's name on this host (`<repository>/<slug>`;
+// the console's title is the control plane's), else its id; "" when the
+// host's switch is off. A name that would read as a flag is not given.
+func (s *Service) remoteControlName(session domain.Session) string {
+	if s.remoteControl == nil || !s.remoteControl() {
+		return ""
+	}
+	if name := strings.TrimSpace(session.Name); name != "" && !strings.HasPrefix(name, "-") {
+		return name
+	}
+	return session.ID
+}
+
 // promptReported records that the control plane has a session's first
 // message, so no pass offers it again, in this process or the next.
 func (s *Service) promptReported(id string) {
@@ -754,6 +773,7 @@ func (s *Service) Restart(ctx context.Context, id string) (domain.Session, error
 		launch.Saved = s.transcripts.SavedConversation(session)
 	}
 	launch.StatusLine = s.statusLine(session.ID)
+	launch.RemoteControl = s.remoteControlName(session)
 	launch.Wrap = s.observer.wrap(session.ID)
 	s.brief(&launch, session.Agent, session)
 	s.trustFolder(session.Agent, session.Cwd())

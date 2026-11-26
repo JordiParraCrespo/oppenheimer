@@ -316,6 +316,9 @@ func (p Paths) BrowserPolicy() string { return filepath.Join(p.Home, "browser.js
 
 func (p Paths) Browsers() string { return filepath.Join(p.State(), "browsers") }
 
+// RemoteControlPolicy is `runner remote-control`'s file.
+func (p Paths) RemoteControlPolicy() string { return filepath.Join(p.Home, "remote-control.json") }
+
 // Desktop is whether and how this host shares its screen (`runner desktop`):
 // a file in the runner home, written on the host and never over the link.
 func (p Paths) Desktop() string { return filepath.Join(p.Home, "desktop.json") }

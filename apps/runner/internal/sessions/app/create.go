@@ -233,6 +233,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, session domain.Ses
 		}
 		launch.Server = session.Launch.Server
 		launch.StatusLine = s.statusLine(session.ID)
+		launch.RemoteControl = s.remoteControlName(session)
 		launch.Wrap = s.observer.wrap(session.ID)
 		s.brief(&launch, session.Agent, session)
 		s.trustFolder(session.Agent, session.Cwd())

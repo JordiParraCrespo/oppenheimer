@@ -514,6 +514,30 @@ func TestAClaudeSessionRunsTheRunnersStatusLineWhichIsNeverSaved(t *testing.T) {
 	}
 }
 
+// Remote Control is Claude Code's own and is always given a name: the flag
+// takes an optional one, so with none it would take the first task as the
+// session's name and start Claude Code with no task. The regression: a
+// switched-on host losing every session's first task, or handing the flag
+// to an agent that refuses it; a saved launch carrying it past a switch-off.
+func TestRemoteControlIsNamedAheadOfTheTaskAndOnlyForClaude(t *testing.T) {
+	launch := Launch{Permission: "auto", RemoteControl: "Fix the login page", Prompt: "fix it"}
+	got := launch.Args(AgentClaude)
+	want := []string{"--remote-control", "Fix the login page", "--permission-mode", "auto", "fix it"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("claude argv = %q, want %q", got, want)
+	}
+	if args := launch.Args(AgentCodex); slices.Contains(args, "--remote-control") {
+		t.Fatalf("codex argv = %q", args)
+	}
+	saved, err := json.Marshal(launch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(saved), "Fix the login page") {
+		t.Fatalf("saved launch = %s", saved)
+	}
+}
+
 // Which agent may join a session in another window without taking its
 // conversation over: any other kind; a second copy of its own only when the
 // session is found by its conversation's id. The regression: a second Codex,

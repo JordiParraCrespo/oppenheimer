@@ -62,6 +62,12 @@ or Edge headless, one per bot with a profile under
 protocol on a pipe (no debugging port is opened; downloads are refused): the page is read as elements with refs, and a ref is what a click
 or typed text acts on.
 
+`runner remote-control on` makes this host's Claude Code sessions reachable
+from the Claude app and claude.ai/code too, through Claude Code's own Remote
+Control, under the claude.ai account its `claude` is signed in as: each
+session's window 0 starts with `--remote-control <repository>/<slug>` from
+its next start or restart. Off by default, in `~/.oppenheimer/remote-control.json`.
+
 A session's Simulator tab streams the iOS simulator or Android emulator its
 host gives it, through Argent (`product/research/device-streaming.md`). A
 host with Argent installed needs no setup: each new session takes one of the
