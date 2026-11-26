@@ -2306,10 +2306,10 @@ one its decision belongs to:
   `apps/runner`'s pairing client.
 - 2026-09-19: **a project is the body of work a session belongs to**, and the
   layout gains a level. `design/foundations/control-plane.md`'s data model lists `projects` and says a session
-  belongs to one; `design/foundations/api-implementation-plan.md`'s §1 is superseded at the top by
+  belongs to one; `archive/workspace-layout.md`'s §1 is superseded at the top by
   `workspaces/<organization.slug>/projects/<project.slug>/{repos,sessions}`,
   because a session may check out several repositories and the old tree had
-  nowhere to put the second one. `design/foundations/api-implementation-plan.md`'s collision rule is unchanged and now names
+  nowhere to put the second one. `archive/workspace-layout.md`'s collision rule is unchanged and now names
   the project's directory: the repository's own name, or `<owner>--<repo>` when
   another repository already holds it, then `<owner>--<repo>-<githubRepoId>`,
   which is where a rejected random suffix used to be — every candidate is
