@@ -171,6 +171,7 @@ func New(version string) (*App, error) {
 		ComputerPolicies:      policyfile.Computer{Path: paths.ComputerPolicy()},
 		BrowserPolicies:       policyfile.Browser{Path: paths.BrowserPolicy()},
 		RemoteControlPolicies: policyfile.RemoteControl{Path: paths.RemoteControlPolicy()},
+		ClaudeHelp:            system.ClaudeHelp,
 		Browsers:              chrome.New(chrome.Options{Dir: paths.Browsers()}),
 		Desktop: hostdesktop.New(hostdesktop.Options{
 			Display: os.Getenv("DISPLAY"), Home: paths.UserHome,

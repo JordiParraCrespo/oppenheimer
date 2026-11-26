@@ -376,8 +376,8 @@ func remoteControlPolicy(ctx context.Context, args []string) (int, error) {
 	case len(args) == 0 || (len(args) == 1 && args[0] == "status"):
 		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.RemoteControlShow(os.Stdout) })
 	case len(args) == 1 && (args[0] == "on" || args[0] == "off"):
-		return withApp(ctx, func(_ context.Context, app *cli.App) error {
-			return app.RemoteControlSet(os.Stdout, args[0] == "on")
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.RemoteControlSet(ctx, os.Stdout, args[0] == "on")
 		})
 	}
 	usage(os.Stderr)

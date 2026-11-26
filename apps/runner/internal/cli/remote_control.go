@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"io"
 
 	hostdomain "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/host/domain"
@@ -33,8 +34,8 @@ func (a *App) RemoteControlShow(out io.Writer) error {
 // RemoteControlSet turns it on or off (`runner remote-control on|off`). A
 // session takes it at its next launch or restart; one already running keeps
 // how it started.
-func (a *App) RemoteControlSet(out io.Writer, enabled bool) error {
-	if err := a.Host.SetRemoteControlPolicy(hostdomain.RemoteControlPolicy{Enabled: enabled}); err != nil {
+func (a *App) RemoteControlSet(ctx context.Context, out io.Writer, enabled bool) error {
+	if err := a.Host.SetRemoteControlPolicy(ctx, hostdomain.RemoteControlPolicy{Enabled: enabled}); err != nil {
 		return err
 	}
 	return a.RemoteControlShow(out)

@@ -43,7 +43,10 @@ type Options struct {
 	// RemoteControlPolicies keeps whether Claude Code sessions here are
 	// reachable from the Claude app too.
 	RemoteControlPolicies RemoteControlPolicies
-	Browsers              Browsers
+	// ClaudeHelp is what `claude --help` prints: whether the installed
+	// version takes `--remote-control` before the switch is turned on.
+	ClaudeHelp func(context.Context) (string, error)
+	Browsers   Browsers
 }
 
 // Service collects the host inventory.
@@ -67,6 +70,7 @@ type Service struct {
 	desktopTurn         chan struct{}
 	browserPolicy       BrowserPolicies
 	remoteControlPolicy RemoteControlPolicies
+	claudeHelp          func(context.Context) (string, error)
 	browsers            Browsers
 }
 
@@ -79,7 +83,7 @@ func New(opts Options) *Service {
 		execSlots: make(chan struct{}, domain.MaxConcurrentExecs),
 		computers: opts.ComputerPolicies, desktop: opts.Desktop,
 		desktopTurn:   make(chan struct{}, 1),
-		browserPolicy: opts.BrowserPolicies, remoteControlPolicy: opts.RemoteControlPolicies, browsers: opts.Browsers,
+		browserPolicy: opts.BrowserPolicies, remoteControlPolicy: opts.RemoteControlPolicies, claudeHelp: opts.ClaudeHelp, browsers: opts.Browsers,
 	}
 }
 
