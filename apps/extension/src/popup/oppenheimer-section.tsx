@@ -7,7 +7,9 @@ import {
   Input,
   SidebarListHead,
   StatusDot,
+  type StatusState,
 } from '@oppenheimer/design-system-web';
+import type { TFunction } from 'i18next';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { OppenheimerConnection, ReportStatus } from '@/sessions/store';
@@ -43,35 +45,28 @@ export function OppenheimerSection({
     void connect({ apiUrl, token, consoleUrl });
   }
 
-  const host = connection ? new URL(connection.apiUrl).host : '';
+  const line = connection ? reportLine(t, report, new URL(connection.apiUrl).host) : null;
 
   return (
     <section aria-label={t('oppenheimer.label')} className="flex flex-col gap-2">
       <SidebarListHead label={t('oppenheimer.label')} />
-      {connection ? (
-        <div className="flex items-center gap-2 pl-2.5">
-          <StatusDot
-            density="compact"
-            className="min-w-0 flex-1"
-            state={report?.ok === false ? 'failed' : report?.ok ? 'running' : 'pending'}
-          >
-            {report?.ok === false
-              ? t('oppenheimer.notReporting', { detail: report.detail })
-              : report?.ok
-                ? t('oppenheimer.launched', { host, count: report.matched })
-                : t('oppenheimer.reportingTo', { host })}
-          </StatusDot>
-          <Button size="xs" variant="ghost" onClick={() => void disconnect()}>
-            {t('oppenheimer.disconnect')}
-          </Button>
-        </div>
-      ) : null}
-      {connection && runnerProblem ? (
-        <Callout tone="warning">
-          {t('oppenheimer.runnerUnread', { detail: runnerProblem.detail })}
-        </Callout>
-      ) : null}
-      {connection ? null : (
+      {line ? (
+        <>
+          <div className="flex items-center gap-2 pl-2.5">
+            <StatusDot density="compact" className="min-w-0 flex-1" state={line.state}>
+              {line.text}
+            </StatusDot>
+            <Button size="xs" variant="ghost" onClick={() => void disconnect()}>
+              {t('oppenheimer.disconnect')}
+            </Button>
+          </div>
+          {runnerProblem ? (
+            <Callout tone="warning">
+              {t('oppenheimer.runnerUnread', { detail: runnerProblem.detail })}
+            </Callout>
+          ) : null}
+        </>
+      ) : (
         <div className="px-2.5">
           <Disclosure>
             <DisclosureTrigger tone="muted">{t('oppenheimer.connectTitle')}</DisclosureTrigger>
@@ -110,4 +105,17 @@ export function OppenheimerSection({
       )}
     </section>
   );
+}
+
+/** How the last report went, as a dot and its words: none yet, delivered, or refused. */
+function reportLine(
+  t: TFunction,
+  report: ReportStatus | undefined,
+  host: string,
+): { state: StatusState; text: string } {
+  if (!report) return { state: 'pending', text: t('oppenheimer.reportingTo', { host }) };
+  if (!report.ok) {
+    return { state: 'failed', text: t('oppenheimer.notReporting', { detail: report.detail }) };
+  }
+  return { state: 'running', text: t('oppenheimer.launched', { host, count: report.matched }) };
 }

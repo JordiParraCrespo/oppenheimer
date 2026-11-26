@@ -1,9 +1,9 @@
 import { SessionItem, type StatusState } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
 import { reasonText } from '@/i18n/translator';
-import { sessionUrl } from '@/sessions/links';
 import type { TrackedSession } from '@/sessions/session';
 import { age } from './age';
+import { openSession } from './open-session';
 import { TeleportButton } from './teleport-button';
 
 /** The design system's run-state word for each of ours: it picks the glyph's colour. */
@@ -30,10 +30,7 @@ export function SessionRow({ session, now }: { session: TrackedSession; now: num
       status={age(session.updatedAt, now)}
       working={session.state === 'running'}
       title={detail || undefined}
-      onClick={() => {
-        void chrome.tabs.create({ url: sessionUrl(session.id) });
-        window.close();
-      }}
+      onClick={() => openSession(session.id)}
       action={<TeleportButton sessionId={session.id} />}
     />
   );

@@ -1,9 +1,9 @@
 import { InboxItem } from '@oppenheimer/design-system-web';
 import { useTranslation } from 'react-i18next';
 import { reasonText } from '@/i18n/translator';
-import { sessionUrl } from '@/sessions/links';
 import type { TrackedSession } from '@/sessions/session';
 import { age } from './age';
+import { openSession } from './open-session';
 import { TeleportButton } from './teleport-button';
 
 /**
@@ -23,10 +23,7 @@ export function NeedsYouRow({ session, now }: { session: TrackedSession; now: nu
       preview={session.repo ?? undefined}
       meta={age(session.updatedAt, now)}
       unread={!failed}
-      onClick={() => {
-        void chrome.tabs.create({ url: sessionUrl(session.id) });
-        window.close();
-      }}
+      onClick={() => openSession(session.id)}
       action={<TeleportButton sessionId={session.id} />}
     />
   );
