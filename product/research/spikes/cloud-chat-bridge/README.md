@@ -54,8 +54,8 @@ without them, and never fail the session.
 ## Run it
 
 ```bash
-node product/research/cloud-chat-bridge/demo.mjs          # the whole loop, with checks
-node product/research/cloud-chat-bridge/demo.mjs --keep   # then leave the chat up
+node product/research/spikes/cloud-chat-bridge/demo.mjs          # the whole loop, with checks
+node product/research/spikes/cloud-chat-bridge/demo.mjs --keep   # then leave the chat up
 ```
 
 `demo.mjs` starts the server, makes a scratch project whose

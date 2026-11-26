@@ -67,7 +67,7 @@ version shipped all four at once with no flag (decided 6).
    routes carry their policies and scopes like any other.
 
 Each note keeps its own smaller open questions; the decisions above are
-logged in `../README.md`.
+logged in `../../decisions.md`.
 
 ## As built (first version)
 

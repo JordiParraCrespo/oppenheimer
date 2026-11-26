@@ -14,8 +14,8 @@ recorded as the misbehaviours to survive. Every number below comes from
 `spikes/agent-coordination/results.md` is what it prints.
 
 ```
-node product/research/agent-coordination/sim.mjs            # ~10 s, 100 seeds
-node product/research/agent-coordination/sim.mjs --json out.json
+node product/research/spikes/agent-coordination/sim.mjs            # ~10 s, 100 seeds
+node product/research/spikes/agent-coordination/sim.mjs --json out.json
 ```
 
 The run is deterministic: the same seeds give byte-identical output.

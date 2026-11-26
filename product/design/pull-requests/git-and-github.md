@@ -32,7 +32,7 @@ a Pull requests area in the rail with a queue, views and analytics.
 3. Does the agent get a scoped GitHub API surface (note 05 §5) in 0.2, or
    does the console open PRs on its behalf?
 4. Webhooks: the MVP dropped mirroring repositories with webhooks
-   (`../../README.md`). PR status and auto-fix need events again — for
+   (`../../decisions.md`). PR status and auto-fix need events again — for
    subscribed PRs only?
 5. Several repositories per session returns "with the runner slice that
    makes several worktrees" (`../foundations/00-scope.md`). Is that 0.2?

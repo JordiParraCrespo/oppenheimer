@@ -2,13 +2,13 @@
 // Agent coordination experiments: a seeded, discrete-time simulation of a
 // team of bots working one backlog under several coordination protocols,
 // with the misbehaviours the July 2026 Hugging Face incident recorded. Read
-// `../agent-coordination-experiments.md` before the numbers: every rate in
+// `../../agent-coordination-experiments.md` before the numbers: every rate in
 // DEFAULTS is an assumption, and experiment 5 reports which conclusions
 // survive moving all of them at once.
 //
-//   node product/research/agent-coordination/sim.mjs              # everything, 100 seeds
-//   node product/research/agent-coordination/sim.mjs --seeds 30   # quicker
-//   node product/research/agent-coordination/sim.mjs --json out.json
+//   node product/research/spikes/agent-coordination/sim.mjs              # everything, 100 seeds
+//   node product/research/spikes/agent-coordination/sim.mjs --seeds 30   # quicker
+//   node product/research/spikes/agent-coordination/sim.mjs --json out.json
 
 import { writeFileSync } from 'node:fs';
 

@@ -6,7 +6,7 @@ with every screen framed live and linked by name.
 
 The screens are the visual counterpart of [`../design/console/05-screens.md`](../design/console/05-screens.md),
 which is the written spec; the two were reconciled on 2026-09-19 (see the
-decision log in [`../design/README.md`](../design/README.md)).
+decision log in [`../decisions.md`](../decisions.md), "The design").
 
 ## Screens
 
@@ -300,7 +300,7 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   later slice; that note has not been reconciled with the frames yet.
   Settings is: `../design/console/05-screens.md` records it as the one destination
   beside the console, with its routes, the catalog row and the decision
-  log in `../design/README.md` say the same, and `../brief.html` follows.
+  log in `../decisions.md` say the same, and `../brief.html` follows.
   The Hosts section's backend is `../design/runner/14-hosts-settings.md`.
 - Projects as the frames draw them are in the notes: the project chip,
   the project dialog, the grouped sidebar and Move in `../design/console/05-screens.md`,

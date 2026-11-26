@@ -69,7 +69,7 @@ the OS's application-support directory, its worktrees under
 - **Stores are bare**, and live beside the sessions rather than holding
   them, so `git status` in a store sees no worktree and no IDE walks into
   one.
-- **Every level carries a `../README.md` and an `AGENTS.md`**: the root, each
+- **Every level carries a `README.md` and an `AGENTS.md`**: the root, each
   account, workspace, `repos.noindex/`, `sessions.noindex/` and session
   folder. Since every folder is named by an id, the README is how a person
   finds their workspace (by its slug) and a session (by its name, its
@@ -300,6 +300,6 @@ place with the agent `codex`; what differs is the vendor's CLI:
   than an index it keeps; a bare name only, so a typed path is still
   browsed.
 - 2026-11-23: every level of the work folder carries a generated
-  `../README.md` and `AGENTS.md` (§2), so a workspace and a session can be
+  `README.md` and `AGENTS.md` (§2), so a workspace and a session can be
   found by name although their folders are named by ids; a session's
   marker also keeps its name, agent, branch and checkouts for them.

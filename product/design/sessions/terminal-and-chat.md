@@ -27,7 +27,7 @@ a terminal.
 3. Is the chat read-only beside the terminal, or can you type into it,
    and what happens for a blank-terminal session?
 4. Does the chat display change the "the session view stays a terminal"
-   decision (`../../README.md`), or sit beside it?
+   decision (`../../decisions.md`), or sit beside it?
 
 ## Proof of concept (2026-10-21)
 

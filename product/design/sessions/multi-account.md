@@ -12,7 +12,7 @@ roadmap as of 2026-09-26, with no version number yet.
   once VMs exist (note 04). It also covers the macOS Keychain, which
   Claude Code 2.1.144+ scopes per config dir, so it is not a blocker.
 - The MVP left accounts out on purpose ("no account objects",
-  `../README.md`). `../../README.md` notes that note 06's
+  `../../decisions.md`). `../../decisions.md` notes that note 06's
   per-account config directories stay the answer for several logins on
   one machine.
 - Since 2026-10-28 each host reports the claude.ai account its `claude` is
