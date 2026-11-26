@@ -33,6 +33,7 @@ import {
   searchWords,
   snippetAround,
 } from '../domain/bot-chat-search.policy';
+import { describeBotEffort } from '../domain/bot-effort.policy';
 import {
   describeKept,
   memoryScopeOf,
@@ -532,7 +533,7 @@ function describeSelf(bot: BotEntity): string[] {
   return [
     `You: ${bot.id} "${bot.name}"`,
     `- description: ${bot.description || '(none)'}`,
-    `- provider: ${bot.provider}; model: ${model?.label ?? bot.model ?? 'default'}${bot.effort ? `; effort: ${bot.effort}` : ''}`,
+    `- provider: ${bot.provider}; model: ${model?.label ?? bot.model ?? 'default'}; effort: ${describeBotEffort(bot)}`,
     `- approval level: ${bot.permission}`,
     `- learn automatically: ${bot.learnAutomatically ? promptText('core/tools-self.describe-self-remember-saves-directly') : promptText('core/tools-self.describe-self-off-ask-before')}`,
     promptText('core/tools-self.describe-self-home-host-list', {

@@ -288,7 +288,7 @@ async function main(): Promise<void> {
   };
   const messageOf = (c: Case) => {
     if (c.kind === 'ask') return c.message ?? '';
-    const opening = promptText('wake/check-back.opening', {
+    const opening = promptText('core/wake-check-back.opening', {
       look: '2',
       startedAt: formatToolTime(chainStartedAt, 'Europe/Madrid'),
       about,

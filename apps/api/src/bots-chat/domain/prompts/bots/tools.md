@@ -46,7 +46,7 @@ A model id or label the provider offers; yours on the same provider when omitted
 
 <!-- fragment: create-bot-effort -->
 
-Only for a model that takes one; null is the model's own default.
+Only for a model that takes one; null is Auto: medium on a model whose own default is lower, else the model's own default.
 
 <!-- fragment: create-bot-permission -->
 
@@ -136,7 +136,7 @@ You run under {{ceiling}}, and you cannot give a bot looser permissions than you
 
 <!-- fragment: engine-update-for-refusal -->
 
-For "{{name}}": {{engineLabel}} does not take effort "{{effort}}". {{levelsCount}} Leave effort out for its default.
+For "{{name}}": {{engineLabel}} does not take effort "{{effort}}". {{levelsCount}} Leave effort out for Auto.
 
 <!-- fragment: bots-updated-answer -->
 

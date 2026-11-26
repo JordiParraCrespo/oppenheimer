@@ -2407,6 +2407,29 @@ The decisions it produced:
   is now refused only when it is given (a new skill, a rename), so a row
   saved under one before still loads, edits and runs, as this list said on
   2026-11-02.
+- 2026-11-25: **Auto runs at medium at least, and a bot does only what it
+  was asked.** A bot's effort left unset (Auto) sent none, so a turn ran at
+  its model's own default, which for GPT-6.2 Sol and Astra, 6.1 Sol, 6
+  Astra and 5.6 Sol is `low`: Oppie answered turns of 700,000 input tokens with under 2,000
+  output tokens, reasoning included, and in one of them widened "improve
+  the main-red automation" into also fixing main's current failure, with a
+  session and a task, without saying so. Auto still stores null, and a
+  turn now runs at the bot floor, `medium` (`BOT_EFFORT_FLOOR`, `botTurnEffort`), on any
+  model whose default is below it and that offers it; a model whose default
+  is medium or above (every current Claude model) is left to its default,
+  and a level the owner picked is kept as it is. `bot_turn.effort` records
+  what the turn runs at, the chip shows it, and `get_self` and `get_bot`
+  say it ("auto, runs at medium"). One floor, whatever the turn does;
+  reviews, the summary, the dream and compaction keep their own low
+  effort. "How a turn goes" now says to do what was asked and nothing
+  more: the job is the person's and the way is the bot's, other work is
+  offered in a line and never folded into a task or a session's brief, and
+  a question is no permission to change anything. A check against the ask
+  before every call that changes something was tried and dropped: it made
+  a bot ask for details instead of watching a deploy it was asked to watch. Both follow
+  OpenClaw and Hermes, which default reasoning models to medium and do
+  what they are asked without taking on what they were not. The eval is
+  `scripts/evals/bot-scope/`.
 - 2026-11-08: **the goal and rule reviewers run at low effort.** They
   passed no effort, meant as "least effort", which a model with levels
   reads as its default. They now ask for `low` where the model offers it,

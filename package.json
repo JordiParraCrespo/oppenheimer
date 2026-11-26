@@ -63,6 +63,7 @@
     "eval:bot-first-chat": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-first-chat/run.ts",
     "eval:bot-react": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-react/run.ts",
     "eval:bot-memory": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-memory/run.ts",
+    "eval:bot-scope": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-scope/run.ts",
     "eval:bot-session-follow": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-session-follow/run.ts",
     "eval:bot-session-restart": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-session-restart/run.ts",
     "eval:bot-session-search": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-session-search/run.ts",
