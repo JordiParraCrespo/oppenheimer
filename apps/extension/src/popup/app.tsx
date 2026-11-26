@@ -3,6 +3,7 @@ import {
   Callout,
   EmptyState,
   IconButton,
+  InboxList,
   SessionList,
   SidebarListHead,
   Switch,
@@ -12,15 +13,18 @@ import {
   TooltipTrigger,
 } from '@oppenheimer/design-system-web';
 import { CircleCheck, ExternalLink, RefreshCw } from '@oppenheimer/design-system-web/icons';
-import { type ReactNode, useState } from 'react';
+import type { TFunction } from 'i18next';
+import { type ComponentType, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CLAUDE_ORIGIN } from '@/sessions/links';
 import { NEEDS_YOU, type TrackedSession } from '@/sessions/session';
 import type { SyncStatus } from '@/sessions/store';
 import { byRecent } from '@/sessions/tracker';
+import { age } from './age';
 import { useNow } from './hooks/use-now';
 import { useRefresh } from './hooks/use-refresh';
 import { useStoredState } from './hooks/use-stored-state';
+import { NeedsYouRow } from './needs-you-row';
 import { OppenheimerSection } from './oppenheimer-section';
 import { SessionRow } from './session-row';
 
@@ -48,9 +52,14 @@ export function App() {
   return (
     <TooltipProvider>
       <div className="flex w-90 flex-col gap-3 p-3 text-fg">
-        <header className="flex items-center gap-2">
-          <BrandMark size={20} />
-          <h1 className="flex-1 font-medium text-operate">{t('title')}</h1>
+        <header className="flex items-center gap-2.5 px-1">
+          <BrandMark size={22} />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <h1 className="truncate font-semibold text-operate">{t('title')}</h1>
+            {state.status?.ok ? (
+              <p className="text-xs text-fg-subtle">{checkedText(t, age(state.status.at, now))}</p>
+            ) : null}
+          </div>
           <Tooltip>
             <TooltipTrigger
               render={
@@ -71,9 +80,15 @@ export function App() {
         <SyncCallout status={state.status} />
 
         {needsYou.length > 0 ? (
-          <Section title={t('groups.needsYou')} sessions={needsYou} now={now} />
+          <Section
+            title={t('groups.needsYou')}
+            sessions={needsYou}
+            now={now}
+            List={InboxList}
+            Row={NeedsYouRow}
+          />
         ) : state.status?.ok ? (
-          <EmptyState>
+          <EmptyState compact>
             <EmptyState.Header>
               <EmptyState.Media variant="icon">
                 <CircleCheck />
@@ -118,7 +133,7 @@ export function App() {
           href={`${CLAUDE_ORIGIN}/code`}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-1.5 border-border border-t px-2.5 pt-3 text-fg-muted text-sm hover:text-fg"
+          className="-mx-3 flex items-center gap-1.5 border-border-subtle border-t px-5.5 pt-3 text-fg-muted text-sm transition-colors hover:text-fg"
         >
           {t('openClaude')}
           <ExternalLink className="size-3.5" />
@@ -135,12 +150,17 @@ function Section({
   count = sessions.length,
   action,
   now,
+  List = SessionList,
+  Row = SessionRow,
 }: {
   title: string;
   sessions: TrackedSession[];
   count?: number;
   action?: ReactNode;
   now: number;
+  /** The list and its rows: one line each, or the Inbox's two for what needs you. */
+  List?: ComponentType<{ children: ReactNode }>;
+  Row?: ComponentType<{ session: TrackedSession; now: number }>;
 }) {
   return (
     <section aria-label={title}>
@@ -148,14 +168,20 @@ function Section({
         {action}
       </SidebarListHead>
       {sessions.length > 0 && (
-        <SessionList>
+        <List>
           {sessions.map((session) => (
-            <SessionRow key={session.id} session={session} now={now} />
+            <Row key={session.id} session={session} now={now} />
           ))}
-        </SessionList>
+        </List>
       )}
     </section>
   );
+}
+
+/** "Checked just now", "Checked 5m ago". */
+function checkedText(t: TFunction, ago: string | undefined) {
+  if (!ago || ago === 'now') return t('checked.now');
+  return t('checked.ago', { age: ago });
 }
 
 /** The catalog key for each way a check can fail. */
