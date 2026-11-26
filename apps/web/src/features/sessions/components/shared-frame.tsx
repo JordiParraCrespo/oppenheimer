@@ -1,5 +1,4 @@
 import { BrandMark, ChatHeader, Wordmark } from '@oppenheimer/design-system-web';
-import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -28,13 +27,15 @@ export function SharedFrame({
     <div className="flex h-dvh flex-col bg-term-bg">
       <ChatHeader
         leading={
-          <Link
-            to="/"
+          // A plain link home: this page is the guest's way in, not a route
+          // of the console they were already in.
+          <a
+            href="/"
             aria-label={t('sessions.shared.home')}
             className="flex shrink-0 items-center rounded-sm text-fg outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {title ? <BrandMark size={20} /> : <Wordmark size={16} />}
-          </Link>
+          </a>
         }
         title={
           title ? (
