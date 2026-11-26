@@ -10,12 +10,12 @@ was added after the order was set.
 |---------|----------|-------|
 | 0.1 | [`design/`](design/README.md) | The MVP: hosts you own, sessions as worktrees with a tmux terminal, Claude Code first |
 | 0.2 | [Git and GitHub](design/pull-requests/git-and-github.md), [Pull requests](design/pull-requests/pull-requests.md) | Git, aka GitHub support: diff, review, commit, push and PRs from the console; a Pull requests area in the rail with a queue and analytics |
-| 0.3 | — | Kanban moved into the MVP as Plan ([`design/plan/17-plan.md`](design/plan/17-plan.md)) | Plan: a task board with goals, tasks that start or link sessions, and a calendar beside Google Calendar |
+| 0.3 | — | Kanban moved into the MVP as Plan ([`design/plan/plan.md`](design/plan/plan.md)) | Plan: a task board with goals, tasks that start or link sessions, and a calendar beside Google Calendar |
 | 0.4 | [Slack](design/channels/slack-sessions.md) | The Slack integration; now the Slack channel of [Channels](design/channels/channels.md) |
 | 0.5 | [Mobile](design/clients/mobile.md) | Mobile |
 | 0.6 | [MCP, CLI and agent](design/clients/mcp-cli-and-agent.md) | An MCP server, a CLI and an agent over the same API |
 | 0.7 | [Terminal and chat display](design/sessions/terminal-and-chat.md), [The chat's model and protocol](design/sessions/chat-protocol.md) | Improve the terminal, and a chat display beside it; one item model and stream for both chats |
-| — | [Multi-account](design/sessions/multi-account.md) | Several agent accounts per person (note 06); on the list, version not set |
+| — | [Multi-account](design/sessions/multi-account.md) | Several agent accounts per person (`archive/multi-account.md`); on the list, version not set |
 | — | [Mail](design/channels/mail.md) | Bots work your own Gmail accounts, several per person: search, attachments, drafts, sends (always approved), labels and archive, new mail as a routine trigger; the first version, ahead of channels; version not set |
 | — | [WhatsApp](design/channels/whatsapp.md) | Bots read your own WhatsApp number's chats and write in them, OpenClaw's linked device held by the runner on your host; built 2026-10-30, version not set |
 | — | [Telegram](design/channels/telegram.md) | Bots read and answer the chats of a Telegram bot you made with @BotFather, OpenClaw's Bot API route long-polled by the runner on your host, the token kept there; built 2026-11-08, version not set |
@@ -32,7 +32,7 @@ was added after the order was set.
 ## What this list does not place yet
 
 The MVP notes name VMs (with sleep tiers), the accounts model and Codex
-as "the slices after" (`design/foundations/00-scope.md`, `brief.html`). The
+as "the slices after" (`design/foundations/scope.md`, `brief.html`). The
 accounts model is on this list as multi-account, but it has no version
 yet. VMs and Codex are not on the list at all. Nothing is cancelled;
 where these land is the first open question below.
@@ -43,6 +43,6 @@ where these land is the first open question below.
    and the host settings drawer land relative to 0.2 to 0.7?
 2. Is each version a release with a version number the runner and the
    console both carry, or a product milestone only? The runner already
-   ships signed, versioned releases (`design/runner/09-runner-install-and-update.md`).
-3. What is each version's demo scene, the way `design/foundations/00-scope.md`
+   ships signed, versioned releases (`design/runner/runner-install-and-update.md`).
+3. What is each version's demo scene, the way `design/foundations/scope.md`
    has one for the MVP?

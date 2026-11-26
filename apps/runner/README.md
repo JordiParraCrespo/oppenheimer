@@ -1,12 +1,12 @@
 # @oppenheimer/runner
 
-The host agent from `product/design/runner/02-runner.md`: one static Go
+The host agent from `product/design/runner/runner.md`: one static Go
 binary that will own the worktrees, the tmux sessions and the PTY stream on
 a host you own. The NestJS API is the control plane; this service is the
 thing that runs on the machine.
 
 How it is installed on that machine and how it updates itself afterwards are
-`product/design/runner/09-runner-install-and-update.md`.
+`product/design/runner/runner-install-and-update.md`.
 
 **What works today**: a macOS, Debian or Ubuntu machine pairs with a
 workspace, installs itself as a user service, keeps itself on the current
@@ -27,7 +27,7 @@ typed into it, is stopped (never closed) to free its processes. Working,
 blocked, attached (from the console or a tmux client on the host) and kept
 sessions are never stopped this way, nor a child whose parent is live, nor a
 parent with a child that is not idle too. `RUNNER_IDLE_STOP` sets the window (`90m`, `4h`)
-or turns it `off` (`product/design/runner/02-runner.md` §5).
+or turns it `off` (`product/design/runner/runner.md` §5).
 
 `runner run` holds one outbound WebSocket to the control plane: sessions are
 driven from the console over it, and the git credential helper answers with
@@ -35,7 +35,7 @@ installation tokens the control plane mints on it. `runner sessions …` drives
 the same lifecycle from the host itself.
 
 A bot can run one program on the host over the link (`host.exec`,
-`product/design/bots/25-bots.md` §4.2, "Commands on a host"), but only what
+`product/design/bots/bots.md` §4.2, "Commands on a host"), but only what
 `runner exec` allows here: off by default, an allowlist of programs, or
 everything. The policy lives in `~/.oppenheimer/exec.json` and is read on every
 call. It is written here, or by a bot over the link when the person asked it
@@ -45,7 +45,7 @@ bot can also drive a blank-terminal session (`terminal.drive`): type into
 it and read its screen back.
 
 A bot can use the host's screen, mouse and keyboard over the link too
-(`computer.act`, `25-bots.md` §4.2, "Using a computer"), only after `runner
+(`computer.act`, `product/design/bots/bots.md` §4.2, "Using a computer"), only after `runner
 computer on` here: a second switch, in `~/.oppenheimer/computer.json`, off by
 default. On a Mac it drives the main
 screen through `screencapture` and `osascript` (the runner needs Screen
@@ -54,7 +54,7 @@ ImageMagick's `import`, starting a virtual one (Xvfb, locked with an `xauth`
 key in `~/.Xauthority`) on a host that has none; a Wayland session is
 refused. The Mac path has not been run on a Mac yet.
 
-A bot can also drive a browser of its own here (`browser.act`, `25-bots.md`
+A bot can also drive a browser of its own here (`browser.act`, `product/design/bots/bots.md`
 §4.2, "Using a browser"), only after `runner browser on`: a third switch, in
 `~/.oppenheimer/browser.json`. The runner starts the host's Chrome, Chromium
 or Edge headless, one per bot with a profile under
@@ -211,7 +211,7 @@ telling an agent where its checkout is and what not to touch. The runner
 rewrites both on every create and close and when it starts; a file at that
 path it did not write is left alone.
 
-The layout is `product/design/sessions/24-session-places.md` §2. The two
+The layout is `product/design/sessions/session-places.md` §2. The two
 directories that hold checkouts end in `.noindex`, which Spotlight skips:
 indexing a host's sessions costs it more CPU than the agents use. Every level is
 named by an id that never changes, and only a folder whose marker names the

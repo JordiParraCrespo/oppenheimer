@@ -4,21 +4,21 @@
 > #43, which was closed on 2026-10-10 without merging. It was drafted as
 > `versions/mvp/18-headless-runs.md` before automations moved into the
 > MVP. What governs is
-> [`design/automations/16-automations-architecture.md`](../design/automations/16-automations-architecture.md),
+> [`design/automations/automations-architecture.md`](../design/automations/automations-architecture.md),
 > which built on this draft; the note's own "Read with 16" says where.
 > Bare numbers in it name `design/` notes. Its numbered
-> cross-references (`02 §14`, `03 §Cloud hosts` and the like) point at
+> cross-references (``../design/runner/runner.md` §14`, ``../design/foundations/control-plane.md` §Cloud hosts` and the like) point at
 > sections that pull request proposed and that the current notes do not
 > have. Paths in backticks are relative to `product/`.
 
-> **Read with 16.** This draft came before automations moved into the
+> **Read with `../design/automations/automations-architecture.md`.** This draft came before automations moved into the
 > MVP. 16 (2026-09-27) builds on it, decides what ships, and governs
 > where the two differ: automations are in the MVP and the model is
 > `automation*` in `automations/`, not `routine*`; the runner ships raw
 > lines tagged `{agent, format}` and a per-agent adapter in the API
 > translates them, rather than the runner reading the stream; execution
 > is `sessions/`'s `session_turn` with `turn.started` and `turn.ended`,
-> not `run.*` events. The detail 16 leans on stays here: the launch (§2),
+> not `run.*` events. The detail `../design/automations/automations-architecture.md` leans on stays here: the launch (§2),
 > permissions with nobody watching (§3), which repositories run (§4),
 > turns and takeover (§5, §6).
 
@@ -57,7 +57,7 @@ on 2026-09-26.
 A person's session is Claude Code's terminal UI in tmux, and stays so. An
 automated run is **the same kind of session** — the same directory of
 checkouts, the same worktree and branch, the same tmux session on the
-same host (02 §5) — whose window 0 runs Claude Code **headless**:
+same host (`../design/runner/runner.md` §5) — whose window 0 runs Claude Code **headless**:
 
 ```
 claude -p <prompt> --output-format stream-json --verbose
@@ -66,7 +66,7 @@ claude -p <prompt> --output-format stream-json --verbose
 ```
 
 It is the CLI the host already has, installed and logged in by its
-owner, launched the way 02 §5 launches the TUI. Not the Agent SDK as a
+owner, launched the way `../design/runner/runner.md` §5 launches the TUI. Not the Agent SDK as a
 library: the runner is Go and the SDK is Python or TypeScript around the
 same binary, so it would add a runtime to every host for controls a first
 version does not need (approval callbacks, answering questions mid-turn).
@@ -82,7 +82,7 @@ straight from it, with no screen scraping and no hooks to install.
 
 - **`session.create` gains `drive`**: `interactive` (the TUI, today's
   only value and the default) or `headless`. It rides the create like
-  `runtime` does (01), because how the agent is started is what the
+  `runtime` does (`../design/foundations/protocol.md`), because how the agent is started is what the
   runner is being asked to start.
 - **The catalog grows a `headless` block per agent** in
   `packages/shared/src/agents/catalog.ts`: the argv that selects
@@ -91,18 +91,18 @@ straight from it, with no screen scraping and no hooks to install.
   agent without the block cannot be the agent of a routine, and the
   console hides it in the routine form. Codex (`codex exec --json`) and
   the others are a row each when they are wanted; no protocol change.
-- **The argv stays a vector** (02 §5). The prompt is one argument, never
+- **The argv stays a vector** (`../design/runner/runner.md` §5). The prompt is one argument, never
   spliced into a string.
 - **Output goes to a file, through the runner itself.** Window 0 runs
   `runner headless --out <session>/.oppenheimer/runs/<n>.jsonl -- claude
   -p …`: a small subcommand that execs the agent with stdout and stderr
   on files and exits with its code. tmux keeps the process alive across a
-  runner restart or self-update, as it keeps every session (00, 09 §5),
+  runner restart or self-update, as it keeps every session (`../design/foundations/scope.md`, `../design/runner/runner-install-and-update.md` §5),
   and the runner **tails the file by byte offset**, so a restart resumes
   the feed where it stopped instead of losing the turn. No shell, no
   redirection string.
 - **Version gate.** `--permission-prompts` needs Claude Code 2.1.259 or
-  later; the runner already probes each agent's version (02 §10), and the
+  later; the runner already probes each agent's version (`../design/runner/runner.md` §10), and the
   control plane refuses a headless create for an older one with a catalog
   code, as it refuses an agent the runner never probed.
 
@@ -131,7 +131,7 @@ auto`) instead is a catalog change, left open below. (Decided on
 `.mcp.json` servers, `CLAUDE.md` and skills **with no trust prompt**. A
 run therefore executes whatever its repository configures. Runs are
 allowed only on repositories already in one of the person's projects
-(10), which they connected and chose; that is the same trust they give
+(`../design/foundations/api-modules-and-data-model.md`), which they connected and chose; that is the same trust they give
 the interactive session they would otherwise start there. Runs are not
 `--bare`: a routine that ignored the repository's `CLAUDE.md` would do
 the work worse than a person's session in the same place. A trigger's
@@ -171,7 +171,7 @@ executes. A schedule is a repeatable job on the API's queue
 (`@oppenheimer/backend-queue`); a GitHub event arrives on the App's
 webhook the API already receives. Each fire is recorded before anything
 is dispatched, so a run a host was offline for is created and delivered
-when it reconnects, as any create is (01). Linear and Slack are later
+when it reconnects, as any create is (`../design/foundations/protocol.md`). Linear and Slack are later
 trigger types on the same routine (`{ type: 'linear', team, event,
 filter }`, `{ type: 'slack', channel, event: 'mention' }`); they differ
 only in that the run keeps a **reply binding** — the issue or thread —
@@ -187,7 +187,7 @@ From the stream, per run: cause (schedule, which event), `startedAt`,
 `endedAt`, state (`running`, `completed`, `failed`, `stopped`), the
 agent session id, the `result` text, `total_cost_usd` (a client-side
 estimate, shown as one), turn count and permission denials. The raw
-events are the session's log (`events.append`, 01), batched and
+events are the session's log (`events.append`, `../design/foundations/protocol.md`), batched and
 acknowledged by key like every other session event, so the activity
 feed is a view of the log and not a second store.
 
@@ -209,7 +209,7 @@ Recorded here, written into each note when its slice is built:
 
 ## Open
 
-- **When.** Automations stay after the MVP (00, 13): only their console
+- **When.** Automations stay after the MVP (`../design/foundations/scope.md`, `../design/automations/automations.md`): only their console
   routes exist ahead of the API. Whether §7's GitHub triggers ship with
   schedules or after them is decided with that slice.
 - **Whose login a run uses.** The run uses the host's Claude Code as its

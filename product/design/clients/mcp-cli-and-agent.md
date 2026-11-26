@@ -9,7 +9,7 @@ agent of our own on top.
 - API tokens and OAuth for MCP clients, governed by the scope catalog
   (`packages/shared/src/scopes/`, `.agents/rules/scopes-and-credentials.md`).
 - The generated typed API client (`packages/frontend/api-client`).
-- Note 00 §3's delegation primitives (`spawn_task`, `wait_task`,
+- `../../archive/vision-and-plan.md` §3's delegation primitives (`spawn_task`, `wait_task`,
   `send_message`) exposed through MCP, with the coordinator "just an
   agent with that MCP server enabled".
 - The runner already is a CLI on the host (`runner sessions`, …); the
@@ -24,8 +24,8 @@ agent of our own on top.
 
 ## Questions to answer first
 
-1. Is "Agent" the delegation coordinator of note 00, an agent that runs
-   unattended (the Agent SDK add-on note 01 keeps for later), or both?
+1. Is "Agent" the delegation coordinator of `../../archive/vision-and-plan.md`, an agent that runs
+   unattended (the Agent SDK add-on `../../archive/terminal-first.md` keeps for later), or both?
 2. Does the MCP server live in the API process (Better Auth's `mcp`
    plugin already serves OAuth) or as its own app?
 3. One CLI for users, separate from `runner`, or `runner` grows user

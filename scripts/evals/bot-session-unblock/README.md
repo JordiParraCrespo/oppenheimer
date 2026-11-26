@@ -6,7 +6,7 @@ On 2026-11-10 the owner saw Oppie, a routine's bot, find the Sentry triage
 session waiting on a permission and tell him to open the session and decide
 it. Since then a bot woken because a session's agent waits on a question or
 a permission dialog answers it itself with `answer_session`
-(`product/design/bots/25-bots.md` §4.2):
+(`product/design/bots/bots.md` §4.2):
 
 - it approves and answers what the session's task and its instructions
   point to, and turns down (the No option) what goes against the task;

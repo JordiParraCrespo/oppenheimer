@@ -4,14 +4,14 @@
 > #43, which was closed on 2026-10-10 without merging. It was the
 > research behind a v0.2 that renting cloud hosts would have been; that
 > v0.2 is now Git and GitHub. What governs today:
-> [`archive/03-machines-and-vm-provisioning.md`](../archive/03-machines-and-vm-provisioning.md),
-> [`archive/08-reuse-gha-runner.md`](../archive/08-reuse-gha-runner.md) and
-> [`archive/10-sleep-wake-and-pricing.md`](../archive/10-sleep-wake-and-pricing.md) for
+> [`archive/machines-and-vm-provisioning.md`](../archive/machines-and-vm-provisioning.md),
+> [`archive/reuse-gha-runner.md`](../archive/reuse-gha-runner.md) and
+> [`archive/sleep-wake-and-pricing.md`](../archive/sleep-wake-and-pricing.md) for
 > VMs and cloud hosts,
-> [`design/foundations/00-scope.md`](../design/foundations/00-scope.md) for what the
+> [`design/foundations/scope.md`](../design/foundations/scope.md) for what the
 > MVP runs, and [`roadmap.md`](../roadmap.md), where
 > VMs are not yet placed in the order after the MVP. Its numbered
-> cross-references (`02 §14`, `03 §Cloud hosts` and the like) point at
+> cross-references (``../design/runner/runner.md` §14`, ``../design/foundations/control-plane.md` §Cloud hosts` and the like) point at
 > sections that pull request proposed and that the current notes do not
 > have. Paths in backticks are relative to `product/`.
 
@@ -27,7 +27,7 @@ Question: can a session run on a machine that exists only for that
 task, the way a Claude Code on the web session gets a fresh VM and
 loses it when it goes idle, and can we drive that through one interface
 on AWS, Oracle Cloud and Alibaba Cloud? Yes. The shape is smaller than
-the cloud adapter notes 03 and 10 sketched, because the MVP runner
+the cloud adapter `../archive/machines-and-vm-provisioning.md` and `../archive/sleep-wake-and-pricing.md` sketched, because the MVP runner
 already does most of the work: a cloud machine is **a host that pairs
 itself**, and the provider driver only creates, stops and destroys
 machines. This is the research behind **v0.2**: what Claude Code on the web
@@ -36,9 +36,9 @@ login gap, and the order of work — AWS first, Oracle second while the
 $300 trial is live, Alibaba when somebody needs it. The decisions it
 led to live in the MVP design notes that own them, not here: the port,
 the routes and the pause, resume, delete policy in
-[`design/foundations/03-control-plane.md`](../design/foundations/03-control-plane.md) §Cloud hosts,
-the tables in `design/foundations/10-api-modules-and-data-model.md`, the wire and the runner in
-`design/foundations/01-protocol.md` and `02`, the screens in `05`, the cloud-init path
+[`design/foundations/control-plane.md`](../design/foundations/control-plane.md) §Cloud hosts,
+the tables in `design/foundations/api-modules-and-data-model.md`, the wire and the runner in
+`design/foundations/protocol.md` and `02`, the screens in `05`, the cloud-init path
 in `09`.
 
 Sources are primary docs and price lists, dated where the page gives a
@@ -107,23 +107,23 @@ sessions finish and is restarted with a fresh disk by Kubernetes, which
 is right for a fleet and wrong for us: our runner already isolates by
 worktree and the machine itself is the disposable unit. And their
 control plane is the queue; ours assigns a session to a host before
-anything is created (note 03 §3's "no pool to size"), so we spawn a
+anything is created (`../archive/machines-and-vm-provisioning.md` §3's "no pool to size"), so we spawn a
 machine *for* a session rather than letting one claim it.
 
 ## 2. The decision: a cloud machine is a host that pairs itself
 
-Note 03 §4 and note 10 §6 described the cloud adapter as "the runner
+`../archive/machines-and-vm-provisioning.md` §4 and `../archive/sleep-wake-and-pricing.md` §6 described the cloud adapter as "the runner
 running in the control plane" with an "in-guest agent" registering a
 JIT identity. That was written before the MVP runner existed. Now that
 it does, the smaller design is:
 
 - The control plane calls the provider to create a VM whose cloud-init
-  runs **the ordinary install command** of `design/runner/09-runner-install-and-update.md` §1 with a one-hour,
+  runs **the ordinary install command** of `design/runner/runner-install-and-update.md` §1 with a one-hour,
   single-use pairing token. The runner registers, the VM appears as a
   host owned by the person whose cloud account it is, and the session is
   dispatched to it exactly as to a Mac Studio: worktree, tmux, PTY over
   the link, credential helper minting one-hour repository tokens.
-- The pairing token **is** the JIT identity note 03 wanted: it can do
+- The pairing token **is** the JIT identity `../archive/machines-and-vm-provisioning.md` wanted: it can do
   one thing, add one host to one person's account, and it is burned at
   registration, seconds after boot, before any session runs. Nothing
   long-lived is in user data, which matters because on all three clouds
@@ -135,13 +135,13 @@ it does, the smaller design is:
   *host* holding several microVM sessions; the sentence still holds.)
 
 What it changes in the control plane is written where the control plane
-is designed, `design/foundations/03-control-plane.md` §Cloud hosts and `10`: `hosts/` is
+is designed, `design/foundations/control-plane.md` §Cloud hosts and `10`: `hosts/` is
 the host factory — two person-owned rows, `cloud_account` and
 `machine`, a `MachineProviderPort` with an adapter per provider in its
 `infrastructure/`, `machine.hostId` set at registration and
 `host_pairing_token.machineId` to join the two, `POST /sessions`
 accepting a cloud account in place of a host — and there is no sixth
-module and no package. One thing note 10 §10 decided changes: a
+module and no package. One thing `../archive/sleep-wake-and-pricing.md` §10 decided changes: a
 session on a cloud host defaults to **Keep**, paused when idle and
 resumed when opened (§7), because a paused machine costs only its disk
 on all three providers; **Ephemeral**, destroyed after N idle hours
@@ -162,13 +162,13 @@ hosts/     mint a pairing token bound to a new machine row
    │                anything unknown or past its TTL → destroy
    ▼
 VM boots, cloud-init as root: create user `agent`, install git tmux node claude,
-   loginctl enable-linger agent, then the installer as agent with its runtime env set (design/runner/09-runner-install-and-update.md §2)
+   loginctl enable-linger agent, then the installer as agent with its runtime env set (design/runner/runner-install-and-update.md §2)
    │
    ▼
 POST /api/v1/hosts/register  ──► host row created, machine.hostId set, link comes up
    │
    ▼
-sessions/ dispatches session.create to the new host  (the offline-host path 01 already has)
+sessions/ dispatches session.create to the new host  (the offline-host path `../design/foundations/protocol.md` already has)
    │
    ▼
 idle 30 min (the control plane's call) ──► session.stop push:true ──► provider.stop(suspend | stop) ──► machine.stopped
@@ -184,7 +184,7 @@ log, so the sidebar's boot trace is the same component.
 ## 3. What the research says the port must express
 
 The port itself — verbs, errors, routes — is named once, in
-`design/foundations/03-control-plane.md` §Cloud hosts, and lives in `hosts/`. What the
+`design/foundations/control-plane.md` §Cloud hosts, and lives in `hosts/`. What the
 provider research below fixes about it, so three drivers cannot drift:
 
 - **Idempotency is a provider primitive on all three**, and the key
@@ -408,7 +408,7 @@ provider research below fixes about it, so three drivers cannot drift:
   moved to `*.console.alibabacloud.com` on 2026-01-20. Stable API,
   uneven inventory, the most paperwork of the three.
 
-### Side by side, for the workload in note 10 §10
+### Side by side, for the workload in `../archive/sleep-wake-and-pricing.md` §10
 
 Ten ephemeral sessions, four hours each on 22 working days: 880 running
 hours a month, a 4 vCPU / 16 GB machine where the provider sells one,
@@ -435,7 +435,7 @@ Reading it: Oracle is the cheapest place to *run* this by a factor of
 two, and the only one where sleeping is nearly free; AWS is the only
 one with real suspend and the smoothest inventory; Alibaba is a
 credible third with the most friction and no Arm in Europe. All three
-are more than the dedicated host of note 10 §7 for a personal
+are more than the dedicated host of `../archive/sleep-wake-and-pricing.md` §7 for a personal
 workspace, which stays the recommendation for daily use; the cloud is
 the overflow and the "no host yet" path.
 
@@ -451,7 +451,7 @@ changes it by region:
 | medium (default) | 4 / 16 | t4g.xlarge | A1.Flex 4 / 16 | g7a.xlarge / g8y.xlarge |
 | large | 8 / 32 | m7g.2xlarge | A1.Flex 8 / 32 | g7a.2xlarge / g8y.2xlarge |
 
-Arm first: the runner already ships `linux/arm64` (`design/runner/09-runner-install-and-update.md` §2), Node and
+Arm first: the runner already ships `linux/arm64` (`design/runner/runner-install-and-update.md` §2), Node and
 Claude Code run on it, and it is the cheapest tier on AWS and the only
 tier on OCI's free money. `arch: 'amd64'` is a per-session override for
 a repository that needs it (Docker images built for x86, a native
@@ -466,24 +466,24 @@ demands it. Version one installs at boot from cloud-config: create the
 user's systemd manager and bus exist before `runner install` asks
 `systemctl --user` for a unit, then the installer as `agent` with
 `XDG_RUNTIME_DIR` and `DBUS_SESSION_BUS_ADDRESS` set
-(`design/runner/09-runner-install-and-update.md` §2).
+(`design/runner/runner-install-and-update.md` §2).
 That is two to four minutes on all three clouds. Version two prebakes
 the image per provider (Packer, or EC2 Image Builder on AWS, a custom
 image from a stopped instance on OCI and Alibaba) and the cloud-config
 shrinks to the install command; boot to online is then under a minute
-on AWS and OCI. Note 03's Actuated lesson applies: one lean image with
+on AWS and OCI. `../archive/machines-and-vm-provisioning.md`'s Actuated lesson applies: one lean image with
 git, tmux, Node, Claude Code, Docker, and the toolchains the person's
 repositories actually use, rebuilt by CI, not a 3,000-package runner
 image.
 
 **Docker inside** is the one thing a cloud VM has that the MVP host
 may not: it is a real VM, so `dockerd` is in the image, which is the
-"VM per session" argument of note 10 §8 for free.
+"VM per session" argument of `../archive/sleep-wake-and-pricing.md` §8 for free.
 
 ## 6. Connecting a cloud account
 
 A cloud account is a person's, like a host (`ownerUserId`, no
-`organizationId`; note 10 in `design`), because the bill is
+`organizationId`; `../design/foundations/api-modules-and-data-model.md` in `design`), because the bill is
 theirs and the machines it makes are hosts they own. It is a row
 because it is revocable (the credentials rule in the same note). The
 credential is the first secret the API stores as a *row* rather than
@@ -500,7 +500,7 @@ leaves `hosts/infrastructure/`.
 
 Choose a region on connect; the host chip lists each connected account
 as `<provider> <region>` with the medium size's per-hour price, own
-hosts first (note 10 §10). Disconnecting revokes the row and destroys
+hosts first (`../archive/sleep-wake-and-pricing.md` §10). Disconnecting revokes the row and destroys
 every machine it made after the sessions on them are closed; the VPC
 stays, because deleting a network that something else in the person's
 account might use is not ours to do.
@@ -509,7 +509,7 @@ Egress: no inbound rule on any provider ever, the runner dials out. On
 AWS and Alibaba a public IP with a no-inbound security group is both
 cheaper and simpler than a NAT gateway for a personal fleet ($3.60 a
 month versus about $32 on AWS; $0 versus about $31 on Alibaba) and the
-note 04's "no inbound port" findings hold because there is nothing listening.
+`../archive/security-review.md`'s "no inbound port" findings hold because there is nothing listening.
 On OCI the NAT gateway is free, so the machine gets no public address at
 all. IMDSv2 required on AWS and Alibaba (`HttpTokens: 'required'`;
 Alibaba's `100.100.100.200` endpoint with a token), which is what makes
@@ -521,12 +521,12 @@ than a credential problem.
 The headline of v0.2 is that a session on a cloud machine can be
 **paused, resumed, and deleted later**, the way a laptop lid works,
 with the machine costing nothing but its disk while it is closed. Note
-10 §10 made Ephemeral (destroy after idle) the default on cloud hosts;
+`../design/foundations/api-modules-and-data-model.md` §10 made Ephemeral (destroy after idle) the default on cloud hosts;
 that changes. Stopped compute is free on all three providers (§4), so
 the default on a cloud machine is the same as on an own host: **Keep**,
 paused when idle, resumed when opened, deleted when you say so or after
 a long sleep. Ephemeral stays as an option for one-task work. The
-policy and its routes are `design/foundations/03-control-plane.md` §Cloud hosts; this
+policy and its routes are `design/foundations/control-plane.md` §Cloud hosts; this
 section is what each verb *is* on each provider and why the policy has
 the shape it has.
 
@@ -542,16 +542,16 @@ the shape it has.
 
 So there are two resume paths and every driver may need the second:
 **warm** (AWS hibernate, processes intact) and **cold** (boot, relaunch,
-`--resume`). The cold path is note 10 §1's hibernate column and needs
-what `design/runner/02-runner.md` §9 already records: the agent's native session
+`--resume`). The cold path is `../archive/sleep-wake-and-pricing.md` §1's hibernate column and needs
+what `design/runner/runner.md` §9 already records: the agent's native session
 id, captured continuously, never at pause time. On wake the runner
-does what note 10 §3 lists before it announces ready — mint a fresh
+does what `../archive/sleep-wake-and-pricing.md` §3 lists before it announces ready — mint a fresh
 repository token, let `chrony` fix the clock — and on the cold path
 the control plane's `restart` relaunches window 0 with the agent's
-own `--resume` (`design/runner/02-runner.md` §5).
+own `--resume` (`design/runner/runner.md` §5).
 
 **Pause pushes.** `session.stop` carries `push: true` on a host the
-control plane can put to sleep (`design/foundations/01-protocol.md`): the runner pushes
+control plane can put to sleep (`design/foundations/protocol.md`): the runner pushes
 every checkout's working branch before ending the agent, the push
 `close` performs without the removal. That is what makes a failed
 resume on Alibaba or a capacity miss on Oracle a nuisance rather than
@@ -563,14 +563,14 @@ recreate; the machine row does not.
 **The policy picks the verb; the driver never degrades one.** Pause on
 AWS is `stop('suspend')`; on Oracle and Alibaba it is `stop('stop')`,
 because their capabilities say `suspend: false` and the port refuses a
-`suspend` there rather than quietly stopping. Note 10 §6's "skip the
+`suspend` there rather than quietly stopping. `../archive/sleep-wake-and-pricing.md` §6's "skip the
 tier" rule, made a decision the row records instead of an alias inside
 the driver.
 
 **Idle is the control plane's call, and the guest never powers itself
 off.** The sidebar group already says when a session is idle
-(`design/foundations/10-api-modules-and-data-model.md`), so a session idle for thirty minutes on a cloud
-host — longer than note 10 §2's ten, because a resume costs a boot on
+(`design/foundations/api-modules-and-data-model.md`), so a session idle for thirty minutes on a cloud
+host — longer than `../archive/sleep-wake-and-pricing.md` §2's ten, because a resume costs a boot on
 two of the three providers — is paused by the sweeper, which sends the
 stop and then the machine stop. The runner reports and the control
 plane acts, on every provider alike; there is no runner flag for it,
@@ -595,7 +595,7 @@ running ──(idle 30 min)──► paused ──(asleep 7 d, or Delete)──�
 
 ### Never leaking a machine
 
-The ladder in `design/foundations/03-control-plane.md` §Cloud hosts, and why each rung is
+The ladder in `design/foundations/control-plane.md` §Cloud hosts, and why each rung is
 there:
 
 1. **The event.** `session.stopped` on a cloud host is followed by the
@@ -608,7 +608,7 @@ there:
    past its 7 days, a `provisioning` machine older than the boot budget
    (300 s, the `--expected-spawn-seconds` of §1). This is the only thing
    that catches a machine whose user data never ran, and it is the
-   rung Actuated's "everything around the VM is slow" lesson (note 03
+   rung Actuated's "everything around the VM is slow" lesson (`../archive/machines-and-vm-provisioning.md`
    §3) says will fire.
 3. **The provider's own safety.** Spot on AWS is `persistent` +
    `hibernate` (the only spot shape that survives a pause) or not used;
@@ -625,25 +625,25 @@ finish it.
 
 ## 8. The gap that matters: the agent login
 
-On your own host the Claude login is the host's own (00): you type it
+On your own host the Claude login is the host's own (`../design/foundations/scope.md`): you type it
 once in the terminal and every session on that host spends it. An
 ephemeral machine has no `~/.claude`, so every machine would ask you to
 log in, and that is the one place this design is worse than Claude Code
 on the web, where a session-scoped OAuth token is minted by the
 control plane that also runs the model. We cannot mint one, and "no
-vendor credential is ever stored by the platform" is in 00's *done
+vendor credential is ever stored by the platform" is in `../design/foundations/scope.md`'s *done
 means*.
 
 Two answers, in order:
 
 - **Version one: the login button, once per machine.** The login URL
-  Claude prints becomes a button (00), you tap it, the machine is
+  Claude prints becomes a button (`../design/foundations/scope.md`), you tap it, the machine is
   logged in for its lifetime. Ten to fifteen seconds per ephemeral
   session, on a phone. Honest and cheap, and it is exactly the flow the
   MVP already has.
-- **Version two: the account volume of note 10 §6.** A small provider
+- **Version two: the account volume of `../archive/sleep-wake-and-pricing.md` §6.** A small provider
   block volume per cloud account holding the login directory
-  (`CLAUDE_CONFIG_DIR`, note 06), attached to one machine at a time (the
+  (`CLAUDE_CONFIG_DIR`, `../archive/multi-account.md`), attached to one machine at a time (the
   F13 rule), mounted by cloud-init before the runner starts. That is
   the accounts slice, and the first thing it needs is exactly this
   volume; the `MachineProvider` port grows `attachVolume` /
@@ -669,12 +669,12 @@ platform a holder of vendor credentials.
 - **Apache Libcloud** (Python, 35 providers, has OCI and Aliyun
   drivers) and **pkgcloud** (Node, AWS/Azure/DigitalOcean/OpenStack/
   Rackspace, no OCI or Alibaba, stale): a generic node abstraction
-  is exactly the port of `design/foundations/03-control-plane.md`, and writing it over three official SDKs is
+  is exactly the port of `design/foundations/control-plane.md`, and writing it over three official SDKs is
   three files, each a hundred lines of mapping. A generic library buys
   the fourth provider and costs us the capability flags that make the
   first three honest.
 - **Sandbox services** (E2B, Daytona, Northflank BYOC, Fly Sprites):
-  note 10 §7 already ruled them out for lifetime caps, no Docker, and
+  `../archive/sleep-wake-and-pricing.md` §7 already ruled them out for lifetime caps, no Docker, and
   price floors; Daytona has since gone closed-source (June 2026). BYOC
   offerings deploy a platform into your cloud account, which is a
   bigger thing to own than three drivers.
@@ -720,27 +720,27 @@ platform a holder of vendor credentials.
 
 ## 11. What this changes in the plan
 
-- Note 03 §4's cloud bullet and note 10 §6 are rewritten: there is no
+- `../archive/machines-and-vm-provisioning.md` §4's cloud bullet and `../archive/sleep-wake-and-pricing.md` §6 are rewritten: there is no
   guest agent, the ordinary runner pairs with an ordinary pairing
   token, and the adapter is a machine-lifecycle port with no session
   knowledge, owned by `hosts/` rather than a sixth module.
-- The MVP design notes gain the decisions: `design/foundations/03-control-plane.md` the port,
+- The MVP design notes gain the decisions: `design/foundations/control-plane.md` the port,
   the routes and the pause, resume, delete policy; `10` the two rows;
   `01` the `push` flag on `stop`; `02` push-on-stop and the cold
   resume; `05` the host chip, the boot-trace rows and the session menu;
   `09` the cloud-init path. This note stays research.
-- Note 10 §6's provider order "AWS first, Fly second, GCP and Azure
+- `../archive/sleep-wake-and-pricing.md` §6's provider order "AWS first, Fly second, GCP and Azure
   after" is now **AWS, Oracle, Alibaba** in that note's body, driven by
   where the money and the accounts are; Fly, GCP, Azure and Hetzner
   Cloud are rows of the same table there, unscheduled drivers of the
   same port.
-- Note 10 §10's "Ephemeral is the default on cloud hosts" is rewritten:
+- `../archive/sleep-wake-and-pricing.md` §10's "Ephemeral is the default on cloud hosts" is rewritten:
   stopped compute is free on all three providers, so the cloud default
   is Keep with pause and resume (§7), and Ephemeral is the option.
   Its teardown ladder and the boot-trace rows (§2) are new.
 - This note is the design for **v0.2**: the slice after the MVP, with
   pause, resume and delete on cloud machines as its headline.
-- `design/foundations/00-scope.md` is unchanged: this is the slice after the
+- `design/foundations/scope.md` is unchanged: this is the slice after the
   MVP, not part of it. The MVP's install command and pairing token are
   what make the slice small, which is an argument for finishing them
   exactly as designed.

@@ -2,7 +2,7 @@
 "@oppenheimer/api": minor
 ---
 
-Bots, `update_bot` (`product/design/bots/25-bots.md` §4.6): a bot changes the
+Bots, `update_bot` (`product/design/bots/bots.md` §4.6): a bot changes the
 settings of one or more of the person's bots in one call (provider, model,
 effort, permission, group, name, description, colour, learning). It asks under
 Approve for me, needs a workspace key for a new provider, refuses a model the

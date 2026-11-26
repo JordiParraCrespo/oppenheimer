@@ -82,7 +82,7 @@ admits no inline script.
 ## Sign-up
 
 Sign-up creates the account and its personal workspace in one go
-(`product/design/foundations/08-auth.md`). The `/onboarding` screen is only the
+(`product/design/foundations/auth.md`). The `/onboarding` screen is only the
 recovery path for an account that ended up with no workspace. Only
 `/register` passes the social `sign-up` intent.
 
@@ -99,9 +99,9 @@ recovery path for an account that ended up with no workspace. Only
   composer's host chip; the one pairing page, `AddHostScreen`, is Settings'
   own at `/settings/hosts/new`. New project, Project settings and the
   automation editor are dialogs too, not pages
-  (`product/design/console/05-screens.md`, `13-automations.md`). Plan's task,
+  (`product/design/console/screens.md`, `product/design/automations/automations.md`). Plan's task,
   milestone and Start session dialogs open from the address (`?task=`, `?start=`)
-  so "Back to task" is a link (`product/design/plan/18-plan-product.md`).
+  so "Back to task" is a link (`product/design/plan/plan-product.md`).
 - Putting `useWatch` or a query in the page and threading the value down.
   Subscribe at the leaf — `src/features/projects/components/project-save-button.tsx`
   for a form value, `src/features/sessions/screens/session.tsx` for a query:

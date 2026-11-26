@@ -3,7 +3,7 @@
 //
 // On 2026-11-24 a bot told its owner the session it delegated to "is stopped
 // and accepts no instructions: open it with the button above". Since then a bot
-// restarts a stopped session with `restart_session` (`product/design/bots/25-bots.md`),
+// restarts a stopped session with `restart_session` (`product/design/bots/bots.md`),
 // and `send_to_session` on one is refused with the way back.
 //
 // Each case in `cases.json` is one session, stopped (idle, or by a host

@@ -17,7 +17,7 @@
   - `@oppenheimer/web` / `@oppenheimer/translations`: the slider draws the model's levels and sends nothing until moved.
   - `@oppenheimer/design-system-web`: `EffortSlider` and `EffortPicker` take their stops from the caller; `EFFORT_STOPS` is gone.
 
-- fc0e75d: The hosts backend for the Settings page (`product/design/runner/14-hosts-settings.md`).
+- fc0e75d: The hosts backend for the Settings page (`product/design/runner/hosts-settings.md`).
 
   - `@oppenheimer/api`: a host read carries a derived `status` (`running`, `idle`,
     `offline`, `unpaired`) and `runningSessionCount`, counted by `sessions/`
@@ -32,7 +32,7 @@
   - `@oppenheimer/runner`: the facts report the logical CPU count as `cpus`.
   - `@oppenheimer/api`: host metadata tables (`host_inventory`, `host_presence`,
     `host_network`, `host_event`), backfilled from `host`; the old columns stay
-    until the code switches over (`product/design/runner/15-host-metadata.md`).
+    until the code switches over (`product/design/runner/host-metadata.md`).
   - `@oppenheimer/api`: heartbeats write `host_presence` and, only when the
     machine changed, `host_inventory`, with the change on the host's timeline;
     host responses carry `machine`, `vitals` and `network`;
@@ -81,7 +81,7 @@
 - a566fac: A session's start says when the host is downloading the repository for the
   first time: the clone step carries `download`, and the start pane explains
   the longer wait.
-- 3404cd3: A session's terminal can be shared with a link, to watch or to type, for anyone, any signed-in account or named people (`product/design/sessions/21-session-share-links.md`).
+- 3404cd3: A session's terminal can be shared with a link, to watch or to type, for anyone, any signed-in account or named people (`product/design/sessions/session-share-links.md`).
 
 ### Patch Changes
 

@@ -6,7 +6,7 @@ and the runner stopping idle sessions by itself. Each is weighed here against
 four products that do the same.
 
 **onorca is Orca.** `onorca.dev` answers with a 307 to `orca.dev`. Orca
-(Stably AI, MIT) is the agent IDE note 00 calls our closest analogue, and
+(Stably AI, MIT) is the agent IDE `../archive/vision-and-plan.md` calls our closest analogue, and
 `orca-bots.md` reads it too. It runs Claude Code, Codex and other CLIs in
 parallel git worktrees, on the desktop, over SSH and in cloud VMs.
 
@@ -98,7 +98,7 @@ limit is the cap on live agents per host.
 - **The window.** All four default to 30 minutes, but they suspend at no
   cost (a VM, or a pane resumed in place). Orca ships its own idle stop off.
   Our stop costs a relaunch, and the terminal comes back from the agent's
-  transcript, not from its old screen. Note 10 set the same trade-off for
+  transcript, not from its old screen. `../archive/sleep-wake-and-pricing.md` set the same trade-off for
   VMs: pause after ten minutes, suspend to disk after two hours. We take
   **two hours**. That is past a meeting or a lunch, so stepping away does not
   lose the terminal, and short enough that a day's forgotten sessions are

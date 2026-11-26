@@ -3,7 +3,7 @@
 "@oppenheimer/api-client": minor
 ---
 
-Bots, `create_bot` (`product/design/bots/25-bots.md` §4.6).
+Bots, `create_bot` (`product/design/bots/bots.md` §4.6).
 
 - `@oppenheimer/api`: the `create_bot` tool, which asks under Approve for me.
   It dispatches the console's create command as the owner, with the name,

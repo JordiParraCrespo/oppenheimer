@@ -42,7 +42,7 @@ const scroll = (what: string) =>
   z.number().int().min(-COMPUTER_SCROLL_MAX).max(COMPUTER_SCROLL_MAX).optional().describe(what);
 
 /**
- * Using a computer (`25-bots.md` §4.2, "Using a computer"): a bot sees the
+ * Using a computer (`product/design/bots/bots.md` §4.2, "Using a computer"): a bot sees the
  * screen of one of the owner's hosts and uses its mouse and keyboard, one
  * action at a time, each answered with the screen after it. It reaches
  * outside Oppenheimer, so under Approve for me it asks first, once per host

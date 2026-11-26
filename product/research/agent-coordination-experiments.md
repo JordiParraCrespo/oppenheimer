@@ -152,7 +152,7 @@ Sensitivity, every assumed rate scaled at once by a random factor in
    share to a person)`, an output of the model computed from its own
    assumed rates, not a measurement. The cost is safety: 4.5 bad actions
    through lanes against 1.4 with a person on everything, so the lane
-   policy's quality is the safety knob (note 15's lanes are the same
+   policy's quality is the safety knob (`reviewing-at-agent-speed.md`'s lanes are the same
    idea).
 6. **Broadcast is the expensive part.** Every agent reading every
    message is quadratic: 260 times the reads at 20 agents, 1,150 times
@@ -177,7 +177,7 @@ Sensitivity, every assumed rate scaled at once by a random factor in
 
 ## What was built from it
 
-`message_bot` and `ask_bot` (`design/bots/25-bots.md` §4.6, 2026-10-18)
+`message_bot` and `ask_bot` (`design/bots/bots.md` §4.6, 2026-10-18)
 take two of the six controls as they are, the sender recorded by the
 server and the secret scanner on messages, and add what the incident's
 failures called for beside them: a chain bounded in depth and turns,

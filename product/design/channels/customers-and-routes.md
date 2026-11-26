@@ -139,7 +139,7 @@ this number to Juno", which is the binding channels.md had.
 
 ## 4. A bot of a customer's own
 
-A bot dedicated to one customer is an ordinary bot (note 25) with routes
+A bot dedicated to one customer is an ordinary bot (`../bots/bots.md`) with routes
 that send only that customer to it. Nothing new is built for it, and that
 is the point: its `INSTRUCTIONS.md`, its documents and its memory are its
 own, so what it knows about Acme was only ever learned from Acme.
@@ -157,7 +157,7 @@ own, so what it knows about Acme was only ever learned from Acme.
 ## 5. A shared bot serving many customers
 
 Iris answering every Slack customer must not tell Globex what it learned
-from Acme. Note 25 has one memory per bot, shared by every conversation
+from Acme. `../bots/bots.md` has one memory per bot, shared by every conversation
 (channels.md §4, as dots does). Customer turns change that:
 
 - **Facts carry who they came from.** `bot_memory_fact` gains a nullable
@@ -215,7 +215,7 @@ Support needs a way out of the bot.
   app, the address) with their name where the channel shows one.
 - **Back to the bot** is a button; until it is pressed, new messages wait
   in the inbox, not for a turn.
-- **The workspace is personal** (CLAUDE.md, note 08), so "a person" is the
+- **The workspace is personal** (CLAUDE.md, `../foundations/auth.md`), so "a person" is the
   owner for now. Teams, assignment and an inbox per person come with teams.
 
 ## 8. Channels with customers on them
@@ -283,7 +283,7 @@ These come after channels.md slice 1 (the core and email to one bot).
    (clocking in and out, absences), that is a separate bot and note.
 2. Does a customer need a portal or a web chat widget as a fourth
    channel, or are email, WhatsApp and Slack enough?
-3. Bookings: is the front desk's calendar the workspace's (note 20) or a
+3. Bookings: is the front desk's calendar the workspace's (`../plan/plan-calendar.md`) or a
    per-customer one?
 4. Should a customer's identities be created by the bot (it asks for an
    email on WhatsApp and links them), or only by the owner?

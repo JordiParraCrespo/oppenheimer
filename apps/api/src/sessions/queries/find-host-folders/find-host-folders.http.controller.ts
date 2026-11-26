@@ -52,7 +52,7 @@ export class FindHostFoldersHttpController {
   @ApiOperation({
     summary: 'List a folder on a host',
     description:
-      'The sub-directories of one folder on the host, listed by its runner now: names only, hidden ones left out, with the branch of each that is a git repository. Nothing is cached. `recent` is the caller’s own earlier folder sessions on this host (`product/design/sessions/24-session-places.md`).',
+      'The sub-directories of one folder on the host, listed by its runner now: names only, hidden ones left out, with the branch of each that is a git repository. Nothing is cached. `recent` is the caller’s own earlier folder sessions on this host (`product/design/sessions/session-places.md`).',
   })
   @ApiQuery({
     name: 'path',

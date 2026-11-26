@@ -23,7 +23,7 @@ export type HostComputerOutcome =
 
 /**
  * What the module that owns the runner link implements so a bot can use a
- * host's screen, mouse and keyboard (`product/design/bots/25-bots.md` §4.2,
+ * host's screen, mouse and keyboard (`product/design/bots/bots.md` §4.2,
  * "Using a computer"). It waits for the runner's answer; whether the host
  * lets a bot near its screen at all is the host's own setting, which nothing
  * here sees. The screenshot is never stored.

@@ -6,12 +6,12 @@ a terminal.
 ## What exists to build on
 
 - The terminal: xterm.js, tmux on the host, the PTY stream
-  (`../runner/02-runner.md`, `../foundations/01-protocol.md`).
-  Note 13 records tmux as a trade: agents survive a restart, at a cost
+  (`../runner/runner.md`, `../foundations/protocol.md`).
+  `../../research/lessons-from-herdr.md` records tmux as a trade: agents survive a restart, at a cost
   in terminal fidelity.
-- Note 01's "Later" column for the terminal: serialized scrollback,
+- `../../archive/terminal-first.md`'s "Later" column for the terminal: serialized scrollback,
   search, links.
-- Note 13 and `../runner/02-runner.md` §9: lifecycle hooks are
+- `../../research/lessons-from-herdr.md` and `../runner/runner.md` §9: lifecycle hooks are
   authoritative where an agent has them, screen reading the fallback —
   the source a chat display would read from.
 - `../../research/lessons-from-synara-and-openclaw.md`: how two products
@@ -46,7 +46,7 @@ Claude Code session it follows `<conversation>.jsonl` and sends what is
 appended. This is the other answer to `../../research/lessons-from-synara-and-openclaw.md`
 §3: Synara, OpenClaw and T3 Code drive the CLI through stream-json or the
 Agent SDK and give up process survival; this keeps tmux and reads the
-file the CLI writes anyway. It also keeps note 01's subscription position:
+file the CLI writes anyway. It also keeps `../../archive/terminal-first.md`'s subscription position:
 nothing reads or relays the person's Claude credentials.
 
 - **Runner** (`sessions/adapters/transcript/follow.go`; each agent's reader
@@ -274,7 +274,7 @@ What it does not do yet, and what a version of it would decide:
 
 1. **Token streaming.** The transcript gets a line per message and per
    tool result, so a reply appears whole, not word by word. Lifecycle
-   hooks (02 §9) or reading the PTY for the reply in flight are the two
+   hooks (`../runner/runner.md` §9) or reading the PTY for the reply in flight are the two
    ways to get closer.
 2. **Approvals as UI.** A permission prompt is still answered in the
    terminal; the chat shows the call waiting. Hooks are the source here too.
@@ -284,7 +284,7 @@ What it does not do yet, and what a version of it would decide:
 4. **Codex.** Done, with Grok: "Codex and Grok (2026-11-02)" below, after
    OpenCode, which has no file and is read by its API ("OpenCode
    (2026-11-02)").
-5. **The security note** (07) should say in words that a conversation's
+5. **The security note** (`../foundations/security-checklist.md`) should say in words that a conversation's
    text now crosses the relay as text, which is no more than the terminal
    bytes already carry.
 

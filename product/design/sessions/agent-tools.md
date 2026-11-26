@@ -18,11 +18,11 @@ fifth gives a bot §2's line (2026-11-03):
 
 They share one shape: the agent runs a `runner` command in its terminal,
 which reaches the runner's daemon over its local socket (as
-`runner sessions report` does, `../runner/02-runner.md`), and the
+`runner sessions report` does, `../runner/runner.md`), and the
 command is taught to every agent by `runner --skill`
 (`apps/runner/internal/cli/skill.md`). A question with options (the
 `AskUserQuestion` card) is already the Inbox's slice 4
-(`../console/29-inbox.md`), so it is not here.
+(`../console/inbox.md`), so it is not here.
 
 ## 1. Send a file (built 2026-11-02)
 
@@ -93,7 +93,7 @@ command is taught to every agent by `runner --skill`
 - **Not yet.** A push to a phone: the Inbox is where a notice lands, and
   the phone is 0.5's (`../clients/mobile.md`, its question 3). A browser
   notification while the console is open in another tab is the cheap step
-  before that; built 2026-11-24 (`../console/29-inbox.md`, "A
+  before that; built 2026-11-24 (`../console/inbox.md`, "A
   notification in this browser").
 
 ## 3. Wake on a pull request (built 2026-11-02)
@@ -207,7 +207,7 @@ its pending approvals reached the Inbox.
 
 - **What it is.** §3's wake, for a bot instead of a session's agent: a
   bot subscription of kind `pull_request`
-  (`../bots/27-bot-subscriptions.md` §7.1), made with
+  (`../bots/bot-subscriptions.md` §7.1), made with
   `watch_pull_request { repository: "owner/name" | id, number, purpose? }`
   and undone with `unwatch_pull_request`; `list_watches` lists it beside
   the sessions the bot follows.
@@ -228,7 +228,7 @@ its pending approvals reached the Inbox.
   `get_pull_request`. A merge is the last wake. Twenty wakes end it.
 - **Not yet.** A pull request closed without a merge makes no event, so it
   does not end the watch; nor does the console list a bot's watches
-  (27 §9, slice B).
+  (`../bots/bot-subscriptions.md` §9, slice B).
 
 ## 7. Bots see shared files (built 2026-11-03)
 
@@ -286,7 +286,7 @@ its pending approvals reached the Inbox.
   `tool_call`, `tool_result`, `image`), oldest first
   (`packages/shared/src/schemas/session-transcript.schema.ts`).
 - **Where it comes from.** The host, live, on request: `transcript.read` /
-  `transcript.page` on the link (`../foundations/01-protocol.md`), behind
+  `transcript.page` on the link (`../foundations/protocol.md`), behind
   the runner's `transcript.read` capability and an 8-second wait. The
   runner reads the same compacted lines the chat view gets, from Claude
   Code's, Codex's and Grok's own transcripts; OpenCode keeps its

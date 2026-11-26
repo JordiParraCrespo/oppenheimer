@@ -9,7 +9,7 @@ on 2026-10-22, and it has no version yet.
 **Claude is built** (2026-10-27), ahead of the order below, because the
 owner asked for it end to end:
 
-- **Cloud is a third place** (`24-session-places.md` §7). New
+- **Cloud is a third place** (`session-places.md` §7). New
   session's Where chip offers *Claude Code cloud* on a host.
 - **The dispatching host's runner starts it.** It fetches the repository with
   a token sealed into the create, runs `claude --cloud <task>` in a scratch
@@ -57,7 +57,7 @@ The owner asked for Codex cloud tasks "more or less as Claude Code": started
 from a host, finished on OpenAI's machines, not ours, with their status
 followed here and a way to bring the work back. It is the host-started kind
 of the `cloud` place with the agent `codex`
-(`24-session-places.md` §7):
+(`session-places.md` §7):
 
 - **The dispatching host's runner starts it** with
   `codex cloud exec --env=<environment> --branch <base> <task>` and the
@@ -279,7 +279,7 @@ gone, and "What it is" and "What it shows" here are kept as history.
 - **What it is.** Its own module and table (`apps/api/src/cloud-agents/`,
   `cloud_agent`), not a third place of `work_session`: a work session is
   the fold of a host's event log, with a host, a tmux session and
-  checkouts, none of which a vendor's agent has. Note 24 stays as it is.
+  checkouts, none of which a vendor's agent has. `session-places.md` stays as it is.
   A cloud agent is a person's own: nobody else in the workspace reads it.
 - **What it shows.** Launch (a prompt, a repository Cursor can reach, a
   model or Cursor's own pick, a starting branch, open a pull request);
@@ -570,7 +570,7 @@ automation's runs now pick **where** as New session does:
   with **Runs in**; Started from is the host for Claude Code's cloud, and
   Cursor has no host or agent row, its models being Cursor's.
 - **Which Claude account.** A Claude Code cloud session runs on the
-  claude.ai account the starting host's `claude` is signed in as (24 §7), so
+  claude.ai account the starting host's `claude` is signed in as (`session-places.md` §7), so
   picking the host picks the account. The owner asked to see it as they
   pick: in Claude Code cloud, the task dialog's host list names each host's
   account and a line under the chips says which one the session runs on,
@@ -606,13 +606,13 @@ no rule of its own: a missing key is `CLOUD_AGENTS_004`, a host that cannot
 start the cloud is the session's own failure. The approval card says a
 Cursor session runs on the owner's Cursor key, since it bills their plan.
 The tool lists `CLOUD_AGENT_PROVIDERS` beside `HOST_CLOUD_AGENT_IDS`, so the
-next vendor is a value there too (`25-bots.md` §4.2).
+next vendor is a value there too (`../bots/bots.md` §4.2).
 
 ## Questions to answer first
 
 1. ~~Does the control plane holding a person's Cursor API key need F23
    reworded to "no subscription sign-in"?~~ Answered 2026-10-26: F23
-   carries a dated line saying so (`../../archive/04-security-review.md`).
+   carries a dated line saying so (`../../archive/security-review.md`).
 2. Which version takes it, and does the first step (remote features for
    host sessions) go into 0.7 with the chat? Cursor and Claude landed
    ahead of any version; Codex and Grok still wait on this. Codex landed

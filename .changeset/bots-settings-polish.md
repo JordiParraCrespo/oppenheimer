@@ -8,7 +8,7 @@
 "@oppenheimer/translations": minor
 ---
 
-Bot settings polish (`product/design/bots/25-bots.md`, 2026-10-16).
+Bot settings polish (`product/design/bots/bots.md`, 2026-10-16).
 
 - `@oppenheimer/api`: `GET /bots/:id/conversation/export` streams the whole
   chat as NDJSON, one message per line, a page at a time; `DELETE /bots/:id/conversation` clears it (turns,

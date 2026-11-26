@@ -3,7 +3,7 @@
 The engines a bot's turn runs on: one `BotEngine` port over the Claude Agent
 SDK (`anthropic`, `glm`) and the OpenAI Agents SDK (`openai`, and `chatgpt`,
 the same engine pointed at ChatGPT's Codex backend on a subscription sign-in). Designed in
-`product/design/bots/25-bots.md` §2.
+`product/design/bots/bots.md` §2.
 
 > Read the root [`CLAUDE.md`](../../../CLAUDE.md) and
 > [`.agents/rules/backend-packages.md`](../../../.agents/rules/backend-packages.md).

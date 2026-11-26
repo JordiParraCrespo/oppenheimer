@@ -1,4 +1,4 @@
-# 15 — Reviewing at the speed agents write
+# Reviewing at the speed agents write
 
 The owner asked on 2026-09-27 for research and forward thinking: when a
 developer deals with GitHub, what would make them more productive or give
@@ -205,7 +205,7 @@ Auto-merge covers **every PR** in the repository that passes (owner,
 
 **We act in the user's name** (owner, 2026-09-28). The approving review
 and the merge are made with the user's own GitHub authorization, the
-user-to-server token of the App's install flow (note 09 §1), so on
+user-to-server token of the App's install flow (`../archive/github-app-install.md` §1), so on
 GitHub they are the user's approval and the user's merge. The review body
 carries the lane, Jev's probabilities, the policy lines and the
 verification run's evidence, marked as done by Oppenheimer on the user's
@@ -227,7 +227,7 @@ only read diffs.
 
 ### 5.1 Prepared before you open it
 
-Review is an **automation** (13), not a new kind of thing. Its trigger is
+Review is an **automation** (`../design/automations/automations.md`), not a new kind of thing. Its trigger is
 *a pull request enters the queue* (opened, ready for review, or a new
 push). Its What step is the review, sized by the lane. Its Agent step is
 the same one the automation editor already has: agent, model, permission
@@ -324,7 +324,7 @@ automation editor like any other:
 
 - **Where:** the project and its repositories, and the host.
 - **When:** a pull request enters the queue, with the PR filters the
-  GitHub trigger already has (note 05 §7): base branch, labels, author,
+  GitHub trigger already has (`../archive/github-experience.md` §7): base branch, labels, author,
   draft.
 - **What:** the review, with the setup commands, the checks to run, how
   to start the app, and extra review rules. Each lane's agent (§3) is a
@@ -337,7 +337,7 @@ The auto-merge policy's hard lines live on the same automation, so
 "how this repository is reviewed" is one page.
 
 The wider market, and what to take from it (a learning loop, the policy
-as a file, a ready-to-merge agent), is note 16.
+as a file, a ready-to-merge agent), is `developer-tools-landscape.md`.
 
 ## 6. Also worth building
 

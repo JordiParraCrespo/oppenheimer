@@ -35,7 +35,7 @@ pnpm generate:guide                     # bundle docs/guide for the bots (check:
 `docs/guide/` is "Using Oppenheimer", the user guide, and it has a second
 reader: every bot in the product reads these exact pages through its
 `read_oppenheimer_docs` tool before it answers a question about Oppenheimer
-(`product/design/bots/25-bots.md` §4.1, "Oppenheimer's own guide"). So:
+(`product/design/bots/bots.md` §4.1, "Oppenheimer's own guide"). So:
 
 - Write only what is built, where it is in the console, and its limits; a
   bot repeats what a page says as fact.

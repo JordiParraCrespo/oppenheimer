@@ -7,7 +7,7 @@
 "@oppenheimer/translations": patch
 ---
 
-Bots in the console's sections (`product/design/bots/28-bots-in-sections.md`).
+Bots in the console's sections (`product/design/bots/bots-in-sections.md`).
 
 - `@oppenheimer/shared`: `BOT_SECTIONS` (`sessions`, `automations`, `plan`,
   `pulls`), and `sections` on the create and update bot inputs.

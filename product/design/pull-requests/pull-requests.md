@@ -80,7 +80,7 @@ with Jev's type, risk and area chips, the brief's top half written by a
 summary agent, and keyboard triage that approves, comments and merges
 in the user's name), and **Analytics** (§5). Lanes, auto-merge,
 prepared review sessions, *what it ran*, saved views and the rest of
-note 15 come after. The design handoff for it is
+`../../research/reviewing-at-agent-speed.md` come after. The design handoff for it is
 [`pull-requests-design-handoff.md`](pull-requests-design-handoff.md).
 
 ### The screens as built (owner, 2026-10-13)
@@ -171,7 +171,7 @@ What the two references do, and what we took:
   *guided reviews* split a diff into sections with a line on what changed and
   why, the core of the change first and the glue last, on the argument that
   agents now check lines and people judge whether a change fits. That is
-  note 15's reading order (§5.3). The deck takes the first half, the summary
+  `../../research/reviewing-at-agent-speed.md`'s reading order (§5.3). The deck takes the first half, the summary
   before the diff; the guided diff itself is not built (below).
 
 What is built:
@@ -215,7 +215,7 @@ What is built:
 
 Not built, and why:
 
-- **A guided diff** (Linear's sections, note 15's cohorts in reading
+- **A guided diff** (Linear's sections, `../../research/reviewing-at-agent-speed.md`'s cohorts in reading
   order): the deck opens the plain Changes view.
 - **Private pictures.** A picture attached to a private repository's pull
   request is served by GitHub only to a signed-in browser, so it does not
@@ -269,7 +269,7 @@ it than that.
 ## 2. Where it lives in the console
 
 The rail left of the sidebar already switches the console's lists —
-Sessions, Automations (`../console/05-screens.md`, 13). **Pull
+Sessions, Automations (`../console/screens.md`, `../automations/automations.md`). **Pull
 requests** becomes the third item, between them:
 
 ```
@@ -415,7 +415,7 @@ nobody should read it as a promise.
 On a PR in *Waiting on others*, past its red threshold, the row offers
 **Nudge @reviewer**: a comment on the PR from your account, with a fixed
 template you can edit before sending. Never automatic in 0.2: an
-automatic nudge is an automation (13), and the Automations list is
+automatic nudge is an automation (`../automations/automations.md`), and the Automations list is
 where it belongs when it comes. The Slack version is 0.4's.
 
 ## 4. Picking a PR: the pane
@@ -451,9 +451,9 @@ What only Oppenheimer can do, because it owns hosts and sessions:
 - **Fix in its session** — on a PR opened by a session, *CI failing*,
   *Changes requested* and *n unanswered threads* each have a button
   that sends the failing check or the threads into that session's
-  composer, bundled as note 05 §5 bundles inline diff comments. Nothing
+  composer, bundled as `../../archive/github-experience.md` §5 bundles inline diff comments. Nothing
   is sent without the person pressing send; auto-fix subscriptions
-  (note 05 §6) stay 0.2's other document's question.
+  (`../../archive/github-experience.md` §6) stay 0.2's other document's question.
 - **CI findings** (built 2026-10-29, from Grok Bot's CI investigation,
   `research/lessons-from-grok-bot.md` §9 row 14). What a failing check
   came to is a record, not prose in a chat:
@@ -495,7 +495,7 @@ one of its tabs, and the Pull requests sidebar keeps a link to that tab.
 ### 5.1 Principles
 
 - **Flow, and your own habits.** The workspace is personal
-  (`../foundations/08-auth.md`), so the first reader is you. When teams
+  (`../foundations/auth.md`), so the first reader is you. When teams
   come, the numbers become the team's flow; there is **no ranking of
   people** in either, following the metrics tools' own guidance and
   Goodhart's law.
@@ -541,14 +541,14 @@ purpose: they measure typing, not work.
 ## 6. Where the data comes from
 
 The MVP lists repositories live from GitHub and keeps no mirror
-(`../foundations/10-api-modules-and-data-model.md`). The queue can
+(`../foundations/api-modules-and-data-model.md`). The queue can
 stay live; analytics cannot, because it needs history.
 
 - **Identity.** "Review requested from you" needs your GitHub login. The
-  App's install flow already carries a user authorization (note 09 §1),
+  App's install flow already carries a user authorization (`../../archive/github-app-install.md` §1),
   so the user-to-server token answers "who am I" and GitHub search as
   you, while results stay inside the installation's repositories. Note
-  09's boundary is unchanged: a repository the App is not installed on
+  `../runner/runner-install-and-update.md`'s boundary is unchanged: a repository the App is not installed on
   does not appear through the App, and the empty state says how to add
   it. One the App will never be installed on reaches the queue through
   a token of your own instead (§6.1).
@@ -570,7 +570,7 @@ stay live; analytics cannot, because it needs history.
   nothing is precomputed until a query is measured slow. The tables are
   designed with `/design-database` when this is built; the point here is
   only that events are the source and the numbers are derived.
-- **Reconnecting 05's webhook receiver.** This is the receiver note 05
+- **Reconnecting `../../archive/github-experience.md`'s webhook receiver.** This is the receiver `../../archive/github-experience.md`
   §6 needs for auto-fix. Building it for the queue pays for auto-fix's
   plumbing too, which is an argument for doing 0.2's two documents in
   that order.
@@ -587,7 +587,7 @@ to a hook a repository admin adds, and a GitHub App's user-to-server
 token is held to the installation, so §Identity's search does not see
 those repositories either. What reaches them is a credential of the
 person's own. This section is how such a repository reaches the queue
-and nothing else: what a session may do there is note 09's, unchanged.
+and nothing else: what a session may do there is `../../archive/github-app-install.md`'s, unchanged.
 
 The App stays the path: it is the only one with webhooks, short-lived
 tokens and nothing to paste, and the empty state for a missing
@@ -643,7 +643,7 @@ settings, and nothing changes for anyone who does not.
   this path does not exist, and the empty state says that, naming the
   organisation.
 - **Writes go to GitHub.** Approving, commenting and merging on these
-  repositories is *Open on GitHub*. Note 15's writes in your name are for
+  repositories is *Open on GitHub*. `../../research/reviewing-at-agent-speed.md`'s writes in your name are for
   installed repositories.
 - **The budget** (`integrations.md`: written down before it is built).
   Every call spends the person's own 5,000 requests an hour, never a
@@ -717,7 +717,7 @@ Kept out of 0.2 and listed so nobody adds them by accident:
 - **Ask about the numbers**: a question box over the analytics that
   answers with a view (a query), so the answer is still a list you can
   check.
-- **Automations with PR triggers** (13, note 05 §7): "when a PR in view
+- **Automations with PR triggers** (`../automations/automations.md`, `../../archive/github-experience.md` §7): "when a PR in view
   X waits past red, nudge on Slack" — rules again, running on a
   schedule.
 

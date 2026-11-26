@@ -44,7 +44,7 @@ export class SearchHostFoldersHttpController {
   @ApiOperation({
     summary: 'Search the folders on a host',
     description:
-      'The folders under the host’s home whose name holds `q`, found by its runner now: a walk a few levels deep that skips hidden folders and dependency trees and does not look inside git repositories. Best match first, at most fifty; `truncated` says there may be more (`product/design/sessions/24-session-places.md`).',
+      'The folders under the host’s home whose name holds `q`, found by its runner now: a walk a few levels deep that skips hidden folders and dependency trees and does not look inside git repositories. Best match first, at most fifty; `truncated` says there may be more (`product/design/sessions/session-places.md`).',
   })
   @ApiQuery({ name: 'q', required: true, type: String, description: 'Part of a folder’s name.' })
   @ApiResponse({ status: 200, type: HostFolderSearchResponseDto })

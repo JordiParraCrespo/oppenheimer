@@ -3,8 +3,8 @@
 > **Proposal, not adopted.** Research brought over from pull request
 > #43, which was closed on 2026-10-10 without merging. It decides
 > nothing; the notes each item would change are named in it, and none of
-> them has taken an item yet. Its numbered cross-references (`02 §14`,
-> `03 §Cloud hosts` and the like) point at sections that pull request
+> them has taken an item yet. Its numbered cross-references (``../design/runner/runner.md` §14`,
+> ``../design/foundations/control-plane.md` §Cloud hosts` and the like) point at sections that pull request
 > proposed and that the current notes do not have. Paths in backticks
 > are relative to `product/`.
 
@@ -59,7 +59,7 @@ called. Concepts are carried over, not code.
   API keys.
 - There is no Claude Code proxy; the code lists it as future work.
 
-That is the opposite of `design/foundations/00-scope.md`'s *Done means* (the person
+That is the opposite of `design/foundations/scope.md`'s *Done means* (the person
 logs in to their own subscription inside the machine; no vendor
 credential is stored by the platform). As a runtime it is out. The only door left is the
 `custom` adapter running our own runner, and whether a CLI can finish
@@ -148,7 +148,7 @@ Each item names the notes it would change. None of them is decided
 here.
 
 1. **Agent state from hooks, and approvals as objects.** This is the
-   hook half of `design/runner/02-runner.md` §9 that is still to build, and it
+   hook half of `design/runner/runner.md` §9 that is still to build, and it
    answers `05` open question 2 (what "blocked" looks like).
    - A `runner hook <event>` subcommand, the same shape as the
      credential helper, installed as Claude Code's hooks at launch and

@@ -124,7 +124,7 @@ A new module `apps/api/src/voice/`, scaffolded with `/scaffold-module`:
   the module.
   - **The workspace's ChatGPT sign-in** first (decided 2026-10-16).
     Settings → Model providers already signs a workspace in to ChatGPT
-    for bots (`../bots/25-bots.md` §2), and
+    for bots (`../bots/bots.md` §2), and
     `ChatgptCredentialResolver` in `apps/api/src/bots/` stores, seals
     and refreshes that sign-in. Voice reuses it rather than asking for a
     second credential. The bots module exports the resolver behind a

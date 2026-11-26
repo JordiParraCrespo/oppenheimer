@@ -38,7 +38,7 @@
   - `@oppenheimer/tsconfig`: the app dependency-cruiser rules add `providers-mount-dialogs` and `features-query-through-the-product`.
   - `@oppenheimer/web`: `features/installations/`.
 - 2dc27d2: Plan: a task board, goals and a calendar, the console rail's third item
-  (`product/design/plan/17-plan.md`).
+  (`product/design/plan/plan.md`).
 
   - `@oppenheimer/api`: the `tasks` module (tasks, goals, the board's order,
     starting or linking a session, the attach rule) and the `calendar` module

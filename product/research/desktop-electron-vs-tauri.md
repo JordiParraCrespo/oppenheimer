@@ -104,7 +104,7 @@ Both rendered the console the same way after sign-in
    are.
 5. **Tauri ties the console to each platform's WebView.** That means WebKit
    on macOS and Linux and WebView2 on Windows, so CSS, WebRTC (the direct
-   path, 22) and xterm's WebGL renderer have to be tested in each.
+   path, `../design/runner/direct-terminal-path.md`) and xterm's WebGL renderer have to be tested in each.
    Electron ships one Chromium, the same engine the console is developed
    and tested in.
 

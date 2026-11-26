@@ -6,7 +6,7 @@ review from a phone.
 ## What exists to build on
 
 - The console is a web SPA; the terminal is xterm.js over a WebSocket
-  (`../console/05-screens.md`, `../foundations/01-protocol.md`).
+  (`../console/screens.md`, `../foundations/protocol.md`).
 - The starter's mobile app was pruned from the repository, so a native
   app starts fresh.
 - 0.4's notifications, which a phone wants as push.
@@ -86,7 +86,7 @@ review from a phone.
   stays on the computer, where its trigger and repositories are picked.
 - **Plan** (2026-11-16), stacked on Automations. The mobile export has no
   Plan frames (its tab bar predates it), so the tab reads the console's
-  board (`Tasks.dc.html`, `18-plan-product.md`) on a phone: one list, its
+  board (`Tasks.dc.html`, `../plan/plan-product.md`) on a phone: one list, its
   four columns in order, Done keeping the past week with the rest a tap
   away, the project picked in the system's picker, the counts under the
   title, and Add task at the foot of Not started. A row ticks done, opens

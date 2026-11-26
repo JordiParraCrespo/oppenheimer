@@ -62,7 +62,7 @@ new feature. Before creating anything, answer these:
   that fill something in steps (New project, Add host) are `EditorPage`s under
   the `_editor` layout. The console's sidebar *is* the session list. Workspaces
   are personal: there is no roster, invitation or team UI to build, whatever
-  the API serves (`product/design/foundations/08-auth.md`).
+  the API serves (`product/design/foundations/auth.md`).
 - **Does the API serve it?** Look for the endpoint in `apps/api/openapi.json`
   and the generated client in `packages/frontend/api-client`. If it isn't
   there, the backend comes first (`/scaffold-module`, then

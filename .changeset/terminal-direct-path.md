@@ -7,7 +7,7 @@
 ---
 
 A session's terminal can take a direct path to its host
-(`product/design/runner/22-direct-terminal-path.md`), behind the new
+(`product/design/runner/direct-terminal-path.md`), behind the new
 `terminal_direct_path` release flag.
 
 - `@oppenheimer/runner`: answers a browser's WebRTC offer with pion and

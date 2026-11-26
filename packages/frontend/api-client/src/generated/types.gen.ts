@@ -1700,7 +1700,7 @@ export type SessionResponseDto = {
      */
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | 'cursor';
     /**
-     * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/design/sessions/24-session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).
+     * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/design/sessions/session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).
      */
     place: 'worktree' | 'folder' | 'cloud';
     /**
@@ -1713,7 +1713,7 @@ export type SessionResponseDto = {
     cloudSessionId?: string | null;
     launch: SessionLaunchResponseDto;
     /**
-     * The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/design/foundations/03-control-plane.md`).
+     * The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/design/foundations/control-plane.md`).
      */
     state: 'working' | 'waiting-on-you' | 'ready-for-review' | 'landing' | 'idle' | 'resolved';
     /**
@@ -1727,7 +1727,7 @@ export type SessionResponseDto = {
     agentSessionId?: string | null;
     lastEventAt?: string | null;
     /**
-     * When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/design/console/29-inbox.md` §3).
+     * When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/design/console/inbox.md` §3).
      */
     observedSince?: string | null;
     /**

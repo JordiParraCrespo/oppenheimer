@@ -36,8 +36,8 @@ internal/
   arch/                       import-boundary test
 ```
 
-The product contexts are designed in `product/design/runner/02-runner.md` §3
-and `09-runner-install-and-update.md`. Six of them exist:
+The product contexts are designed in `product/design/runner/runner.md` §3
+and `product/design/runner/runner-install-and-update.md`. Six of them exist:
 
 | Context | What it owns |
 | ------- | ------------ |
@@ -47,7 +47,7 @@ and `09-runner-install-and-update.md`. Six of them exist:
 | `updates` | the policy: channel, safe window, staging, health gate, rollback — on `packages/go/selfupdate`, which holds the mechanics |
 | `whatsapp` | the host's one WhatsApp linked device, on whatsmeow (`adapters/whatsmeow`, the only package that may import it, and with the transcript adapter the only one that may import the SQLite driver): pairing by QR, the reconnects, the messages that arrive kept in an on-disk outbox until the control plane acks them, sends inside the host's own budget (`product/design/channels/whatsapp.md`) |
 | `telegram` | the host's one Telegram bot on the Bot API (`adapters/botapi`, four HTTPS calls on `net/http`, no library): its token checked and kept in the state directory, `getUpdates` long-polled with backoff, the messages that arrive kept in an on-disk outbox until the control plane acks them, sends paced to Telegram's own limits (`product/design/channels/telegram.md`) |
-| `sessions` | the lifecycle: the work folder (bare stores, session folders and their markers, 24 §2), worktree or folder sessions, the tmux session and its windows, the screen classifier, adoption after a restart, close |
+| `sessions` | the lifecycle: the work folder (bare stores, session folders and their markers, `product/design/sessions/session-places.md` §2), worktree or folder sessions, the tmux session and its windows, the screen classifier, adoption after a restart, close |
 
 `sessions/adapters/manifest` is the one adapter whose behaviour is **data**:
 one JSON manifest per agent (bundled with `go:embed`, overridable from

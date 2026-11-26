@@ -4,22 +4,22 @@
 > #43, which was closed on 2026-10-10 without merging. It was drafted as
 > `versions/mvp/17-orchestration.md`; that number is now Plan. Its
 > "What it proposed" list was never adopted: the control plane today is
-> [`design/foundations/03-control-plane.md`](../design/foundations/03-control-plane.md)
+> [`design/foundations/control-plane.md`](../design/foundations/control-plane.md)
 > and
-> [`10-api-modules-and-data-model.md`](../design/foundations/10-api-modules-and-data-model.md),
+> [`../design/foundations/api-modules-and-data-model.md`](../design/foundations/api-modules-and-data-model.md),
 > and the runner is
-> [`design/runner/02-runner.md`](../design/runner/02-runner.md). Bare
+> [`design/runner/runner.md`](../design/runner/runner.md). Bare
 > numbers in it name `design/` notes. Its numbered
-> cross-references (`02 §14`, `03 §Cloud hosts` and the like) point at
+> cross-references (``../design/runner/runner.md` §14`, ``../design/foundations/control-plane.md` §Cloud hosts` and the like) point at
 > sections that pull request proposed and that the current notes do not
 > have. Paths in backticks are relative to `product/`.
 
 How many runners there are, who decides where a session runs, what a
 "queue" is in this system, and what survives what. Proposed 2026-09-22
-on top of what is built: the link and its in-process registry (03
+on top of what is built: the link and its in-process registry (`../design/foundations/control-plane.md`
 §The relay), the transactional outbox (`apps/api/src/outbox`), the
-BullMQ queue package, the session log as the truth (10), and the
-microVM runtime (02 §14, `sessions-in-microvms.md`).
+BullMQ queue package, the session log as the truth (`../design/foundations/api-modules-and-data-model.md`), and the
+microVM runtime (`../design/runner/runner.md` §14, `sessions-in-microvms.md`).
 
 ## What it proposed
 
@@ -27,11 +27,11 @@ microVM runtime (02 §14, `sessions-in-microvms.md`).
   person.** A runner is the host's agent, installed as that person's
   user service. Scaling out is more hosts, never more runners on one
   host. A host is either the person's own machine or one rented through
-  the port in 03 §Cloud hosts; both run the same runner and the same
+  the port in `../design/foundations/control-plane.md` §Cloud hosts; both run the same runner and the same
   microVMs.
 - **The control plane assigns; hosts never claim.** A session is placed
   on a specific host at create (or as soon as a host exists), the rule
-  note 03 §3 took from Actuated: assign before creating anything, so
+  `../archive/machines-and-vm-provisioning.md` §3 took from Actuated: assign before creating anything, so
   there is no pool to size. Anthropic's self-hosted runners do the
   opposite — a queue per environment, runners claim — and that is right
   for a fleet of identical containers restarted by Kubernetes; ours are
@@ -39,7 +39,7 @@ microVM runtime (02 §14, `sessions-in-microvms.md`).
   session lives on is what decides where it resumes.
 - **Three kinds of "queue", and none is a `jobs` table.** Sessions
   waiting for a host are rows in `starting` with no `hostId` yet (the
-  row *is* the queue, as 10 decided for dispatch). Provider calls and
+  row *is* the queue, as `../design/foundations/api-modules-and-data-model.md` decided for dispatch). Provider calls and
   the sweeper are **BullMQ jobs** on Redis, because they need retries,
   backoff, concurrency limits and to outlive a process. Domain events
   ride the **outbox** in-process, as today. The outbox announces,
@@ -52,7 +52,7 @@ microVM runtime (02 §14, `sessions-in-microvms.md`).
 - **Capacity is declared by the host and reserved by the row.** The
   runner reports `vmSlots` in its facts (cores at 2:1 CPU overcommit,
   memory at 4 GB per session, whichever is smaller; the numbers of
-  note 10 §8) and the running count in every heartbeat; the control
+  `../archive/sleep-wake-and-pricing.md` §8) and the running count in every heartbeat; the control
   plane counts a `starting` session against a slot from the moment it
   is assigned, so two creates cannot both take the last one.
 - **A session's persistence has four layers**, each cheaper and slower
@@ -64,8 +64,8 @@ microVM runtime (02 §14, `sessions-in-microvms.md`).
   and "resume" would mean a fresh agent on the pushed branch.
 - **VMs outlive the runner.** Firecracker runs in its own transient
   scope, not in the runner's cgroup, so a runner restart or self-update
-  (09 §5) leaves every session running; the runner adopts them on boot
-  by their sockets, the way it adopts tmux sessions today (02 §11).
+  (`../design/runner/runner-install-and-update.md` §5) leaves every session running; the runner adopts them on boot
+  by their sockets, the way it adopts tmux sessions today (`../design/runner/runner.md` §11).
 - **One API replica holds links in v0.2**, and the seam that changes
   when that stops being true is one file (03 open question 4, confirmed
   there): presence and dispatch go through Redis, not through a bigger
@@ -141,12 +141,12 @@ placement until the runner reports `vm.ready` or the session fails.
 This is why placement runs under the host row's lock in the create
 transaction, and why a heartbeat's running count is a check against
 the rows rather than the source of the number — a runner that reports
-fewer VMs than the rows say has lost some, and reconciliation (03
+fewer VMs than the rows say has lost some, and reconciliation (`../design/foundations/control-plane.md`
 §Hello reconciliation) marks them stopped.
 
 **Own hosts** take a session when the person picks them and are never
 chosen by the ladder for a cloud-account create; the two are different
-chips (05). Their `vmSlots` is enforced the same way, so a laptop with
+chips (`../design/console/screens.md`). Their `vmSlots` is enforced the same way, so a laptop with
 8 GB refuses a fifth microVM rather than swapping.
 
 ## 3. Machine jobs
@@ -164,7 +164,7 @@ own.
 | Job | Calls | On success | On failure |
 |---|---|---|---|
 | `machine.create` | `ensureNetwork` if the account has none in the region, then `create` | `machine.booting`; the pairing token's `machineId` joins the host row at registration (`machine.paired`) | `MACHINE_CAPACITY`: retry after 30 s with the next shape in the size's fallback list (E5 for A1 on Oracle, `m8i` for `c8i` on AWS), then after 2 min, then `machine.lost`. `MACHINE_QUOTA` and `MACHINE_CREDENTIALS`: no retry; the account is flagged, the waiting sessions fail with the reason, the console shows it on the account. `MACHINE_PROVIDER`: three retries with exponential backoff, then `machine.lost` |
-| `machine.start` | `start`, then wait for the host's link (`HostOnline`) | `machine.started`; waiting sessions are dispatched | a start refused for capacity is the **recreate** path of 03 §Cloud hosts: `machine.destroy` of the old row, `machine.create` of a new one, the sessions re-dispatched onto it from their snapshots (§5) |
+| `machine.start` | `start`, then wait for the host's link (`HostOnline`) | `machine.started`; waiting sessions are dispatched | a start refused for capacity is the **recreate** path of `../design/foundations/control-plane.md` §Cloud hosts: `machine.destroy` of the old row, `machine.create` of a new one, the sessions re-dispatched onto it from their snapshots (§5) |
 | `machine.stop` | `stop('stop')` | `machine.stopped` | retried; a host that will not stop is reported, never silently left running |
 | `machine.destroy` | `destroy`, then `describe` until gone | `machine.destroyed`; the host row is unpaired | retried; the sweeper catches what stays |
 | `machine.sweep` | `list` per account and region (repeatable, every minute) | §6 | — |
@@ -187,7 +187,7 @@ the API already runs is that, with Bull Board to look at it.
 Today `links/` holds every host's link in an in-process map and
 `RelayDispatchAdapter` writes frames to it. That stays the design for
 one API process, and v0.2 runs one. The seam for the day the relay
-splits (note 03 §5 says it is the first thing to) is already named in
+splits (`../archive/machines-and-vm-provisioning.md` §5 says it is the first thing to) is already named in
 03 open question 4; here is its shape, so nothing built now has to be
 undone:
 
@@ -208,7 +208,7 @@ undone:
 
 Until then, the registry is the map, and the sweeper plus hello
 reconciliation are what make a lost in-process command harmless:
-every command is idempotent by session id and command id (01), and
+every command is idempotent by session id and command id (`../design/foundations/protocol.md`), and
 a host that reconnects announces what it holds.
 
 ## 5. Persistence: what lives where
@@ -220,13 +220,13 @@ a host that reconnects announces what it holds.
 | **The host's disk** | the runner's `~/.oppenheimer` (config, key, `state/sessions.json`), the base image and kernel, one **session disk** per session (a reflinked, sparse ext4 file), the project stores (bare clones) | the runner | a runner restart and a host reboot; not the host's destruction |
 | **Inside a session disk** | the worktrees and everything the agent wrote, `node_modules`, Docker's images, the agent's own session files (`~/.claude/projects/<cwd>/<id>.jsonl`, `~/.codex/sessions/…`), tmux's history while it runs | the guest | a VM stop and start; not a Delete, not a lost host |
 | **Object storage** (`@oppenheimer/backend-storage`, S3 in production) | the **transcript snapshot**: the agent's session files, uploaded at every stop; later, other session artifacts | the control plane, keyed `sessions/<id>/transcript/<seq>.tar.zst` | a lost host, a recreate |
-| **GitHub** | every pushed branch, `session/<id>/…` (10) | the person | everything on our side |
-| **The runner's memory** | scrollback ring buffers (2 MB per session), the unacknowledged event batch | the runner | nothing; scrollback is not persisted by design (note 03 §1, F12) |
+| **GitHub** | every pushed branch, `session/<id>/…` (`../design/foundations/api-modules-and-data-model.md`) | the person | everything on our side |
+| **The runner's memory** | scrollback ring buffers (2 MB per session), the unacknowledged event batch | the runner | nothing; scrollback is not persisted by design (`../archive/machines-and-vm-provisioning.md` §1, F12) |
 
 **The transcript snapshot** is the layer that was missing. On every
 `session.stop` — the person's, the idle sweeper's, or the one before a
 host stop — the control plane puts a presigned upload URL on the
-command (01); after the push and before the VM is killed, the guest
+command (`../design/foundations/protocol.md`); after the push and before the VM is killed, the guest
 agent tars the agent's session directory for that session, compresses
 it and PUTs it there; the runner reports `session.stopped` with the
 object's key and size in the event. A restart on the **same** disk
@@ -262,7 +262,7 @@ does when they move a session from a rented host to their own box.
 | **Redis lost** | tickets and in-flight jobs are gone; the sweeper re-enqueues from the rows within a minute; links are unaffected | the sweeper |
 | **Provider API down or refusing** | jobs back off and retry; sessions waiting on a host show *Host starting* with the last error; after the budget they fail with the reason | BullMQ, then the sweeper |
 | **Rented host lost** (destroyed outside us, spot reclaimed, a start that will not come back) | `machine.lost`; the sessions on it are re-placed by the ladder and recreated from their snapshots and branches; the old row is destroyed | the sweeper, the session handlers |
-| **Disk pressure on a host** | the runner's disk-pressure event (02 §10); placement skips the host; the console shows it on the host row | the runner reports, placement reads |
+| **Disk pressure on a host** | the runner's disk-pressure event (`../design/runner/runner.md` §10); placement skips the host; the console shows it on the host row | the runner reports, placement reads |
 | **A VM that will not stop** | the runner kills it after the guest's grace (30 s after the push completes); a disk that was not unmounted replays its journal at the next boot | the runner |
 | **Two processes think they hold a host** | the epoch on every frame; the older link is closed at hello, and a frame with a stale epoch is dropped | `links/` |
 
@@ -270,7 +270,7 @@ does when they move a session from a rented host to their own box.
 
 One repeatable job a minute, per cloud account and for own hosts,
 reading rows and provider listings and enqueuing the machine jobs of
-§3. Idle is the control plane's decision (03 §Cloud hosts); the runner
+§3. Idle is the control plane's decision (`../design/foundations/control-plane.md` §Cloud hosts); the runner
 reports the derived group and nothing else.
 
 | Condition | Action | Default |
@@ -287,14 +287,14 @@ reports the derived group and nothing else.
 
 Every action the sweeper takes is an event on the session or machine
 log, so the boot trace and the host row show why a machine went away.
-Timeouts are per-person settings with these defaults, as note 10 §2
+Timeouts are per-person settings with these defaults, as `../archive/sleep-wake-and-pricing.md` §2
 said.
 
 ## 8. Caps
 
 | Cap | Default | Where |
 |---|---|---|
-| running sessions per person | 10 (note 10 §10) | `sessions/`, at create |
+| running sessions per person | 10 (`../archive/sleep-wake-and-pricing.md` §10) | `sessions/`, at create |
 | hosts per cloud account | 2 | `cloud_account.maxHosts` |
 | `vmSlots` per host | reported by the runner: min(cores × 2 ÷ 2, memory ÷ 4 GB) | host facts |
 | session disk allowance | 40 GB sparse | the runner, from the create |
@@ -316,9 +316,9 @@ the observability of v0.2.
 - 01: `session.stop` may carry `snapshotUploadUrl`; `session.create`
   and `session.restart` may carry `snapshotDownloadUrl`; `session.stopped`
   carries the snapshot's key and size. Host facts gain `vmSlots`.
-- 02 §14: VMs run in their own transient scope and are adopted on boot;
+- `../design/runner/runner.md` §14: VMs run in their own transient scope and are adopted on boot;
   the guest agent makes and unpacks the snapshot.
-- 03 §Cloud hosts: placement and the machine jobs are this document's;
+- `../design/foundations/control-plane.md` §Cloud hosts: placement and the machine jobs are this document's;
   `POST /sessions` with `cloudAccountId` runs the ladder. `machine`
   rows fold `machine.*` events like sessions fold theirs.
 - 10: `cloud_account.maxHosts`; `work_session.machineId` null while a

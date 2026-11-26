@@ -7,7 +7,7 @@ import { HOST_COMPUTER } from '../../sessions.di-tokens';
 import { UseHostComputerCommand } from './use-host-computer.command';
 
 /**
- * A bot's action on a host's screen (`product/design/bots/25-bots.md` §4.2,
+ * A bot's action on a host's screen (`product/design/bots/bots.md` §4.2,
  * "Using a computer"). The host is checked with the same check a session's
  * create makes, so a bot reaches only the hosts its owner may start work on,
  * and a host they cannot use is the same not-found. Whether the host then

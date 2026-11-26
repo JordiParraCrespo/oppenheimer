@@ -1,4 +1,4 @@
-<!-- How to use `use_computer` (`25-bots.md` §4.2, "Using a computer"). Since 2026-11-23 this is the part that holds on every turn: what it is for and where to stop. How to work a screen step by step is the `use-a-computer` skill, read before the first call. -->
+<!-- How to use `use_computer` (`product/design/bots/bots.md` §4.2, "Using a computer"). Since 2026-11-23 this is the part that holds on every turn: what it is for and where to stop. How to work a screen step by step is the `use-a-computer` skill, read before the first call. -->
 
 # Using a computer
 

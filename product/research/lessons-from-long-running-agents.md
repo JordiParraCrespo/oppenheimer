@@ -4,7 +4,7 @@ The owner asked why a bot stopped mid-work at "20 steps" and whether a task
 could run for 200 hours. We read three agents that run long tasks, to find
 out how each bounds one: Codex's open source, a static read of Grok Bot's
 newest Linux build, and OpenClaw's open source. Ideas only; no code is taken.
-What `design/bots/25-bots.md` built from it is §2 ("A turn is bounded")
+What `design/bots/bots.md` built from it is §2 ("A turn is bounded")
 and §4.1 ("Goals"), dated 2026-11-09.
 
 Sources:
@@ -82,7 +82,7 @@ writing a new one, so nothing it held is dropped.
   OpenClaw: "The Gateway restarted while you were working… check the
   current state of anything that was in progress before repeating it."
 
-## 6. What we took (25 §2 and §4.1, 2026-11-09)
+## 6. What we took (`../design/bots/bots.md` §2 and §4.1, 2026-11-09)
 
 | Theirs | Ours |
 | --- | --- |

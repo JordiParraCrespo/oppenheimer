@@ -8,7 +8,7 @@
  * An edit that changes no decision and nothing the brief says (a typo, a
  * link) says so in a commit on the branch, with a trailer:
  *
- *   Product-Sync: fixes a typo in 25-bots.md; no decision or brief text changes
+ *   Product-Sync: fixes a typo in bots.md; no decision or brief text changes
  *
  * Run: node scripts/check-product-sync.mjs [--base <ref>]   (default origin/main)
  */

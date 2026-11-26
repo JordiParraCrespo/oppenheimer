@@ -10,7 +10,7 @@
 ---
 
 A session runs in a new worktree or in a folder already on the host
-(`product/design/sessions/24-session-places.md`).
+(`product/design/sessions/session-places.md`).
 
 - `@oppenheimer/runner`: the work folder is `~/oppenheimer/<account>/<workspace>/{repos,
   agents, sessions}`, with bare stores and a `.oppenheimer/` marker in every

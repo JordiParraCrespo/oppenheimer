@@ -5,7 +5,7 @@ is a terminal straight to it, as in Orca, and where everything still works
 out of the box away from home. This note is the spike and what it measured;
 it decides nothing. The plan is for the owner to settle, and the decisions
 will go to a numbered note under `design/` with a line in
-`../README.md` (note 00 rejected Electron because "state must live
+`../README.md` (`../archive/vision-and-plan.md` rejected Electron because "state must live
 server-side"; this shape keeps it there, since the window is the hosted
 console).
 
@@ -25,7 +25,7 @@ console).
   (`packages/frontend/consumer/src/modules/sessions/stream/local-first-stream.ts`)
   asks the bridge whether this machine's runner holds the session; if so it
   attaches through the socket, and if not, or if that fails or later closes,
-  it hands the stream to the attach socket with its WebRTC path (22). The
+  it hands the stream to the attach socket with its WebRTC path (`../design/runner/direct-terminal-path.md`). The
   bridge is a port (`LocalTerminals`) the web app binds at composition when
   the preload is there; in a browser nothing is bound and nothing changes.
   The terminal's drained bytes go back as credit, and the shell stops
@@ -35,7 +35,7 @@ console).
 
 Rejected: spawning `tmux attach` from Electron with `node-pty`, as Orca
 does. It is a native module per platform and per Electron version (Orca's
-own pain point, note 01), and it would teach the desktop the runner's tmux
+own pain point, `../archive/terminal-first.md`), and it would teach the desktop the runner's tmux
 socket and target names and step around the runner's rules (read-only,
 session state).
 
@@ -69,7 +69,7 @@ leaving and coming back needs nothing. The Tokyo device took two minutes
 to show the terminal because it loaded the Vite dev server's unbundled
 modules over simulated hotel Wi-Fi (43 MB); that measures the dev server,
 not the product. Typed characters there are drawn at once by predictive
-echo (22); the readout is the true round trip.
+echo (`../design/runner/direct-terminal-path.md`); the readout is the true round trip.
 
 The runner ran as root in that container with its root check patched out of
 a throwaway build (the sandbox allowed no second account); nothing of that

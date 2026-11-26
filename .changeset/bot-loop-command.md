@@ -10,7 +10,7 @@
 `/loop`, the third built-in command for bots: a prompt run now and again
 every interval, from a minute to a day, or when the bot says, until it is
 stopped, the bot ends it or it expires after 3 days
-(`product/design/bots/25-bots.md` §4.1).
+(`product/design/bots/bots.md` §4.1).
 
 - `@oppenheimer/shared`: `loop` joins `BOT_BUILT_IN_COMMANDS`;
   `botLoopCommandOf` reads `/loop [interval] [prompt]` and `/loop stop`; the

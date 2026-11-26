@@ -66,7 +66,7 @@ app per bot too (`../../research/orca-bots.md`).
 
 ## 3. Who may ask
 
-Workspaces are personal (`../foundations/08-auth.md`), so Slack is the
+Workspaces are personal (`../foundations/auth.md`), so Slack is the
 owner's only.
 
 - **The owner's Slack user** is recorded by a one-time code: the bot's Slack

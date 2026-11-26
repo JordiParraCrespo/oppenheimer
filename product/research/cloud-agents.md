@@ -90,7 +90,7 @@ That fits the runner model we already have.
   - Products that host Claude Code must run the unmodified binary, signed
     in by each person.
   - Source: <https://code.claude.com/docs/en/legal-and-compliance>.
-  - This is note 01 §7 and F23 again. The only legitimate driver of
+  - This is `../archive/terminal-first.md` §7 and F23 again. The only legitimate driver of
     `--cloud` and `--teleport` is the person's own CLI on the person's own
     machine, which is our runner's position exactly.
 - **Managed Agents** (`/v1/sessions`, SSE, webhooks) is a real API, but it
@@ -135,7 +135,7 @@ from our console, with no credential crossing us.
   service would mean holding the person's ChatGPT tokens and posing as the
   CLI.
   - Bots already do something close to this for
-    `backend-api/codex/responses` (`design/bots/25-bots.md` §2), on a
+    `backend-api/codex/responses` (`design/bots/bots.md` §2), on a
     workspace sign-in.
   - A private task API is a larger exposure than that. Shelling out to
     the CLI on the host is the supported shape.
@@ -179,10 +179,10 @@ These matter more than cloud for Codex sessions on our hosts:
 - **`codex exec --json`** (with `resume` and `fork`) and the TypeScript SDK
   (which wraps `exec --experimental-json`) are the headless path for
   automations, the way `claude -p` is
-  (`design/automations/16-automations-architecture.md`).
+  (`design/automations/automations-architecture.md`).
 - **Hooks** (`features.hooks`) cover SessionStart, PreToolUse,
   PermissionRequest, Stop and SessionEnd, among others. They have to be
-  trusted by hash. They are the authoritative state signal that 02 §9
+  trusted by hash. They are the authoritative state signal that `../design/runner/runner.md` §9
   prefers over reading the screen, and Codex's manifest is still
   provisional there. Source: <https://learn.chatgpt.com/docs/hooks>.
 - **Rollouts.** These live under `$CODEX_HOME/sessions/…/rollout-<ts>-<uuid>.jsonl`,
@@ -293,7 +293,7 @@ These keep tmux, the runner and the per-host login exactly as they are:
 ### B. Cloud sessions: a session whose place is the vendor's cloud
 
 A third **place** beside `worktree` and `folder`
-(`design/sessions/24-session-places.md`; the blank terminal is an agent, not
+(`design/sessions/session-places.md`; the blank terminal is an agent, not
 a place): **Cloud**, with a provider of Claude, Codex or Cursor. A cloud session has no PTY. It has a status, a
 chat when the vendor gives one, a branch, a pull request, and a link to
 the vendor's own page.
@@ -314,7 +314,7 @@ the vendor's own page.
     - a host must be online to start one (not to keep it running);
     - Claude gives no status at all.
 - **Cursor: the control plane, with the person's own API key.** This is
-  the bots' model-provider key precedent (`design/bots/25-bots.md`):
+  the bots' model-provider key precedent (`design/bots/bots.md`):
   stored sealed, never returned, never sent to a host.
   - It is an API key the vendor documents for exactly this purpose, not
     a subscription sign-in, so F23's reasoning (one subscription, one
@@ -343,7 +343,7 @@ opt-in SessionStart and Stop hook in the repository that POSTs
 Its network level must allow our host. This is an inbound event, and
 `inbound-events` already exists for that. It is not in the first cut.
 
-**Data.** Cloud extends the place model that note 24 owns. It is not a
+**Data.** Cloud extends the place model that `../design/sessions/session-places.md` owns. It is not a
 parallel set of columns:
 
 - `SESSION_PLACES` and `CHK_work_session_place` gain `cloud`.
@@ -355,7 +355,7 @@ parallel set of columns:
 - A check makes them present exactly when `place = 'cloud'`, so a session
   can never be two places at once. The place writer that sets `folder`
   sets them too.
-- Note 24 is where the place and its payload get written down, once this
+- `../design/sessions/session-places.md` is where the place and its payload get written down, once this
   is decided.
 
 The session's state maps onto the existing states: working, waiting on

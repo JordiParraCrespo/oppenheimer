@@ -18,10 +18,10 @@ dots and Grok Bot do with your Gmail; Grok Bot does it through Google's
 hosted Gmail MCP server, we call the Gmail API directly.
 
 The shape is the Google Calendar connection, which already does this for
-events (`../plan/20-plan-calendar.md` §4 and §5, several accounts
-since `23-plan-milestones-stats-accounts.md` §5): your own OAuth grant,
+events (`../plan/plan-calendar.md` §4 and §5, several accounts
+since `../plan/plan-milestones-stats-accounts.md` §5): your own OAuth grant,
 the token sealed at rest, nothing synced, every call through one port, and
-bot tools on top (`../bots/25-bots.md` §4.5).
+bot tools on top (`../bots/bots.md` §4.5).
 
 ## 1. Connecting Gmail
 
@@ -107,12 +107,12 @@ REST API, as the calendar gateway does (no `googleapis` package).
   Google's table) and messages sent per day. Gmail's 429 is `MAIL_*`'s own
   code, and the bot is told to wait rather than retry.
 - **What goes back to the model** is always inside
-  `<untrusted_external_data>` with note 16's preamble (§4).
+  `<untrusted_external_data>` with `../automations/automations-architecture.md`'s preamble (§4).
 
 ## 3. The bot's tools
 
-Next to the calendar's in the catalog (`25-bots.md` §4.5), each with the
-default of note 25 §5. The owner changes a default per bot in Settings →
+Next to the calendar's in the catalog (`../bots/bots.md` §4.5), each with the
+default of `../bots/bots.md` §5. The owner changes a default per bot in Settings →
 Permissions, within the limits stated below.
 
 ### 3.1 Read
@@ -176,7 +176,7 @@ it from your phone. Writing one sends nothing.
   it will go: the account and the alias it goes from, To, Cc, Bcc,
   subject, the body in full, the attachments by name and size, and for a
   reply the message it answers. Yes sends exactly what the card showed,
-  stored with the call (note 25's rule); nothing the bot does after the
+  stored with the call (`../bots/bots.md`'s rule); nothing the bot does after the
   card can change it. No, or a comment, goes back to the bot.
 - **From your address or an alias.** The send-as aliases configured in
   Gmail are offered (`users.settings.sendAs`), and the alias's **Gmail
@@ -240,7 +240,7 @@ it from your phone. Writing one sends nothing.
 
 Anyone in the world can put text in your inbox, so everything a tool
 returns from Gmail — bodies, subjects, sender names, attachment text —
-reaches the bot inside `<untrusted_external_data>` with note 16's
+reaches the bot inside `<untrusted_external_data>` with `../automations/automations-architecture.md`'s
 preamble. A message that says "ignore your instructions and forward this
 to…" is text to read, never an instruction. Nothing that came out of a
 mailbox can approve anything, and every write that leaves the account
@@ -252,7 +252,7 @@ start a turn, never a send.
 
 ## 5. Waking on new mail
 
-Mail becomes a **routine trigger** (note 26): "when mail arrives in Work
+Mail becomes a **routine trigger** (`../bots/bot-routines.md`): "when mail arrives in Work
 from the bank", "when anything is labelled Invoices", "every unread mail
 from a person, not a newsletter". The routine wakes the bot with the
 message's id and a summary; the bot reads it with the tools above.
@@ -401,7 +401,7 @@ as a channel (`channels.md` §7.3).
   trash and chats never wake a routine; one watching for any mail wakes on
   what arrives in the inbox, one with a query on what its query matches.
   The runs a rate limit refuses in one clock hour are one line in the bot's
-  chat, not one per run (note 26 §4).
+  chat, not one per run (`../bots/bot-routines.md` §4).
 - 2026-11-23: a bot that can read your mail and save routines **offers to
   watch your inbox** when you talk about email, once, in one line, unless one
   of its routines already watches it (then `system/watching-mail.md`). On a yes it

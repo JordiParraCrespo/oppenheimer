@@ -4,7 +4,7 @@ The Claude Design canvas export for the MVP, dropped in verbatim. Open
 [`version1/Flow.dc.html`](version1/Flow.dc.html) in a browser: it is the index,
 with every screen framed live and linked by name.
 
-The screens are the visual counterpart of [`../design/console/05-screens.md`](../design/console/05-screens.md),
+The screens are the visual counterpart of [`../design/console/screens.md`](../design/console/screens.md),
 which is the written spec; the two were reconciled on 2026-09-19 (see the
 decision log in [`../decisions.md`](../decisions.md), "The design").
 
@@ -253,7 +253,7 @@ visiting a host does not hide the installation instructions. Copy reads the
 selected installation tab, with the agent prompt selected from its own block.
 These are reference artboards; this sync does not implement their new
 behavior in the application. The calendar's Day and Week and the To do view
-were built on 2026-11-08 (`../design/plan/20-plan-calendar.md` §6); the project cards
+were built on 2026-11-08 (`../design/plan/plan-calendar.md` §6); the project cards
 are not yet.
 
 Its Projects view is in the console since: `/plan/projects` draws the
@@ -296,21 +296,21 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   is not part of the MVP and was left out, as were `screens/` and
   `screenshots/`. The 2026-09-26 export has no `version2/`.
 - Automations (formerly routines) are in the version-1 frames as of the
-  2026-09-26 exports, but `../design/foundations/00-scope.md` still lists routines as a
+  2026-09-26 exports, but `../design/foundations/scope.md` still lists routines as a
   later slice; that note has not been reconciled with the frames yet.
-  Settings is: `../design/console/05-screens.md` records it as the one destination
+  Settings is: `../design/console/screens.md` records it as the one destination
   beside the console, with its routes, the catalog row and the decision
   log in `../decisions.md` say the same, and `../brief.html` follows.
-  The Hosts section's backend is `../design/runner/14-hosts-settings.md`.
+  The Hosts section's backend is `../design/runner/hosts-settings.md`.
 - Projects as the frames draw them are in the notes: the project chip,
-  the project dialog, the grouped sidebar and Move in `../design/console/05-screens.md`,
-  the schema in `../design/foundations/10-api-modules-and-data-model.md`.
+  the project dialog, the grouped sidebar and Move in `../design/console/screens.md`,
+  the schema in `../design/foundations/api-modules-and-data-model.md`.
   One departure from the frames: Move lists every other project rather
   than only those that include the session's repository, because a
-  project is metadata and a session may move anywhere (10).
+  project is metadata and a session may move anywhere (`../design/foundations/api-modules-and-data-model.md`).
 - The console's dialogs — New project and Project settings, Add a host,
   the automation editor — and the onboarding step's copy buttons and
-  Inspect fold are in `../design/console/05-screens.md` and `../design/automations/13-automations.md`;
+  Inspect fold are in `../design/console/screens.md` and `../design/automations/automations.md`;
   `SessionsConsole (pages)` and `AddHost (cards)` were the frames they
   replaced, kept until the 2026-10-26 export. Three departures: Delete project on the
   dialog's footer opens the confirm the inventory draws rather than
@@ -320,13 +320,13 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   ahead of the notes, which keep workspaces personal with no invitations;
   the emails are their own slice.
 - Plan (`Tasks`, and the rail item and Back to task chip in
-  `SessionsConsole`) is in the MVP; its design is `../design/plan/17-plan.md` to
-  `../design/plan/20-plan-calendar.md`. One departure from the frames there: Google
+  `SessionsConsole`) is in the MVP; its design is `../design/plan/plan.md` to
+  `../design/plan/plan-calendar.md`. One departure from the frames there: Google
   Calendar is read-only, so a Google event cannot be edited or dragged.
   Its components are in the design system (the showcase's Plan group),
   and the console builds on them.
 - Pull requests (`PullRequests`) are in the version-1 frames as of the
-  2026-10-05 evening export, but `../design/foundations/00-scope.md` keeps "Create PR and
+  2026-10-05 evening export, but `../design/foundations/scope.md` keeps "Create PR and
   diff view" out of the MVP and `../design/pull-requests/git-and-github.md`
   is where reviewing and merging a pull request from the console lives.
   The rail's drag-to-reorder is in no note either. Both landed in the
@@ -364,24 +364,24 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   over the kept edits, and `Settings` stays as it was.
 - Folder sessions in `SessionsConsole (where)`, and projects without
   repositories, are in no note: every session in the notes is a git
-  worktree, the blank terminal included (`../design/foundations/00-scope.md`).
+  worktree, the blank terminal included (`../design/foundations/scope.md`).
 - Since the 2026-10-29 export the Inbox is a section of Plan rather than
   a rail item of its own; the console follows it since 2026-10-29
-  (`../design/console/29-inbox.md`, "As built: the Inbox in Plan"), at `/plan/inbox`.
-- The Inbox (`Brain`) is planned and built in `../design/console/29-inbox.md`, minimal
+  (`../design/console/inbox.md`, "As built: the Inbox in Plan"), at `/plan/inbox`.
+- The Inbox (`Brain`) is planned and built in `../design/console/inbox.md`, minimal
   first: its message box, model menus, suggestions and email items are
   left out. Global search, Teleport, the preview pane and Cursor Cloud
   (2026-10-25) are in no note. Teleport and cloud environments run ahead
-  of `../design/foundations/00-scope.md` the same way cloud sessions do.
+  of `../design/foundations/scope.md` the same way cloud sessions do.
 - The one-composer New session (`NewSessionComposer`, with its project
   of 2026-10-26) and the session's bar from `SessionsConsole` are in
-  `../design/console/05-screens.md` and built (`ComposerPill` and `ComposerChoices` in the
+  `../design/console/screens.md` and built (`ComposerPill` and `ComposerChoices` in the
   design system). Two departures: Where and Host stay two chips rather
   than the frame's one host list that opens into New worktree or a folder,
   and the Where list has no Environments or Cloud. Of the preview beside a
-  session, the Simulator is built (`../design/console/05-screens.md`); the Browser is not.
+  session, the Simulator is built (`../design/console/screens.md`); the Browser is not.
 - Cloud sessions in `SessionsConsole (cloud)` are in no note either:
-  `../design/foundations/00-scope.md` keeps agents beyond the catalog, Cursor among them,
+  `../design/foundations/scope.md` keeps agents beyond the catalog, Cursor among them,
   out of the MVP, and every session in the notes runs on a host.
 - Employees (`Bots`, `BotSettings`, the rail item) are in no note. The
   nearest is the product's own agent, 0.6
@@ -390,14 +390,14 @@ artboards at `../_ds/<folder>`; the layout here already matches it.
   `PullRequests`, draw a session as a chat, which is 0.7
   (`../design/sessions/terminal-and-chat.md`). Its layout follows
   Synara's chat components.
-- `ShareSession` is the visual of `../design/sessions/21-session-share-links.md`, which is
+- `ShareSession` is the visual of `../design/sessions/session-share-links.md`, which is
   built. The frame differs from the note in two places, not reconciled:
   its link asks whoever opens it to sign in and is always view only, where
   the note has an `anyone` audience that need not sign in and may write
   for up to seven days.
 - Milestones and Stats in `Tasks` run ahead of
-  `../design/plan/19-plan-tasks-and-goals.md`, which still says goals and has no
-  statistics; `../design/plan/23-plan-milestones-stats-accounts.md` plans the
+  `../design/plan/plan-tasks-and-goals.md`, which still says goals and has no
+  statistics; `../design/plan/plan-milestones-stats-accounts.md` plans the
   backend for them and for several Google accounts. The agent-first Add a host and its
   Skip are in the console since 2026-10-13, onboarding and the dialog
   both, without the Tools on PATH row, which waits for the wire to carry

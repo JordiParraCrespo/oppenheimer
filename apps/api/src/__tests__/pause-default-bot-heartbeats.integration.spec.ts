@@ -6,7 +6,7 @@ import { loadMigrations } from './run-migrations';
 
 /**
  * Migration `PauseDefaultBotHeartbeats` on rows it meets in a deployment
- * (`26-bot-routines.md` §6, "Changed 2026-11-15"). What breaks this: a
+ * (`product/design/bots/bot-routines.md` §6, "Changed 2026-11-15"). What breaks this: a
  * heartbeat left running every hour, one moved to twice a day in the wrong
  * zone (another bot's, or none when the owner wrote with one), a heartbeat
  * whose owner chose its times (even only its minute) rewritten, another

@@ -29,7 +29,7 @@ import { SideTerminal } from './side-terminal';
 
 /**
  * The side pane beside a session: a tab for each thing opened beside it, and
- * the launcher when none is shown (`product/design/console/32-side-pane.md`).
+ * the launcher when none is shown (`product/design/console/side-pane.md`).
  * A terminal is one of the session's windows past the agent's, listed by its
  * host, so its tabs follow the host: one opened on another device shows here
  * too, and closing its tab closes the window. It runs a plain shell, or a

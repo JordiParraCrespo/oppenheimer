@@ -8,7 +8,7 @@ would take here, and records a proof of concept run on 2026-10-17
 
 What was decided from it is in the notes that own it: on 2026-10-26 the
 console's preview pane got its Simulator, a session's device streamed over
-the link and driven through Argent (`../design/console/05-screens.md`). On
+the link and driven through Argent (`../design/console/screens.md`). On
 2026-11-15 the reader got a picker over the host's devices and a Refresh:
 `device.info` lists them, each free or held by another session, and
 `device.select` moves the session onto a free one, its screen switched on
@@ -49,7 +49,7 @@ before we ship anything that leans on it.
   Argent's stream server for that one device and carries frames and input
   over the link as one more attachment kind; input names the session and
   the runner fills in the device. MJPEG over the relay first, an H.264
-  WebRTC track on the direct path (`design/runner/22-direct-terminal-path.md`) after.
+  WebRTC track on the direct path (`design/runner/direct-terminal-path.md`) after.
 - **iOS needs a macOS host with Xcode**; Android works on Linux and macOS.
 
 ## The proof of concept
@@ -141,7 +141,7 @@ Linux it can also start a TigerVNC and XFCE desktop of its own.
   so a reader who watched saw no pointer. While a desktop is watched, the
   runner reads the pointer with CoreGraphics (through purego, since the
   runner builds without cgo) about thirty times a second and sends
-  `desktop.pointer` when it moves (`design/foundations/01-protocol.md`); the
+  `desktop.pointer` when it moves (`design/foundations/protocol.md`); the
   console draws the server's cursor shape there, scaled with the screen,
   or a plain arrow until a shape arrives. Not while the reader is in
   control: their own pointer is the host's then, and two would show. Only
@@ -155,7 +155,7 @@ and after Take control the same keys ran a command there.
 
 **Not built.** A desktop the runner starts itself on a headless Linux host
 (OpenClaw's managed TigerVNC and XFCE), one per session; the clipboard both
-ways; audio; adaptive quality; the direct path (22). A Mac shares the one
+ways; audio; adaptive quality; the direct path (`../design/runner/direct-terminal-path.md`). A Mac shares the one
 screen its agents work on, so the reader and the agent drive the same
 pointer; nothing arbitrates between them yet.
 

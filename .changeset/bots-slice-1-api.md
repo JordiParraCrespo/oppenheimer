@@ -5,7 +5,7 @@
 "@oppenheimer/translations": patch
 ---
 
-Bots, slice 1 (`product/design/bots/25-bots.md`): a bot without a runtime.
+Bots, slice 1 (`product/design/bots/bots.md`): a bot without a runtime.
 
 - `@oppenheimer/shared`: `bot.schema.ts` (create and edit a bot and a group,
   save a document over a base revision, a memory fact, the revisions query)

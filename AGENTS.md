@@ -28,12 +28,12 @@ All research and decisions live in `product/`; start with `product/README.md`.
 
 - How the product works is `product/design/`, one folder per area (its
   README is the index); the MVP's scope is
-  `product/design/foundations/00-scope.md`. What comes next is
+  `product/design/foundations/scope.md`. What comes next is
   `product/roadmap.md`. `product/archive/` holds the pre-MVP planning notes,
   superseded and kept for history; `product/research/` decides nothing.
 - Workspaces are personal: the Better Auth `organization` row is the one
   workspace, created at sign-up with the account as its single owner. No
-  roster, invitations or teams in the console (`product/design/foundations/08-auth.md`;
+  roster, invitations or teams in the console (`product/design/foundations/auth.md`;
   `AUTHORIZATION.md` is the starter's kernel design, kept as history).
 - When a decision changes, update the note that made it and add a dated
   line to `product/decisions.md`. Do not silently
@@ -41,9 +41,9 @@ All research and decisions live in `product/`; start with `product/README.md`.
   the notes; keep it in sync when a note changes. `scripts/check-product-sync.mjs`
   fails a branch whose notes changed without both; an edit that changes no
   decision says so in a commit trailer, `Product-Sync: <why>`.
-- The runner is `product/design/runner/02-runner.md` and
-  `…/09-runner-install-and-update.md`; the wire is
-  `product/design/foundations/01-protocol.md`.
+- The runner is `product/design/runner/runner.md` and
+  `…/runner-install-and-update.md`; the wire is
+  `product/design/foundations/protocol.md`.
 
 ## Monorepo map
 

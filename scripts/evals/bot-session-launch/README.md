@@ -5,7 +5,7 @@ Does a bot start the session the person asked for? A bot once answered
 its Claude Code is set to." That was true then: `start_session` took no
 model. Since 2026-11-10 it takes everything the console's composer offers:
 `model` (a catalog id or a name such as "Opus 5.5"), `effort`, `permission`
-and `base_branch` (`product/design/bots/25-bots.md`, `start_session`).
+and `base_branch` (`product/design/bots/bots.md`, `start_session`).
 
 The unit specs prove the tool does the right thing with those fields
 (`apps/api/src/bots-chat/__tests__/bot-session-launch.policy.spec.ts`,

@@ -8,7 +8,7 @@
 ---
 
 A bot's routine can be edited by hand from its Routines tab
-(`product/design/bots/26-bot-routines.md` §7, changed 2026-11-21).
+(`product/design/bots/bot-routines.md` §7, changed 2026-11-21).
 
 - `@oppenheimer/api`: `PATCH /v1/bots/:id/routines/:routineId` takes `name`
   and `prompt` beside `enabled` (any of them, at least one). A name or prompt

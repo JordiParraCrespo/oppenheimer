@@ -12,27 +12,27 @@ a Pull requests area in the rail with a queue, views and analytics.
 ## What exists to build on
 
 - The GitHub App install and one-hour tokens narrowed per session
-  (note 09, `../foundations/03-control-plane.md`), and the runner's git
-  credential helper (`../runner/02-runner.md`).
+  (`../../archive/github-app-install.md`, `../foundations/control-plane.md`), and the runner's git
+  credential helper (`../runner/runner.md`).
 - Repositories listed live from GitHub, checkouts on `work_session`
-  (`../foundations/10-api-modules-and-data-model.md`).
-- Note 05 already walks the target experience piece by piece and prices
+  (`../foundations/api-modules-and-data-model.md`).
+- `../../archive/github-experience.md` already walks the target experience piece by piece and prices
   it: the `+42 -18` indicator and diff view, inline comments on the diff
   bundled into the next message, Create PR mirroring the repo's PR
   template, auto-fix by subscribing a session to a PR, branch and push
-  rules (note 05 §4–§6, §9).
+  rules (`../../archive/github-experience.md` §4–§6, §9).
 
 ## Questions to answer first
 
-1. Which of note 05's pieces are 0.2 and which wait: diff view, inline
+1. Which of `../../archive/github-experience.md`'s pieces are 0.2 and which wait: diff view, inline
    comments, Create PR, PR status on the session, auto-fix subscriptions,
    GitHub-triggered routines?
 2. Where is a diff computed: the runner from the worktree, or the control
    plane from GitHub after a push? The first works before a push.
-3. Does the agent get a scoped GitHub API surface (note 05 §5) in 0.2, or
+3. Does the agent get a scoped GitHub API surface (`../../archive/github-experience.md` §5) in 0.2, or
    does the console open PRs on its behalf?
 4. Webhooks: the MVP dropped mirroring repositories with webhooks
    (`../../decisions.md`). PR status and auto-fix need events again — for
    subscribed PRs only?
 5. Several repositories per session returns "with the runner slice that
-   makes several worktrees" (`../foundations/00-scope.md`). Is that 0.2?
+   makes several worktrees" (`../foundations/scope.md`). Is that 0.2?

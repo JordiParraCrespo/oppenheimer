@@ -265,7 +265,7 @@ fragment to.** The API never serves the agent's bytes from its own
 origin, the page is the same for every visual, and each frame gets an
 origin of its own from the sandbox. Deployments with a preview domain
 already have the second origin and the `frame-src` entry
-(`design/sessions/30-session-previews.md`).
+(`design/sessions/session-previews.md`).
 
 The test ran in one Chromium build. Firefox and Safari are not measured.
 

@@ -2,16 +2,16 @@
 
 > **Proposal, not adopted.** Research brought over from pull request
 > #43, which was closed on 2026-10-10 without merging. Its proposal of
-> 2026-09-22 never became a decision: libvirt first, Firecracker later (note 08) and the sleep tiers of note
+> 2026-09-22 never became a decision: libvirt first, Firecracker later (`../archive/reuse-gha-runner.md`) and the sleep tiers of note
 > 10 still stand. What governs today:
-> [`archive/03-machines-and-vm-provisioning.md`](../archive/03-machines-and-vm-provisioning.md),
-> [`archive/08-reuse-gha-runner.md`](../archive/08-reuse-gha-runner.md) and
-> [`archive/10-sleep-wake-and-pricing.md`](../archive/10-sleep-wake-and-pricing.md) for
+> [`archive/machines-and-vm-provisioning.md`](../archive/machines-and-vm-provisioning.md),
+> [`archive/reuse-gha-runner.md`](../archive/reuse-gha-runner.md) and
+> [`archive/sleep-wake-and-pricing.md`](../archive/sleep-wake-and-pricing.md) for
 > VMs and cloud hosts,
-> [`design/foundations/00-scope.md`](../design/foundations/00-scope.md) for what the
+> [`design/foundations/scope.md`](../design/foundations/scope.md) for what the
 > MVP runs, and [`roadmap.md`](../roadmap.md), where
 > VMs are not yet placed in the order after the MVP. Its numbered
-> cross-references (`02 §14`, `03 §Cloud hosts` and the like) point at
+> cross-references (``../design/runner/runner.md` §14`, ``../design/foundations/control-plane.md` §Cloud hosts` and the like) point at
 > sections that pull request proposed and that the current notes do not
 > have. Paths in backticks are relative to `product/`.
 
@@ -25,10 +25,10 @@ provider port of `ephemeral-cloud-machines.md` rents a KVM-capable host when you
 rather than one cloud VM per session.
 
 It would have changed three earlier decisions, none of which
-changed: note 08's "libvirt first, Firecracker later"; `ephemeral-cloud-machines.md`'s
-"one provider VM per session, paired as a host"; and note 10's three
+changed: `../archive/reuse-gha-runner.md`'s "libvirt first, Firecracker later"; `ephemeral-cloud-machines.md`'s
+"one provider VM per session, paired as a host"; and `../archive/sleep-wake-and-pricing.md`'s three
 sleep tiers, which collapse to two states for a microVM session. The
-design was to land in the MVP notes that own each piece — `design/runner/02-runner.md`
+design was to land in the MVP notes that own each piece — `design/runner/runner.md`
 §14 (the runtime), `04` (the image), `03` §Cloud hosts (the port, the
 policy), `10` (the columns), `07` (the findings) — and this note was
 the research behind them.
@@ -48,7 +48,7 @@ The session that wrote this note was inspected from inside, on
 
 So Anthropic's "resume" is a **boot on the kept disk**, not a memory
 restore: between turns the VM does not exist, only its disk does, and
-a message boots a new one. That is note 10 §1's hibernate column with
+a message boots a new one. That is `../archive/sleep-wake-and-pricing.md` §1's hibernate column with
 a two-second boot. The published docs say the same in product terms:
 "each session runs in an isolated, Anthropic-managed VM", "a fresh VM
 running Ubuntu 24.04 on x86_64", sessions stop after inactivity and
@@ -69,13 +69,13 @@ documentation.
 **A session is a microVM.** On a host with KVM, the runner boots one
 Firecracker VM per session from a prebaked root image, on a disk that
 belongs to the session. The VM runs while the session is active. When
-the session is idle (the control plane's call, `design/foundations/03-control-plane.md`), the
+the session is idle (the control plane's call, `design/foundations/control-plane.md`), the
 guest agent syncs and unmounts, the VM is killed, and the disk stays.
 The next message boots a new VM on that disk: tmux comes up, the agent
 is relaunched with its own resume flag, the terminal shows the tail of
 the old scrollback above a live prompt. Delete drops the disk.
 
-**Two states, not three tiers.** Note 10 §2's pause-in-RAM, managedsave
+**Two states, not three tiers.** `../archive/sleep-wake-and-pricing.md` §2's pause-in-RAM, managedsave
 and hibernate were tuned to a libvirt guest that took tens of seconds
 to boot. A microVM that boots in about two seconds on its kept disk
 makes the RAM tiers pointless: running or stopped, and stopped costs
@@ -84,7 +84,7 @@ stay as a later optimisation for a warm resume, with the constraints
 §4 lists.
 
 **The host runs many.** One KVM host holds several sessions: the
-Hetzner box first, since it already runs KVM guests (note 08), and a
+Hetzner box first, since it already runs KVM guests (`../archive/reuse-gha-runner.md`), and a
 rented KVM-capable host through `ephemeral-cloud-machines.md`'s port when the person has no
 box. That port's design holds word for word — a cloud machine is a
 host that pairs itself — but the machine it creates is a *host* sized
@@ -96,11 +96,11 @@ What this replaces:
 
 | Was | Now | Why |
 |---|---|---|
-| Note 08 §4: libvirt/KVM first, Firecracker later, reuse the CI controller | Firecracker first; the controller's image script, capacity gate and reconcile-on-boot are reused as ideas, not code | the lifecycle *is* the boot time: a tens-of-seconds cloud-init boot per wake is not "like Anthropic", and libvirt's managedsave is what the three tiers existed to use |
+| `../archive/reuse-gha-runner.md` §4: libvirt/KVM first, Firecracker later, reuse the CI controller | Firecracker first; the controller's image script, capacity gate and reconcile-on-boot are reused as ideas, not code | the lifecycle *is* the boot time: a tens-of-seconds cloud-init boot per wake is not "like Anthropic", and libvirt's managedsave is what the three tiers existed to use |
 | `ephemeral-cloud-machines.md` §2, §7: one provider VM per session, hibernate on AWS as the warm path | one provider *host* for many sessions; warm resume is a Firecracker snapshot, not EC2 hibernation | a per-session cloud VM costs a boot of 45 to 90 s on two of three providers and a public IP each; a host boots once and its microVMs boot in seconds |
-| Note 10 §2: three sleep tiers | two states | above |
-| Note 11 §2: Keep sessions share a workspace VM per project | a VM per session, always; the shared workspace VM stays on the shelf | Anthropic does per session; with a two-second boot and a reflinked disk the sharing buys little, and the isolation is simpler to state |
-| Note 03 §4, note 08 §2: tap on a bridge, NAT, firewall rules | **no NIC in the guest**; all egress over vsock to the host proxy | F14 by construction rather than by iptables (§4) |
+| `../archive/sleep-wake-and-pricing.md` §2: three sleep tiers | two states | above |
+| `../archive/workspace-layout.md` §2: Keep sessions share a workspace VM per project | a VM per session, always; the shared workspace VM stays on the shelf | Anthropic does per session; with a two-second boot and a reflinked disk the sharing buys little, and the isolation is simpler to state |
+| `../archive/machines-and-vm-provisioning.md` §4, `../archive/reuse-gha-runner.md` §2: tap on a bridge, NAT, firewall rules | **no NIC in the guest**; all egress over vsock to the host proxy | F14 by construction rather than by iptables (§4) |
 
 ## 3. The lifecycle, verb by verb
 
@@ -126,12 +126,12 @@ running ◄──── resume: boot on the kept disk, agent --resume ─┤
   hands it the session: ids, the layout, the launch, the first task.
   The guest clones through the proxy (§4), runs the setup, starts tmux,
   launches the agent. The boot-trace rows are the same events as
-  `design/foundations/03-control-plane.md`.
+  `design/foundations/control-plane.md`.
 - **Active.** PTY bytes, resize, window open and close, and the screen
   manifest ride vsock between the guest agent and the host runner; the
   runner relays them on the link exactly as it relays a tmux on the
   host today. The wire between browser, control plane and host does not
-  change (`design/foundations/01-protocol.md`).
+  change (`design/foundations/protocol.md`).
 - **Stop.** The control plane sends `session.stop` with `push: true`
   (already decided); the guest pushes, `sync`s, unmounts, and reports;
   the runner kills the VM. The disk keeps its ext4 journal, so a VM
@@ -139,9 +139,9 @@ running ◄──── resume: boot on the kept disk, agent --resume ─┤
   booting "unchecked".
 - **Resume.** `session.restart` boots a VM on the kept disk; the guest
   relaunches tmux window 0 with the agent's own resume flag and the
-  session id recorded continuously (`design/runner/02-runner.md` §5 and §9), and
+  session id recorded continuously (`design/runner/runner.md` §5 and §9), and
   the fresh repository token arrives over vsock before the prompt is
-  live (note 10 §3).
+  live (`../archive/sleep-wake-and-pricing.md` §3).
 - **Delete.** `session.close`, then the disk file is removed (F18). The
   account volume, when the accounts slice arrives, is a second block
   device and outlives the session (F13).
@@ -157,15 +157,15 @@ the `ephemeral-cloud-machines.md` review). On a microVM host the runner's action
 else. The guest agent listens on `127.0.0.1` as an HTTP `CONNECT`
 proxy and forwards each connection over vsock to the runner's egress
 proxy on the host, which enforces the environment's allowlist
-(trusted, limited, none: the modes note 02 named), re-terminates TLS
+(trusted, limited, none: the modes `../archive/targets-and-github-auth.md` named), re-terminates TLS
 with a CA the image trusts, and injects credentials in flight —
 the one-hour repository token into `github.com` requests, so the guest
 never holds it and the credential helper of the MVP is not needed
 there. `HTTPS_PROXY`, `NO_PROXY` for loopback, and the CA path are set
 for every process, `dockerd` included. Anything that is not HTTP over
 the proxy does not exist, which is what "network: none" should mean
-and what F14 asked for; the tap, bridge, NAT and firewall of note 03
-§4 and note 08 go away. Git over SSH is rewritten to HTTPS, as
+and what F14 asked for; the tap, bridge, NAT and firewall of `../archive/machines-and-vm-provisioning.md`
+§4 and `../archive/reuse-gha-runner.md` go away. Git over SSH is rewritten to HTTPS, as
 Anthropic does. A userspace netstack over vsock (gVisor's
 `gvisor-tap-vsock`) is the answer if raw TCP to arbitrary hosts is
 ever needed; it is not, in v0.2.
@@ -186,7 +186,7 @@ reach, the host identifies the VM by the CID it assigned, and the
 runner's own host key is the identity on the link. Nothing is injected
 on the kernel command line but the boot arguments.
 
-**The image** is `design/foundations/04-guest-image.md`: Ubuntu 24.04 from a Dockerfile,
+**The image** is `design/foundations/guest-image.md`: Ubuntu 24.04 from a Dockerfile,
 exported to a raw ext4, with git, tmux, Node, Claude Code, Codex,
 Docker, the common toolchains, `chrony`, the proxy CA, and the guest
 agent as `init`. Signed with the offline key, the rootfs half of F26.
@@ -195,7 +195,7 @@ image — the agent CLIs, skills — are the trick Anthropic uses for
 skills and are worth copying the day the image rebuild becomes the
 bottleneck. Root inside the guest, as decided in `04`.
 
-**Docker inside** is a real daemon in a real VM, note 10 §8's argument,
+**Docker inside** is a real daemon in a real VM, `../archive/sleep-wake-and-pricing.md` §8's argument,
 at no extra cost.
 
 ## 5. On the host
@@ -208,7 +208,7 @@ kernel 6.1 or 6.18, x86_64 or aarch64, `/dev/kvm`. VMM overhead is
 under 5 MiB per VM.
 
 **Disks.** Firecracker takes raw images only, never qcow2 (which is
-what note 08's controller uses; it does not carry over). The base
+what `../archive/reuse-gha-runner.md`'s controller uses; it does not carry over). The base
 image is a raw ext4 file; each session disk is a **reflink** of it on
 an XFS or btrfs host filesystem, so create is milliseconds and the
 disk shares blocks with the base until written. A session disk is a
@@ -220,7 +220,7 @@ e2b's shape — saves nothing on a reflink host and puts a filesystem
 trick in the guest. Live resize exists but only for an unmounted
 drive; grow the file before boot instead.
 
-**Density.** Note 10 §8's arithmetic holds and improves: a 2 vCPU / 4
+**Density.** `../archive/sleep-wake-and-pricing.md` §8's arithmetic holds and improves: a 2 vCPU / 4
 GB session at 2:1 CPU overcommit, memory faulted lazily so an idle
 guest holds far less than its ceiling, the balloon with free-page
 reporting for the rest, and `vm.overcommit_memory=1` **not** set, on
@@ -245,7 +245,7 @@ VM with nested virtualisation. Checked 2026-09-22:
 
 | Host | KVM via | Shape for 6 to 8 sessions | Per hour | Stopped | Boot | Notes |
 |---|---|---|---|---|---|---|
-| **Your Hetzner dedicated box** | metal | AX41-1-LTD 12 threads / 64 GB €57.30 a month, no setup; AX42-1-LTD 16 / 64 GB €77.30 plus €39 | €0.08 to €0.10 amortised | billed in full, so it stays on | minutes, once | the June 2026 repricing moved the AX42-1 to €97.30 a month; note 10 §4's €47 to €57 predates it |
+| **Your Hetzner dedicated box** | metal | AX41-1-LTD 12 threads / 64 GB €57.30 a month, no setup; AX42-1-LTD 16 / 64 GB €77.30 plus €39 | €0.08 to €0.10 amortised | billed in full, so it stays on | minutes, once | the June 2026 repricing moved the AX42-1 to €97.30 a month; `../archive/sleep-wake-and-pricing.md` §4's €47 to €57 predates it |
 | **AWS EC2** | nested virtualisation on virtual instances since **2026-02-16**, Intel families only (C7i, C8i, M7i, M8i, R7i, R8i and their `-flex`), `--cpu-options NestedVirtualization=enabled`, changeable while stopped | m8i.2xlarge 8 / 32 | $0.507 Frankfurt, $0.198 spot; m8i.xlarge 4 / 16 $0.254 / $0.103 | EBS only | 10 to 40 s | no Graviton; AWS points latency-sensitive work at metal; spot is not documented either way |
 | **Oracle Cloud** | nested virtualisation present on E5.Flex (AMD) and Standard3.Flex (Intel); not on A1 | E5.Flex 4 OCPU / 32 GB | $0.184, preemptible $0.092; 2 OCPU / 16 GB $0.092 | boot volume only, counts against limits | one to three minutes | Oracle's own Firecracker benchmark: CPU −3.5 %, but random 16 KiB I/O **−79 %** against bare metal; the $300 trial spends on E5, Always Free does not cover it |
 | **Alibaba Cloud** | bare metal only, 104 vCPU and up | — | several dollars an hour | economical mode unlikely | minutes | not a fit for a personal workspace |
@@ -280,7 +280,7 @@ and every session disk on it is gone, which is why session disks on a
 rented host are pushed at every pause and why the account volume, when
 it comes, is a provider volume and not a file on the host's disk.
 
-## 7. Security, mapped onto note 04
+## 7. Security, mapped onto `../archive/security-review.md`
 
 | Finding | In v0.2 |
 |---|---|
@@ -300,7 +300,7 @@ platform's real credential boundary is that the guest never holds one.
 
 ## 8. What a session costs now
 
-For note 10 §10's workload — ten sessions, four hours each on 22
+For `../archive/sleep-wake-and-pricing.md` §10's workload — ten sessions, four hours each on 22
 working days, 880 session-hours, six to eight per host at once:
 
 | Where | Host | Running | Asleep | Month |
@@ -313,11 +313,11 @@ Compared with `ephemeral-cloud-machines.md`'s per-session VMs (AWS $135, Oracle 
 $121 to $172 for the same 880 hours) the host model is two to five
 times cheaper, because eight sessions share one machine and idle
 sessions cost nothing at all. The model is still the bill; compute is
-still one to five percent of a task (note 10 §8).
+still one to five percent of a task (`../archive/sleep-wake-and-pricing.md` §8).
 
 ## 9. What we looked at and did not take
 
-- **libvirt/KVM and the existing CI controller** (note 08): qcow2
+- **libvirt/KVM and the existing CI controller** (`../archive/reuse-gha-runner.md`): qcow2
   overlays, cloud-init guests and managedsave are the wrong primitives
   for a boot-per-wake lifecycle; the ideas (golden image script,
   capacity gate, reconcile-on-boot, "no host mounts in the guest")
@@ -328,7 +328,7 @@ still one to five percent of a task (note 10 §8).
   less. Behind the same runner interface if a reason appears.
 - **gVisor** (`runsc`): what Anthropic used a year ago and still uses
   for claude.ai code execution; no Docker daemon inside, a kernel
-  shared with the host. Note 10 §8's VM decision stands.
+  shared with the host. `../archive/sleep-wake-and-pricing.md` §8's VM decision stands.
 - **A netstack over vsock**: only if raw TCP to arbitrary hosts is
   needed; an HTTP proxy over vsock is smaller and stricter.
 - **Snapshots as the resume path**: §5.
@@ -339,7 +339,7 @@ still one to five percent of a task (note 10 §8).
 
 ## 10. Order of work
 
-1. **The image and the guest agent** (`design/foundations/04-guest-image.md`, `02` §14): a
+1. **The image and the guest agent** (`design/foundations/guest-image.md`, `02` §14): a
    Dockerfile to a raw ext4, the guest agent as `init` with the vsock
    control channel, the PTY bridge, the proxy forwarder, the CA. Done
    means: `firecracker` on the Hetzner box boots it to a tmux prompt
@@ -361,7 +361,7 @@ still one to five percent of a task (note 10 §8).
    driver is a week away.
 5. **Later**: Firecracker snapshots for a warm resume; read-only
    squashfs drives for the agent CLIs; the account volume (F13); the
-   shared workspace VM of note 11 if the per-session clone ever hurts.
+   shared workspace VM of `../archive/workspace-layout.md` if the per-session clone ever hurts.
 
 ## Sources
 

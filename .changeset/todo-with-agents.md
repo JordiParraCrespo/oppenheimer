@@ -6,7 +6,7 @@
 "@oppenheimer/shared": patch
 ---
 
-TODO knows about agents (`product/design/plan/20-plan-calendar.md` §6,
+TODO knows about agents (`product/design/plan/plan-calendar.md` §6,
 "Changed on 2026-11-12").
 
 - `@oppenheimer/web`: a task on TODO that an agent is working on (a session

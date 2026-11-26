@@ -1,0 +1,54 @@
+# Security checklist
+
+Findings from `../../archive/security-review.md` that the MVP must satisfy,
+as a checklist. The rest of that note applies when the corresponding
+feature lands.
+
+- [ ] F1 per-session single-use attach tickets
+- [ ] F2 Origin check on WebSocket upgrades, CSRF on mutating HTTP
+- [ ] F3 linkify only vendor login hosts
+- [ ] F5 registration token: one hour, single use, revocable, source IP shown
+- [ ] F6 runner pins the control plane's key fingerprint
+- [ ] F7 job payloads encrypted to the runner key
+- [ ] F8 runner private key 0600; rotation arrives with the link (`../runner/runner-install-and-update.md` §3) —
+      until then a stolen key is answered by unpairing, and an unpaired host
+      can neither hold a link nor be granted credentials (`protocol.md`)
+- [ ] F10 direct-mode hosts are labelled "full access", never "sandbox"; the runner never runs as root; secrets and tokens are env or socket-scoped to the session's shell, nothing written to disk by the runner
+- [ ] F11 a worktree is never presented as a boundary
+- [ ] F12 scrollback not persisted on the host by default; if enabled, 0600 and scrubbed. The one file the runner does write from a reader's screen is a pasted or attached file, named in `../runner/runner.md` §11: an allowlist judged by its bytes (images, PDF, UTF-8 text that is not a script or markup), never an executable or archive, saved under a name the runner chose
+- [ ] F20 App private key in the secret store, never the database
+- [ ] F21 installation tokens narrowed to one repo, one hour
+- [ ] F23 no vendor credential ever stored by the platform
+- [ ] F24 every object owned by the user; queries scoped
+- [ ] F25 unguessable session ids plus ticket authorization
+- [ ] F26 runner releases signed with an offline key, verified against a
+      public key compiled into the binary, before a staged binary is ever
+      executed; the control plane offers versions and never supplies code
+      (`../runner/runner-install-and-update.md` §5). `../../archive/security-review.md`'s F26 covers rootfs images too; that half stays
+      deferred with the VM slice, and this row is the runner half of the
+      same finding
+- [ ] F26a first install is trust-on-first-use — a script fetched over
+      HTTPS only, checked against the digest the Add host screen shows.
+      Where it can, the script checks the release signature, but against
+      keys it carries itself, so F26 still begins at the first self-update,
+      not at install. The mitigation is the digest on screen, the token's
+      one-hour single use, and keeping the script host separate from the
+      control plane (`control-plane.md`)
+- [ ] F29 the direct terminal path (`../runner/direct-terminal-path.md`) answers ICE only for an offer that
+      arrived over the runner's own link, for an attachment that link opened,
+      and binds the channel to the DTLS fingerprint that offer named; a
+      watcher's input is dropped by the runner on the channel as on the link,
+      and nothing listens for a peer it was not told about
+- [ ] F30 the host proves itself on every direct channel (`../runner/peer-to-peer-and-the-host-proof.md`): before a byte
+      crosses it, it signs both DTLS fingerprints and the browser's nonce with
+      its pairing key (`ProveDirect`, which signs nothing else), and the
+      browser checks the signature against its own peer connection and the key
+      it pinned for the host. A control plane that rewrites the signalling
+      cannot sit in the middle of a direct path
+
+Deferred to later slices, with the VMs: F13 account volumes, F14 host
+egress proxy, F15 and F16 isolation proofs, F17 vsock auth, F18 overlay
+retention. Also deferred: Tailscale mode for the control plane itself.
+F26 was deferred and is now in the list above: self-update landed in the
+MVP with `../runner/runner-install-and-update.md`, and an unsigned update path would be the widest hole
+in it.

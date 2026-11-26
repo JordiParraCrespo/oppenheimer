@@ -130,7 +130,7 @@ SDK behind providers `anthropic` and `glm` and the OpenAI Agents SDK behind
 (text, tool steps, usage, one `done`); the key is passed per call and never
 read from the environment. `FakeBotEngine` replays scripted turns for tests.
 See the package README (`packages/backend/agents/README.md`) and
-`product/design/bots/25-bots.md` §2.
+`product/design/bots/bots.md` §2.
 
 ## `@oppenheimer/backend-storage`
 

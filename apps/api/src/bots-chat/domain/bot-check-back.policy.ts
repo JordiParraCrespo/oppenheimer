@@ -7,7 +7,7 @@ import { BotTurnEntity } from './bot-turn.entity';
 
 /**
  * A bot checking back on anything it delegated or waits on (`check_back`,
- * `27-bot-subscriptions.md` §7.3), as rules: when each look of a chain is
+ * `product/design/bots/bot-subscriptions.md` §7.3), as rules: when each look of a chain is
  * due, when a chain stops, which call continues a chain and which starts
  * one, what a look is keyed on and what its turn opens with. Pure.
  *

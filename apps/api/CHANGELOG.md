@@ -102,7 +102,7 @@
 - 8e2de68: Add `hosts/`: pairing tokens, host registration, and the host's boot assertion
   as the `host` credential kind this module contributes to the auth kernel with
   `AuthModule.contributeCredentials`.
-- fc0e75d: The hosts backend for the Settings page (`product/design/runner/14-hosts-settings.md`).
+- fc0e75d: The hosts backend for the Settings page (`product/design/runner/hosts-settings.md`).
 
   - `@oppenheimer/api`: a host read carries a derived `status` (`running`, `idle`,
     `offline`, `unpaired`) and `runningSessionCount`, counted by `sessions/`
@@ -117,7 +117,7 @@
   - `@oppenheimer/runner`: the facts report the logical CPU count as `cpus`.
   - `@oppenheimer/api`: host metadata tables (`host_inventory`, `host_presence`,
     `host_network`, `host_event`), backfilled from `host`; the old columns stay
-    until the code switches over (`product/design/runner/15-host-metadata.md`).
+    until the code switches over (`product/design/runner/host-metadata.md`).
   - `@oppenheimer/api`: heartbeats write `host_presence` and, only when the
     machine changed, `host_inventory`, with the change on the host's timeline;
     host responses carry `machine`, `vitals` and `network`;
@@ -164,7 +164,7 @@
 - f099524: Domain events and queued jobs are staged in the same transaction as the write that owes them, so a crash between commit and dispatch no longer drops them.
 - f099524: Sign-up grants the default role and provisions the personal workspace through domain use cases rather than SQL in a Better Auth hook. A slug with no URL-safe characters falls back to `workspace-…` everywhere, and `ROLE_007` replaces a bare 500 when a system role is missing.
 - 2dc27d2: Plan: a task board, goals and a calendar, the console rail's third item
-  (`product/design/plan/17-plan.md`).
+  (`product/design/plan/plan.md`).
 
   - `@oppenheimer/api`: the `tasks` module (tasks, goals, the board's order,
     starting or linking a session, the attach rule) and the `calendar` module
@@ -278,7 +278,7 @@
   line, SVG and HTML are refused whatever they are called, and the runner
   names each file itself. A runner announces the wider set with the
   `session.files` capability; an older one is still sent images only.
-- 3404cd3: A session's terminal can be shared with a link, to watch or to type, for anyone, any signed-in account or named people (`product/design/sessions/21-session-share-links.md`).
+- 3404cd3: A session's terminal can be shared with a link, to watch or to type, for anyone, any signed-in account or named people (`product/design/sessions/session-share-links.md`).
 - ca05d90: Cheaper runner-link traffic and a keyset session list.
 
   - `@oppenheimer/api`: a batch of session events lands in one `INSERT` (the

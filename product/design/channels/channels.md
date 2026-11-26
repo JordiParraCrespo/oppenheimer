@@ -21,7 +21,7 @@ which replaces the one bot per account of this note with routes (2026-10-24).
 | What it does | Wakes the bot; the bot answers there | Reads or writes in the owner's account, inside a turn |
 | Example | "Juno, what failed last night?" on WhatsApp | Juno reads #incidents with the owner's Slack token |
 
-This document is channels. Connectors are tools of note 25 §4, held to its
+This document is channels. Connectors are tools of `../bots/bots.md` §4, held to its
 permissions, and come later. A channel never grants a connector: talking to
 a bot in Slack does not let it read your Slack.
 
@@ -31,9 +31,9 @@ Grok Bot reaches your Gmail through Google's hosted Gmail MCP server, and
 Codex's connectors are one hosted MCP server, but our mail connector calls
 the Gmail API directly and gives the bot its tools the way the calendar
 does. Our bots' tools are already an in-process MCP server shared by both
-engines (note 25 §4), so a remote MCP server (Linear, Notion) can join the
+engines (`../bots/bots.md` §4), so a remote MCP server (Linear, Notion) can join the
 same turn later, with the owner's OAuth token and the tool permissions of
-note 25 §5. That is its own note.
+`../bots/bots.md` §5. That is its own note.
 
 ## 2. One interface, one implementation per channel
 
@@ -159,7 +159,7 @@ The turn is the one unit of work; there is no queue of the channels' own.
 
 ## 4. Conversations
 
-A bot has its console chat today (note 25 §3). A channel adds
+A bot has its console chat today (`../bots/bots.md` §3). A channel adds
 **conversations beside it**, one per WhatsApp chat, Slack DM or thread, or
 email thread:
 
@@ -198,14 +198,14 @@ email thread:
 - **Everything from outside is untrusted except the instruction itself.**
   Quotes, forwarded text, thread history, other people's lines and an
   email's quoted chain reach the bot inside `<untrusted_external_data>`,
-  with note 16's preamble. Nothing from a channel can approve anything.
+  with `../automations/automations-architecture.md`'s preamble. Nothing from a channel can approve anything.
 
 ## 6. Sending and approvals
 
 - **Answering in the conversation it was asked in** needs no approval: it
   is the reply.
 - **Writing anywhere else** — a new chat, another person, another channel
-  — is a tool, `send_message`, which **asks** by default (note 25 §5). A
+  — is a tool, `send_message`, which **asks** by default (`../bots/bots.md` §5). A
   draft never grants a send.
 - **A Needs input card** stays in the console. The channel gets one line to
   the owner only: "Waiting for your approval: <link>". Native buttons
@@ -253,7 +253,7 @@ owner chose**, not by the API.
 - **Behaviour that keeps a number safe:** never shown as online, no history
   sync, no reply to messages from before the link or from long ago, read
   receipts off by default, the send budget of §6.
-- **Media:** text first. Images go to the bot as images (note 25 §3.1);
+- **Media:** text first. Images go to the bot as images (`../bots/bots.md` §3.1);
   voice notes are transcribed through voice's provider list; documents
   wait.
 - **The cost:** the bot answers on WhatsApp only while that host is up. A
@@ -347,7 +347,7 @@ without touching DNS. It is the same adapter shape and the same core.
   runner's link. The API runs as it
   does today.
 - **Runner:** `internal/channels/whatsapp` holds the socket, the keys and
-  the outbox; the link gains a `channels` lane (`../foundations/01-protocol.md`
+  the outbox; the link gains a `channels` lane (`../foundations/protocol.md`
   owns its frames). The runner's arch test keeps whatsmeow inside that
   package.
 - **bots-chat** owns the turn and the conversation: `bot_conversation`,
@@ -367,7 +367,7 @@ Reading your own mailboxes ([Mail](mail.md)) comes before all of these.
    and 2): a forwarded `support@` answered for customers.
 3. **WhatsApp**, the linked device of §7.1, on the runner.
 4. **Slack**, which is 0.4.
-5. **`send_message`**, and channels as routine triggers (note 26): a
+5. **`send_message`**, and channels as routine triggers (`../bots/bot-routines.md`): a
    message to a bot's address or number can also fire a routine.
 6. **A mailbox you own** as a channel (§7.3, later), on the same
    connection as [Mail](mail.md).

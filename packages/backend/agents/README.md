@@ -1,7 +1,7 @@
 # @oppenheimer/backend-agents
 
 The engines a bot's turn runs on. A bot is a chat agent whose loop runs in a
-BullMQ worker inside the API (`product/design/bots/25-bots.md` §2); this
+BullMQ worker inside the API (`product/design/bots/bots.md` §2); this
 package is the only code that imports the two agent SDKs, and it hides both
 behind one port.
 
@@ -108,7 +108,7 @@ before the model reads it.
   retry fixes, from a fault worth reporting.
 - `maxSteps` caps model round trips when given: Claude Code's `maxTurns`,
   the Agents SDK's `maxTurns`; reaching it ends with `max_steps`. Absent,
-  a turn has no limit (`25-bots.md` §2, 2026-11-09).
+  a turn has no limit (`product/design/bots/bots.md` §2, 2026-11-09).
 - **Every turn compacts mid-turn** past `compactionThreshold(contextWindow)`,
   70% of `min(contextWindow, BOT_COMPACTION_WINDOW)`: Claude Code by itself,
   told that window and share; the OpenAI engines through `TurnCompactor`

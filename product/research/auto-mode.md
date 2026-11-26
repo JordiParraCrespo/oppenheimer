@@ -1,6 +1,6 @@
 # Auto mode: how Claude Code and Codex let an agent act without asking
 
-Read on 2026-11-25 for the bots' approval levels (`design/bots/25-bots.md`
+Read on 2026-11-25 for the bots' approval levels (`design/bots/bots.md`
 §5). It covers what Anthropic says about how it built Claude Code's auto
 mode, and how OpenAI's open-source Codex CLI decides on its own whether a
 call may run (commit `ebd0765` of `openai/codex`, `codex-rs/`). Both

@@ -9,18 +9,16 @@ What Oppenheimer is, why, and how each part of it works, kept as notes.
 | [`roadmap.md`](roadmap.md) | The order of what comes next, and the questions it leaves open |
 | [`decisions.md`](decisions.md) | Every decision that replaced an earlier one, dated, so nobody is misled by an older note |
 | [`research/`](research/README.md) | Reads of other products, measurements and proposals not adopted; the code and captures behind them are in `research/spikes/`. A research note decides nothing |
-| [`archive/`](archive/README.md) | The planning notes from before the MVP was scoped; mostly superseded, still cited as "note 04" |
+| [`archive/`](archive/README.md) | The planning notes from before the MVP was scoped; mostly superseded |
 | [`mockups/`](mockups/README.md) | The design exports the console's screens are built from; `version1/Flow.dc.html` is their index |
 
 ## How notes are cited
 
-- A bare number is a numbered design note: `02 §6` is
-  [`design/runner/02-runner.md`](design/runner/02-runner.md) §6. The
-  numbers are unique across `design/` and never reused.
-- "note 04", with the word, is a planning note in `archive/`; research notes
-  that once had a number are mapped in the Formerly column of
-  [`research/README.md`](research/README.md).
-- A note without a number is cited by its path.
+By path, relative to the note citing it, with `§` for a section:
+[`design/runner/runner.md`](design/runner/runner.md) §6. In research
+notes, a path in backticks that does not start with `../` is relative to
+`product/`. Notes carry no numbers; older lines in `decisions.md` that
+name "the MVP decision log" mean its section "The design".
 
 ## Changing a note
 

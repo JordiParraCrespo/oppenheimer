@@ -82,7 +82,7 @@ needs the user's own GitHub token, not an installation token.
   and throws it away today). Turn on *expiring user tokens*:
   8-hour access tokens and 6-month refresh tokens. The token's power is
   the intersection of the App's permissions and the user's own, so
-  "installation is the access control" (note 09) still holds.
+  "installation is the access control" (`../../archive/github-app-install.md`) still holds.
 - **Store it** in a new `github_user_grant` table, one row per user.
   Columns:
   - `user_id`, `github_user_id`, `login`;

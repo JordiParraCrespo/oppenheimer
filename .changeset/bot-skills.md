@@ -7,7 +7,7 @@
 "@oppenheimer/translations": minor
 ---
 
-Skills for bots, run as slash commands (`product/design/bots/25-bots.md` §4.1).
+Skills for bots, run as slash commands (`product/design/bots/bots.md` §4.1).
 
 - `@oppenheimer/shared`: `botSkillSchema`, `updateBotSkillSchema`, the name
   rules and `parseBotSlashCommand` (`/<name> args` and `/skill <name> args`).

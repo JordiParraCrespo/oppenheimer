@@ -13,8 +13,8 @@ same app and its install rather than a second one.
 
 - The Slack channel of `channels.md`: the app, its install, the signed
   events endpoint, the owner's Slack user linked to their account.
-- Sessions and their event log (`../foundations/10-api-modules-and-data-model.md`).
-- The untrusted-payload envelope note 05 §6–§7 proposes for GitHub
+- Sessions and their event log (`../foundations/api-modules-and-data-model.md`).
+- The untrusted-payload envelope `../../archive/github-experience.md` §6–§7 proposes for GitHub
   events applies to Slack messages the same way.
 
 ## Questions to answer first

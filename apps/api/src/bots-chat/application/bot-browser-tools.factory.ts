@@ -34,7 +34,7 @@ import {
 } from './bot-tool.factory';
 
 /**
- * Using a browser (`25-bots.md` §4.2, "Using a browser"): a bot drives a
+ * Using a browser (`product/design/bots/bots.md` §4.2, "Using a browser"): a bot drives a
  * browser of its own on one of the owner's hosts. It reads a page as a list
  * of what can be acted on, each with a ref, acts on a ref, and gets a picture
  * of the page when its model reads images. It reaches outside Oppenheimer,

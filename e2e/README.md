@@ -138,13 +138,13 @@ running (`stack.mjs up --web`) and skip without it. Two things about the hosts a
 The container entrypoint's restart loop is a test recipe standing in for
 launchd `KeepAlive` and systemd `Restart=always`, not a third way to run the
 runner; install, the service units and the signed swap are proved on a real OS
-(`product/design/runner/09-runner-install-and-update.md`). What the fleet covers
-is recorded in `product/design/foundations/11-api-implementation-plan.md`, slice 6.
+(`product/design/runner/runner-install-and-update.md`). What the fleet covers
+is recorded in `product/design/foundations/api-implementation-plan.md`, slice 6.
 
 `tests/fleet/inbox-stress.spec.ts` is the Inbox under load (thirty
 sessions in every scenario it reads, ten bots, two readers; about seven
 minutes) and runs only with `INBOX_STRESS=1`. What it covers and what it
-found is `product/design/console/29-inbox.md`, "Stress test".
+found is `product/design/console/inbox.md`, "Stress test".
 
 ```bash
 INBOX_STRESS=1 FLEET_HOSTS=local pnpm --filter @oppenheimer/e2e e2e:fleet tests/fleet/inbox-stress.spec.ts

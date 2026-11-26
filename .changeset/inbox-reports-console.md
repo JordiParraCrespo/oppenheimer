@@ -5,7 +5,7 @@
 "@oppenheimer/translations": minor
 ---
 
-Inbox reports, the console (`product/design/console/29-inbox.md`, "Reports"). A
+Inbox reports, the console (`product/design/console/inbox.md`, "Reports"). A
 problem an unattended agent sent is one more Inbox item, `report`, read with
 its pictures and answered on its card.
 

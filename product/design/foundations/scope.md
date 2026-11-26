@@ -1,0 +1,168 @@
+# Scope
+
+## In one line
+
+Orca, as a hosted web app: connect a host you own, then run sessions
+on it. No virtual machines in the MVP. Claude Code, Codex, OpenCode, Grok
+or a blank terminal in each session; Claude Code is the one the demo walks.
+
+## Decided
+
+- **Personal workspace.** One user. Teams and multiplayer come later
+  on the same users table with an org membership added.
+- **Sign-in on day one: GitHub, Google, and email plus password**, from
+  a base project that already ships account linking (Better Auth on
+  Hono or equivalent). Connect GitHub is a separate step after sign-in:
+  the App installation with all or selected repositories, attached to
+  whatever account you signed in with (`../../archive/github-app-install.md`). Identity and
+  repository access are two different things.
+- **Hosts are your own machines, direct mode** (`../../archive/targets-and-github-auth.md` mode A). The
+  runner runs as your user on the host, installed with one command that
+  carries a one-hour registration token; it generates a keypair, dials
+  out to the control plane, and stays connected. Linux and macOS.
+- **A session is a worktree plus a terminal on a host.** No VM, no
+  container. **Changed 2026-10-14 (`../sessions/session-places.md`):** a session runs in a new
+  worktree or in a folder already on the host, and the layout below is
+  replaced by `../sessions/session-places.md`'s work folder. The runner creates a git worktree under the fixed layout,
+  starts a tmux session in it, launches the agent, and streams the PTY
+  to the browser. **Changed again 2026-09-26 (`api-modules-and-data-model.md`):** a session checks
+  out several repositories, usually one, chosen freely rather than from
+  its project's defaults; what follows is the 2026-09-23 rule, which now
+  holds only until the runner makes several worktrees. A session checks
+  out **one repository** in the MVP (changed 2026-09-23, #56): the runner makes one worktree per session,
+  and a session that asked for two was accepted, refused by the host and
+  left spinning. The API refuses a second repository before a row is
+  written, and since 2026-09-27 it refuses a session with none too: the
+  runner refused one at launch, so it failed after it was recorded (`api-modules-and-data-model.md`). **Changed again 2026-10-26:** the owner
+  lifted the one-repository cap. The runner makes one worktree per
+  checkout, each in its own directory of the session folder, so a session
+  checks out one to five repositories, each a different one, the agent
+  starting in the first unless another is named; a sixth is
+  `SESSIONS_010`. Five because every checkout is a clone and a worktree on
+  the host, and the picker has to stay readable.
+  The model still keeps checkouts as a list with a primary
+  (the `cwd` checkout, where the agent launches), so several
+  repositories, one worktree each, is the next runner slice (`api-implementation-plan.md`'s R3)
+  rather than a schema change; it was decided on 2026-09-19 and is
+  deferred, not dropped.
+- **Projects:** a session is listed under a project, a saved scope a
+  person creates (name, repositories with their base branches and
+  defaults, a default host and agent), or under the workspace's
+  **Unassigned** project when it names none. A project is metadata: a
+  session can be moved between any two projects and nothing on a host
+  moves (`api-modules-and-data-model.md`, 2026-09-26).
+- **Fixed layout on every host** (replaced 2026-10-14 by `../sessions/session-places.md` §2):
+  `~/oppenheimer-ai/workspaces/<repo>/main` (the fetch source, never
+  edited) and `~/oppenheimer-ai/workspaces/<repo>/worktrees/<slug>`
+  (one per session). Nothing else under `~/oppenheimer-ai` yet; agent
+  personalities and the like come later (`../../archive/workspace-layout.md` §1).
+- **Create session chips:** project, host, repository, branch, every
+  one of them searchable (the project chip joined on 2026-09-26; the
+  agent moved to the engine button on 2026-09-20). The repository chip picks one repository and
+  carries its branch; picking another replaces it (above). **Changed
+  2026-10-26:** the chip picks several repositories (up to five), each on
+  its own branch; the ones picked before it opened lead the list, and a
+  pick past five replaces the oldest. The agent
+  lives in the engine button (`../console/screens.md`) and lists Claude Code, Codex, OpenCode,
+  Grok and a blank terminal, with the vendors' marks where they exist. All
+  five are rows of the shared agent catalog (`CODING_AGENTS`) and the
+  runner launches each of them (`../runner/runner.md` §5). The blank terminal is a worktree
+  and a login shell with nothing launched in it: no model, no permission
+  level, no effort, and no login button.
+- **Agent login is the host's own.** The runner launches the agent with
+  the host's existing config; you log in once per host by typing it in
+  the terminal, and the login URL becomes a button when its host is one
+  the catalog lists for that agent (`../runner/runner.md` §9). No account objects,
+  no volumes, no config-dir switching yet (`../../archive/multi-account.md` comes later).
+- **GitHub access for clone and push:** the runner obtains a one-hour
+  installation token scoped to the session's repository from the
+  control plane and exposes it through a git credential helper bound
+  to that session's shell. Nothing written to disk (`../../archive/targets-and-github-auth.md` §"Mode A"
+  option 2).
+- **Sidebar** of sessions with a state dot from screen manifests
+  (working, blocked, idle) and a name. Tabs are tmux windows in the
+  session's own tmux session: window 0 is the agent, tabs 1 and up are
+  plain shells in the same worktree (`../runner/runner.md` §tmux).
+- **No ports on the host, ever.** The runner holds one outbound
+  WebSocket to the control plane; the browser connects to the control
+  plane; the control plane relays. Tailscale is an optional fast path
+  later, never a requirement.
+- **Onboarding is four numbered steps and a landing**: sign in; name
+  your workspace and pick its address; connect GitHub; add a host
+  (paste one command or hand an agent the install prompt); then a
+  "You're all set" summary that leads into the console, where New
+  session has its chips prefilled (`../console/screens.md` §onboarding).
+- **Sleep is not a platform concern.** The host is always on; tmux
+  keeps sessions alive; the browser reattaches. Closing a session
+  pushes the branch and removes the worktree.
+- **Hosted control plane** in the same Hetzner region as your hosts,
+  public HTTPS for the browser, outbound WebSocket from runners.
+- **The runner keeps itself current**, and three things hold whatever
+  the policy around them turns out to be: an update is a signed
+  artifact, the control plane can offer a version but never mint code,
+  and sessions survive the swap because they live in tmux. When it
+  applies — channels, the quiet window and what overrides it — is `../runner/runner-install-and-update.md` §5,
+  and that is the only place those clocks are written.
+
+- **Automations are in the MVP** (2026-09-27, `../automations/automations-architecture.md`). A saved prompt with a
+  project, repositories, a host, an agent and one or more triggers — a
+  schedule, a GitHub event, or Run now — where each run is one session
+  started as the automation's owner, guarded, limited and listed with its
+  history (`../automations/automations.md`). Built: the control plane's pipeline and the console's
+  pages; a run's session takes its prompt as a person's does. Next, in
+  the slices of `../automations/automations-architecture.md` §5: the headless drive (a run with no terminal, for any
+  agent, with its structured result), then resume. Slack, Linear and push
+  guardrails stay later.
+
+- **Plan is in the MVP** (2026-10-05, `../plan/plan.md`). The rail's third item: a
+  board of tasks (Later, To do, In progress, Done) per project with
+  goals over it, tasks that start a session or link existing ones, and
+  a month calendar of task due dates, automation runs, personal events
+  and a read-only Google Calendar. Designed in `../plan/plan-product.md`, `../plan/plan-tasks-and-goals.md` and `../plan/plan-calendar.md`.
+
+## Out, for later slices
+
+Virtual machines in any form (Shared workspace VM, Clean VM,
+Firecracker, tart, cloud adapters), sleep tiers, account objects and
+volumes, the egress proxy, agents beyond the catalog (Cursor,
+Gemini and the rest Orca and Synara run), Create PR and diff
+view, preview URLs, auto-fix, usage meters, delegation,
+Tailscale mode, orgs and billing, agent personalities and any other
+directory under `~/oppenheimer-ai`.
+
+The VM design already written (`../../archive/reuse-gha-runner.md`, `../../archive/sleep-wake-and-pricing.md`, `../../archive/workspace-layout.md` §2 and §5, and the VM
+parts of the documents in this directory) stays as the next slice. It
+is not deleted, it is deferred.
+
+## The demo scene
+
+You tap Continue with GitHub on your phone and pick the repositories
+the app may see. In Settings you add a host: copy one command, run it
+on your Mac Studio or your Hetzner box, and the host appears online.
+New session: host `mac-studio`, repo `xrp-mobile`, branch `main`, agent
+Claude Code. A terminal appears in a fresh worktree with `claude`
+running. You tap the login URL once on that host, give the task, close
+the phone. On the laptop the session is still there. You open three
+more and switch in the sidebar.
+
+## Done means
+
+- The scene runs on a real Mac and a real Linux host from a phone.
+- Closing the browser, losing wifi, and restarting the runner do not
+  kill a session.
+- No GitHub token is ever stored by the control plane beyond the
+  one-hour scoped tokens it mints, and none is written to a host's
+  disk. No vendor credential is ever stored by the platform.
+- `docker compose up` brings the control plane up on a fresh machine.
+
+## Open questions
+
+1. ~~Tabs~~: decided, tmux windows in one tmux session per session
+   (`../runner/runner.md` §tmux).
+2. Session naming: typed by the user, derived from the first task, or
+   from the branch?
+3. Branch chip: base for a new session-named branch, or check out an
+   existing branch directly? Both, with new-branch as default?
+4. Should the runner refuse to start a session if the host has no
+   `claude` login, or start it and let the login prompt appear? Let it
+   appear; that is the flow.
