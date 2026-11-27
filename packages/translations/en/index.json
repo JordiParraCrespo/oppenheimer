@@ -1074,7 +1074,7 @@
           "description": "The agent asks before it runs anything."
         },
         "auto": {
-          "label": "Approve for me",
+          "label": "Auto",
           "description": "Edits and safe commands run; the rest still asks."
         },
         "full": {
@@ -2048,7 +2048,7 @@
           "description": "Asks you before anything that reaches outside Oppenheimer."
         },
         "auto": {
-          "label": "Approve for me",
+          "label": "Auto",
           "description": "A reviewer lets what you asked for run; anything risky still asks."
         },
         "full": {
@@ -2630,7 +2630,7 @@
         },
         "preset": {
           "ask": "Tools you leave on their default follow Ask for approval: anything that reaches outside Oppenheimer asks first.",
-          "auto": "Tools you leave on their default follow Approve for me: anything that reaches outside Oppenheimer goes to a reviewer first, which lets what you asked for run and leaves the rest to you. A tool you set to Ask always asks.",
+          "auto": "Tools you leave on their default follow Auto: anything that reaches outside Oppenheimer goes to a reviewer first, which lets what you asked for run and leaves the rest to you. A tool you set to Ask always asks.",
           "full": "Tools you leave on their default follow Full access: they run without asking, the ones that always ask included. Sending mail, and what you set to Ask or a rule asks for, still wait for your yes."
         },
         "decisions": {
@@ -5197,6 +5197,10 @@
     },
     "title": "Claude Code sessions",
     "checkNow": "Check now",
+    "checked": {
+      "now": "Checked just now",
+      "ago": "Checked {{age}} ago"
+    },
     "badge": {
       "none": "Claude Code sessions",
       "needsYou_one": "{{count}} Claude Code session needs you",
@@ -5261,7 +5265,9 @@
       "runnerUnread": "Can't read the sessions on your hosts: {{detail}}",
       "notAUrl": "That is not a URL.",
       "permission": "Chrome needs your permission to reach {{origin}}.",
-      "refused": "Oppenheimer refused: {{detail}}"
+      "refused": "Oppenheimer refused: {{detail}}",
+      "connectTitle": "Connect to Oppenheimer",
+      "connectHint": "Send these sessions' states to your console, and hear about the sessions on your hosts."
     },
     "runner": {
       "waiting": "{{name}} is waiting on you",

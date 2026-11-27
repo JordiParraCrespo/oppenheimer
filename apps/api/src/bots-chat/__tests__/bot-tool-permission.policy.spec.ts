@@ -36,7 +36,7 @@ const settings = (
   );
 
 describe('toolDecision', () => {
-  it('follows the preset where nothing is set: an outside tool asks under Approve for me, runs under Full access', () => {
+  it('follows the preset where nothing is set: an outside tool asks under Auto, runs under Full access', () => {
     expect(toolDecision(NO_PERMISSIONS, comment, 'auto')).toBe('ask');
     expect(toolDecision(NO_PERMISSIONS, comment, 'full')).toBe('allow');
     expect(toolDecision(NO_PERMISSIONS, recall, 'auto')).toBe('allow');

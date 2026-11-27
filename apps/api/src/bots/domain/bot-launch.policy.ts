@@ -7,7 +7,7 @@ export interface BotEngine {
   provider: BotProvider;
   /** A model id the provider offers; null runs the provider's default. */
   model: string | null;
-  /** A level the model offers; null runs the model's own default. */
+  /** A level the model offers; null is Auto (`botTurnEffort`). */
   effort: SessionEffort | null;
 }
 

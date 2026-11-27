@@ -55,7 +55,7 @@ export type BotDocumentName = (typeof BOT_DOCUMENT_NAMES)[number];
 /**
  * How far a bot's turns may go without asking, strictest first, the sessions'
  * three levels: `ask` (Ask for approval: what reaches outside Oppenheimer
- * raises a card), `auto` (Approve for me: a reviewer reads each such call
+ * raises a card), `auto` (Auto: a reviewer reads each such call
  * first and lets it run or raises the card), `full` (Full access: no card).
  */
 export const BOT_PERMISSIONS = [
@@ -341,7 +341,7 @@ export function botModelOf(provider: BotProvider, model: string | null): BotMode
 
 /**
  * The effort a bot on `provider` and `model` records for `requested`: the level
- * when that model offers it, else none (the model's own default).
+ * when that model offers it, else none (Auto, which `botTurnEffort` resolves).
  */
 export function botEffortLevelFor(
   provider: BotProvider,
@@ -351,6 +351,32 @@ export function botEffortLevelFor(
   if (!SESSION_EFFORTS.includes(requested as SessionEffort)) return null;
   const level = requested as SessionEffort;
   return botModelOf(provider, model)?.effort?.levels.includes(level) ? level : null;
+}
+
+/**
+ * The least effort a bot's turn runs at when its owner left effort on Auto.
+ * Several models default to `low` (GPT-6.2 Sol, Oppie's), where a bot barely
+ * reasons before it acts; OpenClaw and Hermes both land on `medium` too.
+ */
+export const BOT_EFFORT_FLOOR: SessionEffort = 'medium';
+
+/**
+ * The effort a bot's turn runs at: the one its owner chose, or on Auto (null)
+ * `BOT_EFFORT_FLOOR` when the model's own default is below it and the model
+ * offers it, else null, the model's own default, which is then the floor or
+ * above (and Claude's adaptive thinking is left to decide).
+ */
+export function botTurnEffort(
+  provider: BotProvider,
+  model: string | null,
+  effort: SessionEffort | null,
+): SessionEffort | null {
+  if (effort !== null) return effort;
+  const offered = botModelOf(provider, model)?.effort;
+  if (!offered) return null;
+  const floor = offered.levels.indexOf(BOT_EFFORT_FLOOR);
+  const fallback = offered.levels.indexOf(offered.default);
+  return floor >= 0 && fallback >= 0 && fallback < floor ? BOT_EFFORT_FLOOR : null;
 }
 
 /** A provider key's length bounds: wide enough for every provider's format. */

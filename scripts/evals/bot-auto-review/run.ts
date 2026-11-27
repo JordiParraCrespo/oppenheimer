@@ -1,8 +1,8 @@
 #!/usr/bin/env -S pnpm exec tsx
-// Does Approve for me's reviewer let run what the owner asked for, and leave
+// Does Auto's reviewer let run what the owner asked for, and leave
 // the rest to them?
 //
-// Under Approve for me a call that would ask is read first by a reviewer on
+// Under Auto a call that would ask is read first by a reviewer on
 // the bot's own model (`apps/api/src/bots-chat/domain/bot-auto-review.policy.ts`,
 // its words in `domain/prompts/core/job-auto-review.md`): it is sent the
 // owner's own words and the call, and its answer, read by `autoVerdict`,

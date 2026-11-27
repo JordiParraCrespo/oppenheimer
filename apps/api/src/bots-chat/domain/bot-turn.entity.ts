@@ -13,6 +13,7 @@ import {
   type BotTurnLane,
   type BotTurnOrigin,
   type BotTurnStatus,
+  botTurnEffort,
   isChannelOrigin,
   type Scope,
 } from '@oppenheimer/shared';
@@ -216,6 +217,9 @@ export class BotTurnEntity extends AggregateRoot<BotTurnProps> {
         steer: false,
         contact: null,
         ...props,
+        // Auto runs at the bot floor on a model whose own default is below it,
+        // and the row records what the turn runs at.
+        effort: botTurnEffort(props.provider, props.model, props.effort),
         origin: props.origin ?? 'message',
         sourceKey: props.sourceKey ?? null,
         timeZone: props.timeZone ?? null,

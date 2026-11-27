@@ -98,17 +98,12 @@ export const LEDGER = [
   },
   {
     file: 'bots-chat/domain/bot-auto-review.policy.ts',
-    starts: 'Approve for me left this to you',
+    starts: 'Auto could not review',
     why: "an approval card's note, for the person",
   },
   {
     file: 'bots-chat/domain/bot-auto-review.policy.ts',
-    starts: 'Approve for me could not review',
-    why: "an approval card's note, for the person",
-  },
-  {
-    file: 'bots-chat/domain/bot-auto-review.policy.ts',
-    starts: 'Approve for me cannot read all',
+    starts: 'Auto cannot read all',
     why: "an approval card's note, for the person",
   },
   {

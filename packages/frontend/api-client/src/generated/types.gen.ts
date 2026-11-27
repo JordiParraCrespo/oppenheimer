@@ -4312,7 +4312,7 @@ export type BotResponseDto = {
      */
     model: string | null;
     /**
-     * The effort level; null runs the model at its own default.
+     * The effort level; null is Auto: turns run at medium on a model whose own default is lower, else at its own default.
      */
     effort: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
     /**
@@ -5694,7 +5694,7 @@ export type BotToolPermissionDto = {
      */
     description: string;
     /**
-     * It reaches outside Oppenheimer: asking is its default under Approve for me.
+     * It reaches outside Oppenheimer: asking is its default under Auto.
      */
     asks: boolean;
     /**

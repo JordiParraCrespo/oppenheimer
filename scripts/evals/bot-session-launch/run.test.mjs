@@ -49,10 +49,10 @@ test('fails a turn that raised no card, quoting what the bot said instead', () =
   assert.match(verdict.failures[0], /no start_session card; the bot said: I can't choose/);
 });
 
-test('fails a bot that started a session without asking: the eval needs Approve for me', () => {
+test('fails a bot that started a session without asking: the eval needs Auto', () => {
   const verdict = grade({}, { card: null, started: true, reply: 'Started.' });
   assert.equal(verdict.pass, false);
-  assert.match(verdict.failures[0], /Approve for me/);
+  assert.match(verdict.failures[0], /Auto/);
 });
 
 test('passes a refused model only with no card and a reply that offers the real ones', () => {

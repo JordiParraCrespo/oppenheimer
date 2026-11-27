@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 /**
  * How far a bot's turns go without asking, the sessions' three levels: Ask
- * for approval, Approve for me (a reviewer decides) and Full access.
+ * for approval, Auto (a reviewer decides) and Full access.
  */
 export function BotPermissionChip({
   value,

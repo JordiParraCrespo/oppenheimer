@@ -18,6 +18,7 @@ import {
   toUpdateBotBody,
   type UpdateBotsInput,
 } from '../bot-peer-tool.mapper';
+import { describeBotEffort } from '../domain/bot-effort.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
 
 export type { UpdateBotsInput };
@@ -151,7 +152,7 @@ function engineUpdateFor(
 
 /**
  * The Needs input card's line: `Update 2 bots (Zengue Jewels, Coverd Web):
- * runs on ChatGPT GPT-6.1 Sol, permission Approve for me`.
+ * runs on ChatGPT GPT-6.1 Sol, permission Auto`.
  */
 export function botUpdateSummary(input: UpdateBotsInput, plan: BotUpdatePlan): string {
   const names = plan.steps.map((step) => step.bot.name).join(', ');
@@ -174,7 +175,7 @@ function describeChanges(input: UpdateBotsInput, plan: BotUpdatePlan): string[] 
     ];
     changes.push(`runs on ${engines.join(' / ')}`);
   }
-  if (input.effort !== undefined) changes.push(`effort ${input.effort ?? 'default'}`);
+  if (input.effort !== undefined) changes.push(`effort ${input.effort ?? 'auto'}`);
   if (input.permission !== undefined) {
     changes.push(`permission ${BOT_PERMISSION_LABELS[input.permission]}`);
   }
@@ -209,7 +210,7 @@ export function botsUpdatedAnswer(
             engineLabel: engineLabelOf(bot.provider, bot.model),
             provider: bot.provider,
             model: bot.model ?? 'default',
-            effort: bot.effort ?? 'default',
+            effort: describeBotEffort(bot),
             permission: BOT_PERMISSION_LABELS[bot.permission],
           }),
         ),

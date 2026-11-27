@@ -69,7 +69,7 @@ describe('run_command', () => {
     expect(first.kind).toBe('host_program');
   });
 
-  it('asks first under Approve for me, with the command line on the card', async () => {
+  it('asks first under Auto, with the command line on the card', async () => {
     const { call, request, commandBus } = setup('auto');
     await call({ argv: ['python3', 'report.py'] });
     expect(request.mock.calls[0]?.[0].summary).toBe('Run `python3 report.py` on build-02');

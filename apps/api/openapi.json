@@ -40780,7 +40780,7 @@
               null
             ],
             "nullable": true,
-            "description": "The effort level; null runs the model at its own default."
+            "description": "The effort level; null is Auto: turns run at medium on a model whose own default is lower, else at its own default."
           },
           "permission": {
             "type": "string",
@@ -44185,7 +44185,7 @@
           },
           "asks": {
             "type": "boolean",
-            "description": "It reaches outside Oppenheimer: asking is its default under Approve for me."
+            "description": "It reaches outside Oppenheimer: asking is its default under Auto."
           },
           "perCallOnly": {
             "type": "boolean",

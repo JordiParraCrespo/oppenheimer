@@ -58,7 +58,7 @@ The workspace has no {{label}} key, so a bot on {{label}} could not answer. Prov
 
 <!-- fragment: resolve-effort-refusal -->
 
-{{engineLabel}} does not take effort "{{effort}}". {{levelsCount}} Leave effort out for its default.
+{{engineLabel}} does not take effort "{{effort}}". {{levelsCount}} Leave effort out for Auto.
 
 <!-- fragment: resolve-permission-refusal -->
 

@@ -106,7 +106,7 @@ describe('answerNeedsPerson', () => {
   const destructive = permission('Bash command\n  rm -rf ../shared');
   const waiting = (decision: SessionDecision | null) => ({ pendingDecision: decision });
 
-  it('under Approve for me, puts letting a destructive dialog through to the person', () => {
+  it('under Auto, puts letting a destructive dialog through to the person', () => {
     expect(
       answerNeedsPerson(waiting(destructive), { decisionId: 'perm-1', option: 0 }, 'auto'),
     ).toBe(true);
@@ -122,7 +122,7 @@ describe('answerNeedsPerson', () => {
     expect(answerNeedsPerson(null, { decisionId: 'perm-1', option: 0 }, 'full')).toBe(false);
   });
 
-  it('under Approve for me, puts an answer to a session it could not read to the person', () => {
+  it('under Auto, puts an answer to a session it could not read to the person', () => {
     expect(answerNeedsPerson(null, { decisionId: 'perm-1', option: 0 }, 'auto')).toBe(true);
   });
 

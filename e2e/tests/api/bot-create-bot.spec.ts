@@ -5,7 +5,7 @@ import { signedUpContext } from '../../support/auth';
  * A bot creating a bot through the deployed API (`create_bot`), with a real GLM
  * key (`GLM_API_KEY`; skipped without it). Under Full access the bot creates
  * exactly one bot when asked: the person's, marked as created by it, on its
- * provider and model, under Approve for me. Under Approve for me the call waits
+ * provider and model, under Auto. Under Auto the call waits
  * on a card naming the bot, and approving it creates exactly that one bot.
  */
 
@@ -89,7 +89,7 @@ test('under Ask for approval the creation waits on a card, and approving it crea
   test.skip(!key, 'GLM_API_KEY is not set: the live turn needs a real key');
   const { api, bot, bots } = await glmWorkspace('botcreateask', key as string);
   expect(bot.permission).toBe('auto');
-  // Approve for me's reviewer would clear a creation asked for this plainly: Ask for approval cards it.
+  // Auto's reviewer would clear a creation asked for this plainly: Ask for approval cards it.
   const asks = await api.patch(`/api/v1/bots/${bot.id}`, { data: { permission: 'ask' } });
   expect(asks.status(), await asks.text()).toBe(200);
 

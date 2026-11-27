@@ -27,7 +27,7 @@ import type { BotToolContext } from '../bot-tool.factory';
 /**
  * Starting, prompting, answering and stopping sessions reach the owner's
  * machines, so they ask:
- * under Approve for me nothing is dispatched, a card is raised that names the
+ * under Auto nothing is dispatched, a card is raised that names the
  * agent, the host, the repository and the task, and the model is told;
  * under Full access the sessions' own commands run in the owner's scope,
  * the session marked as the bot's, and the same call in the same turn
@@ -255,7 +255,7 @@ function setup(permission: BotToolContext['permission'], conversationId = 'bot-1
 }
 
 describe('BotSessionToolsFactory', () => {
-  it('asks first under Approve for me: a card naming the agent, host, repository and task, nothing started', async () => {
+  it('asks first under Auto: a card naming the agent, host, repository and task, nothing started', async () => {
     const { commandBus, approvals, call } = setup('auto');
     const result = await call('start_session', { task: 'Fix the test', project_id: PROJECT });
     expect(approvals.request).toHaveBeenCalledWith({
@@ -406,9 +406,9 @@ describe('BotSessionToolsFactory', () => {
     });
   });
 
-  // What breaks this: a grant given for sessions at approve for me, or the
+  // What breaks this: a grant given for sessions at Auto, or the
   // Full access preset, starting an agent with every check off unseen.
-  it('asks for a session at full access on a card of its own, offering only this call, under Approve for me', async () => {
+  it('asks for a session at full access on a card of its own, offering only this call, under Auto', async () => {
     const { commandBus, approvals, call } = setup('auto');
     await call('start_session', { task: 'x', project_id: PROJECT, permission: 'full' });
     expect(approvals.request).toHaveBeenCalledWith(
@@ -485,7 +485,7 @@ describe('BotSessionToolsFactory', () => {
       });
     }
 
-    it('asks first under Approve for me, the card naming the cloud, the host, the repository and the task', async () => {
+    it('asks first under Auto, the card naming the cloud, the host, the repository and the task', async () => {
       const { commandBus, approvals, call } = setup('auto');
       await call('start_cloud_session', { task: 'Fix the test', project_id: PROJECT });
       expect(approvals.request.mock.calls[0][0]).toMatchObject({
@@ -889,7 +889,7 @@ describe('BotSessionToolsFactory', () => {
   // me the person, on a card of its own past every grant; under Full access
   // the bot. What breaks this: a grant given for answering tests letting a
   // recursive delete through unseen, or a card stopping a Full access bot.
-  it('under Approve for me, puts letting a destructive dialog through on a card offering only this call', async () => {
+  it('under Auto, puts letting a destructive dialog through on a card offering only this call', async () => {
     const { queryBus, commandBus, approvals, call } = setup('auto');
     const destructive = destructiveSession();
     queryBus.execute.mockResolvedValue(destructive);
@@ -922,9 +922,9 @@ describe('BotSessionToolsFactory', () => {
     });
   });
 
-  // What breaks this: under Approve for me, a lookup that fails here and
+  // What breaks this: under Auto, a lookup that fails here and
   // succeeds in the command lets a destructive approval through on a grant.
-  it('under Approve for me, puts an answer whose decision it cannot read on a card of its own', async () => {
+  it('under Auto, puts an answer whose decision it cannot read on a card of its own', async () => {
     const { queryBus, commandBus, approvals, call, session } = setup('auto');
     queryBus.execute.mockRejectedValueOnce(new Error('connection reset'));
     await call('answer_session', { session_id: session.id, decision_id: 'perm-1', option: 0 });

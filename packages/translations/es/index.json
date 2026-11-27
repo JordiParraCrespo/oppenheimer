@@ -1085,7 +1085,7 @@
           "description": "El agente pregunta antes de ejecutar nada."
         },
         "auto": {
-          "label": "Aprobar por mí",
+          "label": "Auto",
           "description": "Las ediciones y los comandos seguros se ejecutan; el resto sigue preguntando."
         },
         "full": {
@@ -2096,7 +2096,7 @@
           "description": "Te pregunta antes de todo lo que sale de Oppenheimer."
         },
         "auto": {
-          "label": "Aprobar por mí",
+          "label": "Auto",
           "description": "Un revisor deja ejecutarse lo que pediste; lo arriesgado sigue preguntando."
         },
         "full": {
@@ -2699,7 +2699,7 @@
         },
         "preset": {
           "ask": "Las herramientas que dejas en su valor por defecto siguen Pedir aprobación: todo lo que sale de Oppenheimer pregunta antes.",
-          "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pasa antes por un revisor, que deja ejecutarse lo que pediste y te deja el resto a ti. Una herramienta que pones en Preguntar siempre pregunta.",
+          "auto": "Las herramientas que dejas en su valor por defecto siguen Auto: todo lo que sale de Oppenheimer pasa antes por un revisor, que deja ejecutarse lo que pediste y te deja el resto a ti. Una herramienta que pones en Preguntar siempre pregunta.",
           "full": "Las herramientas que dejas en su valor por defecto siguen Acceso total: se ejecutan sin preguntar, también las que siempre preguntan. Enviar correo, y lo que pones en Preguntar o pide una regla, siguen esperando tu sí."
         },
         "decisions": {
@@ -5291,6 +5291,10 @@
     },
     "title": "Sesiones de Claude Code",
     "checkNow": "Comprobar ahora",
+    "checked": {
+      "now": "Comprobado ahora mismo",
+      "ago": "Comprobado hace {{age}}"
+    },
     "badge": {
       "none": "Sesiones de Claude Code",
       "needsYou_one": "{{count}} sesión de Claude Code te necesita",
@@ -5358,7 +5362,9 @@
       "runnerUnread": "No se pueden leer las sesiones de tus equipos: {{detail}}",
       "notAUrl": "Eso no es una URL.",
       "permission": "Chrome necesita tu permiso para contactar con {{origin}}.",
-      "refused": "Oppenheimer lo rechazó: {{detail}}"
+      "refused": "Oppenheimer lo rechazó: {{detail}}",
+      "connectTitle": "Conectar con Oppenheimer",
+      "connectHint": "Envía el estado de estas sesiones a tu consola y entérate de las sesiones en tus equipos."
     },
     "runner": {
       "waiting": "{{name}} te está esperando",

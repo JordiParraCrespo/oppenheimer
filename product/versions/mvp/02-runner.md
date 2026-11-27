@@ -347,7 +347,7 @@ Then, in order:
    Ask is its `default` rather than its own `auto`, which approves on its
    own.
    OpenCode's TUI has one approval flag, `--auto`, which is Full access;
-   Ask and Approve for me are an `OPENCODE_PERMISSION` block, whose rules
+   Ask and Auto are an `OPENCODE_PERMISSION` block, whose rules
    land after its build agent's default `"*": "allow"` and so win
    (checked against opencode 1.18.32's `debug agent build`). That default
    is why the two halves are never separable: an Ask started without its

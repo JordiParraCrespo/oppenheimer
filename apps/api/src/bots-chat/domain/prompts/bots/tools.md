@@ -22,7 +22,7 @@ Sent to {{botName}} ({{botId}}). It will read it after the person's own messages
 
 <!-- fragment: create-bot -->
 
-Creates a new bot for the person, marked as created by you: its name, what it is for, its soul (persona and tone) and instructions (its job and rules), and what runs it. The provider and model default to yours; only a provider the workspace has a key for is accepted. Its permission defaults to Approve for me and is never looser than yours. It can go in an existing group (by name or id from the sidebar); you cannot create groups. Use list_bots first so you do not make a second bot for the same job.
+Creates a new bot for the person, marked as created by you: its name, what it is for, its soul (persona and tone) and instructions (its job and rules), and what runs it. The provider and model default to yours; only a provider the workspace has a key for is accepted. Its permission defaults to Auto and is never looser than yours. It can go in an existing group (by name or id from the sidebar); you cannot create groups. Use list_bots first so you do not make a second bot for the same job.
 
 <!-- fragment: bot-description -->
 
@@ -46,11 +46,11 @@ A model id or label the provider offers; yours on the same provider when omitted
 
 <!-- fragment: create-bot-effort -->
 
-Only for a model that takes one; null is the model's own default.
+Only for a model that takes one; null is Auto: medium on a model whose own default is lower, else the model's own default.
 
 <!-- fragment: create-bot-permission -->
 
-ask (Ask for approval: what reaches outside asks), auto (Approve for me: a reviewer lets safe calls run, the rest asks) or full (Full access: nothing asks); never looser than yours. auto when omitted, or yours when stricter.
+ask (Ask for approval: what reaches outside asks), auto (Auto: a reviewer lets safe calls run, the rest asks) or full (Full access: nothing asks); never looser than yours. auto when omitted, or yours when stricter.
 
 <!-- fragment: create-bot-group -->
 
@@ -78,7 +78,7 @@ A model id or label the provider offers; null is the provider's default.
 
 <!-- fragment: update-bot-permission -->
 
-ask (Ask for approval: what reaches outside asks), auto (Approve for me: a reviewer lets safe calls run, the rest asks) or full (Full access: nothing asks); never looser than yours.
+ask (Ask for approval: what reaches outside asks), auto (Auto: a reviewer lets safe calls run, the rest asks) or full (Full access: nothing asks); never looser than yours.
 
 <!-- fragment: update-bot-group -->
 
@@ -136,7 +136,7 @@ You run under {{ceiling}}, and you cannot give a bot looser permissions than you
 
 <!-- fragment: engine-update-for-refusal -->
 
-For "{{name}}": {{engineLabel}} does not take effort "{{effort}}". {{levelsCount}} Leave effort out for its default.
+For "{{name}}": {{engineLabel}} does not take effort "{{effort}}". {{levelsCount}} Leave effort out for Auto.
 
 <!-- fragment: bots-updated-answer -->
 

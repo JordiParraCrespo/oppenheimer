@@ -186,7 +186,7 @@ export function planBotSessionLaunch(
 /** What each permission level reads as on a card. */
 const PERMISSION_PHRASES: Readonly<Record<SessionPermission, string>> = {
   ask: 'asking for approval',
-  auto: 'approve for me',
+  auto: 'auto',
   full: 'full access',
 };
 

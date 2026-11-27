@@ -7,6 +7,10 @@
   },
   "title": "Claude Code sessions",
   "checkNow": "Check now",
+  "checked": {
+    "now": "Checked just now",
+    "ago": "Checked {{age}} ago"
+  },
   "badge": {
     "none": "Claude Code sessions",
     "needsYou_one": "{{count}} Claude Code session needs you",
@@ -71,7 +75,9 @@
     "runnerUnread": "Can't read the sessions on your hosts: {{detail}}",
     "notAUrl": "That is not a URL.",
     "permission": "Chrome needs your permission to reach {{origin}}.",
-    "refused": "Oppenheimer refused: {{detail}}"
+    "refused": "Oppenheimer refused: {{detail}}",
+    "connectTitle": "Connect to Oppenheimer",
+    "connectHint": "Send these sessions' states to your console, and hear about the sessions on your hosts."
   },
   "runner": {
     "waiting": "{{name}} is waiting on you",

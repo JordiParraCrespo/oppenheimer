@@ -31,7 +31,7 @@ export interface CreateBotInput {
   provider?: BotProvider;
   /** Left out: the creator's, or the provider's default. `null`: the provider's default. */
   model?: string | null;
-  /** Left out: the creator's on the same model. `null`: the model's own default. */
+  /** Left out: the creator's on the same model. `null`: Auto (`botTurnEffort`). */
   effort?: SessionEffort | null;
   permission?: BotPermission;
   group?: string;
@@ -52,7 +52,7 @@ export interface BotCreationPlan {
 /** What each level is called on the composer's approval chip. */
 export const BOT_PERMISSION_LABELS: Readonly<Record<BotPermission, string>> = {
   ask: 'Ask for approval',
-  auto: 'Approve for me',
+  auto: 'Auto',
   full: 'Full access',
 };
 
@@ -262,7 +262,7 @@ export interface UpdateBotsInput {
   provider?: BotProvider;
   /** `null`: the provider's default. */
   model?: string | null;
-  /** `null`: the model's own default. */
+  /** `null`: Auto (`botTurnEffort`). */
   effort?: SessionEffort | null;
   permission?: BotPermission;
   /** A group by id or name; `null` takes them out of their group. */
