@@ -45,7 +45,7 @@ const scroll = (what: string) =>
  * Using a computer (`25-bots.md` §4.2, "Using a computer"): a bot sees the
  * screen of one of the owner's hosts and uses its mouse and keyboard, one
  * action at a time, each answered with the screen after it. It reaches
- * outside Oppenheimer, so under Approve for me it asks first, once per host
+ * outside Oppenheimer, so under Auto it asks first, once per host
  * when the owner answers "always"; and whatever the bot's permissions say,
  * the host acts only when the person on it ran `runner computer on`.
  */

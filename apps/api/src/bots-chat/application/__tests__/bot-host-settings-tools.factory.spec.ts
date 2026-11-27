@@ -66,7 +66,7 @@ describe('set_host_settings', () => {
     expect(JSON.stringify(result)).toContain('pop-os now allows: browser on');
   });
 
-  it('asks first under Approve for me, with what changes on the card, and changes nothing yet', async () => {
+  it('asks first under Auto, with what changes on the card, and changes nothing yet', async () => {
     const { call, request, commandBus } = setup('auto');
     await call({ browser: 'on', exec_mode: 'allowlist', exec_allow: ['python3'] });
     expect(request.mock.calls[0]?.[0].summary).toBe(

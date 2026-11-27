@@ -2167,3 +2167,6 @@ earlier note:
   from a row's menu), whose choices apply to a live share as they are
   picked; the guest page is the session's own bar and a full-width
   terminal ("Share as a popover").
+- Notes 05 and 25 called the middle permission level, sessions' and bots'
+  alike, "Approve for me". It is now "Auto" (2026-11-27): the same level,
+  stored as `auto`, under a shorter name the owner asked for.

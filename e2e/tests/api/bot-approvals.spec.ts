@@ -6,7 +6,7 @@ import { insertPendingBotApproval } from '../../support/db';
 /**
  * A bot's Needs input cards through the deployed API: a bot with none lists
  * none, and a decision on a card that is not the bot's is `BOTS_015`. With a
- * GLM key (`GLM_API_KEY`, a real one), a bot on Approve for me asked to start a
+ * GLM key (`GLM_API_KEY`, a real one), a bot on Auto asked to start a
  * session raises a card instead of starting it; denying it with a note runs
  * nothing and gives the bot a turn opened by an event that says so, and a
  * second decision is `BOTS_016`. Approving one answers at once with the card
@@ -109,7 +109,7 @@ test('a start_session under Ask for approval waits on a card, and a denial is re
     await api.post('/api/v1/bots', { data: { name: 'Asker', provider: 'glm' } })
   ).json()) as { id: string; permission: string };
   expect(bot.permission).toBe('auto');
-  // Approve for me's reviewer would clear a call asked for this plainly: Ask for approval cards it.
+  // Auto's reviewer would clear a call asked for this plainly: Ask for approval cards it.
   const asks = await api.patch(`/api/v1/bots/${bot.id}`, { data: { permission: 'ask' } });
   expect(asks.status(), await asks.text()).toBe(200);
 

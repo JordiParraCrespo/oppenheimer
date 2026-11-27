@@ -179,7 +179,7 @@ export class BotTurnContextResolver {
             botId: bot.id,
           }),
         }),
-        // Approve for me: the reviewer reads the owner's own words, never the bot's.
+        // Auto: the reviewer reads the owner's own words, never the bot's.
         ...(bot.permission === 'auto' && {
           autoReviewer: this.autoReviewers.create(
             model,

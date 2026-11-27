@@ -75,7 +75,7 @@
       "ending": "idle",
       "ask": "Have the Fix the login test session also run the e2e suite and fix what fails.",
       "expect": "restart",
-      "why": "Under Approve for me the restart is a card: the bot still calls the tool, it does not tell the person to open the session."
+      "why": "Under Auto the restart is a card: the bot still calls the tool, it does not tell the person to open the session."
     },
     {
       "id": "running-control",

@@ -23,7 +23,7 @@ export class BotToolPermissionDto {
   description!: string;
 
   @ApiProperty({
-    description: 'It reaches outside Oppenheimer: asking is its default under Approve for me.',
+    description: 'It reaches outside Oppenheimer: asking is its default under Auto.',
   })
   asks!: boolean;
 

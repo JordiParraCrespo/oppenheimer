@@ -55,7 +55,7 @@ export type BotDocumentName = (typeof BOT_DOCUMENT_NAMES)[number];
 /**
  * How far a bot's turns may go without asking, strictest first, the sessions'
  * three levels: `ask` (Ask for approval: what reaches outside Oppenheimer
- * raises a card), `auto` (Approve for me: a reviewer reads each such call
+ * raises a card), `auto` (Auto: a reviewer reads each such call
  * first and lets it run or raises the card), `full` (Full access: no card).
  */
 export const BOT_PERMISSIONS = [

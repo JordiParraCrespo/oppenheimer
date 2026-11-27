@@ -47,7 +47,7 @@ export function messageOf(testCase, project) {
 export function grade(testCase, observed) {
   const failures = [];
   if (observed.started) {
-    failures.push('the bot started a session without a card: set it to Approve for me');
+    failures.push('the bot started a session without a card: set it to Auto');
   }
   if (testCase.refused) {
     if (observed.card) failures.push(`a card was raised: ${observed.card.summary}`);

@@ -78,7 +78,7 @@ export interface CreateBotProps {
   model?: string | null;
   /** Kept only when the model offers it. */
   effort?: SessionEffort | null;
-  /** Approve for me (the reviewer) unless named. */
+  /** Auto (the reviewer) unless named. */
   permission?: BotPermission;
   /** The bot that is creating it, and the key that makes that creation happen once. */
   createdByBotId?: string | null;

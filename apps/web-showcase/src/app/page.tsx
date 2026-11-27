@@ -1034,7 +1034,7 @@ export default function Page() {
         desc="What the agent may do on the host without asking: a muted tool button and three two-line options with their glyphs. Full access is the one level that can change a machine unattended, so it is the only one allowed the warning tone, on the button and on its row."
         code={`<PermissionMenu options={levels} value={level} onValueChange={setLevel} />`}
       >
-        <Swatch label="approve for me">
+        <Swatch label="auto">
           <PermissionDemo />
         </Swatch>
         <Swatch label="full access">
