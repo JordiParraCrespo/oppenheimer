@@ -31,6 +31,7 @@ import { useToolCallsShownInChat } from '@/features/bots/hooks/use-tool-calls-sh
 import {
   type ChatTurnBlock,
   compactTokens,
+  liveLineFor,
   replyText,
   turnDurationMs,
   turnPhase,
@@ -61,7 +62,8 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * Hidden tool calls (the default) make the chat read like a messenger: no
  * trace, a live line that only says the bot is thinking (no call named, no
  * clock, no subagents) and goes once its words stream in, and a trail of
- * actions with no time, model or tokens (`turnTrail`).
+ * actions with no time, model or tokens. What each view draws is decided
+ * once, in `turnTrail` and `liveLineFor`.
  *
  * You react to your message from its actions, and to the bot's answer from
  * its trail, which reacts to its last words (`onReact`): a pill of quick
@@ -148,11 +150,12 @@ export function BotTurn({
         .filter(Boolean)
         .join(' · ')
     : undefined;
-  // The quiet chat says only that someone stopped the turn, never its time, model or tokens.
-  const quietMeta = phase === 'cancelled' ? t('bots.chat.turn.stopped') : undefined;
-  // Hidden, the live line is a messenger's "typing": the thinking word, with
-  // no call named, no clock and no subagents; gone once words stream in.
-  const liveLine = toolCallsShown || !live;
+  const line = liveLineFor(toolCallsShown, {
+    step,
+    subagents,
+    startedAt: turn?.startedAt ?? null,
+    writing: Boolean(live),
+  });
 
   return (
     <div className="flex flex-col gap-4.5">
@@ -231,15 +234,15 @@ export function BotTurn({
         {behind
           ? null
           : (working ??
-            (turn && active && liveLine ? (
+            (turn && active && line ? (
               <BotTurnLive
                 queued={turn.status === 'queued'}
-                step={toolCallsShown ? step : undefined}
-                subagents={toolCallsShown && step ? subagents[step.callId] : undefined}
+                step={line.step}
+                subagents={line.subagents}
                 writing={Boolean(live)}
                 waitingOn={waitingOn}
                 provider={BOT_PROVIDER_CATALOG[turn.provider].label}
-                since={toolCallsShown ? turn.startedAt : null}
+                since={line.since}
                 seed={turn.startedAt?.getTime() ?? 0}
               />
             ) : null))}
@@ -251,10 +254,9 @@ export function BotTurn({
             onOpenProviders={onOpenProviders}
           />
         ) : null}
-        {turn && !active && !silent && trail !== 'none' ? (
+        {turn && !active && !silent && trail ? (
           <MessageTrail
-            // Quiet, the actions wait for a hover or a focus, as they do under your bubble.
-            className={trail === 'full' || quietMeta ? undefined : QUIET_TRAIL}
+            className={trail.actions === 'onHover' ? ON_HOVER : undefined}
             actions={
               <>
                 {lastWords && onReact ? (
@@ -279,7 +281,13 @@ export function BotTurn({
                 ) : null}
               </>
             }
-            meta={trail === 'full' ? meta : trail === 'quiet' ? quietMeta : undefined}
+            meta={
+              trail.meta === 'full'
+                ? meta
+                : trail.meta === 'stopped'
+                  ? t('bots.chat.turn.stopped')
+                  : undefined
+            }
           />
         ) : null}
       </div>
@@ -287,6 +295,6 @@ export function BotTurn({
   );
 }
 
-/** A trail shown only while the turn is hovered or holds focus, the way a messenger's actions are. */
-const QUIET_TRAIL =
+/** A trail shown only while the turn is hovered or holds focus (`TrailView`'s `onHover`). */
+const ON_HOVER =
   'opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100';

@@ -4,7 +4,7 @@ import type {
   BotToolStep,
   BotTurnEntity,
 } from '@oppenheimer/frontend-consumer';
-import type { BotMessageEvent } from '@oppenheimer/shared/schemas/bot';
+import type { BotMessageEvent, BotSubagentProgress } from '@oppenheimer/shared/schemas/bot';
 import { routineNeedsOwner } from './routine-event';
 
 /**
@@ -120,26 +120,68 @@ export function turnPhase(turn: BotTurnEntity, wrote: boolean): TurnPhase {
 }
 
 /**
- * What a finished turn's trail carries. With the tool calls shown, `full`:
- * how long it worked, its model and tokens, then Copy, React and Retry.
- * Hidden, the chat reads like a messenger: `quiet` keeps the actions and
- * says only Stopped, never the time, model or tokens; a completed turn that
- * did nothing but run tools has said nothing to trail, so only the newest
- * keeps Retry (`retry`) and the rest trail `none`.
+ * What a finished turn's trail draws: which words it says (`meta`), and
+ * whether its actions (Copy, React, Retry) stand there or wait for a hover
+ * or a focus, as they do under your bubble; `null` for no trail.
+ */
+export interface TrailView {
+  /** `full`: Stopped, how long it worked, its model and tokens. `stopped`: Stopped alone. */
+  meta: 'full' | 'stopped' | 'none';
+  actions: 'always' | 'onHover';
+}
+
+/**
+ * The one decision of what a finished turn trails, in each of the chat's
+ * two views. With the tool calls shown, all of it, always. Hidden, the chat
+ * reads like a messenger: no time, model or tokens, the actions on hover;
+ * a stopped turn keeps Stopped, standing with its actions, since that is the
+ * one thing it has to say. A completed turn that did nothing but run tools
+ * has said nothing to trail: only the newest keeps one, for its Retry.
  */
 export function turnTrail(
   block: ChatTurnBlock,
   phase: TurnPhase | null,
   toolCallsShown: boolean,
   retryable: boolean,
-): 'full' | 'quiet' | 'retry' | 'none' {
-  if (toolCallsShown) return 'full';
+): TrailView | null {
+  if (toolCallsShown) return { meta: 'full', actions: 'always' };
+  if (phase === 'cancelled') return { meta: 'stopped', actions: 'always' };
   const onlyRanTools =
     phase === 'completed' &&
     block.answer.length > 0 &&
     block.answer.every((message) => message.role === 'activity');
-  if (!onlyRanTools) return 'quiet';
-  return retryable ? 'retry' : 'none';
+  if (onlyRanTools && !retryable) return null;
+  return { meta: 'none', actions: 'onHover' };
+}
+
+/**
+ * The one decision of what a running turn's live line shows (`BotTurnLive`),
+ * or `null` for none. With the tool calls shown: the running call, its
+ * subagents and the turn's clock. Hidden, a messenger's "typing": the
+ * thinking word alone, with no call named, no subagents and no clock, gone
+ * once the bot's words stream in.
+ */
+export function liveLineFor(
+  toolCallsShown: boolean,
+  turn: {
+    step: BotToolStep | undefined;
+    subagents: Readonly<Record<string, readonly BotSubagentProgress[]>>;
+    startedAt: Date | null;
+    writing: boolean;
+  },
+): {
+  step: BotToolStep | undefined;
+  subagents: readonly BotSubagentProgress[] | undefined;
+  since: Date | null;
+} | null {
+  if (!toolCallsShown) {
+    return turn.writing ? null : { step: undefined, subagents: undefined, since: null };
+  }
+  return {
+    step: turn.step,
+    subagents: turn.step ? turn.subagents[turn.step.callId] : undefined,
+    since: turn.startedAt,
+  };
 }
 
 /**
