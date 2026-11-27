@@ -18,7 +18,8 @@ Hardening from the pre-launch security review.
 - `@oppenheimer/frontend-web`: `sanitizeRedirect` drops a path holding a
   control character or a backslash (`/\t/evil.example` read as `//evil.example`).
 - `@oppenheimer/web`: nginx's access log keeps no query string (and cuts the
-  `Referer` at its `?`); `CSP_EXTRA_ORIGINS` is split into
+  `Referer` at its `?`), and writes the token in a password-reset link's,
+  a cloud file's and a routine webhook's path as `[redacted]`; `CSP_EXTRA_ORIGINS` is split into
   `CSP_CONNECT_ORIGINS` and `CSP_SCRIPT_ORIGINS`, and the old variable now
   widens `connect-src` only.
 - `@oppenheimer/runner`: `host.exec` refuses a bot folder (`home`) that is not

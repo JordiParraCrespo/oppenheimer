@@ -31,7 +31,9 @@ On `claude/dazzling-darwin-pbdhdk-hardening`, on top of this pull request:
   (`Secure`, `Path=/`, no `Domain`), so a sibling preview cannot plant one;
   every copy a request carries is tried, and every `Domain` is taken off an
   app's `Set-Cookie`. A test with a planted copy first fails on the old code.
-- **I.** nginx logs `$uri`, never the query (the `Referer` cut at `?`);
+- **I.** nginx logs `$uri`, never the query (the `Referer` cut at `?`), and
+  masks the token in the three paths that carry one (`/api/auth/reset-password/`,
+  `/api/v1/cloud-files/`, `/api/v1/routine-webhooks/`) as `[redacted]`;
   `CSP_EXTRA_ORIGINS` is split into `CSP_CONNECT_ORIGINS` and
   `CSP_SCRIPT_ORIGINS` (the old one now widens `connect-src` only); a control
   character in a redirect path (`/\t/evil.example`) is refused by
