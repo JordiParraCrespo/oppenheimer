@@ -87,7 +87,6 @@ function ChatHeaderTag({ icon, className, children }: { icon?: React.ReactNode; 
 function ChatTabStrip({
   onNew,
   newLabel = 'New tab',
-  reserveNew = false,
   label,
   navigation = false,
   className,
@@ -96,12 +95,6 @@ function ChatTabStrip({
 }: Omit<React.ComponentProps<'nav'>, 'ref' | 'role'> & {
   onNew?: () => void;
   newLabel?: string;
-  /**
-   * Keeps the plus's room while there is no `onNew` (a page that is itself
-   * the new tab), so the tabs do not widen when it steps aside and narrow
-   * when it comes back.
-   */
-  reserveNew?: boolean;
   /**
    * What the strip holds, for a screen reader ("Open sessions"). The strip's
    * ground is the bar's; a bar that is not the canvas names its colour in
@@ -152,8 +145,6 @@ function ChatTabStrip({
         <IconButton variant="quiet" size="sm" aria-label={newLabel} onClick={onNew} className="ml-0.5 shrink-0">
           <PlusIcon />
         </IconButton>
-      ) : reserveNew ? (
-        <span aria-hidden data-slot="chat-tab-strip-new" className="ml-0.5 size-(--control-h-sm) shrink-0" />
       ) : null}
     </Strip>
   );

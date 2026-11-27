@@ -104,7 +104,6 @@ export function SessionTabs({
       label={t('sessions.tabs.label')}
       onNew={shown ? () => void navigate({ to: '/sessions/new' }) : undefined}
       newLabel={t('sessions.tabs.new')}
-      reserveNew
     >
       <DragProvider
         {...drag}
@@ -130,9 +129,13 @@ export function SessionTabs({
         </SortableGroup>
       </DragProvider>
       {shown ? null : (
-        <ChatTab active icon={<PlusIcon />} render={<Link to="/sessions/new" search={true} />}>
-          {t('sessions.tabs.new')}
-        </ChatTab>
+        <>
+          <ChatTab active icon={<PlusIcon />} render={<Link to="/sessions/new" search={true} />}>
+            {t('sessions.tabs.new')}
+          </ChatTab>
+          {/* The plus's room, kept while it steps aside, so no tab narrows when the session is created. */}
+          <span aria-hidden className="ml-0.5 size-(--control-h-sm) shrink-0" />
+        </>
       )}
     </ChatTabStrip>
   );
