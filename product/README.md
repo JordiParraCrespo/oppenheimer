@@ -2178,7 +2178,8 @@ earlier note:
   is listed as waiting to move forward, the notification is gone, and a
   check in the sessions sidebar's menu, on by default, turns it off ("A
   session left unattended is an Inbox item"); its card opens the session,
-  streamed, to reply in, as a bot's notice opens the bot's chat.
+  streamed, to reply in, as a bot's notice opens the bot's chat, and a
+  row's Mute notifications keeps that one session out of it.
 - Notes 05 and 25 called the middle permission level, sessions' and bots'
   alike, "Approve for me". It is now "Auto" (2026-11-27): the same level,
   stored as `auto`, under a shorter name the owner asked for.
