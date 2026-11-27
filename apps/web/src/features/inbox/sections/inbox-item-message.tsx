@@ -44,7 +44,15 @@ export function InboxItemMessage({
         />
       );
     case 'unattended':
-      return <InboxUnattendedCard key={item.key} item={item} copy={copy} from={from} age={age} />;
+      return (
+        <InboxUnattendedCard
+          key={inboxCardKey(item)}
+          item={item}
+          copy={copy}
+          from={from}
+          age={age}
+        />
+      );
     case 'run':
       return <InboxRunCard key={item.key} item={item} copy={copy} from={from} age={age} />;
     case 'report':

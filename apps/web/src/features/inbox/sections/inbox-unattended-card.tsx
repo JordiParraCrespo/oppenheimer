@@ -6,18 +6,21 @@ import {
 } from '@oppenheimer/design-system-web';
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
 import { useSessionChatSlot } from '@/features/inbox/hooks/use-session-chat-slot';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
+import { inboxHeld } from '@/features/inbox/lib/inbox-held';
 
 /**
  * A session whose turn ended thirty minutes ago and that nobody has opened
  * since, with two ways to move it forward. Reply here opens the session on
  * the card, streamed as its own page draws it (its chat and its terminal),
  * without reading its turn, so you see what it did and answer it without
- * leaving the Inbox; once it goes back to work it leaves the list. Open
+ * leaving the Inbox. While it is open the card holds the deck
+ * (`inboxHeld`): the session going back to work takes it off the list, not
+ * from under your hands; closing the reply, Done or moving on lets go. Open
  * session goes to its page, which reads the turn. The dock's Done puts it
  * away without either.
  */
@@ -36,6 +39,13 @@ export function InboxUnattendedCard({
   const session = useSessionChatSlot();
   const [replying, setReplying] = useState(false);
   const sessionId = item.session.id;
+  // Synchronises the deck's hold with the open reply: held while open, let
+  // go when it closes or the card leaves the deck.
+  useEffect(() => {
+    if (!replying) return;
+    inboxHeld.hold(item);
+    return () => inboxHeld.release(item.key);
+  }, [replying, item]);
   return (
     <InboxMessage
       icon={<InboxKindIcon kind="unattended" />}

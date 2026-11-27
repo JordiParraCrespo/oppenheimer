@@ -130,7 +130,8 @@ export function SessionPane({
   const { data: session, error } = useSuspenseSession(sessionId);
   // Opening a session reads what its last turn left: its blue dot goes.
   useReadOnOpen(session, readOnOpen);
-  useClearUnreadOnOpen(sessionId);
+  // Nor the reader's own Mark as unread, where the turn is kept unread.
+  useClearUnreadOnOpen(sessionId, readOnOpen);
   const previewTabs: PreviewTab[] = [
     ...(browserOffered ? (['browser'] as const) : []),
     ...(simulatorOffered ? (['simulator'] as const) : []),

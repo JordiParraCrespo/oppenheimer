@@ -1,5 +1,6 @@
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { inboxAnswered } from '@oppenheimer/frontend-consumer/react';
+import { inboxHeld } from './inbox-held';
 
 /**
  * What happened in the Inbox on this visit: the items sent to the end with
@@ -54,6 +55,7 @@ export const inboxVisit = {
     write({ ...visit, later: add(visit.later, key) });
   },
   done(item: InboxItem) {
+    inboxHeld.release(item.key);
     write({
       ...visit,
       done: add(visit.done, item.key),
@@ -90,6 +92,7 @@ export const inboxVisit = {
   },
   clear() {
     inboxAnswered.clear();
+    inboxHeld.release(inboxHeld.get()?.key ?? '');
     if (visit !== EMPTY) write(EMPTY);
   },
 };
