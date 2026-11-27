@@ -10,6 +10,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { describe, expect, it } from 'vitest';
 import { type BotTurnRequest, compactionThreshold } from '../../bot-engine';
 import {
+  ADVISOR_GATE,
   BUILT_IN_TOOLS,
   claudeEnv,
   claudeOptions,
@@ -137,6 +138,9 @@ describe('claudeOptions', () => {
       advisorModel: 'advisor-placeholder',
     };
     expect(options(anthropic).settings).toEqual({ advisorModel: 'advisor-placeholder' });
+    // Without the gate open, Claude Code drops the setting under our
+    // environment and the turn runs with no advisor (measured 2026-11-27).
+    expect(options(anthropic).env?.[ADVISOR_GATE]).toBe('1');
     for (const none of [
       { ...base, advisorModel: 'advisor-placeholder' },
       { ...anthropic, baseUrl: 'https://proxy.example' },
@@ -144,6 +148,7 @@ describe('claudeOptions', () => {
       { ...anthropic, advisorModel: null },
     ]) {
       expect(options(none).settings).toBeUndefined();
+      expect(options(none).env?.[ADVISOR_GATE]).toBeUndefined();
     }
   });
 

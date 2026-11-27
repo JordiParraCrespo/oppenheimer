@@ -286,6 +286,16 @@ export function claudeToolSearch(
 }
 
 /**
+ * Claude Code reads `advisorModel` only behind a feature gate it fetches from
+ * Anthropic's flag service, which `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`
+ * (`claudeEnv`) turns off; with the gate off the setting is dropped and the
+ * turn runs without its advisor. This variable opens the gate on its own
+ * (read from Claude Code 2.1.300; recheck it when the SDK is upgraded, the
+ * live check being a turn whose `usage` carries `advisor`).
+ */
+export const ADVISOR_GATE = 'CLAUDE_CODE_ENABLE_EXPERIMENTAL_ADVISOR_TOOL';
+
+/**
  * The advisor Claude Code is told to offer the turn's model (its
  * `advisorModel` setting, which declares Anthropic's server-side advisor
  * tool): only on Anthropic's own API, where the tool is served, and never on
@@ -325,7 +335,11 @@ export function claudeOptions(
     model: request.model,
     systemPrompt: claudeSystemPrompt(request),
     cwd: dirs.cwd,
-    env: { ...claudeEnv(request, dirs), ENABLE_TOOL_SEARCH: search ? 'true' : 'false' },
+    env: {
+      ...claudeEnv(request, dirs),
+      ENABLE_TOOL_SEARCH: search ? 'true' : 'false',
+      ...(advisor ? { [ADVISOR_GATE]: '1' } : {}),
+    },
     tools: builtIns,
     allowedTools: [...builtIns, ...ourTools],
     disallowedTools: DISALLOWED_TOOLS,

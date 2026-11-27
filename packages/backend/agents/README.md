@@ -147,7 +147,10 @@ Claude Code runs as a subprocess per turn, with:
   setting: the turn's model may consult that stronger one mid-turn. Every
   other provider, a `baseUrl` and a completion leave it off. The caller sends
   only a pair the catalog lists (`botAdvisorFor` in `@oppenheimer/shared`),
-  since Anthropic refuses any other. The run's `usage` counts only the turn's
+  since Anthropic refuses any other. Claude Code reads the setting only
+  behind a feature gate our environment turns off, so the engine opens it
+  with `CLAUDE_CODE_ENABLE_EXPERIMENTAL_ADVISOR_TOOL` (`ADVISOR_GATE`) on such
+  a turn; without it the turn runs with no advisor and says nothing. The run's `usage` counts only the turn's
   own model; the advisor's calls are read off its `modelUsage` into
   `usage.advisor`, and kept out of the context the turn reports.
 - **No state between turns.** `settingSources: []`, `persistSession: false`;
