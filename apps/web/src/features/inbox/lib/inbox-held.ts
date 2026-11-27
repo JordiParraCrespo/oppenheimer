@@ -35,9 +35,10 @@ export const inboxHeld = {
 };
 
 /**
- * The item on the deck once the hold is counted: the held one while the
- * address names it (or names nothing) and its subject has left the list;
- * otherwise what the list says. Moving on (J, K, a row) names another item,
+ * The item on the deck once the hold is counted: while the address names
+ * the held subject, or names nothing, the held card stays, as the list has it
+ * now if it still lists it (a new item sorted above it does not take its
+ * place), else as it was held. Moving on (J, K, a row) names another item,
  * which ends the hold's say.
  */
 export function heldCurrent<T extends { key: string }>(
@@ -49,6 +50,5 @@ export function heldCurrent<T extends { key: string }>(
   if (!hold) return current;
   const subject = inboxSubject(hold.key);
   if (named !== null && inboxSubject(named) !== subject) return current;
-  if (open.some((item) => inboxSubject(item.key) === subject)) return current;
-  return hold;
+  return open.find((item) => inboxSubject(item.key) === subject) ?? hold;
 }

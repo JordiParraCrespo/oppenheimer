@@ -25,6 +25,14 @@ describe('heldCurrent', () => {
     expect(heldCurrent([renamed, next], held.key, renamed, held)).toBe(renamed);
   });
 
+  // The regression: with no item named, the deck shows the first item, and a
+  // newer item sorted above the held card took its place and closed its
+  // session mid-typing.
+  it('keeps the held card when a newer item sorts above it and the address names none', () => {
+    const newer = card('session:s3:2026-11-27T10:09:00.000Z');
+    expect(heldCurrent([newer, held, next], null, newer, held)).toBe(held);
+  });
+
   it('lets go once the reader moves on to another card', () => {
     expect(heldCurrent([next], next.key, next, held)).toBe(next);
   });
