@@ -14,12 +14,12 @@
 //
 // On the Claude Code login; `--glm` sends the call to z.ai's Anthropic
 // endpoint instead, with the key the environment's proxy injects.
+
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readFileSync } from 'node:fs';
 import {
   autoVerdict,
   BOT_AUTO_REVIEWER_PROMPT,
@@ -177,7 +177,10 @@ function jobs(): Job[] {
       id: 'claimed',
       objective: 'Every open pull request on acme/api has a reviewer.',
       transcript: [
-        { role: 'assistant' as const, text: 'I think all of them should have reviewers by now. Done!' },
+        {
+          role: 'assistant' as const,
+          text: 'I think all of them should have reviewers by now. Done!',
+        },
       ],
     },
     {
@@ -192,7 +195,12 @@ function jobs(): Job[] {
     },
   ];
   const day = (n: number) => new Date(Date.UTC(2026, 10, n));
-  const fact = (id: string, content: string, n: number, tier: 'profile' | 'log' = 'log'): DreamFact => ({
+  const fact = (
+    id: string,
+    content: string,
+    n: number,
+    tier: 'profile' | 'log' = 'log',
+  ): DreamFact => ({
     id,
     botId: 'bot-1',
     content,
@@ -217,7 +225,11 @@ function jobs(): Job[] {
     keep: [],
     summary: 'The owner moved acme/web deploys to main and asked for weekly digests on Mondays.',
     messages: [
-      { role: 'user', content: 'From now on send me the digest on Mondays, not Fridays.', createdAt: day(22) },
+      {
+        role: 'user',
+        content: 'From now on send me the digest on Mondays, not Fridays.',
+        createdAt: day(22),
+      },
       { role: 'assistant', content: 'Will do: Mondays from next week.', createdAt: day(22) },
     ],
   });
@@ -287,7 +299,9 @@ async function ask(job: Job, model: string, structured: boolean, glm: boolean): 
         // As the engine's completion: no tool; a structured answer is the
         // StructuredOutput tool's one call, so it needs one more turn.
         maxTurns: structured ? 3 : 1,
-        ...(structured ? { outputFormat: { type: 'json_schema' as const, schema: job.schema } } : {}),
+        ...(structured
+          ? { outputFormat: { type: 'json_schema' as const, schema: job.schema } }
+          : {}),
         env: {
           ...process.env,
           CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
@@ -308,9 +322,12 @@ async function ask(job: Job, model: string, structured: boolean, glm: boolean): 
       },
     })) {
       if (message.type === 'assistant' && !structured) {
-        for (const block of message.message.content) if (block.type === 'text') answer += block.text;
+        for (const block of message.message.content)
+          if (block.type === 'text') answer += block.text;
       } else if (message.type === 'result') {
-        inputTokens = message.usage.input_tokens + (message.usage.cache_read_input_tokens ?? 0) +
+        inputTokens =
+          message.usage.input_tokens +
+          (message.usage.cache_read_input_tokens ?? 0) +
           (message.usage.cache_creation_input_tokens ?? 0);
         outputTokens = message.usage.output_tokens;
         if (message.subtype !== 'success') stopped = message.subtype;
