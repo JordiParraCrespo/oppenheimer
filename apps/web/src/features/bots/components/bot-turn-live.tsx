@@ -27,7 +27,7 @@ export function BotTurnLive({
   waitingOn,
   provider,
   since,
-  seed = since?.getTime() ?? 0,
+  seed,
 }: {
   queued: boolean;
   /** The call running now, if one is. */
@@ -51,7 +51,7 @@ export function BotTurnLive({
     step,
     subagents,
     writing,
-    seed,
+    seed: seed ?? since?.getTime() ?? 0,
   });
   const text =
     !queued && waitingOn
