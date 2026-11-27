@@ -85,6 +85,8 @@ export interface InboxSources {
 export interface InboxOptions {
   /** Whether a session left unread for {@link UNATTENDED_AFTER_MS} is listed. */
   unattended: boolean;
+  /** Sessions the reader muted from their row: never listed as unattended. */
+  muted?: ReadonlySet<string>;
 }
 
 /**
@@ -254,10 +256,12 @@ function unattendedItems(
   sessions: readonly SessionEntity[],
   now: number,
   projectOf: (id: string | null | undefined) => string[],
+  muted: ReadonlySet<string>,
 ): InboxItem[] {
   const items: InboxItem[] = [];
   for (const session of sessions) {
     if (session.state !== 'ready-for-review' || session.isClosing) continue;
+    if (muted.has(session.id)) continue;
     const since = turnEndedAt(session);
     if (now - since.getTime() < UNATTENDED_AFTER_MS) continue;
     items.push({
@@ -311,7 +315,9 @@ function inboxItems(sources: InboxSources, now: number, options: InboxOptions): 
       .map((project) => project.id);
 
   const items: InboxItem[] = sessionItems(sources.sessions, projectOf);
-  if (options.unattended) items.push(...unattendedItems(sources.sessions, now, projectOf));
+  if (options.unattended) {
+    items.push(...unattendedItems(sources.sessions, now, projectOf, options.muted ?? new Set()));
+  }
   for (const notice of sources.botNotices) {
     items.push({
       kind: 'botNotice',
@@ -398,7 +404,7 @@ function inboxItems(sources: InboxSources, now: number, options: InboxOptions): 
  * never read. `answered` are occurrences answered here whose source has not
  * caught up yet: gone from every list, so each count agrees with them.
  * `options` are the reader's own: with `unattended` off, a session left
- * unread is never listed.
+ * unread is never listed, and a session in `muted` never is either.
  */
 export function composeInbox(
   sources: InboxSources,

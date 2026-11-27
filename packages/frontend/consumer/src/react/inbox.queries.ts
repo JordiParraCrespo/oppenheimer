@@ -174,7 +174,7 @@ function deviceSet(
 /**
  * The sessions whose system notifications the reader turned off on this
  * device (a row's Mute notifications): none of their waits, notices or
- * finished turns is told. The Inbox and the sidebar still show them.
+ * finished turns is told, and the Inbox never lists them as left unattended. The Inbox and the sidebar still show them.
  */
 export const useMutedSessionAlerts = deviceSet('oppenheimer.sessions.muted');
 
@@ -329,6 +329,7 @@ export function useSuspenseInbox(
   const [requested, mine] = pullResults.map((result) => result.data);
   const answered = useAnsweredKeys();
   const [unattended] = useUnattendedSessionsShown();
+  const [muted] = useMutedSessionAlerts();
   const view = useMemo(
     () =>
       composeInbox(
@@ -345,7 +346,7 @@ export function useSuspenseInbox(
         marks.data,
         now,
         answered,
-        { unattended },
+        { unattended, muted },
       ),
     [
       sessions.data,
@@ -361,6 +362,7 @@ export function useSuspenseInbox(
       now,
       answered,
       unattended,
+      muted,
     ],
   );
   const error =
@@ -386,6 +388,7 @@ export function useInboxCount(now: number): number | undefined {
   const pullResults = useQueries({ queries: usePullQueries(pullsShown) });
   const answered = useAnsweredKeys();
   const [unattended] = useUnattendedSessionsShown();
+  const [muted] = useMutedSessionAlerts();
   const [sessions, approvals, runs, botNotices, reports, projects, marks, tasks] = results;
   if (
     !sessions?.data ||
@@ -414,7 +417,7 @@ export function useInboxCount(now: number): number | undefined {
     marks.data as InboxMarkEntity[],
     now,
     answered,
-    { unattended },
+    { unattended, muted },
   ).open.length;
 }
 

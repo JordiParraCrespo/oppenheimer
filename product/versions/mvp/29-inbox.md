@@ -721,6 +721,10 @@ turn it off. This replaces "A long wait is told once more" above:
   A first try with a bare text box sent through `POST /sessions/{id}/prompt`
   was not what the owner meant ("it is not the session streamed"); it never
   shipped.
+- **Per session, Mute.** The owner asked the same day to turn it off for
+  one session: a row's Mute notifications (kept on the device, as before)
+  now also keeps that session out of the unattended items, while the
+  sidebar's switch turns them off for all.
 - **Follow-up.** The thirty minutes count from `observedSince`, else the
   log's last event: a rename or a move of a session left unread restarts
   them, so the item comes later than it should, never earlier. A stored

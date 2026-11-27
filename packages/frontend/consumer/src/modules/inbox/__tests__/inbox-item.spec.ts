@@ -468,6 +468,19 @@ describe('composeInbox: a session nobody has moved forward', () => {
     expect(view.open).toEqual([]);
   });
 
+  // The reader muted this one session from its row: it must not remind them,
+  // while every other session still does.
+  it('lists none for a session the reader muted, and still the others', () => {
+    const view = composeInbox(
+      sources({ sessions: [blue('s1', 45), blue('s2', 45)] }),
+      [],
+      NOW,
+      new Set(),
+      { unattended: true, muted: new Set(['s1']) },
+    );
+    expect(view.open.map((item) => item.key)).toEqual([`unattended:s2:${at(45).toISOString()}`]);
+  });
+
   it('leaves out a session read, still working or waiting on you, which the Inbox already lists', () => {
     const view = composeInbox(
       sources({
