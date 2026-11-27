@@ -381,6 +381,12 @@
     "delete": "Delete selected",
     "clear": "Clear selection"
   },
+  "group": {
+    "actions": "Actions for {{name}}",
+    "hideAll": "Hide all sessions",
+    "showAll": "Show all sessions",
+    "deleteAll": "Delete all sessions…"
+  },
   "deleteSessions": {
     "title_one": "Delete {{count}} session?",
     "title_other": "Delete {{count}} sessions?",
