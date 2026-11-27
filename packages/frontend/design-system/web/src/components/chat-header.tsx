@@ -190,7 +190,7 @@ const TAB_ATTENTION = {
  * inside a hairline, and a hairline between two tabs that are not shown.
  */
 const TAB_FRAME = cn(
-  'group/tab relative flex h-(--control-h-sm) min-w-24 shrink basis-60 items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-sm text-fg-muted transition-colors duration-fast',
+  'group/tab relative flex h-(--control-h-sm) min-w-24 shrink basis-40 items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-sm text-fg-muted transition-colors duration-fast',
   'data-active:border-border-subtle data-active:bg-(--chat-tab-lit) data-active:font-medium data-active:text-fg',
   "not-first:before:absolute not-first:before:top-1/2 not-first:before:-translate-y-1/2 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
   'data-active:before:hidden [[data-active]+&]:before:hidden',
@@ -198,7 +198,7 @@ const TAB_FRAME = cn(
 
 /**
  * One open thing in a `ChatTabStrip`: its mark, its name, its close. Every
- * tab is the same width whatever its name, the way a browser's are: 240px
+ * tab is the same width whatever its name, the way a browser's are: 160px
  * while the strip has room, then all shrinking alike down to 96px as more
  * open, past which the strip scrolls; so lighting a tab never moves the
  * strip. The close of a tab not shown takes no room until it is hovered or

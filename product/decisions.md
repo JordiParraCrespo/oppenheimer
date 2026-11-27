@@ -2164,6 +2164,10 @@ one its decision belongs to:
   permission level, sessions' and bots' alike, "Approve for me". It is now
   "Auto" (2026-11-27): the same level, stored as `auto`, under a shorter name
   the owner asked for.
+- `design/console/session-tabs.md` drew a session's tabs 240px wide, and New
+  session's plus took no room while it stepped aside, so the tabs narrowed
+  when a session was created. Tabs are now 160px, and the plus keeps its room
+  on New session ("no layout shift when creating a new session").
 - On 2026-11-26 the owner had `product/` restructured. It had three homes
   for design (the numbered notes at its root, `versions/mvp/`,
   `next-steps/`), and most of `next-steps/` was built. Now the design is

@@ -73,6 +73,14 @@ its sidebar row draws, on the mark: amber while it waits on you, blue once
 it is ready for review or marked unread; its name shimmers while the agent
 works.
 
+Every tab is one width whatever its name, shrinking alike as more open. On
+2026-11-27 the owner found them too wide and saw them jump when a session
+was created ("there should be no layout shift when creating a new session,
+maybe we should preallocate"): a tab is 160px while the strip has room
+(240px before), down to 96px, and on New session the plus that steps aside
+keeps its room, so the lit New session tab turns into the session's tab in
+its place and no other tab moves.
+
 ## 3. One line
 
 The bar is one line: the sidebar toggle, "Back to task" when there is one,
