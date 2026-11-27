@@ -81,9 +81,12 @@ export interface SessionStream {
   /**
    * A page of the pane's scrollback asked for with `askHistory`: its lines
    * and its screen, with their colours, the screen's last. `truncated` says
-   * its oldest lines were left out. Optional, as `askHistory` is.
+   * its oldest lines were left out; `failed` that the host could not read
+   * it. Optional, as `askHistory` is.
    */
-  onHistory?(listener: (page: { text: string; truncated: boolean }) => void): () => void;
+  onHistory?(
+    listener: (page: { text: string; truncated: boolean; failed: boolean }) => void,
+  ): () => void;
   /**
    * Asks the host for up to `lines` lines of the pane's scrollback, for a
    * watcher whose wheel never reaches tmux; the page comes to `onHistory`.
@@ -196,7 +199,7 @@ export class AttachSessionStream implements SessionStream {
   private readonly endListeners = new Set<(reason: StreamEnd) => void>();
   private readonly chatListeners = new Set<(batch: ChatBatch) => void>();
   private readonly historyListeners = new Set<
-    (page: { text: string; truncated: boolean }) => void
+    (page: { text: string; truncated: boolean; failed: boolean }) => void
   >();
   private readonly socketFactory: SocketFactory;
   private readonly schedule: Schedule;
@@ -267,7 +270,9 @@ export class AttachSessionStream implements SessionStream {
     this.tell({ type: 'chat.older', before });
   }
 
-  onHistory(listener: (page: { text: string; truncated: boolean }) => void): () => void {
+  onHistory(
+    listener: (page: { text: string; truncated: boolean; failed: boolean }) => void,
+  ): () => void {
     this.historyListeners.add(listener);
     return () => this.historyListeners.delete(listener);
   }
@@ -445,7 +450,11 @@ export class AttachSessionStream implements SessionStream {
         for (const listener of this.chatListeners) listener(message);
         return;
       case 'history': {
-        const page = { text: message.text, truncated: message.truncated ?? false };
+        const page = {
+          text: message.text,
+          truncated: message.truncated ?? false,
+          failed: message.failed ?? false,
+        };
         for (const listener of this.historyListeners) listener(page);
         return;
       }

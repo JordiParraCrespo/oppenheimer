@@ -1406,6 +1406,7 @@
       }
     },
     "shared": {
+      "historyFailed": "Couldn't load the terminal's history.",
       "backToLive": "Back to live",
       "viewOnly": "View only",
       "canWrite": "Can edit",

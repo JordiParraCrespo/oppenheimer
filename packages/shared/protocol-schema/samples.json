@@ -268,7 +268,8 @@
     "type": "attachment.history.page",
     "attachmentId": 7,
     "text": "\u001b[32m$\u001b[0m make test\nok\n",
-    "truncated": true
+    "truncated": true,
+    "failed": true
   },
   "device.attach": {
     "type": "device.attach",

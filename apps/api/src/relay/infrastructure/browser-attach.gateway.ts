@@ -522,6 +522,7 @@ class BrowserAttachment implements AttachmentSink {
       type: 'history',
       text: message.text,
       ...(message.truncated ? { truncated: true } : {}),
+      ...(message.failed ? { failed: true } : {}),
     });
   }
 

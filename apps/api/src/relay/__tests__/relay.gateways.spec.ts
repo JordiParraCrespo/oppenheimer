@@ -1916,10 +1916,18 @@ describe('browser attach socket', () => {
       browser.send(JSON.stringify({ type: 'resize', cols: 100, rows: 30 }));
       expect((await next).text).toMatchObject({ type: 'session.resize' });
 
-      // Its page came: the next ask goes through.
+      // Its page came, a failed one, which the guest is told as such: the
+      // next ask goes through.
       const page = nextMessage(browser);
-      runner.send(JSON.stringify({ type: 'attachment.history.page', attachmentId: 1, text: '' }));
-      await page;
+      runner.send(
+        JSON.stringify({
+          type: 'attachment.history.page',
+          attachmentId: 1,
+          text: '',
+          failed: true,
+        }),
+      );
+      expect((await page).text).toEqual({ type: 'history', text: '', failed: true });
       const again = nextMessage(runner);
       browser.send(JSON.stringify({ type: 'history.ask', lines: 5000 }));
       expect((await again).text).toMatchObject({ type: 'attachment.history' });

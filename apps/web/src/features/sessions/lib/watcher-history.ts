@@ -3,6 +3,16 @@ import { ATTACHMENT_HISTORY_MAX_LINES } from '@oppenheimer/shared/protocol';
 import { Terminal } from '@xterm/xterm';
 import { readTerminalTheme, TERMINAL_FONT, terminalMinimumContrastRatio } from './terminal-theme';
 
+/**
+ * What the reader sees of a watcher's history: a page open (and how to
+ * close it), a page that could not be had (and how to ask again or let it
+ * go), or nothing but the live grid (null).
+ */
+export type WatcherHistoryState =
+  | { kind: 'open'; close: () => void }
+  | { kind: 'failed'; retry: () => void; dismiss: () => void }
+  | null;
+
 /** What a watcher's history is doing: following the pane, waiting on a page, or showing one. */
 type Phase = 'live' | 'asking' | 'open';
 
@@ -23,13 +33,15 @@ const PAGE_WAIT_MS = 5_000;
  * notches that asked for it. Scrolling back to its end, Escape, or `close`
  * returns to the live grid, which never stopped following the pane.
  *
- * `onChange` hears the page open (with a way to close it) and close (null).
+ * A host that could not read the page, or no answer in `PAGE_WAIT_MS`, is
+ * said as a failure with a retry, never as an empty scrollback. `onChange`
+ * hears each state (`WatcherHistoryState`).
  */
 export function bindWatcherHistory(
   term: Terminal,
   container: HTMLElement,
   stream: SessionStream,
-  onChange: (close: (() => void) | null) => void,
+  onChange: (state: WatcherHistoryState) => void,
 ): { wheel(lines: number): void; dispose(): void } {
   let phase: Phase = 'live';
   // Notches up that arrived while the page was on its way.
@@ -55,6 +67,27 @@ export function bindWatcherHistory(
     }
     term.focus();
   };
+
+  const ask = (lines: number) => {
+    if (!stream.askHistory) return;
+    phase = 'asking';
+    pending = lines;
+    stream.askHistory(ATTACHMENT_HISTORY_MAX_LINES);
+    waiting = setTimeout(fail, PAGE_WAIT_MS);
+  };
+
+  // No page: said, with a way to ask again, so it never reads as nothing to scroll.
+  function fail() {
+    close();
+    onChange({
+      kind: 'failed',
+      retry: () => {
+        onChange(null);
+        if (phase === 'live') ask(-term.rows);
+      },
+      dismiss: () => onChange(null),
+    });
+  }
 
   const open = (text: string) => {
     const box = document.createElement('div');
@@ -121,7 +154,7 @@ export function bindWatcherHistory(
       view.scrollLines(Math.min(pending, -1));
       pending = 0;
       view.focus();
-      onChange(close);
+      onChange({ kind: 'open', close });
     });
   };
 
@@ -129,6 +162,10 @@ export function bindWatcherHistory(
     stream.onHistory?.((page) => {
       if (phase !== 'asking') return;
       stopWaiting();
+      if (page.failed) {
+        fail();
+        return;
+      }
       if (page.text === '') {
         close();
         return;
@@ -147,10 +184,8 @@ export function bindWatcherHistory(
         return;
       }
       if (phase !== 'live') return;
-      phase = 'asking';
-      pending = lines;
-      stream.askHistory(ATTACHMENT_HISTORY_MAX_LINES);
-      waiting = setTimeout(close, PAGE_WAIT_MS);
+      onChange(null);
+      ask(lines);
     },
     dispose() {
       stopWaiting();

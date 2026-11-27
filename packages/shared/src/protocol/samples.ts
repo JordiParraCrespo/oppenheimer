@@ -142,6 +142,7 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     attachmentId: 7,
     text: '\u001b[32m$\u001b[0m make test\nok\n',
     truncated: true,
+    failed: true,
   },
   'device.attach': { type: 'device.attach', commandId, sessionId, attachmentId: 9 },
   'device.info': {

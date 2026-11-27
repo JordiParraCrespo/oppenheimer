@@ -48,15 +48,12 @@ export function SharedSessionTerminal({
   const createStream = useSharedSessionStream(slug);
   const { chat, cover } = reading;
   const { shown: chatShown } = useChatReading(reading);
-  const { containerRef, closeHistory, status, hasOutput, ended, retryNow } = useTerminal(
-    createStream,
-    {
-      chat,
-      agentWindow: true,
-      readOnly,
-      onEnd,
-    },
-  );
+  const { containerRef, history, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
+    chat,
+    agentWindow: true,
+    readOnly,
+    onEnd,
+  });
 
   return (
     <Terminal className={cn('min-h-0 flex-1 overflow-hidden', chatShown && 'bg-transparent')}>
@@ -73,11 +70,11 @@ export function SharedSessionTerminal({
             </EmptyState>
           </div>
         ) : null}
-        {closeHistory && !chatShown ? (
+        {history?.kind === 'open' && !chatShown ? (
           // A watcher scrolled back through the pane's scrollback: the live
           // grid is one press away.
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-3 font-sans">
-            <FloatingChip className="pointer-events-auto" onClick={closeHistory}>
+            <FloatingChip className="pointer-events-auto" onClick={history.close}>
               <ArrowDown />
               {t('sessions.shared.backToLive')}
             </FloatingChip>
@@ -85,6 +82,21 @@ export function SharedSessionTerminal({
         ) : null}
         {chatShown ? <ChatCover>{cover}</ChatCover> : null}
       </div>
+
+      {history?.kind === 'failed' && !chatShown ? (
+        // The host could not read the scrollback: said, never drawn as nothing to scroll.
+        <div className="px-5 pb-3">
+          <ErrorAlert
+            message={t('sessions.shared.historyFailed')}
+            onDismiss={history.dismiss}
+            action={
+              <Button variant="ghost" size="sm" onClick={history.retry}>
+                {t('sessions.session.retry')}
+              </Button>
+            }
+          />
+        </div>
+      ) : null}
 
       {ended ? (
         <div className="px-5 pb-3">

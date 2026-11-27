@@ -11,7 +11,7 @@ import { bindWatcherHistory } from '../lib/watcher-history';
  * the live grid.
  */
 
-type Page = { text: string; truncated: boolean };
+type Page = { text: string; truncated: boolean; failed?: boolean };
 
 function watcherStream(answers = true) {
   let deliver: ((page: Page) => void) | null = null;
@@ -72,10 +72,10 @@ describe('bindWatcherHistory', () => {
     answer({ text: `${scrollback}\n`, truncated: false });
     await settle();
     expect(container.querySelector('[data-slot="terminal-history"]')).not.toBeNull();
-    const close = onChange.mock.lastCall?.[0] as (() => void) | null;
-    expect(close).toBeTypeOf('function');
+    const state = onChange.mock.lastCall?.[0];
+    expect(state).toMatchObject({ kind: 'open' });
 
-    close?.();
+    state.close();
     expect(container.querySelector('[data-slot="terminal-history"]')).toBeNull();
     expect(onChange).toHaveBeenLastCalledWith(null);
     history.dispose();
@@ -92,9 +92,49 @@ describe('bindWatcherHistory', () => {
     answer({ text: 'only the screen\n', truncated: false });
     await settle();
     expect(container.querySelector('[data-slot="terminal-history"]')).toBeNull();
-    expect(onChange).not.toHaveBeenCalledWith(expect.any(Function));
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ kind: 'open' }));
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ kind: 'failed' }));
     history.dispose();
     term.dispose();
+  });
+
+  it('says a page the host could not read, and asks again on retry', async () => {
+    // What breaks this: a failed read drawn as nothing to scroll back through.
+    const { term, container } = liveGrid();
+    const { stream, asked, answer } = watcherStream();
+    const onChange = vi.fn();
+    const history = bindWatcherHistory(term, container, stream, onChange);
+
+    history.wheel(-3);
+    answer({ text: '', truncated: false, failed: true });
+    const state = onChange.mock.lastCall?.[0];
+    expect(state).toMatchObject({ kind: 'failed' });
+    expect(container.querySelector('[data-slot="terminal-history"]')).toBeNull();
+
+    state.retry();
+    expect(asked).toEqual([5000, 5000]);
+    answer({ text: `${scrollback}\n`, truncated: false });
+    await settle();
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ kind: 'open' });
+    history.dispose();
+    term.dispose();
+  });
+
+  it('says a page that never came, rather than waiting on it', () => {
+    vi.useFakeTimers();
+    try {
+      const { term, container } = liveGrid();
+      const { stream } = watcherStream();
+      const onChange = vi.fn();
+      const history = bindWatcherHistory(term, container, stream, onChange);
+      history.wheel(-3);
+      vi.advanceTimersByTime(5_000);
+      expect(onChange.mock.lastCall?.[0]).toMatchObject({ kind: 'failed' });
+      history.dispose();
+      term.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('asks nothing of a stream that cannot ask, and ignores notches down', () => {

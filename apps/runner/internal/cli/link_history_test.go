@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -124,5 +125,42 @@ func TestScrollbackAsksArePaced(t *testing.T) {
 	sent.mu.Unlock()
 	if pages != 1 {
 		t.Fatalf("%d pages sent for 20 asks in 300ms, want 1", pages)
+	}
+}
+
+// A read tmux refuses is answered as failed, so the console says so instead
+// of showing a guest nothing to scroll back through.
+func TestAScrollbackReadThatFailsIsSaidToHaveFailed(t *testing.T) {
+	pty := newHeldPTY(false)
+	h, sent, terminals := newAttachHarness(t, pty, nil)
+	h.Message(context.Background(), message(t, "session.attach", map[string]any{
+		"commandId": "55555555-5555-4555-8555-555555555555", "sessionId": sessionUnderTest,
+		"attachmentId": attachmentUnderTest, "window": 0, "cols": 80, "rows": 24, "readOnly": true,
+	}))
+	waitForAttachment(t, h)
+	terminals.scrollError = errors.New("no server running")
+	h.Message(context.Background(), message(t, "attachment.history", map[string]any{
+		"attachmentId": attachmentUnderTest, "lines": 5000,
+	}))
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		sent.mu.Lock()
+		var page *link.AttachmentHistoryPage
+		for _, m := range sent.sent {
+			if p, ok := m.(link.AttachmentHistoryPage); ok {
+				page = &p
+			}
+		}
+		sent.mu.Unlock()
+		if page != nil {
+			if !page.Failed || page.Text != "" {
+				t.Fatalf("page = %+v, want failed and empty", *page)
+			}
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("no attachment.history.page was sent")
+		}
+		time.Sleep(time.Millisecond)
 	}
 }

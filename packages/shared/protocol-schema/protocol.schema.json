@@ -2141,6 +2141,9 @@
         },
         "truncated": {
           "type": "boolean"
+        },
+        "failed": {
+          "type": "boolean"
         }
       },
       "required": [

@@ -225,12 +225,14 @@ export const attachChatSchema = z.object({
 
 /**
  * The runner's `attachment.history.page`, relayed as it came: the pane's
- * scrollback and screen with their colours, the screen's lines last.
+ * scrollback and screen with their colours, the screen's lines last, or
+ * `failed` when the host could not read it.
  */
 export const attachHistorySchema = z.object({
   type: z.literal('history'),
   text: z.string().max(ATTACHMENT_HISTORY_MAX_BYTES),
   truncated: z.boolean().optional(),
+  failed: z.boolean().optional(),
 });
 
 /**

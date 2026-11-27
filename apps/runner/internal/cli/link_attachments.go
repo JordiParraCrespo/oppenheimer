@@ -76,8 +76,8 @@ const historyPace = time.Second
 
 // history answers the attachment's `attachment.history` asks while it is
 // open, one at a time and at most one a `historyPace`, each with one
-// `attachment.history.page`. A read or a send that fails answers with an
-// empty page, so the console stops waiting.
+// `attachment.history.page`. A read or a send that fails answers with a
+// `failed` page, so the console says so rather than show nothing to scroll.
 func (h *linkHandler) history(ctx context.Context, att *attachment) {
 	for {
 		select {
@@ -87,7 +87,8 @@ func (h *linkHandler) history(ctx context.Context, att *attachment) {
 			readCtx, cancel := context.WithTimeout(ctx, historyWait)
 			text, err := h.app.Sessions.Scrollback(readCtx, att.sessionID, att.window, lines)
 			cancel()
-			if err != nil {
+			failed := err != nil
+			if failed {
 				h.logger.Debug("could not read the session's scrollback", slog.String("session", att.sessionID), slog.Any("error", err))
 				text = ""
 			}
@@ -97,11 +98,11 @@ func (h *linkHandler) history(ctx context.Context, att *attachment) {
 			// encoding/json would write each invalid byte as six.
 			page, truncated := historyTail(strings.ToValidUTF8(text, ""), link.AttachmentHistoryMaxBytes)
 			answer := link.AttachmentHistoryPage{
-				Type: link.TypeAttachmentHistoryPage, AttachmentID: att.id, Text: page, Truncated: truncated,
+				Type: link.TypeAttachmentHistoryPage, AttachmentID: att.id, Text: page, Truncated: truncated, Failed: failed,
 			}
 			if err := h.client.Send(answer); err != nil {
 				h.logger.Debug("could not send the session's scrollback", slog.String("session", att.sessionID), slog.Any("error", err))
-				answer.Text, answer.Truncated = "", false
+				answer.Text, answer.Truncated, answer.Failed = "", false, true
 				_ = h.client.Send(answer)
 			}
 			select {

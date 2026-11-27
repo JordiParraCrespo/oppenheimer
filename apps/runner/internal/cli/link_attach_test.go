@@ -100,15 +100,16 @@ type heldAttach struct {
 	readOnly bool
 	// scrollback is what a scrollback read answers, and scrolled the target
 	// and line count it was last asked for.
-	scrollback string
-	scrolled   chan string
+	scrollback  string
+	scrollError error
+	scrolled    chan string
 }
 
 func (t *heldAttach) CaptureScrollback(_ context.Context, target string, lines int) (string, error) {
 	if t.scrolled != nil {
 		t.scrolled <- fmt.Sprintf("%s %d", target, lines)
 	}
-	return t.scrollback, nil
+	return t.scrollback, t.scrollError
 }
 
 func (t *heldAttach) Attach(_ context.Context, _ string, _ sessionsapp.Size, readOnly bool) (sessionsapp.Attachment, error) {

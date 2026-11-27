@@ -1807,14 +1807,15 @@ export type AttachmentHistoryMessage = z.infer<typeof attachmentHistorySchema>;
 /**
  * An attachment's scrollback and screen, as `capture-pane -e` reads them:
  * lines with their colours, the screen's last. `truncated` says the text was
- * cut at its start to `ATTACHMENT_HISTORY_MAX_BYTES`. Empty when the pane is
- * gone.
+ * cut at its start to `ATTACHMENT_HISTORY_MAX_BYTES`. `failed` says the host
+ * could not read or send it, so an empty text is not an empty scrollback.
  */
 export const attachmentHistoryPageSchema = z.object({
   type: z.literal('attachment.history.page'),
   attachmentId: attachmentIdSchema,
   text: z.string().max(ATTACHMENT_HISTORY_MAX_BYTES),
   truncated: z.boolean().optional(),
+  failed: z.boolean().optional(),
 });
 
 export type AttachmentHistoryPageMessage = z.infer<typeof attachmentHistoryPageSchema>;

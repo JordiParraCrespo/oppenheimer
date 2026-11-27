@@ -29,7 +29,7 @@ import {
   terminalMinimumContrastRatio,
 } from './terminal-theme';
 import { bindUserTurns } from './user-turns';
-import { bindWatcherHistory } from './watcher-history';
+import { bindWatcherHistory, type WatcherHistoryState } from './watcher-history';
 
 /** The platform test xterm itself uses to pick its Mac behaviour. */
 const IS_MAC = typeof navigator !== 'undefined' && /^Mac/.test(navigator.platform);
@@ -60,11 +60,11 @@ export interface SessionTerminalOptions {
    */
   readOnly?: boolean;
   /**
-   * A watcher's scrollback page opened (with a way to close it) or closed
-   * (null): a read-only pane scrolls back through a page the host reads for
-   * it (`bindWatcherHistory`), since its wheel never reaches tmux.
+   * A watcher's scrollback page opened, failed or closed: a read-only pane
+   * scrolls back through a page the host reads for it (`bindWatcherHistory`),
+   * since its wheel never reaches tmux.
    */
-  onHistory?: (close: (() => void) | null) => void;
+  onHistory?: (state: WatcherHistoryState) => void;
   /**
    * Whether predictive local echo may draw (`typeahead.ts`): the
    * `terminal_typeahead` flag, read through a getter so the flag arriving
@@ -257,7 +257,7 @@ export function mountSessionTerminal(
   // A watcher's notches up open the pane's scrollback instead: tmux takes no
   // input from it, and its copy mode would move everyone's view.
   const history = options.readOnly
-    ? bindWatcherHistory(term, container, stream, (close) => options.onHistory?.(close))
+    ? bindWatcherHistory(term, container, stream, (state) => options.onHistory?.(state))
     : null;
 
   term.attachCustomWheelEventHandler((event) => {

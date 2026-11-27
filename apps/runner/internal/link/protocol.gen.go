@@ -1115,6 +1115,7 @@ type AttachmentHistoryPage struct {
 	AttachmentID uint32 `json:"attachmentId"`
 	Text         string `json:"text"`
 	Truncated    bool   `json:"truncated,omitempty"`
+	Failed       bool   `json:"failed,omitempty"`
 }
 
 // DeviceAttach is the `device.attach` message.
