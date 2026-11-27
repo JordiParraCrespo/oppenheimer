@@ -95,17 +95,41 @@ func (h *linkHandler) history(ctx context.Context, att *attachment) {
 	}
 }
 
-// historyTail keeps the last max bytes of text, starting at a line, so a
-// page never opens mid-line or mid-escape. It reports whether it cut.
+// historyTail keeps the newest whole lines of text whose JSON encoding fits
+// max bytes, so the page and its envelope fit one frame: a control byte (the
+// escape every colour starts with) goes out as six. A page never opens
+// mid-line or mid-escape. It reports whether it cut.
 func historyTail(text string, max int) (string, bool) {
-	if len(text) <= max {
-		return text, false
+	size := 0
+	start := len(text)
+	for start > 0 {
+		from := strings.LastIndexByte(text[:start-1], '\n') + 1
+		line := jsonSize(text[from:start])
+		if size+line > max {
+			return text[start:], true
+		}
+		size += line
+		start = from
 	}
-	tail := text[len(text)-max:]
-	if at := strings.IndexByte(tail, '\n'); at >= 0 {
-		return tail[at+1:], true
+	return text, false
+}
+
+// jsonSize is how many bytes s takes as a JSON string's contents, the way
+// encoding/json writes it: control bytes, quotes, backslashes and the HTML
+// characters escaped.
+func jsonSize(s string) int {
+	size := 0
+	for i := 0; i < len(s); i++ {
+		switch c := s[i]; {
+		case c == '\n' || c == '\r' || c == '\t' || c == '"' || c == '\\':
+			size += 2
+		case c < 0x20 || c == '<' || c == '>' || c == '&':
+			size += 6
+		default:
+			size++
+		}
 	}
-	return "", true
+	return size
 }
 
 // chat follows the attached session's conversation for the console's chat

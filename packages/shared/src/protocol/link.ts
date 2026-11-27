@@ -105,8 +105,9 @@ export const CHAT_COMMANDS_MAX = 200;
 export const ATTACHMENT_HISTORY_MAX_LINES = 5000;
 
 /**
- * The largest `attachment.history.page` text, with its colours: its last
- * bytes are kept, cut at a line, so the page and its envelope fit one frame
+ * The largest `attachment.history.page` text, measured as it is encoded on
+ * the link, where every escape a colour starts with is six bytes: its newest
+ * whole lines are kept, so the page and its envelope fit one frame
  * (`LINK_MAX_FRAME_BYTES`).
  */
 export const ATTACHMENT_HISTORY_MAX_BYTES = 384 * 1024;

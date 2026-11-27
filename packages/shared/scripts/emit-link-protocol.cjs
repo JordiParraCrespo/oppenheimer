@@ -189,7 +189,7 @@ const CONSTANT_DOCS = {
   ],
   attachmentHistoryMaxBytes: [
     'AttachmentHistoryMaxBytes is how much of a pane `attachment.history.page`',
-    'carries: its last bytes, cut at a line.',
+    'carries, as JSON-encoded on the link: its newest whole lines.',
   ],
   sessionChanges: [
     'The bounds of one `session.changes`: the files one checkout names, the',

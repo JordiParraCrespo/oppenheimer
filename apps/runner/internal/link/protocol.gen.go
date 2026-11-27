@@ -80,7 +80,7 @@ const ExecOutputMaxBytes = 32768
 const TerminalScreenMaxBytes = 32768
 
 // AttachmentHistoryMaxBytes is how much of a pane `attachment.history.page`
-// carries: its last bytes, cut at a line.
+// carries, as JSON-encoded on the link: its newest whole lines.
 const AttachmentHistoryMaxBytes = 393216
 
 // The bounds of one `session.changes`: the files one checkout names, the

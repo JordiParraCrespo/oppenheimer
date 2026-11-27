@@ -1876,9 +1876,7 @@ describe('browser attach socket', () => {
       // What breaks this: a watcher's terminal that cannot scroll at all, since
       // its wheel never reaches tmux.
       shareIs(true);
-      const { runner, browser } = await attachedThrough(shareTicket(true), [
-        'attachment.history',
-      ]);
+      const { runner, browser } = await attachedThrough(shareTicket(true), ['attachment.history']);
       const asked = nextMessage(runner);
       browser.send(JSON.stringify({ type: 'history.ask', lines: 5000 }));
       expect((await asked).text).toEqual({
