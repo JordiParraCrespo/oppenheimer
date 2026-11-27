@@ -16,9 +16,17 @@ vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
-const mutateAsync = vi.fn(async () => {});
+// The batch as the API would answer it: every id changed, or the ones `refuse` names refused.
+let refuse: string[] = [];
+const mutateAsync = vi.fn(async ({ ids, hidden }: { ids: string[]; hidden: boolean }) => ({
+  changed: ids
+    .filter((id) => !refuse.includes(id))
+    .map((id) => sessionEntity({ id, name: id, hidden })),
+  failed: ids.filter((id) => refuse.includes(id)),
+  reason: refuse.length > 0 ? new Error('refused') : null,
+}));
 vi.mock('@oppenheimer/frontend-consumer/react', () => ({
-  useSetSessionHidden: () => ({ mutateAsync, isPending: false }),
+  useSetSessionsHidden: () => ({ mutateAsync, isPending: false }),
 }));
 const notifySuccess = vi.fn();
 vi.mock('@oppenheimer/frontend-web', () => ({
@@ -28,6 +36,7 @@ vi.mock('@oppenheimer/frontend-web', () => ({
 afterEach(() => {
   cleanup();
   mutateAsync.mockClear();
+  refuse = [];
   notifySuccess.mockClear();
 });
 
@@ -59,9 +68,8 @@ describe('GroupSessionsMenu', () => {
     fireEvent.click(screen.getByText('sessions.group.hideAll'));
 
     await waitFor(() => expect(onWrite).toHaveBeenCalledWith(null));
-    expect(mutateAsync).toHaveBeenCalledTimes(2);
-    expect(mutateAsync).toHaveBeenCalledWith({ id: 'a', hidden: true });
-    expect(mutateAsync).toHaveBeenCalledWith({ id: 'c', hidden: true });
+    expect(mutateAsync).toHaveBeenCalledTimes(1);
+    expect(mutateAsync).toHaveBeenCalledWith({ ids: ['a', 'c'], hidden: true });
     expect(notifySuccess).toHaveBeenCalledWith('sessionsHidden', { n: '2' });
   });
 
@@ -75,14 +83,11 @@ describe('GroupSessionsMenu', () => {
     fireEvent.click(screen.getByText('sessions.group.showAll'));
 
     await waitFor(() => expect(onWrite).toHaveBeenCalledWith(null));
-    expect(mutateAsync).toHaveBeenCalledWith({ id: 'a', hidden: false });
-    expect(mutateAsync).toHaveBeenCalledWith({ id: 'b', hidden: false });
+    expect(mutateAsync).toHaveBeenCalledWith({ ids: ['a', 'b'], hidden: false });
   });
 
   it('shows the first refusal and toasts only what landed', async () => {
-    mutateAsync.mockImplementationOnce(async () => {
-      throw new Error('refused');
-    });
+    refuse = ['a'];
     const { onWrite } = renderMenu([
       { id: 'a', hidden: false },
       { id: 'b', hidden: false },
@@ -92,7 +97,7 @@ describe('GroupSessionsMenu', () => {
 
     await waitFor(() => expect(onWrite).toHaveBeenCalled());
     expect(onWrite).toHaveBeenCalledWith(expect.objectContaining({ message: 'refused' }));
-    expect(notifySuccess).toHaveBeenCalledWith('sessionHidden', expect.anything());
+    expect(notifySuccess).toHaveBeenCalledWith('sessionHidden', { name: 'b' });
   });
 
   it('hands the whole group to the delete dialog', () => {

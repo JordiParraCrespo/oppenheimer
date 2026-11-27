@@ -8,10 +8,9 @@ import {
 } from '@oppenheimer/design-system-web';
 import { Ellipsis } from '@oppenheimer/design-system-web/icons';
 import type { SessionEntity } from '@oppenheimer/frontend-consumer';
-import { useSetSessionHidden } from '@oppenheimer/frontend-consumer/react';
+import { useSetSessionsHidden } from '@oppenheimer/frontend-consumer/react';
 import { notifySuccess } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
-import { settleEach } from '../lib/session-selection';
 
 /**
  * A sidebar group's menu, at its header's ellipsis or on a right-click
@@ -21,7 +20,8 @@ import { settleEach } from '../lib/session-selection';
  * a filter, the search or Pinned holding some of them keeps those out, as the
  * selection bar does only what the reader can see.
  *
- * The hides go out side by side; the ones that land toast once, and the first
+ * The hides are one batch (`useSetSessionsHidden`), a few writes at a time
+ * and one re-read of the list; the ones that land toast once, and the first
  * one refused shows above the list.
  */
 export function GroupSessionsMenu({
@@ -41,16 +41,16 @@ export function GroupSessionsMenu({
   onWrite: (error: Error | null) => void;
 }) {
   const { t } = useTranslation();
-  const visibility = useSetSessionHidden();
+  const visibility = useSetSessionsHidden();
   const allHidden = sessions.every((session) => session.hidden);
 
   async function setHidden(hidden: boolean) {
     const changing = sessions.filter((session) => session.hidden !== hidden);
-    const { failed, reason } = await settleEach(changing, (session) =>
-      visibility.mutateAsync({ id: session.id, hidden }),
-    );
+    const { changed, reason } = await visibility.mutateAsync({
+      ids: changing.map((session) => session.id),
+      hidden,
+    });
     onWrite(reason ? (reason as Error) : null);
-    const changed = changing.filter((session) => !failed.includes(session));
     if (changed.length === 0) return;
     if (changed.length === 1) {
       notifySuccess(hidden ? 'sessionHidden' : 'sessionShown', { name: changed[0]?.name ?? '' });

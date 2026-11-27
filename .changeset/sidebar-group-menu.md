@@ -3,6 +3,7 @@
 "@oppenheimer/design-system-web": minor
 "@oppenheimer/frontend-web": minor
 "@oppenheimer/translations": minor
+"@oppenheimer/frontend-consumer": minor
 ---
 
 A sidebar group's header has a menu, at its ellipsis or on a right-click:
@@ -17,3 +18,6 @@ or delete them all after the dialog for several asks.
   `onContextMenu` and `menuOpen` for its head.
 - `@oppenheimer/translations`: `sessions.group.*`, and the `sessionsHidden`
   and `sessionsShown` toasts.
+- `@oppenheimer/frontend-consumer`: `useSetSessionsHidden` hides or shows
+  several sessions in one batch, four writes in flight at a time and one
+  re-read of the list at the end.
