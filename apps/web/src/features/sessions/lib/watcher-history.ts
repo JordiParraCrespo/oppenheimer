@@ -1,7 +1,7 @@
 import type { SessionStream } from '@oppenheimer/frontend-consumer';
 import { ATTACHMENT_HISTORY_MAX_LINES } from '@oppenheimer/shared/protocol';
-import { Terminal } from '@xterm/xterm';
-import { readTerminalTheme, TERMINAL_FONT, terminalMinimumContrastRatio } from './terminal-theme';
+import type { Terminal } from '@xterm/xterm';
+import { createThemedTerminal, followAppliedTheme } from './themed-terminal';
 
 /**
  * What the reader sees of a watcher's history: a page open (and how to
@@ -46,11 +46,21 @@ export function bindWatcherHistory(
   let phase: Phase = 'live';
   // Notches up that arrived while the page was on its way.
   let pending = 0;
-  let overlay: { box: HTMLElement; view: Terminal; themes: MutationObserver } | null = null;
+  let overlay: { box: HTMLElement; view: Terminal; unfollowTheme: () => void } | null = null;
   let waiting: ReturnType<typeof setTimeout> | null = null;
   const stopWaiting = () => {
     if (waiting !== null) clearTimeout(waiting);
     waiting = null;
+  };
+
+  /** Takes the page off the grid; reports whether there was one. */
+  const removeOverlay = (): boolean => {
+    if (!overlay) return false;
+    overlay.unfollowTheme();
+    overlay.view.dispose();
+    overlay.box.remove();
+    overlay = null;
+    return true;
   };
 
   const close = () => {
@@ -58,13 +68,7 @@ export function bindWatcherHistory(
     if (phase === 'live') return;
     phase = 'live';
     pending = 0;
-    if (overlay) {
-      overlay.themes.disconnect();
-      overlay.view.dispose();
-      overlay.box.remove();
-      overlay = null;
-      onChange(null);
-    }
+    if (removeOverlay()) onChange(null);
     term.focus();
   };
 
@@ -95,34 +99,23 @@ export function bindWatcherHistory(
     box.style.position = 'absolute';
     box.style.inset = '0';
     box.style.zIndex = '1';
-    const theme = readTerminalTheme();
-    box.style.background = theme.background ?? 'transparent';
+    // The terminal's ground, as a token, so it follows light and dark itself.
+    box.style.background = 'var(--term-bg)';
     if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
     container.append(box);
 
-    const view = new Terminal({
-      ...TERMINAL_FONT,
-      theme,
-      minimumContrastRatio: terminalMinimumContrastRatio(),
+    // Made as the live grid is, so the page draws exactly as it did.
+    const view = createThemedTerminal({
       cols: term.cols,
       rows: term.rows,
       scrollback: ATTACHMENT_HISTORY_MAX_LINES + term.rows,
       // capture-pane ends each line with a bare newline.
       convertEol: true,
       disableStdin: true,
-      cursorBlink: false,
       cursorInactiveStyle: 'none',
     });
     view.open(box);
-    // Light or dark switched while the page is open: it follows, as the grid does.
-    const themes = new MutationObserver(() => {
-      const next = readTerminalTheme();
-      view.options.theme = next;
-      view.options.minimumContrastRatio = terminalMinimumContrastRatio();
-      box.style.background = next.background ?? 'transparent';
-    });
-    themes.observe(document.documentElement, { attributeFilter: ['class'] });
-    overlay = { box, view, themes };
+    overlay = { box, view, unfollowTheme: followAppliedTheme(view) };
 
     // Down to the end of the page is back to live; anything else scrolls it.
     view.attachCustomWheelEventHandler((event) => {
@@ -191,12 +184,7 @@ export function bindWatcherHistory(
       stopWaiting();
       offHistory();
       offResize.dispose();
-      if (overlay) {
-        overlay.themes.disconnect();
-        overlay.view.dispose();
-        overlay.box.remove();
-        overlay = null;
-      }
+      removeOverlay();
     },
   };
 }
