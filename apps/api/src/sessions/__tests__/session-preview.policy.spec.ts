@@ -50,21 +50,15 @@ describe('session preview addresses', () => {
     expect(url.pathname).toBe('/__oppenheimer/enter');
     expect(url.searchParams.get('path')).toBe('/docs?x=1');
     expect(url.searchParams.get('embed')).toBe('1');
-    for (const away of ['//evil.test', 'https://evil.test', '/\\evil.test', 'docs']) {
-      expect(safePreviewPath(away)).toBe('/');
-    }
   });
 
-  it('opens no path with a control character, which a browser drops to read `//`', () => {
-    for (const away of [
-      '/\t/evil.test',
-      '/\n/evil.test',
-      '/\r/evil.test',
-      '/\u0000x',
-      '/\u007fx',
-    ]) {
+  // Which paths leave the origin is `isSameOriginPath`'s, tested in
+  // `@oppenheimer/shared`; this holds what a preview opens on instead.
+  it('opens on the app root for a path that would leave it, a missing one or an overlong one', () => {
+    for (const away of ['//evil.test', '/\\evil.test', '/\t/evil.test', undefined, null, '']) {
       expect(safePreviewPath(away)).toBe('/');
     }
+    expect(safePreviewPath(`/${'a'.repeat(2048)}`)).toBe('/');
     expect(safePreviewPath('/docs/%09')).toBe('/docs/%09');
   });
 });

@@ -19,6 +19,7 @@ src/
 ├── agents/        # the closed coding-agent catalog
 ├── protocol/      # the runner link's wire vocabulary, as Zod
 ├── feature-flags/ # the flag catalog, the evaluator, targeting schemas
+├── urls/          # `isSameOriginPath`: the one open-redirect rule the console and the API share
 ├── guide/         # "Using Oppenheimer" as bots read it, generated from apps/docs (never edit the .gen.ts)
 └── index.ts
 ```

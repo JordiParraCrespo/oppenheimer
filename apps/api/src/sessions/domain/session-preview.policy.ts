@@ -1,3 +1,5 @@
+import { isSameOriginPath } from '@oppenheimer/shared/urls';
+
 /**
  * Where a session's preview lives:
  * one origin per session and port under the deployment's preview domain,
@@ -96,17 +98,12 @@ export function previewEnterUrl(
   return url.toString();
 }
 
-/** A C0 control character or DEL: a browser strips a tab or newline, so `/\t/x` reads `//x`. */
-// biome-ignore lint/suspicious/noControlCharactersInRegex: the control characters are what it refuses
-const CONTROL = /[\u0000-\u001f\u007f]/;
-
 /**
- * A path inside the app, never a way off it: one that does not start with a
- * single `/` (`//evil.example`, `https:…`, `\\evil`), or that holds a control
- * character (`/\t/evil.example`), is the app's root.
+ * A path inside the app, never a way off it: one `isSameOriginPath` refuses
+ * (`//evil.example`, `https:…`, `\\evil`, `/\t/evil.example`), or one past
+ * 2048 characters, is the app's root.
  */
 export function safePreviewPath(path: string | undefined | null): string {
-  if (!path?.startsWith('/') || path.startsWith('//') || path.includes('\\')) return '/';
-  if (CONTROL.test(path)) return '/';
+  if (!path || !isSameOriginPath(path)) return '/';
   return path.length > 2048 ? '/' : path;
 }
