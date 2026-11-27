@@ -42,8 +42,13 @@ export class AddMemberHttpController {
   @Version('1')
   @RequireScopes('members:write')
   @OrganizationScoped('orgId')
-  @CheckPolicies({ action: 'create', subject: 'Member' })
-  @ApiOperation({ summary: 'Add an existing user as a member' })
+  // Adds someone else's account without asking them, so it is the platform
+  // administrator's alone: a workspace owner holds `create Member` in their
+  // own workspace, and would otherwise pull any account into it (and, on that
+  // account's next sign-in, land it there). People join by accepting an
+  // invitation.
+  @CheckPolicies({ action: 'create', subject: 'Member' }, { action: 'manage', subject: 'all' })
+  @ApiOperation({ summary: 'Add an existing user as a member (platform administrators)' })
   @ApiResponse({ status: 201, type: MemberResponseDto })
   async add(
     @Req() req: Request,

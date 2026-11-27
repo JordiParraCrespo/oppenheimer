@@ -1,5 +1,6 @@
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
 import type { Scope } from '@oppenheimer/shared';
+import type { MintingCredentialReach } from '../../domain/minting-reach.policy';
 
 /** The principal minting the token, as the guard resolved it. */
 export interface ApiTokenActor {
@@ -8,6 +9,8 @@ export interface ApiTokenActor {
   role?: string;
   /** Active organization, so org-scoped permission conditions resolve. */
   organizationId?: string | null;
+  /** The scoped credential presenting the request, if it is not a browser session. */
+  credential?: MintingCredentialReach;
 }
 
 export class CreateApiTokenCommand extends CommandBase {
