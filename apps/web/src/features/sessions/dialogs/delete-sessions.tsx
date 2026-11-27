@@ -1,14 +1,13 @@
-import type { SessionEntity } from '@oppenheimer/frontend-consumer';
+import { type SessionEntity, settleEach } from '@oppenheimer/frontend-consumer';
 import { useCloseSession } from '@oppenheimer/frontend-consumer/react';
 import { ConfirmDialog, ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSessionSelectionActions } from '../hooks/use-session-selection';
-import { settleEach } from '../lib/session-selection';
 
 /**
  * Delete the sessions picked in the sidebar: `DeleteSessionDialog` for several
- * at once, one close each, side by side. Each row leaves the sidebar on the
+ * at once, one close each, a few at a time (`settleEach`). Each row leaves the sidebar on the
  * click as a single delete's does (`useCloseSession`), so the sidebar is the
  * confirmation and nothing toasts.
  *

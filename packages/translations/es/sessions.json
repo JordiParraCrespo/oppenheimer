@@ -382,6 +382,12 @@
     "delete": "Eliminar las seleccionadas",
     "clear": "Quitar la selección"
   },
+  "group": {
+    "actions": "Acciones de {{name}}",
+    "hideAll": "Ocultar todas las sesiones",
+    "showAll": "Mostrar todas las sesiones",
+    "deleteAll": "Eliminar todas las sesiones…"
+  },
   "deleteSessions": {
     "title_one": "¿Eliminar {{count}} sesión?",
     "title_many": "¿Eliminar {{count}} de sesiones?",

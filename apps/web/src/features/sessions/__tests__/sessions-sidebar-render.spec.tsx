@@ -98,6 +98,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useRenameSession: () => ({ mutate: vi.fn(), error: null }),
   useMoveSession: () => ({ mutate: vi.fn(), error: null }),
   useSetSessionHidden: () => ({ mutate: vi.fn(), error: null }),
+  useSetSessionsHidden: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useMutedSessionAlerts: () => NO_MUTES,
 }));
 

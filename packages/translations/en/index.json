@@ -1267,6 +1267,12 @@
       "delete": "Delete selected",
       "clear": "Clear selection"
     },
+    "group": {
+      "actions": "Actions for {{name}}",
+      "hideAll": "Hide all sessions",
+      "showAll": "Show all sessions",
+      "deleteAll": "Delete all sessions…"
+    },
     "deleteSessions": {
       "title_one": "Delete {{count}} session?",
       "title_other": "Delete {{count}} sessions?",
@@ -5082,6 +5088,8 @@
     "sessionMoved": "“{{name}}” moved to {{project}}.",
     "sessionHidden": "“{{name}}” hidden. Show hidden sessions from the filter menu.",
     "sessionShown": "“{{name}}” shown.",
+    "sessionsHidden": "{{n}} sessions hidden. Show hidden sessions from the filter menu.",
+    "sessionsShown": "{{n}} sessions shown.",
     "sessionsMoved": "{{n}} sessions moved to {{project}}.",
     "projectCreated": "“{{name}}” created.",
     "projectSaved": "“{{name}}” saved.",
