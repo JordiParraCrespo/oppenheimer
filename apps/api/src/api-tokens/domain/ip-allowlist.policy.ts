@@ -158,20 +158,44 @@ export function isIpAllowed(
   return allowlist.some((entry) => matchesIpRule(entry, address));
 }
 
-/** Is every address the rule `inner` admits also admitted by the rule `outer`? */
-function ruleWithin(inner: string, outer: string): boolean {
-  const a = parseRule(inner);
-  const b = parseRule(outer);
-  if (!a || !b) return false;
-  let bytes = a.bytes;
-  let bits = a.bits;
-  // A sixteen-byte rule holds an IPv4 one as its mapped range.
-  if (b.bytes.length === 16 && bytes.length === 4) {
-    bytes = mappedIPv6(bytes);
-    bits += 96;
-  }
-  if (bytes.length !== b.bytes.length || bits < b.bits) return false;
-  return prefixEquals(bytes, b.bytes, b.bits);
+/** A rule as sixteen bytes and a prefix in 128 bits: an IPv4 rule as its mapped range. */
+interface Net {
+  bytes: number[];
+  bits: number;
+}
+
+function toNet(entry: string): Net | null {
+  const rule = parseRule(entry);
+  if (!rule) return null;
+  return rule.bytes.length === 4
+    ? { bytes: mappedIPv6(rule.bytes), bits: rule.bits + 96 }
+    : { bytes: rule.bytes, bits: rule.bits };
+}
+
+const contains = (outer: Net, inner: Net) =>
+  inner.bits >= outer.bits && prefixEquals(inner.bytes, outer.bytes, outer.bits);
+
+const overlaps = (a: Net, b: Net) => prefixEquals(a.bytes, b.bytes, Math.min(a.bits, b.bits));
+
+/** `net` with one more prefix bit, set to `bit`. */
+function half(net: Net, bit: 0 | 1): Net {
+  const bytes = [...net.bytes];
+  const index = Math.floor(net.bits / 8);
+  const mask = 0x80 >> (net.bits % 8);
+  bytes[index] = bit ? bytes[index] | mask : bytes[index] & ~mask;
+  return { bytes, bits: net.bits + 1 };
+}
+
+/**
+ * Is every address in `net` admitted by one of `outers`, together? A range two
+ * adjacent rules cover between them (`/25` and `/25`) is covered though no
+ * single rule holds it. It splits a range in two only while some rule overlaps
+ * it, so the walk is bounded by the rules' depth, never by the range's size.
+ */
+function covered(net: Net, outers: readonly Net[]): boolean {
+  if (outers.some((outer) => contains(outer, net))) return true;
+  if (net.bits >= 128 || !outers.some((outer) => overlaps(outer, net))) return false;
+  return covered(half(net, 0), outers) && covered(half(net, 1), outers);
 }
 
 function prefixEquals(left: number[], right: number[], bits: number): boolean {
@@ -197,5 +221,9 @@ export function allowlistWithin(
 ): boolean {
   if (!outer || outer.length === 0) return true;
   if (!inner || inner.length === 0) return false;
-  return inner.every((entry) => outer.some((rule) => ruleWithin(entry, rule)));
+  const outers = outer.map(toNet).filter((net): net is Net => net !== null);
+  return inner.every((entry) => {
+    const net = toNet(entry);
+    return net !== null && covered(net, outers);
+  });
 }

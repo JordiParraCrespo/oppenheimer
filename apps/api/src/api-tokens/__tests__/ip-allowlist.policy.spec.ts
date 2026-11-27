@@ -99,6 +99,24 @@ describe('allowlistWithin', () => {
     expect(allowlistWithin(['2001:db8::/48'], ['2001:db8::/32'])).toBe(true);
   });
 
+  it('holds a range the parent’s rules cover only together, and not one they leave a gap in', () => {
+    expect(allowlistWithin(['203.0.113.0/24'], ['203.0.113.0/25', '203.0.113.128/25'])).toBe(true);
+    expect(
+      allowlistWithin(
+        ['203.0.113.0/24'],
+        ['203.0.113.0/25', '203.0.113.128/26', '203.0.113.192/26'],
+      ),
+    ).toBe(true);
+    expect(allowlistWithin(['203.0.113.0/24'], ['203.0.113.0/25', '203.0.113.192/26'])).toBe(false);
+    expect(allowlistWithin(['203.0.112.0/23'], ['203.0.113.0/25', '203.0.113.128/25'])).toBe(false);
+  });
+
+  it('decides a wide range against many narrow rules without walking its addresses', () => {
+    const narrow = Array.from({ length: 200 }, (_, index) => `10.0.${index}.1`);
+    expect(allowlistWithin(['0.0.0.0/0'], narrow)).toBe(false);
+    expect(allowlistWithin(['::/0'], narrow)).toBe(false);
+  });
+
   it('holds a malformed entry within nothing', () => {
     expect(allowlistWithin(['not-an-ip'], ['0.0.0.0/0'])).toBe(false);
   });
