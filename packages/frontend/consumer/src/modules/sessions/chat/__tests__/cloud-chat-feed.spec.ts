@@ -8,7 +8,9 @@ const line = (value: unknown) => JSON.stringify(value);
 function sourceOf(pages: CloudChatPage[]) {
   const replies: string[] = [];
   const source: CloudChatSource = {
-    read: vi.fn(async () => pages.shift() ?? { lines: [], next: 0, replies: [] }),
+    read: vi.fn(
+      async () => pages.shift() ?? { lines: [], next: 0, source: 'hook' as const, replies: [] },
+    ),
     reply: vi.fn(async (text: string) => {
       replies.push(text);
     }),
@@ -26,6 +28,7 @@ describe('CloudChatFeed', () => {
       {
         next: 3,
         replies: [],
+        source: 'hook',
         lines: [
           line({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Ship it' } }),
           line({
@@ -106,8 +109,8 @@ describe('CloudChatFeed', () => {
       },
     });
     const { source } = sourceOf([
-      { lines: [], next: 0, replies: [sent, waiting] },
-      { lines: [echo], next: 1, replies: [sent, waiting] },
+      { lines: [], next: 0, source: 'hook', replies: [sent, waiting] },
+      { lines: [echo], next: 1, source: 'hook', replies: [sent, waiting] },
     ]);
     const pending: string[][] = [];
     const feed = new CloudChatFeed(source, chat, {
@@ -122,6 +125,81 @@ describe('CloudChatFeed', () => {
     // once its words are back (a prompt's one text block, not only a string).
     expect(pending).toEqual([['r1:sent', 'r2:waiting'], ['r2:waiting']]);
     expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual(['Now tag the release']);
+    stop();
+  });
+
+  it('reads the chat again from its first line when the extension’s lines replace the hook’s', async () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const prompt = (uuid: string, text: string) =>
+      line({ type: 'user', uuid, message: { role: 'user', content: text } });
+    const { source } = sourceOf([
+      { lines: [prompt('h1', 'Fix the login page')], next: 1, source: 'hook', replies: [] },
+      {
+        lines: [prompt('e1', 'Fix the login page'), prompt('e2', 'Also the signup page')],
+        next: 2,
+        source: 'browser',
+        replies: [],
+      },
+      {
+        lines: [prompt('e1', 'Fix the login page'), prompt('e2', 'Also the signup page')],
+        next: 2,
+        source: 'browser',
+        replies: [],
+      },
+    ]);
+    const feed = new CloudChatFeed(source, chat, {
+      everyMs: 1000,
+      onPending: () => {},
+      onReplyFailed: () => {},
+    });
+    const stop = feed.start();
+    await vi.advanceTimersByTimeAsync(1000);
+    // Breaks if the extension's lines are read on from the hook's number
+    // (dropping the start of the log) or drawn after the hook's (twice).
+    expect(source.read).toHaveBeenNthCalledWith(2, 1);
+    expect(source.read).toHaveBeenNthCalledWith(3, 0);
+    expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual([
+      'Fix the login page',
+      'Also the signup page',
+    ]);
+    stop();
+  });
+
+  it('shows a reply the extension posted on claude.ai as sent until the log has its words', async () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const at = new Date('2026-11-27T10:00:00Z');
+    const posted = {
+      id: 'r1',
+      text: 'Also the signup page',
+      createdAt: at,
+      collectedAt: at,
+      deliveredVia: 'browser' as const,
+    };
+    const echo = line({
+      type: 'user',
+      uuid: 'e9',
+      message: { role: 'user', content: 'Also the signup page' },
+    });
+    const { source } = sourceOf([
+      { lines: [], next: 0, source: 'browser', replies: [posted] },
+      { lines: [echo], next: 1, source: 'browser', replies: [posted] },
+    ]);
+    const pending: string[][] = [];
+    const feed = new CloudChatFeed(source, chat, {
+      everyMs: 1000,
+      onPending: (now) => pending.push(now.map((reply) => `${reply.id}:${reply.state}`)),
+      onReplyFailed: () => {},
+    });
+    const stop = feed.start();
+    await vi.advanceTimersByTimeAsync(1000);
+    // Breaks if the posted reply vanishes before the session has it, or stays
+    // drawn beside the prompt it became.
+    expect(pending).toEqual([['r1:sent'], []]);
+    expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual([
+      'Also the signup page',
+    ]);
     stop();
   });
 });

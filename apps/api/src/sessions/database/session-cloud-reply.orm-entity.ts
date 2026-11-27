@@ -9,7 +9,7 @@ import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn 
  */
 @Entity('session_cloud_reply')
 @Check('CHK_session_cloud_reply_text', `char_length("text") > 0`)
-@Check('CHK_session_cloud_reply_delivered_via', `"deliveredVia" IN ('hook', 'host')`)
+@Check('CHK_session_cloud_reply_delivered_via', `"deliveredVia" IN ('hook', 'host', 'browser')`)
 @Check('CHK_session_cloud_reply_delivered', `("deliveredVia" IS NULL) = ("collectedAt" IS NULL)`)
 @Index('IDX_session_cloud_reply_session', ['organizationId', 'sessionId', 'createdAt', 'id'])
 @Index('IDX_session_cloud_reply_waiting', ['sessionId', 'createdAt'], {

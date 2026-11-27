@@ -36,10 +36,13 @@ export class FindCloudChatQueryHandler
         detail: `Session ${session.slug} is not a Claude Code cloud session`,
       });
     }
+    // The source first: lines read after a switch to the extension's are the
+    // extension's, so a reader told `hook` never takes them for the hook's.
+    const source = await this.chat.findSource(session.id);
     const [lines, replies] = await Promise.all([
       this.chat.findLines(session.id, query.from, query.limit),
       this.chat.findReplies(session.organizationId, session.id, MAX_REPLIES),
     ]);
-    return SessionCloudChatMapper.toChat(query.from, lines, replies);
+    return SessionCloudChatMapper.toChat(query.from, source, lines, replies);
   }
 }

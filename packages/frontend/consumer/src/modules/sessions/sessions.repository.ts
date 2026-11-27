@@ -485,6 +485,7 @@ export class SessionsRepository {
       return {
         lines: data.lines,
         next: data.next,
+        source: data.source,
         replies: data.replies.map((reply) => ({
           id: reply.id,
           text: reply.text,

@@ -1,5 +1,6 @@
 import {
   CLOUD_REPLY_PREAMBLE,
+  type CloudChatSource as CloudChatOrigin,
   type CloudReplyDelivery,
 } from '@oppenheimer/shared/schemas/session-cloud-chat';
 import type { SessionChat } from './session-chat';
@@ -13,7 +14,8 @@ export interface CloudChatReply {
   collectedAt: Date | null;
   /**
    * `hook`: the session's Stop hook took it at the end of a turn; `host`: a
-   * host sent it with `claude -p … --cloud`, which wakes an idle session.
+   * host sent it with `claude -p … --cloud`, which wakes an idle session;
+   * `browser`: the browser extension posted it on claude.ai as its author.
    * Null while it waits.
    */
   deliveredVia: CloudReplyDelivery | null;
@@ -21,7 +23,8 @@ export interface CloudChatReply {
 
 /**
  * A reply the chat does not show yet, and why: `waiting` for the session's
- * Stop hook, or `sent` from a host and not yet back in the transcript.
+ * Stop hook, or `sent` from a host or the browser extension and not yet back
+ * in the transcript.
  */
 export interface PendingCloudReply extends CloudChatReply {
   state: 'waiting' | 'sent';
@@ -33,6 +36,12 @@ export interface CloudChatPage {
   lines: readonly string[];
   /** Where the next read starts. */
   next: number;
+  /**
+   * Where the lines come from: the session's hook, or its log on claude.ai
+   * read by the browser extension. The two number the lines apart, so a
+   * change means reading the chat again from its first line.
+   */
+  source: CloudChatOrigin;
   replies: readonly CloudChatReply[];
 }
 
@@ -56,7 +65,6 @@ const FEEDBACK = /^Stop hook feedback:\n(?:\[[^\]]*\]: )?/;
  */
 function asChatLine(raw: string): { line: string; reply: string | null } {
   const unchanged = { line: raw, reply: null };
-  if (!raw.includes(CLOUD_REPLY_PREAMBLE)) return unchanged;
   let line: Record<string, unknown>;
   try {
     line = JSON.parse(raw) as Record<string, unknown>;
@@ -65,10 +73,18 @@ function asChatLine(raw: string): { line: string; reply: string | null } {
   }
   const message = line.message as { role?: unknown; content?: unknown } | undefined;
   const content = textOf(message?.content);
-  if (line.type !== 'user' || content === null) return unchanged;
+  if (
+    line.type !== 'user' ||
+    content === null ||
+    (line.isMeta === true && !raw.includes(CLOUD_REPLY_PREAMBLE))
+  ) {
+    return unchanged;
+  }
   const body = content.replace(FEEDBACK, '');
   const at = body.indexOf(CLOUD_REPLY_PREAMBLE);
-  if (at < 0) return unchanged;
+  // A prompt as the person typed it: what a reply the extension posted on
+  // claude.ai comes back as, so its words are counted to match it by.
+  if (at < 0) return { line: raw, reply: body.trim() || null };
   const text = body.slice(at + CLOUD_REPLY_PREAMBLE.length).trim();
   return {
     line: JSON.stringify({ ...line, isMeta: false, message: { ...message, content: text } }),
@@ -101,6 +117,8 @@ function textOf(content: unknown): string | null {
  */
 export class CloudChatFeed {
   private next = 0;
+  /** Where the lines read so far came from; null before the first read. */
+  private origin: CloudChatOrigin | null = null;
   /** How many times each reply's words came back in the transcript. */
   private readonly echoed = new Map<string, number>();
   private typed = '';
@@ -164,7 +182,9 @@ export class CloudChatFeed {
       }
       const seen = unmatched.get(reply.text) ?? 0;
       if (seen > 0) unmatched.set(reply.text, seen - 1);
-      else if (reply.deliveredVia === 'host') pending.push({ ...reply, state: 'sent' });
+      else if (reply.deliveredVia === 'host' || reply.deliveredVia === 'browser') {
+        pending.push({ ...reply, state: 'sent' });
+      }
     }
     return pending;
   }
@@ -174,6 +194,15 @@ export class CloudChatFeed {
     try {
       const page = await this.source.read(this.next);
       if (this.stopped) return;
+      if (this.origin !== null && page.source !== this.origin) {
+        // The extension's lines replaced the hook's: numbered anew, so the
+        // chat is read again from its first line, as if just opened.
+        this.origin = page.source;
+        this.next = 0;
+        this.echoed.clear();
+        return this.read(true);
+      }
+      this.origin = page.source;
       const read = page.lines.map(asChatLine);
       for (const { reply } of read) {
         if (reply !== null) this.echoed.set(reply, (this.echoed.get(reply) ?? 0) + 1);

@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OutboxService } from '@oppenheimer/backend-ddd';
-import { type CloudReplyDelivery, QUEUE_NAMES } from '@oppenheimer/shared';
-import type { Repository } from 'typeorm';
+import { type CloudChatSource, type CloudReplyDelivery, QUEUE_NAMES } from '@oppenheimer/shared';
+import type { EntityManager, Repository } from 'typeorm';
 import type {
+  BrowserCloudReply,
+  CloudChatEvent,
   CloudChatLine,
   CloudChatReply,
   CloudReplyWake,
@@ -35,6 +37,13 @@ const asReply = (row: ReplyRow): CloudChatReply => ({
   deliveredVia: row.deliveredVia,
 });
 
+/** Serializes the writers of one session's lines until the transaction ends. */
+async function lockSessionLines(manager: EntityManager, sessionId: string): Promise<void> {
+  await manager.query(`SELECT pg_advisory_xact_lock(hashtext('session_cloud_line:' || $1))`, [
+    sessionId,
+  ]);
+}
+
 @Injectable()
 export class SessionCloudChatRepository implements SessionCloudChatRepositoryPort {
   constructor(
@@ -52,17 +61,86 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     lines: readonly string[],
   ): Promise<number> {
     if (lines.length === 0) return 0;
-    // One statement for the batch; PK_session_cloud_line turns a resent line
-    // into nothing, so a hook retrying after a dropped answer changes nothing.
-    const inserted: unknown[] = await this.lines.query(
-      `INSERT INTO session_cloud_line ("organizationId", "sessionId", "seq", "line")
-       SELECT $1, $2, $3 + (ordinality - 1)::integer, line
-         FROM unnest($4::text[]) WITH ORDINALITY AS batch(line, ordinality)
-       ON CONFLICT ("sessionId", "seq") DO NOTHING
-       RETURNING "seq"`,
-      [organizationId, sessionId, from, lines],
+    return this.outbox.transaction(async (manager) => {
+      await lockSessionLines(manager, sessionId);
+      // One statement for the batch; PK_session_cloud_line turns a resent line
+      // into nothing, so a hook retrying after a dropped answer changes nothing.
+      // A session the extension has read is served from claude.ai's own log, so
+      // the hook's copy is no longer kept (UQ_session_cloud_line_event finds one).
+      const inserted: unknown[] = await manager.query(
+        `INSERT INTO session_cloud_line ("organizationId", "sessionId", "seq", "line")
+         SELECT $1, $2, $3 + (ordinality - 1)::integer, line
+           FROM unnest($4::text[]) WITH ORDINALITY AS batch(line, ordinality)
+          WHERE NOT EXISTS (
+            SELECT 1 FROM session_cloud_line
+             WHERE "sessionId" = $2 AND "eventId" IS NOT NULL)
+         ON CONFLICT ("sessionId", "seq") DO NOTHING
+         RETURNING "seq"`,
+        [organizationId, sessionId, from, lines],
+      );
+      return inserted.length;
+    });
+  }
+
+  async appendEvents(
+    organizationId: string,
+    sessionId: string,
+    events: readonly CloudChatEvent[],
+  ): Promise<number> {
+    if (events.length === 0) return 0;
+    return this.outbox.transaction(async (manager) => {
+      // One writer per session at a time, the hook's appends included: each
+      // new event is numbered after the last line held.
+      await lockSessionLines(manager, sessionId);
+      // The first events replace the hook's copy: the two number the same
+      // conversation differently, and claude.ai's log is the whole of it.
+      await manager.query(
+        `DELETE FROM session_cloud_line
+          WHERE "sessionId" = $1 AND "eventId" IS NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM session_cloud_line
+               WHERE "sessionId" = $1 AND "eventId" IS NOT NULL)`,
+        [sessionId],
+      );
+      // New events only (an id held already, or twice in the batch, is
+      // skipped), numbered in the batch's order after the last line.
+      const inserted: unknown[] = await manager.query(
+        `WITH batch AS (
+           SELECT DISTINCT ON (id) id, line, ordinality
+             FROM unnest($3::text[], $4::text[]) WITH ORDINALITY AS e(id, line, ordinality)
+            ORDER BY id, ordinality),
+         fresh AS (
+           SELECT id, line, row_number() OVER (ORDER BY ordinality) AS n
+             FROM batch
+            WHERE NOT EXISTS (
+              SELECT 1 FROM session_cloud_line held
+               WHERE held."sessionId" = $2 AND held."eventId" = batch.id)),
+         base AS (
+           SELECT coalesce(max("seq") + 1, 0) AS next FROM session_cloud_line WHERE "sessionId" = $2)
+         INSERT INTO session_cloud_line ("organizationId", "sessionId", "seq", "eventId", "line")
+         SELECT $1, $2, (base.next + fresh.n - 1)::integer, fresh.id, fresh.line
+           FROM fresh, base
+         RETURNING "seq"`,
+        [
+          organizationId,
+          sessionId,
+          events.map((event) => event.id),
+          events.map((event) => event.line),
+        ],
+      );
+      return inserted.length;
+    });
+  }
+
+  async findSource(sessionId: string): Promise<CloudChatSource> {
+    // UQ_session_cloud_line_event: one probe of the partial index.
+    const [row]: { browser: boolean }[] = await this.lines.query(
+      `SELECT EXISTS (
+         SELECT 1 FROM session_cloud_line WHERE "sessionId" = $1 AND "eventId" IS NOT NULL
+       ) AS browser`,
+      [sessionId],
     );
-    return inserted.length;
+    return row?.browser ? 'browser' : 'hook';
   }
 
   async findLines(sessionId: string, from: number, limit: number): Promise<CloudChatLine[]> {
@@ -147,6 +225,49 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
       [replyId, sessionId],
     );
     return rows[0] ? asReply(rows[0]) : null;
+  }
+
+  async claimRepliesForBrowser(
+    organizationId: string,
+    authorId: string,
+  ): Promise<BrowserCloudReply[]> {
+    // The same `collectedAt IS NULL` claim as the hook's and the host's, for
+    // every waiting reply of this person in an open Claude Code cloud session
+    // with a claude.ai id; IDX_session_cloud_reply_author finds them.
+    const [rows]: [(ReplyRow & { cloudSessionId: string })[], number] = await this.replies.query(
+      `UPDATE session_cloud_reply reply
+          SET "collectedAt" = now(), "deliveredVia" = 'browser'
+         FROM work_session session
+        WHERE reply."authorId" = $2
+          AND reply."organizationId" = $1
+          AND reply."collectedAt" IS NULL
+          AND session.id = reply."sessionId"
+          AND session."organizationId" = reply."organizationId"
+          AND session.place = 'cloud'
+          AND session.agent = 'claude-code'
+          AND session."agentSessionId" IS NOT NULL
+          AND session.state <> 'resolved'
+       RETURNING reply.id, reply."authorId", reply."text", reply."createdAt",
+                 reply."collectedAt", reply."deliveredVia",
+                 session."agentSessionId" AS "cloudSessionId"`,
+      [organizationId, authorId],
+    );
+    return rows
+      .map((row) => ({ ...asReply(row), cloudSessionId: row.cloudSessionId }))
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id));
+  }
+
+  async releaseBrowserClaim(
+    organizationId: string,
+    authorId: string,
+    replyId: string,
+  ): Promise<boolean> {
+    const [, affected]: [unknown[], number] = await this.replies.query(
+      `UPDATE session_cloud_reply SET "collectedAt" = NULL, "deliveredVia" = NULL
+        WHERE id = $1 AND "organizationId" = $2 AND "authorId" = $3 AND "deliveredVia" = 'browser'`,
+      [replyId, organizationId, authorId],
+    );
+    return affected === 1;
   }
 
   async releaseHostClaim(sessionId: string, replyId: string): Promise<void> {
