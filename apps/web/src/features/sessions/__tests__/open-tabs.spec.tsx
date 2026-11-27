@@ -1,7 +1,13 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useOpenTabs } from '../hooks/use-open-tabs';
-import { openTabOf, tabAfterClosing, withPlaceholdersCapped } from '../lib/open-tabs';
+import {
+  openTabOf,
+  tabAfterClosing,
+  tabAfterClosingMany,
+  tabsToClose,
+  withPlaceholdersCapped,
+} from '../lib/open-tabs';
 
 /**
  * The tabs over Sessions are this device's, kept across a reload, in the
@@ -55,7 +61,7 @@ describe('open tabs', () => {
     );
     const strip = renderHook(() => useOpenTabs('session:new'));
     // Another browser tab closed it, so the page on screen is drawn but not kept.
-    act(() => strip.result.current.close('session:new'));
+    act(() => strip.result.current.close(['session:new']));
     act(() => strip.result.current.reorder(['session:a', 'session:new', 'session:b']));
     expect(window.localStorage.getItem('oppenheimer.sessions.tabs')).toBe(
       JSON.stringify(['session:a', 'session:new', 'session:b']),
@@ -68,7 +74,7 @@ describe('open tabs', () => {
       JSON.stringify(['session:a', 'session:b']),
     );
     const strip = renderHook(() => useOpenTabs('session:a'));
-    act(() => strip.result.current.close('session:b'));
+    act(() => strip.result.current.close(['session:b']));
     // The drop names the tabs as they stood when it was picked up.
     act(() => strip.result.current.reorder(['session:b', 'session:a']));
     expect(strip.result.current.keys).toEqual(['session:a']);
@@ -83,9 +89,41 @@ describe('open tabs', () => {
     expect(tabAfterClosing(keys, 'session:a', 'session:c')).toBe('session:a');
   });
 
+  it("closes what a tab's menu names, counted from that tab, and nothing for a tab no longer drawn", () => {
+    const keys = ['session:a', 'session:b', 'session:c', 'session:d'];
+    expect(tabsToClose(keys, 'session:b', 'this')).toEqual(['session:b']);
+    expect(tabsToClose(keys, 'session:b', 'others')).toEqual([
+      'session:a',
+      'session:c',
+      'session:d',
+    ]);
+    expect(tabsToClose(keys, 'session:b', 'left')).toEqual(['session:a']);
+    expect(tabsToClose(keys, 'session:b', 'right')).toEqual(['session:c', 'session:d']);
+    expect(tabsToClose(keys, 'session:b', 'all')).toEqual(keys);
+    expect(tabsToClose(keys, 'session:gone', 'all')).toEqual([]);
+  });
+
+  it("shows the menu's own tab when the page on screen closes with others, else the neighbour that stays", () => {
+    const keys = ['session:a', 'session:b', 'session:c', 'session:d'];
+    // The screen stays when it is not among those closed.
+    expect(tabAfterClosingMany(keys, 'session:b', 'session:b', ['session:c', 'session:d'])).toBe(
+      'session:b',
+    );
+    // Close others from b while d is on screen: b is lit, as in a browser.
+    expect(
+      tabAfterClosingMany(keys, 'session:d', 'session:b', ['session:a', 'session:c', 'session:d']),
+    ).toBe('session:b');
+    // Close b and c with c on screen: the neighbour that stays, d.
+    expect(tabAfterClosingMany(keys, 'session:c', 'session:b', ['session:b', 'session:c'])).toBe(
+      'session:d',
+    );
+    expect(tabAfterClosingMany(keys, 'session:a', 'session:a', keys)).toBeNull();
+    expect(tabAfterClosingMany(keys, null, 'session:a', keys)).toBeNull();
+  });
+
   it('keeps the page on screen among the tabs after it is closed, until the reader moves on', () => {
     const strip = renderHook(() => useOpenTabs('session:a'));
-    act(() => strip.result.current.close('session:a'));
+    act(() => strip.result.current.close(['session:a']));
     expect(strip.result.current.keys).toEqual(['session:a']);
   });
 
@@ -135,7 +173,7 @@ describe('open tabs', () => {
     strip.rerender({ shown: 'session:b' });
     expect(strip.result.current.keys).toEqual(['session:a', 'session:b']);
 
-    act(() => strip.result.current.close('session:a'));
+    act(() => strip.result.current.close(['session:a']));
     expect(strip.result.current.keys).toEqual(['session:b']);
   });
 });

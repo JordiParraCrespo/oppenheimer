@@ -1838,7 +1838,14 @@
     "tabs": {
       "label": "Open sessions",
       "new": "New session",
-      "close": "Close {{name}}"
+      "close": "Close {{name}}",
+      "menu": {
+        "close": "Close tab",
+        "closeOthers": "Close other tabs",
+        "closeLeft": "Close tabs to the left",
+        "closeRight": "Close tabs to the right",
+        "closeAll": "Close all tabs"
+      }
     }
   },
   "bots": {

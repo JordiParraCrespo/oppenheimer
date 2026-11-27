@@ -978,6 +978,13 @@
   "tabs": {
     "label": "Sesiones abiertas",
     "new": "Nueva sesión",
-    "close": "Cerrar {{name}}"
+    "close": "Cerrar {{name}}",
+    "menu": {
+      "close": "Cerrar pestaña",
+      "closeOthers": "Cerrar las demás pestañas",
+      "closeLeft": "Cerrar pestañas a la izquierda",
+      "closeRight": "Cerrar pestañas a la derecha",
+      "closeAll": "Cerrar todas las pestañas"
+    }
   }
 }

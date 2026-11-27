@@ -63,6 +63,45 @@ export function tabAfterClosing(
   return rest[Math.min(at, rest.length - 1)] ?? null;
 }
 
+/** What a tab's menu closes, the way a browser's does: counted from the tab it opened on. */
+export type CloseTabs = 'this' | 'others' | 'left' | 'right' | 'all';
+
+/** The keys `which` closes, read from the tab `key` in `keys`, the strip's order. */
+export function tabsToClose(keys: readonly string[], key: string, which: CloseTabs): string[] {
+  const at = keys.indexOf(key);
+  if (at < 0) return [];
+  switch (which) {
+    case 'this':
+      return [key];
+    case 'others':
+      return keys.filter((one) => one !== key);
+    case 'left':
+      return keys.slice(0, at);
+    case 'right':
+      return keys.slice(at + 1);
+    case 'all':
+      return [...keys];
+  }
+}
+
+/**
+ * The tab to show once the menu of `key` closes `closed`: the one on screen
+ * when it stays, else `key` itself when it stays (a browser lights the tab
+ * whose menu it was), else what closing `key` alone would show; null when
+ * nothing is left.
+ */
+export function tabAfterClosingMany(
+  keys: readonly string[],
+  shown: string | null,
+  key: string,
+  closed: readonly string[],
+): string | null {
+  if (shown === null || !closed.includes(shown)) return shown;
+  if (!closed.includes(key)) return key;
+  const left = keys.filter((one) => one === shown || !closed.includes(one));
+  return tabAfterClosing(left, shown, shown);
+}
+
 /**
  * How many tabs the strip drew the last time both lists answered on this
  * device. The stored tabs can hold some whose session or bot is gone, which
