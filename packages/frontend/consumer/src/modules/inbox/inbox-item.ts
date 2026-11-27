@@ -163,14 +163,22 @@ function pullItemKey(pull: Pick<PullRequestEntity, 'githubRepoId' | 'number' | '
 }
 
 /**
- * A session left unread by the turn that ended (`observedSince`), else by its
- * lifecycle's change count: the next turn left unread asks again.
+ * When a session's turn ended, as near as its row says: the host's
+ * `observedSince` once a second report confirms the state, else the turn-end
+ * event's own time (`lastEventAt`), since the first report of a state clears
+ * `observedSince` and a turn that ends is reported once.
  */
-function unattendedItemKey(
-  session: Pick<SessionEntity, 'id' | 'observedSince' | 'stateSeq'>,
-): string {
-  const stay = session.observedSince ? session.observedSince.toISOString() : `s${session.stateSeq}`;
-  return `unattended:${session.id}:${stay}`;
+function turnEndedAt(session: SessionEntity): Date {
+  return session.observedSince ?? session.lastEventAt ?? session.createdAt;
+}
+
+/**
+ * A session left unread by when its turn ended: the next turn left unread is
+ * a new occurrence, so a Done on the last one never hides it. Not by
+ * `stateSeq`, which moves only with the lifecycle, never with a turn.
+ */
+function unattendedItemKey(session: SessionEntity): string {
+  return `unattended:${session.id}:${turnEndedAt(session).toISOString()}`;
 }
 
 function runItemKey(run: { id: string }): string {
@@ -249,7 +257,7 @@ function unattendedItems(
   const items: InboxItem[] = [];
   for (const session of sessions) {
     if (session.state !== 'ready-for-review' || session.isClosing) continue;
-    const since = session.observedSince ?? session.lastEventAt ?? session.createdAt;
+    const since = turnEndedAt(session);
     if (now - since.getTime() < UNATTENDED_AFTER_MS) continue;
     items.push({
       kind: 'unattended',

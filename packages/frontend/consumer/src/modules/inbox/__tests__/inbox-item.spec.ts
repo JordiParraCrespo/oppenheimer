@@ -493,6 +493,24 @@ describe('composeInbox: a session nobody has moved forward', () => {
     ).toEqual(['unattended']);
     expect(inboxSubject(`unattended:s1:${at(35).toISOString()}`)).toBe('unattended:s1');
   });
+
+  // The regression: a turn that ends is reported once, so a blue session has
+  // no `observedSince`; keyed by `stateSeq`, which no turn moves, a Done on
+  // one turn hid every later turn of the session.
+  it('names a turn by its last event when the host confirmed no state, so the next turn comes back', () => {
+    const unread = (lastEventMinutesAgo: number) =>
+      new SessionEntity({
+        ...session('s1', { state: 'ready-for-review', observedSince: null }),
+        lastEventAt: at(lastEventMinutesAgo),
+      });
+    const first = composeInbox(sources({ sessions: [unread(40)] }), [], NOW).open;
+    expect(first).toMatchObject([{ kind: 'unattended', since: at(40) }]);
+    const done = [mark(first[0].key, 'done')];
+    expect(composeInbox(sources({ sessions: [unread(40)] }), done, NOW).open).toEqual([]);
+    expect(
+      composeInbox(sources({ sessions: [unread(35)] }), done, NOW).open.map((item) => item.kind),
+    ).toEqual(['unattended']);
+  });
 });
 
 describe('composeInbox: what a bot told you', () => {

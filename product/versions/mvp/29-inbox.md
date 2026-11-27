@@ -713,7 +713,8 @@ turn it off. This replaces "A long wait is told once more" above:
   from the host's `observedSince`, is listed in the Inbox: "<name> is waiting
   to move forward", with Open session. Opening the session reads its turn
   and takes the item away; Done puts it away for that turn. It is keyed by
-  the session and the turn (`unattended:<id>:<observedSince>`), so the next
+  the session and when its turn ended (`unattended:<id>:<time>`, the host's
+  `observedSince` else the turn-end event's time), so the next
   turn left unread comes back however the last one was marked. It counts
   under Sessions in the Type facet and in the rail's count.
 - **Amber is already there.** A session waiting on you (amber) is an Inbox
