@@ -1,9 +1,5 @@
-import {
-  BOT_PROVIDER_CATALOG,
-  type BotProvider,
-  botAdvisorFor,
-  botModelOf,
-} from '@oppenheimer/shared';
+import { type BotProvider, botAdvisorFor, botModelOf } from '@oppenheimer/shared';
+import { modelLabel } from './bot-model-name.policy';
 
 /**
  * A bot's advisor as a bot reads it in `get_self` and `get_bot`: the one its
@@ -17,13 +13,8 @@ export function describeBotAdvisor(bot: {
   advisorModel: string | null;
 }): string {
   const advisor = botAdvisorFor(bot.provider, bot.model, bot.advisorModel);
-  const models = BOT_PROVIDER_CATALOG[bot.provider].models;
-  if (advisor) {
-    const label = models.find((row) => row.id === advisor)?.label ?? advisor;
-    return `${label} (${advisor})`;
-  }
+  if (advisor) return `${modelLabel(bot.provider, advisor)} (${advisor})`;
   const offered = botModelOf(bot.provider, bot.model)?.advisors ?? [];
   if (offered.length === 0) return 'none (its model takes none)';
-  const labels = offered.map((id) => models.find((row) => row.id === id)?.label ?? id);
-  return `none (its model takes ${labels.join(', ')})`;
+  return `none (its model takes ${offered.map((id) => modelLabel(bot.provider, id)).join(', ')})`;
 }

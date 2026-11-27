@@ -29,7 +29,7 @@ const plan = (target: BotEntity, input: Record<string, unknown>) =>
 describe("update_bot's advisor", () => {
   it('takes an advisor by id or by label, and null turns it off', () => {
     const sonnet = bot('claude-sonnet-5-5');
-    for (const asked of ['claude-opus-5-5', 'Opus 5.5', 'opus 5.5']) {
+    for (const asked of ['claude-opus-5-5', ' CLAUDE-OPUS-5-5 ', 'Opus 5.5', 'opus 5.5']) {
       expect(plan(sonnet, { advisor_model: asked })).toMatchObject({
         steps: [{ body: { advisorModel: 'claude-opus-5-5' } }],
       });

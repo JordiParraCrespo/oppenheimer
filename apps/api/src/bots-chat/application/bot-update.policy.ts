@@ -1,5 +1,4 @@
 import {
-  BOT_PROVIDER_CATALOG,
   type BotPermission,
   type BotProvider,
   botEffortLevelFor,
@@ -21,6 +20,7 @@ import {
 } from '../bot-peer-tool.mapper';
 import { describeBotAdvisor } from '../domain/bot-advisor.policy';
 import { describeBotEffort } from '../domain/bot-effort.policy';
+import { modelLabel, modelNamed } from '../domain/bot-model-name.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
 
 export type { UpdateBotsInput };
@@ -176,14 +176,9 @@ function advisorUpdateFor(
     return { value: input.advisor_model };
   }
   const offered = botModelOf(provider, model)?.advisors ?? [];
-  const models = BOT_PROVIDER_CATALOG[provider].models;
-  const asked = input.advisor_model.trim().toLowerCase();
-  const id = offered.find(
-    (each) =>
-      each === asked || models.find((row) => row.id === each)?.label.toLowerCase() === asked,
-  );
+  const id = modelNamed(provider, input.advisor_model, offered);
   if (id) return { value: id };
-  const labels = offered.map((each) => models.find((row) => row.id === each)?.label ?? each);
+  const labels = offered.map((each) => modelLabel(provider, each));
   return {
     refusal: promptText('bots/tools.engine-update-for-advisor-refusal', {
       name: bot.name,

@@ -9,9 +9,9 @@
 // the runner serves update_bot with its production description and schema,
 // and get_self, as stubs that answer as production does, and runs one turn.
 //
-// A run is right when it calls update_bot for the bot itself with
-// advisor_model set as the case expects (the id or its label), and changes
-// nothing else of its engine. One miss fails its case.
+// A run is right when it calls update_bot for the bot itself, ends with the
+// advisor the case expects (by id or label, as the stub keeps it), and no
+// call in it changes the bot's model or provider. One miss fails its case.
 //
 //   pnpm eval:bot-advisor                every case, 3 runs each
 //   pnpm eval:bot-advisor --case set --runs 1
@@ -144,16 +144,17 @@ async function runOnce(via: Transport, data: Cases, item: Case) {
     maxTurns: 5,
   });
   const updates = turn.calls.filter((call) => call.tool === 'update_bot');
-  const right = updates.some((call) => {
-    const input = call.input as { bot_ids?: unknown; model?: unknown; provider?: unknown };
-    const ids = Array.isArray(input.bot_ids) ? input.bot_ids : [];
-    return (
-      ids.includes(data.bot.id) &&
-      advisorOf(call.input) === item.advisor &&
-      input.model === undefined &&
-      input.provider === undefined
-    );
+  // Judged by where the run ends, not by one good call: setting the advisor
+  // and then clearing it is wrong, and so is any call that moves the engine.
+  const forSelf = updates.some((call) => {
+    const ids = (call.input as { bot_ids?: unknown }).bot_ids;
+    return Array.isArray(ids) && ids.includes(data.bot.id);
   });
+  const engineMoved = updates.some((call) => {
+    const input = call.input as { model?: unknown; provider?: unknown };
+    return input.model !== undefined || input.provider !== undefined;
+  });
+  const right = forSelf && !engineMoved && state.advisor === item.advisor;
   return { right, calls: turn.calls, answer: turn.answer, stopped: turn.stopped };
 }
 

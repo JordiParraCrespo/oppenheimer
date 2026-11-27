@@ -12,6 +12,7 @@ import type { SessionEffort } from '@oppenheimer/shared/agents';
 import type { BotEntity } from '../bots/domain/bot.entity';
 import { permissionForBotMadeBy } from '../bots/domain/bot-creation.policy';
 import type { BotGroupEntity } from '../bots/domain/bot-group.entity';
+import { modelNamed } from './domain/bot-model-name.policy';
 import { promptText } from './domain/bot-prompt-text.policy';
 
 /**
@@ -142,12 +143,8 @@ export function resolveModel(
     return { value: provider === creator.provider ? creator.model : null };
   }
   if (input.model === null) return { value: null };
-  const wanted = input.model.trim().toLowerCase();
-  const row = BOT_PROVIDER_CATALOG[provider].models.find(
-    (candidate) =>
-      candidate.id.toLowerCase() === wanted || candidate.label.toLowerCase() === wanted,
-  );
-  if (row) return { value: row.id };
+  const id = modelNamed(provider, input.model);
+  if (id) return { value: id };
   const offered = BOT_PROVIDER_CATALOG[provider].models.map((candidate) => candidate.id).join(', ');
   return {
     refusal: promptText('bots/tools-peer-messages.resolve-model-refusal', {
