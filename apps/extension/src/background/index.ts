@@ -134,7 +134,7 @@ const RETRY_MS = 15_000;
 
 /** Sessions a reply was just posted to, and when. Lost with the worker, which is fine. */
 const hot = new Map<string, number>();
-let chats: Promise<void> | null = null;
+let chatsRunning = false;
 
 /**
  * The chat loop, while Oppenheimer is connected: claims the replies typed in
@@ -144,8 +144,10 @@ let chats: Promise<void> | null = null;
  * if Chrome stopped the worker anyway.
  */
 function runChats() {
-  chats ??= chatLoop().finally(() => {
-    chats = null;
+  if (chatsRunning) return;
+  chatsRunning = true;
+  void chatLoop().finally(() => {
+    chatsRunning = false;
   });
 }
 
