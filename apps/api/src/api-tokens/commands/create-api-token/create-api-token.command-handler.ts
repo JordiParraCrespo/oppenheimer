@@ -10,7 +10,7 @@ import type { ApiTokenRepositoryPort } from '../../database/api-token.repository
 import type { OrganizationMembershipReaderPort } from '../../database/organization-membership.repository.port';
 import { ApiTokenEntity } from '../../domain/api-token.entity';
 import { ApiTokenErrors } from '../../domain/api-token.errors';
-import { exceedsMintingCredential } from '../../domain/minting-reach.policy';
+import { mintingRefusal } from '../../domain/minting-reach.policy';
 import { CreateApiTokenCommand } from './create-api-token.command';
 
 const MAX_ACTIVE_TOKENS_PER_USER = 50;
@@ -56,23 +56,18 @@ export class CreateApiTokenCommandHandler
       { organizationId: command.actor.organizationId ?? null },
     );
 
-    const beyondCredential = exceedsMintingCredential(command.actor.credential, command);
-    const exceeded = [
-      ...new Set([...ungrantableScopes(ability, command.scopes), ...beyondCredential.scopes]),
-    ];
-    if (exceeded.length > 0) {
+    const refusal = mintingRefusal(
+      ungrantableScopes(ability, command.scopes),
+      command.actor.credential,
+      command,
+    );
+    if (refusal) {
       throw new AppError(ApiTokenErrors.SCOPES_EXCEED_GRANTER, {
-        detail: `The caller may not grant: ${exceeded.join(', ')}`,
-        extensions: { ungrantableScopes: exceeded },
+        detail: refusal.detail,
+        extensions: { ungrantableScopes: refusal.ungrantableScopes },
       });
     }
 
-    if (beyondCredential.leavesOrganizations) {
-      throw new AppError(ApiTokenErrors.SCOPES_EXCEED_GRANTER, {
-        detail: 'A token minted with a token must be pinned within its organizations',
-        extensions: { ungrantableScopes: [] },
-      });
-    }
     await this.assertMemberOfRequestedOrganizations(command);
 
     const { token, secret } = ApiTokenEntity.issue({
