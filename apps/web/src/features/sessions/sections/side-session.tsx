@@ -10,9 +10,16 @@ import { SideSessionStatus } from './side-session-status';
  * pane its own page draws, without its bar. Its status line keeps the link's
  * state and the view switch (`SideSessionStatus`); Share is
  * its own page's. It has no side pane of its own: that is offered only with
- * a bar.
+ * a bar. `readOnOpen` false leaves its finished turn unread (an Inbox card,
+ * which that unread turn is what lists).
  */
-export function SideSession({ sessionId }: { sessionId: string }) {
+export function SideSession({
+  sessionId,
+  readOnOpen,
+}: {
+  sessionId: string;
+  readOnOpen?: boolean;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -24,6 +31,7 @@ export function SideSession({ sessionId }: { sessionId: string }) {
       <QueryState.Data>
         <SessionPane
           sessionId={sessionId}
+          readOnOpen={readOnOpen}
           terminal={(session, reading) => (
             <SessionTerminal
               sessionId={session.id}

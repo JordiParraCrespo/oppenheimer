@@ -100,6 +100,7 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
   useSetSessionHidden: () => ({ mutate: vi.fn(), error: null }),
   useSetSessionsHidden: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useMutedSessionAlerts: () => NO_MUTES,
+  useUnattendedSessionsShown: () => [true, vi.fn()],
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', async (original) => ({

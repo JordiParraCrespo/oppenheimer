@@ -9,7 +9,11 @@ import type {
   SessionFilters,
 } from '../lib/session-filters';
 import { SessionFilterChips } from './session-filter-chips';
-import { type ProjectVisibility, SessionsFilterMenu } from './sessions-filter-menu';
+import {
+  type ProjectVisibility,
+  SessionsFilterMenu,
+  type UnattendedReminders,
+} from './sessions-filter-menu';
 
 /**
  * The sidebar's head. The filters and the settled query are the section's
@@ -31,6 +35,7 @@ export function SessionsSidebarHead({
   options,
   dirty,
   visibility,
+  reminders,
   chips,
   onFiltersChange,
   onFiltersClear,
@@ -47,6 +52,7 @@ export function SessionsSidebarHead({
   options: Record<SessionFacet, FilterOption[]>;
   dirty: boolean;
   visibility: ProjectVisibility;
+  reminders: UnattendedReminders;
   chips: FilterChipEntry[];
   onFiltersChange: (patch: Partial<SessionFilters>) => void;
   onFiltersClear: () => void;
@@ -76,6 +82,7 @@ export function SessionsSidebarHead({
             options={options}
             dirty={dirty}
             visibility={visibility}
+            reminders={reminders}
             onChange={onFiltersChange}
             onClear={onFiltersClear}
             onNewProject={onNewProject}

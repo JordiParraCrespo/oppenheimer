@@ -80,6 +80,16 @@ export function inboxCopy(item: InboxItem, t: TFunction): InboxCopy {
   switch (item.kind) {
     case 'session':
       return sessionCopy(item, t);
+    case 'unattended': {
+      const name = item.session.name;
+      return {
+        sender: name,
+        short: t('inbox.unattended.short', { name }),
+        source: item.session.scopeLabel ?? t('inbox.from.session'),
+        title: t('inbox.unattended.title', { name }),
+        body: t('inbox.unattended.body'),
+      };
+    }
     case 'notice': {
       const { session, notice } = item;
       const name = session.name;
