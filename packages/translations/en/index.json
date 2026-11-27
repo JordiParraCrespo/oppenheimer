@@ -4214,7 +4214,12 @@
     "unattended": {
       "short": "{{name}} is waiting to move forward",
       "title": "{{name}} has sat unread for over 30 minutes",
-      "body": "Its turn ended and nobody has opened it since. Open the session to read what it did and give it the next step."
+      "body": "Its turn ended and nobody has opened it since. Give it the next step here, or open the session to read what it did.",
+      "replyLabel": "Reply to the agent",
+      "replyPlaceholder": "Tell it what to do next…",
+      "send": "Send",
+      "sending": "Sending…",
+      "replyFailed": "Couldn't send your reply. Try again, or open the session."
     },
     "notice": {
       "title": "{{name}} has news for you"

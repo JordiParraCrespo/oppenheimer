@@ -35,7 +35,7 @@ Items are not stored, with one exception: an item is there while its source says
 | A review request (when shown) | Pull requests | someone asked for your review | **Open**, **View on GitHub** |
 | A pull request ready to merge (when shown) | Pull requests | your pull request has nothing holding it | **Merge**, **Open**, **View on GitHub** |
 | A failed automation run | Automations | a run failed in the last 24 hours | **Run again**, **Open run** |
-| A session left unattended | Sessions | its turn ended thirty minutes ago and nobody has opened it since (its row's dot is still blue) | **Open session** reads it and takes it away; **Done** puts it away for that turn. Turn it off with **Remind me after 30 minutes unread** in the sessions sidebar's filter menu |
+| A session left unattended | Sessions | its turn ended thirty minutes ago and nobody has opened it since (its row's dot is still blue) | Write the next step and **Send** (or Enter): it is typed into the agent's prompt, the session goes back to work and leaves the Inbox. **Open session** reads it and takes it away; **Done** puts it away for that turn. Turn it off with **Remind me after 30 minutes unread** in the sessions sidebar's filter menu |
 | A session's notice | an agent in a session | the agent ran `runner sessions notify "…"` | **Open session**; **Done** once read |
 | A bot's notice | a bot | the bot used its `notify` tool | **Open chat**; **Done** once read |
 | A report | any agent with a token | it posted a problem, with up to four pictures | Write an answer and **Send answer**; the agent reads it. **Done** hides it without answering |

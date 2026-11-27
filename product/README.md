@@ -2177,7 +2177,8 @@ earlier note:
   be an Inbox item instead: a session left unread (blue) for thirty minutes
   is listed as waiting to move forward, the notification is gone, and a
   check in the sessions sidebar's menu, on by default, turns it off ("A
-  session left unattended is an Inbox item").
+  session left unattended is an Inbox item"); its card takes a reply typed
+  into the agent's prompt, as a bot's notice takes one.
 - Notes 05 and 25 called the middle permission level, sessions' and bots'
   alike, "Approve for me". It is now "Auto" (2026-11-27): the same level,
   stored as `auto`, under a shorter name the owner asked for.

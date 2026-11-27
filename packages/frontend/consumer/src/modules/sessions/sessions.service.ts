@@ -88,6 +88,10 @@ export class SessionsService {
     return this.repository.answerDecision(id, answer);
   }
 
+  sendPrompt(id: string, text: string): Promise<SessionEntity> {
+    return this.repository.sendPrompt(id, text);
+  }
+
   restart(id: string): Promise<SessionEntity> {
     return this.repository.restart(id);
   }

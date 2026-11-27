@@ -415,6 +415,18 @@ export class SessionsRepository {
   }
 
   /**
+   * Type a message into the session's agent and submit it, as its chat does,
+   * from outside the session (the Inbox). Only while the agent waits at its
+   * prompt; the API refuses it otherwise, and nothing is queued.
+   */
+  sendPrompt(id: string, text: string): Promise<SessionEntity> {
+    return callApi(SessionsErrors.PROMPT_SEND_FAILED, async (api) => {
+      const data = await api.body(heyApiSdk.sendSessionPrompt({ path: { id }, body: { text } }));
+      return toEntity(data.session);
+    });
+  }
+
+  /**
    * Bring a stopped session's terminal back. The host recreates window 0 in the
    * worktrees the session already has and reopens the agent's own conversation,
    * so what comes back is the session as it was rather than a second one.

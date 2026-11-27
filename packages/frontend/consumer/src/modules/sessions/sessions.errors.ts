@@ -130,4 +130,8 @@ export const SessionsErrors = {
     code: 'SESSIONS_CLIENT_030',
     message: "Failed to mark the session's last turn as read",
   },
+  PROMPT_SEND_FAILED: {
+    code: 'SESSIONS_CLIENT_031',
+    message: 'Failed to send the message to the session',
+  },
 } as const satisfies Record<string, ErrorDefinition>;
