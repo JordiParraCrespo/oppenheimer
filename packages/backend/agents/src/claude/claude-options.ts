@@ -285,6 +285,21 @@ export function claudeToolSearch(
   return waiting > DEFER_TOOLS_ABOVE_CHARS;
 }
 
+/**
+ * The advisor Claude Code is told to offer the turn's model (its
+ * `advisorModel` setting, which declares Anthropic's server-side advisor
+ * tool): only on Anthropic's own API, where the tool is served, and never on
+ * a completion, whose one round trip has nothing to plan.
+ */
+export function claudeAdvisor(
+  request: Pick<BotTurnRequest, 'provider' | 'baseUrl' | 'engineTools' | 'advisorModel'>,
+): string | null {
+  if (request.provider !== 'anthropic' || request.baseUrl || request.engineTools === false) {
+    return null;
+  }
+  return request.advisorModel || null;
+}
+
 /** The bot's system prompt, and how to call its tools on this engine when it has any. */
 export function claudeSystemPrompt(request: {
   systemPrompt: string;
@@ -303,6 +318,7 @@ export function claudeOptions(
 ): Options {
   const ourTools = request.tools.map((tool) => qualifiedToolName(tool.name));
   const search = claudeToolSearch(request);
+  const advisor = claudeAdvisor(request);
   const builtIns =
     request.engineTools === false ? [] : [...BUILT_IN_TOOLS, ...(search ? [TOOL_SEARCH_TOOL] : [])];
   return {
@@ -325,6 +341,7 @@ export function claudeOptions(
     includePartialMessages: true,
     ...(request.maxSteps ? { maxTurns: request.maxSteps } : {}),
     ...(request.effort ? { effort: request.effort } : {}),
+    ...(advisor ? { settings: { advisorModel: advisor } } : {}),
     stderr: onStderr,
   };
 }

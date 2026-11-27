@@ -83,6 +83,15 @@ export interface BotTurnImage {
   data: string;
 }
 
+/** What a turn's advisor spent, on its own model. */
+export interface BotAdvisorUsage {
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+}
+
 export interface BotTurnRequest {
   provider: BotProvider;
   /**
@@ -97,6 +106,14 @@ export interface BotTurnRequest {
   model: string;
   /** Ignored by a model or endpoint that takes no effort setting. */
   effort?: BotEffort | null;
+  /**
+   * A stronger model the turn's model may consult mid-turn (Anthropic's
+   * advisor tool, through Claude Code's `advisorModel`). Only Anthropic's own
+   * API serves it: every other provider, and a `baseUrl`, ignores it. The
+   * caller sends only a pair the catalog lists (`botAdvisorFor`), since
+   * Anthropic refuses any other.
+   */
+  advisorModel?: string | null;
   /**
    * A stable id for the conversation the turn continues, the same on every
    * turn of it. A provider whose prompt cache lives per server sends the
@@ -224,6 +241,12 @@ export type BotEngineEvent =
       cacheWriteTokens?: number;
       context?: BotTurnContext;
       limits?: BotPlanLimits;
+      /**
+       * What the turn's advisor spent, apart from the counts above, which
+       * are the turn's own model's: the advisor is priced as its own model.
+       * Absent when the turn had none or it was never consulted.
+       */
+      advisor?: BotAdvisorUsage;
     }
   | {
       type: 'done';

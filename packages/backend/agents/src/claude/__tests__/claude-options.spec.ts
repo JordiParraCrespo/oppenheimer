@@ -127,6 +127,26 @@ describe('claudeOptions', () => {
     );
   });
 
+  // What breaks this: Anthropic's advisor tool declared to an endpoint that
+  // does not serve it (z.ai, a proxy), whose turns would then fail, or a
+  // completion's one round trip spent consulting it.
+  it("names the advisor to Claude Code on Anthropic's own API only, and never on a completion", () => {
+    const anthropic = {
+      ...base,
+      provider: 'anthropic' as const,
+      advisorModel: 'advisor-placeholder',
+    };
+    expect(options(anthropic).settings).toEqual({ advisorModel: 'advisor-placeholder' });
+    for (const none of [
+      { ...base, advisorModel: 'advisor-placeholder' },
+      { ...anthropic, baseUrl: 'https://proxy.example' },
+      { ...anthropic, engineTools: false },
+      { ...anthropic, advisorModel: null },
+    ]) {
+      expect(options(none).settings).toBeUndefined();
+    }
+  });
+
   it('offers no engine tool to a completion, and keeps the rest denied', () => {
     const completion = options({ ...base, engineTools: false });
     expect(completion.tools).toEqual([]);

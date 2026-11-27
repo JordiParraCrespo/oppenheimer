@@ -5,7 +5,7 @@ import type { Query, SDKUserMessage } from '@anthropic-ai/claude-agent-sdk';
 import { BotEngine, type BotEngineEvent, type BotTurnRequest } from '../bot-engine';
 import { describeError, failed, guardTurn, ToolCallData } from '../turn';
 import { ClaudeEventTranslator } from './claude-events';
-import { claudeMessageParts, claudeOptions, scratchDirs } from './claude-options';
+import { claudeAdvisor, claudeMessageParts, claudeOptions, scratchDirs } from './claude-options';
 import { createToolServer } from './claude-tool-server';
 
 const STDERR_TAIL = 2_000;
@@ -103,7 +103,7 @@ export class ClaudeBotEngine extends BotEngine {
       stderr = (stderr + data).slice(-STDERR_TAIL);
     };
     const made = new ToolCallData();
-    const translator = new ClaudeEventTranslator(made);
+    const translator = new ClaudeEventTranslator(made, claudeAdvisor(request));
     const toolServer = createToolServer(
       request.tools,
       { signal, apiKey: request.apiKey, steering: request.steering },

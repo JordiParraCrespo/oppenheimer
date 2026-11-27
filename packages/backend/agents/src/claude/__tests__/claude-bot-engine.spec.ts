@@ -216,6 +216,60 @@ describe('ClaudeBotEngine', () => {
     });
   });
 
+  // What breaks this: a bot with an advisor whose spend vanished, since the
+  // run's `usage` counts only the turn's own model and the advisor's calls
+  // come back only in `modelUsage` (an Opus advisor cost twice the Sonnet
+  // turn it advised, measured 2026-11-27); or its own copy of the
+  // conversation taken for the turn's context.
+  it('reports what the advisor spent apart, on its own model, and leaves it out of the context', async () => {
+    const spent = (input: number, output: number, contextWindow: number) => ({
+      inputTokens: input,
+      outputTokens: output,
+      cacheReadInputTokens: 100,
+      cacheCreationInputTokens: 0,
+      webSearchRequests: 0,
+      costUSD: 0,
+      contextWindow,
+      maxOutputTokens: 0,
+    });
+    const answer = {
+      type: 'assistant',
+      parent_tool_use_id: null,
+      message: {
+        content: [{ type: 'text', text: 'Done.' }],
+        usage: { input_tokens: 2, cache_read_input_tokens: 6_000, output_tokens: 40 },
+      },
+    } as unknown as SDKMessage;
+    const run = (modelUsage: Record<string, unknown>) => {
+      scripted(() => [answer, success({ modelUsage })]);
+      return collect(
+        new ClaudeBotEngine().run(
+          request({ provider: 'anthropic', advisorModel: 'advisor-placeholder' }),
+        ),
+      );
+    };
+
+    const consulted = await run({
+      'model-main': spent(6_000, 40, 1_000_000),
+      'advisor-placeholder': spent(9_000, 665, 200_000),
+    });
+    expect(consulted.find((event) => event.type === 'usage')).toMatchObject({
+      inputTokens: 15,
+      outputTokens: 5,
+      context: { tokens: 6_002, window: 1_000_000 },
+      advisor: {
+        model: 'advisor-placeholder',
+        inputTokens: 9_100,
+        outputTokens: 665,
+        cacheReadTokens: 100,
+        cacheWriteTokens: 0,
+      },
+    });
+
+    const never = await run({ 'model-main': spent(6_000, 40, 1_000_000) });
+    expect(never.find((event) => event.type === 'usage')).not.toHaveProperty('advisor');
+  });
+
   it('runs our tools through the in-process MCP server, under our names, with the key redacted', async () => {
     const getTime: BotEngineTool = {
       name: 'get_time',

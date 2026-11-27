@@ -77,6 +77,7 @@ before the model reads it.
 | `tool.started { callId, name, input }`             | The model called a tool; `name` is ours, without Claude's `mcp__` prefix |
 | `tool.finished { callId, name, output, isError }`  | Its result, as the model read it                                       |
 | `usage { inputTokens, outputTokens }`              | What calls spent, added up by the caller (input includes cached tokens); a summary's own call is one |
+| `usage.advisor { model, inputTokens, outputTokens, … }` | What the turn's advisor spent, apart from the turn's own model, which it is not priced as; absent when it was never consulted |
 | `compacted { tokensBefore, tokensAfter }`          | What the turn read was folded into a summary mid-turn (estimates)       |
 | `done { reason, error? }`                          | `completed`, `cancelled`, `max_steps` or `failed` with a reason        |
 
@@ -141,6 +142,14 @@ Claude Code runs as a subprocess per turn, with:
   URL, its secrets, a provider key) reaches the subprocess. Every model
   Claude Code would pick on its own (the small model, a subagent's) is set to
   the bot's model.
+- **An advisor on Anthropic's own API.** `advisorModel` turns on Anthropic's
+  advisor tool (`advisor_20260301`) through Claude Code's `advisorModel`
+  setting: the turn's model may consult that stronger one mid-turn. Every
+  other provider, a `baseUrl` and a completion leave it off. The caller sends
+  only a pair the catalog lists (`botAdvisorFor` in `@oppenheimer/shared`),
+  since Anthropic refuses any other. The run's `usage` counts only the turn's
+  own model; the advisor's calls are read off its `modelUsage` into
+  `usage.advisor`, and kept out of the context the turn reports.
 - **No state between turns.** `settingSources: []`, `persistSession: false`;
   earlier turns are rendered into the system prompt as a delimited
   transcript, because the SDK takes only user prompts as input.

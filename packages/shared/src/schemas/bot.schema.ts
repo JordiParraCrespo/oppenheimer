@@ -6,6 +6,7 @@ import {
   type SessionEffort,
   type SessionPermission,
 } from '../agents/catalog.js';
+import { CLAUDE_ADVISORS } from '../agents/claude-advisors.js';
 import { GROK_4_5_LEVELS, GROK_LEVELS, levels } from '../agents/effort-levels.js';
 import type { GithubEventType } from '../automations/catalog.js';
 import { isValidTimeZone } from '../automations/schedule.js';
@@ -226,6 +227,12 @@ export interface BotModel {
   readonly effort?: CodingAgentEffort;
   /** An earlier generation, offered behind "More models" (`CodingAgentModel.legacy`). */
   readonly legacy?: true;
+  /**
+   * The models this one may consult mid-turn as its advisor, strongest
+   * first (`CLAUDE_ADVISORS`). Absent: it takes none, and the console offers
+   * no advisor.
+   */
+  readonly advisors?: readonly string[];
 }
 
 /**
@@ -273,7 +280,16 @@ export const BOT_PROVIDER_CATALOG: Readonly<Record<BotProvider, BotProviderDefin
       images: true,
       auth: 'api_key',
       label: 'Anthropic',
-      models: CODING_AGENTS['claude-code'].models,
+      models: Object.freeze(
+        CODING_AGENTS['claude-code'].models.map((row) => {
+          // A model advising itself is left out: Claude Code reports both
+          // under one model, so what the advisor spent could not be told apart.
+          const advisors = (CLAUDE_ADVISORS[row.id] ?? []).filter((id) => id !== row.id);
+          return advisors.length
+            ? Object.freeze({ ...row, advisors: Object.freeze(advisors) })
+            : row;
+        }),
+      ),
     }),
     glm: Object.freeze({
       id: 'glm',
@@ -351,6 +367,19 @@ export function botEffortLevelFor(
   if (!SESSION_EFFORTS.includes(requested as SessionEffort)) return null;
   const level = requested as SessionEffort;
   return botModelOf(provider, model)?.effort?.levels.includes(level) ? level : null;
+}
+
+/**
+ * The advisor a bot on `provider` and `model` records for `requested`: the
+ * model when this one takes it as its advisor, else none.
+ */
+export function botAdvisorFor(
+  provider: BotProvider,
+  model: string | null,
+  requested: unknown,
+): string | null {
+  if (typeof requested !== 'string') return null;
+  return botModelOf(provider, model)?.advisors?.includes(requested) ? requested : null;
 }
 
 /**

@@ -1,5 +1,10 @@
 import type { SDKMessage, SDKResultMessage } from '@anthropic-ai/claude-agent-sdk';
-import type { BotEngineEvent, BotEngineFailure, BotTurnContext } from '../bot-engine';
+import type {
+  BotAdvisorUsage,
+  BotEngineEvent,
+  BotEngineFailure,
+  BotTurnContext,
+} from '../bot-engine';
 import { failed, failureOf, type ToolCallData } from '../turn';
 import { botToolName } from './claude-tool-server';
 
@@ -62,8 +67,15 @@ export class ClaudeEventTranslator {
   /** What the main thread's last answer was sent; none before the first. */
   private contextTokens: number | null = null;
 
-  /** `made`: what our tools' calls made, recorded by the tool server as they ran. */
-  constructor(private readonly made: ToolCallData) {}
+  /**
+   * `made`: what our tools' calls made, recorded by the tool server as they
+   * ran. `advisorModel`: the turn's advisor, whose spend the run reports
+   * only in its `modelUsage`, apart from the turn's own `usage`.
+   */
+  constructor(
+    private readonly made: ToolCallData,
+    private readonly advisorModel: string | null = null,
+  ) {}
 
   translate(message: SDKMessage): BotEngineEvent[] {
     switch (message.type) {
@@ -137,6 +149,7 @@ export class ClaudeEventTranslator {
         cacheReadTokens: usage.cache_read_input_tokens ?? 0,
         cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
         ...(context ? { context } : {}),
+        ...this.advisorOf(result),
       },
     ];
     if (result.subtype === 'success') {
@@ -155,16 +168,32 @@ export class ClaudeEventTranslator {
     return events;
   }
 
+  /** What the advisor spent, when it was consulted. */
+  private advisorOf(result: SDKResultMessage): { advisor?: BotAdvisorUsage } {
+    const spent = this.advisorModel ? result.modelUsage?.[this.advisorModel] : undefined;
+    if (!this.advisorModel || !spent) return {};
+    const advisor: BotAdvisorUsage = {
+      model: this.advisorModel,
+      inputTokens: spent.inputTokens + spent.cacheReadInputTokens + spent.cacheCreationInputTokens,
+      outputTokens: spent.outputTokens,
+      cacheReadTokens: spent.cacheReadInputTokens,
+      cacheWriteTokens: spent.cacheCreationInputTokens,
+    };
+    return advisor.inputTokens + advisor.outputTokens > 0 ? { advisor } : {};
+  }
+
   /**
    * The context at the last answer, against the window of the model that
    * did most of the run's reading (a subagent on a smaller model reads
-   * less), when the run reported one.
+   * less, and the advisor is left out), when the run reported one.
    */
   private contextOf(result: SDKResultMessage): BotTurnContext | null {
     if (this.contextTokens === null) return null;
     let window: number | null = null;
     let read = -1;
-    for (const model of Object.values(result.modelUsage ?? {})) {
+    for (const [name, model] of Object.entries(result.modelUsage ?? {})) {
+      // The advisor reads its own copy of the conversation, not the turn's context.
+      if (name === this.advisorModel) continue;
       const modelRead =
         model.inputTokens + model.cacheReadInputTokens + model.cacheCreationInputTokens;
       if (modelRead > read && model.contextWindow > 0) {
