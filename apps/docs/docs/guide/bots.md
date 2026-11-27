@@ -18,7 +18,7 @@ The Employees sidebar holds your bots in groups (New group, Move to group) in an
 - After an answer, the empty box suggests your next message; **Tab** writes it in.
 - The chat shows the bot's text, an activity line per run of tool calls, cards for what needs you, and a line for every change it makes to itself.
 - You can send images (PNG, JPEG, GIF, WebP; up to 5 MB, four a message), except to GLM models. No other file types.
-- The composer picks the provider, model and effort, and its meter shows context use and, on a ChatGPT sign-in, the plan's limits.
+- The composer picks the provider, model and effort, and its meter shows context use and, on a ChatGPT sign-in, the plan's limits. A bot on an Anthropic model can also have an advisor, a stronger Claude model its turns may ask for a plan or a second look: pick one with the Advisor chip beside the model, or No advisor. Each consultation is billed as the advisor's model, and `/usage` shows it as that model's share.
 
 ## Settings
 

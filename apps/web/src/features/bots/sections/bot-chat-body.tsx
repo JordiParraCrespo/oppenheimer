@@ -3,6 +3,7 @@ import { useBotDocuments, useUpdateBotOptimistically } from '@oppenheimer/fronte
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BotAdvisorChip } from '@/features/bots/components/bot-advisor-chip';
 import { BotChatScroller } from '@/features/bots/components/bot-chat-scroller';
 import { BotHello } from '@/features/bots/components/bot-hello';
 import { BotPermissionChip } from '@/features/bots/components/bot-permission-chip';
@@ -116,6 +117,14 @@ export function BotChatBody({
               engine={
                 <>
                   <BotUsage botId={bot.id} />
+                  <BotAdvisorChip
+                    provider={bot.provider}
+                    model={bot.model}
+                    value={bot.advisorModel}
+                    onValueChange={(next) =>
+                      update.mutate({ id: bot.id, input: { advisorModel: next } })
+                    }
+                  />
                   <BotEngine
                     provider={bot.provider}
                     model={bot.model}

@@ -132,6 +132,7 @@ function toBot(dto: BotResponseDto): BotEntity {
     dto.sections,
     dto.avatarFace,
     dto.unread,
+    dto.advisorModel,
   );
 }
 

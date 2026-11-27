@@ -117,6 +117,22 @@ export function botEffort(
   };
 }
 
+/**
+ * The advisors a bot's model may consult, strongest first, each with the
+ * label the model button gives it; empty when the model takes none (every
+ * provider but Anthropic, and a model whose only advisor would be itself).
+ */
+export function botAdvisorOptions(
+  provider: BotProvider,
+  model: string | null,
+): { id: string; label: string }[] {
+  const models = BOT_PROVIDER_CATALOG[provider].models;
+  return (botModelOf(provider, model)?.advisors ?? []).map((id) => ({
+    id,
+    label: models.find((row) => row.id === id)?.label ?? id,
+  }));
+}
+
 export function effortStops(
   levels: readonly SessionEffort[],
   labels: Record<SessionEffort, string>,

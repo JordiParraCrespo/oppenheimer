@@ -2041,6 +2041,12 @@
       "model": "Model",
       "searchModels": "Search models…",
       "noModel": "No model matches “{{query}}”.",
+      "advisor": {
+        "label": "Advisor",
+        "on": "Advisor: {{model}}",
+        "off": "No advisor",
+        "description": "Its turns may ask this stronger model for a plan or a second look; each consultation is billed as that model."
+      },
       "permission": {
         "label": "Approval level",
         "ask": {

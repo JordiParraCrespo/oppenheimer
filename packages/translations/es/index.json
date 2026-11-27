@@ -2089,6 +2089,12 @@
       "model": "Modelo",
       "searchModels": "Buscar modelos…",
       "noModel": "Ningún modelo coincide con «{{query}}».",
+      "advisor": {
+        "label": "Asesor",
+        "on": "Asesor: {{model}}",
+        "off": "Sin asesor",
+        "description": "Sus turnos pueden pedir a este modelo, más capaz, un plan o una segunda mirada; cada consulta se factura como ese modelo."
+      },
       "permission": {
         "label": "Nivel de aprobación",
         "ask": {

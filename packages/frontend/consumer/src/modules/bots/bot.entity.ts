@@ -52,6 +52,8 @@ export class BotEntity {
     public readonly avatarFace: BotFace | null = null,
     /** Whether its chat has a message newer than the person last read it, on any device. */
     public readonly unread: boolean = false,
+    /** The stronger model its turns may consult mid-turn; `null` consults none. */
+    public readonly advisorModel: string | null = null,
   ) {}
 
   /** What its avatar draws: its colour, its id (which picks a face) and the face it was given. */
@@ -235,6 +237,8 @@ export interface UpdateBotInput {
   provider?: BotProvider;
   model?: string | null;
   effort?: SessionEffort | null;
+  /** One the model lists as an advisor; `null` turns it off. */
+  advisorModel?: string | null;
   permission?: BotPermission;
   learnAutomatically?: boolean;
   /** The whole set; `[]` shows it in Employees only. */
