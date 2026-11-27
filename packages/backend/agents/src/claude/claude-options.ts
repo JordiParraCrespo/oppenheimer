@@ -24,7 +24,11 @@ export const TOOL_SEARCH_TOOL = 'ToolSearch';
 /**
  * Removed outright, so that nothing (a subagent, a settings file, a future
  * default) can bring one back. `tools` above is what is offered; this is the
- * belt to its braces.
+ * belt to its braces. The names are read from Claude Code 2.1.300, the binary
+ * `@anthropic-ai/claude-agent-sdk` 0.3.300 ships (`sdk-tools.d.ts`, then
+ * `strings` on the binary); recheck the list when the SDK is upgraded.
+ * `StructuredOutput` stays off it: it is how Claude Code answers an
+ * `outputFormat`, which a completion may ask for.
  */
 export const DISALLOWED_TOOLS = [
   'WebFetch',
@@ -57,6 +61,31 @@ export const DISALLOWED_TOOLS = [
   'AskUserQuestion',
   'ListMcpResourcesTool',
   'ReadMcpResourceTool',
+  'ReadMcpResourceDirTool',
+  'RefreshMcpTools',
+  'TaskCreate',
+  'TaskGet',
+  'TaskList',
+  'TaskUpdate',
+  'TaskStop',
+  'SendMessage',
+  'ListAgents',
+  'PushNotification',
+  'ReadNotifications',
+  'LSP',
+  'Config',
+  'Brief',
+  'Projects',
+  'ProposeGoal',
+  'ReportFindings',
+  'SendFeedback',
+  'Artifact',
+  'ArtifactComments',
+  'ArtifactData',
+  'ClaudeDesign',
+  'DesignSync',
+  'OfferChromeSetup',
+  'ShowOnboardingRolePicker',
 ];
 
 /**
