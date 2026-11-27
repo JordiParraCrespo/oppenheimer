@@ -59,6 +59,7 @@ export class HostCredentialResolver implements CredentialResolverPort {
       // and what may run on it is decided by `HostAccessPort`, not by a scope.
       resourceScope: toResourceScope(null),
       expiresAt,
+      mintingBounds: { expiresAt: null, ipAllowlist: null },
     };
   }
 }

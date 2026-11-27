@@ -14,6 +14,17 @@ export interface CredentialOwner {
 }
 
 /**
+ * How far a credential bounds a token minted with it: the token it mints may
+ * not outlive `expiresAt` nor work from outside `ipAllowlist`. `null` is no
+ * bound. Each resolver says what its own kind bounds, where it builds the
+ * context, so the mint reads one field and asks no kind.
+ */
+export interface MintingBounds {
+  expiresAt: Date | null;
+  ipAllowlist: readonly string[] | null;
+}
+
+/**
  * What a scoped credential acting **for a person** authorizes: an API token, an
  * OAuth access token, or any other kind a module contributes that stands in for
  * someone.
@@ -49,6 +60,8 @@ export interface UserCredentialContext {
   ipAllowlist?: readonly string[] | null;
   /** Display prefix of an API token, for logs and error messages. */
   prefix?: string;
+  /** What this credential bounds a token minted with it to. */
+  mintingBounds: MintingBounds;
 }
 
 /**
@@ -70,6 +83,8 @@ export interface HostCredentialContext {
   scopes: Scope[];
   resourceScope: ResourceScope;
   expiresAt: Date | null;
+  /** None: a host holds no `tokens:write`, so it never mints. */
+  mintingBounds: MintingBounds;
 }
 
 /** Any credential that is not a browser session. */

@@ -71,6 +71,8 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
       expiresAt: token.expiresAt,
       ipAllowlist: token.ipAllowlist,
       prefix: token.prefix,
+      // A token minted with this one may not outlive it or work from outside its addresses.
+      mintingBounds: { expiresAt: token.expiresAt, ipAllowlist: token.ipAllowlist },
     };
   }
 }

@@ -92,6 +92,20 @@ describe('ApiTokenCredentialResolver', () => {
     expect(scope.resourceScope).toEqual(toResourceScope(['org-1']));
   });
 
+  // Regression: a token minted with a short-lived or address-bound token
+  // outlived it or worked from anywhere.
+  it('bounds a token minted with this one by its own expiry and allowlist', async () => {
+    const { token, secret } = stored({ expiresInDays: 7, ipAllowlist: ['203.0.113.0/24'] });
+
+    const scope = await resolver.resolve(secret, request('203.0.113.7'));
+
+    expect(scope.mintingBounds).toEqual({
+      expiresAt: token.expiresAt,
+      ipAllowlist: ['203.0.113.0/24'],
+    });
+    expect(token.expiresAt).toBeInstanceOf(Date);
+  });
+
   it('records the usage without letting a failed stamp fail the request', async () => {
     const { token, secret } = stored();
     vi.mocked(apiTokens.touchLastUsedAt).mockRejectedValue(new Error('write failed'));
