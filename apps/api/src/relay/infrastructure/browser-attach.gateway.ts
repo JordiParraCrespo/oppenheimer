@@ -469,14 +469,7 @@ class BrowserAttachment implements AttachmentSink {
   }
 
   deliver(bytes: Uint8Array): void {
-    if (this.ws.readyState !== this.ws.OPEN) return;
-    if (this.ws.bufferedAmount > BROWSER_MAX_BUFFERED_BYTES) {
-      // A client that cannot keep up is disconnected, never allowed to stall
-      // the relay.
-      this.ws.close(1008, 'slow consumer');
-      return;
-    }
-    this.ws.send(bytes, { binary: true });
+    if (this.keepsUp()) this.ws.send(bytes, { binary: true });
   }
 
   closed(reason: AttachmentClosedReason, detail?: string): void {
@@ -495,11 +488,7 @@ class BrowserAttachment implements AttachmentSink {
   }
 
   chat(message: AttachmentChatMessage): void {
-    if (!this.chatView || this.finished || this.ws.readyState !== this.ws.OPEN) return;
-    if (this.ws.bufferedAmount > BROWSER_MAX_BUFFERED_BYTES) {
-      this.ws.close(1008, 'slow consumer');
-      return;
-    }
+    if (!this.chatView || this.finished || !this.keepsUp()) return;
     this.tell({
       type: 'chat',
       ...(message.reset ? { reset: true } : {}),
@@ -513,17 +502,25 @@ class BrowserAttachment implements AttachmentSink {
 
   history(message: AttachmentHistoryPageMessage): void {
     this.historyAskedAt = null;
-    if (this.finished || this.ws.readyState !== this.ws.OPEN) return;
-    if (this.ws.bufferedAmount > BROWSER_MAX_BUFFERED_BYTES) {
-      this.ws.close(1008, 'slow consumer');
-      return;
-    }
+    if (this.finished || !this.keepsUp()) return;
     this.tell({
       type: 'history',
       text: message.text,
       ...(message.truncated ? { truncated: true } : {}),
       ...(message.failed ? { failed: true } : {}),
     });
+  }
+
+  /**
+   * Whether the browser can take more: the socket is open and not too far
+   * behind. A client that cannot keep up is disconnected, never allowed to
+   * stall the relay.
+   */
+  private keepsUp(): boolean {
+    if (this.ws.readyState !== this.ws.OPEN) return false;
+    if (this.ws.bufferedAmount <= BROWSER_MAX_BUFFERED_BYTES) return true;
+    this.ws.close(1008, 'slow consumer');
+    return false;
   }
 
   refused(code: string, detail?: string): void {

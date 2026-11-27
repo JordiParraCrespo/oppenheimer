@@ -282,14 +282,9 @@ func (t *Terminals) PressKeys(_ context.Context, target string, keys []string) e
 	return nil
 }
 
-// CaptureHistory implements app.Terminals: the fake keeps no scrollback.
-func (t *Terminals) CaptureHistory(ctx context.Context, target string, _ int) (string, error) {
-	return t.CaptureBody(ctx, target)
-}
-
-// CaptureScrollback implements app.Terminals: the fake keeps no scrollback
-// and no colours.
-func (t *Terminals) CaptureScrollback(ctx context.Context, target string, _ int) (string, error) {
+// CaptureHistory implements app.Terminals: the fake keeps no scrollback and
+// no colours.
+func (t *Terminals) CaptureHistory(ctx context.Context, target string, _ int, _ bool) (string, error) {
 	return t.CaptureBody(ctx, target)
 }
 

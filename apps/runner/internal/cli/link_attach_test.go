@@ -98,16 +98,16 @@ type heldAttach struct {
 	entered chan struct{}
 	// readOnly is what the last attach asked for.
 	readOnly bool
-	// scrollback is what a scrollback read answers, and scrolled the target
-	// and line count it was last asked for.
+	// scrollback and scrollError are what a scrollback read answers, and
+	// scrolled the target, line count and colours it was last asked for.
 	scrollback  string
 	scrollError error
 	scrolled    chan string
 }
 
-func (t *heldAttach) CaptureScrollback(_ context.Context, target string, lines int) (string, error) {
+func (t *heldAttach) CaptureHistory(_ context.Context, target string, lines int, colours bool) (string, error) {
 	if t.scrolled != nil {
-		t.scrolled <- fmt.Sprintf("%s %d", target, lines)
+		t.scrolled <- fmt.Sprintf("%s %d %v", target, lines, colours)
 	}
 	return t.scrollback, t.scrollError
 }
@@ -258,19 +258,14 @@ func TestFramesReachThePTYInOrder(t *testing.T) {
 // asked for a read-only client, and keystrokes that reach the link anyway
 // never reach the PTY.
 func TestAReadOnlyAttachmentTakesNoInput(t *testing.T) {
-	pty := newHeldPTY(false)
-	h, _, terminals := newAttachHarness(t, pty, nil)
-	h.Message(context.Background(), message(t, "session.attach", map[string]any{
-		"commandId": "55555555-5555-4555-8555-555555555555", "sessionId": sessionUnderTest,
-		"attachmentId": attachmentUnderTest, "window": 0, "cols": 80, "rows": 24, "readOnly": true,
-	}))
-	waitForAttachment(t, h)
+	h, _, terminals := watching(t)
 	if !terminals.readOnly {
 		t.Fatal("tmux was not asked for a read-only client")
 	}
 
 	h.Frame(context.Background(), attachmentUnderTest, []byte("rm -rf ~\r"))
 	time.Sleep(20 * time.Millisecond)
+	pty := terminals.pty
 	pty.mu.Lock()
 	written := string(pty.written)
 	pty.mu.Unlock()

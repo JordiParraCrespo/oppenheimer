@@ -1423,7 +1423,6 @@
     },
     "shared": {
       "historyFailed": "No se pudo cargar el historial del terminal.",
-      "backToLive": "Volver al directo",
       "viewOnly": "Solo ver",
       "canWrite": "Puede editar",
       "endsIn": "Termina en {{time}}",

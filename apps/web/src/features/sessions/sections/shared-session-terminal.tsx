@@ -1,18 +1,16 @@
 import {
-  Button,
   cn,
   EmptyState,
-  FloatingChip,
   Terminal,
   TerminalStatusBar,
   TerminalStatusItem,
 } from '@oppenheimer/design-system-web';
-import { ArrowDown } from '@oppenheimer/design-system-web/icons';
 import { useSharedSessionStream } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ChatCover } from '../components/chat-cover';
 import { TerminalColumn } from '../components/terminal-column';
+import { TerminalFailure } from '../components/terminal-failure';
+import { ToLatestChip } from '../components/to-latest-chip';
 import { useChatReading } from '../hooks/use-session-chat';
 import { useTerminal } from '../hooks/use-terminal';
 import type { PaneReading } from '../lib/chat-blocks';
@@ -70,45 +68,20 @@ export function SharedSessionTerminal({
             </EmptyState>
           </div>
         ) : null}
-        {history?.kind === 'open' && !chatShown ? (
-          // A watcher scrolled back through the pane's scrollback: the live
-          // grid is one press away.
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-3 font-sans">
-            <FloatingChip className="pointer-events-auto" onClick={history.close}>
-              <ArrowDown />
-              {t('sessions.shared.backToLive')}
-            </FloatingChip>
-          </div>
-        ) : null}
+        {history?.kind === 'open' && !chatShown ? <ToLatestChip onClick={history.close} /> : null}
         {chatShown ? <ChatCover>{cover}</ChatCover> : null}
       </div>
 
       {history?.kind === 'failed' && !chatShown ? (
-        // The host could not read the scrollback: said, never drawn as nothing to scroll.
-        <div className="px-5 pb-3">
-          <ErrorAlert
-            message={t('sessions.shared.historyFailed')}
-            onDismiss={history.dismiss}
-            action={
-              <Button variant="ghost" size="sm" onClick={history.retry}>
-                {t('sessions.session.retry')}
-              </Button>
-            }
-          />
-        </div>
+        <TerminalFailure
+          message={t('sessions.shared.historyFailed')}
+          onRetry={history.retry}
+          onDismiss={history.dismiss}
+        />
       ) : null}
 
       {ended ? (
-        <div className="px-5 pb-3">
-          <ErrorAlert
-            message={t(`sessions.shared.ended.${ended}`)}
-            action={
-              <Button variant="ghost" size="sm" onClick={retryNow}>
-                {t('sessions.session.retry')}
-              </Button>
-            }
-          />
-        </div>
+        <TerminalFailure message={t(`sessions.shared.ended.${ended}`)} onRetry={retryNow} />
       ) : null}
 
       {/* Live, the bar above says it all, as over a member's terminal; the

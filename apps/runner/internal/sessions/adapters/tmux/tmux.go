@@ -423,19 +423,18 @@ func (s *Server) PressKeys(ctx context.Context, target string, keys []string) er
 	return err
 }
 
-// CaptureHistory returns the visible screen and up to lines lines above it.
-func (s *Server) CaptureHistory(ctx context.Context, target string, lines int) (string, error) {
-	if lines <= 0 {
+// CaptureHistory returns the visible screen and up to lines lines above it,
+// with colours each line's escapes (`-e`). It reads the pane alone: no client
+// is put in copy mode, so nobody's view of the pane moves.
+func (s *Server) CaptureHistory(ctx context.Context, target string, lines int, colours bool) (string, error) {
+	if lines <= 0 && !colours {
 		return s.CaptureBody(ctx, target)
 	}
-	return s.command(ctx, "capture-pane", "-p", "-t", target, "-S", fmt.Sprintf("-%d", lines))
-}
-
-// CaptureScrollback returns the visible screen and up to lines lines above
-// it, each with its colours (`-e`). It reads the pane alone: no client is
-// put in copy mode, so nobody's view of the pane moves.
-func (s *Server) CaptureScrollback(ctx context.Context, target string, lines int) (string, error) {
-	return s.command(ctx, "capture-pane", "-p", "-e", "-t", target, "-S", fmt.Sprintf("-%d", max(lines, 0)))
+	args := []string{"capture-pane", "-p", "-t", target, "-S", fmt.Sprintf("-%d", max(lines, 0))}
+	if colours {
+		args = append(args, "-e")
+	}
+	return s.command(ctx, args...)
 }
 
 // Launch replaces the shell a window was made with by command, in dir.

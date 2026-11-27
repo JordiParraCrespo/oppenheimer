@@ -174,7 +174,7 @@ func TestScrollbackKeepsTheLinesAboveTheScreenWithTheirColours(t *testing.T) {
 	}
 	waitFor(t, s, "opp-scrollback:0", "green-80")
 
-	page, err := s.CaptureScrollback(ctx, "opp-scrollback:0", 200)
+	page, err := s.CaptureHistory(ctx, "opp-scrollback:0", 200, true)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -49,12 +49,10 @@ type Terminals interface {
 	// (`Enter`, `C-c`): what a person presses that is not text.
 	PressKeys(ctx context.Context, target string, keys []string) error
 	// CaptureHistory is CaptureBody with up to lines lines of scrollback
-	// above the visible screen.
-	CaptureHistory(ctx context.Context, target string, lines int) (string, error)
-	// CaptureScrollback is CaptureHistory with each line's colours and
-	// attributes kept as escape sequences, for a reader who scrolls back
+	// above the visible screen. With colours, each line keeps its colours
+	// and attributes as escape sequences, for a reader who scrolls back
 	// through it as the terminal drew it.
-	CaptureScrollback(ctx context.Context, target string, lines int) (string, error)
+	CaptureHistory(ctx context.Context, target string, lines int, colours bool) (string, error)
 	// Launch replaces the program in a window with command, run in dir: the
 	// program becomes the pane's own process on a fresh screen, and nothing
 	// is typed to start it. An empty command is a plain shell.

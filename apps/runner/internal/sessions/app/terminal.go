@@ -96,7 +96,7 @@ func (s *Service) Drive(ctx context.Context, id string, req DriveRequest) (Drive
 			return DriveResult{}, err
 		}
 	}
-	screen, err := s.terminals.CaptureHistory(ctx, target, req.History)
+	screen, err := s.terminals.CaptureHistory(ctx, target, req.History, false)
 	if err != nil {
 		return DriveResult{}, err
 	}
@@ -204,5 +204,5 @@ func (s *Service) Scrollback(ctx context.Context, id string, window, lines int) 
 	if _, ok := session.Window(window); !ok {
 		return "", domain.ErrNotFound.WithDetail("%v: %d", domain.ErrNoSuchWindow, window)
 	}
-	return s.terminals.CaptureScrollback(ctx, session.Target(window), lines)
+	return s.terminals.CaptureHistory(ctx, session.Target(window), lines, true)
 }
