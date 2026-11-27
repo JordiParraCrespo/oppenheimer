@@ -88,6 +88,7 @@ export class CreateApiTokenCommandHandler
       organizationIds: command.organizationIds,
       ipAllowlist: command.ipAllowlist,
       expiresInDays: command.expiresInDays,
+      issuedUnder: command.actor.issuedUnder,
     });
 
     const outcome = await this.apiTokenRepository.insertWithinLimit(

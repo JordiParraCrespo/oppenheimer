@@ -12,11 +12,16 @@ import { CompletePasswordResetCommand } from './complete-password-reset.command'
  * Better Auth deletes (`revokeSessionsOnPasswordReset`): an API token, an
  * OAuth or MCP grant. So all of them go.
  *
- * The OAuth grants are the kernel's own and are deleted here; the API tokens
- * belong to a module the kernel does not know, which revokes its own on the
- * `PasswordResetDomainEvent` staged in the same transaction. The cached
- * delegated sessions those credentials act through are dropped last.
- * Idempotent: a second run finds nothing left to revoke.
+ * What makes that hold is the account's credential cutoff, written in this
+ * handler's one transaction: from its commit, every scoped credential whose
+ * chain began before the reset is refused on its next request
+ * (`CredentialScopeResolver`), and no code or refresh token signed in before
+ * it is exchanged (`oauth-grant-gate.util.ts`). Nothing waits on the outbox.
+ * The same transaction deletes the kernel's own OAuth grants, consents and
+ * pending authorization codes, and stages `PasswordResetDomainEvent`, on which
+ * api-tokens marks its tokens revoked so they read as revoked in the console.
+ * The cached delegated sessions those credentials act through are dropped
+ * last. Idempotent: a second run moves no cutoff back and finds nothing left.
  */
 @CommandHandler(CompletePasswordResetCommand)
 export class CompletePasswordResetCommandHandler
@@ -32,7 +37,7 @@ export class CompletePasswordResetCommandHandler
   ) {}
 
   async execute(command: CompletePasswordResetCommand): Promise<void> {
-    const revoked = await this.oauthGrants.revokeAllForUser(command.userId, [
+    const revoked = await this.oauthGrants.revokeAllForUser(command.userId, command.resetAt, [
       new PasswordResetDomainEvent({
         aggregateId: command.userId,
         userId: command.userId,

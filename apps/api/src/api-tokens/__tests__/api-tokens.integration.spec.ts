@@ -894,8 +894,8 @@ describe('API tokens & scopes (integration)', () => {
     return ((await response.json()) as { client_id: string }).client_id;
   }
 
-  /** Authorize as the session's account and exchange the code at the token endpoint. */
-  async function exchangeOAuthCode(sessionToken: string, clientId: string) {
+  /** Authorize as the session's account: the code a client would be redirected with. */
+  async function authorizeOAuthCode(sessionToken: string, clientId: string) {
     const verifier = randomBytes(32).toString('base64url');
     const challenge = createHash('sha256').update(verifier).digest('base64url');
     const query = new URLSearchParams({
@@ -913,23 +913,78 @@ describe('API tokens & scopes (integration)', () => {
     const location = authorized.headers.get('location') ?? '';
     const code = new URL(location, baseUrl).searchParams.get('code');
     expect(code, `authorize answered ${authorized.status} ${location}`).toBeTruthy();
+    return { clientId, code: code as string, verifier };
+  }
 
-    const exchanged = await fetch(`${baseUrl}/api/auth/mcp/token`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code: code as string,
-        redirect_uri: REDIRECT_URI,
-        client_id: clientId,
-        code_verifier: verifier,
-      }),
-    });
+  /**
+   * Exchange a code at the token endpoint, as a form (what clients send) or
+   * as JSON with the code in whatever shape `codeAs` gives it.
+   */
+  async function exchangeCode(
+    grant: { clientId: string; code: string; verifier: string },
+    { codeAs }: { codeAs?: (code: string) => unknown } = {},
+  ) {
+    const fields = {
+      grant_type: 'authorization_code',
+      redirect_uri: REDIRECT_URI,
+      client_id: grant.clientId,
+      code_verifier: grant.verifier,
+    };
+    const exchanged = await fetch(
+      `${baseUrl}/api/auth/mcp/token`,
+      codeAs
+        ? {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ ...fields, code: codeAs(grant.code) }),
+          }
+        : {
+            method: 'POST',
+            headers: { 'content-type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ ...fields, code: grant.code }),
+          },
+    );
     const text = await exchanged.text();
     return {
       status: exchanged.status,
       body: text ? (JSON.parse(text) as Record<string, unknown>) : undefined,
     };
+  }
+
+  async function exchangeOAuthCode(sessionToken: string, clientId: string) {
+    return exchangeCode(await authorizeOAuthCode(sessionToken, clientId));
+  }
+
+  async function oauthGrantCount(userId: string): Promise<number> {
+    const rows: { n: number }[] = await dataSource.query(
+      'SELECT count(*)::int AS n FROM "oauthAccessToken" WHERE "userId" = $1',
+      [userId],
+    );
+    return rows[0].n;
+  }
+
+  /** "Forgot password", followed through: the reset link's token, then the new password. */
+  async function resetPassword(account: { id: string; email: string }) {
+    const requested = await fetch(`${baseUrl}/api/auth/request-password-reset`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: account.email, redirectTo: 'http://localhost:3000/reset' }),
+    });
+    expect(requested.ok).toBe(true);
+    const [verification]: { identifier: string }[] = await dataSource.query(
+      `SELECT "identifier" FROM "verification"
+        WHERE "value" = $1 AND "identifier" LIKE 'reset-password:%'`,
+      [account.id],
+    );
+    const reset = await fetch(`${baseUrl}/api/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        token: verification.identifier.slice('reset-password:'.length),
+        newPassword: 'Integration-test-password-2',
+      }),
+    });
+    expect(reset.ok).toBe(true);
   }
 
   // Pre-account squatting: someone registers the victim's address first and
@@ -963,11 +1018,22 @@ describe('API tokens & scopes (integration)', () => {
       expect(exchanged.status).toBe(403);
       expect(exchanged.body?.code).toBe('TOKEN_010');
       expect(exchanged.body?.error).toBe('access_denied');
-      const rows: { n: number }[] = await dataSource.query(
-        'SELECT count(*)::int AS n FROM "oauthAccessToken" WHERE "userId" = $1',
-        [squatter.id],
-      );
-      expect(rows[0].n).toBe(0);
+      expect(await oauthGrantCount(squatter.id)).toBe(0);
+    });
+
+    // Better Auth reads any JSON value for `code` and stringifies it.
+    // Regression: `"code": ["…"]` skipped the gate and was redeemed.
+    it.each([
+      ['an array', (code: string) => [code]],
+      ['a number', () => 12345],
+    ])('is refused when the code is sent as %s, and no grant is stored', async (_shape, codeAs) => {
+      const grant = await authorizeOAuthCode(squatter.sessionToken, await registerOAuthClient());
+
+      const exchanged = await exchangeCode(grant, { codeAs });
+
+      expect(exchanged.status).toBe(400);
+      expect(exchanged.body?.error).toBe('invalid_request');
+      expect(await oauthGrantCount(squatter.id)).toBe(0);
     });
   });
 
@@ -988,45 +1054,138 @@ describe('API tokens & scopes (integration)', () => {
       expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(200);
       expect((await call('/api/v1/me/credential', { token: accessToken })).status).toBe(200);
 
-      const requested = await fetch(`${baseUrl}/api/auth/request-password-reset`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: owner.email, redirectTo: 'http://localhost:3000/reset' }),
-      });
-      expect(requested.ok).toBe(true);
-      const [verification]: { identifier: string }[] = await dataSource.query(
-        `SELECT "identifier" FROM "verification"
-          WHERE "value" = $1 AND "identifier" LIKE 'reset-password:%'`,
-        [owner.id],
-      );
-      const reset = await fetch(`${baseUrl}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          token: verification.identifier.slice('reset-password:'.length),
-          newPassword: 'Integration-test-password-2',
-        }),
-      });
-      expect(reset.ok).toBe(true);
+      await resetPassword(owner);
 
-      // The OAuth grant goes in the reset's own request; the tokens follow
-      // through the outbox a moment later.
+      // Both go in the reset's own transaction, the token by its cutoff; the
+      // outbox then marks the token revoked as well.
       expect((await call('/api/v1/me/credential', { token: accessToken })).status).toBe(401);
+      const refused = await call('/api/v1/me/credential', { token: pat });
+      expect(refused.status).toBe(401);
+      expect(refused.body?.code).toBe('TOKEN_003');
+      expect(await oauthGrantCount(owner.id)).toBe(0);
       await vi.waitFor(async () => {
-        const after = await call('/api/v1/me/credential', { token: pat });
-        expect(after.status).toBe(401);
-        expect(after.body?.code).toBe('TOKEN_003');
+        const tokens: { revokedAt: Date | null }[] = await dataSource.query(
+          'SELECT "revokedAt" FROM "api_token" WHERE "userId" = $1',
+          [owner.id],
+        );
+        expect(tokens.map((token) => token.revokedAt)).not.toContain(null);
       });
-      const grants: { n: number }[] = await dataSource.query(
-        'SELECT count(*)::int AS n FROM "oauthAccessToken" WHERE "userId" = $1',
-        [owner.id],
+    });
+
+    // The revocation of API tokens arrives through the outbox, seconds after
+    // the reset. Regression: in that window a token holding `tokens:write`
+    // kept working, and the token it minted outlived the reset.
+    describe('before its revocation is delivered', () => {
+      let handle: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(async () => {
+        const { PasswordResetDomainEventHandler } = await import(
+          '../application/event-handlers/password-reset.domain-event-handler'
+        );
+        handle = vi
+          .spyOn(app.get(PasswordResetDomainEventHandler), 'handle')
+          .mockResolvedValue(undefined);
+      });
+
+      afterEach(() => handle.mockRestore());
+
+      it('refuses a token minted before it, and every token that token mints', async () => {
+        const owner = await signUp('raced@example.com');
+        const minted = await call('/api/v1/tokens', {
+          method: 'POST',
+          token: owner.sessionToken,
+          body: { name: 'minter', scopes: ['tokens:write'] },
+        });
+        expect(minted.status).toBe(201);
+        const minter = (minted.body as { token: string }).token;
+        const [{ issuedAt }]: { issuedAt: Date }[] = await dataSource.query(
+          'SELECT "issuedAt" FROM "api_token" WHERE "userId" = $1',
+          [owner.id],
+        );
+
+        await resetPassword(owner);
+
+        expect((await call('/api/v1/me/credential', { token: minter })).status).toBe(401);
+        const remint = await call('/api/v1/tokens', {
+          method: 'POST',
+          token: minter,
+          body: { name: 'after the reset', scopes: ['tokens:read'] },
+        });
+        expect(remint.status).toBe(401);
+
+        // A mint whose request resolved the minter before the reset and lands
+        // after it: the handler runs with the minter's issue time.
+        const { CommandBus } = await import('@nestjs/cqrs');
+        const { CreateApiTokenCommand } = await import(
+          '../commands/create-api-token/create-api-token.command'
+        );
+        const raced = await app
+          .get(CommandBus)
+          .execute<InstanceType<typeof CreateApiTokenCommand>, { secret: string }>(
+            new CreateApiTokenCommand({
+              actor: {
+                id: owner.id,
+                role: 'user',
+                credential: { scopes: ['tokens:write'], organizationIds: null },
+                issuedUnder: issuedAt,
+              },
+              name: 'raced the reset',
+              scopes: ['tokens:read'],
+            }),
+          );
+        const refused = await call('/api/v1/me/credential', { token: raced.secret });
+        expect(refused.status).toBe(401);
+        expect(refused.body?.code).toBe('TOKEN_003');
+
+        // Nothing marked them revoked: the cutoff alone refused them.
+        expect(handle).toHaveBeenCalled();
+        const tokens: { revokedAt: Date | null }[] = await dataSource.query(
+          'SELECT "revokedAt" FROM "api_token" WHERE "userId" = $1',
+          [owner.id],
+        );
+        expect(tokens.map((token) => token.revokedAt)).toEqual([null, null]);
+      });
+
+      it('keeps a token minted after it, from a session signed in after it', async () => {
+        const owner = await signUp('fresh-start@example.com');
+        await resetPassword(owner);
+        const signedIn = await fetch(`${baseUrl}/api/auth/sign-in/email`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email: owner.email, password: 'Integration-test-password-2' }),
+        });
+        expect(signedIn.ok).toBe(true);
+        const sessionToken = signedIn.headers.get('set-auth-token') as string;
+        expect(sessionToken).toBeTruthy();
+
+        const minted = await call('/api/v1/tokens', {
+          method: 'POST',
+          token: sessionToken,
+          body: { name: 'after the reset', scopes: ['tokens:read'] },
+        });
+        expect(minted.status).toBe(201);
+        const pat = (minted.body as { token: string }).token;
+        expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(200);
+      });
+    });
+
+    // Regression: a code issued before the reset stayed redeemable for its
+    // ten minutes, handing whoever held it a fresh grant.
+    it('takes back an authorization code issued before it, unexchanged', async () => {
+      const owner = await signUp('pending-code@example.com');
+      const grant = await authorizeOAuthCode(owner.sessionToken, await registerOAuthClient());
+
+      await resetPassword(owner);
+
+      const rows: { n: number }[] = await dataSource.query(
+        'SELECT count(*)::int AS n FROM "verification" WHERE "identifier" = $1',
+        [grant.code],
       );
-      expect(grants[0].n).toBe(0);
-      const tokens: { revokedAt: Date | null }[] = await dataSource.query(
-        'SELECT "revokedAt" FROM "api_token" WHERE "userId" = $1',
-        [owner.id],
-      );
-      expect(tokens.map((token) => token.revokedAt)).not.toContain(null);
+      expect(rows[0].n).toBe(0);
+      const exchanged = await exchangeCode(grant);
+      expect(exchanged.status).toBe(401);
+      expect(exchanged.body?.error).toBe('invalid_grant');
+      expect(await oauthGrantCount(owner.id)).toBe(0);
     });
   });
 });

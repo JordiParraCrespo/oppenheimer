@@ -43,6 +43,10 @@ export class BetterAuthCredentialVerifierAdapter implements CredentialVerifierPo
       accessToken: session.accessToken,
       scopes: session.scopes,
       accessTokenExpiresAt: session.accessTokenExpiresAt,
+      // The plugin answers the whole `oauthAccessToken` row, though its type
+      // leaves `createdAt` out. Missing, it reads as an unknown issue time,
+      // which a password reset refuses.
+      issuedAt: String(asRecord(session).createdAt ?? ''),
     };
   }
 

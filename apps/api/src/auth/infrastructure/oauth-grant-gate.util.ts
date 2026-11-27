@@ -1,5 +1,6 @@
 import { APIError } from 'better-auth/api';
 import { AuthErrors } from '../domain/auth.errors';
+import { predatesCutoff } from '../domain/credential-cutoff.policy';
 import { mayIssueCredential } from '../domain/credential-issuance.policy';
 
 /**
@@ -21,72 +22,141 @@ export type GrantStep =
   | { by: 'authorization-code'; code: string }
   | { by: 'refresh-token'; refreshToken: string };
 
-/** Which grant step this Better Auth request is, if any. */
+/**
+ * Which grant step this Better Auth request is, if any.
+ *
+ * The token endpoint reads its body as `z.record(z.any(), z.any())` and calls
+ * `toString()` on what it finds, so `"code": ["…"]` or `"code": 123` would
+ * still redeem a code that a string check let past the gate. It also treats
+ * every `grant_type` but `refresh_token` as a code exchange. So the gate takes
+ * the same branches and fails closed: a code or refresh token that is not a
+ * non-empty string is refused here (`invalid_request`), never handed on to be
+ * stringified.
+ */
 export function grantStepOf(path: string | undefined, body: unknown): GrantStep | null {
   const fields = formFields(body);
   if (path === '/oauth2/consent') return fields.accept === true ? { by: 'session' } : null;
   if (path !== '/mcp/token') return null;
 
-  if (fields.grant_type === 'authorization_code' && typeof fields.code === 'string') {
-    return { by: 'authorization-code', code: fields.code };
+  if (fields.grant_type === 'refresh_token') {
+    return {
+      by: 'refresh-token',
+      refreshToken: requireString(fields.refresh_token, 'refresh_token'),
+    };
   }
-  if (fields.grant_type === 'refresh_token' && typeof fields.refresh_token === 'string') {
-    return { by: 'refresh-token', refreshToken: fields.refresh_token };
-  }
-  return null;
+  return { by: 'authorization-code', code: requireString(fields.code, 'code') };
+}
+
+/** The account a code or refresh token was issued to, and when that was authorized. */
+export interface GrantOwner {
+  userId: string;
+  /**
+   * When the sign-in behind the grant happened: a code's `authTime` (the
+   * session that authorized it), a refresh token's row. `null` when unknown,
+   * which a password reset since then refuses.
+   */
+  authorizedAt: Date | null;
 }
 
 /** What the gate reads; each answers `null` when it finds nothing. */
 export interface GrantOwnerLookups {
   sessionUserId(): Promise<string | null>;
-  codeUserId(code: string): Promise<string | null>;
-  refreshTokenUserId(refreshToken: string): Promise<string | null>;
+  codeOwner(code: string): Promise<GrantOwner | null>;
+  refreshTokenOwner(refreshToken: string): Promise<GrantOwner | null>;
   emailVerified(userId: string): Promise<boolean | null>;
+  /** The account's credential cutoff (`credential_cutoff`), if a reset set one. */
+  credentialCutoff(userId: string): Promise<Date | null>;
 }
 
 /**
  * Refuse the step when its account has not verified its email, with the
  * `TOKEN_010` the console's consent screen translates and the OAuth
- * `access_denied` a client reads. A step whose account cannot be found is left
- * to Better Auth, which refuses an unknown code or token on its own terms.
+ * `access_denied` a client reads; and refuse a code or refresh token whose
+ * sign-in predates the account's last password reset, with `invalid_grant`.
+ * The reset deletes those in its own transaction; this holds for one issued
+ * by a request that raced it. A step whose account cannot be found is left to
+ * Better Auth, which refuses an unknown code or token on its own terms.
  */
-export async function refuseUnverifiedGrant(
+export async function refuseUngrantable(
   step: GrantStep,
   lookups: GrantOwnerLookups,
 ): Promise<void> {
-  const userId =
+  const owner =
     step.by === 'session'
-      ? await lookups.sessionUserId()
+      ? await sessionOwner(lookups)
       : step.by === 'authorization-code'
-        ? await lookups.codeUserId(step.code)
-        : await lookups.refreshTokenUserId(step.refreshToken);
-  if (!userId) return;
+        ? await lookups.codeOwner(step.code)
+        : await lookups.refreshTokenOwner(step.refreshToken);
+  if (!owner) return;
 
-  if (mayIssueCredential({ emailVerified: await lookups.emailVerified(userId) })) return;
+  if (!mayIssueCredential({ emailVerified: await lookups.emailVerified(owner.userId) })) {
+    const refusal = AuthErrors.EMAIL_VERIFICATION_REQUIRED;
+    throw new APIError('FORBIDDEN', {
+      code: refusal.code,
+      message: refusal.message,
+      error: 'access_denied',
+      error_description: refusal.message,
+    });
+  }
 
-  const refusal = AuthErrors.EMAIL_VERIFICATION_REQUIRED;
-  throw new APIError('FORBIDDEN', {
-    code: refusal.code,
-    message: refusal.message,
-    error: 'access_denied',
-    error_description: refusal.message,
-  });
-}
-
-/** The user id an authorization code's verification row was written for. */
-export function userIdOfCodeValue(value: string): string | null {
-  try {
-    const parsed: unknown = JSON.parse(value);
-    const userId = (parsed as { userId?: unknown } | null)?.userId;
-    return typeof userId === 'string' ? userId : null;
-  } catch {
-    return null;
+  // A session is never older than a reset: the reset deletes every session.
+  if (step.by === 'session') return;
+  if (predatesCutoff(owner.authorizedAt, await lookups.credentialCutoff(owner.userId))) {
+    throw new APIError('UNAUTHORIZED', {
+      error: 'invalid_grant',
+      error_description: 'This grant was issued before the account’s password was reset',
+    });
   }
 }
 
-/** The token endpoint takes a form body as well as JSON. */
+/**
+ * The owner of an authorization code, from the `verification` row the MCP
+ * plugin wrote for it: a JSON value carrying `userId` and `authTime` (the
+ * authorizing session's creation, in milliseconds).
+ */
+export function codeOwnerOfVerification(row: {
+  value: string;
+  createdAt?: Date | string | null;
+}): GrantOwner | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(row.value);
+  } catch {
+    return null;
+  }
+  const value = (parsed ?? {}) as { userId?: unknown; authTime?: unknown };
+  if (typeof value.userId !== 'string') return null;
+  const authorizedAt =
+    typeof value.authTime === 'number' && Number.isFinite(value.authTime)
+      ? new Date(value.authTime)
+      : row.createdAt
+        ? new Date(row.createdAt)
+        : null;
+  return { userId: value.userId, authorizedAt };
+}
+
+async function sessionOwner(lookups: GrantOwnerLookups): Promise<GrantOwner | null> {
+  const userId = await lookups.sessionUserId();
+  return userId ? { userId, authorizedAt: null } : null;
+}
+
+function requireString(value: unknown, field: string): string {
+  if (typeof value === 'string' && value.length > 0) return value;
+  throw new APIError('BAD_REQUEST', {
+    error: 'invalid_request',
+    error_description: `${field} must be a string`,
+  });
+}
+
+/**
+ * The token endpoint takes a form body as well as JSON. Better Auth hands the
+ * hook a urlencoded body already parsed into an object of strings; a
+ * `FormData` is read the way the plugin reads it.
+ */
 function formFields(body: unknown): Record<string, unknown> {
   if (body instanceof FormData) return Object.fromEntries(body.entries());
-  if (body && typeof body === 'object') return body as Record<string, unknown>;
+  if (body && typeof body === 'object' && !Array.isArray(body)) {
+    return body as Record<string, unknown>;
+  }
   return {};
 }

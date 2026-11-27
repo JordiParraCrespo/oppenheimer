@@ -26,6 +26,7 @@ export class ApiTokenMapper
     record.expiresAt = entity.expiresAt;
     record.lastUsedAt = entity.lastUsedAt;
     record.revokedAt = entity.revokedAt;
+    record.issuedAt = entity.issuedAt;
     return record;
   }
 
@@ -45,6 +46,7 @@ export class ApiTokenMapper
         expiresAt: record.expiresAt,
         lastUsedAt: record.lastUsedAt,
         revokedAt: record.revokedAt,
+        issuedAt: record.issuedAt,
       },
     });
   }

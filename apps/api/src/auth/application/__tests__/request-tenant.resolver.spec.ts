@@ -34,6 +34,7 @@ const tokenFor = (organizationIds: string[]): ScopeContext => ({
   scopes: [],
   resourceScope: toResourceScope(organizationIds),
   expiresAt: null,
+  issuedAt: new Date(0),
 });
 
 describe('RequestTenantResolver', () => {

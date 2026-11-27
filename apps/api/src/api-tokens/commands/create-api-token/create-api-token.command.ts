@@ -11,6 +11,12 @@ export interface ApiTokenActor {
   organizationId?: string | null;
   /** The scoped credential presenting the request, if it is not a browser session. */
   credential?: MintingCredentialReach;
+  /**
+   * When the credential presenting the request began its chain: the scoped
+   * credential's `issuedAt`, or the browser session's creation. The new token
+   * inherits it, so it is refused with its minter after a password reset.
+   */
+  issuedUnder?: Date | null;
 }
 
 export class CreateApiTokenCommand extends CommandBase {

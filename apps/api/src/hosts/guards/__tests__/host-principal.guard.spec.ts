@@ -64,6 +64,7 @@ describe('HostPrincipalGuard', () => {
       scopes: ['hosts:write'],
       resourceScope: toResourceScope(null),
       expiresAt: null,
+      issuedAt: new Date(0),
     });
 
     await expect(guard.canActivate(context())).rejects.toMatchObject({ code: 'HOSTS_005' });

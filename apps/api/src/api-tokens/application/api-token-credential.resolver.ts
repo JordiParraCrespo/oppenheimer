@@ -69,6 +69,7 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
       scopes: token.scopes,
       resourceScope: token.resourceScope,
       expiresAt: token.expiresAt,
+      issuedAt: token.issuedAt,
       prefix: token.prefix,
     };
   }

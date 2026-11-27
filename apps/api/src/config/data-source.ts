@@ -3,6 +3,7 @@ import { OutboxMessageSchema } from '@oppenheimer/backend-ddd';
 import { DataSource } from 'typeorm';
 import { ApiTokenOrmEntity } from '../api-tokens/database/api-token.orm-entity';
 import { Account } from '../auth/database/account.orm-entity';
+import { CredentialCutoffOrmEntity } from '../auth/database/credential-cutoff.orm-entity';
 import { OAuthAccessTokenOrmEntity } from '../auth/database/oauth-access-token.orm-entity';
 import { OAuthApplicationOrmEntity } from '../auth/database/oauth-application.orm-entity';
 import { OAuthConsentOrmEntity } from '../auth/database/oauth-consent.orm-entity';
@@ -124,6 +125,7 @@ export default new DataSource({
     OAuthApplicationOrmEntity,
     OAuthAccessTokenOrmEntity,
     OAuthConsentOrmEntity,
+    CredentialCutoffOrmEntity,
     RoleOrmEntity,
     AccessGrantOrmEntity,
     GithubInstallationOrmEntity,

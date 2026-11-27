@@ -74,6 +74,7 @@ const apiToken: ScopeContext = {
   scopes: ['organizations:read'],
   resourceScope: toResourceScope(['org-1']),
   expiresAt: null,
+  issuedAt: new Date(0),
   prefix: 'oppenheimer_pat_abc',
 };
 

@@ -118,7 +118,7 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
       const records = await repository.find({
         where: usableWhere(userId, now).map((where) => ({
           ...where,
-          createdAt: LessThanOrEqual(issuedBefore),
+          issuedAt: LessThanOrEqual(issuedBefore),
         })),
         lock: { mode: 'pessimistic_write' },
       });

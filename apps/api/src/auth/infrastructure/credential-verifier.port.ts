@@ -8,6 +8,8 @@ export interface VerifiedOAuthGrant {
   /** Space-delimited scope string as granted at consent. */
   scopes: string | null | undefined;
   accessTokenExpiresAt: Date | string | null | undefined;
+  /** When the access token was issued (its row's `createdAt`). */
+  issuedAt: Date | string;
 }
 
 /**

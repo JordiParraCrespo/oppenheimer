@@ -21,8 +21,8 @@ import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
 import { buildInvitationUrl } from './invitation-url.util';
 // oppenheimer:begin mobile
 import { mobileAppAuth } from './mobile-app-auth.util';
-import { grantStepOf, refuseUnverifiedGrant, userIdOfCodeValue } from './oauth-grant-gate.util';
 // oppenheimer:end mobile
+import { codeOwnerOfVerification, grantStepOf, refuseUngrantable } from './oauth-grant-gate.util';
 import { sessionDeleteHooks } from './session-delete-hook.util';
 
 /**
@@ -322,25 +322,36 @@ export const auth = betterAuth({
   },
   hooks: {
     // An OAuth (MCP) grant is approved or exchanged only for an account that
-    // has proven its address (`mayIssueCredential`, `oauth-grant-gate.util.ts`).
-    // Reads only: the session, the code or refresh token, and the user row,
-    // fresh rather than from the session cache.
+    // has proven its address (`mayIssueCredential`, `oauth-grant-gate.util.ts`),
+    // and a code or refresh token is never exchanged when its sign-in predates
+    // the account's last password reset (`credential_cutoff`). Reads only: the
+    // session, the code or refresh token, the user row and the cutoff, fresh
+    // rather than from the session cache.
     before: createAuthMiddleware(async (ctx) => {
       const step = grantStepOf(ctx.path, ctx.body);
       if (!step) return;
-      await refuseUnverifiedGrant(step, {
+      await refuseUngrantable(step, {
         sessionUserId: async () => (await getSessionFromCtx(ctx))?.user.id ?? null,
-        codeUserId: async (code) => {
+        codeOwner: async (code) => {
           const found = await ctx.context.internalAdapter.findVerificationValue(code);
-          return found ? userIdOfCodeValue(found.value) : null;
+          return found ? codeOwnerOfVerification(found) : null;
         },
-        refreshTokenUserId: async (refreshToken) =>
-          (
-            await pool.query<{ userId: string | null }>(
-              `SELECT "userId" FROM "oauthAccessToken" WHERE "refreshToken" = $1`,
+        refreshTokenOwner: async (refreshToken) => {
+          const row = (
+            await pool.query<{ userId: string | null; createdAt: Date }>(
+              `SELECT "userId", "createdAt" FROM "oauthAccessToken" WHERE "refreshToken" = $1`,
               [refreshToken],
             )
-          ).rows[0]?.userId ?? null,
+          ).rows[0];
+          return row?.userId ? { userId: row.userId, authorizedAt: row.createdAt } : null;
+        },
+        credentialCutoff: async (userId) =>
+          (
+            await pool.query<{ issuedBefore: Date }>(
+              `SELECT "issuedBefore" FROM "credential_cutoff" WHERE "userId" = $1`,
+              [userId],
+            )
+          ).rows[0]?.issuedBefore ?? null,
         emailVerified: async (userId) =>
           (
             await pool.query<{ emailVerified: boolean }>(

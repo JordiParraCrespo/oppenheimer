@@ -1,6 +1,7 @@
 import { AppError } from '@oppenheimer/backend-core';
 import { toResourceScope } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CredentialCutoffRepositoryPort } from '../../database/credential-cutoff.repository.port';
 import { AuthErrors } from '../../domain/auth.errors';
 import type {
   CredentialOwner,
@@ -40,6 +41,7 @@ describe('CredentialScopeResolver', () => {
   let credentials: CredentialVerifierPort;
   let owners: CredentialOwnerPort;
   let failures: AuthFailureLimiterPort;
+  let cutoffs: CredentialCutoffRepositoryPort;
   let resolver: CredentialScopeResolver;
 
   beforeEach(() => {
@@ -54,7 +56,8 @@ describe('CredentialScopeResolver', () => {
       requireActiveOwner: vi.fn().mockResolvedValue(owner),
     };
     failures = { recordFailure: vi.fn(), recordSuccess: vi.fn(), retryAfter: vi.fn() };
-    resolver = new CredentialScopeResolver(registry, credentials, owners, failures);
+    cutoffs = { findCutoff: vi.fn().mockResolvedValue(null) };
+    resolver = new CredentialScopeResolver(registry, credentials, owners, cutoffs, failures);
   });
 
   /** A contribution, as `AuthModule.contributeCredentials` registers it. */
@@ -71,6 +74,7 @@ describe('CredentialScopeResolver', () => {
           scopes: ['users:read'],
           resourceScope: toResourceScope(null),
           expiresAt: null,
+          issuedAt: new Date('2026-11-01T00:00:00.000Z'),
         }),
       ),
       ...overrides,
@@ -122,6 +126,7 @@ describe('CredentialScopeResolver', () => {
       accessToken: 'oauth-access-token',
       scopes: 'users:read users:write',
       accessTokenExpiresAt: '2026-01-01T00:00:00.000Z',
+      issuedAt: '2025-12-31T23:00:00.000Z',
     });
 
     const scope = await resolver.resolve(requestWith('Bearer oauth-access-token'));
@@ -144,10 +149,49 @@ describe('CredentialScopeResolver', () => {
       accessToken: 'oauth-access-token',
       scopes: 'users:read',
       accessTokenExpiresAt: null,
+      issuedAt: '2025-12-31T23:00:00.000Z',
     });
     vi.mocked(owners.requireActiveOwner).mockRejectedValue(
       new AppError(AuthErrors.INVALID_CREDENTIAL),
     );
+
+    await expect(resolver.resolve(requestWith('Bearer oauth-access-token'))).rejects.toMatchObject({
+      code: 'TOKEN_003',
+    });
+  });
+
+  // A password reset writes the owner's cutoff in its own transaction; the
+  // revocation it stages on the outbox arrives seconds later. Regression: a
+  // token holding `tokens:write` kept working in that window and minted one
+  // that outlived the reset.
+  it('refuses a contributed credential issued before its owner’s password reset', async () => {
+    contribute();
+    vi.mocked(cutoffs.findCutoff).mockResolvedValue(new Date('2026-11-02T00:00:00.000Z'));
+
+    await expect(resolver.resolve(requestWith('Bearer test_abc'))).rejects.toMatchObject({
+      code: 'TOKEN_003',
+    });
+    expect(cutoffs.findCutoff).toHaveBeenCalledWith(owner.id);
+  });
+
+  it('keeps a credential issued after the reset', async () => {
+    contribute();
+    vi.mocked(cutoffs.findCutoff).mockResolvedValue(new Date('2026-10-01T00:00:00.000Z'));
+
+    await expect(resolver.resolve(requestWith('Bearer test_abc'))).resolves.toMatchObject({
+      kind: 'test-credential',
+    });
+  });
+
+  it('refuses an OAuth grant issued before the reset, or with no issue time', async () => {
+    vi.mocked(cutoffs.findCutoff).mockResolvedValue(new Date('2026-01-01T00:00:00.000Z'));
+    vi.mocked(credentials.verifyOAuthGrant).mockResolvedValue({
+      userId: owner.id,
+      accessToken: 'oauth-access-token',
+      scopes: 'users:read',
+      accessTokenExpiresAt: null,
+      issuedAt: '',
+    });
 
     await expect(resolver.resolve(requestWith('Bearer oauth-access-token'))).rejects.toMatchObject({
       code: 'TOKEN_003',

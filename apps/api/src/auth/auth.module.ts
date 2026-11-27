@@ -6,6 +6,7 @@ import { CredentialResolverRegistry } from './application/credential-resolver.re
 import { CredentialScopeResolver } from './application/credential-scope.resolver';
 import { RequestTenantResolver } from './application/request-tenant.resolver';
 import {
+  CREDENTIAL_CUTOFF_REPOSITORY,
   CREDENTIAL_SCOPE,
   CREDENTIAL_VERIFIER,
   DELEGATED_SESSION,
@@ -17,6 +18,8 @@ import { CompletePasswordResetCommandHandler } from './commands/complete-passwor
 import { CompleteSignUpCommandHandler } from './commands/complete-sign-up/complete-sign-up.command-handler';
 import { RotateDelegatedSessionsCommandHandler } from './commands/rotate-delegated-sessions/rotate-delegated-sessions.command-handler';
 import { Account } from './database/account.orm-entity';
+import { CredentialCutoffOrmEntity } from './database/credential-cutoff.orm-entity';
+import { CredentialCutoffRepository } from './database/credential-cutoff.repository';
 import { OAuthAccessTokenOrmEntity } from './database/oauth-access-token.orm-entity';
 import { OAuthApplicationOrmEntity } from './database/oauth-application.orm-entity';
 import { OAuthConsentOrmEntity } from './database/oauth-consent.orm-entity';
@@ -62,6 +65,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
       OAuthApplicationOrmEntity,
       OAuthAccessTokenOrmEntity,
       OAuthConsentOrmEntity,
+      CredentialCutoffOrmEntity,
     ]),
   ],
   providers: [
@@ -86,6 +90,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     { provide: SESSION_CACHE, useClass: BetterAuthSessionCacheAdapter },
     { provide: REQUEST_TENANT, useClass: RequestTenantResolver },
     { provide: OAUTH_GRANT_REPOSITORY, useClass: OAuthGrantRepository },
+    { provide: CREDENTIAL_CUTOFF_REPOSITORY, useClass: CredentialCutoffRepository },
   ],
   // Guards are inbound adapters other modules apply with `@UseGuards`; the rest
   // is published as tokens, so nothing downstream names a concrete class.

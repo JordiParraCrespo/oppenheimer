@@ -88,6 +88,28 @@ describe('CreateApiTokenCommandHandler', () => {
     expect(repo.insertWithinLimit).not.toHaveBeenCalled();
   });
 
+  // A password reset refuses every credential whose chain began before it.
+  // Regression: a request on a pre-reset token that raced the reset minted a
+  // token stamped "now", which outlived the reset.
+  it('stamps the new token with the issue time of the credential that minted it', async () => {
+    const minterIssuedAt = new Date('2026-01-01T00:00:00.000Z');
+    await service.execute(
+      command({ actor: { id: 'user-1', role: 'user', issuedUnder: minterIssuedAt } }),
+    );
+
+    expect(insertedToken().issuedAt).toEqual(minterIssuedAt);
+  });
+
+  it('starts a token’s chain at its mint when the minter’s is unknown or in the future', async () => {
+    const before = Date.now();
+    await service.execute(
+      command({ actor: { id: 'user-1', role: 'user', issuedUnder: new Date(before + 60_000) } }),
+    );
+
+    expect(insertedToken().issuedAt.getTime()).toBeGreaterThanOrEqual(before);
+    expect(insertedToken().issuedAt.getTime()).toBeLessThanOrEqual(Date.now());
+  });
+
   it('never persists the secret, only its digest', async () => {
     const result = await service.execute(command());
     const stored = insertedToken();

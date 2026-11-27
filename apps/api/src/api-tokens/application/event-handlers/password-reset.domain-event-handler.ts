@@ -7,12 +7,14 @@ import type { ApiTokenRepositoryPort } from '../../database/api-token.repository
 /**
  * A password reset takes back every token the account minted before it: the
  * reset is how a real owner recovers an address someone else registered first,
- * and a token that survived it would keep that someone in. Each token is
- * revoked as `RevokeApiTokenCommand` would, so each raises
- * `ApiTokenRevokedDomainEvent` and its cached delegated session goes too.
+ * and a token that survived it would keep that someone in. Those tokens are
+ * already refused from the reset's commit, by the account's credential cutoff
+ * (`CredentialScopeResolver`); this marks them revoked, as
+ * `RevokeApiTokenCommand` would, so the console lists them as revoked and each
+ * raises `ApiTokenRevokedDomainEvent`, which drops its cached delegated session.
  *
- * Only tokens minted up to the reset: the event is delivered at least once,
- * and a redelivery must not take a token the owner made afterwards.
+ * Only tokens whose chain began up to the reset: the event is delivered at
+ * least once, and a redelivery must not take a token the owner made afterwards.
  */
 @Injectable()
 export class PasswordResetDomainEventHandler {

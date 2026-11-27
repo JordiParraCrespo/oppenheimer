@@ -42,6 +42,14 @@ export interface UserCredentialContext {
   scopes: Scope[];
   resourceScope: ResourceScope;
   expiresAt: Date | null;
+  /**
+   * When the chain of credentials behind this one began: an OAuth grant's
+   * issue, an API token's `issuedAt` (inherited from the credential that
+   * minted it). The kernel refuses one older than the owner's last password
+   * reset (`predatesCutoff`), and a credential minted with this one inherits
+   * it, so a token minted in a request that raced the reset dies with it.
+   */
+  issuedAt: Date;
   /** Display prefix of an API token, for logs and error messages. */
   prefix?: string;
 }
@@ -119,4 +127,17 @@ export function pinnedOrganizationIdOf(context: ScopeContext | null | undefined)
   if (!context || isHostCredential(context)) return null;
   const organizationIds = context.resourceScope.organizationIds;
   return organizationIds?.length === 1 ? organizationIds[0] : null;
+}
+
+/**
+ * When the chain of credentials presenting this request began: a scoped
+ * credential's `issuedAt`, else the browser session's creation (`null` when
+ * neither is known). A credential minted by the request inherits it, so a
+ * password reset that refuses the minter refuses what it minted too.
+ */
+export function credentialIssuedAtOf(request: ScopedRequest): Date | null {
+  const context = request.scopeContext;
+  if (context && !isHostCredential(context)) return context.issuedAt;
+  const createdAt = request.session?.createdAt;
+  return createdAt instanceof Date || typeof createdAt === 'string' ? new Date(createdAt) : null;
 }
