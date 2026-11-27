@@ -2174,3 +2174,9 @@ earlier note:
 - Notes 05 and 25 called the middle permission level, sessions' and bots'
   alike, "Approve for me". It is now "Auto" (2026-11-27): the same level,
   stored as `auto`, under a shorter name the owner asked for.
+- Note 05 had a member who could only request an organization's GitHub
+  install connect it once an owner approved, by choosing the organization
+  again. Since 2026-11-27 only the installation's own account or an owner
+  of its organization can connect it (a security review: GitHub lists an
+  installation for anyone with access to one of its repositories); the
+  owner approves and connects it themselves.

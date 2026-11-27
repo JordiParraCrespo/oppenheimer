@@ -354,7 +354,7 @@ session asks.
 | `GITHUB_001` <a id="github_001" /> | GitHub installation not found                                  | 404  |
 | `GITHUB_002` <a id="github_002" /> | The GitHub App is not configured on this server                | 503  |
 | `GITHUB_003` <a id="github_003" /> | That GitHub installation is already connected to another workspace | 409 |
-| `GITHUB_004` <a id="github_004" /> | GitHub does not list that installation for your account         | 403  |
+| `GITHUB_004` <a id="github_004" /> | That installation is not yours to connect                       | 403  |
 | `GITHUB_005` <a id="github_005" /> | GitHub rejected the authorization code                         | 400  |
 | `GITHUB_006` <a id="github_006" /> | GitHub installations are connected inside an organization      | 400  |
 | `GITHUB_007` <a id="github_007" /> | Invalid GitHub webhook signature                               | 400  |
