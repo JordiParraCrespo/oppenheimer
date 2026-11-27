@@ -1,6 +1,9 @@
 // @vitest-environment node
+
+import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { describe, expect, it } from 'vitest';
-import { heldCurrent } from '../lib/inbox-held';
+import { heldCurrent, inboxHeld } from '../lib/inbox-held';
+import { inboxVisit } from '../lib/inbox-visit';
 
 /**
  * A card whose Reply here is open holds the deck. The regression: the reader
@@ -39,5 +42,23 @@ describe('heldCurrent', () => {
 
   it('changes nothing with no card held', () => {
     expect(heldCurrent([next], held.key, next, null)).toBe(next);
+  });
+});
+
+// The regression: snoozing or deleting a held card from its row menu left it
+// on the deck, since only Done let go of the hold.
+describe('putting a held card away', () => {
+  const unattended = { key: held.key } as InboxItem;
+
+  it.each([
+    ['done', () => inboxVisit.done(unattended)],
+    ['snoozed', () => inboxVisit.cleared(held.key)],
+    ['deleted', () => inboxVisit.forget(held.key)],
+    ['answered', () => inboxVisit.answered(held.key)],
+  ])('lets go once it is %s', (_how, putAway) => {
+    inboxHeld.hold(unattended);
+    putAway();
+    expect(inboxHeld.get()).toBeNull();
+    inboxVisit.clear();
   });
 });

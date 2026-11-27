@@ -65,6 +65,7 @@ export const inboxVisit = {
   },
   /** Deleted: out of Show done, and cleared. */
   forget(key: string) {
+    inboxHeld.release(key);
     write({
       ...visit,
       done: visit.done.filter((k) => k !== key),
@@ -73,6 +74,7 @@ export const inboxVisit = {
   },
   /** Snoozed, or put away some other way that leaves no row for this visit. */
   cleared(key: string) {
+    inboxHeld.release(key);
     write({ ...visit, cleared: add(visit.cleared, key) });
   },
   /**
@@ -81,6 +83,7 @@ export const inboxVisit = {
    * cleared once.
    */
   answered(key: string, ...alsoSettles: string[]) {
+    inboxHeld.release(key);
     inboxAnswered.add(key, ...alsoSettles);
     write({ ...visit, cleared: add(visit.cleared, key) });
   },
