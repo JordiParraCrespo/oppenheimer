@@ -3076,7 +3076,7 @@
             "bearer": []
           }
         ],
-        "summary": "Add an existing user as a member",
+        "summary": "Add an existing user as a member (platform administrators)",
         "tags": [
           "Organization members"
         ]

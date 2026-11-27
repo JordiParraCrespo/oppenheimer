@@ -167,7 +167,10 @@ export const auth = betterAuth({
         type: 'boolean',
         required: false,
         defaultValue: false,
-        input: true,
+        // Written by the server alone (`internalAdapter.createSession`): an
+        // `input` field is one `POST /update-session` can set, and a session
+        // that set it would hide from the list that exists to expose it.
+        input: false,
         // Nothing outside the API has any use for it, and a session payload is
         // something clients hold on to.
         returned: false,
@@ -175,7 +178,7 @@ export const auth = betterAuth({
       delegatedCredentialId: {
         type: 'string',
         required: false,
-        input: true,
+        input: false,
         returned: false,
       },
     },

@@ -4,7 +4,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${DB_USERNAME:-oppenheimer}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-oppenheimer}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
       POSTGRES_DB: ${DB_DATABASE:-oppenheimer}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -55,7 +55,7 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USERNAME: ${DB_USERNAME:-oppenheimer}
-      DB_PASSWORD: ${DB_PASSWORD:-oppenheimer}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
       DB_DATABASE: ${DB_DATABASE:-oppenheimer}
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -69,8 +69,10 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    ports:
-      - "3001:3001"
+    # No published port: the web container's nginx proxies /api to it over
+    # the compose network, and a port published here would reach the API
+    # without nginx's headers and past any firewall (Docker's own rules
+    # bypass ufw).
 
   # oppenheimer:begin web
   web:

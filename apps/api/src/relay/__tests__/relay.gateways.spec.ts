@@ -995,6 +995,32 @@ describe('browser attach socket', () => {
     expect(h.workspaces.isMember).toHaveBeenCalledWith(ORG, USER);
   });
 
+  // A preview ticket travels in a URL (the preview origin's `enter` link), so
+  // it may be logged on the way; it buys a read of one port, never a shell.
+  it('refuses a preview ticket instead of opening the session’s terminal on it', async () => {
+    const runner = await runnerUp(h);
+    sockets.push(runner);
+    const ticket = `p-${Math.random().toString(36).slice(2)}`;
+    h.tickets.set(`attach:${ticket}`, {
+      sessionId: SESSION,
+      organizationId: ORG,
+      window: 0,
+      userId: USER,
+      target: 'preview',
+      port: 5173,
+    });
+    const browser = ws(h.origin, '/api/v1/relay/attach', {}, [ticket]);
+    sockets.push(browser);
+    const gone = closed(browser);
+    const why = nextMessage(browser);
+    const sentToRunner = vi.fn();
+    runner.on('message', sentToRunner);
+    await opened(browser);
+    expect((await why).text).toEqual({ type: 'closed', reason: 'unauthorized' });
+    await expect(gone).resolves.toMatchObject({ code: ATTACH_CLOSE_CODES.UNAUTHORIZED });
+    expect(sentToRunner).not.toHaveBeenCalled();
+  });
+
   it('refuses a browser from an origin the API does not serve', async () => {
     const browser = ws(
       h.origin,

@@ -47,6 +47,18 @@ const schema = z.object({
   // the repository root, so `.logs/api.log` is the same file wherever the
   // API is started from.
   logFile: z.string().optional().transform(resolveLogFile),
+}).superRefine((config, context) => {
+  // Everything signed with the secret (session cookies, the preview cookie)
+  // can be forged by whoever knows it, so production refuses the value
+  // `.env.example` ships and anything short enough to guess.
+  if (config.nodeEnv !== 'production') return;
+  if (config.betterAuthSecret.length < 32 || /change-me/i.test(config.betterAuthSecret)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['betterAuthSecret'],
+      message: 'must be at least 32 random characters in production (openssl rand -base64 32)',
+    });
+  }
 });
 
 export const appConfig = registerAs('app', () =>
