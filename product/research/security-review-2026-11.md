@@ -31,11 +31,28 @@ at, what was wrong on them, and what is still open.
 | B | P1 | **Invitations and multi-member workspaces work through the API** although the console has none. That opens: a demoted admin who re-accepts their old invitation gets the `owner` role back (`accept-invitation.command-handler.ts`); Better Auth's own `/api/auth/organization/*` routes remove or demote members without touching their application role, so they keep access; a removed member keeps org-pinned API tokens; the Inbox routes are `@NoPolicy` and trust the tenant alone; an invitation can be accepted without a verified email | Turn invitations and Better Auth's organization write routes off on the server (`disabledPaths`) until the teams slice, as `versions/mvp/08-auth.md` already says of the console |
 | C | P1 | **Pre-account squatting.** Sign-up does not need a verified email, and API tokens and OAuth grants survive a password reset. Someone registers `victim@corp.com` first, mints a token, and keeps it after the real owner recovers the account with "Forgot password" and pairs hosts | Require a verified email before minting a token or approving an OAuth grant, and revoke both on password reset |
 | D | P1 off Cloudflare | **Better Auth's sign-in rate limit trusts `X-Forwarded-For` as sent.** A deployment not behind Cloudflare gets unlimited password guesses by sending a new header each time; behind Cloudflare, one shared bucket can be held full | Set `advanced.ipAddress` to the same proxy depth as `TRUST_PROXY`, or have nginx overwrite the header |
-| E | P2 | A GitHub-triggered routine fires on events from **anyone** on a public repository (an issue, a comment), so a stranger can launch an agent session on the owner's host with text they wrote (wrapped as untrusted) | An "insiders only" filter on triggers, on by default for public repositories |
 | F | P2 | The `admin` platform role can promote itself to `superadmin` (`set-role`) | Leave `set-role` to `superadmin` |
 | G | P2 | Session tokens, OAuth access and refresh tokens, and social-login provider tokens are stored in plain text, so a database dump holds working credentials | Store digests (sessions) and encrypt (`account.encryptOAuthTokens`) |
 | H | P2 | All previews share one site, so a malicious dev server in one preview can set cookies for every other preview (break them, or fix a session into a dev app) | Put the preview domain on the Public Suffix List, or one registrable domain per preview |
-| I | P3 | Smaller: nginx access logs keep query strings (single-use tokens reach Loki); `CSP_EXTRA_ORIGINS` also widens `script-src`; a tab in a redirect path passes the open-redirect check; routine webhooks are unsigned by default; the runner joins `host.exec`'s `home` without a check (not reachable today); `release-runner.yml` puts inputs straight into `run:` | Each is a small change |
+| I | P3 | Smaller: nginx access logs keep query strings (single-use tokens reach Loki); `CSP_EXTRA_ORIGINS` also widens `script-src`; a tab in a redirect path passes the open-redirect check; the runner joins `host.exec`'s `home` without a check (not reachable today); `release-runner.yml` puts inputs straight into `run:` | Each is a small change |
+
+## Fixed in a later layer
+
+- **E** (branch `claude/dazzling-darwin-pbdhdk-triggers`): a GitHub event
+  starts a run, and wakes a bot or session following a pull request, only
+  when the repository's owner, a member or a collaborator caused it
+  (`author_association`; a label added by another person, a check on the
+  repository's own branch, a push, merge or release). It fails closed on an
+  event with no association, and is a fixed rule with no per-trigger
+  opt-out (`github/domain/github-event-actor.policy.ts`; handler tests that
+  fail on the old code). Note 27's 2026-11-03 call, that a stranger's comment
+  wakes a watching bot, changed with it.
+- **I, routine webhooks unsigned by default** (same branch): a URL asked for
+  through the API without `signed` is signed when `BOTS_PROVIDER_KEY` is set;
+  stored URLs keep what they had. A valid signature is claimed once in Redis
+  for its window, so a replayed signed request is refused `401` whatever
+  `Idempotency-Key` it carries. Still open: the console's checkbox starts
+  unticked (a visual change, waiting for its screenshots).
 
 ## Checked and found sound
 

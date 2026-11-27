@@ -1,4 +1,5 @@
 import type { AutomationSkipReason } from '@oppenheimer/shared/automations';
+import { githubEventByInsider } from '../../github/domain/github-event-actor.policy';
 import type { AutomationTarget } from './automation.types';
 import type { AutomationLimits } from './automation-limits.policy';
 
@@ -27,6 +28,23 @@ export function firstRefusal(...verdicts: (() => GuardVerdict)[]): GuardVerdict 
 }
 
 // -- At firing ---------------------------------------------------------------
+
+/**
+ * Whether an external event is offered to any trigger at all. A GitHub event
+ * a stranger caused on a public repository (an issue, a comment, a fork's pull
+ * request) starts no run: its words would reach an agent on the owner's host
+ * (`githubEventByInsider` is the table). It is a gate before matching rather
+ * than a recorded skip, because anyone can cause such events at any rate, and
+ * a row each would fill the run history with what strangers did. Other
+ * sources are their own: mail is the owner's inbox, a webhook its secret URL.
+ */
+export function eventMayFire(
+  source: string,
+  eventType: string,
+  attributes: Readonly<Record<string, unknown>>,
+): boolean {
+  return source !== 'github' || githubEventByInsider(eventType, attributes);
+}
 
 /** Paused ignores triggers. Run now is a person asking, and passes. */
 export function pausedGuard(paused: boolean, manual: boolean): GuardVerdict {

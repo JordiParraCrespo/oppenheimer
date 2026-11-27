@@ -340,3 +340,53 @@ describe('reviews', () => {
     ).toEqual([]);
   });
 });
+
+describe('who acted', () => {
+  // The normalizer keeps what GitHub says of the author; the actor policy
+  // decides what a stranger's event may start. Breaks if the association is
+  // read off the wrong object (the pull request's for a review).
+  it("keeps the author's association from the object they wrote", () => {
+    const issue = { number: 5, user: { login: 'stranger' }, author_association: 'NONE' };
+    expect(normalize('issues', { action: 'opened', issue })[0].attributes).toMatchObject({
+      authorAssociation: 'NONE',
+    });
+    const [comment] = normalize('issue_comment', {
+      action: 'created',
+      issue,
+      comment: { id: 1, body: 'hi', author_association: 'MEMBER' },
+    });
+    expect(comment.attributes.authorAssociation).toBe('MEMBER');
+    const pr = pullRequest({ author_association: 'FIRST_TIME_CONTRIBUTOR' });
+    expect(
+      normalize('pull_request', { action: 'opened', pull_request: pr })[0].attributes
+        .authorAssociation,
+    ).toBe('FIRST_TIME_CONTRIBUTOR');
+    const [review] = normalize('pull_request_review', {
+      action: 'submitted',
+      pull_request: pr,
+      review: { id: 2, state: 'commented', body: 'x', author_association: 'OWNER' },
+    });
+    expect(review.attributes.authorAssociation).toBe('OWNER');
+    expect(
+      normalize('issues', { action: 'opened', issue: { number: 6, author_association: 'x y' } })[0]
+        .attributes.authorAssociation,
+    ).toBeNull();
+  });
+
+  it('says who added a label: the author, an app, or another person', () => {
+    const issue = { number: 5, user: { login: 'stranger' }, author_association: 'NONE' };
+    const labeled = (by: Record<string, unknown>) =>
+      normalizeGithubDelivery(
+        {
+          deliveryId: 'd',
+          eventName: 'issues',
+          payload: { repository, sender: by, action: 'labeled', label: { name: 'bug' }, issue },
+          receivedAt,
+        },
+        options,
+      )[0].attributes.labeledBy;
+    expect(labeled({ login: 'stranger', type: 'User' })).toBe('author');
+    expect(labeled({ login: 'github-actions[bot]', type: 'Bot' })).toBe('app');
+    expect(labeled({ login: 'maintainer', type: 'User' })).toBe('person');
+  });
+});

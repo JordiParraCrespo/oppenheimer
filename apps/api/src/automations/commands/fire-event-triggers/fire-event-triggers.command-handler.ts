@@ -11,6 +11,7 @@ import type { AutomationRepositoryPort } from '../../database/automation.reposit
 import type { AutomationRunRepositoryPort } from '../../database/automation-run.repository.port';
 import { AutomationRunEntity } from '../../domain/automation-run.entity';
 import {
+  eventMayFire,
   firstRefusal,
   loopGuard,
   ownSessionGuard,
@@ -24,7 +25,8 @@ const HOUR = 60 * 60 * 1000;
 /**
  * Match an event to the triggers watching its subject, apply each trigger's
  * filter, and queue one run per automation it fires — keyed by the event, so a
- * redelivery queues nothing twice. Paused automations ignore it. An event our
+ * redelivery queues nothing twice. An event a stranger caused on GitHub is
+ * offered to no trigger (`eventMayFire`). Paused automations ignore it. An event our
  * own App caused (the loop guard), one on the branch of a session a
  * routine's own bot started (`ownSessionGuard`) and one past the hourly caps
  * become a recorded skip with its reason, never a silent drop.
@@ -48,6 +50,7 @@ export class FireEventTriggersCommandHandler
   async execute(command: FireEventTriggersCommand): Promise<number> {
     const definition = externalEventDefinition(command.source, command.eventType);
     if (!definition) return 0;
+    if (!eventMayFire(command.source, command.eventType, command.attributes)) return 0;
     const candidates = await this.automations.findEventCandidates(
       command.organizationId,
       command.source,

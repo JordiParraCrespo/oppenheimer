@@ -81,6 +81,7 @@ function command(
   actorIsOwnApp = false,
   branch = 'feature/x',
   head: { fork: boolean; headRepoId: number | null } = { fork: false, headRepoId: 101 },
+  authorAssociation: string | null = 'OWNER',
 ) {
   return new FireEventTriggersCommand({
     organizationId: 'org-1',
@@ -90,7 +91,54 @@ function command(
     subjectRef: '101',
     externalId: 'delivery-1',
     actorIsOwnApp,
-    attributes: { baseBranch: 'main', branch, ...head },
+    attributes: { baseBranch: 'main', branch, ...head, authorAssociation },
+    metadata: { correlationId: 'delivery-corr' },
+  });
+}
+
+function issueWatcher() {
+  const automation = AutomationEntity.createNew({
+    organizationId: 'org-1',
+    projectId: 'project-1',
+    ownerUserId: 'user-1',
+    name: 'Triage',
+    revision: {
+      place: 'host',
+      hostId: 'host-1',
+      agent: 'claude-code',
+      model: 'claude-sonnet-5',
+      permission: 'auto',
+      effort: null,
+      prompt: 'Triage the issue.',
+      repositories: [{ installationId: 'inst-1', githubRepoId: '101', fullName: 'acme/atlas' }],
+      createdByUserId: 'user-1',
+    },
+    triggers: [
+      triggerFromInput(
+        { source: 'github', event: 'issue_opened', repositories: [101], filter: { op: 'any' } },
+        0,
+      ),
+    ],
+    active: true,
+    now,
+  });
+  return { automation, trigger: automation.triggers[0] };
+}
+
+function issueOpened(authorAssociation: string | undefined) {
+  return new FireEventTriggersCommand({
+    organizationId: 'org-1',
+    inboundEventId: 'event-2',
+    source: 'github',
+    eventType: 'issue_opened',
+    subjectRef: '101',
+    externalId: 'delivery-2',
+    actorIsOwnApp: false,
+    attributes: {
+      number: 7,
+      isPullRequest: false,
+      ...(authorAssociation ? { authorAssociation } : {}),
+    },
     metadata: { correlationId: 'delivery-corr' },
   });
 }
@@ -247,5 +295,36 @@ describe('FireEventTriggersCommandHandler', () => {
       await handler.execute(command(false, 'opp/fix-login', { fork: true, headRepoId: 101 })),
     ).toBe(0);
     expect(decided.map((run) => run.skipReason)).toEqual(['own_session_event']);
+  });
+
+  it("starts no run and stages nothing for a stranger's issue on a public repository", async () => {
+    // Regression (security review E): anyone can open an issue on a public
+    // repository, and the issue's text reached an agent on the owner's host.
+    const { handler, fireUnderCaps } = setup({ automation: 0, workspace: 0 }, [issueWatcher()]);
+    expect(await handler.execute(issueOpened('NONE'))).toBe(0);
+    expect(await handler.execute(issueOpened('CONTRIBUTOR'))).toBe(0);
+    expect(fireUnderCaps).not.toHaveBeenCalled();
+  });
+
+  it("starts a run for an insider's issue", async () => {
+    const { handler, decided } = setup({ automation: 0, workspace: 0 }, [issueWatcher()]);
+    expect(await handler.execute(issueOpened('COLLABORATOR'))).toBe(1);
+    expect(decided.map((run) => run.skipReason)).toEqual([null]);
+  });
+
+  it('starts nothing for an issue that carries no association, failing closed', async () => {
+    const { handler, fireUnderCaps } = setup({ automation: 0, workspace: 0 }, [issueWatcher()]);
+    expect(await handler.execute(issueOpened(undefined))).toBe(0);
+    expect(fireUnderCaps).not.toHaveBeenCalled();
+  });
+
+  it("starts nothing for a stranger's pull request from a fork", async () => {
+    const { handler, fireUnderCaps } = setup({ automation: 0, workspace: 0 });
+    expect(
+      await handler.execute(
+        command(false, 'patch-1', { fork: true, headRepoId: 202 }, 'FIRST_TIME_CONTRIBUTOR'),
+      ),
+    ).toBe(0);
+    expect(fireUnderCaps).not.toHaveBeenCalled();
   });
 });

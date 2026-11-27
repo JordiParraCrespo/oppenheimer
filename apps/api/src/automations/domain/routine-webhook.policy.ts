@@ -81,6 +81,25 @@ export function verifyWebhookSignature(
 }
 
 /**
+ * How long a signature is remembered once used: as long as its timestamp
+ * could still pass, which is the tolerance either side of now.
+ */
+export const SIGNATURE_REPLAY_TTL_SECONDS = 2 * WEBHOOK_SIGNATURE_TOLERANCE_SECONDS + 1;
+
+/**
+ * What a valid signature is remembered by, so the same request posted again
+ * inside its window is refused: the routine, the signed timestamp and a digest
+ * of the body. Under one secret those decide the signature, and no secret or
+ * signature is kept. The `Idempotency-Key` is no part of it: it is not signed,
+ * so anyone replaying a request could change it.
+ */
+export function signatureReplayKey(automationId: string, header: string, rawBody: Buffer): string {
+  const timestamp = /(?:^|,)\s*t=(\d{1,12})/.exec(header)?.[1] ?? '';
+  const body = createHash('sha256').update(rawBody).digest('hex');
+  return `routine-webhook:signature:${automationId}:${timestamp}:${body}`;
+}
+
+/**
  * What a run keeps of a posted body: its text, cut to `WEBHOOK_BODY_KEPT_CHARS`
  * and marked when cut, and the content type without its parameters. Bytes that
  * are not UTF-8, and NUL, which Postgres `jsonb` refuses, are kept as the

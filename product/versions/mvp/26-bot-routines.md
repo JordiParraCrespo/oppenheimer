@@ -416,7 +416,9 @@ clock, spent tokens to say `nothing_to_report`. So:
   them on.
 - A routine fired by people outside the workspace (an issue opened by
   anyone) keeps the bot's *ask* tools asking: an unattended turn cannot
-  approve its own card.
+  approve its own card. Since 2026-11-27 a GitHub event fires a routine only
+  when an insider of the repository caused it (note 16, "Insiders only"): a
+  stranger's issue or comment on a public repository starts no run.
 
 ## 7. The Routines tab
 
@@ -567,3 +569,14 @@ Each is a stacked pull request, green on `pnpm ci:local`.
   skip, a run in progress and a provider with no key are the dispatcher's.
   `Idempotency-Key` makes a retried POST the same run. Session automations
   do not get it yet: their editor would need its own URL screen.
+- 2026-11-27, security review I: **signed unless asked otherwise, and a
+  signature counts once.** A URL issued through the API without `signed` is
+  signed whenever `BOTS_PROVIDER_KEY` is set (unsigned, and said so in the
+  answer, where it is not); URLs already issued keep what they were issued
+  with, since signing is the stored sealed secret, not a column default. The
+  console sends its checkbox's value, still unticked by default; ticking it
+  by default is a console change waiting for its screenshots. A valid
+  signature is claimed in Redis (`SET NX`, eleven minutes: the window either
+  side of now) by the routine, its timestamp and the body's digest, so the
+  same signed request posted again is refused `401`, whatever
+  `Idempotency-Key` it carries: that header is not signed.

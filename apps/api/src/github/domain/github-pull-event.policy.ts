@@ -1,4 +1,5 @@
 import { PULL_REQUEST_WAKE_EVENTS, type PullRequestWakeEvent } from '@oppenheimer/shared';
+import { githubEventByInsider } from './github-event-actor.policy';
 
 /**
  * What a GitHub event on a pull request says to whoever it wakes, a session's
@@ -39,7 +40,8 @@ export interface FollowedPullEvent {
 
 /**
  * The pull request a stored event moved, or null when it wakes no follower:
- * another source, our own app's doing, an event nobody is woken by, or one
+ * another source, our own app's doing, a stranger's doing
+ * (`githubEventByInsider`), an event nobody is woken by, or one
  * that names no pull request by a repository id and a number. The one place
  * that knows how a GitHub event names a followed pull request.
  */
@@ -52,20 +54,12 @@ export function followedPullEvent(event: {
 }): FollowedPullEvent | null {
   if (event.source !== 'github' || event.actorIsOwnApp) return null;
   if (!isPullRequestWakeEvent(event.eventType)) return null;
+  // A stranger's comment or review wakes nobody: anyone can write one on a
+  // public repository, and the follower would spend a turn and a wake on it.
+  if (!githubEventByInsider(event.eventType, event.attributes)) return null;
   const number = pullNumberOf(event.attributes);
   if (number === null || !/^[1-9]\d{0,18}$/.test(event.subjectRef)) return null;
   return { githubRepoId: event.subjectRef, number, type: event.eventType };
-}
-
-/**
- * Whether an author is part of the repository, from GitHub's
- * `author_association`: its owner, a member of its organization or a
- * collaborator. Anyone else (a contributor, a first-timer, nobody) wrote
- * from outside it; null when GitHub did not say.
- */
-export function isRepositoryInsider(association: string | null | undefined): boolean | null {
-  if (!association) return null;
-  return ['OWNER', 'MEMBER', 'COLLABORATOR'].includes(association.toUpperCase());
 }
 
 /** A login as GitHub allows one, or nothing: no other character reaches the reader. */

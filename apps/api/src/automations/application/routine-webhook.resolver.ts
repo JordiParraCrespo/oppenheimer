@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { CacheService } from '@oppenheimer/backend-cache';
 import { AppError, type KeySealer } from '@oppenheimer/backend-core';
 import {
   AUTOMATION_REPOSITORY,
@@ -15,7 +16,9 @@ import type { AutomationTriggerProps } from '../domain/automation.types';
 import { AutomationErrors } from '../domain/automations.errors';
 import {
   isWebhookTokenShaped,
+  SIGNATURE_REPLAY_TTL_SECONDS,
   type SignatureVerdict,
+  signatureReplayKey,
   verifyWebhookSignature,
   webhookTokenHash,
 } from '../domain/routine-webhook.policy';
@@ -38,12 +41,13 @@ const SIGNATURE_DETAIL: Record<Exclude<SignatureVerdict, 'valid'>, string> = {
   stale: 'The signature’s timestamp is more than five minutes from now',
   mismatch: 'The signature does not match the body',
 };
+const REPLAYED_DETAIL = 'This signed request was already received: sign it again to send it again';
 
 /**
  * The routine a POST to a webhook URL is for, authenticated: its token names
  * a live routine that still has a webhook trigger (else 404, with no hint of
  * which part failed), and a signed URL's request carries a fresh signature
- * over exactly its bytes (else 401).
+ * over exactly its bytes, not one already received (else 401).
  */
 @Injectable()
 export class RoutineWebhookResolver {
@@ -56,6 +60,7 @@ export class RoutineWebhookResolver {
     private readonly automations: AutomationRepositoryPort,
     @Inject(WEBHOOK_SECRET_SEALER)
     private readonly sealer: KeySealer,
+    private readonly cache: CacheService,
   ) {}
 
   async require(request: WebhookRequest, now: Date): Promise<WebhookTarget> {
@@ -73,11 +78,15 @@ export class RoutineWebhookResolver {
     if (!routine || routine.isDeleted || routine.target.kind !== 'bot' || !trigger) {
       throw new AppError(AutomationErrors.WEBHOOK_NOT_FOUND);
     }
-    this.assertSigned(webhook, request, now);
+    await this.assertSigned(webhook, request, now);
     return { routine, trigger };
   }
 
-  private assertSigned(webhook: RoutineWebhookRecord, request: WebhookRequest, now: Date): void {
+  private async assertSigned(
+    webhook: RoutineWebhookRecord,
+    request: WebhookRequest,
+    now: Date,
+  ): Promise<void> {
     if (!webhook.signingSecretSealed) return;
     let secret: string;
     try {
@@ -96,6 +105,15 @@ export class RoutineWebhookResolver {
       throw new AppError(AutomationErrors.WEBHOOK_SIGNATURE_INVALID, {
         detail: SIGNATURE_DETAIL[verdict],
       });
+    }
+    // Claimed in one command, so two copies of one request racing run once.
+    const first = await this.cache.setIfAbsent(
+      signatureReplayKey(webhook.automationId, request.signature ?? '', request.body),
+      now.toISOString(),
+      SIGNATURE_REPLAY_TTL_SECONDS,
+    );
+    if (!first) {
+      throw new AppError(AutomationErrors.WEBHOOK_SIGNATURE_INVALID, { detail: REPLAYED_DETAIL });
     }
   }
 }

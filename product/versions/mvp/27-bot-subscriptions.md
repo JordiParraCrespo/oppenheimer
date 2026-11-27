@@ -392,7 +392,14 @@ share their words (`github/domain/github-pull-event.policy.ts`).
   forbid putting the person's private information where outside text
   points. Narrowing by author (a collaborator's words drive the bot, a
   stranger's ask first) and a tool-less reader in front of the bot are the
-  options on file if that changes.
+  options on file if that changes. **Changed 2026-11-27 (security review
+  E):** a stranger's comment or review no longer wakes the bot, nor a session
+  watching the pull request: a wake needs its author to be the repository's
+  owner, a member or a collaborator, and a check to be on a branch of the
+  repository (`githubEventByInsider`, the rule routines fire by). The turn a
+  wake starts keeps every tool, and a collaborator's words still drive it;
+  a stranger's comment is still read, fenced and tagged, when an insider's
+  event wakes the bot.
 - **Not yet.** GitHub's normalizer makes no event of a pull request closed
   without a merge, so such a subscription stays until it is unwatched or
   reaches its wake limit; a `pr_closed` type in the catalog is what would

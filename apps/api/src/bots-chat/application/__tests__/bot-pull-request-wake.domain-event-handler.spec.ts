@@ -32,7 +32,7 @@ const event = (overrides: Record<string, unknown> = {}) =>
     subjectRef: '821374923',
     actorLogin: 'github-actions[bot]',
     actorIsOwnApp: false,
-    attributes: { number: 128, conclusion: 'failure', check: 'CI' },
+    attributes: { number: 128, branch: 'fix/env', conclusion: 'failure', check: 'CI' },
     metadata: { correlationId: 'corr-1', timestamp: Date.now() },
     ...overrides,
   }) as Parameters<BotPullRequestWakeDomainEventHandler['handle']>[0];
@@ -49,7 +49,7 @@ describe('BotPullRequestWakeDomainEventHandler', () => {
     expect(sent[0]).toMatchObject({
       inboundEventId: 'evt-1',
       type: 'check_failed',
-      attributes: { number: 128, conclusion: 'failure', check: 'CI' },
+      attributes: { number: 128, branch: 'fix/env', conclusion: 'failure', check: 'CI' },
       actorLogin: 'github-actions[bot]',
       metadata: { correlationId: 'corr-1' },
     });

@@ -2174,3 +2174,13 @@ earlier note:
 - Notes 05 and 25 called the middle permission level, sessions' and bots'
   alike, "Approve for me". It is now "Auto" (2026-11-27): the same level,
   stored as `auto`, under a shorter name the owner asked for.
+- Note 27 (2026-11-03, the owner's call) let anyone who can comment on a
+  followed pull request wake the bot, and note 16 let any GitHub event on a
+  watched repository fire an automation or routine. Since 2026-11-27
+  (security review E) only events the repository's insiders cause (its
+  owner, members and collaborators, by GitHub's `author_association`; a
+  check only on the repository's own branch) fire a run or wake a bot or
+  session; a stranger's issue, comment or review starts nothing, with no
+  opt-out yet (note 16, "Insiders only"). Note 26: a routine webhook URL
+  asked for through the API without `signed` is now signed, and a signed
+  request is accepted once.

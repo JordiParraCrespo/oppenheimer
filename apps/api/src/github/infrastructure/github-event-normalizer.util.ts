@@ -5,6 +5,7 @@ import {
   type ExternalEventContext,
   type InboundDelivery,
 } from '../../inbound-events/domain/external-event.types';
+import type { GithubLabeler } from '../domain/github-event-actor.policy';
 
 /**
  * GitHub webhook deliveries → the trigger catalog's events.
@@ -32,6 +33,10 @@ import {
  * `check_suite` rather than `check_run`: one suite per app per commit, where a
  * workflow with twenty jobs is twenty runs — "Check failed" would otherwise
  * start twenty sessions for one red commit.
+ *
+ * It filters nobody out by who acted: it keeps what GitHub says of them, the
+ * author's `authorAssociation` and who added a label (`labeledBy`), and
+ * `githubEventByInsider` decides what a stranger's event may start.
  */
 export const GITHUB_WEBHOOK_EVENTS = [
   'pull_request',
@@ -83,6 +88,23 @@ function dateOf(...candidates: unknown[]): Date | null {
     if (!Number.isNaN(date.getTime())) return date;
   }
   return null;
+}
+
+/** GitHub's `author_association` word (`OWNER`, `NONE`…), or null when there is none. */
+function association(value: unknown): string | null {
+  const text = str(value);
+  return text && /^[A-Z_]{1,32}$/.test(text) ? text : null;
+}
+
+/**
+ * Who added a label: the item's own author (an issue form applies its labels
+ * as the author), an app, or another person, which takes triage access.
+ */
+function labelerOf(sender: Json, item: Json): GithubLabeler {
+  const login = str(sender.login);
+  if (sender.type === 'Bot') return 'app';
+  if (!login || login === str(obj(item.user).login)) return 'author';
+  return 'person';
 }
 
 function branchOfRef(ref: unknown): string | null {
@@ -183,6 +205,7 @@ function pullRequestParts(pr: Json) {
       // `fork` is also true inside a repository that is itself a fork; the
       // head's id says whether the branch lives in another repository.
       headRepoId: num(headRepo.id),
+      authorAssociation: association(pr.author_association),
     },
     context: {
       ref: number === null ? undefined : `#${number}`,
@@ -218,7 +241,7 @@ function pullRequestEvents(payload: Json, action: string | null, make: Make): Ex
       return [
         make(
           'issue_labeled',
-          { ...attributes, label },
+          { ...attributes, label, labeledBy: labelerOf(obj(payload.sender), pr) },
           { ...context, label },
           dateOf(pr.updated_at),
           `:${label}`,
@@ -233,7 +256,11 @@ function pullRequestEvents(payload: Json, action: string | null, make: Make): Ex
 function issueParts(issue: Json) {
   const number = num(issue.number);
   return {
-    attributes: { number, isPullRequest: issue.pull_request !== undefined },
+    attributes: {
+      number,
+      isPullRequest: issue.pull_request !== undefined,
+      authorAssociation: association(issue.author_association),
+    },
     context: {
       ref: number === null ? undefined : `#${number}`,
       title: capped(issue.title),
@@ -255,7 +282,7 @@ function issueEvents(payload: Json, action: string | null, make: Make): External
     return [
       make(
         'issue_labeled',
-        { ...attributes, label },
+        { ...attributes, label, labeledBy: labelerOf(obj(payload.sender), issue) },
         { ...context, label },
         dateOf(issue.updated_at),
         `:${label}`,
@@ -285,7 +312,12 @@ function commentEvents(
   // A line comment's parent is a pull request; a conversation comment's is an
   // issue, which is a pull request's when GitHub links one.
   const isPullRequest = payload.pull_request !== undefined || parent.pull_request !== undefined;
-  const attributes = { number, commentId: num(comment.id), isPullRequest };
+  const attributes = {
+    number,
+    commentId: num(comment.id),
+    isPullRequest,
+    authorAssociation: association(comment.author_association),
+  };
   const at = dateOf(comment.created_at);
   const events = [make('comment', attributes, context, at)];
   if (mentions(comment.body, options.mentionHandle)) {
@@ -303,7 +335,13 @@ function reviewEvents(
   if (action !== 'submitted') return [];
   const review = obj(payload.review);
   const pr = obj(payload.pull_request);
-  const { attributes, context } = pullRequestParts(pr);
+  const parts = pullRequestParts(pr);
+  const { context } = parts;
+  // The review's author is who acted, not the pull request's.
+  const attributes = {
+    ...parts.attributes,
+    authorAssociation: association(review.author_association),
+  };
   const reviewContext = {
     ...context,
     body: capped(review.body),

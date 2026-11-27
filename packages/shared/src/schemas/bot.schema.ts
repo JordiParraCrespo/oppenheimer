@@ -1406,9 +1406,11 @@ export type UpdateBotRoutineDto = z.infer<typeof updateBotRoutineSchema>;
 
 /**
  * A new URL for a routine's webhook, from its Routines tab: `signed` also
- * issues a signing secret every request must then be signed with.
+ * issues a signing secret every request must then be signed with. Left out,
+ * the URL is signed whenever the deployment can keep the secret
+ * (`BOTS_PROVIDER_KEY`). URLs already issued keep what they were issued with.
  */
-export const issueRoutineWebhookSchema = z.object({ signed: z.boolean().default(false) });
+export const issueRoutineWebhookSchema = z.object({ signed: z.boolean().optional() });
 export type IssueRoutineWebhookDto = z.infer<typeof issueRoutineWebhookSchema>;
 
 /**
