@@ -36,6 +36,7 @@ import {
   SendBotPeerMessageCommand,
   type SendBotPeerMessageResult,
 } from '../commands/send-bot-peer-message/send-bot-peer-message.command';
+import { describeBotAdvisor } from '../domain/bot-advisor.policy';
 import { describeBotEffort } from '../domain/bot-effort.policy';
 import { NOT_ON_A_GITHUB_ASK } from '../domain/bot-github-ask.policy';
 import { BOT_PEER_MESSAGES_PER_TURN } from '../domain/bot-peer-message.policy';
@@ -297,6 +298,13 @@ export class BotPeerToolsFactory implements BotToolArea {
           .nullable()
           .optional()
           .describe(promptText('bots/tools.create-bot-effort')),
+        advisor_model: z
+          .string()
+          .min(1)
+          .max(128)
+          .nullable()
+          .optional()
+          .describe(promptText('bots/tools.update-bot-advisor-model')),
         permission: z
           .enum(BOT_PERMISSIONS)
           .optional()
@@ -447,6 +455,7 @@ export class BotPeerToolsFactory implements BotToolArea {
           provider: bot.provider,
           model: bot.model ?? 'default',
           effort: describeBotEffort(bot),
+          advisor: describeBotAdvisor(bot),
           permission: BOT_PERMISSION_LABELS[bot.permission],
           permission2: bot.permission,
           groupLabel: groupLabelOf(bot, groups),

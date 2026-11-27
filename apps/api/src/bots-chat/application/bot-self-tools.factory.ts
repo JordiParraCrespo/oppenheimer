@@ -28,6 +28,7 @@ import { FindBotMemoryQuery } from '../../bots/queries/find-bot-memory/find-bot-
 import { FindBotMemoryFactQuery } from '../../bots/queries/find-bot-memory-fact/find-bot-memory-fact.query';
 import { ReactAsBotCommand } from '../commands/react-as-bot/react-as-bot.command';
 import type { ReactAsBotOutcome } from '../commands/react-as-bot/react-as-bot.command-handler';
+import { describeBotAdvisor } from '../domain/bot-advisor.policy';
 import {
   BOT_CHAT_SEARCH_LIMIT_MAX,
   searchWords,
@@ -534,6 +535,7 @@ function describeSelf(bot: BotEntity): string[] {
     `You: ${bot.id} "${bot.name}"`,
     `- description: ${bot.description || '(none)'}`,
     `- provider: ${bot.provider}; model: ${model?.label ?? bot.model ?? 'default'}; effort: ${describeBotEffort(bot)}`,
+    `- advisor: ${describeBotAdvisor(bot)}`,
     `- approval level: ${bot.permission}`,
     `- learn automatically: ${bot.learnAutomatically ? promptText('core/tools-self.describe-self-remember-saves-directly') : promptText('core/tools-self.describe-self-off-ask-before')}`,
     promptText('core/tools-self.describe-self-home-host-list', {

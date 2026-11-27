@@ -1,0 +1,25 @@
+{
+  "bot": {
+    "name": "Juno",
+    "id": "5f1c2a7e-3b4d-4e8f-9a10-2b3c4d5e6f70",
+    "model": "claude-sonnet-5-5"
+  },
+  "cases": [
+    {
+      "id": "set",
+      "message": "Give yourself Opus 5.5 as your advisor for the hard steps.",
+      "advisor": "claude-opus-5-5"
+    },
+    {
+      "id": "off",
+      "advisorBefore": "claude-opus-5-5",
+      "message": "Turn your advisor off, it costs too much.",
+      "advisor": null
+    },
+    {
+      "id": "label-es",
+      "message": "Quiero que Opus 5.5 te asesore en las tareas difíciles.",
+      "advisor": "claude-opus-5-5"
+    }
+  ]
+}

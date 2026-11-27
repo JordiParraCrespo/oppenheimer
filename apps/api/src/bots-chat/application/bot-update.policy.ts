@@ -1,4 +1,5 @@
 import {
+  BOT_PROVIDER_CATALOG,
   type BotPermission,
   type BotProvider,
   botEffortLevelFor,
@@ -105,12 +106,17 @@ function hasUpdate(input: UpdateBotsInput): boolean {
   return Object.values(changes).some((value) => value !== undefined);
 }
 
-/** The provider, model and effort one bot ends up on, as `resolveBotEngine` will write them. */
+/** The provider, model, effort and advisor one bot ends up on, as `resolveBotEngine` will write them. */
 function engineUpdateFor(
   input: UpdateBotsInput,
   bot: BotEntity,
-): Resolved<Pick<UpdateBotDto, 'provider' | 'model' | 'effort'>> {
-  if (input.provider === undefined && input.model === undefined && input.effort === undefined) {
+): Resolved<Pick<UpdateBotDto, 'provider' | 'model' | 'effort' | 'advisorModel'>> {
+  if (
+    input.provider === undefined &&
+    input.model === undefined &&
+    input.effort === undefined &&
+    input.advisor_model === undefined
+  ) {
     return { value: {} };
   }
   const provider = input.provider ?? bot.provider;
@@ -141,12 +147,49 @@ function engineUpdateFor(
       };
     }
   }
+  const advisor = advisorUpdateFor(input, bot, provider, model);
+  if ('refusal' in advisor) return advisor;
   return {
     value: {
       ...(input.provider !== undefined ? { provider } : {}),
       model,
       ...(input.effort !== undefined ? { effort: input.effort } : {}),
+      ...(advisor.value !== undefined ? { advisorModel: advisor.value } : {}),
     },
+  };
+}
+
+/**
+ * The advisor `update_bot` names, by id or by the label the model button
+ * shows, as one the resulting model takes; `undefined` when the call names
+ * none. One it does not take is refused with the ones it does, rather than
+ * left for `resolveBotEngine` to drop without a word.
+ */
+function advisorUpdateFor(
+  input: UpdateBotsInput,
+  bot: BotEntity,
+  provider: BotProvider,
+  model: string | null,
+): Resolved<string | null | undefined> {
+  if (input.advisor_model === undefined || input.advisor_model === null) {
+    return { value: input.advisor_model };
+  }
+  const offered = botModelOf(provider, model)?.advisors ?? [];
+  const models = BOT_PROVIDER_CATALOG[provider].models;
+  const asked = input.advisor_model.trim().toLowerCase();
+  const id = offered.find(
+    (each) =>
+      each === asked || models.find((row) => row.id === each)?.label.toLowerCase() === asked,
+  );
+  if (id) return { value: id };
+  const labels = offered.map((each) => models.find((row) => row.id === each)?.label ?? each);
+  return {
+    refusal: promptText('bots/tools.engine-update-for-advisor-refusal', {
+      name: bot.name,
+      engineLabel: engineLabelOf(provider, model),
+      advisor: input.advisor_model,
+      advisorsCount: labels.length ? `It takes: ${labels.join(', ')}.` : 'It takes no advisor.',
+    }),
   };
 }
 
@@ -176,6 +219,9 @@ function describeChanges(input: UpdateBotsInput, plan: BotUpdatePlan): string[] 
     changes.push(`runs on ${engines.join(' / ')}`);
   }
   if (input.effort !== undefined) changes.push(`effort ${input.effort ?? 'auto'}`);
+  if (input.advisor_model !== undefined) {
+    changes.push(input.advisor_model === null ? 'no advisor' : `advisor ${input.advisor_model}`);
+  }
   if (input.permission !== undefined) {
     changes.push(`permission ${BOT_PERMISSION_LABELS[input.permission]}`);
   }

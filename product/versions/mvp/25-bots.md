@@ -1701,7 +1701,7 @@ person can, past the installation that is the workspace's access control
 | `ask_bot` | Give another bot a task; its answer comes back as a new turn | auto |
 | `message_bot` | Send another bot a message, no answer owed | auto |
 | `create_bot` | A new bot: name, description, soul, instructions, provider, model, group | ask |
-| `update_bot` | Change one or more bots' settings: provider, model, effort, permission, group, name, description, colour, learning | ask |
+| `update_bot` | Change one or more bots' settings: provider, model, effort, advisor (one its model takes, by id or label, else refused with the ones it does; 2026-11-27, `scripts/evals/bot-advisor/`), permission, group, name, description, colour, learning | ask |
 
 `message_bot` and `ask_bot` (built 2026-10-18) queue a turn on the other
 bot, opened by an *event* message holding the words, in its `bots` lane

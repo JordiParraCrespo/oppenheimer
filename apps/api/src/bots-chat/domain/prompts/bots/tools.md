@@ -58,7 +58,7 @@ An existing bot group, by name or id; ungrouped when omitted.
 
 <!-- fragment: update-bot -->
 
-Changes the settings of one or more of the person's bots (you included) in one call: what runs them (provider, model and effort), their permission, their group, their name, description and avatar colour, and whether they save what they learn without asking. Give every bot the change applies to in bot_ids (from list_bots), at most {{updateMax}}; a field left out stays as it is. A model is an id or label of the bot's provider (the one named here, else each bot's own); a provider needs a workspace key. Permission is never looser than yours; a rename goes to one bot at a time; you cannot create groups. It does not edit a bot's soul or instructions.
+Changes the settings of one or more of the person's bots (you included) in one call: what runs them (provider, model, effort and advisor), their permission, their group, their name, description and avatar colour, and whether they save what they learn without asking. Give every bot the change applies to in bot_ids (from list_bots), at most {{updateMax}}; a field left out stays as it is. A model is an id or label of the bot's provider (the one named here, else each bot's own); a provider needs a workspace key. Permission is never looser than yours; a rename goes to one bot at a time; you cannot create groups. It does not edit a bot's soul or instructions.
 
 <!-- fragment: update-bot-bot-ids -->
 
@@ -75,6 +75,10 @@ Who answers them; switching provider without a model runs that provider's defaul
 <!-- fragment: update-bot-model -->
 
 A model id or label the provider offers; null is the provider's default.
+
+<!-- fragment: update-bot-advisor-model -->
+
+A stronger model the bots' turns may consult mid-turn for a plan or a second look, billed as that model: an id or label the bots' model takes as its advisor (Anthropic models only; get_self or get_bot says the current one). null turns it off.
 
 <!-- fragment: update-bot-permission -->
 
@@ -109,6 +113,7 @@ Reads one bot of the workspace: its name, what it is for, its provider and model
 Bot {{id}} "{{name}}"{{id2}}
 - for: {{description}}
 - runs on: {{engineLabel}} (provider {{provider}}, model {{model}}, effort {{effort}})
+- advisor: {{advisor}}
 - permission: {{permission}} ({{permission2}})
 - group: {{groupLabel}}
 - home host: {{homeHostId}}
@@ -137,6 +142,10 @@ You run under {{ceiling}}, and you cannot give a bot looser permissions than you
 <!-- fragment: engine-update-for-refusal -->
 
 For "{{name}}": {{engineLabel}} does not take effort "{{effort}}". {{levelsCount}} Leave effort out for Auto.
+
+<!-- fragment: engine-update-for-advisor-refusal -->
+
+For "{{name}}": {{engineLabel}} does not take "{{advisor}}" as its advisor. {{advisorsCount}} Leave advisor_model out to keep the current one.
 
 <!-- fragment: bots-updated-answer -->
 

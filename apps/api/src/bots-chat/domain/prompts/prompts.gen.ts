@@ -42,6 +42,7 @@ export type PromptId =
   | "bots/tools.update-bot-avatar-color"
   | "bots/tools.update-bot-provider"
   | "bots/tools.update-bot-model"
+  | "bots/tools.update-bot-advisor-model"
   | "bots/tools.update-bot-permission"
   | "bots/tools.update-bot-group"
   | "bots/tools.update-bot-learn-automatically"
@@ -56,6 +57,7 @@ export type PromptId =
   | "bots/tools.plan-bot-update-refusal-name-goes-one"
   | "bots/tools.update-looser-than-yours"
   | "bots/tools.engine-update-for-refusal"
+  | "bots/tools.engine-update-for-advisor-refusal"
   | "bots/tools.bots-updated-answer"
   | "bots/wake-peer-message.sender"
   | "bots/wake-peer-message.sender-since-deleted"
@@ -1247,9 +1249,10 @@ export interface PromptSlots {
   "bots/tools.send-sent-will-read": { botName: string; botId: string };
   "bots/tools.update-bot": { updateMax: string };
   "bots/tools.update-plan-workspace-has-bot": { unknown: string };
-  "bots/tools.get-bot-bot-runs-provider": { id: string; name: string; id2: string; description: string; engineLabel: string; provider: string; model: string; effort: string; permission: string; permission2: string; groupLabel: string; homeHostId: string; formatToolTime: string };
+  "bots/tools.get-bot-bot-runs-provider": { id: string; name: string; id2: string; description: string; engineLabel: string; provider: string; model: string; effort: string; advisor: string; permission: string; permission2: string; groupLabel: string; homeHostId: string; formatToolTime: string };
   "bots/tools.update-looser-than-yours": { ceiling: string };
   "bots/tools.engine-update-for-refusal": { name: string; engineLabel: string; effort: string; levelsCount: string };
+  "bots/tools.engine-update-for-advisor-refusal": { name: string; engineLabel: string; advisor: string; advisorsCount: string };
   "bots/tools.bots-updated-answer": { id: string; name: string; engineLabel: string; provider: string; model: string; effort: string; permission: string };
   "bots/wake-peer-message.sender": { name: string; id: string };
   "bots/wake-peer-message.sender-since-deleted": { name: string };
@@ -1769,11 +1772,12 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "bots/tools.create-bot-effort": "Only for a model that takes one; null is Auto: medium on a model whose own default is lower, else the model's own default.",
   "bots/tools.create-bot-permission": "ask (Ask for approval: what reaches outside asks), auto (Approve for me: a reviewer lets safe calls run, the rest asks) or full (Full access: nothing asks); never looser than yours. auto when omitted, or yours when stricter.",
   "bots/tools.create-bot-group": "An existing bot group, by name or id; ungrouped when omitted.",
-  "bots/tools.update-bot": "Changes the settings of one or more of the person's bots (you included) in one call: what runs them (provider, model and effort), their permission, their group, their name, description and avatar colour, and whether they save what they learn without asking. Give every bot the change applies to in bot_ids (from list_bots), at most {{updateMax}}; a field left out stays as it is. A model is an id or label of the bot's provider (the one named here, else each bot's own); a provider needs a workspace key. Permission is never looser than yours; a rename goes to one bot at a time; you cannot create groups. It does not edit a bot's soul or instructions.",
+  "bots/tools.update-bot": "Changes the settings of one or more of the person's bots (you included) in one call: what runs them (provider, model, effort and advisor), their permission, their group, their name, description and avatar colour, and whether they save what they learn without asking. Give every bot the change applies to in bot_ids (from list_bots), at most {{updateMax}}; a field left out stays as it is. A model is an id or label of the bot's provider (the one named here, else each bot's own); a provider needs a workspace key. Permission is never looser than yours; a rename goes to one bot at a time; you cannot create groups. It does not edit a bot's soul or instructions.",
   "bots/tools.update-bot-bot-ids": "The bots to change, from list_bots.",
   "bots/tools.update-bot-avatar-color": "The colour its face is drawn in.",
   "bots/tools.update-bot-provider": "Who answers them; switching provider without a model runs that provider's default.",
   "bots/tools.update-bot-model": "A model id or label the provider offers; null is the provider's default.",
+  "bots/tools.update-bot-advisor-model": "A stronger model the bots' turns may consult mid-turn for a plan or a second look, billed as that model: an id or label the bots' model takes as its advisor (Anthropic models only; get_self or get_bot says the current one). null turns it off.",
   "bots/tools.update-bot-permission": "ask (Ask for approval: what reaches outside asks), auto (Approve for me: a reviewer lets safe calls run, the rest asks) or full (Full access: nothing asks); never looser than yours.",
   "bots/tools.update-bot-group": "An existing bot group, by name or id; null takes them out of their group.",
   "bots/tools.update-bot-learn-automatically": "Whether what they decide to remember is saved without asking.",
@@ -1781,13 +1785,14 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "bots/tools.update-plan-workspace-has-bot": "The workspace has no bot {{unknown}}. Use list_bots for their ids.",
   "bots/tools.list-bots": "Lists the workspace's bots (you included, marked) with what each is for, its sidebar group, its provider and model, and its home host. Use get_bot for one bot's details.",
   "bots/tools.get-bot": "Reads one bot of the workspace: its name, what it is for, its provider and model, its home host and when its chat was last used. It does not read the bot's soul, instructions, memory or chat.",
-  "bots/tools.get-bot-bot-runs-provider": "Bot {{id}} \"{{name}}\"{{id2}}\n- for: {{description}}\n- runs on: {{engineLabel}} (provider {{provider}}, model {{model}}, effort {{effort}})\n- permission: {{permission}} ({{permission2}})\n- group: {{groupLabel}}\n- home host: {{homeHostId}}\n- last message: {{formatToolTime}}",
+  "bots/tools.get-bot-bot-runs-provider": "Bot {{id}} \"{{name}}\"{{id2}}\n- for: {{description}}\n- runs on: {{engineLabel}} (provider {{provider}}, model {{model}}, effort {{effort}})\n- advisor: {{advisor}}\n- permission: {{permission}} ({{permission2}})\n- group: {{groupLabel}}\n- home host: {{homeHostId}}\n- last message: {{formatToolTime}}",
   "bots/tools.peer-message-bot-id": "The other bot, from list_bots. Not yourself.",
   "bots/tools.peer-message-message": "What you are telling or asking it, complete on its own: it does not see this chat.",
   "bots/tools.plan-bot-update-refusal-name-least-one": "Name at least one thing to change: name, description, avatar_color, provider, model, effort, permission, group or learn_automatically.",
   "bots/tools.plan-bot-update-refusal-name-goes-one": "A name goes to one bot at a time: call update_bot once per bot to rename.",
   "bots/tools.update-looser-than-yours": "You run under {{ceiling}}, and you cannot give a bot looser permissions than yours. Ask the person to raise it in that bot's settings.",
   "bots/tools.engine-update-for-refusal": "For \"{{name}}\": {{engineLabel}} does not take effort \"{{effort}}\". {{levelsCount}} Leave effort out for Auto.",
+  "bots/tools.engine-update-for-advisor-refusal": "For \"{{name}}\": {{engineLabel}} does not take \"{{advisor}}\" as its advisor. {{advisorsCount}} Leave advisor_model out to keep the current one.",
   "bots/tools.bots-updated-answer": "- {{id}} \"{{name}}\": runs on {{engineLabel}} (provider {{provider}}, model {{model}}, effort {{effort}}); permission {{permission}}",
   "bots/wake-peer-message.sender": "The bot \"{{name}}\" ({{id}})",
   "bots/wake-peer-message.sender-since-deleted": "The bot \"{{name}}\", since deleted,",

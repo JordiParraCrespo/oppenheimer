@@ -264,6 +264,8 @@ export interface UpdateBotsInput {
   model?: string | null;
   /** `null`: Auto (`botTurnEffort`). */
   effort?: SessionEffort | null;
+  /** An advisor by id or label; `null` turns it off. */
+  advisor_model?: string | null;
   permission?: BotPermission;
   /** A group by id or name; `null` takes them out of their group. */
   group?: string | null;
@@ -277,7 +279,7 @@ export interface UpdateBotsInput {
  */
 export function toUpdateBotBody(
   input: UpdateBotsInput,
-  engine: Pick<UpdateBotDto, 'provider' | 'model' | 'effort'>,
+  engine: Pick<UpdateBotDto, 'provider' | 'model' | 'effort' | 'advisorModel'>,
   permission: BotPermission | undefined,
   groupId: string | null | undefined,
 ): UpdateBotDto {
