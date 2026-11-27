@@ -78,7 +78,7 @@ const allowSameNameInput = z
  * repositories come from a connected installation, an archived project takes
  * nothing new, a project another workspace owns is not found. Making, changing,
  * restoring and moving stay inside Oppenheimer and can be put back, so they run
- * under Approve for me; archiving stops work from being started and pauses
+ * under Auto; archiving stops work from being started and pauses
  * automations that a restore leaves paused, so it asks every time, under every
  * preset.
  */

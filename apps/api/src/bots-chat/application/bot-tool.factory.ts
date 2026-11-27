@@ -79,7 +79,7 @@ export interface BotToolCallContext {
   /** The sender's IANA zone; times a tool writes are in it. */
   timeZone: string;
   /**
-   * The bot's approval preset: `auto` (Approve for me)
+   * The bot's approval preset: `auto` (Auto)
    * runs what stays inside Oppenheimer and asks for what reaches outside it;
    * `full` runs everything.
    */
@@ -147,7 +147,7 @@ export function inChannel(context: BotToolCallContext): boolean {
   return context.conversationId !== context.botId;
 }
 
-/** A turn's context: a call's, and where an asking tool's call goes under Approve for me. */
+/** A turn's context: a call's, and where an asking tool's call goes under Auto. */
 export interface BotToolContext extends BotToolCallContext {
   approvals: BotApprovalRequesterPort;
   /**
@@ -161,7 +161,7 @@ export interface BotToolContext extends BotToolCallContext {
    */
   reviewer?: BotRuleReviewer;
   /**
-   * Under Approve for me, decides whether a call that would ask runs
+   * Under Auto, decides whether a call that would ask runs
    * without the owner (`bot-auto-review.policy.ts`). Absent on every other
    * preset, and where no call asks (a child's tools).
    */
@@ -243,10 +243,10 @@ export interface BotToolSpec<Input extends z.ZodType> {
   /**
    * The tool reaches outside Oppenheimer (it starts or stops work on a host,
    * posts to GitHub, creates a bot): under Ask for approval it asks the owner
-   * first, and under Approve for me the reviewer reads the call before it
+   * first, and under Auto the reviewer reads the call before it
    * does. Its validated call becomes a Needs input card, the model is told
    * to end its turn, and the call runs only when the owner approves it.
-   * `'always'` skips the reviewer and asks under Approve for me too, until
+   * `'always'` skips the reviewer and asks under Auto too, until
    * the owner allows it (Settings, or a card's "always"): what the reviewer
    * alone must not let run (trashing mail). Full access runs it. `'card'`
    * runs only from a yes on its card, under every preset, Full access
@@ -269,7 +269,7 @@ export interface BotToolSpec<Input extends z.ZodType> {
    * Whether this call reaches further than the tool's standing grants were
    * given for (a session at full access, where the tool's default is approve
    * for me): such a call is decided on its own, under Ask for approval and
-   * Approve for me and past every grant, Settings' Allow, rule and the
+   * Auto and past every grant, Settings' Allow, rule and the
    * reviewer, on a card that offers only this call. Full access runs it. Only with `asks`. It may read what the call acts on (the
    * dialog an answer lets through).
    */
@@ -355,7 +355,7 @@ export interface BotToolDefinition {
   readonly ownerOnlyOn: readonly BotTurnOrigin[] | null;
   /** Offered only on a turn a person is waiting on (`BotToolSpec.attendedOnly`). */
   readonly attendedOnly: boolean;
-  /** The tool for one turn; an asking tool asks first under Approve for me. */
+  /** The tool for one turn; an asking tool asks first under Auto. */
   bind(context: BotToolContext): BotEngineTool;
   /**
    * Carries out an approved call: the stored input, already validated when
@@ -543,7 +543,7 @@ function decidedFirst<Input extends z.ZodType>(
 /**
  * One review of a call, as a verdict the plan reads, each failing closed: a
  * review that throws, or cannot be read, asks, and the card says why. The
- * owner's rules say which rule matched; Approve for me's reviewer always
+ * owner's rules say which rule matched; Auto's reviewer always
  * settles (run or ask), asks for a call too long to read whole, and a turn
  * stopped while it ran neither runs the call nor raises its card.
  */

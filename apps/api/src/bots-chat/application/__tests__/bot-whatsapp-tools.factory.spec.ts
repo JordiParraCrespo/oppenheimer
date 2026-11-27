@@ -276,7 +276,7 @@ describe('BotWhatsappToolsFactory', () => {
     );
   });
 
-  it('asks before sending under Approve for me, and sends nothing yet', async () => {
+  it('asks before sending under Auto, and sends nothing yet', async () => {
     const { command, tool } = setup();
     const ctx = context();
     vi.mocked(ctx.approvals.request).mockResolvedValue({ approvalId: 'appr-1' } as never);
@@ -328,7 +328,7 @@ describe('BotWhatsappToolsFactory', () => {
     });
 
     // What breaks this: a card that hides what the owner's voice will say, or where it goes.
-    it('asks under Approve for me with the exact words and the destination on the card, speaking and sending nothing yet', async () => {
+    it('asks under Auto with the exact words and the destination on the card, speaking and sending nothing yet', async () => {
       const { command, tool } = setup();
       const ctx = context();
       vi.mocked(ctx.approvals.request).mockResolvedValue({

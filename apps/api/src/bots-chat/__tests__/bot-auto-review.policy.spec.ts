@@ -10,7 +10,7 @@ import {
 import { NO_PERMISSIONS } from '../domain/bot-tool-permission.policy';
 
 /**
- * Approve for me's reviewer, as a policy: what it is shown (the owner's own
+ * Auto's reviewer, as a policy: what it is shown (the owner's own
  * words, never the bot's, the action fenced as data), how its answer is read
  * (the threshold holds whatever the model says; an unreadable answer throws,
  * so the call asks), and which calls it reads at all. A regression here lets a
@@ -149,7 +149,7 @@ describe('ownerMessagesFor', () => {
 describe('autoReviews', () => {
   const tool = { name: 'merge_pull_request', asks: true, perCallOnly: true };
 
-  it('reads a call only under Approve for me', () => {
+  it('reads a call only under Auto', () => {
     expect(autoReviews(NO_PERMISSIONS, tool, 'auto')).toBe(true);
     expect(autoReviews(NO_PERMISSIONS, tool, 'ask')).toBe(false);
     expect(autoReviews(NO_PERMISSIONS, tool, 'full')).toBe(false);

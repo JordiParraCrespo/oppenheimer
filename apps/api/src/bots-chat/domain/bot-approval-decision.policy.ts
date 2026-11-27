@@ -16,9 +16,9 @@ import type { BotPermissions, BotToolTraits } from './bot-tool-permission.policy
  *    the owner's ask rules, when it has any: a match raises the card.
  * 3. A call that would ask runs on a standing grant for the thing it acts on.
  * 4. Then the owner's rules: an ask rule raises the card, an allow rule no ask
- *    rule overrides runs it. Under Approve for me every rule is read, so an
+ *    rule overrides runs it. Under Auto every rule is read, so an
  *    ask rule keeps the card the owner wanted before the reviewer runs.
- * 5. Then, under Approve for me, the reviewer (`autoReviews`), which runs the
+ * 5. Then, under Auto, the reviewer (`autoReviews`), which runs the
  *    call or raises the card.
  * 6. Otherwise the call raises the card.
  *

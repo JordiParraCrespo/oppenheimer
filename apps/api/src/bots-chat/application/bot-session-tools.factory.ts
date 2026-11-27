@@ -63,7 +63,7 @@ const CLOUD_START_WAIT_MAX_SECONDS = 120;
  * with a task, or in a vendor's cloud (Claude Code's or Codex's from a host,
  * Cursor's on the owner's key), give a running one a follow-up prompt or answer what it asks,
  * stop one, or close one it started. Each reaches outside Oppenheimer (they run things on the
- * owner's machine), so under Approve for me they ask first, and each says on
+ * owner's machine), so under Auto they ask first, and each says on
  * the card what it will do, by name. A bot's session is the owner's, started
  * in their scope, marked `bot`; a prompt it sends is logged as the bot's.
  */

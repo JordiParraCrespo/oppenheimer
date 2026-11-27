@@ -87,7 +87,7 @@ export interface CodingAgentTranscriptLocation {
  * words rather than any one CLI's.
  *
  * The console draws these three and only these: a hand for "Ask for approval",
- * a shield for "Approve for me", an alert ring for "Full access" — the last in
+ * a shield for "Auto", an alert ring for "Full access" — the last in
  * a warning tone, because it is the one that changes a machine unattended.
  */
 export const SESSION_PERMISSIONS = ['ask', 'auto', 'full'] as const;
@@ -95,7 +95,7 @@ export const SESSION_PERMISSIONS = ['ask', 'auto', 'full'] as const;
 export type SessionPermission = (typeof SESSION_PERMISSIONS)[number];
 
 /**
- * The level a session starts at when nobody picked one: "Approve for me",
+ * The level a session starts at when nobody picked one: "Auto",
  * never "Full access", so no start path bypasses the agent's own checks.
  */
 export const DEFAULT_SESSION_PERMISSION: SessionPermission = 'auto';
@@ -724,7 +724,7 @@ export const CODING_AGENTS: Readonly<Record<CodingAgentId, CodingAgentDefinition
       // another name.
       //
       // Ask asks before edits, commands and anything that reaches the
-      // internet; Approve for me lets edits through and still asks for the
+      // internet; Auto lets edits through and still asks for the
       // rest, as Claude Code's `acceptEdits` does. Reads keep OpenCode's own
       // rules, which ask before an `.env` file.
       permission: Object.freeze({

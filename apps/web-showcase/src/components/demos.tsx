@@ -508,7 +508,7 @@ export const PERMISSIONS = [
   },
   {
     value: 'auto' as const,
-    label: 'Approve for me',
+    label: 'Auto',
     description: 'Only ask for actions detected as potentially unsafe.',
   },
   {

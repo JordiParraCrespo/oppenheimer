@@ -20,7 +20,7 @@ person's message asking the bot to have that session do more.
 | `screenshot-es` | the screenshot's case, in Spanish, under Full access; stopped idle | restarts it |
 | `followup-en` | stopped idle overnight | restarts it |
 | `host-rebooted` | stopped when its host rebooted | restarts it |
-| `approve-for-me` | stopped idle, under Approve for me | calls `restart_session` (a card), does not send the person to the session |
+| `approve-for-me` | stopped idle, under Auto | calls `restart_session` (a card), does not send the person to the session |
 | `running-control` | at its prompt | sends the prompt, no restart |
 | `closing-control` | stopped, with a close the person asked for waiting on the host | does not restart it; tells the person |
 

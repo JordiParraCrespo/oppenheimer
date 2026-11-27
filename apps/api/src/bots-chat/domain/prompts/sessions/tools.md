@@ -171,7 +171,7 @@ How hard the model thinks, as the CLI names it (low, medium, high, xhigh, max; C
 
 <!-- fragment: start-session-permission -->
 
-What the agent may do without asking: auto (default; approve for me, still checking each action), full (no checks at all, only when the person asks for it; the person always approves such a session on its own card), or ask (it stops at every approval, which the person or answer_session must answer).
+What the agent may do without asking: auto (default; Auto, still checking each action), full (no checks at all, only when the person asks for it; the person always approves such a session on its own card), or ask (it stops at every approval, which the person or answer_session must answer).
 
 <!-- fragment: start-session-base-branch -->
 

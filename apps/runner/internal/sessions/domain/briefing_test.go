@@ -143,7 +143,7 @@ func TestCodexKeepsThePersonsOwnDeveloperInstructions(t *testing.T) {
 	}
 }
 
-// OpenCode allows any tool no rule names, and its Ask and Approve for me
+// OpenCode allows any tool no rule names, and its Ask and Auto
 // levels name only edits, the shell and the web: without a rule, an agent
 // could start another agent through the server where the same command in
 // the shell waits for the person. The server's tools ask unless the level

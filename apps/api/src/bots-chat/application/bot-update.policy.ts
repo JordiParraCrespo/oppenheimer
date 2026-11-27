@@ -152,7 +152,7 @@ function engineUpdateFor(
 
 /**
  * The Needs input card's line: `Update 2 bots (Zengue Jewels, Coverd Web):
- * runs on ChatGPT GPT-6.1 Sol, permission Approve for me`.
+ * runs on ChatGPT GPT-6.1 Sol, permission Auto`.
  */
 export function botUpdateSummary(input: UpdateBotsInput, plan: BotUpdatePlan): string {
   const names = plan.steps.map((step) => step.bot.name).join(', ');

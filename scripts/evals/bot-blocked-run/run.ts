@@ -12,7 +12,7 @@
 // its earlier runs said. The runner builds the bot's real system prompt and
 // the real routine opening (`routineOpening`), and serves the production
 // session tools over an in-memory workspace (`../bot-workspace.ts`), bound
-// under Approve for me, so `start_session` raises a card and runs nothing.
+// under Auto, so `start_session` raises a card and runs nothing.
 // A run is scored on its `start_session`, `send_to_session` and `notify`
 // calls and on the words the chat keeps of it (`scoreRun`, `keptWords`).
 //

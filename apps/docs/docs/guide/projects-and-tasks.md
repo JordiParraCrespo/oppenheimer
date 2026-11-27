@@ -60,7 +60,7 @@ A session finishing does not finish the task or move it to In review; only you d
 
 A task is where work is asked for; a session is where it is done.
 
-- **Start session** (on a card with no session, or in the dialog's Sessions row) opens a dialog with a prompt prefilled from the title and notes, the **Repository** (the project's), **Where it runs** (on a host, Claude Code cloud from a host, or Cursor's cloud), the **Host**, and the **Agent and model**. The session starts at the Approve for me permission level. If the host is offline the button reads **Queue session** and the session starts when the host is back.
+- **Start session** (on a card with no session, or in the dialog's Sessions row) opens a dialog with a prompt prefilled from the title and notes, the **Repository** (the project's), **Where it runs** (on a host, Claude Code cloud from a host, or Cursor's cloud), the **Host**, and the **Agent and model**. The session starts at the Auto permission level. If the host is offline the button reads **Queue session** and the session starts when the host is back.
 - **Link existing** links sessions you already have; a session can be linked to several tasks.
 - Starting or linking a session moves a task that is in Not started to **In progress**. No other move is automatic.
 - The card's session line shows the linked session that most needs attention (Needs input first). Inside that session, a **Back to task** chip returns to the task.

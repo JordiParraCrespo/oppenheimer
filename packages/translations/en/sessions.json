@@ -188,7 +188,7 @@
         "description": "The agent asks before it runs anything."
       },
       "auto": {
-        "label": "Approve for me",
+        "label": "Auto",
         "description": "Edits and safe commands run; the rest still asks."
       },
       "full": {

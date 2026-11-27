@@ -47,7 +47,7 @@ export interface BotToolTraits {
   asks: boolean;
   /** Every call is decided on its own: no Allow in Settings, no standing grant. */
   perCallOnly: boolean;
-  /** It asks under Approve for me too, past the reviewer, until the owner allows it (trashing mail). */
+  /** It asks under Auto too, past the reviewer, until the owner allows it (trashing mail). */
   always?: boolean;
   /** It runs only from a yes on its card, under Full access too (sending mail: keyed on the approval). */
   cardOnly?: boolean;

@@ -67,7 +67,7 @@ export const MUSE_AGENT: CodingAgentDefinition = Object.freeze({
     //
     // `--approval-mode on-request|untrusted|never`. `on-request`, Muse's
     // default, lets "recognized, non-dangerous" commands through and asks
-    // for the rest, which is Approve for me; `untrusted` is "stricter". Full
+    // for the rest, which is Auto; `untrusted` is "stricter". Full
     // access is `--yolo`, which turns off the approvals *and* the sandbox, as
     // Codex's Full access does; `never` alone would keep the sandbox.
     permission: Object.freeze({

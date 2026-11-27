@@ -114,7 +114,7 @@ describe('BotMailOrganizeToolsFactory', () => {
     expect(result.content).toContain('gone');
   });
 
-  it('asks before trashing under Approve for me, on a card a yes can make standing, and never before bringing threads back', async () => {
+  it('asks before trashing under Auto, on a card a yes can make standing, and never before bringing threads back', async () => {
     const { request, commands, tool } = setup('auto');
 
     await tool('trash_mail').run({ account: 'Personal', thread_ids: ['t1'] }, { signal });
