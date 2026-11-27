@@ -17,10 +17,11 @@ describe('the cloud chat setup the panel hands out', () => {
     const commands = [settings.hooks.SessionStart, settings.hooks.Stop].map(
       (entries) => entries[0].hooks[0].command,
     );
-    // Breaks if the panel names a mode or a path the served hook does not take.
+    // Breaks if the panel names a mode or a path the served hook does not take,
+    // or a path relative to the agent's directory, which a `cd` breaks.
     expect(commands).toEqual([
-      `node ${CLOUD_CHAT_HOOK_PATH} session-start`,
-      `node ${CLOUD_CHAT_HOOK_PATH} stop`,
+      `node "$CLAUDE_PROJECT_DIR"/${CLOUD_CHAT_HOOK_PATH} session-start`,
+      `node "$CLAUDE_PROJECT_DIR"/${CLOUD_CHAT_HOOK_PATH} stop`,
     ]);
     const hook = readFileSync(resolve(__dirname, '../../../../public/cloud-chat-hook.mjs'), 'utf8');
     expect(hook).toContain("mode === 'stop'");
@@ -45,7 +46,7 @@ describe('the cloud chat setup the panel hands out', () => {
     );
     expect(prompt).toContain(`save it as ${CLOUD_CHAT_HOOK_PATH}`);
     expect(prompt).toContain('https://app.example.com/cloud-chat-hook.mjs');
-    expect(prompt).toContain(`node ${CLOUD_CHAT_HOOK_PATH} stop`);
+    expect(prompt).toContain(cloudChatSettings());
     expect(prompt).toContain('allow app.example.com');
     // Breaks if the 90-day key is put in the prompt, where it would land in
     // the agent's transcript: the person pastes it into claude.ai themselves.

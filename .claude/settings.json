@@ -100,7 +100,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".agents/hooks/session-start.sh",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.agents/hooks/session-start.sh",
             "timeout": 600,
             "statusMessage": "Installing dependencies if they are missing..."
           }
@@ -110,7 +110,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/oppenheimer-cloud-chat.mjs session-start",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/oppenheimer-cloud-chat.mjs session-start",
             "timeout": 10
           }
         ]
@@ -122,19 +122,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .agents/hooks/git-guard.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/git-guard.mjs",
             "timeout": 10,
             "statusMessage": "Checking the git command..."
           },
           {
             "type": "command",
-            "command": "node .agents/hooks/screenshot-guard.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/screenshot-guard.mjs",
             "timeout": 15,
             "statusMessage": "Checking a visual change has screenshots..."
           },
           {
             "type": "command",
-            "command": "node .agents/hooks/verify-guard.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/verify-guard.mjs",
             "timeout": 15,
             "statusMessage": "Checking the change was run on the stack and the bot evals..."
           }
@@ -145,13 +145,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .agents/hooks/screenshot-guard.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/screenshot-guard.mjs",
             "timeout": 15,
             "statusMessage": "Checking a visual change has screenshots..."
           },
           {
             "type": "command",
-            "command": "node .agents/hooks/verify-guard.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/verify-guard.mjs",
             "timeout": 15,
             "statusMessage": "Checking the change was run on the stack and the bot evals..."
           }
@@ -164,7 +164,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".agents/hooks/format-on-edit.sh",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.agents/hooks/format-on-edit.sh",
             "timeout": 30,
             "statusMessage": "Formatting with Biome..."
           }
@@ -176,7 +176,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".agents/hooks/arch-check.sh",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.agents/hooks/arch-check.sh",
             "timeout": 180,
             "statusMessage": "Checking architecture boundaries and layout of the packages you changed..."
           }
@@ -186,7 +186,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/oppenheimer-cloud-chat.mjs stop",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/oppenheimer-cloud-chat.mjs stop",
             "timeout": 150
           }
         ]

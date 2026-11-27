@@ -20,10 +20,21 @@ export function cloudChatApiUrl(configured: string | undefined, origin: string):
   return (configured || origin).replace(/\/+$/, '');
 }
 
-/** The lines for the repository's `.claude/settings.json`: both hooks, one file. */
+/**
+ * The lines for the repository's `.claude/settings.json`: both hooks, one file.
+ * The path starts at the project's root: Claude Code runs a hook in the
+ * agent's current directory, so a relative path fails, and the Stop hook with
+ * it, once the agent has moved into a subdirectory.
+ */
 export function cloudChatSettings(): string {
   const run = (mode: string, timeout: number) => ({
-    hooks: [{ type: 'command', command: `node ${CLOUD_CHAT_HOOK_PATH} ${mode}`, timeout }],
+    hooks: [
+      {
+        type: 'command',
+        command: `node "$CLAUDE_PROJECT_DIR"/${CLOUD_CHAT_HOOK_PATH} ${mode}`,
+        timeout,
+      },
+    ],
   });
   return JSON.stringify(
     // The Stop hook waits up to two minutes for a reply, so it gets a little longer.
