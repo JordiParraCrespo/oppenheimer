@@ -24,9 +24,11 @@ export const TOOL_SEARCH_TOOL = 'ToolSearch';
 /**
  * Removed outright, so that nothing (a subagent, a settings file, a future
  * default) can bring one back. `tools` above is what is offered; this is the
- * belt to its braces. The names are read from Claude Code 2.1.300, the binary
- * `@anthropic-ai/claude-agent-sdk` 0.3.300 ships (`sdk-tools.d.ts`, then
- * `strings` on the binary); recheck the list when the SDK is upgraded.
+ * belt to its braces. The names are every built-in that Claude Code 2.1.300,
+ * the binary `@anthropic-ai/claude-agent-sdk` 0.3.300 ships, spells out
+ * (`sdk-tools.d.ts`, then `strings` on the binary); the skills proposer is
+ * named only through an import there and is left out. Recheck the list when
+ * the SDK is upgraded.
  * `StructuredOutput` stays off it: it is how Claude Code answers an
  * `outputFormat`, which a completion may ask for.
  */
@@ -35,6 +37,8 @@ export const DISALLOWED_TOOLS = [
   'Agent',
   'Task',
   'Bash',
+  'PowerShell',
+  'REPL',
   'BashOutput',
   'KillShell',
   'Read',
@@ -75,6 +79,19 @@ export const DISALLOWED_TOOLS = [
   'LSP',
   'Config',
   'Brief',
+  'SendUserMessage',
+  'SendUserFile',
+  'SubagentHandback',
+  'WebBrowser',
+  'SearchMcpRegistry',
+  'ListConnectors',
+  'SuggestConnectors',
+  'SuggestPluginInstall',
+  'SuggestSkills',
+  'ListPlugins',
+  'ListSkills',
+  'SearchPlugins',
+  'SearchSkills',
   'Projects',
   'ProposeGoal',
   'ReportFindings',
