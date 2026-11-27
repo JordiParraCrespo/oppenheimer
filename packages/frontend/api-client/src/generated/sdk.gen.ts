@@ -514,7 +514,7 @@ export const listMembers = <ThrowOnError extends boolean = false>(options: Optio
 });
 
 /**
- * Add an existing user as a member
+ * Add an existing user as a member (platform administrators)
  */
 export const addMember = <ThrowOnError extends boolean = false>(options: Options<AddMemberData, ThrowOnError>): RequestResult<AddMemberResponses, AddMemberErrors, ThrowOnError> => (options.client ?? client).post<AddMemberResponses, AddMemberErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

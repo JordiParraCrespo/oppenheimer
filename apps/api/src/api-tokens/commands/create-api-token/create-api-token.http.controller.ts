@@ -72,6 +72,7 @@ export class CreateApiTokenHttpController {
           id: user.id,
           role: user.role,
           organizationId: tenantOrganizationIdOf(request),
+          credential: credentialReachOf(request),
         },
         name: body.name,
         scopes: body.scopes,
@@ -87,4 +88,11 @@ export class CreateApiTokenHttpController {
 
     return { ...this.mapper.toResponse(token), token: secret };
   }
+}
+
+/** The presenting credential's reach; none for a browser session. */
+function credentialReachOf(request: ScopedRequest) {
+  const context = request.scopeContext;
+  if (!context) return undefined;
+  return { scopes: context.scopes, organizationIds: context.resourceScope.organizationIds };
 }
