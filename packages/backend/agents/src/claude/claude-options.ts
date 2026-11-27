@@ -259,6 +259,18 @@ export function claudeMessageParts(
 export const DEFER_TOOLS_ABOVE_CHARS = 20_000;
 
 /**
+ * Whether a run is on Anthropic's own API, where its server-side tools (the
+ * tool search, the advisor) are served, and is a turn rather than a
+ * completion, which offers no tool at all. z.ai's endpoint and a `baseUrl`
+ * are not known to serve them. Every Anthropic-only feature asks this.
+ */
+export function onAnthropicApi(
+  request: Pick<BotTurnRequest, 'provider' | 'baseUrl' | 'engineTools'>,
+): boolean {
+  return request.provider === 'anthropic' && !request.baseUrl && request.engineTools !== false;
+}
+
+/**
  * Whether Claude Code defers our tools behind its tool search (2026-11-23):
  * only on Anthropic's own API, where `defer_loading` and the search are
  * served (z.ai's endpoint is not known to serve them), and only when the
@@ -272,9 +284,7 @@ export const DEFER_TOOLS_ABOVE_CHARS = 20_000;
 export function claudeToolSearch(
   request: Pick<BotTurnRequest, 'provider' | 'baseUrl' | 'engineTools' | 'tools'>,
 ): boolean {
-  if (request.provider !== 'anthropic' || request.baseUrl || request.engineTools === false) {
-    return false;
-  }
+  if (!onAnthropicApi(request)) return false;
   const waiting = request.tools
     .filter((tool) => tool.deferrable)
     .reduce(
@@ -304,10 +314,7 @@ export const ADVISOR_GATE = 'CLAUDE_CODE_ENABLE_EXPERIMENTAL_ADVISOR_TOOL';
 export function claudeAdvisor(
   request: Pick<BotTurnRequest, 'provider' | 'baseUrl' | 'engineTools' | 'advisorModel'>,
 ): string | null {
-  if (request.provider !== 'anthropic' || request.baseUrl || request.engineTools === false) {
-    return null;
-  }
-  return request.advisorModel || null;
+  return onAnthropicApi(request) ? request.advisorModel || null : null;
 }
 
 /** The bot's system prompt, and how to call its tools on this engine when it has any. */
