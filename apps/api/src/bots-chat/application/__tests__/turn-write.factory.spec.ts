@@ -3,6 +3,7 @@ import {
   type BotMessageRepositoryPort,
   UnstorableStepsError,
 } from '../../database/bot-message.repository.port';
+import type { BotUsageRepositoryPort } from '../../database/bot-usage.repository.port';
 import { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
 import { type TranscriptWrite, TurnTranscript, thrownFailure } from '../turn-transcript.policy';
@@ -41,9 +42,13 @@ function setup(saveSteps: BotMessageRepositoryPort['saveSteps']) {
     settle: vi.fn().mockResolvedValue(undefined),
     publish: vi.fn().mockResolvedValue(undefined),
   };
+  const usage: Pick<BotUsageRepositoryPort, 'recordCall'> = {
+    recordCall: vi.fn().mockResolvedValue(undefined),
+  };
   const write = new TurnWriteFactory(
     messages as BotMessageRepositoryPort,
     stream as unknown as BotStreamPort,
+    usage as BotUsageRepositoryPort,
   ).writer(turn);
   const transcript = new TurnTranscript(turn);
   const started = transcript.apply({
@@ -59,7 +64,7 @@ function setup(saveSteps: BotMessageRepositoryPort['saveSteps']) {
     output: 'Factura',
     isError: false,
   });
-  return { write, messages, stream, started, finished, turn };
+  return { write, messages, stream, usage, started, finished, turn };
 }
 
 async function writeAll(write: (w: TranscriptWrite) => Promise<void>, writes: TranscriptWrite[]) {
@@ -67,6 +72,30 @@ async function writeAll(write: (w: TranscriptWrite) => Promise<void>, writes: Tr
 }
 
 describe('TurnWriteFactory', () => {
+  // What breaks this: the advisor's spend lost (no row on `/usage`), counted
+  // as the turn's own model, or a failed record ending a turn that ran.
+  it("records the advisor's spend as the bot's call on its model, and survives a failed record", async () => {
+    const { write, usage, stream, turn } = setup(async () => undefined);
+    const spent = {
+      model: 'advisor-placeholder',
+      inputTokens: 4_322,
+      outputTokens: 204,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+    };
+    await write({ kind: 'advisor', usage: spent });
+    expect(usage.recordCall).toHaveBeenCalledWith({
+      organizationId: turn.organizationId,
+      botId: turn.botId,
+      purpose: 'advisor',
+      provider: 'anthropic',
+      ...spent,
+    });
+    expect(stream.publish).not.toHaveBeenCalled();
+    vi.mocked(usage.recordCall).mockRejectedValueOnce(new Error('connection reset'));
+    await expect(write({ kind: 'advisor', usage: spent })).resolves.toBeUndefined();
+  });
+
   // What breaks this: a refused call's end thrown up to the turn, so one
   // attachment's bytes end the whole turn and lose what came before it.
   it('fails only the call whose result Postgres refused, and stores and announces that', async () => {

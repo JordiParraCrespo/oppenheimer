@@ -37,8 +37,14 @@ describe('BotEntity', () => {
     bot.edit({ avatarColor: 'coral' });
     expect([...bot.editedFields]).toEqual(['avatarColor']);
     bot.edit({ model: 'claude-opus-5-5' });
-    // The provider, model and effort are one setting, written together.
-    expect([...bot.editedFields].sort()).toEqual(['avatarColor', 'effort', 'model', 'provider']);
+    // The provider, model, effort and advisor are one setting, written together.
+    expect([...bot.editedFields].sort()).toEqual([
+      'advisorModel',
+      'avatarColor',
+      'effort',
+      'model',
+      'provider',
+    ]);
   });
 
   it('applies the launch policy on a provider change and writes all three columns', () => {

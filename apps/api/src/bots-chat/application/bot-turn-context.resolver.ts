@@ -9,6 +9,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import {
   BOT_MEMORY_LOG_IN_PROMPT_CHARS,
   BOT_MEMORY_PROFILE_IN_PROMPT_CHARS,
+  botAdvisorFor,
   botTakesImages,
   isChannelOrigin,
 } from '@oppenheimer/shared';
@@ -211,6 +212,10 @@ export class BotTurnContextResolver {
       documents.find((document) => document.name === name)?.content ?? '';
     const request: BotTurnContext = {
       ...model,
+      // Read from the bot as the turn runs, not copied with its model when
+      // it was made, so it is kept only when that model takes it. The
+      // engine leaves it off a turn with no engine tools (a guest's).
+      advisorModel: botAdvisorFor(turn.provider, turn.model, bot.advisorModel),
       // Each conversation names itself to the provider's prompt cache; the
       // console chat's id is the bot's.
       cacheKey: turn.conversationId,

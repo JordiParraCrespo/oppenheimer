@@ -51,6 +51,8 @@ export interface BotProps {
   /** A model id the provider offers; null runs the provider's default. */
   model: string | null;
   effort: SessionEffort | null;
+  /** A model its model lists as an advisor; null (or absent) consults none. */
+  advisorModel?: string | null;
   permission: BotPermission;
   /** Whether what it decides to remember is saved without asking. */
   learnAutomatically: boolean;
@@ -96,6 +98,7 @@ export interface BotEdit {
   provider?: BotProvider;
   model?: string | null;
   effort?: SessionEffort | null;
+  advisorModel?: string | null;
   permission?: BotPermission;
   learnAutomatically?: boolean;
   sections?: readonly BotSection[];
@@ -112,6 +115,7 @@ export type BotEditedField =
   | 'provider'
   | 'model'
   | 'effort'
+  | 'advisorModel'
   | 'permission'
   | 'learnAutomatically'
   | 'sections';
@@ -142,7 +146,7 @@ export class BotEntity extends AggregateRoot<BotProps> {
    */
   static createNew(props: CreateBotProps): BotEntity {
     const engine = resolveBotEngine(
-      { provider: props.provider, model: null, effort: null },
+      { provider: props.provider, model: null, effort: null, advisorModel: null },
       { model: props.model ?? null, effort: props.effort ?? null },
     );
     const bot = new BotEntity({
@@ -212,6 +216,10 @@ export class BotEntity extends AggregateRoot<BotProps> {
   get effort(): SessionEffort | null {
     return this.props.effort;
   }
+
+  get advisorModel(): string | null {
+    return this.props.advisorModel ?? null;
+  }
   get permission(): BotPermission {
     return this.props.permission;
   }
@@ -280,12 +288,16 @@ export class BotEntity extends AggregateRoot<BotProps> {
     if (
       changes.provider !== undefined ||
       changes.model !== undefined ||
-      changes.effort !== undefined
+      changes.effort !== undefined ||
+      changes.advisorModel !== undefined
     ) {
-      // The three are one setting: each is valid only for the others, so they
+      // The four are one setting: each is valid only for the others, so they
       // are resolved and written together.
-      Object.assign(props, resolveBotEngine(props, changes));
-      edited.add('provider').add('model').add('effort');
+      Object.assign(
+        props,
+        resolveBotEngine({ ...props, advisorModel: props.advisorModel ?? null }, changes),
+      );
+      edited.add('provider').add('model').add('effort').add('advisorModel');
     }
     this.setUpdatedAt(new Date());
     this.validate();

@@ -439,6 +439,8 @@
         "ruleReview_other": "{{count}} rule reviews",
         "autoReview_one": "{{count}} auto review",
         "autoReview_other": "{{count}} auto reviews",
+        "advisor_one": "{{count}} advisor consultation",
+        "advisor_other": "{{count}} advisor consultations",
         "dream_one": "{{count}} memory tidy",
         "dream_other": "{{count}} memory tidies",
         "suggestion_one": "{{count}} suggested reply",

@@ -92,6 +92,9 @@ export class BotOrmEntity {
   @Column({ type: 'varchar', length: 16, nullable: true })
   effort!: string | null;
 
+  @Column({ type: 'varchar', length: 128, nullable: true })
+  advisorModel!: string | null;
+
   @Column({ type: 'varchar', length: 8, default: 'auto' })
   permission!: string;
 

@@ -4316,6 +4316,10 @@ export type BotResponseDto = {
      */
     effort: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
     /**
+     * The model it may consult mid-turn (Anthropic only, one its model lists as an advisor); null consults none.
+     */
+    advisorModel: string | null;
+    /**
      * How far a turn may go without asking.
      */
     permission: 'ask' | 'auto' | 'full';
@@ -4372,6 +4376,7 @@ export type UpdateBotRequest = {
     provider?: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai';
     model?: string | null;
     effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | null;
+    advisorModel?: string | null;
     permission?: 'ask' | 'auto' | 'full';
     learnAutomatically?: boolean;
     sections?: Array<'sessions' | 'automations' | 'plan' | 'pulls'>;
@@ -5304,7 +5309,7 @@ export type BotUsageBackgroundResponseDto = {
     /**
      * Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory.
      */
-    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream' | 'suggestion' | 'auto_review';
+    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream' | 'suggestion' | 'auto_review' | 'advisor';
     calls: number;
 };
 

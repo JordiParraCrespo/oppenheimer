@@ -22019,7 +22019,7 @@
         ]
       },
       "patch": {
-        "description": "Profile, home host, model, effort, approval level, learning, and where it sits: a `position` places it at that index in its group, and a new `groupId` with none puts it last there.",
+        "description": "Profile, home host, model, effort, advisor, approval level, learning, and where it sits: a `position` places it at that index in its group, and a new `groupId` with none puts it last there.",
         "operationId": "updateBot",
         "parameters": [
           {
@@ -40782,6 +40782,11 @@
             "nullable": true,
             "description": "The effort level; null is Auto: turns run at medium on a model whose own default is lower, else at its own default."
           },
+          "advisorModel": {
+            "type": "string",
+            "nullable": true,
+            "description": "The model it may consult mid-turn (Anthropic only, one its model lists as an advisor); null consults none."
+          },
           "permission": {
             "type": "string",
             "enum": [
@@ -40849,6 +40854,7 @@
           "provider",
           "model",
           "effort",
+          "advisorModel",
           "permission",
           "createdByBotId",
           "learnAutomatically",
@@ -41030,6 +41036,12 @@
               "ultra",
               null
             ],
+            "nullable": true
+          },
+          "advisorModel": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
             "nullable": true
           },
           "permission": {
@@ -43239,7 +43251,8 @@
               "rule_review",
               "dream",
               "suggestion",
-              "auto_review"
+              "auto_review",
+              "advisor"
             ],
             "description": "Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory."
           },

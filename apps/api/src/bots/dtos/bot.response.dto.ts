@@ -87,6 +87,14 @@ export class BotResponseDto {
   })
   effort!: SessionEffort | null;
 
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'The model it may consult mid-turn (Anthropic only, one its model lists as an advisor); null consults none.',
+  })
+  advisorModel!: string | null;
+
   @ApiProperty({ enum: BOT_PERMISSIONS, description: 'How far a turn may go without asking.' })
   permission!: BotPermission;
 

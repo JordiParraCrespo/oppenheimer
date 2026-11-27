@@ -497,6 +497,12 @@ export const updateBotSchema = z.object({
   model: z.string().min(1).max(128).nullable().optional(),
   /** Recorded only when the model offers it; otherwise the CLI's own default. */
   effort: z.enum(SESSION_EFFORTS).nullable().optional(),
+  /**
+   * The model it may consult mid-turn, one its model lists
+   * (`BotModel.advisors`); `null` turns it off. Recorded only when the model
+   * takes it, so a model that takes none, or a new provider, clears it.
+   */
+  advisorModel: z.string().min(1).max(128).nullable().optional(),
   permission: botPermissionSchema.optional(),
   learnAutomatically: z.boolean().optional(),
   /** The whole set of sections it shows in; `[]` shows it in Employees only. */
@@ -1068,6 +1074,8 @@ export const BOT_MODEL_CALL_PURPOSES = [
   'dream',
   'suggestion',
   'auto_review',
+  // A turn's consultations of its advisor, priced as the advisor's model.
+  'advisor',
 ] as const;
 export type BotModelCallPurpose = (typeof BOT_MODEL_CALL_PURPOSES)[number];
 

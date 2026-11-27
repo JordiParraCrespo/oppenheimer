@@ -1,10 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { BOT_MESSAGE_REPOSITORY, BOT_STREAM } from '../bots-chat.di-tokens';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { BotAdvisorUsage } from '@oppenheimer/backend-agents';
+import { BOT_MESSAGE_REPOSITORY, BOT_STREAM, BOT_USAGE_REPOSITORY } from '../bots-chat.di-tokens';
 import {
   type BotMessageRepositoryPort,
   TurnGoneError,
   UnstorableStepsError,
 } from '../database/bot-message.repository.port';
+import type { BotUsageRepositoryPort } from '../database/bot-usage.repository.port';
 import type { BotTurnEntity } from '../domain/bot-turn.entity';
 import type { BotStreamPort } from '../infrastructure/bot-stream.port';
 import {
@@ -22,7 +24,8 @@ import {
  * what is stored (a new message, a line's steps, a steer placed where the
  * turn took it) is written, then announced as that message; the words a
  * quiet turn takes back are removed, and the turn's end is what tells the
- * chat to read again. A call's end
+ * chat to read again. What the advisor spent is recorded as the bot's call,
+ * and a failure to record it only logged, as a completion's is. A call's end
  * whose content Postgres refuses (`UnstorableStepsError`) fails that call
  * alone (`failUnstoredCall`); a turn deleted under it (`TurnGoneError`)
  * ends it as it came; any other failed write fails the turn as `storage`
@@ -30,9 +33,12 @@ import {
  */
 @Injectable()
 export class TurnWriteFactory {
+  private readonly logger = new Logger(TurnWriteFactory.name);
+
   constructor(
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
+    @Inject(BOT_USAGE_REPOSITORY) private readonly usage: BotUsageRepositoryPort,
   ) {}
 
   /**
@@ -50,6 +56,7 @@ export class TurnWriteFactory {
   }
 
   private async apply(turn: BotTurnEntity, write: TranscriptWrite): Promise<void> {
+    if (write.kind === 'advisor') return this.advised(turn, write.usage);
     // The bot's stream is its console chat's; a channel's turn is stored only.
     if (!turn.inConsole) {
       if (write.kind === 'text' || write.kind === 'settled' || write.kind === 'retrying') return;
@@ -67,6 +74,22 @@ export class TurnWriteFactory {
     if (write.kind === 'unsay') return;
     const messageId = storedMessageId(write);
     await this.stream.publish(turn.botId, { type: 'message', turnId: turn.id, messageId });
+  }
+
+  private async advised(turn: BotTurnEntity, usage: BotAdvisorUsage): Promise<void> {
+    const call = {
+      organizationId: turn.organizationId,
+      botId: turn.botId,
+      purpose: 'advisor' as const,
+    };
+    await this.usage
+      .recordCall({ ...call, provider: turn.provider, ...usage })
+      .catch((error: unknown) =>
+        this.logger.warn(
+          { message: "A bot's advisor spend was not recorded", ...call, turnId: turn.id },
+          error instanceof Error ? error.stack : String(error),
+        ),
+      );
   }
 
   private async stored(

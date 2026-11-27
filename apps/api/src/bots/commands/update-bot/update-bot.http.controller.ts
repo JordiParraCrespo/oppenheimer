@@ -45,7 +45,7 @@ export class UpdateBotHttpController {
   @ApiOperation({
     summary: 'Edit a bot',
     description:
-      'Profile, home host, model, effort, approval level, learning, and where it sits: a `position` places it at that index in its group, and a new `groupId` with none puts it last there.',
+      'Profile, home host, model, effort, advisor, approval level, learning, and where it sits: a `position` places it at that index in its group, and a new `groupId` with none puts it last there.',
   })
   @ApiResponse({ status: 200, type: BotResponseDto })
   @ApiProblemResponse({ status: 404, description: 'Bot not found', code: 'BOTS_001' })

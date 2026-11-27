@@ -32,6 +32,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     record.provider = entity.provider;
     record.model = entity.model;
     record.effort = entity.effort;
+    record.advisorModel = entity.advisorModel;
     record.permission = entity.permission;
     record.learnAutomatically = entity.learnAutomatically;
     record.sections = [...entity.sections];
@@ -58,6 +59,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
         provider: record.provider as BotProvider,
         model: record.model ?? null,
         effort: (record.effort ?? null) as SessionEffort | null,
+        advisorModel: record.advisorModel ?? null,
         permission: record.permission as BotPermission,
         learnAutomatically: record.learnAutomatically,
         sections: (record.sections ?? []) as BotSection[],
@@ -82,6 +84,7 @@ export class BotMapper implements Mapper<BotEntity, BotOrmEntity, BotResponseDto
     dto.provider = entity.provider;
     dto.model = entity.model;
     dto.effort = entity.effort;
+    dto.advisorModel = entity.advisorModel;
     dto.permission = entity.permission;
     dto.createdByBotId = entity.createdByBotId;
     dto.learnAutomatically = entity.learnAutomatically;

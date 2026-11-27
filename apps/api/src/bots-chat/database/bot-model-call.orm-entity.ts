@@ -5,13 +5,15 @@ import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn 
  * A model call a bot made on its owner's key outside its turns
  * (`1793643110340-AddBotUsage`): a goal's review, the conversation's
  * summary, a review of the owner's rules, a dream, the composer's
- * suggested next message. Append-only.
+ * suggested next message; and a turn's consultations of its advisor, which
+ * are priced as the advisor's model rather than the turn's
+ * (`1795781956360-AddBotAdvisor`). Append-only.
  */
 @Entity('bot_model_call')
 @Index('IDX_bot_model_call_bot', ['organizationId', 'botId', 'createdAt'])
 @Check(
   'CHK_bot_model_call_purpose',
-  `purpose IN ('goal_review', 'summary', 'rule_review', 'dream', 'suggestion', 'auto_review')`,
+  `purpose IN ('goal_review', 'summary', 'rule_review', 'dream', 'suggestion', 'auto_review', 'advisor')`,
 )
 @Check(
   'CHK_bot_model_call_provider',

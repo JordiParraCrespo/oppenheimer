@@ -69,6 +69,24 @@ describe('TurnTranscript', () => {
     });
   });
 
+  // What breaks this: the advisor's tokens added to the turn's, priced as
+  // the turn's model, or dropped.
+  it("hands the advisor's spend on to be recorded apart, and keeps it out of the turn's counts", () => {
+    const advisor = {
+      model: 'advisor-placeholder',
+      inputTokens: 9_000,
+      outputTokens: 600,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+    };
+    const { writes, transcript } = run([
+      { type: 'usage', inputTokens: 10, outputTokens: 2, advisor },
+      { type: 'done', reason: 'completed' },
+    ]);
+    expect(writes).toContainEqual({ kind: 'advisor', usage: advisor });
+    expect(transcript.result).toMatchObject({ inputTokens: 10, outputTokens: 2 });
+  });
+
   // What breaks this: a chat that reconnects mid-turn drawing a stored block
   // again, because the block it was told it is in counts one the conversation
   // never stored (only whitespace) or misses one it did.

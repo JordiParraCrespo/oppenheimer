@@ -3197,7 +3197,7 @@ export const findBot = <ThrowOnError extends boolean = false>(options: Options<F
 /**
  * Edit a bot
  *
- * Profile, home host, model, effort, approval level, learning, and where it sits: a `position` places it at that index in its group, and a new `groupId` with none puts it last there.
+ * Profile, home host, model, effort, advisor, approval level, learning, and where it sits: a `position` places it at that index in its group, and a new `groupId` with none puts it last there.
  */
 export const updateBot = <ThrowOnError extends boolean = false>(options: Options<UpdateBotData, ThrowOnError>): RequestResult<UpdateBotResponses, UpdateBotErrors, ThrowOnError> => (options.client ?? client).patch<UpdateBotResponses, UpdateBotErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

@@ -1,7 +1,7 @@
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError } from '@oppenheimer/backend-core';
-import { parseBotSlashCommand } from '@oppenheimer/shared';
+import { type BotProvider, parseBotSlashCommand } from '@oppenheimer/shared';
 import { None, Some } from 'oxide.ts';
 import type { TurnCredentialsPort } from '../../../bots/application/turn-credentials.port';
 import type { BotRepositoryPort } from '../../../bots/database/bot.repository.port';
@@ -92,6 +92,8 @@ function setup(
     channelChat?: { chatId: string; kind?: 'whatsapp'; whatsappAccountId?: string };
     /** What the owner set for the bot's tools; nothing by default. */
     permissions?: BotPermissions;
+    /** The model the turn runs on and the bot's advisor; GLM and none by default. */
+    engine?: { provider: BotProvider; model: string; advisorModel: string | null };
   } = {},
 ) {
   const opening = conversation.opening ?? 'Hi';
@@ -105,6 +107,7 @@ function setup(
     createdByUserId: 'owner-1',
     homeHostId: HOME,
     permission: 'auto',
+    advisorModel: conversation.engine?.advisorModel ?? null,
   };
   const access = new BotModelAccessResolver(
     { findForTurn: async () => Some(bot) } as unknown as BotRepositoryPort,
@@ -197,8 +200,8 @@ function setup(
       organizationId: 'org-1',
       botId: 'bot-1',
       requestedByUserId: 'owner-1',
-      provider: 'glm',
-      model: 'model-1',
+      provider: conversation.engine?.provider ?? 'glm',
+      model: conversation.engine?.model ?? 'model-1',
       effort: null,
       timeZone,
     });
@@ -252,6 +255,22 @@ describe('BotTurnContextResolver', () => {
   // What breaks this: the text the person wrote in Settings → Memory is saved
   // but never read, or read as someone else's, so every bot asks again who
   // they are.
+  // What breaks this: a bot's advisor never reaching its turns, or one the
+  // turn's own model does not take (the bot's model changed after the turn
+  // was queued) sent anyway, which Anthropic refuses with a 400.
+  it("sends the bot's advisor when the turn's model takes it, and none otherwise", async () => {
+    const engine = (model: string) => ({
+      provider: 'anthropic' as const,
+      model,
+      advisorModel: 'claude-opus-5-5',
+    });
+    const taken = await setup(async () => [], { engine: engine('claude-sonnet-5-5') }).resolve();
+    expect(taken.advisorModel).toBe('claude-opus-5-5');
+    const refused = await setup(async () => [], { engine: engine('claude-fable-5-2') }).resolve();
+    expect(refused.advisorModel).toBeNull();
+    expect((await setup(async () => []).resolve()).advisorModel).toBeNull();
+  });
+
   it('puts what the owner wrote about themselves in the system prompt, and nothing when they wrote nothing', async () => {
     const written = await setup(async () => [], {
       about: 'I am Jordi. Answer in short sentences.',

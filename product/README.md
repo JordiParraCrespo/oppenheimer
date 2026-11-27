@@ -2167,3 +2167,7 @@ earlier note:
   from a row's menu), whose choices apply to a live share as they are
   picked; the guest page is the session's own bar and a full-width
   terminal ("Share as a popover").
+- `versions/mvp/25-bots.md` §1 kept a bot's engine as its provider, model
+  and effort. Since 2026-11-27 an Anthropic bot also has an advisor, a
+  stronger Claude model it may consult mid-turn, kept valid with the other
+  three, and what it spends is its own line on `/usage` (§2).

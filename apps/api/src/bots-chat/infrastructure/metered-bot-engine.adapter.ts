@@ -150,6 +150,13 @@ export class MeteredBotEngine extends BotEngine {
         this.tokens.inc({ ...labels, type: 'output' }, event.outputTokens);
         this.tokens.inc({ ...labels, type: 'cache_read' }, event.cacheReadTokens ?? 0);
         this.tokens.inc({ ...labels, type: 'cache_write' }, event.cacheWriteTokens ?? 0);
+        // The advisor's calls are the turn's provider's too: spent, and counted.
+        if (event.advisor) {
+          this.tokens.inc({ ...labels, type: 'input' }, event.advisor.inputTokens);
+          this.tokens.inc({ ...labels, type: 'output' }, event.advisor.outputTokens);
+          this.tokens.inc({ ...labels, type: 'cache_read' }, event.advisor.cacheReadTokens);
+          this.tokens.inc({ ...labels, type: 'cache_write' }, event.advisor.cacheWriteTokens);
+        }
         return;
       case 'tool.finished':
         this.toolCalls.inc({ provider: labels.provider, result: event.isError ? 'error' : 'ok' });

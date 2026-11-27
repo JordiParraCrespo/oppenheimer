@@ -1,4 +1,8 @@
-import type { BotEngineEvent, BotEngineFailure } from '@oppenheimer/backend-agents';
+import type {
+  BotAdvisorUsage,
+  BotEngineEvent,
+  BotEngineFailure,
+} from '@oppenheimer/backend-agents';
 import { AppError } from '@oppenheimer/backend-core';
 import {
   BOT_PROVIDER_CATALOG,
@@ -51,7 +55,12 @@ export type TranscriptWrite =
   /** The turn ended quiet: the words it stored before it said so go (`QuietTurn`). */
   | { kind: 'unsay'; messageIds: string[] }
   /** The engine waits to try a refused call again; passed on, never stored. */
-  | { kind: 'retrying'; reason: 'rate_limit' | 'unavailable' };
+  | { kind: 'retrying'; reason: 'rate_limit' | 'unavailable' }
+  /**
+   * What the turn's advisor spent: recorded with the bot's other model calls,
+   * priced as the advisor's model, never added to the turn's own counts.
+   */
+  | { kind: 'advisor'; usage: BotAdvisorUsage };
 
 /** How the engine said the turn ended, and what it cost. */
 export interface TranscriptOutcome {
@@ -173,7 +182,7 @@ export class TurnTranscript {
         this.outcome.cacheWriteTokens += event.cacheWriteTokens ?? 0;
         this.outcome.context = event.context ?? this.outcome.context;
         this.outcome.planLimits = event.limits ?? this.outcome.planLimits;
-        return [];
+        return event.advisor ? [{ kind: 'advisor', usage: event.advisor }] : [];
       case 'done': {
         const reset = providerResetOf(event, this.outcome.planLimits);
         if (reset) {

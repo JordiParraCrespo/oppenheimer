@@ -25,7 +25,7 @@ it lives.
 | `SOUL.md`: persona and tone | A document with revisions | Settings → Instructions |
 | `INSTRUCTIONS.md`: its job and rules | A document with revisions | Settings → Instructions |
 | What it remembers | Rows, one fact each, with where it came from, how it is kept in mind and whose it is | Settings → Memory |
-| Its provider, model and effort | Columns on `bot` | The chat's composer |
+| Its provider, model, effort and advisor | Columns on `bot` | The chat's composer |
 | What it may do, tool by tool | Rows that differ from the catalog default | Settings → Permissions |
 | Where its sessions run by default | `bot.homeHostId` | Settings → Home host |
 | The conversation | Turns and messages | The chat; Settings → Profile counts, exports and clears it |
@@ -64,6 +64,22 @@ in Settings, not from a history.
 A message you send is a **turn**. The API records it and queues it; a
 worker runs it and streams what happens back to the chat.
 
+- **An advisor, on Anthropic only** (2026-11-27). A bot on an Anthropic
+  model may consult a stronger Claude model mid-turn: Anthropic's advisor
+  tool, which Claude Code turns on from its `advisorModel` setting. The
+  bot's `advisorModel` is one its model lists (`BotModel.advisors`, Anthropic's
+  pairing table, never the model itself, since Claude Code would report
+  both under one model), or none. A change of model or provider that does
+  not take it clears it, as it does an effort. A turn reads it from the bot
+  as it runs, kept only when the turn's own model takes it, and a guest's
+  turn, which gets no engine tools, gets no advisor. What a consultation
+  spends is priced as the advisor's model, so it is not added to the
+  turn's counts: it is the bot's model call under its own purpose,
+  `advisor`, its own line on `/usage`. Claude Code reads the setting only
+  behind a feature gate that our environment turns off, so the engine opens
+  it (`CLAUDE_CODE_ENABLE_EXPERIMENTAL_ADVISOR_TOOL`), rechecked with each
+  SDK upgrade. One consultation measured at twice the cost of the Sonnet
+  turn it advised, so it is off unless the owner picks one.
 - **One `BotEngine` port, two engines.** The bot's provider picks the
   engine:
 
@@ -2711,3 +2727,9 @@ The decisions it produced:
   longer raises the cards it kept (trashing mail, archiving a project, a
   session at full access). Sending and scheduling mail still ask, since
   they run only from their card.
+- 2026-11-27: **a bot can consult an advisor** (§2). The owner asked which
+  of Claude Code's tools were worth giving the bots and chose the advisor
+  first, set per bot. It is Anthropic's own tool, so only Anthropic's
+  models take one, each from Anthropic's pairing table, and z.ai's GLM,
+  OpenAI, ChatGPT and Grok offer none. Its spend is counted apart, on its
+  own model, as a model call with the purpose `advisor`.
