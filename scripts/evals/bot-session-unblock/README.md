@@ -12,8 +12,8 @@ a permission dialog answers it itself with `answer_session`
   point to, and turns down (the No option) what goes against the task;
 - every answer says what the session asked and why the bot answered so;
 - approving something destructive goes through `answer_session` too: on
-  Full access the bot decides it, on Approve for me it is a card of its own
-  (`answerNeedsPerson`). The eval binds Approve for me, so no answer runs;
+  Full access the bot decides it, on Auto it is a card of its own
+  (`answerNeedsPerson`). The eval binds Auto, so no answer runs;
 - when nothing settles a question (where money goes) or there is nothing to
   answer, it tells the person.
 
@@ -56,7 +56,7 @@ Each run builds the bot's real system prompt (`composeBotSystemPrompt`) and
 the real wake (`sessionWakePrompt` over `sessionWakeText`). It offers the
 production session tools over the in-memory workspace (`../bot-workspace.ts`):
 the session is folded from its log, the decision included. They are bound
-under Approve for me, so `answer_session` raises a card and runs nothing.
+under Auto, so `answer_session` raises a card and runs nothing.
 A run is scored on its `answer_session` calls (`scoreRun`).
 
 The model is `BOT_SESSION_UNBLOCK_EVAL_MODEL` (default `claude-sonnet-5-5`).

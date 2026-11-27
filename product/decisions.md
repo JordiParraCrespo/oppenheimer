@@ -2160,6 +2160,10 @@ one its decision belongs to:
   from a row's menu), whose choices apply to a live share as they are
   picked; the guest page is the session's own bar and a full-width
   terminal ("Share as a popover").
+- `design/console/screens.md` and `design/bots/bots.md` called the middle
+  permission level, sessions' and bots' alike, "Approve for me". It is now
+  "Auto" (2026-11-27): the same level, stored as `auto`, under a shorter name
+  the owner asked for.
 - On 2026-11-26 the owner had `product/` restructured. It had three homes
   for design (the numbered notes at its root, `versions/mvp/`,
   `next-steps/`), and most of `next-steps/` was built. Now the design is

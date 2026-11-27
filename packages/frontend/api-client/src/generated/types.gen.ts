@@ -5694,7 +5694,7 @@ export type BotToolPermissionDto = {
      */
     description: string;
     /**
-     * It reaches outside Oppenheimer: asking is its default under Approve for me.
+     * It reaches outside Oppenheimer: asking is its default under Auto.
      */
     asks: boolean;
     /**

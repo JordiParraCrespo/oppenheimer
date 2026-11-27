@@ -20,7 +20,7 @@ import { TOOL_VIEWS, toToolView } from '@/features/bots/lib/tool-search';
 
 /**
  * Every tool the bot has, under its group: what each does on its own. A tool
- * nobody set follows the preset (Approve for me asks before anything that
+ * nobody set follows the preset (Auto asks before anything that
  * reaches outside Oppenheimer; Full access runs it).
  *
  * The list is long, so it opens folded: one line per group saying how its

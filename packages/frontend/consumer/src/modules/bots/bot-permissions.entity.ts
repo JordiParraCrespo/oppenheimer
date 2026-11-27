@@ -12,7 +12,7 @@ export interface BotToolSetting {
   group: BotToolGroup;
   /** What it does, in a sentence. */
   description: string;
-  /** It reaches outside Oppenheimer: under Approve for me it asks by default. */
+  /** It reaches outside Oppenheimer: under Auto it asks by default. */
   asks: boolean;
   /** Every call is its own decision (merging): Allow is not offered. */
   perCallOnly: boolean;

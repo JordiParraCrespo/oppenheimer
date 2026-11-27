@@ -65,7 +65,7 @@ interface IssueRead {
 /**
  * GitHub issues: read a repository's issues and one with
  * its conversation, open one, comment on one. Reads go through the
- * workspace's installations; the writes ask first under Approve for me and
+ * workspace's installations; the writes ask first under Auto and
  * are made with the owner's own GitHub user token, so GitHub records the
  * person. Titles, bodies and comments come back fenced as data. Issues need
  * the App's Issues permission; without it each tool says so.

@@ -205,7 +205,7 @@
         "description": "Asks you before anything that reaches outside Oppenheimer."
       },
       "auto": {
-        "label": "Approve for me",
+        "label": "Auto",
         "description": "A reviewer lets what you asked for run; anything risky still asks."
       },
       "full": {
@@ -787,7 +787,7 @@
       },
       "preset": {
         "ask": "Tools you leave on their default follow Ask for approval: anything that reaches outside Oppenheimer asks first.",
-        "auto": "Tools you leave on their default follow Approve for me: anything that reaches outside Oppenheimer goes to a reviewer first, which lets what you asked for run and leaves the rest to you. A tool you set to Ask always asks.",
+        "auto": "Tools you leave on their default follow Auto: anything that reaches outside Oppenheimer goes to a reviewer first, which lets what you asked for run and leaves the rest to you. A tool you set to Ask always asks.",
         "full": "Tools you leave on their default follow Full access: they run without asking, the ones that always ask included. Sending mail, and what you set to Ask or a rule asks for, still wait for your yes."
       },
       "decisions": {

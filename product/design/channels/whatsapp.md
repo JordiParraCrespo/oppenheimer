@@ -125,7 +125,7 @@ A group of its own in Settings → Permissions, **WhatsApp**:
 - **What people wrote is untrusted.** Every name and text reaches the model
   inside `<whatsapp>` with the note that it is information, never
   instructions (as mail's `<email>`).
-- **A send asks** under Approve for me, and runs under Approve everything.
+- **A send asks** under Auto, and runs under Approve everything.
   Its card names the number and the chat, and the chat is the call's
   *subject*, so "Always allow for Marta" lets the bot answer Marta without
   asking again while every other chat still asks. That is how a bot comes

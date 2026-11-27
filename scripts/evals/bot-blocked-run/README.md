@@ -58,7 +58,7 @@ pnpm eval:bot-blocked-run --runs 5
 Each run builds the bot's real system prompt (`composeBotSystemPrompt`) and
 the real routine opening (`routineOpening`). It offers the production
 session tools over the in-memory workspace (`../bot-workspace.ts`), bound
-under Approve for me, so `start_session` raises a card and runs nothing;
+under Auto, so `start_session` raises a card and runs nothing;
 `send_to_session` answers a closed session as the API does (`SESSIONS_005`);
 `notify` and `nothing_to_report` are the production definitions over
 stand-ins. The earlier runs' replies open the message as a list, since the

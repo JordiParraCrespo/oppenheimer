@@ -975,7 +975,7 @@ describe('bots (integration)', () => {
     it('creates no looser child when the creator is lowered between the check and the write', async () => {
       const ada = await create('Ada');
       await dataSource.query(`UPDATE bot SET permission = 'full' WHERE id = $1`, [ada.id]);
-      // The owner lowers Ada to Approve for me after the handler checked her
+      // The owner lowers Ada to Auto after the handler checked her
       // level (it reads the names it numbers by after the check), before the insert.
       const lowering = Object.create(bots) as BotRepository;
       lowering.namesIn = async (caller) => {

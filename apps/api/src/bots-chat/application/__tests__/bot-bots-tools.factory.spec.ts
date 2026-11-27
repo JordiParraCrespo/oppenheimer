@@ -23,7 +23,7 @@ import type { BotToolContext } from '../bot-tool.factory';
  * The tools a bot reaches the workspace's other bots through: the reads
  * (the bots module's own queries in the owner's scope, answering what each
  * bot is for and what runs it, the asking bot marked as itself), and
- * `create_bot`, which asks under Approve for me and otherwise dispatches the
+ * `create_bot`, which asks under Auto and otherwise dispatches the
  * console's own create command as the owner, marked as the creator's, on the
  * creator's engine unless told otherwise, never looser than the creator, and
  * once per call; and `message_bot` and `ask_bot`, which dispatch the peer
@@ -228,7 +228,7 @@ describe('create_bot', () => {
     expect(definition.scope).toBe('bots:write');
   });
 
-  it('asks first under Approve for me: a card naming the bot, its engine, its group and what it is for, nothing created', async () => {
+  it('asks first under Auto: a card naming the bot, its engine, its group and what it is for, nothing created', async () => {
     const { commandBus, approvals, call } = creating('auto');
     const result = await call({
       name: 'Scout',
@@ -292,7 +292,7 @@ describe('create_bot', () => {
     expect(result.isError).toBe(false);
     expect(result.content).toContain(`Created bot ${NEW_ID} "Scout"`);
     expect(result.content).toContain('- runs on: GLM GLM-5.3 (provider glm, model glm-5.3)');
-    expect(result.content).toContain('- permission: Approve for me (auto)');
+    expect(result.content).toContain('- permission: Auto (auto)');
     expect(result.content).toContain('open it from the sidebar');
   });
 
@@ -320,7 +320,7 @@ describe('create_bot', () => {
     expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
-  it('refuses a keyless provider before raising a card under Approve for me', async () => {
+  it('refuses a keyless provider before raising a card under Auto', async () => {
     const { approvals, call } = creating('auto', { keyed: [] });
     const result = await call({ name: 'Scout' });
     expect(result.isError).toBe(true);
@@ -352,7 +352,7 @@ describe('create_bot', () => {
     expect(commandBus.execute).not.toHaveBeenCalled();
   });
 
-  it('gives a bot made by one under Full access Approve for me unless asked, and Full access when asked', async () => {
+  it('gives a bot made by one under Full access Auto unless asked, and Full access when asked', async () => {
     const { command, call } = creating('full');
     await call({ name: 'Scout' });
     await call({ name: 'Scout', permission: 'full' });
@@ -360,11 +360,11 @@ describe('create_bot', () => {
     expect(command(1).permission).toBe('full');
   });
 
-  it('refuses Full access to a bot made by one under Approve for me, raising no card', async () => {
+  it('refuses Full access to a bot made by one under Auto, raising no card', async () => {
     const { approvals, commandBus, call } = creating('auto');
     const result = await call({ name: 'Scout', permission: 'full' });
     expect(result.isError).toBe(true);
-    expect(result.content).toContain('You run under Approve for me');
+    expect(result.content).toContain('You run under Auto');
     expect(approvals.request).not.toHaveBeenCalled();
     expect(commandBus.execute).not.toHaveBeenCalled();
   });
@@ -486,7 +486,7 @@ describe('update_bot', () => {
     return { definition, commandBus, approvals, call, commands };
   }
 
-  it('asks under Approve for me with a card naming every bot and the engine they move to, changing nothing', async () => {
+  it('asks under Auto with a card naming every bot and the engine they move to, changing nothing', async () => {
     const { commandBus, approvals, call } = updating('auto');
     const result = await call({
       bot_ids: [ZENGUE, COVERD],
@@ -581,7 +581,7 @@ describe('update_bot', () => {
   it('never gives a bot looser permissions than the caller’s, and renames one bot at a time', async () => {
     const { commandBus, call } = updating('auto');
     const looser = await call({ bot_ids: [ZENGUE], permission: 'full' });
-    expect(looser.content).toContain('You run under Approve for me');
+    expect(looser.content).toContain('You run under Auto');
     const rename = await call({ bot_ids: [ZENGUE, COVERD], name: 'Twin' });
     expect(rename.content).toContain('one bot at a time');
     expect(commandBus.execute).not.toHaveBeenCalled();

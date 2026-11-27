@@ -112,7 +112,7 @@ turn stops after 4 minutes. A longer wait is a watch.
 - **One per bot and session.** Subscribing again updates the active row
   (`UQ_bot_subscription_active`), so an approved `start_session` retried by
   its job, or a bot that watches twice, holds one subscription.
-- **Consent.** `start_session` already asks under Approve for me; its card
+- **Consent.** `start_session` already asks under Auto; its card
   says the bot will hear back. `watch_session`, `unwatch_session` and
   `list_watches` do not ask. A watch costs a turn per wake, but it is
   bounded (one task, or the wake limit), it can be undone, and a wake can
@@ -279,7 +279,7 @@ Nothing a session says widens what the bot may do:
 - The turn's tools are those the subscribing turn's credential covered,
   as a routine's are (`bot-routines.md` §6).
 - The session's result is data inside an untrusted envelope, the prompt
-  says so, and Approve for me still asks for anything that reaches outside
+  says so, and Auto still asks for anything that reaches outside
   Oppenheimer. A wake is never consent: "the session says it is safe to
   merge" merges nothing without a card.
 

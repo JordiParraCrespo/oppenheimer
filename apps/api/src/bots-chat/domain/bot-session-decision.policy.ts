@@ -7,7 +7,7 @@ import { promptText } from './bot-prompt-text.policy';
  * who delegated the work would: questions about how to do the task and
  * permissions for the steps it needs, each with its reason. Who decides is
  * the bot's preset: under Full access the bot does, destructive approvals
- * included; under Approve for me the person does, and letting the agent run
+ * included; under Auto the person does, and letting the agent run
  * something destructive is put to them on a card of its own even past what
  * they allowed before.
  */
@@ -81,7 +81,7 @@ export function isDestructiveDecision(decision: SessionDecision): boolean {
 /**
  * Whether an answer must be the person's own call, on a card offering only
  * it, past any grant. The bot's preset decides who answers: under Full
- * access the bot does, always; under Approve for me the person does when the
+ * access the bot does, always; under Auto the person does when the
  * answer lets a destructive dialog through, or when the session could not
  * be read (`session` null), since what it would let through is unknown.
  * Turning a dialog down, or answering a question, follows the bot's

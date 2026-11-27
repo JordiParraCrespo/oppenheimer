@@ -15,7 +15,7 @@
 // the real wake (`sessionWakePrompt` over `sessionWakeText`), offers the
 // production session tools over an in-memory workspace (`../bot-workspace.ts`,
 // the session folded from its log, the decision included), bound under
-// Approve for me so `answer_session` raises a card and runs nothing, and
+// Auto so `answer_session` raises a card and runs nothing, and
 // scores the calls (`scoreRun`).
 //
 //   pnpm eval:bot-session-unblock                   every case, 3 runs each

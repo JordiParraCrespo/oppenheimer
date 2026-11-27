@@ -215,7 +215,7 @@ worker runs it and streams what happens back to the chat.
     installed, the repository not cloned there), it starts the task it
     wrote, from its own words and never the wake's, on another online
     host that has the agent, asking first as its permissions say (a card
-    under Approve for me), and says where and why (2026-11-15; until then
+    under Auto), and says where and why (2026-11-15; until then
     it only offered, and started on the person's yes, because nothing but
     the session's own words says why it failed). It never starts it on a
     host the task failed on, and never moves a task off a host the person
@@ -1282,7 +1282,7 @@ agent's, in a session, where Claude Code ships them.
 | `watch_project` / `watch_milestone` / `unwatch_project` / `unwatch_milestone` | Follow every task of a project, or those under one milestone, so a change Plan logs on one of them wakes the bot: by default a task added, moved column, done, reopened, blocked, unblocked or deleted; `events` names others (`rescheduled`, `reassigned`, `session_linked`). The wake names the task, the columns and whether the person made the change, never its notes; the bot's own changes never wake it, and there is no wake limit. Scope `tasks:read`; built 2026-11-14, `bot-subscriptions.md` §7.2. `list_watches` lists them too | auto |
 | `wait_for_session` | Wait up to 120 s inside the turn for a session's task to need input or end, at most 3 times a turn (2026-10-29) | auto |
 | `send_to_session` | Type a follow-up prompt into a running session whose agent waits at its prompt; logged as `prompt.sent` with the bot as sender, and it opens a `follow_up` turn the bot then watches (built 2026-10-27) | ask |
-| `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27). The bot unblocks a session it follows with it rather than sending the person to the session, and says why it answered as it did. Under Full access every answer is the bot's, destructive ones included; under Approve for me letting a destructive dialog through (a recursive delete, a forced push, a history rewrite, dropping data, `sudo`) is a card of its own offering only that call, past every grant (2026-11-10). It follows the task it unblocked unless `watch` is false, so the task's end wakes the bot (2026-11-10, `bot-subscriptions.md` §3) | ask |
+| `answer_session` | Answer the question or permission dialog a session's agent waits on, through the Inbox's own command (built 2026-10-27). The bot unblocks a session it follows with it rather than sending the person to the session, and says why it answered as it did. Under Full access every answer is the bot's, destructive ones included; under Auto letting a destructive dialog through (a recursive delete, a forced push, a history rewrite, dropping data, `sudo`) is a card of its own offering only that call, past every grant (2026-11-10). It follows the task it unblocked unless `watch` is false, so the task's end wakes the bot (2026-11-10, `bot-subscriptions.md` §3) | ask |
 | `read_session` | A session's recent log in words: tasks and follow-ups with their sender, the agent working, blocked or done, questions, failures, stops. The log only, never the terminal or the agent's conversation (built 2026-10-27; "recent output" was the plan). `after_seq` reads only what followed an entry; `send_to_session` and `answer_session` name the entry their input followed (2026-10-29) | auto |
 | `search_sessions` | Search every session of the workspace, on any host and closed ones included, for words in its name and log (tasks, follow-ups, the agent's results, notes, questions, failures): web-search syntax, best first, at most 2 excerpts per session, each with the session's id for `read_session`; filters `host_id`, `project_id`, `since`. Not the agents' transcripts (2026-11-09; below) | auto |
 | `stop_session` / `close_session` | Stop it, or close and clean up. `close_session` is the sessions' own close (`CloseSessionCommand`: push each branch, remove the worktree; unpushed work kept unless `accept_unpushed_work`) and only for a session whose origin is `bot`; any other is refused before a card, the person's to close. The `failed` wake offers it once the person is told, so a failed start does not stay in the sidebar (built 2026-11-09) | ask |
@@ -1309,7 +1309,7 @@ as the person does and act on them. Three rules hold it:
   the console's list would tell a person, not what was on the screen. The
   owner turns it off like any tool (§5).
 - **What a bot says is the bot's, on the record.** `send_to_session` asks
-  first under Approve for me, and only types while the agent waits at its
+  first under Auto, and only types while the agent waits at its
   prompt (`SESSIONS_036` otherwise: it would land as the answer to a
   question, or mid-task). The API claims the prompt in the log before it
   types, as `prompt.sent` with `{ kind: 'bot', botId, turnId }` as the
@@ -1371,7 +1371,7 @@ more (`archive/sleep-wake-and-pricing.md` §7 prices the sandbox services).
   id derived from the approval, and the runner answers an id it ran
   recently (its last 256) with that run's result, so a worker that crashed
   after the host ran the program does not run it a second time.
-- **Asked, then answered in words.** It asks under Approve for me, with the
+- **Asked, then answered in words.** It asks under Auto, with the
   command line on the card; a standing yes is per program and host. A run
   is an answer whatever its exit code; a refusal (`EXEC_001` off, `EXEC_002`
   not allowed, `EXEC_003` folder, `EXEC_004` not started) tells the bot that
@@ -1450,7 +1450,7 @@ on a host: its real desktop, on a Mac and on Linux.
   provider whose models read images can use it and GLM is told it cannot.
   The image reaches the model only: it is not stored, not in any event, and
   the chat does not show it.
-- **Permission is per host.** It asks under Approve for me, and its subject
+- **Permission is per host.** It asks under Auto, and its subject
   is the host's screen, so "always allow" on the first card covers the rest
   of the task. An approved single call is carried out after its turn, where
   no model reads an image: it answers in words and the bot looks again.
@@ -1540,7 +1540,7 @@ never written by the control plane.
   or Slack chat): never a contact's or a group's turn, a routine, a wake or
   another bot's message, so a page, a mail or someone else cannot switch a
   host open. The prompt says to turn on only what the work needs.
-- **One card per call** under Approve for me (`perCallOnly`): no standing
+- **One card per call** under Auto (`perCallOnly`): no standing
   grant, since a change opens more than the call itself. Under Full access
   it runs at once. Review pointed out that a page or mail the bot reads on
   the owner's own turn could then prompt it to open a host; asked whether
@@ -1608,7 +1608,7 @@ bot meets the rules a person does and no rule of its own beyond one:
 
 - **Making and changing run; archiving always asks.** A project is
   metadata inside Oppenheimer and a create, an edit or a move can be put
-  back, so under Approve for me they run like the task writes (this table
+  back, so under Auto they run like the task writes (this table
   said `ask` before). An archive stops work being started in the project
   and pauses its automations, which a restore does not resume, so it asks
   under every preset and its card offers this call only. Its card is not
@@ -1730,10 +1730,10 @@ input is the name, description, soul, instructions, provider, model
   provider, the provider's default on another. A provider the workspace
   has no key for is refused, naming the ones it has.
 - **Permission** is ranked by `BOT_PERMISSIONS`, strictest first: `auto`
-  (Approve for me), then `full` (Full access). The new bot gets the one
+  (Auto), then `full` (Full access). The new bot gets the one
   asked for when it is no looser than the creator's, and otherwise the
   stricter of the creator's and the console's default, which is always
-  Approve for me today. Full access asked by a bot under Approve for me is
+  Auto today. Full access asked by a bot under Auto is
   refused, never quietly lowered (`permissionForBotMadeBy`, held by the
   tool and again by the command, whose insert re-reads the creator's level
   under a row lock and rolls back if it changed since the check).
@@ -1830,7 +1830,7 @@ three levels since 2026-11-25 (`BOT_PERMISSIONS`, strictest first):
   what reaches outside it asks: merging, commenting, calendar, creating
   bots, sessions. Until 2026-11-25 this was **Approve for me**, and every
   bot stored at `auto` moved to `ask` with it, keeping what it did.
-- **Approve for me** (`auto`, a new bot's default): a call that would ask
+- **Auto** (`auto`, a new bot's default; named **Approve for me** until 2026-11-27): a call that would ask
   is read first by a **reviewer**, the bots' auto mode, built from
   Claude Code's auto mode and Codex's auto review
   (`research/auto-mode.md`). One completion on the bot's own model and key,
@@ -2583,8 +2583,8 @@ The decisions it produced:
 - 2026-11-10: **the bot's preset decides who lets a destructive dialog
   through** (§4.2, `answer_session`), replacing the same day's "never the
   bot's alone". The owner: a bot on Full access acts on its own, always
-  with its reasoning; a bot on Approve for me asks. Under Full access
-  `answer_session` no longer escalates; under Approve for me a destructive
+  with its reasoning; a bot on Auto asks. Under Full access
+  `answer_session` no longer escalates; under Auto a destructive
   approval, or an answer to a decision that cannot be read, is still a card
   offering only that call, past every grant. Every answer now says what the
   session asked and why the bot answered as it did.
@@ -2711,3 +2711,7 @@ The decisions it produced:
   longer raises the cards it kept (trashing mail, archiving a project, a
   session at full access). Sending and scheduling mail still ask, since
   they run only from their card.
+- 2026-11-27: **Approve for me is called Auto** (§5). The owner asked for
+  the shorter name. Only the words change, in the bots' approval chip and
+  the sessions' permission chip alike: the stored value is still `auto`,
+  and what the level does is unchanged.

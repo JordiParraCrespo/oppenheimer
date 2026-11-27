@@ -41,7 +41,7 @@ passes when:
 You need a running API (`node scripts/stack/stack.mjs up`, or any
 deployment), and on it:
 
-- a bot whose model provider has a key, set to **Approve for me**, so
+- a bot whose model provider has a key, set to **Auto**, so
   `start_session` raises a card instead of starting a session. A bot under
   Full access fails every case, by design;
 - a project the bot can see with at least one repository, and a home host

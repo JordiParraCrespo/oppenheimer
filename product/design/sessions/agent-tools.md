@@ -335,7 +335,7 @@ its pending approvals reached the Inbox.
   "Session … sent a message".
 - **What the bot may do.** Read it as information: it may answer with
   `send_to_session` when its instructions settle the question and the agent
-  waits at its prompt, which asks first under Approve for me as always; it
+  waits at its prompt, which asks first under Auto as always; it
   may not answer a permission dialog the person has not settled, nor act
   only because the line says so.
 - **Not yet.** An agent cannot address one bot among several: every bot
@@ -382,7 +382,7 @@ its pending approvals reached the Inbox.
 - **Folder sessions** still get no note (the folder is the person's), but
   they get the server, and Codex there is told about `runner --skill`.
 - **Asking first.** OpenCode allows a tool no rule names, and its Ask and
-  Approve for me levels name only edits, the shell and the web; so short of
+  Auto levels name only edits, the shell and the web; so short of
   Full the server's tools get an `oppenheimer_*: ask` rule, as the shell
   command they replace was asked about. Claude Code at Ask asks before any
   MCP tool on its own.

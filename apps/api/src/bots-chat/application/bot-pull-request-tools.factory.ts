@@ -121,7 +121,7 @@ function toCiFinding({ root_cause, ...rest }: z.output<typeof ciFinding>): CiFin
 /**
  * GitHub and pull requests, the writes: comment, review,
  * merge, and start a review session. Each reaches outside Oppenheimer, so
- * under Approve for me each asks first and its card names the pull request
+ * under Auto each asks first and its card names the pull request
  * by repository, number and title. Every write is made with the owner's own
  * GitHub user token through the pull-requests module's commands, so GitHub
  * records the person, and GitHub's branch rules stay the gate: nothing is

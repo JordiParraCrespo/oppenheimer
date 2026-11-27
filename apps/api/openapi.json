@@ -44185,7 +44185,7 @@
           },
           "asks": {
             "type": "boolean",
-            "description": "It reaches outside Oppenheimer: asking is its default under Approve for me."
+            "description": "It reaches outside Oppenheimer: asking is its default under Auto."
           },
           "perCallOnly": {
             "type": "boolean",

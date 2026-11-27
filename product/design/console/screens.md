@@ -305,12 +305,12 @@
   (`../foundations/api-modules-and-data-model.md`, changed 2026-09-27).
 - **What the foot row sets, and what it remembers.** The permission
   level is the product's own three words (`ask` / `auto` / `full`
-  stored; "Ask for approval" / "Approve for me" / "Full access" on the
+  stored; "Ask for approval" / "Auto" / "Full access" on the
   control), and each agent's catalog entry says what they mean to its
   CLI. Effort is the model's own levels, under its CLI's names; a model
   that has no notion of effort hides the control. **Chips remember the
   last choice, the permission level included**: New session opens on
-  `auto` ("Approve for me", Claude Code's accept-edits mode) the first
+  `auto` ("Auto", named "Approve for me" until 2026-11-27; Claude Code's accept-edits mode) the first
   time and on the last level picked after that (changed 2026-10-14; it
   opened on `full` and never remembered the level). The console always sends the level; a request that
   names none (an API token, an automation) is launched on `ask`, the

@@ -16,7 +16,7 @@ import type { BotToolContext } from '../bot-tool.factory';
 /**
  * The issue tools: reads dispatch the github module's queries in the owner's
  * scope and fence what anyone can write on GitHub inside `<github_content>`;
- * opening an issue or commenting asks first under Approve for me, its card
+ * opening an issue or commenting asks first under Auto, its card
  * naming the repository, and runs the github module's commands in the
  * owner's scope otherwise. The queries and commands are that module's specs.
  */
@@ -122,7 +122,7 @@ describe('BotIssueToolsFactory reads', () => {
 });
 
 describe('BotIssueToolsFactory writes', () => {
-  it('raises a card naming the repository and the title under Approve for me, and opens nothing', async () => {
+  it('raises a card naming the repository and the title under Auto, and opens nothing', async () => {
     const { call, approvals, commands } = setup('auto', () => repositories);
 
     await call('create_issue', {
