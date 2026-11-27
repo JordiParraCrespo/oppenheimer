@@ -150,7 +150,10 @@ describe('CreateApiTokenCommandHandler', () => {
             organizationIds: ['org-1'],
           }),
         ),
-      ).rejects.toMatchObject({ code: 'TOKEN_002', extensions: { ungrantableScopes: ['hosts:write'] } });
+      ).rejects.toMatchObject({
+        code: 'TOKEN_002',
+        extensions: { ungrantableScopes: ['hosts:write'] },
+      });
       expect(repo.insertWithinLimit).not.toHaveBeenCalled();
     });
 
