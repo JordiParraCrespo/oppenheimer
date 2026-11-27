@@ -1,10 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { retryOnVersionConflict } from '@oppenheimer/backend-ddd';
 import { PasswordResetDomainEvent } from '../../../auth/domain/events/password-reset.domain-event';
 import type { HostRepositoryPort } from '../../database/host.repository.port';
 import type { HostPairingTokenRepositoryPort } from '../../database/host-pairing-token.repository.port';
 import { HOST_PAIRING_TOKEN_REPOSITORY, HOST_REPOSITORY } from '../../hosts.di-tokens';
+import { unpairHost } from '../host-unpair.policy';
 
 /** The fields of the event this handler reads, as the outbox delivers them. */
 type PasswordReset = Pick<PasswordResetDomainEvent, 'userId' | 'resetAt'>;
@@ -19,7 +19,7 @@ type PasswordReset = Pick<PasswordResetDomainEvent, 'userId' | 'resetAt'>;
  *
  * The unspent tokens go first, then the hosts, so a registration racing this
  * either spent its token before the revoke (and its host is found next) or
- * finds it revoked. Each host is unpaired as Remove host does, so
+ * finds it revoked. Each host is unpaired as Remove host does (`unpairHost`), so
  * `HostUnpairedDomainEvent` stops its sessions and closes its link.
  *
  * Only what was minted up to the reset: the event is delivered at least once,
@@ -56,14 +56,13 @@ export class PasswordResetUnpairsHostsDomainEventHandler {
     )) {
       // Each try reads the host afresh, so one another writer changed since
       // the list was read is unpaired from what it is now.
-      await retryOnVersionConflict(async () => {
-        const found = await this.hosts.findOneByIdForMachine(listed.id);
-        if (found.isNone() || found.unwrap().isUnpaired) return;
-        const host = found.unwrap();
-        host.unpair(now);
-        await this.hosts.save(host);
-        unpaired += 1;
-      });
+      const outcome = await unpairHost(
+        this.hosts,
+        listed.id,
+        () => this.hosts.findOneByIdForMachine(listed.id),
+        { now },
+      );
+      if (outcome === 'unpaired') unpaired += 1;
     }
 
     if (revokedTokens > 0 || unpaired > 0) {
