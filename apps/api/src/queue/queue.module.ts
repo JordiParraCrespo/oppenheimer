@@ -12,7 +12,7 @@ import { ProfileModule } from '../profile/profile.module';
 import { EmailJobMapper } from './email-job.mapper';
 import { EmailProcessor } from './infrastructure/email.processor';
 import { JobFailureReportingAdapter } from './infrastructure/job-failure-reporting.adapter';
-import { OUTBOX_QUEUES } from './queue.di-tokens';
+import { OUTBOX_ONE_PENDING_PER_AGGREGATE, OUTBOX_QUEUES } from './queue.di-tokens';
 
 interface QueueRegistration extends RegisterQueueOptions {
   name: string;
@@ -22,6 +22,16 @@ interface QueueRegistration extends RegisterQueueOptions {
    * these fails delivery, is retried and then parked.
    */
   stagedOnOutbox?: true;
+  /**
+   * Every job of this queue redoes its aggregate's owed work from what it
+   * reads when it runs, so one waiting or delayed job per aggregate covers
+   * every row staged for it meanwhile. The relay adds such a row under BullMQ
+   * deduplication keyed by job name and aggregate id: while one is waiting or
+   * delayed (a rate limit's wait, a retry's backoff) the others fold into it,
+   * and one added while it runs is kept and queued once it ends, so work owed
+   * after its read is not dropped. A row with no aggregate id is added as is.
+   */
+  onePendingPerAggregate?: true;
 }
 
 const QUEUE_REGISTRATIONS: readonly QueueRegistration[] = [
@@ -45,8 +55,14 @@ const QUEUE_REGISTRATIONS: readonly QueueRegistration[] = [
   },
   // An approved call is keyed by its approval, so a retry runs it once.
   { name: QUEUE_NAMES.BOT_APPROVALS, defaultJobOptions: DURABLE_JOB_OPTIONS, stagedOnOutbox: true },
-  // A summary write is conditional on the version it read, so a retry never moves it back.
-  { name: QUEUE_NAMES.BOT_SUMMARIES, defaultJobOptions: DURABLE_JOB_OPTIONS, stagedOnOutbox: true },
+  // A summary write is conditional on the version it read, so a retry never moves it back;
+  // a fold reads the bot's whole uncovered conversation, so one pending per bot is enough.
+  {
+    name: QUEUE_NAMES.BOT_SUMMARIES,
+    defaultJobOptions: DURABLE_JOB_OPTIONS,
+    stagedOnOutbox: true,
+    onePendingPerAggregate: true,
+  },
   { name: QUEUE_NAMES.BOT_DREAMS, defaultJobOptions: DURABLE_JOB_OPTIONS, stagedOnOutbox: true },
   // A stall check queues its wake under a key, so a retry tells the bot once.
   {
@@ -86,6 +102,12 @@ const OUTBOX_QUEUE_NAMES = QUEUE_REGISTRATIONS.filter((queue) => queue.stagedOnO
   (queue) => queue.name,
 );
 
+const ONE_PENDING_PER_AGGREGATE: ReadonlySet<string> = new Set(
+  QUEUE_REGISTRATIONS.filter((queue) => queue.stagedOnOutbox && queue.onePendingPerAggregate).map(
+    (queue) => queue.name,
+  ),
+);
+
 /**
  * The only place a BullMQ queue is registered. A module that adds jobs to a
  * queue, or runs its worker, imports this module; it never calls
@@ -108,7 +130,9 @@ const OUTBOX_QUEUE_NAMES = QUEUE_REGISTRATIONS.filter((queue) => queue.stagedOnO
     ProfileModule,
     // `JobFailureReportingAdapter` finds every processor's worker through it.
     DiscoveryModule,
-    BullModule.registerQueue(...QUEUE_REGISTRATIONS.map(({ stagedOnOutbox, ...queue }) => queue)),
+    BullModule.registerQueue(
+      ...QUEUE_REGISTRATIONS.map(({ stagedOnOutbox, onePendingPerAggregate, ...queue }) => queue),
+    ),
   ],
   providers: [
     EmailProcessor,
@@ -120,7 +144,8 @@ const OUTBOX_QUEUE_NAMES = QUEUE_REGISTRATIONS.filter((queue) => queue.stagedOnO
         new Map(OUTBOX_QUEUE_NAMES.map((name, index) => [name, queues[index]])),
       inject: OUTBOX_QUEUE_NAMES.map((name) => getQueueToken(name)),
     },
+    { provide: OUTBOX_ONE_PENDING_PER_AGGREGATE, useValue: ONE_PENDING_PER_AGGREGATE },
   ],
-  exports: [BullModule, OUTBOX_QUEUES],
+  exports: [BullModule, OUTBOX_QUEUES, OUTBOX_ONE_PENDING_PER_AGGREGATE],
 })
 export class QueueModule {}
