@@ -48,8 +48,35 @@ is what this extension sees. To send it:
 
 From then on, after every check, the worker posts every session it tracks
 to `POST /api/v1/sessions/cloud-status` with the token. The API records the
-ones your workspace launched and ignores the rest; nothing of claude.ai's
+ones your workspace launched and ignores the rest. No claude.ai credential
 (no cookie, no token) is ever sent.
+
+### The chat, both ways
+
+Connected, the worker also carries each cloud session's conversation to the
+console and your replies back (`src/sessions/chat.ts`), so a session started
+on claude.ai, the phone or `claude --cloud` reads in the console the way it
+reads in the Claude apps, your messages included:
+
+- **Out.** It reads the session's event log from claude.ai, the log the apps
+  draw, with the claude.ai sign-in in Chrome: the route claude.ai's own page
+  read it from when the tap has seen one, else
+  `/v1/code/sessions/{id}/teleport-events` and `/v1/sessions/{id}/events`,
+  the routes the Claude Code CLI reads it from. Each event is the transcript
+  entry claude.ai keeps; the worker sends the ones the console does not have
+  to `POST /api/v1/sessions/cloud-events`, which adopts a session the
+  workspace did not start (in its unassigned project) and replaces the
+  transcript the session's hook sent. Read on each pass: the sessions running
+  or waiting on you, one you just replied to, and once each, the ones active
+  in the last day. Older ones are left alone until they move.
+- **In.** A loop claims your replies from
+  `POST /api/v1/sessions/cloud-replies/claim`, waiting up to ten seconds for
+  one, and posts each to the session on claude.ai as your message
+  (`POST /v1/sessions/{id}/events`, a `user` event, the call
+  `claude --cloud` makes). The session runs it at once, mid-turn too. One
+  claude.ai refuses is handed back (`…/cloud-replies/{id}/release`) for the
+  session's Stop hook. The loop runs while the worker does: each open request
+  keeps it alive, and the minute's alarm or **Check now** starts it again.
 
 After the report it reads `GET /api/v1/sessions?resolved=false` with the same
 token (`sessions:write` includes `sessions:read`) and tells you, once each,

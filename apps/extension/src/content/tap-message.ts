@@ -1,4 +1,4 @@
-/** What the page tap hands the service worker: one `/sessions` response claude.ai fetched. */
+/** What the page tap hands the service worker: one `/sessions` response claude.ai fetched, or a session's events. */
 export interface TapMessage {
   type: 'tap';
   url: string;

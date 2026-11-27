@@ -2174,3 +2174,10 @@ earlier note:
 - Notes 05 and 25 called the middle permission level, sessions' and bots'
   alike, "Approve for me". It is now "Auto" (2026-11-27): the same level,
   stored as `auto`, under a shorter name the owner asked for.
+- `next-steps/cloud-agents.md` kept a cloud session's chat only for the
+  sessions the console launched, from the transcript their hook sends, with
+  replies waiting for the turn to end (2026-11-07). Since 2026-11-27 the
+  browser extension carries every cloud session's chat from claude.ai's own
+  log, the person's messages included, adopting a session started elsewhere,
+  and posts console replies on claude.ai as the person ("The chat through the
+  extension").

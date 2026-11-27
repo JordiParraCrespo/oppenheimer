@@ -417,6 +417,8 @@ answer it there, the way claude.ai shows it. The research is
 - **Decided with the owner (2026-11-07).**
   1. A session started on claude.ai, not from the console, keeps no chat
      here: only sessions the console launched (`SESSIONS_053`). Not adopted.
+     *Changed 2026-11-27:* the browser extension adopts it ("The chat through
+     the extension", below).
   2. A reply to an idle session is sent from one of the person's hosts,
      signed in to the same claude.ai account (`claude -p … --cloud <id>`),
      so it wakes the session. Built 2026-11-11 ("Waking an idle session").
@@ -465,6 +467,49 @@ answered `{"ok":true,…}` and the idle session ran the message.
   session its account does not have, which Claude Code refuses (`SESS_020`,
   handed back). Recording the account on the session is the fix if that
   turns out to happen.
+
+## The chat through the extension (2026-11-27)
+
+The owner could read the agent's turns of a Claude Code cloud session in the
+console but not their own messages, and wanted the console to show a cloud
+session the way the Claude apps do. Asked which sessions and how replies
+should go, they answered: what works, and the extension sends replies. A read
+of a cloud session's own container showed why the hook bridge could not get
+there: Claude Code runs headless, reading the person's messages from an SSE
+stream on the session API (`/v1/code/sessions/{id}/worker/events/stream`) and
+writing its events back to it; the transcript file is a by-product, and the
+apps draw the service's event log. The hook bridge also refused every session
+it had not launched, and its hooks failed once the agent changed directory.
+
+- **The extension carries the log.** Connected to Oppenheimer, it reads each
+  moving session's event log from claude.ai with the sign-in in Chrome (the
+  route the page read it from, else `teleport-events`, else the session API's
+  `events`), each event the transcript entry claude.ai keeps, and sends what
+  the console lacks to `POST /v1/sessions/cloud-events` (`sessions:write`).
+  The first batch replaces the hook's copy of that session, which the hook
+  then stops adding to; the console reads the chat again from its first line
+  when the source changes (`source` on the chat read).
+- **Every cloud session on the account.** One the workspace does not know is
+  adopted: place `cloud`, no host, no vendor run, in the unassigned project,
+  named after its claude.ai title, keyed on its claude.ai id so it is adopted
+  once. One the person closed here is not brought back. Read: sessions running
+  or waiting on the person, one just replied to, and once each, those active
+  in the last day; older ones only once they move.
+- **Replies go as the person.** The extension claims the person's own waiting
+  replies (`POST /v1/sessions/cloud-replies/claim`, a 10 s long poll) and posts
+  each on claude.ai as their message, the call `claude --cloud` makes; the
+  session runs it at once, mid-turn too. The claim is the hook's and the host's
+  (`deliveredVia: browser`), so a reply goes one way only; one claude.ai
+  refuses is handed back for the Stop hook. The hook and the host wake stay as
+  the paths when no Chrome is running the extension.
+- **What leaves the browser** is now the conversations too, to the person's
+  own API with their own token; never a claude.ai credential. The privacy page
+  and the extension's rule say so.
+- **Open.** Not yet seen against the real claude.ai: the route and the shape
+  of the page's own read of a session's events, and whether claude.ai takes a
+  posted event without a trusted-device header. Each failure is visible
+  (a read that finds no route sends nothing; a refused post goes back to the
+  hook), and the popup does not yet say when the chat stops.
 
 ## Follow-ups to a cloud agent (2026-11-05)
 

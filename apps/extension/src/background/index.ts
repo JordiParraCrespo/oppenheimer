@@ -1,5 +1,16 @@
 import type { TapMessage } from '@/content/tap-message';
 import { createTranslator, reasonText } from '@/i18n/translator';
+import {
+  type ChatSync,
+  type ClaimedReply,
+  claimReplies,
+  eventsPage,
+  fetchSessionEvents,
+  forwardEvents,
+  postReply,
+  releaseReply,
+  sessionsToSync,
+} from '@/sessions/chat';
 import { CLAUDE_ORIGIN, sessionUrl } from '@/sessions/links';
 import { sendReport } from '@/sessions/report';
 import {
@@ -66,7 +77,11 @@ chrome.runtime.onInstalled.addListener(() => void start());
 chrome.runtime.onStartup.addListener(() => void start());
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === POLL_ALARM) void serial(check);
+  if (alarm.name !== POLL_ALARM) return;
+  void serial(check);
+  // The worker may have been stopped since the last minute: the chat loop
+  // starts again with it.
+  runChats();
 });
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, reply) => {
@@ -76,6 +91,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, reply) => {
   }
   if ((message as { type?: string })?.type === 'refresh') {
     void serial(check).then(() => reply(true));
+    runChats();
     return true;
   }
   if (isConnect(message)) {
@@ -103,6 +119,113 @@ chrome.notifications.onClicked.addListener((id) => {
 async function start() {
   await chrome.alarms.create(POLL_ALARM, { periodInMinutes: 1 });
   await serial(check);
+  runChats();
+}
+
+/** How long a session a reply was posted to is read at every turn of the loop. */
+const HOT_MS = 3 * 60_000;
+/** How long the loop waits for a reply while a session is running, and while none is. */
+const BUSY_WAIT_SECONDS = 3;
+const IDLE_WAIT_SECONDS = 10;
+/** Sessions whose log one pass reads, at most. */
+const SESSIONS_PER_PASS = 10;
+/** A failed claim waits this long before the next one. */
+const RETRY_MS = 15_000;
+
+/** Sessions a reply was just posted to, and when. Lost with the worker, which is fine. */
+const hot = new Map<string, number>();
+let chats: Promise<void> | null = null;
+
+/**
+ * The chat loop, while Oppenheimer is connected: claims the replies typed in
+ * the console and posts them on claude.ai, then carries the logs of the
+ * sessions that are moving to the console. One loop at a time; each request
+ * it has open keeps the worker alive, and the minute's alarm starts it again
+ * if Chrome stopped the worker anyway.
+ */
+function runChats() {
+  chats ??= chatLoop().finally(() => {
+    chats = null;
+  });
+}
+
+async function chatLoop() {
+  for (;;) {
+    const { oppenheimer, sessions } = await readState();
+    if (!oppenheimer) return;
+    const busy = Object.values(sessions).some((session) => session.state === 'running');
+    let replies: ClaimedReply[] = [];
+    try {
+      replies = await claimReplies(
+        oppenheimer,
+        busy || hot.size > 0 ? BUSY_WAIT_SECONDS : IDLE_WAIT_SECONDS,
+      );
+    } catch (error) {
+      await writeState({
+        chatProblem: { at: now(), detail: String((error as Error).message ?? error) },
+      });
+      await new Promise((resolve) => setTimeout(resolve, RETRY_MS));
+      continue;
+    }
+    if (replies.length > 0) {
+      const headers = await claudeHeaders();
+      for (const reply of replies) {
+        const posted = await postReply(reply, headers);
+        if (posted.ok) hot.set(reply.cloudSessionId, Date.now());
+        else await releaseReply(oppenheimer, reply.id, posted.reason).catch(() => {});
+      }
+    }
+    await serial(syncChats);
+  }
+}
+
+/**
+ * One pass over the sessions that are moving: reads each one's log from
+ * claude.ai and sends the console what it does not have yet. A session the
+ * console has not seen is adopted there by the first batch.
+ */
+async function syncChats() {
+  const state = await readState();
+  if (!state.oppenheimer) return;
+  const clock = Date.now();
+  for (const [id, at] of hot) if (clock - at > HOT_MS) hot.delete(id);
+  const synced: Record<string, ChatSync> = { ...state.chatSync };
+  const due = sessionsToSync(Object.values(state.sessions), synced, new Set(hot.keys()), clock);
+  if (due.length === 0) return;
+  const headers = await claudeHeaders();
+  try {
+    for (const session of due.slice(0, SESSIONS_PER_PASS)) {
+      const read = await fetchSessionEvents(session.id, headers, state.eventsEndpoint ?? null);
+      if (!read) continue;
+      const sent = await forwardEvents(
+        state.oppenheimer,
+        session,
+        read.events,
+        synced[session.id]?.sent ?? 0,
+      );
+      synced[session.id] = { sent, at: session.updatedAt ?? now() };
+    }
+    // Only the sessions still tracked keep a place, so the record stays small.
+    const kept = Object.fromEntries(Object.entries(synced).filter(([id]) => id in state.sessions));
+    await writeState({ chatSync: kept });
+    await chrome.storage.local.remove('chatProblem');
+  } catch (error) {
+    await writeState({
+      chatSync: synced,
+      chatProblem: { at: now(), detail: String((error as Error).message ?? error) },
+    });
+  }
+}
+
+/** The headers claude.ai's app asks with: its version and beta, the organization, what the page taught. */
+async function claudeHeaders(): Promise<Record<string, string>> {
+  const { endpoint } = await readState();
+  const organization = await organizationId();
+  return {
+    ...BASE_HEADERS,
+    ...(organization ? { 'x-organization-uuid': organization } : {}),
+    ...endpoint?.headers,
+  };
 }
 
 /**
@@ -233,7 +356,20 @@ async function remainingPages(
   return { records: all, complete: next === null };
 }
 
+/** A session's event log in a URL claude.ai's page fetched. */
+const EVENTS_PATH = /(\/sessions\/)([^/?]+)(\/(?:teleport-)?events)$/;
+
 async function fromPage({ url, headers, body }: TapMessage) {
+  const events = new URL(url);
+  if (EVENTS_PATH.test(events.pathname)) {
+    // The page read a session's log: that route, with any session's id in
+    // it, is where the chat is read from next.
+    if (!eventsPage(body)) return;
+    events.pathname = events.pathname.replace(EVENTS_PATH, '$1{id}$3');
+    for (const key of ['cursor', 'after_id', 'before_id']) events.searchParams.delete(key);
+    await writeState({ eventsEndpoint: decodeURI(events.href) });
+    return;
+  }
   const list = sessionList(body);
   if (list) {
     const learned = new URL(url);
@@ -290,6 +426,7 @@ async function connect(
   try {
     const matched = await sendReport(connection, sessions);
     await writeState({ oppenheimer: connection, report: { ok: true, at: now(), matched } });
+    runChats();
     return { ok: true };
   } catch (error) {
     return { ok: false, detail: String((error as Error).message ?? error) };

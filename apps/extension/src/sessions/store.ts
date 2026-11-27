@@ -1,3 +1,4 @@
+import type { ChatSync } from './chat';
 import type { TrackedSessions } from './tracker';
 
 /**
@@ -24,13 +25,23 @@ export interface StoredState {
   runnerWaiting?: number;
   /** Why the last read of the runner sessions failed; absent while it works. */
   runnerProblem?: { at: string; detail: string };
+  /**
+   * Where a session's event log is read, as claude.ai's own page read it,
+   * with `{id}` for the session; absent until the page has shown one.
+   */
+  eventsEndpoint?: string;
+  /** How far each cloud session's log has gone to Oppenheimer (`chat.ts`). */
+  chatSync?: Record<string, ChatSync>;
+  /** Why the last pass carrying the chats failed; absent while it works. */
+  chatProblem?: { at: string; detail: string };
 }
 
 /**
  * The person's Oppenheimer API and a personal API token with `sessions:write`
  * (which reads the sessions too, for the runner sessions that wait on them).
  * The token is theirs, for their own API: it is not a claude.ai credential,
- * and nothing of claude.ai's is ever sent with it.
+ * and no claude.ai credential is ever sent with it. What it carries there is
+ * the sessions' states and their conversations (`chat.ts`).
  */
 export interface OppenheimerConnection {
   /** The API's origin, e.g. `https://api.example.com` or `http://localhost:3001`. */
@@ -68,6 +79,9 @@ const KEYS = [
   'runnerSeen',
   'runnerWaiting',
   'runnerProblem',
+  'eventsEndpoint',
+  'chatSync',
+  'chatProblem',
 ] as const;
 
 export async function readState(): Promise<StoredState> {
@@ -90,5 +104,7 @@ export async function disconnectOppenheimer() {
     'runnerSeen',
     'runnerWaiting',
     'runnerProblem',
+    'chatSync',
+    'chatProblem',
   ]);
 }

@@ -360,3 +360,103 @@ test('a failed read of your hosts says so and leaves the badge, and disconnectin
   await popup.getByRole('button', { name: 'Disconnect' }).click();
   await expect.poll(async () => (await stored(worker)).badge).toBe('');
 });
+
+test('carries a session’s chat to Oppenheimer and posts a reply typed there on claude.ai', async ({
+  context,
+  claude,
+  worker,
+  extensionId,
+}) => {
+  const ID = 'session_01ChatBridge00';
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'POST',
+  };
+  const forwarded: Array<{ cloudSessionId: string; title?: string; events: { id: string }[] }> = [];
+  let claimable = [
+    {
+      id: '0b8f0c2e-6b8c-4f1e-9c9e-2f0e6b0e8a11',
+      cloudSessionId: ID,
+      text: 'Also the signup page',
+    },
+  ];
+  await context.route('http://localhost:3001/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    const path = new URL(request.url()).pathname;
+    if (path.endsWith('/cloud-events')) {
+      forwarded.push(request.postDataJSON());
+      return route.fulfill({ headers: cors, json: { sessionId: 'console-1', accepted: 2 } });
+    }
+    if (path.endsWith('/cloud-replies/claim')) {
+      const replies = claimable;
+      claimable = [];
+      return route.fulfill({ headers: cors, json: { replies } });
+    }
+    return route.fulfill({ headers: cors, json: { matched: 0 } });
+  });
+  const posted: unknown[] = [];
+  await context.route('https://claude.ai/v1/**', (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    if (path === `/v1/code/sessions/${ID}/teleport-events`) {
+      return route.fulfill({
+        json: {
+          data: [
+            {
+              payload: {
+                type: 'user',
+                uuid: 'u1',
+                message: { role: 'user', content: 'Fix login' },
+              },
+            },
+            {
+              payload: {
+                type: 'assistant',
+                uuid: 'a1',
+                message: { role: 'assistant', content: [{ type: 'text', text: 'On it' }] },
+              },
+            },
+          ],
+        },
+      });
+    }
+    if (path === `/v1/sessions/${ID}/events` && request.method() === 'POST') {
+      posted.push(request.postDataJSON());
+      return route.fulfill({ json: {} });
+    }
+    return route.fallback();
+  });
+  await worker.evaluate(() =>
+    chrome.storage.local.set({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_test' },
+    }),
+  );
+  claude.sessions = [running(ID, 'Fix login')];
+  const page = await context.newPage();
+  await page.goto('https://claude.ai/code');
+  await expect.poll(async () => (await stored(worker)).seeded).toBe(true);
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.getByRole('button', { name: 'Check now' }).click();
+
+  // Breaks if the reply typed in the console is not posted as the person's
+  // message, or the conversation (the person's turn included) never leaves.
+  await expect
+    .poll(() => posted)
+    .toEqual([
+      {
+        events: [
+          {
+            type: 'user',
+            uuid: '0b8f0c2e-6b8c-4f1e-9c9e-2f0e6b0e8a11',
+            parent_tool_use_id: null,
+            message: { role: 'user', content: 'Also the signup page' },
+          },
+        ],
+      },
+    ]);
+  await expect.poll(() => forwarded.at(0)?.events.map((event) => event.id)).toEqual(['u1', 'a1']);
+  expect(forwarded[0]).toMatchObject({ cloudSessionId: ID, title: 'Fix login' });
+});
