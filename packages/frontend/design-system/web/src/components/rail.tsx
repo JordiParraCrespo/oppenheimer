@@ -34,11 +34,14 @@ import { useSortableControl } from './drag';
  * under it keeps clear of it with `RAIL_BAR_CLEARANCE`. A rail that is a
  * specimen rather than chrome (the showcase's) passes `layout="column"` and
  * stays the column at every width; the items read the layout from the rail,
- * so a lifted copy outside it is the round button.
+ * so a lifted copy outside it is the round button. The frost is a layer
+ * under the items (`before:`), not the bar's own: a backdrop filter on the
+ * bar would make it the box a fixed descendant is placed in, and the drag
+ * overlay, drawn inside it, would land off the screen.
  */
 const RAIL = {
   surface: 'group/rail z-20 flex shrink-0 items-center',
-  bar: 'fixed inset-x-3 bottom-[calc(var(--spacing)*3+env(safe-area-inset-bottom))] h-16 gap-0.5 rounded-[2rem] bg-popover/85 p-1.5 shadow-popover backdrop-blur-xl md:relative md:inset-auto md:bottom-auto md:h-auto md:w-14 md:flex-col md:justify-start md:gap-1.5 md:rounded-none md:border-border-subtle md:border-r md:bg-sidebar md:px-0 md:py-3.5 md:shadow-none md:backdrop-blur-none',
+  bar: 'fixed inset-x-3 bottom-[calc(var(--spacing)*3+env(safe-area-inset-bottom))] h-16 gap-0.5 rounded-[2rem] p-1.5 shadow-popover before:absolute before:inset-0 before:-z-10 before:rounded-[inherit] before:bg-popover/85 before:backdrop-blur-xl md:before:hidden md:relative md:inset-auto md:bottom-auto md:h-auto md:w-14 md:flex-col md:justify-start md:gap-1.5 md:rounded-none md:border-border-subtle md:border-r md:bg-sidebar md:px-0 md:py-3.5 md:shadow-none',
   column: 'relative w-14 flex-col justify-start gap-1.5 border-border-subtle border-r bg-sidebar py-3.5',
 };
 
