@@ -62,6 +62,7 @@
     "eval:bot-blocked-run": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-blocked-run/run.ts",
     "eval:bot-first-chat": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-first-chat/run.ts",
     "eval:bot-advisor": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-advisor/run.ts",
+    "eval:bot-merge-train": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-merge-train/run.ts",
     "eval:bot-react": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-react/run.ts",
     "eval:bot-memory": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-memory/run.ts",
     "eval:bot-scope": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-scope/run.ts",

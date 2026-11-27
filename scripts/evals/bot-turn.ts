@@ -85,6 +85,12 @@ export interface TurnRequest {
   maxTokens?: number;
   /** Sent on the Messages API path; the Agent SDK takes none, so it samples at its default. */
   temperature?: number;
+  /**
+   * A turn that grades another (a judge, a grader): run as the eval set it
+   * up, never under `BOT_EVAL_ADVISOR` or `BOT_EVAL_EFFORT`, which are for
+   * the bot's turns being compared.
+   */
+  grading?: boolean;
 }
 
 export interface Transport {
@@ -259,6 +265,9 @@ function claudeCode(model: string): Transport['turn'] {
       calls.push(made);
       return { content: [{ type: 'text' as const, text: made.content }], isError: made.isError };
     });
+    // A grading turn runs as the eval set it up; only the bot's turns are compared.
+    const advisor = request.grading ? undefined : EVAL_ADVISOR;
+    const effort = request.grading ? undefined : EVAL_EFFORT;
     const cwd = mkdtempSync(join(tmpdir(), 'bot-eval-'));
     let stopped: string | undefined;
     let searches = 0;
@@ -279,10 +288,10 @@ function claudeCode(model: string): Transport['turn'] {
           env: {
             ...process.env,
             ENABLE_TOOL_SEARCH: deferring ? 'true' : 'false',
-            ...(EVAL_ADVISOR ? { CLAUDE_CODE_ENABLE_EXPERIMENTAL_ADVISOR_TOOL: '1' } : {}),
+            ...(advisor ? { CLAUDE_CODE_ENABLE_EXPERIMENTAL_ADVISOR_TOOL: '1' } : {}),
           },
-          ...(EVAL_ADVISOR ? { settings: { advisorModel: EVAL_ADVISOR } } : {}),
-          ...(EVAL_EFFORT ? { effort: EVAL_EFFORT } : {}),
+          ...(advisor ? { settings: { advisorModel: advisor } } : {}),
+          ...(effort ? { effort } : {}),
           permissionMode: 'dontAsk',
           mcpServers: { oppenheimer: { type: 'sdk', name: 'oppenheimer', instance: mcp } },
           strictMcpConfig: true,
