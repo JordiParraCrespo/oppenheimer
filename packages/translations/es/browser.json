@@ -4300,7 +4300,7 @@
     },
     "unattended": {
       "short": "{{name}} espera para seguir adelante",
-      "title": "{{name}} lleva 30 minutos sin leer",
+      "title": "{{name}} lleva más de 30 minutos sin leer",
       "body": "Su turno terminó y nadie la ha abierto desde entonces. Abre la sesión para leer lo que hizo y darle el siguiente paso."
     },
     "notice": {
