@@ -50,7 +50,7 @@ export function GroupSessionsMenu({
       ids: changing.map((session) => session.id),
       hidden,
     });
-    onWrite(reason ? (reason as Error) : null);
+    onWrite(reason);
     if (changed.length === 0) return;
     if (changed.length === 1) {
       notifySuccess(hidden ? 'sessionHidden' : 'sessionShown', { name: changed[0]?.name ?? '' });

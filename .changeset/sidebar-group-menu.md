@@ -18,6 +18,8 @@ or delete them all after the dialog for several asks.
   `onContextMenu` and `menuOpen` for its head.
 - `@oppenheimer/translations`: `sessions.group.*`, and the `sessionsHidden`
   and `sessionsShown` toasts.
-- `@oppenheimer/frontend-consumer`: `useSetSessionsHidden` hides or shows
-  several sessions in one batch, four writes in flight at a time and one
-  re-read of the list at the end.
+- `@oppenheimer/frontend-consumer`: `settleEach`, the one policy for a bulk
+  write over sessions (four requests in flight at a time, a refusal does not
+  stop the rest, the first reason as an `Error`), which the selection bar,
+  Delete all and the new `useSetSessionsHidden` share; the batch hide re-reads
+  the list once at the end.

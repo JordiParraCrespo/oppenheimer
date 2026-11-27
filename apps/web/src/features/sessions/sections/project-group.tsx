@@ -5,14 +5,13 @@ import {
   SidebarProjectHeader,
   SortableGroup,
   SortableSidebarProjectGroup,
-  useRowMenu,
 } from '@oppenheimer/design-system-web';
 import { Plus } from '@oppenheimer/design-system-web/icons';
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { useGroupSessionsMenu } from '../hooks/use-group-sessions-menu';
 import { emptyMessage } from '../lib/session-groups';
-import { GroupSessionsMenu } from './group-sessions-menu';
 import { SessionRows } from './session-rows';
 
 /**
@@ -20,7 +19,7 @@ import { SessionRows } from './session-rows';
  * project the list does not hold, whose header has only the group's menu. A
  * project's header starts a session in it; the project itself is managed
  * from Plan's Projects view. The header's ellipsis, or a right-click on it,
- * hides or deletes every session the group lists (`GroupSessionsMenu`). Its
+ * hides or deletes every session the group lists (`useGroupSessionsMenu`). Its
  * rows (`SessionRows`) own their ages' clock. It is a section rather than a
  * component because the header's "one of mine is open" mark subscribes to the route, a boolean per
  * group, so a navigation re-renders only the groups whose mark moved.
@@ -67,8 +66,7 @@ export function ProjectGroup({
       ? t('projects.unassigned')
       : project.name
     : t('sessions.sidebar.unfiled');
-  // A group with no rows has nothing for its menu to act on.
-  const menu = useRowMenu(sessions.length > 0);
+  const menu = useGroupSessionsMenu({ label, sessions, onDeleteAll, onWrite });
   const current = useRouterState({
     select: (state) =>
       sessions.some((session) => state.location.pathname === `/sessions/${session.id}`),
@@ -91,20 +89,11 @@ export function ProjectGroup({
         current={current}
         // A right-click on the header opens the group's menu, not the browser's.
         onContextMenu={menu.onContextMenu}
-        menuOpen={menu.open}
+        menuOpen={menu.menuOpen}
         actions={
-          project || sessions.length > 0 ? (
+          project || menu.action ? (
             <>
-              {sessions.length > 0 ? (
-                <GroupSessionsMenu
-                  label={label}
-                  sessions={sessions}
-                  open={menu.open}
-                  onOpenChange={menu.setOpen}
-                  onDeleteAll={onDeleteAll}
-                  onWrite={onWrite}
-                />
-              ) : null}
+              {menu.action}
               {project ? (
                 <IconButton
                   size="xs"

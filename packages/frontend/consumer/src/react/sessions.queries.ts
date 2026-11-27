@@ -35,6 +35,7 @@ import {
   deriveSessionStartProgress,
   type SessionStartProgress,
 } from '../modules/sessions/session-steps';
+import { settleEach } from '../modules/sessions/settle-each';
 import { useConsumerApp } from './context';
 import { useHostListQuery } from './hosts.queries';
 import {
@@ -500,19 +501,16 @@ export interface SetSessionsHiddenVariables {
 export interface SessionsWriteResult {
   changed: SessionEntity[];
   failed: string[];
-  reason: unknown;
+  reason: Error | null;
 }
-
-/** How many of a batch's writes are in flight at once. */
-const BATCH_WRITES_AT_ONCE = 4;
 
 /**
  * Hide several sessions, or show them again (a sidebar group's Hide all).
- * The writes go out a few at a time and the lists are re-read once, when the
- * last has answered: one re-read per row would read every page of the list
- * once for each session and spend the API's per-minute allowance on reads.
- * A refusal does not stop the rest; the result names what landed and what
- * did not, and the mutation resolves either way.
+ * The writes are one `settleEach`, so they go out a few at a time, and the
+ * lists are re-read once, when the last has answered: one re-read per row
+ * would read every page of the list once for each session and spend the
+ * API's per-minute allowance on reads. The mutation resolves either way; the
+ * result names what landed and what did not.
  */
 export function useSetSessionsHidden(
   options?: UseMutationOptions<SessionsWriteResult, Error, SetSessionsHiddenVariables>,
@@ -522,20 +520,11 @@ export function useSetSessionsHidden(
 
   return useMutation({
     mutationFn: async ({ ids, hidden }: SetSessionsHiddenVariables) => {
-      const result: SessionsWriteResult = { changed: [], failed: [], reason: null };
-      const queue = [...ids];
-      const worker = async () => {
-        for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
-          try {
-            result.changed.push(await app.sessions.setHidden(id, hidden));
-          } catch (error) {
-            result.failed.push(id);
-            if (result.failed.length === 1) result.reason = error;
-          }
-        }
-      };
-      await Promise.all(Array.from({ length: Math.min(BATCH_WRITES_AT_ONCE, ids.length) }, worker));
-      return result;
+      const changed: SessionEntity[] = [];
+      const { failed, reason } = await settleEach(ids, async (id) => {
+        changed.push(await app.sessions.setHidden(id, hidden));
+      });
+      return { changed, failed, reason };
     },
     ...withCacheOnSuccess(options, (result) => {
       for (const session of result.changed) {
