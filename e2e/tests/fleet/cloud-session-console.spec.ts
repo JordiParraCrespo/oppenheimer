@@ -29,7 +29,7 @@ test('New session starts a session in Claude Code cloud, and the console follows
   mkdirSync(shots, { recursive: true });
   const shot = (name: string) => page.screenshot({ path: join(shots, `${name}.png`) });
 
-  const { api, user } = await signedUpContext('fleetcloudui');
+  const { api, user } = await signedUpContext('fleetcloudui', { verified: true });
   await connectInstallation(api);
   const [box] = await pairedHosts(api, 1, 'cloud-ui');
 

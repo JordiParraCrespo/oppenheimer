@@ -1,5 +1,6 @@
 import { type APIRequestContext, type APIResponse, expect, request } from '@playwright/test';
 import { API_URL, WEB_URL } from '../playwright.config';
+import { query } from './db';
 
 /** A password that satisfies every rule the app states, for the happy paths. */
 export const VALID_PASSWORD = 'Sup3rSecret!Pass';
@@ -104,15 +105,26 @@ export async function changePassword(
   });
 }
 
-/** Signs up and returns a context already carrying that user's session cookie. */
+/**
+ * Signs up and returns a context already carrying that user's session cookie.
+ *
+ * The address stays unverified unless `verified` is set, which marks it as
+ * following the verification email would. Minting an API token or approving
+ * an OAuth grant needs it (`TOKEN_010`); the API reads the flag fresh from the
+ * row, so the session in hand keeps working.
+ */
 export async function signedUpContext(
   prefix = 'user',
+  { verified = false }: { verified?: boolean } = {},
 ): Promise<{ api: APIRequestContext; user: TestUser; userId: string }> {
   const api = await newContext();
   const user = newUser(prefix);
   const response = await signUp(api, user);
   expect(response.status(), `sign-up for ${user.email} should succeed`).toBe(200);
   const body = await response.json();
+  if (verified) {
+    await query(`UPDATE "user" SET "emailVerified" = true WHERE "id" = $1`, [body.user.id]);
+  }
   return { api, user, userId: body.user.id };
 }
 

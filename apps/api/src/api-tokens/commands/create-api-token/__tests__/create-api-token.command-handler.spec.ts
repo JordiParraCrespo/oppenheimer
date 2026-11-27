@@ -1,5 +1,7 @@
 import { defineAbilitiesFromPermissions } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CredentialOwnerPort } from '../../../../auth/application/credential-owner.port';
+import type { CredentialOwner } from '../../../../auth/domain/scope-context.types';
 import type { AbilityFactory } from '../../../../roles/application/ability.factory';
 import type { ApiTokenRepositoryPort } from '../../../database/api-token.repository.port';
 import type { OrganizationMembershipReaderPort } from '../../../database/organization-membership.repository.port';
@@ -15,6 +17,18 @@ describe('CreateApiTokenCommandHandler', () => {
   let repo: Pick<ApiTokenRepositoryPort, 'insertWithinLimit'>;
   let memberships: OrganizationMembershipReaderPort;
   let abilityFactory: Pick<AbilityFactory, 'createForUser'>;
+  let owners: CredentialOwnerPort;
+
+  const owner = (overrides: Partial<CredentialOwner> = {}): CredentialOwner => ({
+    id: 'user-1',
+    email: 'owner@example.com',
+    firstName: 'Owner',
+    lastName: 'Example',
+    role: 'user',
+    isActive: true,
+    emailVerified: true,
+    ...overrides,
+  });
 
   const useAbility = (permissions: { action: string; subject: string }[]) => {
     vi.mocked(abilityFactory.createForUser).mockResolvedValue(
@@ -41,11 +55,16 @@ describe('CreateApiTokenCommandHandler', () => {
     };
     abilityFactory = { createForUser: vi.fn() };
     useAbility(ADMIN_PERMISSIONS);
+    owners = {
+      findActiveOwner: vi.fn(),
+      requireActiveOwner: vi.fn().mockResolvedValue(owner()),
+    };
 
     service = new CreateApiTokenCommandHandler(
       repo as ApiTokenRepositoryPort,
       memberships,
       abilityFactory as AbilityFactory,
+      owners,
     );
   });
 
@@ -57,6 +76,16 @@ describe('CreateApiTokenCommandHandler', () => {
     expect(repo.insertWithinLimit).toHaveBeenCalledTimes(1);
     expect(result.secret).toMatch(/^oppenheimer_pat_/);
     expect(result.tokenId).toBe(insertedToken().id);
+  });
+
+  // Pre-account squatting: someone registers the victim's address first and
+  // mints a token that would outlive the real owner's password reset.
+  it('refuses an account whose email is not verified, and writes nothing', async () => {
+    vi.mocked(owners.requireActiveOwner).mockResolvedValue(owner({ emailVerified: false }));
+
+    await expect(service.execute(command())).rejects.toMatchObject({ code: 'TOKEN_010' });
+    expect(owners.requireActiveOwner).toHaveBeenCalledWith('user-1');
+    expect(repo.insertWithinLimit).not.toHaveBeenCalled();
   });
 
   it('never persists the secret, only its digest', async () => {

@@ -24,7 +24,7 @@ interface SessionDetail {
 }
 
 test('a cloud session starts on the host, keeps nothing there, and takes its status from the extension', async () => {
-  const { api } = await signedUpContext('fleetcloud');
+  const { api } = await signedUpContext('fleetcloud', { verified: true });
   const installationId = await connectInstallation(api);
   const [box] = await pairedHosts(api, 1, 'cloud');
 

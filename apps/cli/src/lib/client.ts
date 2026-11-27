@@ -90,16 +90,17 @@ function toCliError(status: number, payload: unknown, method: string, path: stri
   const message = code ? `${code}: ${detail}` : detail;
 
   if (status === 401) {
-    return new CliError(message, ExitCode.AUTH, 'Run `opp login` to re-authenticate.');
+    return new CliError(message, ExitCode.AUTH, 'Run `opp login` to re-authenticate.', code);
   }
   if (status === 403) {
     return new CliError(
       message,
       ExitCode.FORBIDDEN,
       'Your credential may be missing a permission — check `opp whoami`.',
+      code,
     );
   }
-  if (status === 404) return new CliError(message, ExitCode.NOT_FOUND);
+  if (status === 404) return new CliError(message, ExitCode.NOT_FOUND, undefined, code);
 
-  return new CliError(message, ExitCode.FAILURE);
+  return new CliError(message, ExitCode.FAILURE, undefined, code);
 }

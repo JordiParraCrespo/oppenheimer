@@ -125,10 +125,15 @@ that does not exist, so session ids cannot be probed.
 | `TOKEN_007` <a id="token_007" /> | This credential is not scoped to that organization                 | 403  |
 | `TOKEN_008` <a id="token_008" /> | A token can only be scoped to organizations its creator belongs to | 403  |
 | `TOKEN_009` <a id="token_009" /> | The maximum number of active API tokens has been reached           | 409  |
+| `TOKEN_010` <a id="token_010" /> | Verify your email address before issuing a credential              | 403  |
 
 `TOKEN_003` is deliberately opaque: unknown, revoked and expired tokens, and
 tokens whose owner is deactivated or banned, share one code so the endpoint
 cannot be used as a probing oracle.
+
+`TOKEN_010` refuses minting an API token, and approving or exchanging an OAuth
+(MCP) grant, for an account whose email address is not verified yet. Verify the
+address from the link in the verification email, then try again.
 
 `TOKEN_002` and `TOKEN_005` carry the offending scopes as extension members
 (`ungrantableScopes` and `missingScopes`) as well as in `detail`.

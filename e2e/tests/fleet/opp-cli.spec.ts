@@ -32,7 +32,7 @@ interface SessionRow {
 test('an agent on one host starts, prompts, waits on and closes a session on another with opp', async () => {
   test.skip(!existsSync(OPP), `opp is not built at ${OPP}`);
 
-  const { api } = await signedUpContext('fleetopp');
+  const { api } = await signedUpContext('fleetopp', { verified: true });
   const installationId = await connectInstallation(api);
   const [here, there] = await pairedHosts(api, 2, 'opp');
 

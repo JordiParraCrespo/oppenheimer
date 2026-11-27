@@ -27,6 +27,8 @@ export class CliError extends Error {
     readonly exitCode: ExitCodeValue = ExitCode.FAILURE,
     /** Optional next step, printed under the error. */
     readonly hint?: string,
+    /** The API's problem code, when the error is one of its answers. */
+    readonly code?: string,
   ) {
     super(message);
     this.name = 'CliError';

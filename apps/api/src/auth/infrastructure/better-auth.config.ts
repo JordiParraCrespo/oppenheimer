@@ -4,14 +4,16 @@ import { Logger } from '@nestjs/common';
 import { organizationSharedOptions, userAdditionalFields } from '@oppenheimer/auth';
 import { DEFAULT_OAUTH_SCOPES, PASSWORD_MIN_LENGTH, SCOPES } from '@oppenheimer/shared';
 import { betterAuth } from 'better-auth';
-import { createAuthMiddleware } from 'better-auth/api';
+import { createAuthMiddleware, getSessionFromCtx } from 'better-auth/api';
 import { admin, bearer, mcp, organization } from 'better-auth/plugins';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { Pool } from 'pg';
 import { databaseConfigFromEnv, poolOptions } from '../../config/database.config';
+import { CompletePasswordResetCommand } from '../commands/complete-password-reset/complete-password-reset.command';
 import { CompleteSignUpCommand } from '../commands/complete-sign-up/complete-sign-up.command';
 import { RotateDelegatedSessionsCommand } from '../commands/rotate-delegated-sessions/rotate-delegated-sessions.command';
 import { standingChangeOf } from './admin-ban-hook.util';
+import { authIpAddressOptions } from './auth-client-ip.util';
 import { dispatchFromAuthHook } from './auth-command-bus.util';
 import { authRateLimit } from './auth-rate-limit.util';
 import { betterAuthSecondaryStorage, sessionStore } from './better-auth-secondary-storage.adapter';
@@ -19,6 +21,7 @@ import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
 import { buildInvitationUrl } from './invitation-url.util';
 // oppenheimer:begin mobile
 import { mobileAppAuth } from './mobile-app-auth.util';
+import { grantStepOf, refuseUnverifiedGrant, userIdOfCodeValue } from './oauth-grant-gate.util';
 // oppenheimer:end mobile
 import { sessionDeleteHooks } from './session-delete-hook.util';
 
@@ -143,6 +146,10 @@ export const auth = betterAuth({
     NODE_ENV: process.env.NODE_ENV,
   }),
   advanced: {
+    // The client address the rate limit and the session rows record: one
+    // header the API writes from `req.ip`, which honours `TRUST_PROXY`, and
+    // never `X-Forwarded-For` as the client sent it (`auth-client-ip.util.ts`).
+    ipAddress: authIpAddressOptions,
     // Generate UUIDs so the ids stay compatible with the existing
     // `ParseUUIDPipe` validation on the `/users/:id` routes.
     database: {
@@ -203,6 +210,19 @@ export const auth = betterAuth({
     // the new password (the web flow already lands on /login on success).
     // `changePassword` offers the same thing through `revokeOtherSessions`.
     revokeSessionsOnPasswordReset: true,
+    // Sessions are not all a reset has to take back: an API token or an OAuth
+    // grant outlives them, and the reset is how a real owner recovers an
+    // address someone registered first. Awaited by Better Auth before it
+    // answers, and best-effort like every dispatch from a hook.
+    onPasswordReset: async ({ user }) => {
+      await dispatchFromAuthHook(
+        new CompletePasswordResetCommand({ userId: user.id, resetAt: new Date() }),
+        {
+          description: 'revoke the credentials of an account whose password was reset',
+          userId: user.id,
+        },
+      );
+    },
     sendResetPassword: async ({ user, url }) => {
       await emailQueue.add('password-reset', {
         to: user.email,
@@ -254,6 +274,15 @@ export const auth = betterAuth({
     }),
   },
   account: {
+    // The Google and GitHub tokens a social sign-in stores on `account` are
+    // encrypted with BETTER_AUTH_SECRET, so a database dump holds no working
+    // provider credential. Nothing in the API reads those columns; only Better
+    // Auth does (`getAccessToken`, `refreshToken`), and it decrypts. Rows
+    // written before this stay plain text and keep working (Better Auth reads
+    // a value that does not look encrypted as it is) until the next sign-in
+    // rewrites them. Rotating the secret makes stored provider tokens
+    // unreadable until the person signs in with the provider again.
+    encryptOAuthTokens: true,
     accountLinking: {
       // Someone who registered with a password and later presses "Continue
       // with Google" on the same address is the same person, so the Google
@@ -292,6 +321,35 @@ export const auth = betterAuth({
     changeEmail: { enabled: true },
   },
   hooks: {
+    // An OAuth (MCP) grant is approved or exchanged only for an account that
+    // has proven its address (`mayIssueCredential`, `oauth-grant-gate.util.ts`).
+    // Reads only: the session, the code or refresh token, and the user row,
+    // fresh rather than from the session cache.
+    before: createAuthMiddleware(async (ctx) => {
+      const step = grantStepOf(ctx.path, ctx.body);
+      if (!step) return;
+      await refuseUnverifiedGrant(step, {
+        sessionUserId: async () => (await getSessionFromCtx(ctx))?.user.id ?? null,
+        codeUserId: async (code) => {
+          const found = await ctx.context.internalAdapter.findVerificationValue(code);
+          return found ? userIdOfCodeValue(found.value) : null;
+        },
+        refreshTokenUserId: async (refreshToken) =>
+          (
+            await pool.query<{ userId: string | null }>(
+              `SELECT "userId" FROM "oauthAccessToken" WHERE "refreshToken" = $1`,
+              [refreshToken],
+            )
+          ).rows[0]?.userId ?? null,
+        emailVerified: async (userId) =>
+          (
+            await pool.query<{ emailVerified: boolean }>(
+              `SELECT "emailVerified" FROM "user" WHERE "id" = $1`,
+              [userId],
+            )
+          ).rows[0]?.emailVerified ?? null,
+      });
+    }),
     // See `RotateDelegatedSessionsCommand`. Awaited by Better Auth, and
     // best-effort like every dispatch from a hook.
     after: createAuthMiddleware(async (ctx) => {

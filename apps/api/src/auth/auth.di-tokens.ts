@@ -18,4 +18,6 @@ export const REQUEST_TENANT = Symbol('REQUEST_TENANT');
 
 export const SESSION_CACHE = Symbol('SESSION_CACHE');
 
+export const OAUTH_GRANT_REPOSITORY = Symbol('OAUTH_GRANT_REPOSITORY');
+
 export const AUTH_FAILURE_LIMITER = Symbol('AUTH_FAILURE_LIMITER');

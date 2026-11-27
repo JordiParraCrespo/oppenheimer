@@ -2,6 +2,10 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { ungrantableScopes } from '@oppenheimer/shared';
+import type { CredentialOwnerPort } from '../../../auth/application/credential-owner.port';
+import { CREDENTIAL_OWNER } from '../../../auth/auth.di-tokens';
+import { AuthErrors } from '../../../auth/domain/auth.errors';
+import { mayIssueCredential } from '../../../auth/domain/credential-issuance.policy';
 import { AbilityFactory } from '../../../roles/application/ability.factory';
 import { API_TOKEN_REPOSITORY, ORGANIZATION_MEMBERSHIP_READER } from '../../api-tokens.di-tokens';
 import type { ApiTokenRepositoryPort } from '../../database/api-token.repository.port';
@@ -29,6 +33,9 @@ export interface CreateApiTokenResult {
  * credentials safe: **a token may never carry more reach than its creator**.
  * The creator's effective ability is rebuilt here from their roles rather than
  * trusted from the request, and every requested scope is checked against it.
+ * Before any of that, the creator must have proven their email address: a
+ * token outlives a password reset's sign-out, so one minted on an address the
+ * account never proved would survive its real owner recovering it.
  */
 @CommandHandler(CreateApiTokenCommand)
 export class CreateApiTokenCommandHandler
@@ -40,9 +47,16 @@ export class CreateApiTokenCommandHandler
     @Inject(ORGANIZATION_MEMBERSHIP_READER)
     private readonly memberships: OrganizationMembershipReaderPort,
     private readonly abilityFactory: AbilityFactory,
+    @Inject(CREDENTIAL_OWNER)
+    private readonly owners: CredentialOwnerPort,
   ) {}
 
   async execute(command: CreateApiTokenCommand): Promise<CreateApiTokenResult> {
+    // Read fresh rather than off the request: the session cache holds a copy
+    // of the user, and a stale "verified" must not mint.
+    const owner = await this.owners.requireActiveOwner(command.actor.id);
+    if (!mayIssueCredential(owner)) throw new AppError(AuthErrors.EMAIL_VERIFICATION_REQUIRED);
+
     const ability = await this.abilityFactory.createForUser(
       { id: command.actor.id, role: command.actor.role },
       { organizationId: command.actor.organizationId ?? null },

@@ -28,7 +28,7 @@ interface Reply {
 }
 
 test('a reply no Stop hook takes wakes the session from the host on its account, once', async () => {
-  const { api } = await signedUpContext('fleetwake');
+  const { api } = await signedUpContext('fleetwake', { verified: true });
   const installationId = await connectInstallation(api);
   const [box] = await pairedHosts(api, 1, 'wake');
 

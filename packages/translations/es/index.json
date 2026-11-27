@@ -274,6 +274,7 @@
       "TOKEN_007": "Ese token no tiene alcance sobre esta organización.",
       "TOKEN_008": "Un token solo puede limitarse a organizaciones a las que perteneces.",
       "TOKEN_009": "Has alcanzado el número máximo de tokens de API activos.",
+      "TOKEN_010": "Verifica primero tu dirección de correo: abre el enlace que te enviamos y vuelve a intentarlo.",
       "ROLE_001": "No se ha encontrado ese rol.",
       "ROLE_002": "Ya existe un rol con ese nombre.",
       "ROLE_003": "Los roles del sistema no se pueden eliminar ni renombrar.",

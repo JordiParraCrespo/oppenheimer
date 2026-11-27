@@ -6737,7 +6737,7 @@ export type CreateApiTokenErrors = {
      */
     401: ProblemDetailsDto;
     /**
-     * TOKEN_002 / TOKEN_008 — Requested scopes exceed the caller’s own permissions, or the caller is not a member of a requested organization
+     * TOKEN_010 / TOKEN_002 / TOKEN_008 — The caller’s email address is not verified, requested scopes exceed the caller’s own permissions, or the caller is not a member of a requested organization
      *
      * FLAG_003 — The "api_token_creation" feature is switched off for the caller
      */

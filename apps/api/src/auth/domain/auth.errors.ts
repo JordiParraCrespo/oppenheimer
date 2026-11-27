@@ -77,4 +77,15 @@ export const AuthErrors = {
     message: 'This credential is not scoped to that organization',
     httpStatus: 403,
   },
+  /**
+   * Minting an API token or approving an OAuth grant on an address the account
+   * has not proven (`mayIssueCredential`). Declared here, beside the other
+   * credential codes, because the kernel raises it on the OAuth path and
+   * `api-tokens` raises it on the mint.
+   */
+  EMAIL_VERIFICATION_REQUIRED: {
+    code: 'TOKEN_010',
+    message: 'Verify your email address before issuing a credential',
+    httpStatus: 403,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

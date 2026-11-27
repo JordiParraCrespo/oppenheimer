@@ -35,7 +35,7 @@ interface TaskRow {
  */
 test.describe('Tasks an agent made', () => {
   test('wait for the person, who takes them up with a TODO day or a dismissal; the agent cannot', async () => {
-    const { api: owner } = await signedUpContext('agenttasks');
+    const { api: owner } = await signedUpContext('agenttasks', { verified: true });
     const agent = await tokenContext(owner);
     const create = async (api: APIRequestContext, title: string) => {
       const created = await api.post('/api/v1/tasks', { data: { title } });

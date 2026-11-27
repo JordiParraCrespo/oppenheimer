@@ -9,15 +9,18 @@ import {
   CREDENTIAL_SCOPE,
   CREDENTIAL_VERIFIER,
   DELEGATED_SESSION,
+  OAUTH_GRANT_REPOSITORY,
   REQUEST_TENANT,
   SESSION_CACHE,
 } from './auth.di-tokens';
+import { CompletePasswordResetCommandHandler } from './commands/complete-password-reset/complete-password-reset.command-handler';
 import { CompleteSignUpCommandHandler } from './commands/complete-sign-up/complete-sign-up.command-handler';
 import { RotateDelegatedSessionsCommandHandler } from './commands/rotate-delegated-sessions/rotate-delegated-sessions.command-handler';
 import { Account } from './database/account.orm-entity';
 import { OAuthAccessTokenOrmEntity } from './database/oauth-access-token.orm-entity';
 import { OAuthApplicationOrmEntity } from './database/oauth-application.orm-entity';
 import { OAuthConsentOrmEntity } from './database/oauth-consent.orm-entity';
+import { OAuthGrantRepository } from './database/oauth-grant.repository';
 import { Session } from './database/session.orm-entity';
 import { Verification } from './database/verification.orm-entity';
 import { ApiAuthGuard } from './guards/api-auth.guard';
@@ -69,6 +72,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     // `dispatchFromAuthHook` in auth-command-bus.util.ts.
     AuthCommandBusBridge,
     CompleteSignUpCommandHandler,
+    CompletePasswordResetCommandHandler,
     RotateDelegatedSessionsCommandHandler,
     PoliciesGuard,
     ApiAuthGuard,
@@ -81,6 +85,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     { provide: DELEGATED_SESSION, useClass: DelegatedSessionAdapter },
     { provide: SESSION_CACHE, useClass: BetterAuthSessionCacheAdapter },
     { provide: REQUEST_TENANT, useClass: RequestTenantResolver },
+    { provide: OAUTH_GRANT_REPOSITORY, useClass: OAuthGrantRepository },
   ],
   // Guards are inbound adapters other modules apply with `@UseGuards`; the rest
   // is published as tokens, so nothing downstream names a concrete class.

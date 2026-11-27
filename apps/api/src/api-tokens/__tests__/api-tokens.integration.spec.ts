@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
@@ -88,8 +89,12 @@ describe('API tokens & scopes (integration)', () => {
     };
   }
 
-  /** Register a user through Better Auth and return a bearer session token. */
-  async function signUp(email: string) {
+  /**
+   * Register a user through Better Auth and return a bearer session token. The
+   * address is marked verified unless asked otherwise, as following the
+   * verification email would: minting a token needs it (`TOKEN_010`).
+   */
+  async function signUp(email: string, { verified = true }: { verified?: boolean } = {}) {
     const response = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -109,6 +114,12 @@ describe('API tokens & scopes (integration)', () => {
     const payload = (await response.json()) as {
       user: { id: string; email: string };
     };
+    if (verified) {
+      await dataSource.query('UPDATE "user" SET "emailVerified" = true WHERE "id" = $1', [
+        payload.user.id,
+      ]);
+      await app.get<SessionCachePort>(SESSION_CACHE).refreshUser(payload.user.id);
+    }
     return {
       id: payload.user.id,
       email: payload.user.email,
@@ -861,6 +872,161 @@ describe('API tokens & scopes (integration)', () => {
       expect(metadata.scopes_supported).toEqual(
         expect.arrayContaining(['openid', 'users:read', 'roles:write']),
       );
+    });
+  });
+
+  // --- OAuth (MCP) grants ----------------------------------------------------
+
+  const REDIRECT_URI = 'http://127.0.0.1:9/callback';
+
+  /** Register a public MCP client, as one does on first use. */
+  async function registerOAuthClient(): Promise<string> {
+    const response = await fetch(`${baseUrl}/api/auth/mcp/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        client_name: 'integration client',
+        redirect_uris: [REDIRECT_URI],
+        token_endpoint_auth_method: 'none',
+      }),
+    });
+    expect(response.ok).toBe(true);
+    return ((await response.json()) as { client_id: string }).client_id;
+  }
+
+  /** Authorize as the session's account and exchange the code at the token endpoint. */
+  async function exchangeOAuthCode(sessionToken: string, clientId: string) {
+    const verifier = randomBytes(32).toString('base64url');
+    const challenge = createHash('sha256').update(verifier).digest('base64url');
+    const query = new URLSearchParams({
+      client_id: clientId,
+      response_type: 'code',
+      redirect_uri: REDIRECT_URI,
+      scope: 'openid tokens:read',
+      code_challenge: challenge,
+      code_challenge_method: 'S256',
+    });
+    const authorized = await fetch(`${baseUrl}/api/auth/mcp/authorize?${query}`, {
+      headers: { authorization: `Bearer ${sessionToken}` },
+      redirect: 'manual',
+    });
+    const location = authorized.headers.get('location') ?? '';
+    const code = new URL(location, baseUrl).searchParams.get('code');
+    expect(code, `authorize answered ${authorized.status} ${location}`).toBeTruthy();
+
+    const exchanged = await fetch(`${baseUrl}/api/auth/mcp/token`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code as string,
+        redirect_uri: REDIRECT_URI,
+        client_id: clientId,
+        code_verifier: verifier,
+      }),
+    });
+    const text = await exchanged.text();
+    return {
+      status: exchanged.status,
+      body: text ? (JSON.parse(text) as Record<string, unknown>) : undefined,
+    };
+  }
+
+  // Pre-account squatting: someone registers the victim's address first and
+  // issues a credential that would outlive the real owner's password reset.
+  describe('an account whose email is not verified', () => {
+    let squatter: { id: string; email: string; sessionToken: string };
+
+    beforeAll(async () => {
+      squatter = await signUp('squatter@example.com', { verified: false });
+    });
+
+    it('is refused a token with TOKEN_010, and nothing is inserted', async () => {
+      const refused = await call('/api/v1/tokens', {
+        method: 'POST',
+        token: squatter.sessionToken,
+        body: { name: 'squatted', scopes: ['tokens:read'] },
+      });
+
+      expect(refused.status).toBe(403);
+      expect(refused.body?.code).toBe('TOKEN_010');
+      const rows: { n: number }[] = await dataSource.query(
+        'SELECT count(*)::int AS n FROM "api_token" WHERE "userId" = $1',
+        [squatter.id],
+      );
+      expect(rows[0].n).toBe(0);
+    });
+
+    it('is refused an OAuth grant at the token endpoint, and no grant is stored', async () => {
+      const exchanged = await exchangeOAuthCode(squatter.sessionToken, await registerOAuthClient());
+
+      expect(exchanged.status).toBe(403);
+      expect(exchanged.body?.code).toBe('TOKEN_010');
+      expect(exchanged.body?.error).toBe('access_denied');
+      const rows: { n: number }[] = await dataSource.query(
+        'SELECT count(*)::int AS n FROM "oauthAccessToken" WHERE "userId" = $1',
+        [squatter.id],
+      );
+      expect(rows[0].n).toBe(0);
+    });
+  });
+
+  describe('a password reset', () => {
+    it('revokes every API token and OAuth grant the account held', async () => {
+      const owner = await signUp('recovered@example.com');
+      const minted = await call('/api/v1/tokens', {
+        method: 'POST',
+        token: owner.sessionToken,
+        body: { name: 'before the reset', scopes: ['tokens:read'] },
+      });
+      expect(minted.status).toBe(201);
+      const pat = (minted.body as { token: string }).token;
+
+      const granted = await exchangeOAuthCode(owner.sessionToken, await registerOAuthClient());
+      expect(granted.status).toBe(200);
+      const accessToken = granted.body?.access_token as string;
+      expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(200);
+      expect((await call('/api/v1/me/credential', { token: accessToken })).status).toBe(200);
+
+      const requested = await fetch(`${baseUrl}/api/auth/request-password-reset`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: owner.email, redirectTo: 'http://localhost:3000/reset' }),
+      });
+      expect(requested.ok).toBe(true);
+      const [verification]: { identifier: string }[] = await dataSource.query(
+        `SELECT "identifier" FROM "verification"
+          WHERE "value" = $1 AND "identifier" LIKE 'reset-password:%'`,
+        [owner.id],
+      );
+      const reset = await fetch(`${baseUrl}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          token: verification.identifier.slice('reset-password:'.length),
+          newPassword: 'Integration-test-password-2',
+        }),
+      });
+      expect(reset.ok).toBe(true);
+
+      // The OAuth grant goes in the reset's own request; the tokens follow
+      // through the outbox a moment later.
+      expect((await call('/api/v1/me/credential', { token: accessToken })).status).toBe(401);
+      await vi.waitFor(async () => {
+        const after = await call('/api/v1/me/credential', { token: pat });
+        expect(after.status).toBe(401);
+        expect(after.body?.code).toBe('TOKEN_003');
+      });
+      const grants: { n: number }[] = await dataSource.query(
+        'SELECT count(*)::int AS n FROM "oauthAccessToken" WHERE "userId" = $1',
+        [owner.id],
+      );
+      expect(grants[0].n).toBe(0);
+      const tokens: { revokedAt: Date | null }[] = await dataSource.query(
+        'SELECT "revokedAt" FROM "api_token" WHERE "userId" = $1',
+        [owner.id],
+      );
+      expect(tokens.map((token) => token.revokedAt)).not.toContain(null);
     });
   });
 });

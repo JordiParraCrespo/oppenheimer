@@ -49,8 +49,8 @@ export class CreateApiTokenHttpController {
   @ApiProblemResponse({
     status: 403,
     description:
-      'Requested scopes exceed the caller’s own permissions, or the caller is not a member of a requested organization',
-    code: ['TOKEN_002', 'TOKEN_008'],
+      'The caller’s email address is not verified, requested scopes exceed the caller’s own permissions, or the caller is not a member of a requested organization',
+    code: ['TOKEN_010', 'TOKEN_002', 'TOKEN_008'],
   })
   @ApiProblemResponse({
     status: 409,
