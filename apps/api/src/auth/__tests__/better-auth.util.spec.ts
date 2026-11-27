@@ -6,6 +6,7 @@ import {
   asRecord,
   type BetterAuthFailure,
   betterAuthInvoker,
+  isoTimeOf,
   unwrap,
   unwrapArray,
 } from '../infrastructure/better-auth.util';
@@ -139,5 +140,22 @@ describe('betterAuthInvoker', () => {
     // The underlying message is for the log only — never the response.
     expect(err.detail).toBeUndefined();
     expect(err.cause).toBe(cause);
+  });
+});
+
+describe('isoTimeOf', () => {
+  // An OAuth grant created later in the same second as a password reset must
+  // not read as issued before the reset's cutoff.
+  it('keeps a Date to the millisecond, so a cutoff in the same second compares right', () => {
+    const issued = new Date('2026-11-27T20:00:00.750Z');
+    expect(isoTimeOf(issued)).toBe('2026-11-27T20:00:00.750Z');
+    expect(Date.parse(isoTimeOf(issued))).toBeGreaterThan(Date.parse('2026-11-27T20:00:00.250Z'));
+  });
+
+  it('keeps an ISO string as given and reads anything else as an unknown time', () => {
+    expect(isoTimeOf('2026-11-27T20:00:00.750Z')).toBe('2026-11-27T20:00:00.750Z');
+    expect(isoTimeOf(undefined)).toBe('');
+    expect(isoTimeOf(1_795_000_000_000)).toBe('');
+    expect(isoTimeOf(new Date(Number.NaN))).toBe('');
   });
 });
