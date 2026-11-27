@@ -6,12 +6,12 @@ import {
 } from '@oppenheimer/design-system-web';
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { Link } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
+import { useInboxHold } from '@/features/inbox/hooks/use-inbox-hold';
 import { useSessionChatSlot } from '@/features/inbox/hooks/use-session-chat-slot';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
-import { inboxHeld } from '@/features/inbox/lib/inbox-held';
 
 /**
  * A session whose turn ended thirty minutes ago and that nobody has opened
@@ -39,13 +39,7 @@ export function InboxUnattendedCard({
   const session = useSessionChatSlot();
   const [replying, setReplying] = useState(false);
   const sessionId = item.session.id;
-  // Synchronises the deck's hold with the open reply: held while open, let
-  // go when it closes or the card leaves the deck.
-  useEffect(() => {
-    if (!replying) return;
-    inboxHeld.hold(item);
-    return () => inboxHeld.release(item.key);
-  }, [replying, item]);
+  useInboxHold(item, replying);
   return (
     <InboxMessage
       icon={<InboxKindIcon kind="unattended" />}
