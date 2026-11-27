@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  BOT_MODEL_CALL_PURPOSES,
+  BOT_BACKGROUND_PURPOSES,
   BOT_PROVIDERS,
-  type BotModelCallPurpose,
+  type BotBackgroundPurpose,
   type BotProvider,
 } from '@oppenheimer/shared';
 
@@ -34,11 +34,11 @@ export class BotUsageModelResponseDto extends BotTokenCountsResponseDto {
 
 export class BotUsageBackgroundResponseDto extends BotTokenCountsResponseDto {
   @ApiProperty({
-    enum: BOT_MODEL_CALL_PURPOSES,
+    enum: BOT_BACKGROUND_PURPOSES,
     description:
       "Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory.",
   })
-  purpose!: BotModelCallPurpose;
+  purpose!: BotBackgroundPurpose;
 
   @ApiProperty()
   calls!: number;

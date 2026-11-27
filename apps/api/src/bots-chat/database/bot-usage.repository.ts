@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import type { BotModelCallPurpose, BotProvider, BotUsage } from '@oppenheimer/shared';
+import type { BotBackgroundPurpose, BotProvider, BotUsage } from '@oppenheimer/shared';
 import type { EntityManager, Repository } from 'typeorm';
 import { BotResource } from '../../bots/bots.resource';
 import { type BotModelCall, botUsageOf, tokenCount } from '../domain/bot-usage.policy';
@@ -94,7 +94,7 @@ export class BotUsageRepository
         firstAt: new Date(String(row.firstAt)),
       })),
       background: calls.map((row) => ({
-        purpose: String(row.purpose) as BotModelCallPurpose,
+        purpose: String(row.purpose) as BotBackgroundPurpose,
         calls: tokenCount(row.calls),
         ...counts(row),
       })),

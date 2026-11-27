@@ -5309,7 +5309,7 @@ export type BotUsageBackgroundResponseDto = {
     /**
      * Why the bot called its model outside a turn: a goal's review, the conversation's summary, a review of the owner's rules, or a dream of its memory.
      */
-    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream' | 'suggestion' | 'auto_review' | 'advisor';
+    purpose: 'goal_review' | 'summary' | 'rule_review' | 'dream' | 'suggestion' | 'auto_review';
     calls: number;
 };
 

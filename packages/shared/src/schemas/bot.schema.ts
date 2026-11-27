@@ -1079,6 +1079,15 @@ export const BOT_MODEL_CALL_PURPOSES = [
 ] as const;
 export type BotModelCallPurpose = (typeof BOT_MODEL_CALL_PURPOSES)[number];
 
+/**
+ * The purposes `/usage` lists as calls outside the turns: every one but the
+ * advisor's, which `/usage` shows as its own model's share instead.
+ */
+export const BOT_BACKGROUND_PURPOSES = BOT_MODEL_CALL_PURPOSES.filter(
+  (purpose): purpose is Exclude<BotModelCallPurpose, 'advisor'> => purpose !== 'advisor',
+);
+export type BotBackgroundPurpose = (typeof BOT_BACKGROUND_PURPOSES)[number];
+
 export interface BotTokenCounts {
   inputTokens: number;
   outputTokens: number;
@@ -1095,7 +1104,7 @@ export interface BotUsageModel extends BotTokenCounts {
 
 /** A bot's calls outside its turns, for one purpose. */
 export interface BotUsageBackground extends BotTokenCounts {
-  purpose: BotModelCallPurpose;
+  purpose: BotBackgroundPurpose;
   calls: number;
 }
 

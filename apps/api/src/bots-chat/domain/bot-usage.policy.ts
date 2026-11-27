@@ -1,5 +1,5 @@
 import {
-  BOT_MODEL_CALL_PURPOSES,
+  BOT_BACKGROUND_PURPOSES,
   type BotModelCallPurpose,
   type BotProvider,
   type BotTokenCounts,
@@ -81,7 +81,7 @@ export function botUsageOf(rows: BotUsageRows): BotUsage {
     models: modelsOf(rows).sort((a, b) => spent(b) - spent(a)),
     background: [...rows.background].sort(
       (a, b) =>
-        BOT_MODEL_CALL_PURPOSES.indexOf(a.purpose) - BOT_MODEL_CALL_PURPOSES.indexOf(b.purpose),
+        BOT_BACKGROUND_PURPOSES.indexOf(a.purpose) - BOT_BACKGROUND_PURPOSES.indexOf(b.purpose),
     ),
   };
 }
