@@ -202,7 +202,11 @@ pnpm test    # vitest; the live GLM spec runs only when GLM_API_KEY is set
 ```
 
 The live spec (`src/__tests__/glm.live.spec.ts`) runs one real turn on
-z.ai, model `GLM_MODEL` or `glm-5.3`. Put the key in the test command's
+z.ai, model `GLM_MODEL` or `glm-5.3`. `src/__tests__/advisor.live.spec.ts` runs one
+real turn on Anthropic's API with an advisor (`ADVISOR_LIVE_MODEL`,
+`ADVISOR_LIVE_ADVISOR`, else Sonnet 5.5 advised by Opus 5.5) and fails when
+the turn's usage carries none: run it with `ANTHROPIC_API_KEY` after every
+SDK upgrade. Put the key in the test command's
 environment only, for example
 `node --env-file=<file with GLM_API_KEY> node_modules/vitest/vitest.mjs run`.
 
