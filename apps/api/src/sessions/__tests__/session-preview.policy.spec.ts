@@ -54,4 +54,17 @@ describe('session preview addresses', () => {
       expect(safePreviewPath(away)).toBe('/');
     }
   });
+
+  it('opens no path with a control character, which a browser drops to read `//`', () => {
+    for (const away of [
+      '/\t/evil.test',
+      '/\n/evil.test',
+      '/\r/evil.test',
+      '/\u0000x',
+      '/\u007fx',
+    ]) {
+      expect(safePreviewPath(away)).toBe('/');
+    }
+    expect(safePreviewPath('/docs/%09')).toBe('/docs/%09');
+  });
 });

@@ -15,6 +15,12 @@ export function sanitizeRedirect(value: unknown): string | undefined {
   if (!value.startsWith('/') || value.startsWith('//')) return undefined;
   // A backslash is treated as a slash by browsers when resolving URLs, so
   // `/\evil.example` would also leave the origin.
-  if (value.startsWith('/\\')) return undefined;
+  if (value.includes('\\')) return undefined;
+  // Browsers strip a tab or newline from a URL, so `/\t/evil.example` reads
+  // `//evil.example`: no control character or DEL anywhere.
+  if (CONTROL.test(value)) return undefined;
   return value;
 }
+
+// biome-ignore lint/suspicious/noControlCharactersInRegex: the control characters are what it refuses
+const CONTROL = /[\u0000-\u001f\u007f]/;

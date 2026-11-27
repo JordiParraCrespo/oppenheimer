@@ -96,11 +96,17 @@ export function previewEnterUrl(
   return url.toString();
 }
 
+/** A C0 control character or DEL: a browser strips a tab or newline, so `/\t/x` reads `//x`. */
+// biome-ignore lint/suspicious/noControlCharactersInRegex: the control characters are what it refuses
+const CONTROL = /[\u0000-\u001f\u007f]/;
+
 /**
  * A path inside the app, never a way off it: one that does not start with a
- * single `/` (`//evil.example`, `https:…`, `\\evil`) is the app's root.
+ * single `/` (`//evil.example`, `https:…`, `\\evil`), or that holds a control
+ * character (`/\t/evil.example`), is the app's root.
  */
 export function safePreviewPath(path: string | undefined | null): string {
   if (!path?.startsWith('/') || path.startsWith('//') || path.includes('\\')) return '/';
+  if (CONTROL.test(path)) return '/';
   return path.length > 2048 ? '/' : path;
 }

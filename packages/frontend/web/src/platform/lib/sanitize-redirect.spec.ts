@@ -17,6 +17,14 @@ describe('sanitizeRedirect', () => {
     expect(sanitizeRedirect('/\\evil.example')).toBeUndefined();
   });
 
+  it('drops a path with a control character, which a browser strips to read `//`', () => {
+    expect(sanitizeRedirect('/\t/evil.example')).toBeUndefined();
+    expect(sanitizeRedirect('/\n/evil.example')).toBeUndefined();
+    expect(sanitizeRedirect('/\r/evil.example')).toBeUndefined();
+    expect(sanitizeRedirect('/\u007f')).toBeUndefined();
+    expect(sanitizeRedirect('/a\\b')).toBeUndefined();
+  });
+
   it('drops anything that is not a string path', () => {
     expect(sanitizeRedirect(undefined)).toBeUndefined();
     expect(sanitizeRedirect(42)).toBeUndefined();
