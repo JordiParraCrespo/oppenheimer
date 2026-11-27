@@ -3,6 +3,7 @@ import { emptyScope } from '@oppenheimer/backend-authz';
 import { AppError, type KeySealer } from '@oppenheimer/backend-core';
 import { WEBHOOK_BODY_KEPT_CHARS } from '@oppenheimer/shared/automations';
 import { None, Some } from 'oxide.ts';
+import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import type { AutomationLimitsResolver } from '../application/automation-limits.resolver';
 import { BotRoutineResolver } from '../application/bot-routine.resolver';
 import { RoutineWebhookResolver } from '../application/routine-webhook.resolver';
@@ -45,7 +46,9 @@ function webhookTrigger(): AutomationTriggerProps {
   return triggerFromInput({ source: 'webhook', event: 'webhook_received' }, 0);
 }
 
-function setup(options: { triggers?: AutomationTriggerProps[]; cap?: number } = {}) {
+function setup(
+  options: { triggers?: AutomationTriggerProps[]; cap?: number; emailVerified?: boolean } = {},
+) {
   const routine = AutomationEntity.createRoutine({
     organizationId: 'org-1',
     ownerUserId: 'owner-1',
@@ -114,10 +117,23 @@ function setup(options: { triggers?: AutomationTriggerProps[]; cap?: number } = 
       maxRunsPerWorkspaceHour: 100,
     })),
   } as unknown as AutomationLimitsResolver;
+  const owners: CredentialOwnerPort = {
+    findActiveOwner: vi.fn(),
+    requireActiveOwner: vi.fn(async (id: string) => ({
+      id,
+      email: 'owner@example.com',
+      firstName: 'Owner',
+      lastName: 'One',
+      role: 'user',
+      isActive: true,
+      emailVerified: options.emailVerified ?? true,
+    })),
+  };
   const issue = new IssueRoutineWebhookCommandHandler(
     new BotRoutineResolver(automations),
     webhooks,
     sealer,
+    owners,
   );
   const receive = new ReceiveRoutineWebhookCommandHandler(
     new RoutineWebhookResolver(webhooks, automations, sealer),
@@ -289,6 +305,15 @@ describe("a routine's webhook", () => {
       ],
     });
     expect(await codeOf(issueUrl())).toBe('AUTOMATIONS_014');
+    expect(webhooks.issue).not.toHaveBeenCalled();
+  });
+
+  // Pre-account squatting: a URL starts runs with no sign-in and survives the
+  // real owner's password reset. Regression: an account that never proved
+  // its address was issued one.
+  it('issues no URL to an account whose email is not verified', async () => {
+    const { issueUrl, webhooks } = setup({ emailVerified: false });
+    expect(await codeOf(issueUrl())).toBe('TOKEN_010');
     expect(webhooks.issue).not.toHaveBeenCalled();
   });
 

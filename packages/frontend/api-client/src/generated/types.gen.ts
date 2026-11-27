@@ -8915,7 +8915,7 @@ export type MintPairingTokenErrors = {
      */
     401: ProblemDetailsDto;
     /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     * TOKEN_010 — The caller’s email address is not verified
      */
     403: ProblemDetailsDto;
     /**
@@ -13290,7 +13290,7 @@ export type IssueRoutineWebhookErrors = {
      */
     401: ProblemDetailsDto;
     /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     * TOKEN_010 — The caller’s email address is not verified
      */
     403: ProblemDetailsDto;
     /**

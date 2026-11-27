@@ -7,6 +7,8 @@ import type { Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import { useTestDatabase, useTestRedis } from '../../__tests__/integration-services';
+import type { SessionCachePort } from '../../auth/application/session-cache.port';
+import { SESSION_CACHE } from '../../auth/auth.di-tokens';
 import type { HostClaudeAccountsPort } from '../application/host-claude-accounts.port';
 import type { HostPresencePort } from '../application/host-presence.port';
 import type { HostRepositoryPort } from '../database/host.repository.port';
@@ -117,7 +119,12 @@ describe('Hosts & pairing (integration)', () => {
     };
   }
 
-  async function signUp(email: string) {
+  /**
+   * Register a user through Better Auth and return a bearer session token. The
+   * address is marked verified unless asked otherwise, as following the
+   * verification email would: pairing a host needs it (`TOKEN_010`).
+   */
+  async function signUp(email: string, { verified = true }: { verified?: boolean } = {}) {
     const response = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -135,6 +142,12 @@ describe('Hosts & pairing (integration)', () => {
     expect(sessionToken).toBeTruthy();
 
     const payload = (await response.json()) as { user: { id: string; email: string } };
+    if (verified) {
+      await dataSource.query('UPDATE "user" SET "emailVerified" = true WHERE "id" = $1', [
+        payload.user.id,
+      ]);
+      await app.get<SessionCachePort>(SESSION_CACHE).refreshUser(payload.user.id);
+    }
     return {
       id: payload.user.id,
       email: payload.user.email,
@@ -360,6 +373,22 @@ describe('Hosts & pairing (integration)', () => {
 
       expect(replacement.status).toBe(201);
       expect(await revokedAt(held[0].body?.id as string)).not.toBeNull();
+    });
+
+    // Pre-account squatting: a paired host survives the real owner's password
+    // reset, so an address nobody proved may not pair one.
+    it('is refused with TOKEN_010 to an account whose email is not verified', async () => {
+      const squatter = await signUp('host-squatter@example.com', { verified: false });
+
+      const refused = await mintAs(squatter, { name: 'Squatted' });
+
+      expect(refused.status).toBe(403);
+      expect(refused.body?.code).toBe('TOKEN_010');
+      const rows: { n: number }[] = await dataSource.query(
+        'SELECT count(*)::int AS n FROM "host_pairing_token" WHERE "ownerUserId" = $1',
+        [squatter.id],
+      );
+      expect(rows[0].n).toBe(0);
     });
 
     it('leaves the old token alone when the mint is refused', async () => {

@@ -131,9 +131,10 @@ that does not exist, so session ids cannot be probed.
 tokens whose owner is deactivated or banned, share one code so the endpoint
 cannot be used as a probing oracle.
 
-`TOKEN_010` refuses minting an API token, and approving or exchanging an OAuth
-(MCP) grant, for an account whose email address is not verified yet. Verify the
-address from the link in the verification email, then try again.
+`TOKEN_010` refuses minting an API token, approving or exchanging an OAuth
+(MCP) grant, minting a host pairing token and issuing a routine's webhook URL,
+for an account whose email address is not verified yet. Verify the address
+from the link in the verification email, then try again.
 
 `TOKEN_002` and `TOKEN_005` carry the offending scopes as extension members
 (`ungrantableScopes` and `missingScopes`) as well as in `detail`.

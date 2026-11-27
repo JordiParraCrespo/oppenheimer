@@ -50,6 +50,11 @@ export class IssueRoutineWebhookHttpController {
       'A new URL for a routine that has a webhook trigger, replacing the one it had, which stops working at once. With `signed`, also a new signing secret every request must be signed with. The URL and the secret are answered this once; only the start of the token is shown afterwards.',
   })
   @ApiResponse({ status: 201, type: IssuedRoutineWebhookResponseDto })
+  @ApiProblemResponse({
+    status: 403,
+    description: 'The caller’s email address is not verified',
+    code: 'TOKEN_010',
+  })
   @ApiProblemResponse({ status: 404, description: 'Routine not found', code: 'AUTOMATIONS_001' })
   @ApiProblemResponse({
     status: 422,

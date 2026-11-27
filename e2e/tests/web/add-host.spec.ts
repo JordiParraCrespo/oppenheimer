@@ -24,7 +24,8 @@ import { provisionedUser, signInAs } from '../../support/web';
 test('pairs a machine from the console and selects it for the next session', async ({ page }) => {
   // Two registrations at an IP-throttled route; see `THROTTLE_WINDOW_MS` in support/sessions.ts.
   test.slow();
-  const owner = await provisionedUser('addhost');
+  // Pairing needs a verified address (`TOKEN_010`).
+  const owner = await provisionedUser('addhost', { verified: true });
   // Without one the repository chip is empty, which is a different spec's
   // subject; the host chip this one ends on needs the composer either way.
   await connectInstallation(owner.api);

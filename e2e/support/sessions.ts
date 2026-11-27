@@ -1,6 +1,6 @@
 import { createHash, generateKeyPairSync, randomInt } from 'node:crypto';
 import { type APIRequestContext, type APIResponse, expect } from '@playwright/test';
-import { newContext } from './auth';
+import { newContext, verifyEmailOf } from './auth';
 import githubApp from './github-app.json' with { type: 'json' };
 import { claimInstallation } from './github-stub';
 
@@ -200,8 +200,13 @@ export async function pairHost(api: APIRequestContext, name: string): Promise<st
 /**
  * Mint the registration token an install command carries, without spending it —
  * for a real runner to redeem (`support/fleet.ts`).
+ *
+ * Pairing needs a verified address (`TOKEN_010`), and every spec that stands a
+ * host up comes through here with a context, not the account, so the caller's
+ * address is verified first. A spec about the refusal mints by hand.
  */
 export async function mintPairingToken(api: APIRequestContext, name: string): Promise<string> {
+  await verifyEmailOf(api);
   const minted = await withoutTripping(() =>
     api.post('/api/v1/hosts/pairing', { data: { name }, failOnStatusCode: false }),
   );

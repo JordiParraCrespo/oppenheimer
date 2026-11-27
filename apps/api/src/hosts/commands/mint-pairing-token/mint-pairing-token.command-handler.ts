@@ -2,6 +2,10 @@ import { Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
+import type { CredentialOwnerPort } from '../../../auth/application/credential-owner.port';
+import { CREDENTIAL_OWNER } from '../../../auth/auth.di-tokens';
+import { AuthErrors } from '../../../auth/domain/auth.errors';
+import { mayIssueCredential } from '../../../auth/domain/credential-issuance.policy';
 import type { HostPairingTokenRepositoryPort } from '../../database/host-pairing-token.repository.port';
 import { HostPairingTokenEntity } from '../../domain/host-pairing-token.entity';
 import { HostErrors } from '../../domain/hosts.errors';
@@ -25,6 +29,13 @@ export interface MintPairingTokenResult {
   agentPrompt: string;
 }
 
+/**
+ * A paired host is a credential of its own, and one a password reset leaves
+ * alone (unpairing every machine on a reset would cost a real owner their
+ * hosts), so the account must have proven its email address before it may
+ * pair one: otherwise whoever registered the address first keeps a machine
+ * the real owner's recovery cannot reach.
+ */
 @CommandHandler(MintPairingTokenCommand)
 export class MintPairingTokenCommandHandler
   implements ICommandHandler<MintPairingTokenCommand, MintPairingTokenResult>
@@ -34,6 +45,8 @@ export class MintPairingTokenCommandHandler
     private readonly tokens: HostPairingTokenRepositoryPort,
     private readonly release: RunnerReleaseConfig,
     private readonly configService: ConfigService,
+    @Inject(CREDENTIAL_OWNER)
+    private readonly owners: CredentialOwnerPort,
   ) {}
 
   async execute(command: MintPairingTokenCommand): Promise<MintPairingTokenResult> {
@@ -45,6 +58,11 @@ export class MintPairingTokenCommandHandler
           'No runner release is configured, so there is no install command to hand a machine.',
       });
     }
+
+    // After the deployment's answer, so `GET /health/capabilities` still says
+    // what minting would. Read fresh: the session cache holds a copy of the user.
+    const owner = await this.owners.requireActiveOwner(command.userId);
+    if (!mayIssueCredential(owner)) throw new AppError(AuthErrors.EMAIL_VERIFICATION_REQUIRED);
 
     const now = new Date();
     const replacing = await this.replacedToken(command);

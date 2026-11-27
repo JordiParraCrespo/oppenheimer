@@ -1,6 +1,10 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError, type KeySealer } from '@oppenheimer/backend-core';
+import type { CredentialOwnerPort } from '../../../auth/application/credential-owner.port';
+import { CREDENTIAL_OWNER } from '../../../auth/auth.di-tokens';
+import { AuthErrors } from '../../../auth/domain/auth.errors';
+import { mayIssueCredential } from '../../../auth/domain/credential-issuance.policy';
 import { BotRoutineResolver } from '../../application/bot-routine.resolver';
 import { AUTOMATION_WEBHOOK_REPOSITORY, WEBHOOK_SECRET_SEALER } from '../../automations.di-tokens';
 import type {
@@ -24,6 +28,11 @@ export interface IssuedWebhook {
  * answered this once and never again, and the URL it had stops working at
  * once. Only a routine with a webhook trigger has one, so the bot that
  * writes triggers never holds a URL or a secret: the person issues them here.
+ *
+ * The URL starts a run with no sign-in and a password reset does not take it
+ * back, so the person must have proven their email address first: otherwise
+ * whoever registered the address first keeps a trigger the real owner's
+ * recovery cannot reach.
  */
 @CommandHandler(IssueRoutineWebhookCommand)
 export class IssueRoutineWebhookCommandHandler
@@ -35,9 +44,14 @@ export class IssueRoutineWebhookCommandHandler
     private readonly webhooks: AutomationWebhookRepositoryPort,
     @Inject(WEBHOOK_SECRET_SEALER)
     private readonly sealer: KeySealer,
+    @Inject(CREDENTIAL_OWNER)
+    private readonly owners: CredentialOwnerPort,
   ) {}
 
   async execute(command: IssueRoutineWebhookCommand): Promise<IssuedWebhook> {
+    // Read fresh: the session cache holds a copy of the user.
+    const owner = await this.owners.requireActiveOwner(command.scope.userId);
+    if (!mayIssueCredential(owner)) throw new AppError(AuthErrors.EMAIL_VERIFICATION_REQUIRED);
     const routine = await this.routines.require(command.scope, command.botId, command.routineId);
     if (!routine.triggers.some((trigger) => trigger.source === 'webhook')) {
       throw new AppError(AutomationErrors.WEBHOOK_TRIGGER_MISSING);

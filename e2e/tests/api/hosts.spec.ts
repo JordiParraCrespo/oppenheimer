@@ -110,7 +110,7 @@ test.describe('Hosts', () => {
     ).json();
     expect(typeof capabilities.hosts).toBe('boolean');
 
-    const { api } = await signedUpContext('hostcap');
+    const { api } = await signedUpContext('hostcap', { verified: true });
     const minted = await mintPairingToken(api);
 
     expect(minted.status === 503 && minted.code === 'HOSTS_004').toBe(!capabilities.hosts);
@@ -119,7 +119,7 @@ test.describe('Hosts', () => {
   test('a machine pairs, appears online-aware, and unpairs itself', async () => {
     // Registering waits out the pairing throttle when the suite has spent it.
     test.slow();
-    const { api, userId } = await signedUpContext('hostowner');
+    const { api, userId } = await signedUpContext('hostowner', { verified: true });
 
     const minted = await mintPairingToken(api, 'Pairing flow');
     test.skip(
@@ -221,7 +221,7 @@ test.describe('Hosts', () => {
   test('a host credential cannot reach a route meant for a person', async () => {
     // Registering waits out the pairing throttle when the suite has spent it.
     test.slow();
-    const { api } = await signedUpContext('hostscope');
+    const { api } = await signedUpContext('hostscope', { verified: true });
     const minted = await mintPairingToken(api);
     test.skip(minted.status === 503, 'this deployment has no runner release configured');
 
@@ -258,7 +258,7 @@ test.describe('Hosts', () => {
     // token, so the guard is read from minting, as every other pairing test
     // here reads it (`GET /health/capabilities` reports the same `hosts`
     // answer; the test above holds the two together).
-    const { api } = await signedUpContext('hostbogus');
+    const { api } = await signedUpContext('hostbogus', { verified: true });
     const minted = await mintPairingToken(api);
     test.skip(
       // The code, not just the status: a 503 from anything else is a failure to
@@ -294,7 +294,7 @@ test.describe('Hosts', () => {
   test("a user cannot see another user's hosts", async () => {
     // Registering waits out the pairing throttle when the suite has spent it.
     test.slow();
-    const { api: owner } = await signedUpContext('hostvictim');
+    const { api: owner } = await signedUpContext('hostvictim', { verified: true });
     const minted = await mintPairingToken(owner, 'victim box');
     test.skip(minted.status === 503, 'this deployment has no runner release configured');
 

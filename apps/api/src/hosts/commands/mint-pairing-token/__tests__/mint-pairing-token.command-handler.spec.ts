@@ -2,6 +2,7 @@ import type { ConfigService } from '@nestjs/config';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CredentialOwnerPort } from '../../../../auth/application/credential-owner.port';
 import type { HostPairingTokenRepositoryPort } from '../../../database/host-pairing-token.repository.port';
 import { HostPairingTokenEntity } from '../../../domain/host-pairing-token.entity';
 import { hashPairingTokenSecret } from '../../../domain/pairing-token-secret.factory';
@@ -39,6 +40,8 @@ describe('MintPairingTokenCommandHandler', () => {
     agentPromptFor: (secret: string) => string;
   };
   let handler: MintPairingTokenCommandHandler;
+  let emailVerified: boolean;
+  let owners: CredentialOwnerPort;
 
   beforeEach(() => {
     tokens = {
@@ -51,10 +54,24 @@ describe('MintPairingTokenCommandHandler', () => {
       installCommandFor: vi.fn((secret: string) => `curl … --token ${secret}`),
       agentPromptFor: vi.fn((secret: string) => `install it, token ${secret}`),
     };
+    emailVerified = true;
+    owners = {
+      findActiveOwner: vi.fn(),
+      requireActiveOwner: vi.fn(async (id: string) => ({
+        id,
+        email: 'jordi@example.com',
+        firstName: 'Jordi',
+        lastName: 'Owner',
+        role: 'user',
+        isActive: true,
+        emailVerified,
+      })),
+    };
     handler = new MintPairingTokenCommandHandler(
       tokens as HostPairingTokenRepositoryPort,
       release as RunnerReleaseConfig,
       config,
+      owners,
     );
   });
 
@@ -69,6 +86,15 @@ describe('MintPairingTokenCommandHandler', () => {
     });
   const inserted = () => vi.mocked(tokens.insertWithinCap).mock.calls[0][0];
   const fence = () => vi.mocked(tokens.insertWithinCap).mock.calls[0][1];
+
+  // Pre-account squatting: a paired host survives the real owner's password
+  // reset. Regression: an account that never proved its address could pair one.
+  it('refuses an account whose email is not verified, and writes nothing', async () => {
+    emailVerified = false;
+
+    await expect(handler.execute(command())).rejects.toMatchObject({ code: 'TOKEN_010' });
+    expect(tokens.insertWithinCap).not.toHaveBeenCalled();
+  });
 
   it('leaves the cap to the write, and refuses when the write finds no room', async () => {
     vi.mocked(tokens.insertWithinCap).mockResolvedValueOnce(false);
@@ -139,6 +165,7 @@ describe('MintPairingTokenCommandHandler', () => {
       tokens as HostPairingTokenRepositoryPort,
       release as RunnerReleaseConfig,
       configWith({ 'hosts.pairingTokenTtlSeconds': 900 }),
+      owners,
     );
     const before = Date.now();
     await handler.execute(command());

@@ -49,6 +49,11 @@ export class MintPairingTokenHttpController {
     code: 'HOSTS_004',
   })
   @ApiProblemResponse({
+    status: 403,
+    description: 'The caller’s email address is not verified',
+    code: 'TOKEN_010',
+  })
+  @ApiProblemResponse({
     status: 404,
     description: 'The token named in `replaces` is not one of the caller’s',
     code: 'HOSTS_002',
