@@ -69,12 +69,13 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
       <SidebarProvider className="h-svh min-h-0">
         {config.rail}
         {noSidebar ? null : <AppSidebar />}
-        {/* On a phone the rail is a bar along the bottom (`Rail`), so the
-            column keeps clear of it. */}
+        {/* On a phone the rail is a tab bar floating at the bottom (`Rail`),
+            so the column keeps clear of it, on the pane's grey so the room it
+            keeps reads as the page running on under the bar. */}
         <SidebarInset
           className={cn(
             'flex min-h-0 min-w-0 flex-col',
-            config.rail ? RAIL_BAR_CLEARANCE : undefined,
+            config.rail ? cn(RAIL_BAR_CLEARANCE, 'max-md:bg-canvas-recessed') : undefined,
           )}
         >
           {chrome ? <TopBar onSearch={() => setCommandOpen(true)} /> : null}
@@ -103,9 +104,12 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
               // its own bar, on its terminal's ground.
               <header
                 data-slot="page-bar"
-                className={cn('flex h-12 shrink-0 items-center pl-3.5', PANE_BAR_CHIP)}
+                className={cn(
+                  'flex h-12 shrink-0 items-center pl-3.5 max-md:h-16 max-md:pl-4',
+                  PANE_BAR_CHIP,
+                )}
               >
-                <SidebarToggle />
+                <SidebarToggle floating />
               </header>
             )}
             <div ref={setBar} className="shrink-0 empty:hidden" />

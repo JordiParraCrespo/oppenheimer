@@ -74,10 +74,15 @@ export function ConsoleRail() {
           ) : null;
         }}
       >
-        <SortableGroup id={RAIL_GROUP} items={order} accepts={['rail-item']}>
+        <SortableGroup
+          id={RAIL_GROUP}
+          items={order}
+          accepts={['rail-item']}
+          className="flex h-full min-w-0 flex-1 md:h-auto md:flex-none"
+        >
           {/* The group owns no spacing of its own; the column's gap is the
-              rail's. On a phone the rail is a bar and the items spread across it. */}
-          <div className="flex flex-1 justify-around gap-1.5 md:flex-none md:flex-col md:justify-start">
+              rail's. On a phone the rail is a tab bar and the items share its width. */}
+          <div className="flex h-full min-w-0 flex-1 gap-0.5 md:h-auto md:flex-none md:flex-col md:gap-1.5">
             {order.map((id) => {
               const entry = railEntry(id);
               if (!entry || (id === 'inbox' && !inboxOn)) return null;
@@ -87,6 +92,7 @@ export function ConsoleRail() {
                   key={id}
                   id={id}
                   label={t(entry.labelKey)}
+                  shortLabel={'shortLabelKey' in entry ? t(entry.shortLabelKey) : undefined}
                   count={counts[id]}
                   attention={attentions[id]}
                   active={lists.includes(list)}

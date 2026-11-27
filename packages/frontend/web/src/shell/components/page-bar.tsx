@@ -4,13 +4,21 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PaneBar } from './pane-bar';
 
+const FLOATING =
+  'max-md:size-(--control-h-lg) max-md:bg-popover max-md:text-fg max-md:shadow-popover max-md:hover:bg-popover max-md:[&_svg:not([class*=size-])]:size-[18px]';
+
 /**
  * The quiet panel glyph that folds the sidebar away and back (⌘B does the
  * same). The shell leads every console page's bar with it; a screen that
  * draws a toolbar of its own (`staticData.bar: 'own'`, a pull request's)
  * leads that toolbar with it.
+ *
+ * `floating`: on a phone it is a 42px round button standing on the popover
+ * surface with its shadow, the one way to the area's list from a page, so it
+ * reads as a button at thumb size rather than a glyph in the corner. From
+ * 768px it is the quiet glyph like everywhere else.
  */
-export function SidebarToggle() {
+export function SidebarToggle({ floating = false }: { floating?: boolean }) {
   const { t } = useTranslation();
   const { toggleSidebar } = useSidebar();
   return (
@@ -19,6 +27,7 @@ export function SidebarToggle() {
       size="sm"
       // Over an image a screen lays under the whole pane it stands on a frosted chip.
       data-pane-chrome
+      className={floating ? FLOATING : undefined}
       aria-label={t('nav.toggleSidebar')}
       onClick={toggleSidebar}
     >
@@ -86,7 +95,8 @@ export function PageBar({
       <ChatHeader
         leading={
           <>
-            <SidebarToggle />
+            {/* On the page's own ground it floats on a phone as the shell's does; over tabs or the terminal it stays quiet. */}
+            <SidebarToggle floating={tone === 'page'} />
             {leading}
           </>
         }

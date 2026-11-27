@@ -27,19 +27,21 @@ import { useSortableControl } from './drag';
  * starts after 5px). Where the order is kept is the app's.
  *
  * Under 768px a column that never leaves takes too much of the width, so the
- * rail is a tab bar fixed along the bottom of the screen instead: the same
- * buttons in a row, spread across it, above the home indicator, with the
- * hairline on top. The mark and the tips (there is no hover on a phone) are
- * dropped. The page under it keeps clear of it with `RAIL_BAR_CLEARANCE`.
+ * rail is a tab bar instead: a 64px pill floating 12px above the home
+ * indicator and 12px in from each edge, frosted over the page, each item its
+ * glyph over its short name, the current one on its own rounded wash. The
+ * mark and the tips (there is no hover on a phone) are dropped. The page
+ * under it keeps clear of it with `RAIL_BAR_CLEARANCE`.
  */
 const RAIL = {
-  surface: 'z-20 flex shrink-0 items-center gap-1.5 border-border-subtle bg-sidebar',
-  bar: 'fixed inset-x-0 bottom-0 h-[calc(var(--spacing)*14+env(safe-area-inset-bottom))] justify-around border-t px-2 pb-[env(safe-area-inset-bottom)]',
-  column: 'md:relative md:inset-auto md:h-auto md:w-14 md:flex-col md:justify-start md:border-t-0 md:border-r md:px-0 md:py-3.5',
+  surface: 'z-20 flex shrink-0 items-center',
+  bar: 'fixed inset-x-3 bottom-[calc(var(--spacing)*3+env(safe-area-inset-bottom))] h-16 gap-0.5 rounded-[2rem] bg-popover/85 p-1.5 shadow-popover backdrop-blur-xl',
+  column:
+    'md:relative md:inset-auto md:bottom-auto md:h-auto md:w-14 md:flex-col md:justify-start md:gap-1.5 md:rounded-none md:border-border-subtle md:border-r md:bg-sidebar md:px-0 md:py-3.5 md:shadow-none md:backdrop-blur-none',
 };
 
-/** What a page beside the rail reserves at its foot, so the phone's bar never covers it. */
-const RAIL_BAR_CLEARANCE = 'pb-[calc(var(--spacing)*14+env(safe-area-inset-bottom))] md:pb-0';
+/** What a page beside the rail reserves at its foot, so the phone's floating bar never covers it. */
+const RAIL_BAR_CLEARANCE = 'pb-[calc(var(--spacing)*22+env(safe-area-inset-bottom))] md:pb-0';
 
 function Rail({ className, ...props }: React.ComponentProps<'nav'>) {
   return <nav data-slot="rail" className={cn(RAIL.surface, RAIL.bar, RAIL.column, className)} {...props} />;
@@ -71,6 +73,7 @@ function RailMark({ className, label, render, ref, ...props }: useRender.Compone
 
 function RailItem({
   label,
+  shortLabel,
   count,
   attention,
   active,
@@ -83,6 +86,8 @@ function RailItem({
 }: useRender.ComponentProps<'button'> & {
   /** The accessible name, and what the tip beside the button reads ("Sessions"). */
   label: string;
+  /** The name under the glyph in the phone's tab bar, when `label` is too long for it ("PRs"). */
+  shortLabel?: string;
   /** Shown after the name in the tip, and read out as the button's description. */
   count?: React.ReactNode;
   /** A 7px amber dot on the corner. */
@@ -107,17 +112,24 @@ function RailItem({
       'aria-describedby': [describedBy, hasCount ? countId : undefined].filter(Boolean).join(' ') || undefined,
       'aria-current': active ? 'page' : undefined,
       className: cn(
-        'group/rail-item relative flex size-10 items-center justify-center rounded-pill text-fg-muted no-underline outline-none transition-[background-color,color,transform] duration-instant ease-standard hover:bg-hover-surface hover:text-fg hover:no-underline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-active:bg-hover-surface data-active:text-fg [&_svg:not([class*=size-])]:size-[18px]',
+        'group/rail-item relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.625rem] text-fg-muted md:size-10 md:flex-none md:gap-0 md:rounded-pill no-underline outline-none transition-[background-color,color,transform] duration-instant ease-standard hover:bg-hover-surface hover:text-fg hover:no-underline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-active:bg-hover-surface data-active:text-fg [&_svg:not([class*=size-])]:size-[18px]',
         className,
       ),
       ...props,
       children: (
         <>
           {children}
+          <span
+            aria-hidden
+            data-slot="rail-item-label"
+            className="w-full truncate px-0.5 text-center font-medium text-[0.6875rem] leading-tight md:hidden"
+          >
+            {shortLabel ?? label}
+          </span>
           {attention ? (
             <span
               aria-hidden
-              className="absolute top-1.5 right-1.5 size-1.75 rounded-pill bg-warning ring-2 ring-sidebar"
+              className="absolute top-2 left-[calc(50%+var(--spacing)*1.5)] size-1.75 rounded-pill bg-warning ring-2 ring-popover md:top-1.5 md:right-1.5 md:left-auto md:ring-sidebar"
             />
           ) : null}
           <RailTip count={hasCount ? count : undefined} countId={countId}>
