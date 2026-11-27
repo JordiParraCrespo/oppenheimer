@@ -269,6 +269,7 @@ export function SessionsSidebarBody() {
                       dialogs.open({ kind: 'share-session', sessionId: target.id })
                     }
                     onDelete={setDeleting}
+                    onDeleteAll={setDeletingMany}
                     onWrite={setFailure}
                   />
                 ) : null}
@@ -297,6 +298,7 @@ export function SessionsSidebarBody() {
                           dialogs.open({ kind: 'share-session', sessionId: target.id })
                         }
                         onDelete={setDeleting}
+                        onDeleteAll={setDeletingMany}
                         onWrite={setFailure}
                       />
                     );

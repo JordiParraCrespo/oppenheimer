@@ -1267,6 +1267,12 @@
       "delete": "Delete selected",
       "clear": "Clear selection"
     },
+    "group": {
+      "actions": "Actions for {{name}}",
+      "hideAll": "Hide all sessions",
+      "showAll": "Show all sessions",
+      "deleteAll": "Delete all sessions…"
+    },
     "deleteSessions": {
       "title_one": "Delete {{count}} session?",
       "title_other": "Delete {{count}} sessions?",
@@ -1838,7 +1844,14 @@
     "tabs": {
       "label": "Open sessions",
       "new": "New session",
-      "close": "Close {{name}}"
+      "close": "Close {{name}}",
+      "menu": {
+        "close": "Close tab",
+        "closeOthers": "Close other tabs",
+        "closeLeft": "Close tabs to the left",
+        "closeRight": "Close tabs to the right",
+        "closeAll": "Close all tabs"
+      }
     }
   },
   "bots": {
@@ -5075,6 +5088,8 @@
     "sessionMoved": "“{{name}}” moved to {{project}}.",
     "sessionHidden": "“{{name}}” hidden. Show hidden sessions from the filter menu.",
     "sessionShown": "“{{name}}” shown.",
+    "sessionsHidden": "{{n}} sessions hidden. Show hidden sessions from the filter menu.",
+    "sessionsShown": "{{n}} sessions shown.",
     "sessionsMoved": "{{n}} sessions moved to {{project}}.",
     "projectCreated": "“{{name}}” created.",
     "projectSaved": "“{{name}}” saved.",

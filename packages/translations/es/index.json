@@ -1279,6 +1279,12 @@
       "delete": "Eliminar las seleccionadas",
       "clear": "Quitar la selección"
     },
+    "group": {
+      "actions": "Acciones de {{name}}",
+      "hideAll": "Ocultar todas las sesiones",
+      "showAll": "Mostrar todas las sesiones",
+      "deleteAll": "Eliminar todas las sesiones…"
+    },
     "deleteSessions": {
       "title_one": "¿Eliminar {{count}} sesión?",
       "title_many": "¿Eliminar {{count}} de sesiones?",
@@ -1875,7 +1881,14 @@
     "tabs": {
       "label": "Sesiones abiertas",
       "new": "Nueva sesión",
-      "close": "Cerrar {{name}}"
+      "close": "Cerrar {{name}}",
+      "menu": {
+        "close": "Cerrar pestaña",
+        "closeOthers": "Cerrar las demás pestañas",
+        "closeLeft": "Cerrar pestañas a la izquierda",
+        "closeRight": "Cerrar pestañas a la derecha",
+        "closeAll": "Cerrar todas las pestañas"
+      }
     }
   },
   "bots": {
@@ -5169,6 +5182,8 @@
     "sessionMoved": "«{{name}}» se ha movido a {{project}}.",
     "sessionHidden": "«{{name}}» ocultada. Muestra las sesiones ocultas desde el menú de filtros.",
     "sessionShown": "«{{name}}» visible de nuevo.",
+    "sessionsHidden": "{{n}} sesiones ocultas. Muestra las sesiones ocultas desde el menú de filtros.",
+    "sessionsShown": "{{n}} sesiones mostradas.",
     "sessionsMoved": "{{n}} sesiones se han movido a {{project}}.",
     "projectCreated": "Se ha creado «{{name}}».",
     "projectSaved": "Se ha guardado «{{name}}».",

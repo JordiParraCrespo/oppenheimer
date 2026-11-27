@@ -38,19 +38,28 @@ function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
 const POPUP_CLASSES =
   'z-50 max-h-(--available-height) min-w-[200px] origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-md bg-popover p-1 text-fg shadow-popover outline-none transition-[opacity,transform] duration-fast ease-out data-starting-style:translate-y-1 data-starting-style:scale-[0.98] data-starting-style:opacity-0 data-ending-style:translate-y-1 data-ending-style:scale-[0.98] data-ending-style:opacity-0';
 
+/**
+ * The menu's popup. A menu with no trigger (one a right-click opens) passes
+ * `anchor`, the element or the point (`getBoundingClientRect`) it opens at.
+ */
 function DropdownMenuContent({
   align = 'start',
   alignOffset = 0,
   side = 'bottom',
   sideOffset = 6,
+  anchor,
   className,
   ...props
 }: MenuPrimitive.Popup.Props &
-  Pick<MenuPrimitive.Positioner.Props, 'align' | 'alignOffset' | 'side' | 'sideOffset'>) {
+  Pick<
+    MenuPrimitive.Positioner.Props,
+    'align' | 'alignOffset' | 'side' | 'sideOffset' | 'anchor'
+  >) {
   return (
     <MenuPrimitive.Portal>
       <MenuPrimitive.Positioner
         className="isolate z-50 outline-none"
+        anchor={anchor}
         align={align}
         alignOffset={alignOffset}
         side={side}

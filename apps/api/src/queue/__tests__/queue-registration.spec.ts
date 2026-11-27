@@ -19,7 +19,7 @@ import { INBOUND_EVENT_REPOSITORY } from '../../inbound-events/inbound-events.di
 import { InboundEventsProcessor } from '../../inbound-events/infrastructure/inbound-events.processor';
 import { ProfileModule } from '../../profile/profile.module';
 import { EmailProcessor } from '../infrastructure/email.processor';
-import { OUTBOX_QUEUES } from '../queue.di-tokens';
+import { OUTBOX_ONE_PENDING_PER_AGGREGATE, OUTBOX_QUEUES } from '../queue.di-tokens';
 import { QueueModule } from '../queue.module';
 
 // The profile module's import graph reaches Better Auth, whose standalone
@@ -117,6 +117,14 @@ describe('queue registration', () => {
       for (const [name, queue] of queues) {
         expect(queue).toBe(moduleRef.get(getQueueToken(name)));
       }
+    });
+
+    // A summary fold rereads the bot's whole uncovered conversation; a turn, an
+    // approval or a wake is one piece of work each and must never be folded.
+    it('keeps one pending job per aggregate on the bot-summaries queue alone', () => {
+      const queues = moduleRef.get<ReadonlySet<string>>(OUTBOX_ONE_PENDING_PER_AGGREGATE);
+
+      expect([...queues]).toEqual([QUEUE_NAMES.BOT_SUMMARIES]);
     });
 
     it.each([
