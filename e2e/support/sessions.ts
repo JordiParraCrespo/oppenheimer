@@ -201,9 +201,10 @@ export async function pairHost(api: APIRequestContext, name: string): Promise<st
  * Mint the registration token an install command carries, without spending it —
  * for a real runner to redeem (`support/fleet.ts`).
  *
- * Pairing needs a verified address (`TOKEN_010`), and every spec that stands a
- * host up comes through here with a context, not the account, so the caller's
- * address is verified first. A spec about the refusal mints by hand.
+ * Pairing needs a verified address (`TOKEN_010`) on a deployment that delivers
+ * email, and every spec that stands a host up comes through here with a
+ * context, not the account, so the caller's address is verified first and the
+ * helper holds on a stack that sends mail as on one that only prints it.
  */
 export async function mintPairingToken(api: APIRequestContext, name: string): Promise<string> {
   await verifyEmailOf(api);

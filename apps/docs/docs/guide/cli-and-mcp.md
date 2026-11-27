@@ -33,6 +33,8 @@ Tokens are managed with `opp tokens list | create | revoke | permissions`. A tok
 - acts inside a workspace only when it is pinned to one; `opp login` and `opp tokens create` pin it to yours;
 - is checked against your current roles on every call.
 
+On a deployment that sends email, creating a token (and so `opp login`) and approving an MCP client's sign-in need a verified email address; until then they are refused with `TOKEN_010`. The console's MCP consent screen offers **Resend verification email**.
+
 Scopes are `resource:read` or `resource:write` (write includes read), for resources such as `hosts`, `projects`, `sessions`, `automations`, `bots`, `tasks`, `repositories`, `pulls` and `inbox`.
 
 | Command | Needs |

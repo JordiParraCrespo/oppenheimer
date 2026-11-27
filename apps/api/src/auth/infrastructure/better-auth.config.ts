@@ -9,6 +9,7 @@ import { admin, bearer, mcp, organization } from 'better-auth/plugins';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { Pool } from 'pg';
 import { databaseConfigFromEnv, poolOptions } from '../../config/database.config';
+import { emailConfigFromEnv, emailDeliveryIsConfigured } from '../../config/email.config';
 import { CompletePasswordResetCommand } from '../commands/complete-password-reset/complete-password-reset.command';
 import { CompleteSignUpCommand } from '../commands/complete-sign-up/complete-sign-up.command';
 import { RotateDelegatedSessionsCommand } from '../commands/rotate-delegated-sessions/rotate-delegated-sessions.command';
@@ -78,6 +79,11 @@ const pool = new Pool({
 pool.on('error', (error: Error) => {
   new Logger('BetterAuth').warn(`Idle database client dropped: ${error.message}`);
 });
+
+// The `email_delivery` capability, read the way `resolveCapabilities` reads
+// it: the same predicate over the same parsed `email` section. Without
+// delivery no address can be verified, so the grant gate does not wait for one.
+const emailDelivery = emailDeliveryIsConfigured(emailConfigFromEnv());
 
 const googleConfigured = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 const githubConfigured = Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET);
@@ -344,7 +350,8 @@ export const auth = betterAuth({
   },
   hooks: {
     // An OAuth (MCP) grant is approved or exchanged only for an account that
-    // has proven its address (`mayIssueCredential`, `oauth-grant-gate.util.ts`),
+    // has proven its address, where the deployment delivers email
+    // (`mayIssueCredential`, `oauth-grant-gate.util.ts`),
     // and a code or refresh token is never exchanged when its sign-in predates
     // the account's last password reset (`credential_cutoff`). Reads only: the
     // session, the code or refresh token, the user row and the cutoff, fresh
@@ -352,36 +359,40 @@ export const auth = betterAuth({
     before: createAuthMiddleware(async (ctx) => {
       const step = grantStepOf(ctx.path, ctx.body);
       if (!step) return;
-      await refuseUngrantable(step, {
-        sessionUserId: async () => (await getSessionFromCtx(ctx))?.user.id ?? null,
-        codeOwner: async (code) => {
-          const found = await ctx.context.internalAdapter.findVerificationValue(code);
-          return found ? codeOwnerOfVerification(found) : null;
+      await refuseUngrantable(
+        step,
+        {
+          sessionUserId: async () => (await getSessionFromCtx(ctx))?.user.id ?? null,
+          codeOwner: async (code) => {
+            const found = await ctx.context.internalAdapter.findVerificationValue(code);
+            return found ? codeOwnerOfVerification(found) : null;
+          },
+          refreshTokenOwner: async (refreshToken) => {
+            const row = (
+              await pool.query<{ userId: string | null; createdAt: Date }>(
+                `SELECT "userId", "createdAt" FROM "oauthAccessToken" WHERE "refreshToken" = $1`,
+                [refreshToken],
+              )
+            ).rows[0];
+            return row?.userId ? { userId: row.userId, authorizedAt: row.createdAt } : null;
+          },
+          credentialCutoff: async (userId) =>
+            (
+              await pool.query<{ issuedBefore: Date }>(
+                `SELECT "issuedBefore" FROM "credential_cutoff" WHERE "userId" = $1`,
+                [userId],
+              )
+            ).rows[0]?.issuedBefore ?? null,
+          emailVerified: async (userId) =>
+            (
+              await pool.query<{ emailVerified: boolean }>(
+                `SELECT "emailVerified" FROM "user" WHERE "id" = $1`,
+                [userId],
+              )
+            ).rows[0]?.emailVerified ?? null,
         },
-        refreshTokenOwner: async (refreshToken) => {
-          const row = (
-            await pool.query<{ userId: string | null; createdAt: Date }>(
-              `SELECT "userId", "createdAt" FROM "oauthAccessToken" WHERE "refreshToken" = $1`,
-              [refreshToken],
-            )
-          ).rows[0];
-          return row?.userId ? { userId: row.userId, authorizedAt: row.createdAt } : null;
-        },
-        credentialCutoff: async (userId) =>
-          (
-            await pool.query<{ issuedBefore: Date }>(
-              `SELECT "issuedBefore" FROM "credential_cutoff" WHERE "userId" = $1`,
-              [userId],
-            )
-          ).rows[0]?.issuedBefore ?? null,
-        emailVerified: async (userId) =>
-          (
-            await pool.query<{ emailVerified: boolean }>(
-              `SELECT "emailVerified" FROM "user" WHERE "id" = $1`,
-              [userId],
-            )
-          ).rows[0]?.emailVerified ?? null,
-      });
+        { emailDelivery },
+      );
     }),
     // See `RotateDelegatedSessionsCommand`. Awaited by Better Auth, and
     // best-effort like every dispatch from a hook.

@@ -2,6 +2,7 @@ import { createHash, generateKeyPairSync, type KeyObject, randomUUID, sign } fro
 import { getQueueToken } from '@nestjs/bullmq';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { EmailService } from '@oppenheimer/backend-email';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
@@ -55,6 +56,12 @@ describe('Hosts & pairing (integration)', () => {
 
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
 
+    // The address gate (`TOKEN_010`) holds only where the deployment delivers
+    // email, so this suite runs on one that does. The transport is never
+    // reached: `EmailService` is replaced below.
+    process.env.EMAIL_PROVIDER = 'nodemailer';
+    process.env.SMTP_HOST = '127.0.0.1';
+
     // Without the key, the release base and the installer, minting and
     // registering answer HOSTS_004 and no machine can pair.
     process.env.CONTROL_PLANE_SIGNING_KEY = controlPlane.privateKey
@@ -65,7 +72,10 @@ describe('Hosts & pairing (integration)', () => {
     process.env.RUNNER_RELEASE_CHANNEL = 'stable';
 
     const { AppModule } = await import('../../app.module');
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(EmailService)
+      .useValue(deliveredNowhere())
+      .compile();
 
     app = moduleRef.createNestApplication({ bodyParser: false });
 
@@ -1016,3 +1026,11 @@ describe('Hosts & pairing (integration)', () => {
     });
   });
 });
+
+/** An `EmailService` whose every send succeeds and goes nowhere. */
+function deliveredNowhere(): EmailService {
+  return new Proxy({} as EmailService, {
+    get: (_target, key) =>
+      typeof key === 'string' && key.startsWith('send') ? async () => undefined : undefined,
+  });
+}

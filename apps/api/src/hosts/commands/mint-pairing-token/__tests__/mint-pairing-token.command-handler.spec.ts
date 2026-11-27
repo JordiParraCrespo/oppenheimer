@@ -1,7 +1,9 @@
 import type { ConfigService } from '@nestjs/config';
 import type { AccessScope } from '@oppenheimer/backend-authz';
+import { CapabilitiesService } from '@oppenheimer/backend-core';
 import { None, Some } from 'oxide.ts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CredentialIssuanceResolver } from '../../../../auth/application/credential-issuance.resolver';
 import type { CredentialOwnerPort } from '../../../../auth/application/credential-owner.port';
 import type { HostPairingTokenRepositoryPort } from '../../../database/host-pairing-token.repository.port';
 import { HostPairingTokenEntity } from '../../../domain/host-pairing-token.entity';
@@ -71,7 +73,7 @@ describe('MintPairingTokenCommandHandler', () => {
       tokens as HostPairingTokenRepositoryPort,
       release as RunnerReleaseConfig,
       config,
-      owners,
+      new CredentialIssuanceResolver(owners, new CapabilitiesService({ email_delivery: true })),
     );
   });
 
@@ -165,7 +167,7 @@ describe('MintPairingTokenCommandHandler', () => {
       tokens as HostPairingTokenRepositoryPort,
       release as RunnerReleaseConfig,
       configWith({ 'hosts.pairingTokenTtlSeconds': 900 }),
-      owners,
+      new CredentialIssuanceResolver(owners, new CapabilitiesService({ email_delivery: true })),
     );
     const before = Date.now();
     await handler.execute(command());

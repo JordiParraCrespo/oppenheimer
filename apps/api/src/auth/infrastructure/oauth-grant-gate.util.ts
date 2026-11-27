@@ -69,7 +69,8 @@ export interface GrantOwnerLookups {
 }
 
 /**
- * Refuse the step when its account has not verified its email, with the
+ * Refuse the step when its account has not verified its email (on a
+ * deployment that delivers email: `mayIssueCredential`), with the
  * `TOKEN_010` the console's consent screen translates and the OAuth
  * `access_denied` a client reads; and refuse a code or refresh token whose
  * sign-in predates the account's last password reset, with `invalid_grant`.
@@ -80,6 +81,7 @@ export interface GrantOwnerLookups {
 export async function refuseUngrantable(
   step: GrantStep,
   lookups: GrantOwnerLookups,
+  deployment: { emailDelivery: boolean },
 ): Promise<void> {
   const owner =
     step.by === 'session'
@@ -89,7 +91,8 @@ export async function refuseUngrantable(
         : await lookups.refreshTokenOwner(step.refreshToken);
   if (!owner) return;
 
-  if (!mayIssueCredential({ emailVerified: await lookups.emailVerified(owner.userId) })) {
+  const emailVerified = deployment.emailDelivery ? await lookups.emailVerified(owner.userId) : null;
+  if (!mayIssueCredential({ emailVerified }, deployment)) {
     const refusal = AuthErrors.EMAIL_VERIFICATION_REQUIRED;
     throw new APIError('FORBIDDEN', {
       code: refusal.code,

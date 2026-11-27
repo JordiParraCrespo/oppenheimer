@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { EmailService } from '@oppenheimer/backend-email';
 import { DataSource } from 'typeorm';
 import { useTestDatabase, useTestRedis } from '../../__tests__/integration-services';
 import type { SessionCachePort } from '../../auth/application/session-cache.port';
@@ -25,6 +26,12 @@ describe('API tokens & scopes (integration)', () => {
 
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
 
+    // The address gate (`TOKEN_010`) holds only where the deployment delivers
+    // email, so this suite runs on one that does. The transport is never
+    // reached: `EmailService` is replaced below.
+    process.env.EMAIL_PROVIDER = 'nodemailer';
+    process.env.SMTP_HOST = '127.0.0.1';
+
     // Import AppModule (and the Better Auth instance, which reads the database
     // config at module load) only after the env vars are set.
     const { AppModule } = await import('../../app.module');
@@ -33,7 +40,10 @@ describe('API tokens & scopes (integration)', () => {
     // limit on token creation.
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(EmailService)
+      .useValue(deliveredNowhere())
+      .compile();
 
     app = moduleRef.createNestApplication({ bodyParser: false });
 
@@ -1226,3 +1236,11 @@ describe('API tokens & scopes (integration)', () => {
     });
   });
 });
+
+/** An `EmailService` whose every send succeeds and goes nowhere. */
+function deliveredNowhere(): EmailService {
+  return new Proxy({} as EmailService, {
+    get: (_target, key) =>
+      typeof key === 'string' && key.startsWith('send') ? async () => undefined : undefined,
+  });
+}

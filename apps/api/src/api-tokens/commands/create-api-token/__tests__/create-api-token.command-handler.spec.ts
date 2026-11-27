@@ -1,5 +1,7 @@
+import { CapabilitiesService } from '@oppenheimer/backend-core';
 import { defineAbilitiesFromPermissions } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CredentialIssuanceResolver } from '../../../../auth/application/credential-issuance.resolver';
 import type { CredentialOwnerPort } from '../../../../auth/application/credential-owner.port';
 import type { CredentialOwner } from '../../../../auth/domain/scope-context.types';
 import type { AbilityFactory } from '../../../../roles/application/ability.factory';
@@ -64,7 +66,7 @@ describe('CreateApiTokenCommandHandler', () => {
       repo as ApiTokenRepositoryPort,
       memberships,
       abilityFactory as AbilityFactory,
-      owners,
+      new CredentialIssuanceResolver(owners, new CapabilitiesService({ email_delivery: true })),
     );
   });
 

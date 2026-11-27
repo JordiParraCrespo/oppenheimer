@@ -25,6 +25,9 @@ describe('the OAuth grant gate', () => {
     credentialCutoff: vi.fn().mockResolvedValue(cutoff),
   });
 
+  const delivers = { emailDelivery: true };
+  const doesNotDeliver = { emailDelivery: false };
+
   it('gates an accepted consent, and lets a refusal through', () => {
     expect(grantStepOf('/oauth2/consent', { accept: true })).toEqual({ by: 'session' });
     expect(grantStepOf('/oauth2/consent', { accept: false })).toBeNull();
@@ -63,18 +66,46 @@ describe('the OAuth grant gate', () => {
 
   it('refuses to renew a grant for an account that has not verified its email', async () => {
     await expect(
-      refuseUngrantable({ by: 'refresh-token', refreshToken: 'r-1' }, lookups(false)),
+      refuseUngrantable({ by: 'refresh-token', refreshToken: 'r-1' }, lookups(false), delivers),
     ).rejects.toMatchObject({ body: { code: 'TOKEN_010', error: 'access_denied' } });
   });
 
   it('treats an account it cannot read as unverified', async () => {
-    await expect(refuseUngrantable({ by: 'session' }, lookups(null))).rejects.toMatchObject({
+    await expect(
+      refuseUngrantable({ by: 'session' }, lookups(null), delivers),
+    ).rejects.toMatchObject({
       body: { code: 'TOKEN_010' },
     });
   });
 
   it('lets a verified account through', async () => {
-    await expect(refuseUngrantable({ by: 'session' }, lookups(true))).resolves.toBeUndefined();
+    await expect(
+      refuseUngrantable({ by: 'session' }, lookups(true), delivers),
+    ).resolves.toBeUndefined();
+  });
+
+  // Without email delivery no address can ever be verified, and no reset
+  // email can recover a squatted one. Regression: every account on such a
+  // deployment was refused MCP for good.
+  it('lets an unverified account through where the deployment delivers no email', async () => {
+    const unverified = lookups(false);
+    await expect(
+      refuseUngrantable({ by: 'session' }, unverified, doesNotDeliver),
+    ).resolves.toBeUndefined();
+    await expect(
+      refuseUngrantable({ by: 'authorization-code', code: 'c-1' }, lookups(null), doesNotDeliver),
+    ).resolves.toBeUndefined();
+    expect(unverified.emailVerified).not.toHaveBeenCalled();
+  });
+
+  it('still refuses a grant signed in before a reset where the deployment delivers no email', async () => {
+    await expect(
+      refuseUngrantable(
+        { by: 'refresh-token', refreshToken: 'r-1' },
+        lookups(false, new Date('2026-11-02T00:00:00.000Z')),
+        doesNotDeliver,
+      ),
+    ).rejects.toMatchObject({ body: { error: 'invalid_grant' } });
   });
 
   // A reset deletes pending codes and grants in its transaction; one written
@@ -84,15 +115,20 @@ describe('the OAuth grant gate', () => {
     const reset = new Date('2026-11-02T00:00:00.000Z');
 
     await expect(
-      refuseUngrantable({ by: 'authorization-code', code: 'c-1' }, lookups(true, reset)),
+      refuseUngrantable({ by: 'authorization-code', code: 'c-1' }, lookups(true, reset), delivers),
     ).rejects.toMatchObject({ body: { error: 'invalid_grant' } });
     await expect(
-      refuseUngrantable({ by: 'refresh-token', refreshToken: 'r-1' }, lookups(true, reset)),
+      refuseUngrantable(
+        { by: 'refresh-token', refreshToken: 'r-1' },
+        lookups(true, reset),
+        delivers,
+      ),
     ).rejects.toMatchObject({ body: { error: 'invalid_grant' } });
     await expect(
       refuseUngrantable(
         { by: 'authorization-code', code: 'c-1' },
         lookups(true, new Date('2026-10-01T00:00:00.000Z')),
+        delivers,
       ),
     ).resolves.toBeUndefined();
   });

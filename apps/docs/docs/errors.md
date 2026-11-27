@@ -133,8 +133,14 @@ cannot be used as a probing oracle.
 
 `TOKEN_010` refuses minting an API token, approving or exchanging an OAuth
 (MCP) grant, minting a host pairing token and issuing a routine's webhook URL,
-for an account whose email address is not verified yet. Verify the address
-from the link in the verification email, then try again.
+for an account whose email address is not verified yet, on a deployment that
+delivers email (the `email_delivery` capability: SMTP or Resend configured).
+Without delivery no address can be verified, and no "Forgot password" email
+can recover one somebody registered first, so the rule does not apply there.
+Verify the address from the link in the verification email, then try again;
+the link expires after an hour, and the console's alert for this code offers
+**Resend verification email** (Better Auth's
+`POST /api/auth/send-verification-email`).
 
 `TOKEN_002` and `TOKEN_005` carry the offending scopes as extension members
 (`ungrantableScopes` and `missingScopes`) as well as in `detail`.

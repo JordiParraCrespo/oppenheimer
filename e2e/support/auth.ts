@@ -111,8 +111,10 @@ export async function changePassword(
  * The address stays unverified unless `verified` is set, which marks it as
  * following the verification email would. Minting an API token, approving an
  * OAuth grant, pairing a host and issuing a routine's webhook URL need it
- * (`TOKEN_010`; `mintPairingToken` in support/sessions.ts sets it itself); the
- * API reads the flag fresh from the row, so the session in hand keeps working.
+ * (`TOKEN_010`) on a deployment that delivers email, which the default stack
+ * (`EMAIL_PROVIDER=console`) does not; `mintPairingToken` in
+ * support/sessions.ts sets it itself. The API reads the flag fresh from the
+ * row, so the session in hand keeps working.
  */
 export async function signedUpContext(
   prefix = 'user',

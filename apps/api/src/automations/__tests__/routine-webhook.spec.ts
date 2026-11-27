@@ -1,8 +1,9 @@
 import { createHmac } from 'node:crypto';
 import { emptyScope } from '@oppenheimer/backend-authz';
-import { AppError, type KeySealer } from '@oppenheimer/backend-core';
+import { AppError, CapabilitiesService, type KeySealer } from '@oppenheimer/backend-core';
 import { WEBHOOK_BODY_KEPT_CHARS } from '@oppenheimer/shared/automations';
 import { None, Some } from 'oxide.ts';
+import { CredentialIssuanceResolver } from '../../auth/application/credential-issuance.resolver';
 import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import type { AutomationLimitsResolver } from '../application/automation-limits.resolver';
 import { BotRoutineResolver } from '../application/bot-routine.resolver';
@@ -133,7 +134,7 @@ function setup(
     new BotRoutineResolver(automations),
     webhooks,
     sealer,
-    owners,
+    new CredentialIssuanceResolver(owners, new CapabilitiesService({ email_delivery: true })),
   );
   const receive = new ReceiveRoutineWebhookCommandHandler(
     new RoutineWebhookResolver(webhooks, automations, sealer),

@@ -2,10 +2,8 @@ import { Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
-import type { CredentialOwnerPort } from '../../../auth/application/credential-owner.port';
-import { CREDENTIAL_OWNER } from '../../../auth/auth.di-tokens';
-import { AuthErrors } from '../../../auth/domain/auth.errors';
-import { mayIssueCredential } from '../../../auth/domain/credential-issuance.policy';
+import type { CredentialIssuancePort } from '../../../auth/application/credential-issuance.port';
+import { CREDENTIAL_ISSUANCE } from '../../../auth/auth.di-tokens';
 import type { HostPairingTokenRepositoryPort } from '../../database/host-pairing-token.repository.port';
 import { HostPairingTokenEntity } from '../../domain/host-pairing-token.entity';
 import { HostErrors } from '../../domain/hosts.errors';
@@ -15,12 +13,9 @@ import { RunnerReleaseConfig } from '../../infrastructure/runner-release.config'
 import { MintPairingTokenCommand } from './mint-pairing-token.command';
 
 /**
- * Commands normally return only the aggregate id and the controller re-reads
- * through a query. Not here, for two reasons: the secret exists only inside this
- * handler — the row holds its digest, so no follow-up query could ever recover
- * it — and the row itself was just written by this transaction, so bouncing it
- * back through the query bus would be a second read of something already in
- * hand.
+ * Not just the id: the secret exists only here (the row holds its digest), and
+ * re-reading a row this transaction just wrote would be a second read of
+ * something already in hand.
  */
 export interface MintPairingTokenResult {
   token: HostPairingTokenEntity;
@@ -30,11 +25,10 @@ export interface MintPairingTokenResult {
 }
 
 /**
- * A paired host is a credential of its own, and one a password reset leaves
- * alone (unpairing every machine on a reset would cost a real owner their
- * hosts), so the account must have proven its email address before it may
- * pair one: otherwise whoever registered the address first keeps a machine
- * the real owner's recovery cannot reach.
+ * A paired host is a credential a password reset leaves alone, so where the
+ * deployment delivers email the account must have proven its address first
+ * (`CREDENTIAL_ISSUANCE`): otherwise whoever registered it first keeps a
+ * machine the real owner's recovery cannot reach.
  */
 @CommandHandler(MintPairingTokenCommand)
 export class MintPairingTokenCommandHandler
@@ -45,8 +39,8 @@ export class MintPairingTokenCommandHandler
     private readonly tokens: HostPairingTokenRepositoryPort,
     private readonly release: RunnerReleaseConfig,
     private readonly configService: ConfigService,
-    @Inject(CREDENTIAL_OWNER)
-    private readonly owners: CredentialOwnerPort,
+    @Inject(CREDENTIAL_ISSUANCE)
+    private readonly issuance: CredentialIssuancePort,
   ) {}
 
   async execute(command: MintPairingTokenCommand): Promise<MintPairingTokenResult> {
@@ -60,9 +54,8 @@ export class MintPairingTokenCommandHandler
     }
 
     // After the deployment's answer, so `GET /health/capabilities` still says
-    // what minting would. Read fresh: the session cache holds a copy of the user.
-    const owner = await this.owners.requireActiveOwner(command.userId);
-    if (!mayIssueCredential(owner)) throw new AppError(AuthErrors.EMAIL_VERIFICATION_REQUIRED);
+    // what minting would.
+    await this.issuance.assertMayIssue(command.userId);
 
     const now = new Date();
     const replacing = await this.replacedToken(command);

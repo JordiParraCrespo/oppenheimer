@@ -2,6 +2,10 @@
 "@oppenheimer/api": minor
 "@oppenheimer/cli": patch
 "@oppenheimer/translations": patch
+"@oppenheimer/frontend-core": minor
+"@oppenheimer/frontend-web": minor
+"@oppenheimer/web": patch
+"@oppenheimer/mobile": patch
 ---
 
 Credentials that outlive a session now need a verified email, and a password
@@ -9,7 +13,9 @@ reset takes back API tokens, OAuth grants and browser sessions.
 
 - `@oppenheimer/api`: minting an API token, approving or exchanging an OAuth
   (MCP) grant, minting a host pairing token and issuing a routine's webhook
-  URL are refused with `TOKEN_010` until the account's email is verified, and
+  URL are refused with `TOKEN_010` until the account's email is verified, on a
+  deployment that delivers email (`email_delivery`: SMTP or Resend; without it
+  no address can be verified, so the rule does not apply), and
   the token endpoint refuses a `code` or `refresh_token` that is not a string.
   A password reset ("Forgot password") takes back, in its own transaction, the
   API tokens and OAuth grants issued before it: it sets the account's
@@ -31,4 +37,14 @@ reset takes back API tokens, OAuth grants and browser sessions.
   registration.
 - `@oppenheimer/cli`: `opp login` on an unverified account says to verify the
   email first instead of pointing at a missing permission.
-- `@oppenheimer/translations`: the message for `TOKEN_010`.
+- `@oppenheimer/translations`: the message for `TOKEN_010`, and the copy of
+  the console's Resend verification email action.
+- `@oppenheimer/frontend-core`: `useSendVerificationEmail` and
+  `IAuthClient.sendVerificationEmail`, a new verification link to the
+  signed-in account's own address.
+- `@oppenheimer/frontend-web`: `ErrorAlert` draws `TOKEN_010` with a Resend
+  verification email action that says where the link went, or that it could
+  not be sent (Add host, onboarding's host step, a routine's webhook URL, the
+  MCP consent screen).
+- `@oppenheimer/web`, `@oppenheimer/mobile`: their auth clients send the link
+  through Better Auth's `send-verification-email`.

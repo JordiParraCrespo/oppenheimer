@@ -1,12 +1,14 @@
 import { Global, Module, type Provider, type Type } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CredentialIssuanceResolver } from './application/credential-issuance.resolver';
 import type { CredentialResolverPort } from './application/credential-resolver.port';
 import { CredentialResolverRegistry } from './application/credential-resolver.registry';
 import { CredentialScopeResolver } from './application/credential-scope.resolver';
 import { RequestTenantResolver } from './application/request-tenant.resolver';
 import {
   CREDENTIAL_CUTOFF_REPOSITORY,
+  CREDENTIAL_ISSUANCE,
   CREDENTIAL_SCOPE,
   CREDENTIAL_VERIFIER,
   DELEGATED_SESSION,
@@ -86,6 +88,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     // the only place that decides Better Auth answers these questions.
     { provide: CREDENTIAL_VERIFIER, useClass: BetterAuthCredentialVerifierAdapter },
     { provide: CREDENTIAL_SCOPE, useClass: CredentialScopeResolver },
+    { provide: CREDENTIAL_ISSUANCE, useClass: CredentialIssuanceResolver },
     { provide: DELEGATED_SESSION, useClass: DelegatedSessionAdapter },
     { provide: SESSION_CACHE, useClass: BetterAuthSessionCacheAdapter },
     { provide: REQUEST_TENANT, useClass: RequestTenantResolver },
@@ -100,6 +103,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     OptionalApiAuthGuard,
     ScopesGuard,
     CredentialResolverRegistry,
+    CREDENTIAL_ISSUANCE,
     CREDENTIAL_SCOPE,
     DELEGATED_SESSION,
     REQUEST_TENANT,
