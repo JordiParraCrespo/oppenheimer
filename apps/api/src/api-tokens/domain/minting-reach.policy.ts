@@ -15,23 +15,50 @@ export interface MintingReachRequest {
   organizationIds?: readonly string[] | null;
 }
 
+/** Why a token may not be minted: the scopes beyond reach, and what was refused. */
+export interface MintingRefusal {
+  ungrantableScopes: Scope[];
+  detail: string;
+}
+
 /**
- * What a new token asks for beyond the credential minting it. A token holding
- * `tokens:write` stands for its holder only as far as its own scopes and
- * organizations reach, so a narrow token cannot mint a wide one: the scopes it
- * lacks, and whether the new token would leave its organizations (no pin, or
- * one outside them). A browser session (no credential) is held to the
- * person's roles alone, elsewhere.
+ * Whether a new token reaches beyond what may grant it, as one refusal or
+ * none. Its owner's roles bound every token (`ownerUngrantable`, the scopes
+ * the roles do not back); a token minted with a token is also held to that
+ * token's own reach, since `tokens:write` stands for its holder only as far
+ * as its scopes and organizations go. A browser session (no credential) is
+ * held to the roles alone. Each further bound on a minting credential is a
+ * case here, not a branch in the handler.
  */
-export function exceedsMintingCredential(
+export function mintingRefusal(
+  ownerUngrantable: readonly Scope[],
   credential: MintingCredentialReach | undefined,
   request: MintingReachRequest,
-): { scopes: readonly Scope[]; leavesOrganizations: boolean } {
-  if (!credential) return { scopes: [], leavesOrganizations: false };
-  const scopes = missingScopes(credential.scopes, request.scopes);
-  if (credential.organizationIds === null) return { scopes, leavesOrganizations: false };
-  const pinned = new Set(credential.organizationIds);
-  const requested = request.organizationIds ?? [];
-  const leavesOrganizations = requested.length === 0 || requested.some((id) => !pinned.has(id));
-  return { scopes, leavesOrganizations };
+): MintingRefusal | null {
+  const beyondCredential = credential ? missingScopes(credential.scopes, request.scopes) : [];
+  const ungrantableScopes = [...new Set([...ownerUngrantable, ...beyondCredential])];
+  if (ungrantableScopes.length > 0) {
+    return {
+      ungrantableScopes,
+      detail: `The caller may not grant: ${ungrantableScopes.join(', ')}`,
+    };
+  }
+  if (credential && leavesOrganizations(credential.organizationIds, request.organizationIds)) {
+    return {
+      ungrantableScopes: [],
+      detail: 'A token minted with a token must be pinned within its organizations',
+    };
+  }
+  return null;
+}
+
+/** No pin, or one outside the minting credential's; a credential with no pin reaches all. */
+function leavesOrganizations(
+  pinned: readonly string[] | null,
+  requested: readonly string[] | null | undefined,
+): boolean {
+  if (pinned === null) return false;
+  const within = new Set(pinned);
+  const asked = requested ?? [];
+  return asked.length === 0 || asked.some((id) => !within.has(id));
 }
