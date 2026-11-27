@@ -69,7 +69,7 @@ describe('use_computer', () => {
   });
 
   // One card per host, not per click: "always" on it must cover the next step.
-  it('asks under Approve for me, once for the host’s screen', async () => {
+  it('asks under Auto, once for the host’s screen', async () => {
     const { call, request, commandBus } = setup({ permission: 'auto' });
     await call({ action: 'type', text: 'hello' });
     const asked = request.mock.calls[0]?.[0];

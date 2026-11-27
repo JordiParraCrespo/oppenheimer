@@ -222,7 +222,7 @@ it from your phone. Writing one sends nothing.
 | `untrash_mail` | Bring threads back from Trash | auto |
 | `create_label` | Create a label | ask |
 
-- Each asks under Approve for me and runs on its own under Full access,
+- Each asks under Auto and runs on its own under Full access,
   except `trash_mail`, which asks under Full access too until the owner
   allows it: **Always allow** on its card, or Allow in Settings →
   Permissions. From then on it runs on its own, and Default in Settings

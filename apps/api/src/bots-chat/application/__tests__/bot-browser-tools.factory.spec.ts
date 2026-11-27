@@ -113,7 +113,7 @@ describe('use_browser', () => {
   });
 
   // One card per host, not per click: "always" on it must cover the next step.
-  it('asks under Approve for me, once for its browser on the host', async () => {
+  it('asks under Auto, once for its browser on the host', async () => {
     const { call, request, commandBus } = setup({ permission: 'auto' });
     await call({ action: 'open', url: 'https://shop.example/cart' });
     const asked = request.mock.calls[0]?.[0];

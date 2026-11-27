@@ -1,6 +1,6 @@
-# Approve for me's reviewer
+# Auto's reviewer
 
-Under **Approve for me** a bot's call that would ask is read first by a
+Under **Auto** a bot's call that would ask is read first by a
 reviewer on the bot's own model: the bots' auto mode
 (`product/research/auto-mode.md`, `product/versions/mvp/25-bots.md` §5).
 This eval sends the real prompt (`domain/prompts/core/job-auto-review.md`)

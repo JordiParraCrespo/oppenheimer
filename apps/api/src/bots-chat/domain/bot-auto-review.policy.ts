@@ -5,7 +5,7 @@ import type { BotPermissions, BotToolTraits } from './bot-tool-permission.policy
 import { cut, neutraliseTags } from './bot-tool-text.policy';
 
 /**
- * Approve for me (`auto`): before a call that would stop on a card, a
+ * Auto (`auto`): before a call that would stop on a card, a
  * reviewer on the bot's own model decides whether it may run without the
  * owner (2026-11-25). Two designs shaped it:
  *
@@ -76,7 +76,7 @@ const TAGS = ['owner_messages', 'owner_instructions', 'message', 'action'];
 
 /**
  * Whether a call that stands at Ask goes to the reviewer before its card:
- * only under Approve for me, and only when it asks because of the catalog.
+ * only under Auto, and only when it asks because of the catalog.
  * The owner's own Ask on a tool, and a tool that asks under every preset
  * until the owner allows it, keep their card: the owner's word stands, as an
  * ask rule keeps Claude Code's prompt in auto mode.
@@ -201,7 +201,7 @@ export function autoAllowedLine(reason: string): string {
 
 /** A call the reviewer would not clear, as its card says it. */
 export function autoPausedNote(reason: string): string {
-  return `Approve for me left this to you: ${reason}`;
+  return `Auto left this to you: ${reason}`;
 }
 
 /** A call too long for the reviewer to read whole: it asks, never reviewed in part. */
@@ -213,7 +213,7 @@ export class AutoReviewIncompleteError extends Error {
 
 /** A call too long to review whole, as its card says it. */
 export const AUTO_TOO_LONG_NOTE =
-  'Approve for me cannot read all of this call at once, so it asks.';
+  'Auto cannot read all of this call at once, so it asks.';
 
 /** A call whose review failed: it asks, and its card says why. */
-export const AUTO_UNCHECKED_NOTE = 'Approve for me could not review this just now, so it asks.';
+export const AUTO_UNCHECKED_NOTE = 'Auto could not review this just now, so it asks.';

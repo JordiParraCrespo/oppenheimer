@@ -67,7 +67,7 @@ context and offers the real tools, constructed over the case's workspace
 (`../bot-workspace.ts`): `list_hosts`, `list_projects`, `list_sessions`,
 `get_session`, `show_session`, `read_session`, `read_session_transcript`,
 `search_sessions`, and `start_session` and `stop_session`, which raise their
-approval card as they do under Approve for me. The sessions are real
+approval card as they do under Auto. The sessions are real
 `WorkSessionEntity` folds of the case's log, so every answer is in
 production's words; only the database is stood in for, and the search is a
 plain match over the words the real one indexes (`sessionSearchText`): every

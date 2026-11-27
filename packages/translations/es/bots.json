@@ -216,7 +216,7 @@
         "description": "Te pregunta antes de todo lo que sale de Oppenheimer."
       },
       "auto": {
-        "label": "Aprobar por mí",
+        "label": "Auto",
         "description": "Un revisor deja ejecutarse lo que pediste; lo arriesgado sigue preguntando."
       },
       "full": {
@@ -819,7 +819,7 @@
       },
       "preset": {
         "ask": "Las herramientas que dejas en su valor por defecto siguen Pedir aprobación: todo lo que sale de Oppenheimer pregunta antes.",
-        "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pasa antes por un revisor, que deja ejecutarse lo que pediste y te deja el resto a ti. Una herramienta que pones en Preguntar siempre pregunta.",
+        "auto": "Las herramientas que dejas en su valor por defecto siguen Auto: todo lo que sale de Oppenheimer pasa antes por un revisor, que deja ejecutarse lo que pediste y te deja el resto a ti. Una herramienta que pones en Preguntar siempre pregunta.",
         "full": "Las herramientas que dejas en su valor por defecto siguen Acceso total: se ejecutan sin preguntar, también las que siempre preguntan. Enviar correo, y lo que pones en Preguntar o pide una regla, siguen esperando tu sí."
       },
       "decisions": {

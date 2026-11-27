@@ -38,7 +38,7 @@ import {
  * browser of its own on one of the owner's hosts. It reads a page as a list
  * of what can be acted on, each with a ref, acts on a ref, and gets a picture
  * of the page when its model reads images. It reaches outside Oppenheimer,
- * so under Approve for me it asks first, once per host when the owner
+ * so under Auto it asks first, once per host when the owner
  * answers "always"; and whatever the bot's permissions say, the host acts
  * only when the person on it ran `runner browser on`.
  */
