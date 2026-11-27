@@ -28,7 +28,8 @@ export class SessionCloudLineOrmEntity {
   /**
    * The id claude.ai gives the event this line is, for a line the browser
    * extension read from the session's event log; null for one the session's
-   * hook sent. See `1795821178978-AddBrowserCloudChat`.
+   * hook sent. A session holds one kind or the other: the extension's first
+   * batch replaces the hook's lines.
    */
   @Column({ type: 'varchar', length: 128, nullable: true })
   eventId!: string | null;
