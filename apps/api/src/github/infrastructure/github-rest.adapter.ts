@@ -167,22 +167,11 @@ export class GithubRestAdapter implements GithubAppPort {
         {
           bucket: `user:${authorization.user.githubUserId}`,
           token: authorization.tokens.accessToken,
-          // Not a member, or the App lacks Members: read. Both are "cannot
-          // prove it", which the caller refuses; a rate limit is not caught here.
-          onStatus: {
-            403: GithubErrors.INSTALLATION_NOT_CLAIMABLE,
-            404: GithubErrors.INSTALLATION_NOT_CLAIMABLE,
-          },
         },
       );
       return { active: body.state === 'active', admin: body.role === 'admin' };
     } catch (error) {
-      if (
-        error instanceof AppError &&
-        error.code === GithubErrors.INSTALLATION_NOT_CLAIMABLE.code
-      ) {
-        return null;
-      }
+      if (isMembershipWithheld(error)) return null;
       throw error;
     }
   }
@@ -544,4 +533,17 @@ function accountTypeOf(installation: RawInstallation): 'User' | 'Organization' {
     detail: 'GitHub described this installation with an account type this app does not know.',
     extensions: { githubInstallationId: installation.id, accountType: String(type ?? '') },
   });
+}
+
+/**
+ * GitHub declining to describe a membership: 404 for no membership, 403 for an
+ * App without the Members: read permission. Both mean "cannot prove it", which
+ * the claim refuses. A secondary rate limit, also a 403, reaches here already
+ * as `GITHUB_015` from the limiter and is not this.
+ */
+function isMembershipWithheld(error: unknown): boolean {
+  if (!(error instanceof AppError) || error.code !== GithubErrors.UPSTREAM_FAILED.code)
+    return false;
+  const status = error.extensions?.upstreamStatus;
+  return status === 403 || status === 404;
 }
