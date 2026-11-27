@@ -143,6 +143,7 @@ const textOf = (call: TurnCall) => JSON.stringify(call.input);
  */
 async function widens(judge: Transport, brief: string): Promise<boolean> {
   const verdict = await judge.turn({
+    grading: true,
     system: JUDGE,
     message: brief,
     tools: [],
