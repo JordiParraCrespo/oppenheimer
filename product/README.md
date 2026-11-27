@@ -2174,3 +2174,11 @@ earlier note:
 - Notes 05 and 25 called the middle permission level, sessions' and bots'
   alike, "Approve for me". It is now "Auto" (2026-11-27): the same level,
   stored as `auto`, under a shorter name the owner asked for.
+- Note 30 named the preview's own cookie plainly and left the preview
+  domain's site shared by every preview unsaid. On 2026-11-27, after a
+  security review, the cookie is `__Host-oppenheimer_preview` (`Secure`,
+  `Path=/`, no `Domain`), so a sibling preview cannot plant one, and the note
+  advises a deployment to put the preview domain on the Public Suffix List,
+  or give each preview a registrable domain of its own, because one app can
+  still set a `Domain=` cookie every other preview is sent
+  (`research/security-review-2026-11.md`).
