@@ -4,7 +4,7 @@ import { Logger } from '@nestjs/common';
 import { organizationSharedOptions, userAdditionalFields } from '@oppenheimer/auth';
 import { DEFAULT_OAUTH_SCOPES, PASSWORD_MIN_LENGTH, SCOPES } from '@oppenheimer/shared';
 import { betterAuth } from 'better-auth';
-import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { admin, bearer, mcp, organization } from 'better-auth/plugins';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { Pool } from 'pg';
@@ -23,7 +23,7 @@ import { buildInvitationUrl } from './invitation-url.util';
 // oppenheimer:begin mobile
 import { mobileAppAuth } from './mobile-app-auth.util';
 // oppenheimer:end mobile
-import { codeOwnerOfVerification, grantStepOf, refuseUngrantable } from './oauth-grant-gate.util';
+import { grantOwnerLookups, grantStepOf, refuseUngrantable } from './oauth-grant-gate.util';
 import { sessionDeleteHooks } from './session-delete-hook.util';
 
 /**
@@ -361,40 +361,7 @@ export const auth = betterAuth({
     before: createAuthMiddleware(async (ctx) => {
       const step = grantStepOf(ctx.path, ctx.body);
       if (!step) return;
-      await refuseUngrantable(
-        step,
-        {
-          sessionUserId: async () => (await getSessionFromCtx(ctx))?.user.id ?? null,
-          codeOwner: async (code) => {
-            const found = await ctx.context.internalAdapter.findVerificationValue(code);
-            return found ? codeOwnerOfVerification(found) : null;
-          },
-          refreshTokenOwner: async (refreshToken) => {
-            const row = (
-              await pool.query<{ userId: string | null; createdAt: Date }>(
-                `SELECT "userId", "createdAt" FROM "oauthAccessToken" WHERE "refreshToken" = $1`,
-                [refreshToken],
-              )
-            ).rows[0];
-            return row?.userId ? { userId: row.userId, authorizedAt: row.createdAt } : null;
-          },
-          credentialCutoff: async (userId) =>
-            (
-              await pool.query<{ issuedBefore: Date }>(
-                `SELECT "issuedBefore" FROM "credential_cutoff" WHERE "userId" = $1`,
-                [userId],
-              )
-            ).rows[0]?.issuedBefore ?? null,
-          emailVerified: async (userId) =>
-            (
-              await pool.query<{ emailVerified: boolean }>(
-                `SELECT "emailVerified" FROM "user" WHERE "id" = $1`,
-                [userId],
-              )
-            ).rows[0]?.emailVerified ?? null,
-        },
-        { emailDelivery },
-      );
+      await refuseUngrantable(step, grantOwnerLookups(ctx, pool), { emailDelivery });
     }),
     // See `RotateDelegatedSessionsCommand`. Awaited by Better Auth, and
     // best-effort like every dispatch from a hook.

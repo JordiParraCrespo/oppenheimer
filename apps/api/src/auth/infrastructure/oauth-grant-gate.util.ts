@@ -1,4 +1,6 @@
-import { APIError } from 'better-auth/api';
+import { APIError, getSessionFromCtx } from 'better-auth/api';
+import type { Pool } from 'pg';
+import { CREDENTIAL_CUTOFF_SQL } from '../database/credential-cutoff.repository';
 import { AuthErrors } from '../domain/auth.errors';
 import { predatesCutoff } from '../domain/credential-cutoff.policy';
 import { mayIssueCredential } from '../domain/credential-issuance.policy';
@@ -66,6 +68,48 @@ export interface GrantOwnerLookups {
   emailVerified(userId: string): Promise<boolean | null>;
   /** The account's credential cutoff (`credential_cutoff`), if a reset set one. */
   credentialCutoff(userId: string): Promise<Date | null>;
+}
+
+/** The Better Auth request a `before` hook is handed. */
+type AuthHookContext = Parameters<typeof getSessionFromCtx>[0];
+
+/**
+ * What the gate reads, for the Better Auth request `ctx`: the session and the
+ * code through Better Auth, the refresh token's row, the user's
+ * `emailVerified` and the cutoff straight from Better Auth's pool. Fresh every
+ * time, never from the session cache: the gate decides on what the database
+ * holds now. Reads only (`apps/api/AGENTS.md`, "A Better Auth hook may read").
+ */
+export function grantOwnerLookups(
+  ctx: AuthHookContext,
+  pool: Pick<Pool, 'query'>,
+): GrantOwnerLookups {
+  return {
+    sessionUserId: async () => (await getSessionFromCtx(ctx))?.user.id ?? null,
+    codeOwner: async (code) => {
+      const found = await ctx.context.internalAdapter.findVerificationValue(code);
+      return found ? codeOwnerOfVerification(found) : null;
+    },
+    refreshTokenOwner: async (refreshToken) => {
+      const row = (
+        await pool.query<{ userId: string | null; createdAt: Date }>(
+          `SELECT "userId", "createdAt" FROM "oauthAccessToken" WHERE "refreshToken" = $1`,
+          [refreshToken],
+        )
+      ).rows[0];
+      return row?.userId ? { userId: row.userId, authorizedAt: row.createdAt } : null;
+    },
+    credentialCutoff: async (userId) =>
+      (await pool.query<{ issuedBefore: Date }>(CREDENTIAL_CUTOFF_SQL, [userId])).rows[0]
+        ?.issuedBefore ?? null,
+    emailVerified: async (userId) =>
+      (
+        await pool.query<{ emailVerified: boolean }>(
+          `SELECT "emailVerified" FROM "user" WHERE "id" = $1`,
+          [userId],
+        )
+      ).rows[0]?.emailVerified ?? null,
+  };
 }
 
 /**
