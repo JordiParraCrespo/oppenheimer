@@ -48,36 +48,51 @@ export function issueSigningSecret(): string {
 
 export type SignatureVerdict = 'valid' | 'missing' | 'malformed' | 'stale' | 'mismatch';
 
+export type SignatureCheck =
+  | { verdict: 'valid'; timestamp: string }
+  | { verdict: Exclude<SignatureVerdict, 'valid'> };
+
 /**
  * Checks `x-oppenheimer-signature: t=<unix seconds>,v1=<hex>`, where the hex is
  * HMAC-SHA256 under the signing secret of `<t>.<raw body>`: Stripe's scheme,
  * which most senders can produce. A timestamp further than the tolerance from
  * now is stale, so a captured request cannot be replayed later. Several `v1`
- * values are allowed, any one matching.
+ * values are allowed, any one matching; a second `t` is malformed, since a
+ * prefixed one would otherwise give a used signature a new replay key. A valid
+ * check answers the timestamp it verified, which is what the replay key is
+ * built from.
  */
 export function verifyWebhookSignature(
   secret: string,
   header: string | undefined,
   rawBody: Buffer,
   now: Date,
-): SignatureVerdict {
-  if (!header?.trim()) return 'missing';
-  let timestamp: string | null = null;
+): SignatureCheck {
+  if (!header?.trim()) return { verdict: 'missing' };
+  const timestamps: string[] = [];
   const signatures: string[] = [];
   for (const part of header.split(',')) {
     const [key, value] = part.trim().split('=', 2);
-    if (key === 't' && value) timestamp = value;
+    if (key === 't') timestamps.push(value ?? '');
     if (key === 'v1' && value) signatures.push(value);
   }
-  if (!timestamp || !/^\d{1,12}$/.test(timestamp) || signatures.length === 0) return 'malformed';
+  const [timestamp] = timestamps;
+  if (
+    timestamps.length !== 1 ||
+    !timestamp ||
+    !/^\d{1,12}$/.test(timestamp) ||
+    signatures.length === 0
+  ) {
+    return { verdict: 'malformed' };
+  }
   const skew = Math.abs(now.getTime() / 1000 - Number(timestamp));
-  if (skew > WEBHOOK_SIGNATURE_TOLERANCE_SECONDS) return 'stale';
+  if (skew > WEBHOOK_SIGNATURE_TOLERANCE_SECONDS) return { verdict: 'stale' };
   const expected = createHmac('sha256', secret).update(`${timestamp}.`).update(rawBody).digest();
   const matches = signatures.some((candidate) => {
     if (!/^[0-9a-f]{64}$/i.test(candidate)) return false;
     return timingSafeEqual(Buffer.from(candidate, 'hex'), expected);
   });
-  return matches ? 'valid' : 'mismatch';
+  return matches ? { verdict: 'valid', timestamp } : { verdict: 'mismatch' };
 }
 
 /**
@@ -91,10 +106,14 @@ export const SIGNATURE_REPLAY_TTL_SECONDS = 2 * WEBHOOK_SIGNATURE_TOLERANCE_SECO
  * inside its window is refused: the routine, the signed timestamp and a digest
  * of the body. Under one secret those decide the signature, and no secret or
  * signature is kept. The `Idempotency-Key` is no part of it: it is not signed,
- * so anyone replaying a request could change it.
+ * so anyone replaying a request could change it. `timestamp` is the one
+ * `verifyWebhookSignature` checked, never parsed again from the header.
  */
-export function signatureReplayKey(automationId: string, header: string, rawBody: Buffer): string {
-  const timestamp = /(?:^|,)\s*t=(\d{1,12})/.exec(header)?.[1] ?? '';
+export function signatureReplayKey(
+  automationId: string,
+  timestamp: string,
+  rawBody: Buffer,
+): string {
   const body = createHash('sha256').update(rawBody).digest('hex');
   return `routine-webhook:signature:${automationId}:${timestamp}:${body}`;
 }

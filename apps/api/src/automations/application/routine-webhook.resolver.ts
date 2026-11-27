@@ -100,15 +100,15 @@ export class RoutineWebhookResolver {
       });
       throw new AppError(AutomationErrors.WEBHOOK_SIGNING_UNAVAILABLE);
     }
-    const verdict = verifyWebhookSignature(secret, request.signature, request.body, now);
-    if (verdict !== 'valid') {
+    const check = verifyWebhookSignature(secret, request.signature, request.body, now);
+    if (check.verdict !== 'valid') {
       throw new AppError(AutomationErrors.WEBHOOK_SIGNATURE_INVALID, {
-        detail: SIGNATURE_DETAIL[verdict],
+        detail: SIGNATURE_DETAIL[check.verdict],
       });
     }
     // Claimed in one command, so two copies of one request racing run once.
     const first = await this.cache.setIfAbsent(
-      signatureReplayKey(webhook.automationId, request.signature ?? '', request.body),
+      signatureReplayKey(webhook.automationId, check.timestamp, request.body),
       now.toISOString(),
       SIGNATURE_REPLAY_TTL_SECONDS,
     );

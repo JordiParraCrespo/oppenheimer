@@ -304,6 +304,29 @@ describe("a routine's webhook", () => {
     expect((await post(token, body, { signature: later })).status).toBe('queued');
   });
 
+  it('refuses a signature header with two timestamps, so a used signature cannot be replayed under a new key', async () => {
+    // Regression (review): verification read the last `t=` and the replay key
+    // the first, so a captured `t=100,v1=…` posted again as `t=1,t=100,v1=…`
+    // verified and claimed a fresh key, one run per prefixed `t=`.
+    const { issueUrl, post, fired } = setup();
+    const { token, signingSecret } = await issueUrl(true);
+    if (!signingSecret) throw new Error('no secret');
+    const body = '{"deploy":43}';
+    const signature = sign(signingSecret, body, new Date());
+    expect((await post(token, body, { signature })).status).toBe('queued');
+    expect(await codeOf(post(token, body, { signature: `t=1,${signature}` }))).toBe(
+      'AUTOMATIONS_011',
+    );
+    expect(await codeOf(post(token, body, { signature: `t=2,${signature}` }))).toBe(
+      'AUTOMATIONS_011',
+    );
+
+    const fresh = sign(signingSecret, body, new Date(Date.now() + 1000));
+    const doubled = `${fresh.split(',')[0]},${fresh}`;
+    expect(await codeOf(post(token, body, { signature: doubled }))).toBe('AUTOMATIONS_011');
+    expect(fired).toHaveLength(1);
+  });
+
   it('signs a new URL unless the caller asks otherwise, when the deployment can keep a secret', async () => {
     const signedByDefault = await setup().issueUrl(null);
     expect(signedByDefault.signingSecret).toMatch(/^owhsec_/);
