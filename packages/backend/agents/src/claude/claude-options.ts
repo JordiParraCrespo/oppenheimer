@@ -77,7 +77,6 @@ export const DISALLOWED_TOOLS = [
   'PushNotification',
   'ReadNotifications',
   'LSP',
-  'Config',
   'Brief',
   'SendUserMessage',
   'SendUserFile',
