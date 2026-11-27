@@ -31,20 +31,40 @@ import { useSortableControl } from './drag';
  * indicator and 12px in from each edge, frosted over the page, each item its
  * glyph over its short name, the current one on its own rounded wash. The
  * mark and the tips (there is no hover on a phone) are dropped. The page
- * under it keeps clear of it with `RAIL_BAR_CLEARANCE`.
+ * under it keeps clear of it with `RAIL_BAR_CLEARANCE`. A rail that is a
+ * specimen rather than chrome (the showcase's) passes `layout="column"` and
+ * stays the column at every width; the items read the layout from the rail,
+ * so a lifted copy outside it is the round button.
  */
 const RAIL = {
-  surface: 'z-20 flex shrink-0 items-center',
-  bar: 'fixed inset-x-3 bottom-[calc(var(--spacing)*3+env(safe-area-inset-bottom))] h-16 gap-0.5 rounded-[2rem] bg-popover/85 p-1.5 shadow-popover backdrop-blur-xl',
-  column:
-    'md:relative md:inset-auto md:bottom-auto md:h-auto md:w-14 md:flex-col md:justify-start md:gap-1.5 md:rounded-none md:border-border-subtle md:border-r md:bg-sidebar md:px-0 md:py-3.5 md:shadow-none md:backdrop-blur-none',
+  surface: 'group/rail z-20 flex shrink-0 items-center',
+  bar: 'fixed inset-x-3 bottom-[calc(var(--spacing)*3+env(safe-area-inset-bottom))] h-16 gap-0.5 rounded-[2rem] bg-popover/85 p-1.5 shadow-popover backdrop-blur-xl md:relative md:inset-auto md:bottom-auto md:h-auto md:w-14 md:flex-col md:justify-start md:gap-1.5 md:rounded-none md:border-border-subtle md:border-r md:bg-sidebar md:px-0 md:py-3.5 md:shadow-none md:backdrop-blur-none',
+  column: 'relative w-14 flex-col justify-start gap-1.5 border-border-subtle border-r bg-sidebar py-3.5',
 };
+
+/** The phone's tab-bar look of an item, applied only inside a responsive rail under 768px. */
+const BAR_ITEM =
+  'max-md:group-data-[layout=responsive]/rail:h-full max-md:group-data-[layout=responsive]/rail:w-auto max-md:group-data-[layout=responsive]/rail:min-w-0 max-md:group-data-[layout=responsive]/rail:flex-1 max-md:group-data-[layout=responsive]/rail:flex-col max-md:group-data-[layout=responsive]/rail:gap-0.5 max-md:group-data-[layout=responsive]/rail:rounded-[1.625rem]';
 
 /** What a page beside the rail reserves at its foot, so the phone's floating bar never covers it. */
 const RAIL_BAR_CLEARANCE = 'pb-[calc(var(--spacing)*22+env(safe-area-inset-bottom))] md:pb-0';
 
-function Rail({ className, ...props }: React.ComponentProps<'nav'>) {
-  return <nav data-slot="rail" className={cn(RAIL.surface, RAIL.bar, RAIL.column, className)} {...props} />;
+function Rail({
+  className,
+  layout = 'responsive',
+  ...props
+}: React.ComponentProps<'nav'> & {
+  /** `responsive`: the floating tab bar on a phone, the column from 768px. `column`: the column at every width. */
+  layout?: 'responsive' | 'column';
+}) {
+  return (
+    <nav
+      data-slot="rail"
+      data-layout={layout}
+      className={cn(RAIL.surface, layout === 'column' ? RAIL.column : RAIL.bar, className)}
+      {...props}
+    />
+  );
 }
 
 /**
@@ -62,7 +82,7 @@ function RailMark({ className, label, render, ref, ...props }: useRender.Compone
       'aria-label': label,
       'aria-hidden': label ? undefined : true,
       className: cn(
-        'mb-2.5 hidden size-8 items-center justify-center rounded-md outline-none md:flex focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+        'mb-2.5 hidden size-8 items-center justify-center rounded-md outline-none group-data-[layout=column]/rail:flex md:flex focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
         className,
       ),
       ...props,
@@ -112,7 +132,8 @@ function RailItem({
       'aria-describedby': [describedBy, hasCount ? countId : undefined].filter(Boolean).join(' ') || undefined,
       'aria-current': active ? 'page' : undefined,
       className: cn(
-        'group/rail-item relative flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.625rem] text-fg-muted md:size-10 md:flex-none md:gap-0 md:rounded-pill no-underline outline-none transition-[background-color,color,transform] duration-instant ease-standard hover:bg-hover-surface hover:text-fg hover:no-underline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-active:bg-hover-surface data-active:text-fg [&_svg:not([class*=size-])]:size-[18px]',
+        'group/rail-item relative flex size-10 items-center justify-center rounded-pill text-fg-muted no-underline outline-none transition-[background-color,color,transform] duration-instant ease-standard hover:bg-hover-surface hover:text-fg hover:no-underline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-active:bg-hover-surface data-active:text-fg [&_svg:not([class*=size-])]:size-[18px]',
+        BAR_ITEM,
         className,
       ),
       ...props,
@@ -122,14 +143,14 @@ function RailItem({
           <span
             aria-hidden
             data-slot="rail-item-label"
-            className="w-full truncate px-0.5 text-center font-medium text-[0.6875rem] leading-tight md:hidden"
+            className="hidden w-full truncate px-0.5 text-center font-medium text-[0.6875rem] leading-tight max-md:group-data-[layout=responsive]/rail:block"
           >
             {shortLabel ?? label}
           </span>
           {attention ? (
             <span
               aria-hidden
-              className="absolute top-2 left-[calc(50%+var(--spacing)*1.5)] size-1.75 rounded-pill bg-warning ring-2 ring-popover md:top-1.5 md:right-1.5 md:left-auto md:ring-sidebar"
+              className="absolute top-1.5 right-1.5 size-1.75 rounded-pill bg-warning ring-2 ring-sidebar max-md:group-data-[layout=responsive]/rail:top-2 max-md:group-data-[layout=responsive]/rail:right-auto max-md:group-data-[layout=responsive]/rail:left-[calc(50%+var(--spacing)*1.5)] max-md:group-data-[layout=responsive]/rail:ring-popover"
             />
           ) : null}
           <RailTip count={hasCount ? count : undefined} countId={countId}>
