@@ -10,6 +10,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDismissible } from '../hooks/use-dismissible';
 import { failureIdentity } from '../lib/failure-identity';
+import { EMAIL_VERIFICATION_REQUIRED, EmailVerificationAlert } from './email-verification-alert';
 
 /** Where the sentence comes from: a raw failure to resolve, or one already resolved. */
 type ErrorAlertSource =
@@ -46,6 +47,11 @@ type ErrorAlertSource =
  * Dismiss is always offered: with `onDismiss` (`lastFailure(…).dismiss` or a
  * mutation's `reset`) the caller clears the failure; without it the alert
  * hides itself until a different failure arrives.
+ *
+ * An unverified address (`TOKEN_010`) is drawn by `EmailVerificationAlert`,
+ * whose action resends the verification link, unless the caller brings its
+ * own action. Every screen that can be refused a credential shows it
+ * through here, so each gets the way out without asking for it.
  */
 export function ErrorAlert({
   title,
@@ -73,6 +79,16 @@ export function ErrorAlert({
   const { dismissed, dismiss } = useDismissible(failureIdentity(source));
   if (!resolved || dismissed) return null;
   const { message, correlationId } = resolved;
+  if ('code' in resolved && resolved.code === EMAIL_VERIFICATION_REQUIRED && !action) {
+    return (
+      <EmailVerificationAlert
+        message={message}
+        correlationId={correlationId}
+        title={title}
+        className={className}
+      />
+    );
+  }
   const trailing = action ?? (
     <Button
       variant="ghost"

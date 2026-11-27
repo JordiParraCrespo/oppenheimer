@@ -760,7 +760,13 @@
     },
     "showPassword": "Show password",
     "legal": "By continuing you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>.",
-    "passwordsDoNotMatch": "Passwords do not match"
+    "passwordsDoNotMatch": "Passwords do not match",
+    "verifyEmail": {
+      "resend": "Resend verification email",
+      "sending": "Sending…",
+      "sent": "Sent to {{email}}. Open the link in it, then try again.",
+      "failed": "Could not send the email. Try again in a moment."
+    }
   },
   "projects": {
     "dialog": {

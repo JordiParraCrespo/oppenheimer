@@ -129,6 +129,11 @@ export const mobileAuthClient: IAuthClient = {
     unwrap(await authClient.resetPassword({ token, newPassword }));
   },
 
+  async sendVerificationEmail(email) {
+    // The link deep-links back into the app, as a sign-in does.
+    unwrap(await authClient.sendVerificationEmail({ email, callbackURL: `${scheme}://` }));
+  },
+
   async getSession() {
     return toAuthSession(await authClient.getSession());
   },

@@ -123,6 +123,22 @@ export function useForgotPassword(
   });
 }
 
+/**
+ * Send the signed-in account a new verification link. Answers the address it
+ * went to. No cache to touch: the account reads as verified only once the
+ * link is followed, which signs the browser in afresh.
+ */
+export function useSendVerificationEmail(
+  options?: Omit<UseMutationOptions<string, Error, void>, 'mutationFn'>,
+) {
+  const app = useOppenheimerApp();
+
+  return useMutation({
+    mutationFn: () => app.auth.sendVerificationEmail(),
+    ...options,
+  });
+}
+
 export function useResetPassword(
   options?: Omit<
     UseMutationOptions<void, Error, { token: string; password: string }>,

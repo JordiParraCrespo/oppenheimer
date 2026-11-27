@@ -101,6 +101,19 @@ export class AuthService {
     this.analytics.capture(ANALYTICS_EVENTS.PASSWORD_RESET_COMPLETED);
   }
 
+  /**
+   * A new verification link, to the signed-in account's own address, which
+   * it answers so the screen can say where the link went. Asked of the
+   * session rather than the screen: Better Auth refuses any other address.
+   */
+  async sendVerificationEmail(): Promise<string> {
+    const session = await this.authRepository.getSession();
+    // Only a signed-in screen offers it; the screen shows its own sentence.
+    if (!session) throw new Error('No signed-in account to send a verification link to');
+    await this.authRepository.sendVerificationEmail(session.user.email);
+    return session.user.email;
+  }
+
   async logout(): Promise<void> {
     await this.authRepository.logout();
     this.store.setState({ isAuthenticated: false });

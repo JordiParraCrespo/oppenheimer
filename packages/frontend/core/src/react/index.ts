@@ -13,6 +13,7 @@ export {
   useLogin,
   useLogout,
   useResetPassword,
+  useSendVerificationEmail,
   useSessionRestore,
   useSocialLogin,
 } from './auth.queries';

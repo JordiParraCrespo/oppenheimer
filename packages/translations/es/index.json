@@ -763,7 +763,13 @@
     },
     "showPassword": "Mostrar contraseña",
     "legal": "Al continuar aceptas los <terms>Términos</terms> y la <privacy>Privacidad</privacy>.",
-    "passwordsDoNotMatch": "Las contraseñas no coinciden"
+    "passwordsDoNotMatch": "Las contraseñas no coinciden",
+    "verifyEmail": {
+      "resend": "Reenviar el correo de verificación",
+      "sending": "Enviando…",
+      "sent": "Enviado a {{email}}. Abre el enlace que contiene y vuelve a intentarlo.",
+      "failed": "No se pudo enviar el correo. Inténtalo de nuevo en un momento."
+    }
   },
   "projects": {
     "dialog": {
