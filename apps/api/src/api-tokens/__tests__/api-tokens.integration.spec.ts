@@ -1,141 +1,41 @@
-import { createHash, randomBytes } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
-import { EmailService } from '@oppenheimer/backend-email';
-import { DataSource } from 'typeorm';
-import { useTestDatabase, useTestRedis } from '../../__tests__/integration-services';
+import type { DataSource } from 'typeorm';
+import {
+  type CredentialApi,
+  credentialFlows,
+  startCredentialApi,
+  stopCredentialApi,
+} from '../../auth/__tests__/credential-flows.spec-support';
 import type { SessionCachePort } from '../../auth/application/session-cache.port';
 import { SESSION_CACHE } from '../../auth/auth.di-tokens';
 
 /**
  * This is the layer unit tests cannot reach: the migration's SQL, the guards
  * running in a real request pipeline, and the intersection of a token's scopes
- * with its owner's live roles.
+ * with its owner's live roles. An OAuth grant and a password reset's take-back
+ * are `auth/__tests__/oauth-grants.integration.spec.ts`; an administrator's
+ * set-password is `admin/__tests__/admin-set-password.integration.spec.ts`.
  */
 describe('API tokens & scopes (integration)', () => {
+  let api: CredentialApi;
   let app: INestApplication;
   let baseUrl: string;
   let dataSource: DataSource;
+  const { call, signUp, resetPassword } = credentialFlows(() => api);
 
   /** Signed-in owner of the tokens under test. */
   let user: { id: string; email: string; sessionToken: string };
 
   beforeAll(async () => {
-    await useTestDatabase();
-    await useTestRedis();
-
-    process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
-
-    // The address gate (`TOKEN_010`) holds only where the deployment delivers
-    // email, so this suite runs on one that does. The transport is never
-    // reached: `EmailService` is replaced below.
-    process.env.EMAIL_PROVIDER = 'nodemailer';
-    process.env.SMTP_HOST = '127.0.0.1';
-
-    // Import AppModule (and the Better Auth instance, which reads the database
-    // config at module load) only after the env vars are set.
-    const { AppModule } = await import('../../app.module');
-    // Rate limiting is skipped under NODE_ENV=test (see AppModule): a suite
-    // that mints dozens of tokens would otherwise trip the deliberately low
-    // limit on token creation.
-    const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(EmailService)
-      .useValue(deliveredNowhere())
-      .compile();
-
-    app = moduleRef.createNestApplication({ bodyParser: false });
-
-    // Mirror `main.ts`: the global prefix, URI versioning and the validation
-    // pipes are part of the request pipeline these tests are exercising.
-    const { VersioningType } = await import('@nestjs/common');
-    const { SanitizePipe } = await import('@oppenheimer/backend-core');
-    const { ZodValidationPipe } = await import('nestjs-zod');
-
-    app.setGlobalPrefix('api');
-    app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
-    app.useGlobalPipes(new SanitizePipe(), new ZodValidationPipe());
-
-    await app.listen(0);
-    baseUrl = (await app.getUrl()).replace('[::1]', '127.0.0.1');
-    dataSource = moduleRef.get(DataSource);
+    api = await startCredentialApi();
+    ({ app, baseUrl, dataSource } = api);
 
     user = await signUp('owner@example.com');
   }, 180000);
 
-  afterAll(async () => {
-    await app?.close();
-    // `app.close()` does not reach it: see `emailQueue`.
-    const { emailQueue } = await import('../../auth/infrastructure/email-queue.util');
-    await emailQueue.close().catch(() => {});
-  });
+  afterAll(() => stopCredentialApi(api));
 
   // --- helpers -------------------------------------------------------------
-
-  interface CallOptions {
-    method?: string;
-    token?: string;
-    body?: unknown;
-    headers?: Record<string, string>;
-  }
-
-  async function call(path: string, options: CallOptions = {}) {
-    const response = await fetch(`${baseUrl}${path}`, {
-      method: options.method ?? 'GET',
-      headers: {
-        accept: 'application/json',
-        ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
-        ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
-        ...options.headers,
-      },
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    });
-
-    const text = await response.text();
-    return {
-      status: response.status,
-      body: text ? (JSON.parse(text) as Record<string, unknown>) : undefined,
-    };
-  }
-
-  /**
-   * Register a user through Better Auth and return a bearer session token. The
-   * address is marked verified unless asked otherwise, as following the
-   * verification email would: minting a token needs it (`TOKEN_010`).
-   */
-  async function signUp(email: string, { verified = true }: { verified?: boolean } = {}) {
-    const response = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        password: 'Integration-test-password-1',
-        name: 'Integration Owner',
-        firstName: 'Integration',
-        lastName: 'Owner',
-      }),
-    });
-
-    expect(response.ok).toBe(true);
-    const sessionToken = response.headers.get('set-auth-token');
-    expect(sessionToken).toBeTruthy();
-
-    const payload = (await response.json()) as {
-      user: { id: string; email: string };
-    };
-    if (verified) {
-      await dataSource.query('UPDATE "user" SET "emailVerified" = true WHERE "id" = $1', [
-        payload.user.id,
-      ]);
-      await app.get<SessionCachePort>(SESSION_CACHE).refreshUser(payload.user.id);
-    }
-    return {
-      id: payload.user.id,
-      email: payload.user.email,
-      sessionToken: sessionToken as string,
-    };
-  }
 
   async function mintToken(body: Record<string, unknown>) {
     const created = await call('/api/v1/tokens', {
@@ -885,123 +785,6 @@ describe('API tokens & scopes (integration)', () => {
     });
   });
 
-  // --- OAuth (MCP) grants ----------------------------------------------------
-
-  const REDIRECT_URI = 'http://127.0.0.1:9/callback';
-
-  /** Register a public MCP client, as one does on first use. */
-  async function registerOAuthClient(): Promise<string> {
-    const response = await fetch(`${baseUrl}/api/auth/mcp/register`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        client_name: 'integration client',
-        redirect_uris: [REDIRECT_URI],
-        token_endpoint_auth_method: 'none',
-      }),
-    });
-    expect(response.ok).toBe(true);
-    return ((await response.json()) as { client_id: string }).client_id;
-  }
-
-  /** Authorize as the session's account: the code a client would be redirected with. */
-  async function authorizeOAuthCode(sessionToken: string, clientId: string) {
-    const verifier = randomBytes(32).toString('base64url');
-    const challenge = createHash('sha256').update(verifier).digest('base64url');
-    const query = new URLSearchParams({
-      client_id: clientId,
-      response_type: 'code',
-      redirect_uri: REDIRECT_URI,
-      scope: 'openid tokens:read',
-      code_challenge: challenge,
-      code_challenge_method: 'S256',
-    });
-    const authorized = await fetch(`${baseUrl}/api/auth/mcp/authorize?${query}`, {
-      headers: { authorization: `Bearer ${sessionToken}` },
-      redirect: 'manual',
-    });
-    const location = authorized.headers.get('location') ?? '';
-    const code = new URL(location, baseUrl).searchParams.get('code');
-    expect(code, `authorize answered ${authorized.status} ${location}`).toBeTruthy();
-    return { clientId, code: code as string, verifier };
-  }
-
-  /**
-   * Exchange a code at the token endpoint, as a form (what clients send) or
-   * as JSON with the code in whatever shape `codeAs` gives it.
-   */
-  async function exchangeCode(
-    grant: { clientId: string; code: string; verifier: string },
-    { codeAs }: { codeAs?: (code: string) => unknown } = {},
-  ) {
-    const fields = {
-      grant_type: 'authorization_code',
-      redirect_uri: REDIRECT_URI,
-      client_id: grant.clientId,
-      code_verifier: grant.verifier,
-    };
-    const exchanged = await fetch(
-      `${baseUrl}/api/auth/mcp/token`,
-      codeAs
-        ? {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ ...fields, code: codeAs(grant.code) }),
-          }
-        : {
-            method: 'POST',
-            headers: { 'content-type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ ...fields, code: grant.code }),
-          },
-    );
-    const text = await exchanged.text();
-    return {
-      status: exchanged.status,
-      body: text ? (JSON.parse(text) as Record<string, unknown>) : undefined,
-    };
-  }
-
-  async function exchangeOAuthCode(sessionToken: string, clientId: string) {
-    return exchangeCode(await authorizeOAuthCode(sessionToken, clientId));
-  }
-
-  async function oauthGrantCount(userId: string): Promise<number> {
-    const rows: { n: number }[] = await dataSource.query(
-      'SELECT count(*)::int AS n FROM "oauthAccessToken" WHERE "userId" = $1',
-      [userId],
-    );
-    return rows[0].n;
-  }
-
-  /** "Forgot password", followed through: the reset link's token, then the new password. */
-  async function resetPassword(account: { id: string; email: string }) {
-    const reset = await attemptPasswordReset(account);
-    expect(reset.ok).toBe(true);
-  }
-
-  async function attemptPasswordReset(account: { id: string; email: string }) {
-    const requested = await fetch(`${baseUrl}/api/auth/request-password-reset`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: account.email, redirectTo: 'http://localhost:3000/reset' }),
-    });
-    expect(requested.ok).toBe(true);
-    const [verification]: { identifier: string }[] = await dataSource.query(
-      `SELECT "identifier" FROM "verification"
-        WHERE "value" = $1 AND "identifier" LIKE 'reset-password:%'`,
-      [account.id],
-    );
-    const reset = await fetch(`${baseUrl}/api/auth/reset-password`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        token: verification.identifier.slice('reset-password:'.length),
-        newPassword: 'Integration-test-password-2',
-      }),
-    });
-    return reset;
-  }
-
   // Pre-account squatting: someone registers the victim's address first and
   // issues a credential that would outlive the real owner's password reset.
   describe('an account whose email is not verified', () => {
@@ -1026,67 +809,9 @@ describe('API tokens & scopes (integration)', () => {
       );
       expect(rows[0].n).toBe(0);
     });
-
-    it('is refused an OAuth grant at the token endpoint, and no grant is stored', async () => {
-      const exchanged = await exchangeOAuthCode(squatter.sessionToken, await registerOAuthClient());
-
-      expect(exchanged.status).toBe(403);
-      expect(exchanged.body?.code).toBe('TOKEN_010');
-      expect(exchanged.body?.error).toBe('access_denied');
-      expect(await oauthGrantCount(squatter.id)).toBe(0);
-    });
-
-    // Better Auth reads any JSON value for `code` and stringifies it.
-    // Regression: `"code": ["…"]` skipped the gate and was redeemed.
-    it.each([
-      ['an array', (code: string) => [code]],
-      ['a number', () => 12345],
-    ])('is refused when the code is sent as %s, and no grant is stored', async (_shape, codeAs) => {
-      const grant = await authorizeOAuthCode(squatter.sessionToken, await registerOAuthClient());
-
-      const exchanged = await exchangeCode(grant, { codeAs });
-
-      expect(exchanged.status).toBe(400);
-      expect(exchanged.body?.error).toBe('invalid_request');
-      expect(await oauthGrantCount(squatter.id)).toBe(0);
-    });
   });
 
   describe('a password reset', () => {
-    it('revokes every API token and OAuth grant the account held', async () => {
-      const owner = await signUp('recovered@example.com');
-      const minted = await call('/api/v1/tokens', {
-        method: 'POST',
-        token: owner.sessionToken,
-        body: { name: 'before the reset', scopes: ['tokens:read'] },
-      });
-      expect(minted.status).toBe(201);
-      const pat = (minted.body as { token: string }).token;
-
-      const granted = await exchangeOAuthCode(owner.sessionToken, await registerOAuthClient());
-      expect(granted.status).toBe(200);
-      const accessToken = granted.body?.access_token as string;
-      expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(200);
-      expect((await call('/api/v1/me/credential', { token: accessToken })).status).toBe(200);
-
-      await resetPassword(owner);
-
-      // Both go in the reset's own transaction, the token by its cutoff; the
-      // outbox then marks the token revoked as well.
-      expect((await call('/api/v1/me/credential', { token: accessToken })).status).toBe(401);
-      const refused = await call('/api/v1/me/credential', { token: pat });
-      expect(refused.status).toBe(401);
-      expect(refused.body?.code).toBe('TOKEN_003');
-      expect(await oauthGrantCount(owner.id)).toBe(0);
-      await vi.waitFor(async () => {
-        const tokens: { revokedAt: Date | null }[] = await dataSource.query(
-          'SELECT "revokedAt" FROM "api_token" WHERE "userId" = $1',
-          [owner.id],
-        );
-        expect(tokens.map((token) => token.revokedAt)).not.toContain(null);
-      });
-    });
-
     // The revocation of API tokens arrives through the outbox, seconds after
     // the reset. Regression: in that window a token holding `tokens:write`
     // kept working, and the token it minted outlived the reset.
@@ -1183,150 +908,5 @@ describe('API tokens & scopes (integration)', () => {
         expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(200);
       });
     });
-
-    // Regression: the hook's dispatch swallowed the failure, so a reset whose
-    // transaction threw answered 200 with no cutoff written and every token
-    // alive. The next reset, from a new link, is what takes them back.
-    it('answers an error when the credentials could not be revoked, and a retry revokes them', async () => {
-      const owner = await signUp('failed-reset@example.com');
-      const minted = await call('/api/v1/tokens', {
-        method: 'POST',
-        token: owner.sessionToken,
-        body: { name: 'survives a failed reset', scopes: ['tokens:read'] },
-      });
-      expect(minted.status).toBe(201);
-      const pat = (minted.body as { token: string }).token;
-      const { CompletePasswordResetCommandHandler } = await import(
-        '../../auth/commands/complete-password-reset/complete-password-reset.command-handler'
-      );
-      const execute = vi
-        .spyOn(app.get(CompletePasswordResetCommandHandler), 'execute')
-        .mockRejectedValueOnce(new Error('the reset transaction failed'));
-
-      const failed = await attemptPasswordReset(owner);
-
-      expect(failed.ok).toBe(false);
-      expect(failed.status).toBe(500);
-      expect(execute).toHaveBeenCalledTimes(1);
-      execute.mockRestore();
-      expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(200);
-
-      await resetPassword(owner);
-
-      expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(401);
-    });
-
-    // Regression: a code issued before the reset stayed redeemable for its
-    // ten minutes, handing whoever held it a fresh grant.
-    it('takes back an authorization code issued before it, unexchanged', async () => {
-      const owner = await signUp('pending-code@example.com');
-      const grant = await authorizeOAuthCode(owner.sessionToken, await registerOAuthClient());
-
-      await resetPassword(owner);
-
-      const rows: { n: number }[] = await dataSource.query(
-        'SELECT count(*)::int AS n FROM "verification" WHERE "identifier" = $1',
-        [grant.code],
-      );
-      expect(rows[0].n).toBe(0);
-      const exchanged = await exchangeCode(grant);
-      expect(exchanged.status).toBe(401);
-      expect(exchanged.body?.error).toBe('invalid_grant');
-      expect(await oauthGrantCount(owner.id)).toBe(0);
-    });
-  });
-
-  // An administrator setting a password is how an account is handed back to
-  // the person it belongs to. Regression: Better Auth's `setUserPassword`
-  // only rewrote the hash, so the previous holder's token, grant and session
-  // all kept working.
-  describe("an administrator's set-password", () => {
-    async function signUpAdmin(email: string) {
-      const admin = await signUp(email);
-      await dataSource.query(`UPDATE "user" SET "role" = 'admin' WHERE "id" = $1`, [admin.id]);
-      await app.get<SessionCachePort>(SESSION_CACHE).refreshUser(admin.id);
-      return admin;
-    }
-
-    it('takes back what a reset does: the cutoff, the tokens, the grants and the sessions', async () => {
-      const owner = await signUp('handed-back@example.com');
-      const minted = await call('/api/v1/tokens', {
-        method: 'POST',
-        token: owner.sessionToken,
-        body: { name: 'before the hand-back', scopes: ['tokens:read'] },
-      });
-      expect(minted.status).toBe(201);
-      const pat = (minted.body as { token: string }).token;
-      const granted = await exchangeOAuthCode(owner.sessionToken, await registerOAuthClient());
-      expect(granted.status).toBe(200);
-      const admin = await signUpAdmin('hands-back@example.com');
-
-      const set = await call(`/api/v1/admin/users/${owner.id}/set-password`, {
-        method: 'POST',
-        token: admin.sessionToken,
-        body: { newPassword: 'Handed-back-password-1' },
-      });
-
-      expect(set.status, JSON.stringify(set.body)).toBe(201);
-      const cutoff: { n: number }[] = await dataSource.query(
-        'SELECT count(*)::int AS n FROM "credential_cutoff" WHERE "userId" = $1',
-        [owner.id],
-      );
-      expect(cutoff[0].n).toBe(1);
-      expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(401);
-      expect(
-        (await call('/api/v1/me/credential', { token: granted.body?.access_token as string }))
-          .status,
-      ).toBe(401);
-      expect(await oauthGrantCount(owner.id)).toBe(0);
-      expect((await call('/api/v1/users/me', { token: owner.sessionToken })).status).toBe(401);
-      const sessions: { n: number }[] = await dataSource.query(
-        'SELECT count(*)::int AS n FROM "session" WHERE "userId" = $1',
-        [owner.id],
-      );
-      expect(sessions[0].n).toBe(0);
-      // The administrator's own session is not the account's, and stays.
-      expect((await call('/api/v1/users/me', { token: admin.sessionToken })).status).toBe(200);
-    });
-
-    it('answers an error when the credentials could not be taken back, and leaves the token for a retry', async () => {
-      const owner = await signUp('handed-back-failed@example.com');
-      const minted = await call('/api/v1/tokens', {
-        method: 'POST',
-        token: owner.sessionToken,
-        body: { name: 'survives a failed hand-back', scopes: ['tokens:read'] },
-      });
-      const pat = (minted.body as { token: string }).token;
-      const admin = await signUpAdmin('hands-back-failed@example.com');
-      const { CompletePasswordResetCommandHandler } = await import(
-        '../../auth/commands/complete-password-reset/complete-password-reset.command-handler'
-      );
-      const execute = vi
-        .spyOn(app.get(CompletePasswordResetCommandHandler), 'execute')
-        .mockRejectedValueOnce(new Error('the reset transaction failed'));
-      const setPassword = () =>
-        call(`/api/v1/admin/users/${owner.id}/set-password`, {
-          method: 'POST',
-          token: admin.sessionToken,
-          body: { newPassword: 'Handed-back-password-2' },
-        });
-
-      const failed = await setPassword();
-
-      expect(failed.status).toBe(502);
-      expect(failed.body?.code).toBe('ADMIN_008');
-      execute.mockRestore();
-      expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(200);
-      expect((await setPassword()).status).toBe(201);
-      expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(401);
-    });
   });
 });
-
-/** An `EmailService` whose every send succeeds and goes nowhere. */
-function deliveredNowhere(): EmailService {
-  return new Proxy({} as EmailService, {
-    get: (_target, key) =>
-      typeof key === 'string' && key.startsWith('send') ? async () => undefined : undefined,
-  });
-}
