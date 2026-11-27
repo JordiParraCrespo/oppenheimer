@@ -51,18 +51,29 @@ export interface ProjectVisibility {
 }
 
 /**
+ * Whether the Inbox lists a session whose finished turn nobody has opened for
+ * thirty minutes, kept on this device.
+ */
+export interface UnattendedReminders {
+  on: boolean;
+  onChange: (on: boolean) => void;
+}
+
+/**
  * The filter button beside the session count and its menu (the artboard's
  * `.op-iconbtn-sm` and `.op-filtermenu`). The button is lit while the menu is
  * open *or* while anything is hidden, by a filter, a hidden project or
  * Pinned only. Props
  * only: the sidebar owns the filters and the hidden projects, because it
- * renders what they narrow.
+ * renders what they narrow. Its last check, the unattended reminders, is no
+ * filter: it turns off the Inbox's reminder about the sessions left unread.
  */
 export function SessionsFilterMenu({
   filters,
   options,
   dirty,
   visibility,
+  reminders,
   onChange,
   onClear,
   onNewProject,
@@ -71,6 +82,7 @@ export function SessionsFilterMenu({
   options: Record<SessionFacet, FilterOption[]>;
   dirty: boolean;
   visibility: ProjectVisibility;
+  reminders: UnattendedReminders;
   onChange: (patch: Partial<SessionFilters>) => void;
   onClear: () => void;
   /** Opens the New project dialog, from the foot of the Project facet. */
@@ -250,6 +262,15 @@ export function SessionsFilterMenu({
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuCheckboxItem
+          checked={reminders.on}
+          onCheckedChange={(checked) => reminders.onChange(checked)}
+        >
+          {t('sessions.filters.unattended')}
+        </DropdownMenuCheckboxItem>
 
         <DropdownMenuSeparator />
 

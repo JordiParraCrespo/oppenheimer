@@ -698,6 +698,34 @@ the way Mark as unread is set. On top of "A notification in this browser":
 
 Still from the console only: with no console tab open, nothing is told.
 
+## A session left unattended is an Inbox item (2026-11-27)
+
+The owner asked on 2026-11-27 for the thirty-minute reminder to stop being
+a browser notification and to be an element of the Inbox instead, telling
+that the session needs to be moved forward, with a setting in the sidebar to
+turn it off. This replaces "A long wait is told once more" above:
+
+- **No notification for a long wait.** The console's notifications tell a
+  session that comes to wait on you, an agent's notice and a finished turn,
+  nothing more; the thirty-minute reminder is gone from them.
+- **An `unattended` item.** A session whose turn ended (its row's blue dot,
+  `ready-for-review`) and that nobody has opened for thirty minutes, counted
+  from the host's `observedSince`, is listed in the Inbox: "<name> is waiting
+  to move forward", with Open session. Opening the session reads its turn
+  and takes the item away; Done puts it away for that turn. It is keyed by
+  the session and the turn (`unattended:<id>:<observedSince>`), so the next
+  turn left unread comes back however the last one was marked. It counts
+  under Sessions in the Type facet and in the rail's count.
+- **Amber is already there.** A session waiting on you (amber) is an Inbox
+  item from the moment it waits, so it gets no second one; idle and working
+  sessions never do.
+- **A switch in the sidebar.** "Remind me after 30 minutes unread", the
+  sessions sidebar filter menu's last check, is on by default and kept on
+  the device like the Inbox's other switches (followed by the browser's other
+  tabs). Off, no such item is listed or counted.
+- The Inbox is composed in the console, so the item is the console's: the
+  Chrome extension and the phone do not list it.
+
 The same day the owner found the row menu long with Mute in it and asked
 for a sublevel: Mark as unread and Mute notifications moved into a
 **Notifications & read** pane, opened from the menu the way Move to project

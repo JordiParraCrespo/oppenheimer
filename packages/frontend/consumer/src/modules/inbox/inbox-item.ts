@@ -20,10 +20,13 @@ import type { InboxReportEntity } from './inbox-report.entity';
  * is; a `botNotice` is a bot's own line (its `notify` tool), each bot's latest;
  * a `report` is a problem an unattended agent sent with its pictures, there
  * until it is answered; a `task` is one an agent made, there until its person
- * takes it up (a TODO day, a session, or Dismiss).
+ * takes it up (a TODO day, a session, or Dismiss). An `unattended` session is
+ * one whose turn ended and that nobody has opened for
+ * {@link UNATTENDED_AFTER_MS}: it waits for someone to move it forward.
  */
 export type InboxItemKind =
   | 'session'
+  | 'unattended'
   | 'notice'
   | 'botNotice'
   | 'approval'
@@ -48,6 +51,7 @@ interface InboxItemBase {
 
 export type InboxItem =
   | (InboxItemBase & { kind: 'session'; session: SessionEntity })
+  | (InboxItemBase & { kind: 'unattended'; session: SessionEntity })
   | (InboxItemBase & { kind: 'notice'; session: SessionEntity; notice: SessionNotice })
   | (InboxItemBase & { kind: 'botNotice'; notice: WorkspaceBotNoticeEntity })
   | (InboxItemBase & { kind: 'approval'; approval: WorkspaceBotApprovalEntity })
@@ -76,6 +80,18 @@ export interface InboxSources {
   tasks: readonly TaskEntity[];
   projects: readonly ProjectEntity[];
 }
+
+/** What the Inbox lists beyond its sources, as the reader set it on this device. */
+export interface InboxOptions {
+  /** Whether a session left unread for {@link UNATTENDED_AFTER_MS} is listed. */
+  unattended: boolean;
+}
+
+/**
+ * How long a session's finished turn sits unread (the row's blue dot) before
+ * the Inbox lists it as waiting to be moved forward.
+ */
+const UNATTENDED_AFTER_MS = 30 * 60_000;
 
 export interface InboxSnoozed {
   item: InboxItem;
@@ -107,14 +123,20 @@ export function sessionItemKey(
 }
 
 /**
- * What an occurrence key is an occurrence of: a session (`session:<id>`), a
+ * What an occurrence key is an occurrence of: a session (`session:<id>`,
+ * `unattended:<id>`), a
  * bot's notices (`botnotice:<bot>`), a pull request (`pull:<repo>#<number>`),
  * or the approval, run or report itself, whose key names one wait already. A
  * session's next wait, a bot's next notice, or a pull request's next push, is
  * the same subject under a new key.
  */
 export function inboxSubject(key: string): string {
-  if (key.startsWith('session:') || key.startsWith('notice:') || key.startsWith('botnotice:')) {
+  if (
+    key.startsWith('session:') ||
+    key.startsWith('unattended:') ||
+    key.startsWith('notice:') ||
+    key.startsWith('botnotice:')
+  ) {
     return key.split(':', 2).join(':');
   }
   if (key.startsWith('pull:')) return key.split('@', 1)[0];
@@ -138,6 +160,17 @@ function approvalItemKey(approval: { id: string }): string {
 /** A pull request by repository, number and head commit: a new push asks again. */
 function pullItemKey(pull: Pick<PullRequestEntity, 'githubRepoId' | 'number' | 'headSha'>): string {
   return `pull:${pull.githubRepoId}#${pull.number}@${pull.headSha}`;
+}
+
+/**
+ * A session left unread by the turn that ended (`observedSince`), else by its
+ * lifecycle's change count: the next turn left unread asks again.
+ */
+function unattendedItemKey(
+  session: Pick<SessionEntity, 'id' | 'observedSince' | 'stateSeq'>,
+): string {
+  const stay = session.observedSince ? session.observedSince.toISOString() : `s${session.stateSeq}`;
+  return `unattended:${session.id}:${stay}`;
 }
 
 function runItemKey(run: { id: string }): string {
@@ -203,6 +236,34 @@ export function sessionItems(
 }
 
 /**
+ * The sessions whose turn ended (blue: `ready-for-review`) at least
+ * {@link UNATTENDED_AFTER_MS} before `now` with nobody opening them. Opening
+ * one reads its report, and it leaves. Dated from when the turn ended, so the
+ * row's age says how long it has waited.
+ */
+function unattendedItems(
+  sessions: readonly SessionEntity[],
+  now: number,
+  projectOf: (id: string | null | undefined) => string[],
+): InboxItem[] {
+  const items: InboxItem[] = [];
+  for (const session of sessions) {
+    if (session.state !== 'ready-for-review' || session.isClosing) continue;
+    const since = session.observedSince ?? session.lastEventAt ?? session.createdAt;
+    if (now - since.getTime() < UNATTENDED_AFTER_MS) continue;
+    items.push({
+      kind: 'unattended',
+      session,
+      key: unattendedItemKey(session),
+      since,
+      projectIds: projectOf(session.projectId),
+      low: false,
+    });
+  }
+  return items;
+}
+
+/**
  * The items in `items` whose occurrence `seen` has not had yet, and `seen`
  * with all of them added: what to tell a person about since the last look.
  * A first look (`seen` null) tells nothing and only remembers, so opening the
@@ -221,7 +282,7 @@ export function newSessionItems<T extends InboxItem>(
  * Every item the sources say needs you, before any mark: one per occurrence,
  * each with its projects.
  */
-function inboxItems(sources: InboxSources): InboxItem[] {
+function inboxItems(sources: InboxSources, now: number, options: InboxOptions): InboxItem[] {
   const placed = new Set(
     sources.projects.filter((project) => !project.isUnassigned).map((project) => project.id),
   );
@@ -241,6 +302,7 @@ function inboxItems(sources: InboxSources): InboxItem[] {
       .map((project) => project.id);
 
   const items: InboxItem[] = sessionItems(sources.sessions, projectOf);
+  if (options.unattended) items.push(...unattendedItems(sources.sessions, now, projectOf));
   for (const notice of sources.botNotices) {
     items.push({
       kind: 'botNotice',
@@ -326,18 +388,21 @@ function inboxItems(sources: InboxSources): InboxItem[] {
  * Snoozed; low sorts last. A mark whose occurrence no source names is
  * never read. `answered` are occurrences answered here whose source has not
  * caught up yet: gone from every list, so each count agrees with them.
+ * `options` are the reader's own: with `unattended` off, a session left
+ * unread is never listed.
  */
 export function composeInbox(
   sources: InboxSources,
   marks: readonly InboxMarkEntity[],
   now: number,
   answered: ReadonlySet<string> = new Set(),
+  options: InboxOptions = { unattended: true },
 ): InboxView {
   const byKey = new Map(
     marks.filter((mark) => mark.inForce(now)).map((mark) => [mark.itemKey, mark]),
   );
   const view: InboxView = { open: [], done: [], snoozed: [] };
-  for (const item of inboxItems(sources)) {
+  for (const item of inboxItems(sources, now, options)) {
     if (answered.has(item.key)) continue;
     const mark = byKey.get(item.key);
     switch (mark?.mark) {

@@ -444,6 +444,57 @@ describe('composeInbox: what an agent told you', () => {
   });
 });
 
+describe('composeInbox: a session nobody has moved forward', () => {
+  const blue = (id: string, minutesAgo: number) =>
+    session(id, { state: 'ready-for-review', observedSince: at(minutesAgo) });
+
+  it('lists a session whose finished turn has sat unread for thirty minutes, dated from the turn', () => {
+    const view = composeInbox(sources({ sessions: [blue('s1', 31), blue('s2', 29)] }), [], NOW);
+    expect(view.open).toHaveLength(1);
+    expect(view.open[0]).toMatchObject({
+      kind: 'unattended',
+      key: `unattended:s1:${at(31).toISOString()}`,
+      since: at(31),
+      projectIds: ['p-app'],
+    });
+  });
+
+  // The regression: the reader turned the reminders off in the sidebar and the
+  // Inbox (and the rail's count) still listed them.
+  it('lists none when the reader turned them off', () => {
+    const view = composeInbox(sources({ sessions: [blue('s1', 45)] }), [], NOW, new Set(), {
+      unattended: false,
+    });
+    expect(view.open).toEqual([]);
+  });
+
+  it('leaves out a session read, still working or waiting on you, which the Inbox already lists', () => {
+    const view = composeInbox(
+      sources({
+        sessions: [
+          session('s-idle', { state: 'idle', observedSince: at(60) }),
+          session('s-work', { state: 'working', observedSince: at(60) }),
+          session('s-amber', { state: 'waiting-on-you', observedSince: at(60) }),
+        ],
+      }),
+      [],
+      NOW,
+    );
+    expect(view.open.map((item) => item.kind)).toEqual(['session']);
+  });
+
+  it('brings the next turn left unread back after the last one was marked done', () => {
+    const done = [mark(`unattended:s1:${at(40).toISOString()}`, 'done')];
+    expect(composeInbox(sources({ sessions: [blue('s1', 40)] }), done, NOW).open).toEqual([]);
+    expect(
+      composeInbox(sources({ sessions: [blue('s1', 35)] }), done, NOW).open.map(
+        (item) => item.kind,
+      ),
+    ).toEqual(['unattended']);
+    expect(inboxSubject(`unattended:s1:${at(35).toISOString()}`)).toBe('unattended:s1');
+  });
+});
+
 describe('composeInbox: what a bot told you', () => {
   const told = (noticeId: string, minutesAgo: number, botId = 'bot-1') =>
     new WorkspaceBotNoticeEntity(noticeId, botId, 'Ops', 'Release 1.4 is out.', at(minutesAgo));

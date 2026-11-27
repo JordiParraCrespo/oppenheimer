@@ -9,7 +9,10 @@ import {
   type SessionEntity,
   sessionAgentLabel,
 } from '@oppenheimer/frontend-consumer';
-import { useSuspenseSessionsSidebar } from '@oppenheimer/frontend-consumer/react';
+import {
+  useSuspenseSessionsSidebar,
+  useUnattendedSessionsShown,
+} from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useDragLabels, useOfflineOnce } from '@oppenheimer/frontend-web';
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
@@ -113,6 +116,7 @@ export function SessionsSidebarBody() {
   const { hidden, setShown, showAll } = useHiddenProjects();
   const { pinnedOnly, setPinnedOnly } = usePinnedOnly();
   const { showHidden, setShowHidden } = useShowHidden();
+  const [unattendedShown, setUnattendedShown] = useUnattendedSessionsShown();
   const [deleting, setDeleting] = useState<SessionEntity | null>(null);
   const [deletingMany, setDeletingMany] = useState<SessionEntity[] | null>(null);
   // A later write that lands clears it, and so does Dismiss.
@@ -207,6 +211,7 @@ export function SessionsSidebarBody() {
             onShowHiddenChange: setShowHidden,
             hiddenSessionCount: hiddenSessions.hiddenCount,
           }}
+          reminders={{ on: unattendedShown, onChange: setUnattendedShown }}
           chips={activeFilters(filters, options)}
           onFiltersChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
           onFiltersClear={() =>

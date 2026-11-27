@@ -199,6 +199,7 @@ export {
   usePutInboxMarks,
   useRefreshInbox,
   useSuspenseInbox,
+  useUnattendedSessionsShown,
 } from './inbox.queries';
 export {
   type ConnectInstallationVariables,

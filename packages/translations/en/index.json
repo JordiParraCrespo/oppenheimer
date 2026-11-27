@@ -1298,6 +1298,7 @@
       "showAll": "Show all projects",
       "pinnedOnly": "Pinned only",
       "showHidden": "Show hidden sessions",
+      "unattended": "Remind me after 30 minutes unread",
       "newProject": "New project…",
       "allStatuses": "All statuses",
       "statuses": {
@@ -4210,6 +4211,11 @@
       "cleared_one": "You cleared {{count}} item on this visit.",
       "cleared_other": "You cleared {{count}} items on this visit."
     },
+    "unattended": {
+      "short": "{{name}} is waiting to move forward",
+      "title": "{{name}} has sat unread for 30 minutes",
+      "body": "Its turn ended and nobody has opened it since. Open the session to read what it did and give it the next step."
+    },
     "notice": {
       "title": "{{name}} has news for you"
     },
@@ -4256,9 +4262,7 @@
     },
     "alert": {
       "doneTitle": "{{name}} finished its turn",
-      "doneBody": "Open the session to see what it did.",
-      "staleTitle": "{{name}} has waited 30 minutes",
-      "staleBody": "It still needs you. Open the session to pick it up."
+      "doneBody": "Open the session to see what it did."
     }
   },
   "settings": {

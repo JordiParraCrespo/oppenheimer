@@ -66,20 +66,25 @@ function useAnsweredKeys(): ReadonlySet<string> {
 }
 
 /**
- * An on/off switch kept on this device, off until the reader turns it on. One
+ * An on/off switch kept on this device, `fallback` until the reader flips it. One
  * value for the page, so every reader agrees the moment it flips, and every
  * other open tab of this browser follows through the `storage` event; a
  * browser that refuses storage keeps it in memory for the visit.
  */
-function deviceSwitch(key: string): () => [on: boolean, setOn: (on: boolean) => void] {
+function deviceSwitch(
+  key: string,
+  fallback = false,
+): () => [on: boolean, setOn: (on: boolean) => void] {
   let value: boolean | undefined;
   const listeners = new Set<() => void>();
+  const parse = (stored: string | null | undefined): boolean =>
+    stored === 'true' || stored === 'false' ? stored === 'true' : fallback;
   const read = (): boolean => {
     if (value === undefined) {
       try {
-        value = globalThis.localStorage?.getItem(key) === 'true';
+        value = parse(globalThis.localStorage?.getItem(key));
       } catch {
-        value = false;
+        value = fallback;
       }
     }
     return value;
@@ -97,7 +102,7 @@ function deviceSwitch(key: string): () => [on: boolean, setOn: (on: boolean) => 
   // Another tab wrote it: take its value, so turning it off anywhere stops it everywhere.
   const fromAnotherTab = (event: StorageEvent) => {
     if (event.key !== key) return;
-    value = event.newValue === 'true';
+    value = parse(event.newValue);
     for (const listener of listeners) listener();
   };
   const subscribe = (listener: () => void) => {
@@ -108,7 +113,7 @@ function deviceSwitch(key: string): () => [on: boolean, setOn: (on: boolean) => 
       if (listeners.size === 0) globalThis.removeEventListener?.('storage', fromAnotherTab);
     };
   };
-  return () => [useSyncExternalStore(subscribe, read, () => false), set];
+  return () => [useSyncExternalStore(subscribe, read, () => fallback), set];
 }
 
 /**
@@ -168,8 +173,8 @@ function deviceSet(
 
 /**
  * The sessions whose system notifications the reader turned off on this
- * device (a row's Mute notifications): none of their waits, notices, finished
- * turns or stale reminders is told. The Inbox and the sidebar still show them.
+ * device (a row's Mute notifications): none of their waits, notices or
+ * finished turns is told. The Inbox and the sidebar still show them.
  */
 export const useMutedSessionAlerts = deviceSet('oppenheimer.sessions.muted');
 
@@ -182,9 +187,16 @@ export const useMutedSessionAlerts = deviceSet('oppenheimer.sessions.muted');
 export const useInboxPullsShown = deviceSwitch('oppenheimer.inbox.pulls');
 
 /**
+ * Whether the Inbox lists a session whose finished turn nobody has opened for
+ * thirty minutes, kept on this device. On until the
+ * reader turns it off, from the sessions sidebar's menu.
+ */
+export const useUnattendedSessionsShown = deviceSwitch('oppenheimer.inbox.unattended', true);
+
+/**
  * Whether this browser tells the reader, with a system notification, when a
- * session comes to wait on them, sends a notice, ends a turn or has waited
- * thirty minutes, kept on this device. Off
+ * session comes to wait on them, sends a notice or ends a turn, kept on this
+ * device. Off
  * until the reader turns it on, since turning it on is what asks the browser
  * for permission.
  */
@@ -316,6 +328,7 @@ export function useSuspenseInbox(
   const pullResults = useSuspenseQueries({ queries: pullQueries });
   const [requested, mine] = pullResults.map((result) => result.data);
   const answered = useAnsweredKeys();
+  const [unattended] = useUnattendedSessionsShown();
   const view = useMemo(
     () =>
       composeInbox(
@@ -332,6 +345,7 @@ export function useSuspenseInbox(
         marks.data,
         now,
         answered,
+        { unattended },
       ),
     [
       sessions.data,
@@ -346,6 +360,7 @@ export function useSuspenseInbox(
       marks.data,
       now,
       answered,
+      unattended,
     ],
   );
   const error =
@@ -370,6 +385,7 @@ export function useInboxCount(now: number): number | undefined {
   const results = useQueries({ queries: useInboxQueries() });
   const pullResults = useQueries({ queries: usePullQueries(pullsShown) });
   const answered = useAnsweredKeys();
+  const [unattended] = useUnattendedSessionsShown();
   const [sessions, approvals, runs, botNotices, reports, projects, marks, tasks] = results;
   if (
     !sessions?.data ||
@@ -398,6 +414,7 @@ export function useInboxCount(now: number): number | undefined {
     marks.data as InboxMarkEntity[],
     now,
     answered,
+    { unattended },
   ).open.length;
 }
 
