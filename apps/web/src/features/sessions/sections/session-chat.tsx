@@ -154,7 +154,9 @@ export function SessionChat({
         <div
           ref={scroller}
           tabIndex={-1}
-          className="scrollbar-strong min-h-0 flex-1 overflow-y-auto pt-6 pb-4 outline-none [overflow-anchor:none]"
+          // The column's width, as the terminal's grid scrolls in its own: the
+          // scrollbar stands beside the text, not at the pane's far edge.
+          className="scrollbar-strong mx-auto min-h-0 w-full max-w-190 flex-1 overflow-y-auto pt-6 pb-4 outline-none [overflow-anchor:none]"
         >
           <TerminalColumn ref={content} className="flex min-h-full flex-col">
             {loading ? (
