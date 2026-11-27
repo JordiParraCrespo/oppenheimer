@@ -3,10 +3,9 @@ import { Wrench } from '@oppenheimer/design-system-web/icons';
 import { useTranslation } from 'react-i18next';
 
 /**
- * The wrench in a bot chat's bar that shows or hides the tool calls in the
- * transcript, the routine runs that did nothing else, and the lines for the
- * tasks a followed project changed; lit while they are shown. Props in,
- * choice out.
+ * The wrench in a bot chat's bar that switches between its two views
+ * (`useToolCallsShown`): the quiet chat, and the one that shows the bot's
+ * work; lit while the work is shown. Props in, choice out.
  */
 export function ToolCallsToggle({
   shown,
