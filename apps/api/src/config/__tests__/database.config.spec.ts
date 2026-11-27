@@ -112,4 +112,21 @@ describe('poolOptions', () => {
       connectionTimeoutMillis: 0,
     });
   });
+
+  it('refuses the development password, or none, in production', () => {
+    for (const password of ['oppenheimer', '', undefined]) {
+      expect(() => withEnv({ NODE_ENV: 'production', DB_PASSWORD: password })).toThrow(
+        /DB_PASSWORD/,
+      );
+    }
+  });
+
+  it('boots production on a password of its own, and development on the default', () => {
+    expect(withEnv({ NODE_ENV: 'production', DB_PASSWORD: 'kV9s2LrQ7tXw' }).password).toBe(
+      'kV9s2LrQ7tXw',
+    );
+    expect(withEnv({ NODE_ENV: 'development', DB_PASSWORD: undefined }).password).toBe(
+      'oppenheimer',
+    );
+  });
 });
