@@ -157,3 +157,45 @@ export function isIpAllowed(
   if (!address) return false;
   return allowlist.some((entry) => matchesIpRule(entry, address));
 }
+
+/** Is every address the rule `inner` admits also admitted by the rule `outer`? */
+function ruleWithin(inner: string, outer: string): boolean {
+  const a = parseRule(inner);
+  const b = parseRule(outer);
+  if (!a || !b) return false;
+  let bytes = a.bytes;
+  let bits = a.bits;
+  // A sixteen-byte rule holds an IPv4 one as its mapped range.
+  if (b.bytes.length === 16 && bytes.length === 4) {
+    bytes = mappedIPv6(bytes);
+    bits += 96;
+  }
+  if (bytes.length !== b.bytes.length || bits < b.bits) return false;
+  return prefixEquals(bytes, b.bytes, b.bits);
+}
+
+function prefixEquals(left: number[], right: number[], bits: number): boolean {
+  const wholeBytes = Math.floor(bits / 8);
+  for (let index = 0; index < wholeBytes; index += 1) {
+    if (left[index] !== right[index]) return false;
+  }
+  const remainder = bits % 8;
+  if (remainder === 0) return true;
+  const mask = 0xff << (8 - remainder);
+  return (left[wholeBytes] & mask) === (right[wholeBytes] & mask);
+}
+
+/**
+ * Does the allowlist `inner` admit only addresses `outer` admits? An empty or
+ * absent `outer` admits any, so anything is within it; an empty or absent
+ * `inner` admits any, so it is within only such an `outer`. A malformed entry
+ * is within nothing.
+ */
+export function allowlistWithin(
+  inner: readonly string[] | null | undefined,
+  outer: readonly string[] | null | undefined,
+): boolean {
+  if (!outer || outer.length === 0) return true;
+  if (!inner || inner.length === 0) return false;
+  return inner.every((entry) => outer.some((rule) => ruleWithin(entry, rule)));
+}

@@ -7,7 +7,7 @@ import { AuthErrors } from '../../auth/domain/auth.errors';
 import type { ScopeContext, ScopedRequest } from '../../auth/domain/scope-context.types';
 import { API_TOKEN_REPOSITORY } from '../api-tokens.di-tokens';
 import type { ApiTokenRepositoryPort } from '../database/api-token.repository.port';
-import { isLastUseStale } from '../domain/api-token.entity';
+import { API_TOKEN_CREDENTIAL_KIND, isLastUseStale } from '../domain/api-token.entity';
 import { ApiTokenErrors } from '../domain/api-token.errors';
 import { hashApiTokenSecret, isApiTokenSecret } from '../domain/api-token-secret.factory';
 
@@ -21,7 +21,7 @@ import { hashApiTokenSecret, isApiTokenSecret } from '../domain/api-token-secret
  */
 @Injectable()
 export class ApiTokenCredentialResolver implements CredentialResolverPort {
-  readonly kind = 'api-token';
+  readonly kind = API_TOKEN_CREDENTIAL_KIND;
 
   private readonly logger = new Logger(ApiTokenCredentialResolver.name);
 
@@ -69,6 +69,7 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
       scopes: token.scopes,
       resourceScope: token.resourceScope,
       expiresAt: token.expiresAt,
+      ipAllowlist: token.ipAllowlist,
       prefix: token.prefix,
     };
   }

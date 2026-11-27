@@ -42,6 +42,11 @@ export interface UserCredentialContext {
   scopes: Scope[];
   resourceScope: ResourceScope;
   expiresAt: Date | null;
+  /**
+   * The addresses and CIDR blocks the credential is accepted from, when its
+   * kind confines it (an API token's allowlist); absent or `null` for any.
+   */
+  ipAllowlist?: readonly string[] | null;
   /** Display prefix of an API token, for logs and error messages. */
   prefix?: string;
 }
