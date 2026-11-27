@@ -1,10 +1,9 @@
 import { useFeatureFlag } from '@oppenheimer/frontend-core/react';
 import { Navigate } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import { BotChatSlotContext } from '@/features/inbox/hooks/use-bot-chat-slot';
 import { useInboxSearch } from '@/features/inbox/hooks/use-inbox-search';
+import { InboxSlotsContext } from '@/features/inbox/hooks/use-inbox-slot';
 import { useForgetVisitOnLeave } from '@/features/inbox/hooks/use-inbox-visit';
-import { SessionChatSlotContext } from '@/features/inbox/hooks/use-session-chat-slot';
 import { InboxListColumn } from '@/features/inbox/sections/inbox-list-column';
 import { InboxReader } from '@/features/inbox/sections/inbox-reader';
 
@@ -31,13 +30,11 @@ export function InboxScreen({
 
   if (!enabled) return <Navigate to="/sessions/new" replace />;
   return (
-    <BotChatSlotContext value={botChat ?? null}>
-      <SessionChatSlotContext value={sessionChat ?? null}>
-        <div className="flex min-h-0 flex-1">
-          <InboxListColumn reading={item !== null} />
-          <InboxReader reading={item !== null} />
-        </div>
-      </SessionChatSlotContext>
-    </BotChatSlotContext>
+    <InboxSlotsContext value={{ bot: botChat ?? null, session: sessionChat ?? null }}>
+      <div className="flex min-h-0 flex-1">
+        <InboxListColumn reading={item !== null} />
+        <InboxReader reading={item !== null} />
+      </div>
+    </InboxSlotsContext>
   );
 }

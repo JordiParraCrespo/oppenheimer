@@ -1,17 +1,13 @@
-import {
-  Button,
-  InboxMessage,
-  InboxMessageActions,
-  InboxMessageBody,
-} from '@oppenheimer/design-system-web';
+import { Button, InboxMessage, InboxMessageBody } from '@oppenheimer/design-system-web';
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
 import { useInboxHold } from '@/features/inbox/hooks/use-inbox-hold';
-import { useSessionChatSlot } from '@/features/inbox/hooks/use-session-chat-slot';
+import { useInboxSlot } from '@/features/inbox/hooks/use-inbox-slot';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
+import { InboxReplyHere } from '@/features/inbox/sections/inbox-reply-here';
 
 /**
  * A session whose turn ended thirty minutes ago and that nobody has opened
@@ -36,7 +32,7 @@ export function InboxUnattendedCard({
   age: string;
 }) {
   const { t } = useTranslation();
-  const session = useSessionChatSlot();
+  const session = useInboxSlot('session');
   const [replying, setReplying] = useState(false);
   const sessionId = item.session.id;
   useInboxHold(item, replying);
@@ -49,34 +45,26 @@ export function InboxUnattendedCard({
       age={age}
     >
       <InboxMessageBody>{copy.body}</InboxMessageBody>
-      <InboxMessageActions>
-        {session ? (
+      <InboxReplyHere
+        id={`inbox-session-chat-${item.key}`}
+        slot={session ? () => session(sessionId) : null}
+        open={replying}
+        onOpenChange={setReplying}
+        labels={{
+          reply: t('inbox.unattended.reply'),
+          hide: t('inbox.unattended.hideReply'),
+          pane: t('inbox.unattended.chat', { name: copy.sender }),
+        }}
+        link={
           <Button
             variant="secondary"
-            aria-expanded={replying}
-            aria-controls={`inbox-session-chat-${item.key}`}
-            onClick={() => setReplying((open) => !open)}
+            render={<Link to="/sessions/$sessionId" params={{ sessionId }} />}
           >
-            {replying ? t('inbox.unattended.hideReply') : t('inbox.unattended.reply')}
+            {t('inbox.session.open')}
           </Button>
-        ) : null}
-        <Button
-          variant="secondary"
-          render={<Link to="/sessions/$sessionId" params={{ sessionId }} />}
-        >
-          {t('inbox.session.open')}
-        </Button>
-      </InboxMessageActions>
-      {session && replying ? (
-        <section
-          id={`inbox-session-chat-${item.key}`}
-          aria-label={t('inbox.unattended.chat', { name: copy.sender })}
-          data-swipe-ignore
-          className="flex h-120 max-h-[70dvh] flex-col overflow-hidden rounded-lg border border-border-subtle bg-term-bg"
-        >
-          {session(sessionId)}
-        </section>
-      ) : null}
+        }
+        className="overflow-hidden bg-term-bg"
+      />
     </InboxMessage>
   );
 }

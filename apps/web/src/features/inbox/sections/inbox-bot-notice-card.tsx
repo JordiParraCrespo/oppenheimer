@@ -1,16 +1,12 @@
-import {
-  Button,
-  InboxMessage,
-  InboxMessageActions,
-  InboxMessageBody,
-} from '@oppenheimer/design-system-web';
+import { Button, InboxMessage, InboxMessageBody } from '@oppenheimer/design-system-web';
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
-import { useBotChatSlot } from '@/features/inbox/hooks/use-bot-chat-slot';
+import { useInboxSlot } from '@/features/inbox/hooks/use-inbox-slot';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
+import { InboxReplyHere } from '@/features/inbox/sections/inbox-reply-here';
 
 /**
  * A line a bot sent you (its `notify` tool): its words as the body, and two
@@ -32,7 +28,7 @@ export function InboxBotNoticeCard({
   age: string;
 }) {
   const { t } = useTranslation();
-  const chat = useBotChatSlot();
+  const chat = useInboxSlot('bot');
   const [replying, setReplying] = useState(false);
   const botId = item.notice.botId;
   return (
@@ -44,35 +40,23 @@ export function InboxBotNoticeCard({
       age={age}
     >
       <InboxMessageBody>{copy.body}</InboxMessageBody>
-      <InboxMessageActions>
-        {chat ? (
-          <Button
-            variant="secondary"
-            aria-expanded={replying}
-            aria-controls={`inbox-bot-chat-${item.key}`}
-            onClick={() => setReplying((open) => !open)}
-          >
-            {replying ? t('inbox.botNotice.hideReply') : t('inbox.botNotice.reply')}
+      <InboxReplyHere
+        id={`inbox-bot-chat-${item.key}`}
+        slot={chat ? () => chat(botId) : null}
+        open={replying}
+        onOpenChange={setReplying}
+        labels={{
+          reply: t('inbox.botNotice.reply'),
+          hide: t('inbox.botNotice.hideReply'),
+          pane: t('inbox.botNotice.chat', { bot: copy.sender }),
+        }}
+        link={
+          <Button variant="secondary" render={<Link to="/bots/$botId" params={{ botId }} />}>
+            {t('inbox.botNotice.openChat')}
           </Button>
-        ) : null}
-        <Button variant="secondary" render={<Link to="/bots/$botId" params={{ botId }} />}>
-          {t('inbox.botNotice.openChat')}
-        </Button>
-      </InboxMessageActions>
-      {/* The transcript scrolls in its own pane; a question, an approval and
-          the composer stand under it at their own height. Taller than the
-          panel (a question of four options on a phone), the panel scrolls,
-          so none of them is cut off. */}
-      {chat && replying ? (
-        <section
-          id={`inbox-bot-chat-${item.key}`}
-          aria-label={t('inbox.botNotice.chat', { bot: copy.sender })}
-          data-swipe-ignore
-          className="flex h-120 max-h-[70dvh] flex-col overflow-y-auto rounded-lg border border-border-subtle bg-chat-ground"
-        >
-          {chat(botId)}
-        </section>
-      ) : null}
+        }
+        className="overflow-y-auto bg-chat-ground"
+      />
     </InboxMessage>
   );
 }
