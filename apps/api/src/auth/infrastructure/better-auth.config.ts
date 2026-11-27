@@ -4,7 +4,7 @@ import { Logger } from '@nestjs/common';
 import { organizationSharedOptions, userAdditionalFields } from '@oppenheimer/auth';
 import { DEFAULT_OAUTH_SCOPES, PASSWORD_MIN_LENGTH, SCOPES } from '@oppenheimer/shared';
 import { betterAuth } from 'better-auth';
-import { createAuthMiddleware, getSessionFromCtx } from 'better-auth/api';
+import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api';
 import { admin, bearer, mcp, organization } from 'better-auth/plugins';
 import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { Pool } from 'pg';
@@ -14,7 +14,7 @@ import { CompleteSignUpCommand } from '../commands/complete-sign-up/complete-sig
 import { RotateDelegatedSessionsCommand } from '../commands/rotate-delegated-sessions/rotate-delegated-sessions.command';
 import { standingChangeOf } from './admin-ban-hook.util';
 import { authIpAddressOptions } from './auth-client-ip.util';
-import { dispatchFromAuthHook } from './auth-command-bus.util';
+import { dispatchFromAuthHook, dispatchFromAuthHookOrFail } from './auth-command-bus.util';
 import { authRateLimit } from './auth-rate-limit.util';
 import { betterAuthSecondaryStorage, sessionStore } from './better-auth-secondary-storage.adapter';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
@@ -210,18 +210,40 @@ export const auth = betterAuth({
     // the new password (the web flow already lands on /login on success).
     // `changePassword` offers the same thing through `revokeOtherSessions`.
     revokeSessionsOnPasswordReset: true,
-    // Sessions are not all a reset has to take back: an API token or an OAuth
-    // grant outlives them, and the reset is how a real owner recovers an
-    // address someone registered first. Awaited by Better Auth before it
-    // answers, and best-effort like every dispatch from a hook.
+    // Sessions are not all a reset has to take back: API tokens, OAuth (MCP)
+    // grants and unexchanged authorization codes outlive them, and the reset
+    // is how a real owner recovers an address someone registered first. The
+    // command writes the account's credential cutoff and deletes those in one
+    // transaction. What it does not take back: paired hosts and routine
+    // webhook URLs, which instead cannot be created before the email is
+    // verified (`mayIssueCredential`), and an OAuth exchange already past the
+    // grant gate at the instant of the reset (milliseconds).
+    //
+    // Unlike every other hook this one fails the request: a reset answered 200
+    // with no cutoff written would tell the owner the account is theirs while
+    // every token stays alive. Better Auth awaits it after it has stored the
+    // new password and spent the link, and before it deletes the sessions
+    // (better-auth/dist/api/routes/password.mjs), so a failure leaves the new
+    // password in place and the sessions alive, and the owner asks for a new
+    // link. That retry is safe: the command is idempotent, and the second
+    // reset's success is what deletes the sessions.
     onPasswordReset: async ({ user }) => {
-      await dispatchFromAuthHook(
-        new CompletePasswordResetCommand({ userId: user.id, resetAt: new Date() }),
-        {
-          description: 'revoke the credentials of an account whose password was reset',
-          userId: user.id,
-        },
-      );
+      try {
+        await dispatchFromAuthHookOrFail(
+          new CompletePasswordResetCommand({ userId: user.id, resetAt: new Date() }),
+          {
+            description: 'revoke the credentials of an account whose password was reset',
+            userId: user.id,
+          },
+        );
+      } catch {
+        // Logged with its stack by the dispatch; an `APIError` keeps Better
+        // Auth from dumping it again and answers a body the client can read.
+        throw new APIError('INTERNAL_SERVER_ERROR', {
+          message:
+            'The password was changed, but the credentials issued before it could not be revoked. Request a new reset link and reset it again.',
+        });
+      }
     },
     sendResetPassword: async ({ user, url }) => {
       await emailQueue.add('password-reset', {

@@ -965,6 +965,11 @@ describe('API tokens & scopes (integration)', () => {
 
   /** "Forgot password", followed through: the reset link's token, then the new password. */
   async function resetPassword(account: { id: string; email: string }) {
+    const reset = await attemptPasswordReset(account);
+    expect(reset.ok).toBe(true);
+  }
+
+  async function attemptPasswordReset(account: { id: string; email: string }) {
     const requested = await fetch(`${baseUrl}/api/auth/request-password-reset`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -984,7 +989,7 @@ describe('API tokens & scopes (integration)', () => {
         newPassword: 'Integration-test-password-2',
       }),
     });
-    expect(reset.ok).toBe(true);
+    return reset;
   }
 
   // Pre-account squatting: someone registers the victim's address first and
@@ -1167,6 +1172,38 @@ describe('API tokens & scopes (integration)', () => {
         const pat = (minted.body as { token: string }).token;
         expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(200);
       });
+    });
+
+    // Regression: the hook's dispatch swallowed the failure, so a reset whose
+    // transaction threw answered 200 with no cutoff written and every token
+    // alive. The next reset, from a new link, is what takes them back.
+    it('answers an error when the credentials could not be revoked, and a retry revokes them', async () => {
+      const owner = await signUp('failed-reset@example.com');
+      const minted = await call('/api/v1/tokens', {
+        method: 'POST',
+        token: owner.sessionToken,
+        body: { name: 'survives a failed reset', scopes: ['tokens:read'] },
+      });
+      expect(minted.status).toBe(201);
+      const pat = (minted.body as { token: string }).token;
+      const { CompletePasswordResetCommandHandler } = await import(
+        '../../auth/commands/complete-password-reset/complete-password-reset.command-handler'
+      );
+      const execute = vi
+        .spyOn(app.get(CompletePasswordResetCommandHandler), 'execute')
+        .mockRejectedValueOnce(new Error('the reset transaction failed'));
+
+      const failed = await attemptPasswordReset(owner);
+
+      expect(failed.ok).toBe(false);
+      expect(failed.status).toBe(500);
+      expect(execute).toHaveBeenCalledTimes(1);
+      execute.mockRestore();
+      expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(200);
+
+      await resetPassword(owner);
+
+      expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(401);
     });
 
     // Regression: a code issued before the reset stayed redeemable for its

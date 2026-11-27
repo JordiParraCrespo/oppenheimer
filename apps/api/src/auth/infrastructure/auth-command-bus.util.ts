@@ -52,6 +52,41 @@ export async function dispatchFromAuthHook(
 }
 
 /**
+ * Run a use case from a Better Auth hook that must not be reported as done
+ * when the use case is not: the failure is logged like
+ * {@link dispatchFromAuthHook}'s, then thrown, so the endpoint that awaited
+ * the hook answers an error instead of success.
+ *
+ * Only for a hook Better Auth awaits inside its endpoint (`onPasswordReset`);
+ * a throw from a `databaseHooks.*.after` would go unhandled. Without a command
+ * bus it throws as well: a process that cannot run the use case cannot claim
+ * it ran.
+ */
+export async function dispatchFromAuthHookOrFail(
+  command: CommandBase,
+  context: { description: string; email?: string; userId?: string },
+): Promise<void> {
+  const account = { email: context.email, userId: context.userId };
+  if (!commandBus) {
+    logger.error({
+      message: `No command bus registered; cannot ${context.description}`,
+      ...account,
+    });
+    throw new Error(`No command bus registered; cannot ${context.description}`);
+  }
+
+  try {
+    await commandBus.execute(command);
+  } catch (error) {
+    logger.error(
+      { message: `Could not ${context.description}`, ...account },
+      error instanceof Error ? error.stack : String(error),
+    );
+    throw error;
+  }
+}
+
+/**
  * Hands the running application's `CommandBus` to the hooks, and takes it back
  * when the module goes away — otherwise a test that rebuilds the module leaves
  * the variable above pointing at a `CommandBus` whose injector is gone.
