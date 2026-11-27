@@ -2171,6 +2171,15 @@ earlier note:
   no room while it stepped aside, so the tabs narrowed when a session was
   created. Tabs are now 160px, and the plus keeps its room on New session
   ("no layout shift when creating a new session").
+- `versions/mvp/29-inbox.md` ("A finished turn, a long wait, and a mute",
+  2026-11-24) told a session left amber or blue for thirty minutes with a
+  browser notification. On 2026-11-27 the owner asked for that reminder to
+  be an Inbox item instead: a session left unread (blue) for thirty minutes
+  is listed as waiting to move forward, the notification is gone, and a
+  check in the sessions sidebar's menu, on by default, turns it off ("A
+  session left unattended is an Inbox item"); its card opens the session,
+  streamed, to reply in, as a bot's notice opens the bot's chat, and a
+  row's Mute notifications keeps that one session out of it.
 - Notes 05 and 25 called the middle permission level, sessions' and bots'
   alike, "Approve for me". It is now "Auto" (2026-11-27): the same level,
   stored as `auto`, under a shorter name the owner asked for.

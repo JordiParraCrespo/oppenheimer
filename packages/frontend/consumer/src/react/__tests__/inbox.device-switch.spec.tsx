@@ -1,6 +1,10 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { useInboxAlertsOn, useMutedSessionAlerts } from '../inbox.queries';
+import {
+  useInboxAlertsOn,
+  useMutedSessionAlerts,
+  useUnattendedSessionsShown,
+} from '../inbox.queries';
 
 /**
  * "Notify me in this browser" is one switch for the whole browser: turned off
@@ -20,6 +24,22 @@ describe('the per-device switches', () => {
       );
     });
     expect(result.current[0]).toBe(false);
+  });
+
+  // The regression: a switch that is on by default read as off on a device
+  // that never stored it, and as off again when another tab cleared storage.
+  it('start on when on by default, and fall back to on when another tab clears it', () => {
+    const { result } = renderHook(() => useUnattendedSessionsShown());
+    expect(result.current[0]).toBe(true);
+    act(() => result.current[1](false));
+    expect(result.current[0]).toBe(false);
+    act(() => {
+      localStorage.removeItem('oppenheimer.inbox.unattended');
+      window.dispatchEvent(
+        new StorageEvent('storage', { key: 'oppenheimer.inbox.unattended', newValue: null }),
+      );
+    });
+    expect(result.current[0]).toBe(true);
   });
 
   it('ignore another key changing', () => {

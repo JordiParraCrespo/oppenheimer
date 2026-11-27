@@ -1748,6 +1748,10 @@ export type SessionResponseDto = {
      */
     hidden: boolean;
     /**
+     * The finished turn nobody has read yet (`ready-for-review`, the console’s blue dot), named the same while it stays unread, whatever else the log records: what `POST /sessions/{id}/report/acknowledge` reads. Null when there is none or it was read.
+     */
+    unreadReport: string | null;
+    /**
      * What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.
      */
     hints: Array<string>;

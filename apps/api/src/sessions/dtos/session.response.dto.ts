@@ -322,6 +322,15 @@ export class SessionResponseDto {
   hidden!: boolean;
 
   @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'The finished turn nobody has read yet (`ready-for-review`, the console’s blue dot), named the same while it stays unread, whatever else the log records: what `POST /sessions/{id}/report/acknowledge` reads. Null when there is none or it was read.',
+    example: 'turn:42',
+  })
+  unreadReport!: string | null;
+
+  @ApiProperty({
     isArray: true,
     type: String,
     description:

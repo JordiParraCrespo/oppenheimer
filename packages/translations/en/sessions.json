@@ -418,6 +418,7 @@
     "showAll": "Show all projects",
     "pinnedOnly": "Pinned only",
     "showHidden": "Show hidden sessions",
+    "unattended": "Remind me after 30 minutes unread",
     "newProject": "New project…",
     "allStatuses": "All statuses",
     "statuses": {
