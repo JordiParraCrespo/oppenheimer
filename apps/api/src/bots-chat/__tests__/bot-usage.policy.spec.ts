@@ -64,3 +64,39 @@ describe('botUsageOf', () => {
     });
   });
 });
+
+describe("botUsageOf, a bot's advisor", () => {
+  // What breaks this: an Opus advisor's tokens read as the Sonnet turn's
+  // model (its share, and its price), or counted twice, once as a model and
+  // once as a call outside the turns.
+  it('gives the advisor a share of its own model, merged with a turn on the same one', () => {
+    const turn = {
+      provider: 'anthropic' as const,
+      model: 'claude-sonnet-5-5',
+      turns: 6,
+      ...counts(180_000, 5_000),
+      activeMs: 1_000,
+      firstAt: new Date('2026-11-27T09:00:00Z'),
+    };
+    const usage = botUsageOf({
+      turns: [turn],
+      background: [],
+      advisor: [{ provider: 'anthropic', model: 'claude-opus-5-5', ...counts(17_000, 2_000) }],
+    });
+    expect(usage.models).toEqual([
+      { provider: 'anthropic', model: 'claude-sonnet-5-5', turns: 6, ...counts(180_000, 5_000) },
+      { provider: 'anthropic', model: 'claude-opus-5-5', turns: 0, ...counts(17_000, 2_000) },
+    ]);
+    expect(usage.background).toEqual([]);
+    expect(usage.turns).toBe(6);
+
+    const same = botUsageOf({
+      turns: [{ ...turn, model: 'claude-opus-5-5' }],
+      background: [],
+      advisor: [{ provider: 'anthropic', model: 'claude-opus-5-5', ...counts(17_000, 2_000) }],
+    });
+    expect(same.models).toEqual([
+      { provider: 'anthropic', model: 'claude-opus-5-5', turns: 6, ...counts(197_000, 7_000) },
+    ]);
+  });
+});

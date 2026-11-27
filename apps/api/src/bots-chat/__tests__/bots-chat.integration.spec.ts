@@ -3545,7 +3545,7 @@ describe('bots chat (integration)', () => {
   // queued turn that never ran counted; a sum read as a string; what a goal
   // review spent missing from /usage, or outliving the chat it was for.
   describe('usage (25-bots.md §4.1, /usage)', () => {
-    it('sums the turns that ran by model, and the calls outside them by purpose', async () => {
+    it("sums the turns that ran by model, the advisor's calls by theirs, and the calls outside them by purpose", async () => {
       const bot = await create('Spender');
       const ran = await runningTurn(bot);
       ran.end('completed', new Date((ran.startedAt ?? new Date()).getTime() + 2_000), {
@@ -3570,6 +3570,16 @@ describe('bots chat (integration)', () => {
       await usage.recordCall({ ...call, purpose: 'goal_review' });
       await usage.recordCall({ ...call, purpose: 'goal_review' });
       await usage.recordCall({ ...call, purpose: 'summary' });
+      // An advisor's consultations, twice: a share of the advisor's own
+      // model, never a call outside the turns counted as theirs.
+      const advised = {
+        ...call,
+        purpose: 'advisor' as const,
+        provider: 'anthropic' as const,
+        model: 'claude-opus-5-5',
+      };
+      await usage.recordCall(advised);
+      await usage.recordCall(advised);
 
       const found = await usage.findForBot(bot.organizationId, bot.id);
       expect(found).toMatchObject({ turns: 1, activeMs: 2_000 });
@@ -3583,6 +3593,15 @@ describe('bots chat (integration)', () => {
           outputTokens: 40,
           cacheReadTokens: 800,
           cacheWriteTokens: 100,
+        },
+        {
+          provider: 'anthropic',
+          model: 'claude-opus-5-5',
+          turns: 0,
+          inputTokens: 600,
+          outputTokens: 10,
+          cacheReadTokens: 400,
+          cacheWriteTokens: 0,
         },
       ]);
       expect(found.background).toEqual([

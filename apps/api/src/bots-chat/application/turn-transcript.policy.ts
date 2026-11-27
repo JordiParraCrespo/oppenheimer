@@ -57,8 +57,9 @@ export type TranscriptWrite =
   /** The engine waits to try a refused call again; passed on, never stored. */
   | { kind: 'retrying'; reason: 'rate_limit' | 'unavailable' }
   /**
-   * What the turn's advisor spent: recorded with the bot's other model calls,
-   * priced as the advisor's model, never added to the turn's own counts.
+   * What the turn's advisor spent: recorded as the bot's model call, priced
+   * as the advisor's model (its own share on `/usage`), never added to the
+   * turn's own counts.
    */
   | { kind: 'advisor'; usage: BotAdvisorUsage };
 

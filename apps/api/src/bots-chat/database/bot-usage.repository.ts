@@ -19,9 +19,9 @@ const TOKEN_SUMS = `
 
 /**
  * What a bot spends: its turns summed by model (`IDX_bot_turn_bot`), only those
- * that started, and its calls outside them summed by purpose
- * (`IDX_bot_model_call_bot`). Two grouped reads, each a handful of rows
- * whatever the chat's length.
+ * that started, its calls outside them summed by purpose, and its advisor's
+ * calls summed by the model that answered (`IDX_bot_model_call_bot`). Three
+ * grouped reads, each a handful of rows whatever the chat's length.
  */
 @Injectable()
 export class BotUsageRepository
@@ -53,7 +53,7 @@ export class BotUsageRepository
   }
 
   async findForBot(organizationId: string, botId: string): Promise<BotUsage> {
-    const [turns, calls]: [SumRow[], SumRow[]] = await Promise.all([
+    const [turns, calls, advised]: [SumRow[], SumRow[], SumRow[]] = await Promise.all([
       this.repository.query(
         `SELECT provider, model, count(*)::int AS turns, ${TOKEN_SUMS},
                 sum(extract(epoch FROM (coalesce("endedAt", now()) - "startedAt")) * 1000)::bigint AS "activeMs",
@@ -66,8 +66,15 @@ export class BotUsageRepository
       this.repository.query(
         `SELECT purpose, count(*)::int AS calls, ${TOKEN_SUMS}
            FROM bot_model_call
-          WHERE "organizationId" = $1 AND "botId" = $2
+          WHERE "organizationId" = $1 AND "botId" = $2 AND purpose <> 'advisor'
           GROUP BY purpose`,
+        [organizationId, botId],
+      ),
+      this.repository.query(
+        `SELECT provider, model, ${TOKEN_SUMS}
+           FROM bot_model_call
+          WHERE "organizationId" = $1 AND "botId" = $2 AND purpose = 'advisor'
+          GROUP BY provider, model`,
         [organizationId, botId],
       ),
     ]);
@@ -89,6 +96,11 @@ export class BotUsageRepository
       background: calls.map((row) => ({
         purpose: String(row.purpose) as BotModelCallPurpose,
         calls: tokenCount(row.calls),
+        ...counts(row),
+      })),
+      advisor: advised.map((row) => ({
+        provider: String(row.provider) as BotProvider,
+        model: String(row.model),
         ...counts(row),
       })),
     });

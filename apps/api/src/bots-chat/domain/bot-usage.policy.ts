@@ -27,7 +27,35 @@ export interface BotModelCall extends BotTokenCounts {
 /** What the read of a bot's turns and calls answers, before it is put together. */
 export interface BotUsageRows {
   turns: (BotUsageModel & { activeMs: number; firstAt: Date })[];
+  /** Every purpose but `advisor`. */
   background: BotUsageBackground[];
+  /** The advisor's calls, by the model that answered them. */
+  advisor?: (BotTokenCounts & { provider: BotProvider; model: string })[];
+}
+
+/**
+ * The models a chat's tokens were spent on: its turns', and its advisor's,
+ * which is another model priced as itself, so it is a share of its own (on
+ * the turns' row when a turn ran on that model too) rather than a call
+ * outside the turns counted as the turns' model.
+ */
+function modelsOf(rows: BotUsageRows): BotUsageModel[] {
+  const models = rows.turns.map(({ activeMs: _active, firstAt: _first, ...model }) => ({
+    ...model,
+  }));
+  for (const advised of rows.advisor ?? []) {
+    const { provider, model, ...counts } = advised;
+    const row = models.find((each) => each.provider === provider && each.model === model);
+    if (!row) {
+      models.push({ provider, model, turns: 0, ...counts });
+      continue;
+    }
+    row.inputTokens += counts.inputTokens;
+    row.outputTokens += counts.outputTokens;
+    row.cacheReadTokens += counts.cacheReadTokens;
+    row.cacheWriteTokens += counts.cacheWriteTokens;
+  }
+  return models;
 }
 
 /** A count as Postgres may hand it back (a `bigint` sum is a string), never below zero. */
@@ -50,9 +78,7 @@ export function botUsageOf(rows: BotUsageRows): BotUsage {
     since: firstAt ? firstAt.toISOString() : null,
     turns: rows.turns.reduce((sum, row) => sum + row.turns, 0),
     activeMs: rows.turns.reduce((sum, row) => sum + row.activeMs, 0),
-    models: rows.turns
-      .map(({ activeMs: _active, firstAt: _first, ...model }) => model)
-      .sort((a, b) => spent(b) - spent(a)),
+    models: modelsOf(rows).sort((a, b) => spent(b) - spent(a)),
     background: [...rows.background].sort(
       (a, b) =>
         BOT_MODEL_CALL_PURPOSES.indexOf(a.purpose) - BOT_MODEL_CALL_PURPOSES.indexOf(b.purpose),

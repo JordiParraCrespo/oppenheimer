@@ -17,7 +17,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * - What the advisor spends is priced as its own model, not the turn's, so
  *   it is counted with the bot's other model calls under a purpose of its
  *   own (`advisor`), with the advisor's model, rather than added to the
- *   turn's counts.
+ *   turn's counts; `/usage` shows it as that model's share.
  *
  * `down()` drops the advisor's rows first, then restores the purpose check
  * without it, then the column.

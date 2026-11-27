@@ -74,8 +74,8 @@ worker runs it and streams what happens back to the chat.
   as it runs, kept only when the turn's own model takes it, and a guest's
   turn, which gets no engine tools, gets no advisor. What a consultation
   spends is priced as the advisor's model, so it is not added to the
-  turn's counts: it is the bot's model call under its own purpose,
-  `advisor`, its own line on `/usage`. Claude Code reads the setting only
+  turn's counts: it is stored as the bot's model call under its own
+  purpose, `advisor`, and `/usage` shows it as that model's share. Claude Code reads the setting only
   behind a feature gate that our environment turns off, so the engine opens
   it (`CLAUDE_CODE_ENABLE_EXPERIMENTAL_ADVISOR_TOOL`), rechecked with each
   SDK upgrade. One consultation measured at twice the cost of the Sonnet
@@ -2732,4 +2732,5 @@ The decisions it produced:
   first, set per bot. It is Anthropic's own tool, so only Anthropic's
   models take one, each from Anthropic's pairing table, and z.ai's GLM,
   OpenAI, ChatGPT and Grok offer none. Its spend is counted apart, on its
-  own model, as a model call with the purpose `advisor`.
+  own model, as a model call with the purpose `advisor`, and `/usage` shows
+  it as that model's share.

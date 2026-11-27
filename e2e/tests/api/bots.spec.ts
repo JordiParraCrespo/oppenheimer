@@ -257,6 +257,35 @@ test.describe('Bots', () => {
     await api.dispose();
   });
 
+  // What breaks this: an advisor stored that the bot's model does not take,
+  // which Anthropic refuses with a 400 on every turn, or one kept past a
+  // change of model or provider that drops it.
+  test("a bot's advisor is kept only while its model takes it", async () => {
+    const { api } = await signedUpContext();
+    const bot = await ok<Bot>(await api.post('/api/v1/bots', { data: {} }), 201);
+    const patch = async (data: Record<string, unknown>) =>
+      ok<Bot & { advisorModel: string | null }>(
+        await api.patch(`/api/v1/bots/${bot.id}`, { data }),
+      );
+
+    expect(
+      await patch({
+        provider: 'anthropic',
+        model: 'claude-sonnet-5-5',
+        advisorModel: 'claude-opus-5-5',
+      }),
+    ).toMatchObject({ model: 'claude-sonnet-5-5', advisorModel: 'claude-opus-5-5' });
+    expect(await patch({ effort: 'low' })).toMatchObject({ advisorModel: 'claude-opus-5-5' });
+    expect(await patch({ model: 'claude-fable-5-2' })).toMatchObject({ advisorModel: null });
+    expect(
+      await patch({ model: 'claude-sonnet-5-5', advisorModel: 'claude-opus-4-8' }),
+    ).toMatchObject({ advisorModel: null });
+    await patch({ advisorModel: 'claude-opus-5-5' });
+    expect(await patch({ provider: 'glm' })).toMatchObject({ provider: 'glm', advisorModel: null });
+    expect(await patch({ advisorModel: 'claude-opus-5-5' })).toMatchObject({ advisorModel: null });
+    await api.dispose();
+  });
+
   // What breaks this: a bot given a heartbeat on its own again, an hourly
   // model turn its owner never asked for.
   test('a bot is given no heartbeat when it gets a job', async () => {

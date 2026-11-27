@@ -2170,4 +2170,4 @@ earlier note:
 - `versions/mvp/25-bots.md` §1 kept a bot's engine as its provider, model
   and effort. Since 2026-11-27 an Anthropic bot also has an advisor, a
   stronger Claude model it may consult mid-turn, kept valid with the other
-  three, and what it spends is its own line on `/usage` (§2).
+  three, and what it spends is that model's own share on `/usage` (§2).
