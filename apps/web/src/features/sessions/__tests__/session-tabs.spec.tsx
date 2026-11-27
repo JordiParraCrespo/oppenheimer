@@ -164,4 +164,41 @@ describe('the tabs over Sessions', () => {
     expect(screen.getAllByRole('link').map((link) => link.textContent)).toEqual(['Fix login']);
     expect(container.querySelectorAll('[data-slot="chat-tab"]')).toHaveLength(3);
   });
+
+  it("opens a tab's menu on a right-click, and its closes leave the strip and the screen as a browser's do", async () => {
+    lists.sessions = [
+      sessionEntity({ id: 'a', name: 'Fix login' }),
+      sessionEntity({ id: 'b', name: 'New website' }),
+      sessionEntity({ id: 'c', name: 'Retry policy' }),
+    ];
+    openFirst('a', 'b', 'c');
+    render(<SessionTabs shown={{ kind: 'session', id: 'c' }} bot={noBot} />);
+    const names = () => screen.getAllByRole('link').map((link) => link.textContent);
+
+    // The first tab has nothing to its left.
+    fireEvent.contextMenu(screen.getByRole('link', { name: 'Fix login' }));
+    const left = await screen.findByRole('menuitem', { name: 'sessions.tabs.menu.closeLeft' });
+    expect(left.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(screen.getByRole('menuitem', { name: 'sessions.tabs.menu.closeRight' }));
+    // The page on screen closed with them: the tab whose menu it was is shown.
+    expect(names()).toEqual(['Fix login', 'Retry policy']);
+    expect(navigate).toHaveBeenLastCalledWith({
+      to: '/sessions/$sessionId',
+      params: { sessionId: 'a' },
+    });
+  });
+
+  it('goes to New session when the menu closes every tab', async () => {
+    lists.sessions = [
+      sessionEntity({ id: 'a', name: 'Fix login' }),
+      sessionEntity({ id: 'b', name: 'New website' }),
+    ];
+    openFirst('a', 'b');
+    render(<SessionTabs shown={{ kind: 'session', id: 'a' }} bot={noBot} />);
+
+    fireEvent.contextMenu(screen.getByRole('link', { name: 'New website' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'sessions.tabs.menu.closeAll' }));
+    expect(navigate).toHaveBeenLastCalledWith({ to: '/sessions/new' });
+    expect(window.localStorage.getItem('oppenheimer.sessions.tabs')).toBe('[]');
+  });
 });
