@@ -6,7 +6,7 @@ import {
   type SessionEffort,
   type SessionPermission,
 } from '../agents/catalog.js';
-import { CLAUDE_ADVISORS } from '../agents/claude-advisors.js';
+import { claudeAdvisorsFor } from '../agents/claude-advisors.js';
 import { GROK_4_5_LEVELS, GROK_LEVELS, levels } from '../agents/effort-levels.js';
 import type { GithubEventType } from '../automations/catalog.js';
 import { isValidTimeZone } from '../automations/schedule.js';
@@ -229,8 +229,8 @@ export interface BotModel {
   readonly legacy?: true;
   /**
    * The models this one may consult mid-turn as its advisor, strongest
-   * first (`CLAUDE_ADVISORS`). Absent: it takes none, and the console offers
-   * no advisor.
+   * first (`claudeAdvisorsFor`). Absent: it takes none, and the console
+   * offers no advisor.
    */
   readonly advisors?: readonly string[];
 }
@@ -282,9 +282,7 @@ export const BOT_PROVIDER_CATALOG: Readonly<Record<BotProvider, BotProviderDefin
       label: 'Anthropic',
       models: Object.freeze(
         CODING_AGENTS['claude-code'].models.map((row) => {
-          // A model advising itself is left out: Claude Code reports both
-          // under one model, so what the advisor spent could not be told apart.
-          const advisors = (CLAUDE_ADVISORS[row.id] ?? []).filter((id) => id !== row.id);
+          const advisors = claudeAdvisorsFor(row.id);
           return advisors.length
             ? Object.freeze({ ...row, advisors: Object.freeze(advisors) })
             : row;

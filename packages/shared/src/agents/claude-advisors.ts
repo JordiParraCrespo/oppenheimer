@@ -48,8 +48,11 @@ const FOR_OPUS_4_6 = Object.freeze([
 /** Haiku 4.5 and Sonnet 4.6: every model above, and Sonnet 4.6. */
 const FOR_HAIKU_4_5 = Object.freeze([...FOR_OPUS_4_6, 'claude-sonnet-4-6']);
 
-/** By the model a turn runs on. A model absent here takes no advisor. */
-export const CLAUDE_ADVISORS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+/**
+ * Anthropic's table, by the model a turn runs on, as Anthropic publishes it:
+ * self-pairs included. What a bot is offered is `claudeAdvisorsFor`.
+ */
+const CLAUDE_ADVISORS: Readonly<Record<string, readonly string[]>> = Object.freeze({
   'claude-opus-5-5': FOR_OPUS_5,
   'claude-opus-5': FOR_OPUS_5,
   'claude-fable-5': FOR_OPUS_5,
@@ -66,3 +69,14 @@ export const CLAUDE_ADVISORS: Readonly<Record<string, readonly string[]>> = Obje
   'claude-haiku-4-5': FOR_HAIKU_4_5,
   'claude-sonnet-4-6': FOR_HAIKU_4_5,
 });
+
+/**
+ * The advisors a bot on `model` is offered, strongest first: Anthropic's
+ * table without the model itself. Anthropic allows a model to advise itself,
+ * but Claude Code reports both under one model, so what the advisor spent
+ * could not be told apart from the turn's; so Fable 5.2, whose only advisor
+ * is itself, is offered none. Empty for a model the table does not list.
+ */
+export function claudeAdvisorsFor(model: string): readonly string[] {
+  return (CLAUDE_ADVISORS[model] ?? []).filter((advisor) => advisor !== model);
+}
