@@ -145,8 +145,8 @@ For "{{name}}": {{engineLabel}} does not take effort "{{effort}}". {{levelsCount
 
 <!-- fragment: engine-update-for-advisor-refusal -->
 
-For "{{name}}": {{engineLabel}} does not take "{{advisor}}" as its advisor. {{advisorsCount}} Leave advisor_model out to keep the current one.
+For "{{name}}": {{engineLabel}} does not take "{{advisor}}" as its advisor. {{advisorsCount}} Name one it takes, or null for none.
 
 <!-- fragment: bots-updated-answer -->
 
-- {{id}} "{{name}}": runs on {{engineLabel}} (provider {{provider}}, model {{model}}, effort {{effort}}); permission {{permission}}
+- {{id}} "{{name}}": runs on {{engineLabel}} (provider {{provider}}, model {{model}}, effort {{effort}}, advisor {{advisor}}); permission {{permission}}

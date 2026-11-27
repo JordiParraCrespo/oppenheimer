@@ -19,6 +19,7 @@ import {
   toUpdateBotBody,
   type UpdateBotsInput,
 } from '../bot-peer-tool.mapper';
+import { describeBotAdvisor } from '../domain/bot-advisor.policy';
 import { describeBotEffort } from '../domain/bot-effort.policy';
 import { promptText } from '../domain/bot-prompt-text.policy';
 
@@ -257,6 +258,7 @@ export function botsUpdatedAnswer(
             provider: bot.provider,
             model: bot.model ?? 'default',
             effort: describeBotEffort(bot),
+            advisor: describeBotAdvisor(bot),
             permission: BOT_PERMISSION_LABELS[bot.permission],
           }),
         ),
