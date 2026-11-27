@@ -14,7 +14,7 @@ import { type ShellConfig, ShellProvider } from '../hooks/use-shell';
 import { resolveContentPane, screenHasNoSidebar, screenOwnsBar } from '../lib/pane';
 import { AppSidebar } from './app-sidebar';
 import { CommandPalette } from './command-palette';
-import { SidebarToggle } from './page-bar';
+import { FloatingSidebarToggle } from './page-bar';
 import { PageFrame } from './page-frame';
 import { TopBar } from './top-bar';
 
@@ -109,7 +109,7 @@ export function AppShell({ children, ...config }: ShellConfig & { children: Reac
                   PANE_BAR_CHIP,
                 )}
               >
-                <SidebarToggle floating />
+                <FloatingSidebarToggle />
               </header>
             )}
             <div ref={setBar} className="shrink-0 empty:hidden" />

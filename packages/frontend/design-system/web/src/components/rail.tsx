@@ -45,9 +45,9 @@ const RAIL = {
   column: 'relative w-14 flex-col justify-start gap-1.5 border-border-subtle border-r bg-sidebar py-3.5',
 };
 
-/** The phone's tab-bar look of an item, applied only inside a responsive rail under 768px. */
+/** The phone's tab-bar look of an item (`rail-bar:`, `globals.css`). */
 const BAR_ITEM =
-  'max-md:group-data-[layout=responsive]/rail:h-full max-md:group-data-[layout=responsive]/rail:w-auto max-md:group-data-[layout=responsive]/rail:min-w-0 max-md:group-data-[layout=responsive]/rail:flex-1 max-md:group-data-[layout=responsive]/rail:flex-col max-md:group-data-[layout=responsive]/rail:gap-0.5 max-md:group-data-[layout=responsive]/rail:rounded-[1.625rem]';
+  'rail-bar:h-full rail-bar:w-auto rail-bar:min-w-0 rail-bar:flex-1 rail-bar:flex-col rail-bar:gap-0.5 rail-bar:rounded-[1.625rem]';
 
 /** What a page beside the rail reserves at its foot, so the phone's floating bar never covers it. */
 const RAIL_BAR_CLEARANCE = 'pb-[calc(var(--spacing)*22+env(safe-area-inset-bottom))] md:pb-0';
@@ -146,14 +146,14 @@ function RailItem({
           <span
             aria-hidden
             data-slot="rail-item-label"
-            className="hidden w-full truncate px-0.5 text-center font-medium text-[0.6875rem] leading-tight max-md:group-data-[layout=responsive]/rail:block"
+            className="hidden w-full truncate px-0.5 text-center font-medium text-[0.6875rem] leading-tight rail-bar:block"
           >
             {shortLabel ?? label}
           </span>
           {attention ? (
             <span
               aria-hidden
-              className="absolute top-1.5 right-1.5 size-1.75 rounded-pill bg-warning ring-2 ring-sidebar max-md:group-data-[layout=responsive]/rail:top-2 max-md:group-data-[layout=responsive]/rail:right-auto max-md:group-data-[layout=responsive]/rail:left-[calc(50%+var(--spacing)*1.5)] max-md:group-data-[layout=responsive]/rail:ring-popover"
+              className="absolute top-1.5 right-1.5 size-1.75 rounded-pill bg-warning ring-2 ring-sidebar rail-bar:top-2 rail-bar:right-auto rail-bar:left-[calc(50%+var(--spacing)*1.5)] rail-bar:ring-popover"
             />
           ) : null}
           <RailTip count={hasCount ? count : undefined} countId={countId}>

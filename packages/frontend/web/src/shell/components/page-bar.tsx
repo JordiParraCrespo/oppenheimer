@@ -12,13 +12,8 @@ const FLOATING =
  * same). The shell leads every console page's bar with it; a screen that
  * draws a toolbar of its own (`staticData.bar: 'own'`, a pull request's)
  * leads that toolbar with it.
- *
- * `floating`: on a phone it is a 42px round button standing on the popover
- * surface with its shadow, the one way to the area's list from a page, so it
- * reads as a button at thumb size rather than a glyph in the corner. From
- * 768px it is the quiet glyph like everywhere else.
  */
-export function SidebarToggle({ floating = false }: { floating?: boolean }) {
+export function SidebarToggle({ className }: { className?: string }) {
   const { t } = useTranslation();
   const { toggleSidebar } = useSidebar();
   return (
@@ -27,13 +22,23 @@ export function SidebarToggle({ floating = false }: { floating?: boolean }) {
       size="sm"
       // Over an image a screen lays under the whole pane it stands on a frosted chip.
       data-pane-chrome
-      className={floating ? FLOATING : undefined}
+      className={className}
       aria-label={t('nav.toggleSidebar')}
       onClick={toggleSidebar}
     >
       <PanelLeft />
     </IconButton>
   );
+}
+
+/**
+ * The toggle a page on its own ground leads with: on a phone a 42px round
+ * button on the popover surface with its shadow, the one way to the area's
+ * list, so it reads as a button at thumb size rather than a glyph in the
+ * corner. From 768px it is the quiet glyph like everywhere else.
+ */
+export function FloatingSidebarToggle() {
+  return <SidebarToggle className={FLOATING} />;
 }
 
 /** The terminal's ground with a hairline under it (`tone="ground"`), the bar a session or a bot's chat stands under. */
@@ -96,7 +101,7 @@ export function PageBar({
         leading={
           <>
             {/* On the page's own ground it floats on a phone as the shell's does; over tabs or the terminal it stays quiet. */}
-            <SidebarToggle floating={tone === 'page'} />
+            {tone === 'page' ? <FloatingSidebarToggle /> : <SidebarToggle />}
             {leading}
           </>
         }

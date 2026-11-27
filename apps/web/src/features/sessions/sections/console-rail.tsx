@@ -92,7 +92,7 @@ export function ConsoleRail() {
                   key={id}
                   id={id}
                   label={t(entry.labelKey)}
-                  shortLabel={'shortLabelKey' in entry ? t(entry.shortLabelKey) : undefined}
+                  shortLabel={t(entry.shortLabelKey)}
                   count={counts[id]}
                   attention={attentions[id]}
                   active={lists.includes(list)}
