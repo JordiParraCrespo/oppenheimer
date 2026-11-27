@@ -52,3 +52,22 @@ again, `told-only-that-session-already-said`) is one run in 20. Claude
 Code's own dollar figures swing with prompt caching, so the tokens are the
 comparison. Whether an advisor earns its cost needs cases the bot fails at
 medium, which no bot eval has yet.
+
+### Then on Haiku 5.5, where the bot does miss (2026-11-27)
+
+| Eval (Haiku 5.5, medium) | alone | with an Opus 5.5 advisor | Advisor consulted |
+| --- | --- | --- | --- |
+| `bot-blocked-run` | 20/20 | 20/20 | never |
+| `bot-session-unblock` | 18/18 | 18/18 | never |
+| `bot-check-back` | 10/14 | 8/14; nudged 11/14 | never; nudged 3 of 14 |
+| `bot-first-chat` | 8/12 | 7/12 | never |
+| `bot-merge-train` `hard-train` | 6/8 | 5/8; nudged 8/8 | never; nudged 8 of 8 |
+
+Offered an advisor, the bot does not consult it, even where it misses. Told
+to consult it before acting (`BOT_EVAL_ADVISOR_NUDGE`), it does, and on the
+multi-step case the advice fixes every miss; on `bot-check-back` it does
+not. Sonnet 5.5 alone gets the multi-step case right as well, for less than
+Haiku with its advisor (`../bot-merge-train/README.md`). Across about 230
+advisor runs the evidence is that the advisor adds nothing a stronger model
+choice does not.
+

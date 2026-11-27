@@ -278,7 +278,13 @@ function claudeCode(model: string): Transport['turn'] {
         options: {
           model,
           // As the engine sends it (`claudeSystemPrompt`): how to call the tools on Claude Code.
-          systemPrompt: claudeSystemPrompt({ systemPrompt: request.system, tools: request.tools }),
+          systemPrompt: claudeSystemPrompt({
+            systemPrompt:
+              advisor && EVAL_ADVISOR_NUDGE
+                ? `${request.system}\n\n${ADVISOR_NUDGE}`
+                : request.system,
+            tools: request.tools,
+          }),
           cwd,
           tools: deferring ? ['ToolSearch'] : [],
           allowedTools: [
@@ -352,6 +358,15 @@ const EVAL_EFFORT = process.env.BOT_EVAL_EFFORT as
   | 'xhigh'
   | 'max'
   | undefined;
+/**
+ * `BOT_EVAL_ADVISOR_NUDGE`: with an advisor, one line more in the bot's
+ * system prompt telling it to consult the advisor before it acts, to
+ * measure whether advice it is made to ask for changes what it gets right.
+ */
+// biome-ignore lint/suspicious/noUndeclaredEnvVars: a root script, not a Turborepo task — nothing caches its output.
+const EVAL_ADVISOR_NUDGE = process.env.BOT_EVAL_ADVISOR_NUDGE === '1';
+const ADVISOR_NUDGE =
+  'You have an advisor. Before you take an action that changes something (a merge, a session, a message sent, a look set or not set), call the advisor once with what you plan to do, and weigh its answer.';
 const spent = new Map<string, { turns: number; input: number; output: number; usd: number }>();
 
 function tally(usage: Record<string, unknown> | undefined): void {
