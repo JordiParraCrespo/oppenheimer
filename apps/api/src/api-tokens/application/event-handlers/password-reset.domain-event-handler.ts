@@ -25,7 +25,9 @@ export class PasswordResetDomainEventHandler {
     private readonly apiTokens: ApiTokenRepositoryPort,
   ) {}
 
-  @OnEvent(PasswordResetDomainEvent.name)
+  // `suppressErrors: false`: a failure is thrown for the outbox to retry; swallowed,
+  // the event would be marked delivered with the credential still live.
+  @OnEvent(PasswordResetDomainEvent.name, { suppressErrors: false })
   async handle(event: PasswordResetDomainEvent): Promise<void> {
     const revoked = await this.apiTokens.revokeIssuedBefore(
       event.userId,

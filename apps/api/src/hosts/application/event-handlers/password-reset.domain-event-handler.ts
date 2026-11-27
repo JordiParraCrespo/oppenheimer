@@ -37,7 +37,9 @@ export class PasswordResetUnpairsHostsDomainEventHandler {
     private readonly hosts: HostRepositoryPort,
   ) {}
 
-  @OnEvent(PasswordResetDomainEvent.name)
+  // `suppressErrors: false`: a failure is thrown for the outbox to retry; swallowed,
+  // the event would be marked delivered with the credential still live.
+  @OnEvent(PasswordResetDomainEvent.name, { suppressErrors: false })
   async handle(event: PasswordReset): Promise<void> {
     const resetAt = new Date(event.resetAt);
     const now = new Date();

@@ -32,7 +32,9 @@ export class PasswordResetRevokesWebhooksDomainEventHandler {
     private readonly webhooks: AutomationWebhookRepositoryPort,
   ) {}
 
-  @OnEvent(PasswordResetDomainEvent.name)
+  // `suppressErrors: false`: a failure is thrown for the outbox to retry; swallowed,
+  // the event would be marked delivered with the credential still live.
+  @OnEvent(PasswordResetDomainEvent.name, { suppressErrors: false })
   async handle(event: PasswordReset): Promise<void> {
     const revoked = await this.webhooks.revokeIssuedUnverified(
       await this.workspaces.ownedBy(event.userId),
