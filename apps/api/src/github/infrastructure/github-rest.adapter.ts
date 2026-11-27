@@ -7,6 +7,7 @@ import type {
   GithubAppPort,
   GithubBranch,
   GithubInstallationClaim,
+  GithubOrganizationMembership,
   GithubRepository,
   GithubRepositoryToken,
   GithubUserAuthorization,
@@ -37,7 +38,7 @@ const APP_JWT_CLOCK_SKEW_SECONDS = 60;
  */
 interface RawInstallation {
   id: number;
-  account: { login?: unknown; slug?: unknown; type?: unknown } | null;
+  account: { id?: unknown; login?: unknown; slug?: unknown; type?: unknown } | null;
   repository_selection: string;
   suspended_at?: string | null;
 }
@@ -73,6 +74,12 @@ interface RawOauthToken {
   error?: string;
 }
 
+/** `GET /user/memberships/orgs/{org}`: `state` is `active` or `pending`, `role` is `admin`, `member` or `billing_manager`. */
+interface RawOrganizationMembership {
+  state?: unknown;
+  role?: unknown;
+}
+
 interface RawUser {
   id: number;
   login: string;
@@ -80,7 +87,7 @@ interface RawUser {
 
 /**
  * What the App does on GitHub, on the platform `fetch` (through
- * {@link GithubHttp}, the module's one client) and `node:crypto`: seven
+ * {@link GithubHttp}, the module's one client) and `node:crypto`: a few
  * endpoints, an RS256 JWT and one pagination rule do not earn a client library
  * to keep current, audit and resolve at install time. GitHub's failures become
  * this module's problem documents, or they would reach a client as a bare 500
@@ -88,7 +95,8 @@ interface RawUser {
  *
  * Each call names the budget GitHub counts it against: `app` for the App's JWT,
  * `installation:<id>` for an installation's token, `oauth` for the install
- * flow (the person's id is not known until its last call, and it runs once).
+ * flow (the person's id is not known until its last call, and it runs once),
+ * `user:<githubUserId>` for what the install's user token asks after that.
  *
  * **Nothing here logs a response body.** The access-token endpoint answers with
  * a live credential, and a log line is the easiest place to leak one.
@@ -147,6 +155,38 @@ export class GithubRestAdapter implements GithubAppPort {
     };
   }
 
+  async readOrganizationMembership(
+    authorization: GithubUserAuthorization,
+    organizationLogin: string,
+  ): Promise<GithubOrganizationMembership | null> {
+    this.assertConfigured();
+
+    try {
+      const { body } = await this.request<RawOrganizationMembership>(
+        `${this.api}/user/memberships/orgs/${encodeURIComponent(organizationLogin)}`,
+        {
+          bucket: `user:${authorization.user.githubUserId}`,
+          token: authorization.tokens.accessToken,
+          // Not a member, or the App lacks Members: read. Both are "cannot
+          // prove it", which the caller refuses; a rate limit is not caught here.
+          onStatus: {
+            403: GithubErrors.INSTALLATION_NOT_CLAIMABLE,
+            404: GithubErrors.INSTALLATION_NOT_CLAIMABLE,
+          },
+        },
+      );
+      return { active: body.state === 'active', admin: body.role === 'admin' };
+    } catch (error) {
+      if (
+        error instanceof AppError &&
+        error.code === GithubErrors.INSTALLATION_NOT_CLAIMABLE.code
+      ) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
   async refreshUserToken(refreshToken: string): Promise<GithubUserTokens> {
     this.assertConfigured();
     return this.exchangeCode({ grant_type: 'refresh_token', refresh_token: refreshToken });
@@ -176,6 +216,7 @@ export class GithubRestAdapter implements GithubAppPort {
     return {
       githubInstallationId: body.id,
       accountLogin: accountLoginOf(body),
+      accountId: accountIdOf(body),
       accountType: accountTypeOf(body),
       repositorySelection: body.repository_selection === 'all' ? 'all' : 'selected',
       suspendedAt: body.suspended_at ? new Date(body.suspended_at) : null,
@@ -478,6 +519,19 @@ function accountLoginOf(installation: RawInstallation): string {
   if (typeof account?.slug === 'string' && account.slug) return account.slug;
   throw new AppError(GithubErrors.UPSTREAM_FAILED, {
     detail: 'GitHub described this installation without an account.',
+    extensions: { githubInstallationId: installation.id },
+  });
+}
+
+/**
+ * The account's numeric id, which a claim is proven against. Refused when
+ * absent: a claim checked against a made-up id proves nothing.
+ */
+function accountIdOf(installation: RawInstallation): number {
+  const id = installation.account?.id;
+  if (typeof id === 'number' && Number.isSafeInteger(id) && id > 0) return id;
+  throw new AppError(GithubErrors.UPSTREAM_FAILED, {
+    detail: 'GitHub described this installation without an account id.',
     extensions: { githubInstallationId: installation.id },
   });
 }

@@ -72,6 +72,10 @@ const DEFAULTS: GithubStubOptions = {
   viewerLogin: 'ana-dev',
 };
 
+/** GitHub's ids for the stub's organization and for whoever authorizes the App. */
+const STUB_ORGANIZATION_ID = 91_004_417;
+const STUB_VIEWER_ID = 583_231;
+
 function readBody(request: IncomingMessage): Promise<unknown> {
   return new Promise((resolve) => {
     let raw = '';
@@ -112,7 +116,7 @@ export async function startGithubStub(
   function installationOf(id: number) {
     return {
       id,
-      account: { login: options.accountLogin, type: 'Organization' },
+      account: { login: options.accountLogin, id: STUB_ORGANIZATION_ID, type: 'Organization' },
       repository_selection: 'selected',
       suspended_at: null,
     };
@@ -144,7 +148,27 @@ export async function startGithubStub(
 
       // Who authorized: the reviews and merges made with that token are theirs.
       if (path === '/user') {
-        return json(response, 200, { id: 583_231, login: options.viewerLogin, type: 'User' });
+        return json(response, 200, {
+          id: STUB_VIEWER_ID,
+          login: options.viewerLogin,
+          type: 'User',
+        });
+      }
+
+      // Whoever authorizes owns the stub's organization: a claim on its
+      // installation needs an active admin membership, and any other
+      // organization is GitHub's 404 for "not a member".
+      const membership = /^\/user\/memberships\/orgs\/([^/]+)$/.exec(path);
+      if (membership) {
+        const org = decodeURIComponent(membership[1]);
+        return org === options.accountLogin
+          ? json(response, 200, {
+              state: 'active',
+              role: 'admin',
+              organization: { login: options.accountLogin, id: STUB_ORGANIZATION_ID },
+              user: { login: options.viewerLogin, id: STUB_VIEWER_ID },
+            })
+          : json(response, 404, { message: 'Not Found' });
       }
 
       const answered = pulls.handle(method, path, url.searchParams, body);

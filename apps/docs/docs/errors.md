@@ -389,6 +389,18 @@ which installations the authorizing account can see. Matching the installation's
 account login against a linked GitHub account instead would refuse every
 organization installation, where that login is the organization and not a user.
 
+Seeing an installation is not enough, because GitHub lists one for anyone with
+explicit access to a single repository it covers: an outside collaborator could
+otherwise connect an organization's whole installation to their own workspace.
+So `GITHUB_004` is also the answer, with a `detail` saying which, when the
+authorizing account does not control the installation's account: a personal
+installation connects only for that same GitHub account, and an organization's
+only for an active owner of it (`GET /user/memberships/orgs/{org}`, role
+`admin`). That read needs the App's **Members: read** organization permission;
+an App registered without it, or an installation whose owner has not accepted
+it, refuses every organization connect with a `detail` naming the permission,
+while personal installations still connect.
+
 `GITHUB_011` is the other half of that proof. The code binds a claim to *a*
 GitHub account, not to the console user whose browser posts it, so a callback
 URL someone stopped halfway through their own install would otherwise connect
