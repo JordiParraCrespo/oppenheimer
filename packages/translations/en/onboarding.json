@@ -37,7 +37,7 @@
       "unstarted": "This GitHub link was not started here. Connect GitHub again.",
       "connectedAll": "Every repository on the account",
       "connectedPending": "Connected",
-      "requested": "Request sent. An owner of the organization has to approve the install on GitHub. Once they have, choose Connect GitHub again and pick the organization to add its repositories here."
+      "requested": "Request sent. An owner of the organization has to approve the install on GitHub, then connect it here themselves: only an owner of the organization can connect its installation."
     },
     "host": {
       "title": "Add your first host",

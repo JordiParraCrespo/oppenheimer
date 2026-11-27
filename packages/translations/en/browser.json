@@ -328,7 +328,7 @@
       "GITHUB_001": "We could not find that GitHub installation.",
       "GITHUB_002": "GitHub is not configured on this server.",
       "GITHUB_003": "Another workspace has already connected that GitHub installation.",
-      "GITHUB_004": "GitHub does not show that installation for your account.",
+      "GITHUB_004": "Only the account an installation is on, or an owner of its organization, can connect it here, and GitHub must list it for you. If you are an owner, the GitHub App may be missing the Members: read permission.",
       "GITHUB_005": "That GitHub link has expired. Start the installation again.",
       "GITHUB_006": "Choose a workspace before connecting GitHub.",
       "GITHUB_007": "That GitHub webhook could not be verified.",
@@ -4874,7 +4874,7 @@
         "unstarted": "This GitHub link was not started here. Connect GitHub again.",
         "connectedAll": "Every repository on the account",
         "connectedPending": "Connected",
-        "requested": "Request sent. An owner of the organization has to approve the install on GitHub. Once they have, choose Connect GitHub again and pick the organization to add its repositories here."
+        "requested": "Request sent. An owner of the organization has to approve the install on GitHub, then connect it here themselves: only an owner of the organization can connect its installation."
       },
       "host": {
         "title": "Add your first host",
