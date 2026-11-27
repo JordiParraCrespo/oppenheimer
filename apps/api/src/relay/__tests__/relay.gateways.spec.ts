@@ -1901,6 +1901,30 @@ describe('browser attach socket', () => {
       });
     });
 
+    it('holds a watcher to one scrollback ask in flight', async () => {
+      // What breaks this: a guest asking in a loop, each page a frame ahead
+      // of every PTY frame on the host's link, starving the owner's terminals.
+      shareIs(true);
+      const { runner, browser } = await attachedThrough(shareTicket(true), ['attachment.history']);
+      const asked = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'history.ask', lines: 5000 }));
+      expect((await asked).text).toMatchObject({ type: 'attachment.history' });
+
+      // Asked again before its page came: dropped; the resize is what arrives.
+      const next = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'history.ask', lines: 5000 }));
+      browser.send(JSON.stringify({ type: 'resize', cols: 100, rows: 30 }));
+      expect((await next).text).toMatchObject({ type: 'session.resize' });
+
+      // Its page came: the next ask goes through.
+      const page = nextMessage(browser);
+      runner.send(JSON.stringify({ type: 'attachment.history.page', attachmentId: 1, text: '' }));
+      await page;
+      const again = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'history.ask', lines: 5000 }));
+      expect((await again).text).toMatchObject({ type: 'attachment.history' });
+    });
+
     it('never asks a runner that does not answer for the scrollback', async () => {
       // What breaks this: a message the runner does not know, sent to one that predates it.
       shareIs(true);

@@ -75,6 +75,12 @@ const MAX_INPUT_BYTES = 64 * 1024;
 const BROWSER_MAX_BUFFERED_BYTES = 4 * 1024 * 1024;
 
 /**
+ * How long a watcher's scrollback ask holds the next one back while its page
+ * has not come: longer than the host takes to read and send one.
+ */
+const HISTORY_ASK_WAIT_MS = 15_000;
+
+/**
  * How often an open attachment is judged again, the way its ticket was. What
  * can end one — a grant revoked, a membership removed (Better Auth writes it
  * and raises no event), an account banned, a session stopped — is either not
@@ -373,6 +379,8 @@ class BrowserAttachment implements AttachmentSink {
   private recheckTimer: NodeJS.Timeout | null = null;
   private rechecking = false;
   private attached = false;
+  /** When the scrollback ask now in flight was sent; null while none is. */
+  private historyAskedAt: number | null = null;
   private finished = false;
   /** A read-only share's attachment: no input, and the host told so. */
   private readonly readOnly: boolean;
@@ -504,6 +512,7 @@ class BrowserAttachment implements AttachmentSink {
   }
 
   history(message: AttachmentHistoryPageMessage): void {
+    this.historyAskedAt = null;
     if (this.finished || this.ws.readyState !== this.ws.OPEN) return;
     if (this.ws.bufferedAmount > BROWSER_MAX_BUFFERED_BYTES) {
       this.ws.close(1008, 'slow consumer');
@@ -574,6 +583,12 @@ class BrowserAttachment implements AttachmentSink {
   private historyAsk(lines: number): void {
     if (!this.attached || this.attachmentId === null) return;
     if (!this.link.capabilities.includes('attachment.history')) return;
+    // One ask in flight: a page is up to a frame and rides the host's link
+    // ahead of its PTY frames, so a guest asking in a loop would starve the
+    // owner's terminals. A page that never came frees the next ask in time.
+    const now = Date.now();
+    if (this.historyAskedAt !== null && now - this.historyAskedAt < HISTORY_ASK_WAIT_MS) return;
+    this.historyAskedAt = now;
     this.link.send({ type: 'attachment.history', attachmentId: this.attachmentId, lines });
   }
 

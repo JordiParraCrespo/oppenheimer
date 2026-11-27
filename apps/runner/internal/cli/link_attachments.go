@@ -68,9 +68,16 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch ui
 // a stuck one must not hold the next ask.
 const historyWait = 10 * time.Second
 
+// historyPace is the least time between two scrollback reads of one
+// attachment. A page is up to a frame, sent ahead of every PTY frame on the
+// link, so a guest asking in a loop would otherwise starve the owner's own
+// terminals; the console asks once per scroll back.
+const historyPace = time.Second
+
 // history answers the attachment's `attachment.history` asks while it is
-// open, one at a time, each with one `attachment.history.page`. A read that
-// fails answers with an empty page, so the console stops waiting.
+// open, one at a time and at most one a `historyPace`, each with one
+// `attachment.history.page`. A read or a send that fails answers with an
+// empty page, so the console stops waiting.
 func (h *linkHandler) history(ctx context.Context, att *attachment) {
 	for {
 		select {
@@ -87,10 +94,21 @@ func (h *linkHandler) history(ctx context.Context, att *attachment) {
 			if ctx.Err() != nil {
 				return
 			}
-			page, truncated := historyTail(text, link.AttachmentHistoryMaxBytes)
-			_ = h.client.Send(link.AttachmentHistoryPage{
+			// encoding/json would write each invalid byte as six.
+			page, truncated := historyTail(strings.ToValidUTF8(text, ""), link.AttachmentHistoryMaxBytes)
+			answer := link.AttachmentHistoryPage{
 				Type: link.TypeAttachmentHistoryPage, AttachmentID: att.id, Text: page, Truncated: truncated,
-			})
+			}
+			if err := h.client.Send(answer); err != nil {
+				h.logger.Debug("could not send the session's scrollback", slog.String("session", att.sessionID), slog.Any("error", err))
+				answer.Text, answer.Truncated = "", false
+				_ = h.client.Send(answer)
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(historyPace):
+			}
 		}
 	}
 }
@@ -114,9 +132,9 @@ func historyTail(text string, max int) (string, bool) {
 	return text, false
 }
 
-// jsonSize is how many bytes s takes as a JSON string's contents, the way
-// encoding/json writes it: control bytes, quotes, backslashes and the HTML
-// characters escaped.
+// jsonSize is how many bytes s, valid UTF-8, takes as a JSON string's
+// contents, the way encoding/json writes it: control bytes, quotes,
+// backslashes, the HTML characters and the line separators escaped.
 func jsonSize(s string) int {
 	size := 0
 	for i := 0; i < len(s); i++ {
@@ -125,6 +143,10 @@ func jsonSize(s string) int {
 			size += 2
 		case c < 0x20 || c == '<' || c == '>' || c == '&':
 			size += 6
+		case c == 0xe2 && i+2 < len(s) && s[i+1] == 0x80 && (s[i+2] == 0xa8 || s[i+2] == 0xa9):
+			// U+2028 and U+2029 go out escaped too: three bytes become six.
+			size += 6
+			i += 2
 		default:
 			size++
 		}

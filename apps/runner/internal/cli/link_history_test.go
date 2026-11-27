@@ -76,7 +76,7 @@ func TestAHistoryPageKeepsItsLastWholeLines(t *testing.T) {
 // escape byte is six: sized by its raw bytes, a colourful scrollback went
 // over the link's frame cap and was never sent, so the guest waited forever.
 func TestAColouredHistoryPageFitsOneFrame(t *testing.T) {
-	line := strings.Repeat("\x1b[32m<a&b>\x1b[0m", 20) + "\n"
+	line := strings.Repeat("\x1b[32m<a&b>\x1b[0m\u2028", 20) + "\n"
 	text := strings.Repeat(line, 20000)
 	page, cut := historyTail(text, link.AttachmentHistoryMaxBytes)
 	if !cut {
@@ -93,5 +93,36 @@ func TestAColouredHistoryPageFitsOneFrame(t *testing.T) {
 	}
 	if !strings.HasPrefix(page, "\x1b[32m") {
 		t.Fatalf("the page opens mid-line: %q", page[:20])
+	}
+}
+
+// A guest asking in a loop gets at most one page a pace: each page rides the
+// link ahead of every PTY frame, and the owner's terminals share that link.
+func TestScrollbackAsksArePaced(t *testing.T) {
+	pty := newHeldPTY(false)
+	h, sent, terminals := newAttachHarness(t, pty, nil)
+	h.Message(context.Background(), message(t, "session.attach", map[string]any{
+		"commandId": "55555555-5555-4555-8555-555555555555", "sessionId": sessionUnderTest,
+		"attachmentId": attachmentUnderTest, "window": 0, "cols": 80, "rows": 24, "readOnly": true,
+	}))
+	waitForAttachment(t, h)
+	terminals.scrollback = "line\n"
+	for range 20 {
+		h.Message(context.Background(), message(t, "attachment.history", map[string]any{
+			"attachmentId": attachmentUnderTest, "lines": 5000,
+		}))
+		time.Sleep(10 * time.Millisecond)
+	}
+	time.Sleep(100 * time.Millisecond)
+	sent.mu.Lock()
+	pages := 0
+	for _, m := range sent.sent {
+		if _, ok := m.(link.AttachmentHistoryPage); ok {
+			pages++
+		}
+	}
+	sent.mu.Unlock()
+	if pages != 1 {
+		t.Fatalf("%d pages sent for 20 asks in 300ms, want 1", pages)
 	}
 }
