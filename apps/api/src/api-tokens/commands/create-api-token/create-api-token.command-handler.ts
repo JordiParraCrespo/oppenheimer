@@ -62,6 +62,7 @@ export class CreateApiTokenCommandHandler
     if (beyondCredential.leavesOrganizations) {
       throw new AppError(ApiTokenErrors.SCOPES_EXCEED_GRANTER, {
         detail: 'A token minted with a token must be pinned within its organizations',
+        extensions: { ungrantableScopes: [] },
       });
     }
     await this.assertMemberOfRequestedOrganizations(command);
