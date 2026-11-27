@@ -23,6 +23,27 @@ at, what was wrong on them, and what is still open.
 | 5 | P1 if copied | Production booted on the placeholder `BETTER_AUTH_SECRET` in `.env.example`. Whoever knows the secret can forge session and preview cookies | A config test that fails on the old code | In production the API refuses a secret under 32 characters or containing `change-me` |
 | 6 | P2 | `docker/docker-compose.prod.yml` published the API on every interface (past nginx and, through Docker's own rules, past ufw) and fell back to the password `oppenheimer`; the dev compose exposed Postgres (known password) and Redis (none) on every interface | Read | Prod: no published API port, `DB_PASSWORD` required. Dev: both bound to `127.0.0.1` |
 
+## Fixed in a later layer
+
+On `claude/dazzling-darwin-pbdhdk-hardening`, on top of this pull request:
+
+- **H (the preview's own cookie).** It is `__Host-oppenheimer_preview`
+  (`Secure`, `Path=/`, no `Domain`), so a sibling preview cannot plant one;
+  every copy a request carries is tried, and every `Domain` is taken off an
+  app's `Set-Cookie`. A test with a planted copy first fails on the old code.
+- **I.** nginx logs `$uri`, never the query (the `Referer` cut at `?`);
+  `CSP_EXTRA_ORIGINS` is split into `CSP_CONNECT_ORIGINS` and
+  `CSP_SCRIPT_ORIGINS` (the old one now widens `connect-src` only); a control
+  character in a redirect path (`/\t/evil.example`) is refused by
+  `safePreviewPath` and `sanitizeRedirect`; the runner refuses a `host.exec`
+  `home` that is not one folder name (`EXEC_003`); `release-runner.yml` reads
+  its inputs through `env:` and checks them. Each with a test that fails on the
+  old code, but the nginx and workflow changes, which were read, not run.
+- **Two gaps the autoreview found in fix 2 and fix 6.** A token minted with an
+  API token may not outlive it or be accepted from addresses outside its IP
+  allowlist (`TOKEN_002`); production refuses `DB_PASSWORD=oppenheimer`, which
+  `.env.example` ships and satisfied the prod compose's required variable.
+
 ## Open: needs a decision
 
 | # | Severity | What | Proposed fix |
@@ -34,8 +55,8 @@ at, what was wrong on them, and what is still open.
 | E | P2 | A GitHub-triggered routine fires on events from **anyone** on a public repository (an issue, a comment), so a stranger can launch an agent session on the owner's host with text they wrote (wrapped as untrusted) | An "insiders only" filter on triggers, on by default for public repositories |
 | F | P2 | The `admin` platform role can promote itself to `superadmin` (`set-role`) | Leave `set-role` to `superadmin` |
 | G | P2 | Session tokens, OAuth access and refresh tokens, and social-login provider tokens are stored in plain text, so a database dump holds working credentials | Store digests (sessions) and encrypt (`account.encryptOAuthTokens`) |
-| H | P2 | All previews share one site, so a malicious dev server in one preview can set cookies for every other preview (break them, or fix a session into a dev app) | Put the preview domain on the Public Suffix List, or one registrable domain per preview |
-| I | P3 | Smaller: nginx access logs keep query strings (single-use tokens reach Loki); `CSP_EXTRA_ORIGINS` also widens `script-src`; a tab in a redirect path passes the open-redirect check; routine webhooks are unsigned by default; the runner joins `host.exec`'s `home` without a check (not reachable today); `release-runner.yml` puts inputs straight into `run:` | Each is a small change |
+| H | P2 | All previews share one site, so a malicious dev server in one preview can still set **app** cookies (`Domain=<preview domain>`) for every other preview's app (break it, or fix a session into it). The preview's own cookie can no longer be shadowed (below) | Put the preview domain on the Public Suffix List, or one registrable domain per preview (now in the `/session-previews` skill and `30-session-previews.md`) |
+| I | P3 | Routine webhooks are unsigned by default (the rest of this row is fixed below) | A small change |
 
 ## Checked and found sound
 
