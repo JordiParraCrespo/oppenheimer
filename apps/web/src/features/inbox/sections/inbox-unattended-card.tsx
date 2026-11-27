@@ -1,21 +1,25 @@
-import { Button, InboxMessage, InboxMessageBody } from '@oppenheimer/design-system-web';
+import {
+  Button,
+  InboxMessage,
+  InboxMessageActions,
+  InboxMessageBody,
+} from '@oppenheimer/design-system-web';
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
-import { useSendSessionPrompt } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { Link } from '@tanstack/react-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InboxKindIcon } from '@/features/inbox/components/inbox-kind-icon';
-import { SessionReplyForm } from '@/features/inbox/forms/session-reply-form';
+import { useSessionChatSlot } from '@/features/inbox/hooks/use-session-chat-slot';
 import type { InboxCopy } from '@/features/inbox/lib/inbox-copy';
-import { inboxVisit } from '@/features/inbox/lib/inbox-visit';
 
 /**
  * A session whose turn ended thirty minutes ago and that nobody has opened
- * since, with two ways to move it forward: a reply written here, typed into
- * the agent's prompt as its chat would (the session goes back to work and
- * leaves the Inbox), or Open session, which reads its turn. The dock's Done
- * puts it away without either. A refused reply (the agent went back to work
- * elsewhere, the host is offline) keeps the text and says why over Send.
+ * since, with two ways to move it forward. Reply here opens the session on
+ * the card, streamed as its own page draws it (its chat and its terminal),
+ * without reading its turn, so you see what it did and answer it without
+ * leaving the Inbox; once it goes back to work it leaves the list. Open
+ * session goes to its page, which reads the turn. The dock's Done puts it
+ * away without either.
  */
 export function InboxUnattendedCard({
   item,
@@ -29,9 +33,9 @@ export function InboxUnattendedCard({
   age: string;
 }) {
   const { t } = useTranslation();
-  const reply = useSendSessionPrompt();
+  const session = useSessionChatSlot();
+  const [replying, setReplying] = useState(false);
   const sessionId = item.session.id;
-
   return (
     <InboxMessage
       icon={<InboxKindIcon kind="unattended" />}
@@ -41,30 +45,34 @@ export function InboxUnattendedCard({
       age={age}
     >
       <InboxMessageBody>{copy.body}</InboxMessageBody>
-      <SessionReplyForm
-        id={`inbox-session-reply-${item.key}`}
-        pending={reply.isPending}
-        onSubmit={({ text }) =>
-          reply.mutate({ sessionId, text }, { onSuccess: () => inboxVisit.answered(item.key) })
-        }
-        alert={
-          reply.error ? (
-            <ErrorAlert
-              error={reply.error}
-              fallback={t('inbox.unattended.replyFailed')}
-              onDismiss={reply.reset}
-            />
-          ) : null
-        }
-        link={
+      <InboxMessageActions>
+        {session ? (
           <Button
             variant="secondary"
-            render={<Link to="/sessions/$sessionId" params={{ sessionId }} />}
+            aria-expanded={replying}
+            aria-controls={`inbox-session-chat-${item.key}`}
+            onClick={() => setReplying((open) => !open)}
           >
-            {t('inbox.session.open')}
+            {replying ? t('inbox.unattended.hideReply') : t('inbox.unattended.reply')}
           </Button>
-        }
-      />
+        ) : null}
+        <Button
+          variant="secondary"
+          render={<Link to="/sessions/$sessionId" params={{ sessionId }} />}
+        >
+          {t('inbox.session.open')}
+        </Button>
+      </InboxMessageActions>
+      {session && replying ? (
+        <section
+          id={`inbox-session-chat-${item.key}`}
+          aria-label={t('inbox.unattended.chat', { name: copy.sender })}
+          data-swipe-ignore
+          className="flex h-120 max-h-[70dvh] flex-col overflow-hidden rounded-lg border border-border-subtle bg-term-bg"
+        >
+          {session(sessionId)}
+        </section>
+      ) : null}
     </InboxMessage>
   );
 }

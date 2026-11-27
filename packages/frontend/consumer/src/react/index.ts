@@ -314,7 +314,6 @@ export {
   useRenameSession,
   useRestartSession,
   useRetrySession,
-  useSendSessionPrompt,
   useSession,
   useSessionOpening,
   useSessionShare,

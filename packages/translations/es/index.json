@@ -4301,12 +4301,10 @@
     "unattended": {
       "short": "{{name}} espera para seguir adelante",
       "title": "{{name}} lleva más de 30 minutos sin leer",
-      "body": "Su turno terminó y nadie la ha abierto desde entonces. Dale el siguiente paso aquí, o abre la sesión para leer lo que hizo.",
-      "replyLabel": "Responder al agente",
-      "replyPlaceholder": "Dile qué hacer ahora…",
-      "send": "Enviar",
-      "sending": "Enviando…",
-      "replyFailed": "No se pudo enviar tu respuesta. Inténtalo de nuevo o abre la sesión."
+      "body": "Su turno terminó y nadie la ha abierto desde entonces. Responde aquí para ver lo que hizo y darle el siguiente paso, o abre la sesión.",
+      "reply": "Responder aquí",
+      "hideReply": "Ocultar respuesta",
+      "chat": "{{name}}, en directo"
     },
     "notice": {
       "title": "{{name}} tiene novedades para ti"

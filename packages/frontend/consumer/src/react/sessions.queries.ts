@@ -614,37 +614,6 @@ export function useAnswerSessionDecision(
   });
 }
 
-export interface SendSessionPromptVariables {
-  sessionId: string;
-  text: string;
-}
-
-/**
- * Send a message to a session's agent from outside its chat (the Inbox's
- * Reply here): the API types it and submits it. The row the API answers
- * replaces the session's in every list at once, so a session that goes back
- * to work leaves what listed it as waiting, and the lists are read again
- * behind it.
- */
-export function useSendSessionPrompt(
-  options?: UseMutationOptions<SessionEntity, Error, SendSessionPromptVariables>,
-) {
-  const app = useConsumerApp();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ sessionId, text }: SendSessionPromptVariables) =>
-      app.sessions.sendPrompt(sessionId, text),
-    ...withCacheOnSuccess(options, (session) => {
-      queryClient.setQueryData(sessionsKeys.detail(session.id), session);
-      queryClient.setQueriesData<SessionEntity[]>({ queryKey: sessionsKeys.lists() }, (rows) =>
-        rows?.map((row) => (row.id === session.id ? session : row)),
-      );
-      void queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() });
-    }),
-  });
-}
-
 export interface CloseSessionVariables {
   id: string;
   acceptUnpushedWork?: boolean;

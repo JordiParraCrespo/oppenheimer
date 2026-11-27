@@ -713,12 +713,14 @@ turn it off. This replaces "A long wait is told once more" above:
   from the host's `observedSince`, is listed in the Inbox: "<name> is waiting
   to move forward", with Open session. Opening the session reads its turn
   and takes the item away; Done puts it away for that turn.
-- **Reply here.** The owner asked the same day to answer it on the card as
-  well: a box under the card types the reply into the agent's prompt
-  (`POST /sessions/{id}/prompt`, as a bot's `send_to_session` does), Enter
-  sends and Shift+Enter breaks the line. The session goes back to work and
-  leaves the Inbox; a refused reply (the agent is working again, the host is
-  offline) keeps the text and says why over Send. It is keyed by
+- **Reply here.** The owner asked the same day to answer it on the card,
+  as a bot's notice is: Reply here opens the session on the card, streamed
+  as its own page draws it (its chat and its terminal, typed into over the
+  terminal as there), without marking its turn read, so opening it does not
+  take the card away. Once the session goes back to work it leaves the list.
+  A first try with a bare text box sent through `POST /sessions/{id}/prompt`
+  was not what the owner meant ("it is not the session streamed"); it never
+  shipped. It is keyed by
   the session and when its turn ended (`unattended:<id>:<time>`, the host's
   `observedSince` else the turn-end event's time), so the next
   turn left unread comes back however the last one was marked. It counts

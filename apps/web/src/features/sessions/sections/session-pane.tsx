@@ -52,6 +52,7 @@ const SessionSidePane = lazy(() =>
 export function SessionPane({
   sessionId,
   restartOnOpen = false,
+  readOnOpen = true,
   closed,
   bar,
   terminal,
@@ -65,6 +66,12 @@ export function SessionPane({
    * not.
    */
   restartOnOpen?: boolean;
+  /**
+   * Whether drawing the pane reads the session's finished turn (its blue
+   * dot goes). On by default; off where that unread turn is what the pane is
+   * shown for (an Inbox card), so opening it does not take the card away.
+   */
+  readOnOpen?: boolean;
   /**
    * The live terminal, once the session has one: the screen composes it, with
    * whatever its status bar carries. `reading` is the session's chat and how
@@ -122,7 +129,7 @@ export function SessionPane({
   const [files] = useState(createFileHandOff);
   const { data: session, error } = useSuspenseSession(sessionId);
   // Opening a session reads what its last turn left: its blue dot goes.
-  useReadOnOpen(session);
+  useReadOnOpen(session, readOnOpen);
   useClearUnreadOnOpen(sessionId);
   const previewTabs: PreviewTab[] = [
     ...(browserOffered ? (['browser'] as const) : []),
