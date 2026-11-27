@@ -33,7 +33,8 @@ const TABS_GROUP = 'tabs';
  *
  * New session keeps the strip, the tabs open as they were, and ends it with
  * a lit New session tab of its own, which is not kept: the plus that leads
- * there steps aside while it shows, and leaving the page leaves no tab.
+ * there steps aside while it shows, its room kept so the tabs keep their
+ * width when the session is created, and leaving the page leaves no tab.
  *
  * A tab whose session or bot is gone (deleted here or on another device)
  * is left off once the list it belongs to has answered without it; until a
@@ -128,9 +129,13 @@ export function SessionTabs({
         </SortableGroup>
       </DragProvider>
       {shown ? null : (
-        <ChatTab active icon={<PlusIcon />} render={<Link to="/sessions/new" search={true} />}>
-          {t('sessions.tabs.new')}
-        </ChatTab>
+        <>
+          <ChatTab active icon={<PlusIcon />} render={<Link to="/sessions/new" search={true} />}>
+            {t('sessions.tabs.new')}
+          </ChatTab>
+          {/* The plus's room, kept while it steps aside, so no tab narrows when the session is created. */}
+          <span aria-hidden className="ml-0.5 size-(--control-h-sm) shrink-0" />
+        </>
       )}
     </ChatTabStrip>
   );

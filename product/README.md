@@ -2173,6 +2173,10 @@ earlier note:
   they open in the Claude app too; a switch in the console is the next
   pull request ("Remote Control for host sessions" in
   `next-steps/cloud-agents.md`).
+- Note 33 drew a session's tabs 240px wide, and New session's plus took
+  no room while it stepped aside, so the tabs narrowed when a session was
+  created. Tabs are now 160px, and the plus keeps its room on New session
+  ("no layout shift when creating a new session").
 - Notes 05 and 25 called the middle permission level, sessions' and bots'
   alike, "Approve for me". It is now "Auto" (2026-11-27): the same level,
   stored as `auto`, under a shorter name the owner asked for.
