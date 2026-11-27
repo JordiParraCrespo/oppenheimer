@@ -6,7 +6,7 @@ import { DEFAULT_OAUTH_SCOPES, PASSWORD_MIN_LENGTH, SCOPES } from '@oppenheimer/
 import { betterAuth } from 'better-auth';
 import { createAuthMiddleware } from 'better-auth/api';
 import { admin, bearer, mcp, organization } from 'better-auth/plugins';
-import { defaultAc, userAc } from 'better-auth/plugins/admin/access';
+import { adminAc, defaultAc, defaultStatements, userAc } from 'better-auth/plugins/admin/access';
 import { Pool } from 'pg';
 import { databaseConfigFromEnv, poolOptions } from '../../config/database.config';
 import { CompleteSignUpCommand } from '../commands/complete-sign-up/complete-sign-up.command';
@@ -24,48 +24,21 @@ import { mobileAppAuth } from './mobile-app-auth.util';
 import { sessionDeleteHooks } from './session-delete-hook.util';
 
 /**
- * Access-control roles for the admin plugin. Every name listed in `adminRoles`
- * must be defined here, so `superadmin` is given the full admin statement set
- * (including `impersonate-admins`, which plain `admin` lacks). `user` reuses
- * Better Auth's built-in role.
+ * Access-control roles for the admin plugin, derived from Better Auth's own
+ * so a permission it adds reaches them. Every name listed in `adminRoles` must
+ * be defined here; `user` reuses the built-in role. The two local decisions:
+ *
+ * - `superadmin` holds every admin statement, `impersonate-admins` included.
+ * - `admin` is Better Auth's `adminAc` without `set-role`. With it an `admin`
+ *   could make itself `superadmin` (`/admin/set-role`, or a `role` on
+ *   create-user or update-user, which Better Auth checks against the same
+ *   permission), and so gain every right kept from it. Who holds which
+ *   platform role is the `superadmin`'s call alone.
  */
-const superadminAc = defaultAc.newRole({
-  user: [
-    'create',
-    'list',
-    'set-role',
-    'ban',
-    'impersonate',
-    'impersonate-admins',
-    'delete',
-    'set-password',
-    'set-email',
-    'get',
-    'update',
-  ],
-  session: ['list', 'revoke', 'delete'],
-});
-
-/**
- * Better Auth's built-in `admin` without `set-role`. With it an `admin` could
- * make itself `superadmin` (`/admin/set-role`, or a `role` on create-user or
- * update-user, which Better Auth checks against the same permission), and so
- * gain `impersonate-admins` and every other right kept from it. Who holds which
- * platform role is the `superadmin`'s call alone.
- */
+const superadminAc = defaultAc.newRole(defaultStatements);
 const adminRoleAc = defaultAc.newRole({
-  user: [
-    'create',
-    'list',
-    'ban',
-    'impersonate',
-    'delete',
-    'set-password',
-    'set-email',
-    'get',
-    'update',
-  ],
-  session: ['list', 'revoke', 'delete'],
+  ...adminAc.statements,
+  user: adminAc.statements.user.filter((permission) => permission !== 'set-role'),
 });
 
 /** OIDC's standard scopes plus this deployment's own permission catalog. */
