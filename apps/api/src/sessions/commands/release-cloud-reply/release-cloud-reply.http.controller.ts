@@ -38,7 +38,9 @@ export class ReleaseCloudReplyHttpController {
   @HttpCode(HttpStatus.OK)
   @Version('1')
   @CheckPolicies({ action: 'update', subject: 'Session' })
-  @RequireScopes('sessions:write')
+  // Both: the person's sessions and their cloud chats. `sessions:write` alone
+  // (an `opp` or MCP token) never reads or takes the replies they type.
+  @RequireScopes('sessions:write', 'cloud-chat:write')
   @ApiOperation({
     summary: 'Hand back a reply claude.ai refused',
     description:

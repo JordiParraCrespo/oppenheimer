@@ -51,6 +51,8 @@ import { CloseSessionWindowCommandHandler } from './commands/close-session-windo
 import { CloseSessionWindowHttpController } from './commands/close-session-window/close-session-window.http.controller';
 import { CollectCloudReplyCommandHandler } from './commands/collect-cloud-reply/collect-cloud-reply.command-handler';
 import { CollectCloudReplyHttpController } from './commands/collect-cloud-reply/collect-cloud-reply.http.controller';
+import { ConfirmCloudReplyCommandHandler } from './commands/confirm-cloud-reply/confirm-cloud-reply.command-handler';
+import { ConfirmCloudReplyHttpController } from './commands/confirm-cloud-reply/confirm-cloud-reply.http.controller';
 import { CreateSessionCommandHandler } from './commands/create-session/create-session.command-handler';
 import { CreateSessionHttpController } from './commands/create-session/create-session.http.controller';
 import { DeliverSessionWakeCommandHandler } from './commands/deliver-session-wake/deliver-session-wake.command-handler';
@@ -204,6 +206,7 @@ const httpControllers = [
   RecordCloudEventsHttpController,
   ClaimCloudRepliesHttpController,
   ReleaseCloudReplyHttpController,
+  ConfirmCloudReplyHttpController,
   CollectCloudReplyHttpController,
   SendCloudReplyHttpController,
   FindCloudChatHttpController,
@@ -245,6 +248,7 @@ const commandHandlers: Provider[] = [
   RecordCloudEventsCommandHandler,
   ClaimCloudRepliesCommandHandler,
   ReleaseCloudReplyCommandHandler,
+  ConfirmCloudReplyCommandHandler,
   CollectCloudReplyCommandHandler,
   SendCloudReplyCommandHandler,
   PrepareSessionCommandHandler,

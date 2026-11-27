@@ -500,7 +500,13 @@ it had not launched, and its hooks failed once the agent changed directory.
   each on claude.ai as their message, the call `claude --cloud` makes; the
   session runs it at once, mid-turn too. The claim is the hook's and the host's
   (`deliveredVia: browser`), so a reply goes one way only; one claude.ai
-  refuses is handed back for the Stop hook. The hook and the host wake stay as
+  refuses is handed back for the Stop hook, one it took is confirmed, and an
+  unconfirmed claim lapses after a minute (`leaseUntil`), so a claim whose
+  post never happened is not lost.
+- **The token takes two scopes.** The extension's routes ask for
+  `sessions:write` and `cloud-chat:write` together: `sessions:write` alone (an
+  `opp` or MCP token) reaches neither the replies the person types nor a
+  session's chat, and the hook's `cloud-chat:write` key alone adopts nothing. The hook and the host wake stay as
   the paths when no Chrome is running the extension.
 - **What leaves the browser** is now the conversations too, to the person's
   own API with their own token; never a claude.ai credential. The privacy page

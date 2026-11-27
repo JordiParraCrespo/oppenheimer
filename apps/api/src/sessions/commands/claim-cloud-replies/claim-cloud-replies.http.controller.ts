@@ -39,7 +39,9 @@ export class ClaimCloudRepliesHttpController {
   @HttpCode(HttpStatus.OK)
   @Version('1')
   @CheckPolicies({ action: 'update', subject: 'Session' })
-  @RequireScopes('sessions:write')
+  // Both: the person's sessions and their cloud chats. `sessions:write` alone
+  // (an `opp` or MCP token) never reads or takes the replies they type.
+  @RequireScopes('sessions:write', 'cloud-chat:write')
   // One open request at a time per extension, each held up to ten seconds.
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @ApiOperation({

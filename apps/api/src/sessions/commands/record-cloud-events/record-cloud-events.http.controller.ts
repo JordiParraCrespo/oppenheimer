@@ -38,7 +38,9 @@ export class RecordCloudEventsHttpController {
   @HttpCode(HttpStatus.OK)
   @Version('1')
   @CheckPolicies({ action: 'create', subject: 'Session' })
-  @RequireScopes('sessions:write')
+  // Both: the person's sessions and their cloud chats. `sessions:write` alone
+  // (an `opp` or MCP token) never reads or takes the replies they type.
+  @RequireScopes('sessions:write', 'cloud-chat:write')
   // The extension reads each running session every few seconds, in batches.
   @Throttle({ default: { limit: 600, ttl: 60_000 } })
   @ApiOperation({

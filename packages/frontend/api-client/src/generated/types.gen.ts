@@ -2145,6 +2145,13 @@ export type ReleasedCloudReplyResponseDto = {
     released: boolean;
 };
 
+export type ConfirmedCloudReplyResponseDto = {
+    /**
+     * Whether it was the caller’s claim, still held, now final.
+     */
+    delivered: boolean;
+};
+
 export type TakeCloudReplyRequest = {
     cloudSessionId: string;
     wait?: number;
@@ -11608,6 +11615,34 @@ export type ReleaseCloudReplyResponses = {
 };
 
 export type ReleaseCloudReplyResponse = ReleaseCloudReplyResponses[keyof ReleaseCloudReplyResponses];
+
+export type ConfirmCloudReplyData = {
+    body?: never;
+    path: {
+        replyId: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/cloud-replies/{replyId}/delivered';
+};
+
+export type ConfirmCloudReplyErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type ConfirmCloudReplyError = ConfirmCloudReplyErrors[keyof ConfirmCloudReplyErrors];
+
+export type ConfirmCloudReplyResponses = {
+    200: ConfirmedCloudReplyResponseDto;
+};
+
+export type ConfirmCloudReplyResponse = ConfirmCloudReplyResponses[keyof ConfirmCloudReplyResponses];
 
 export type CollectCloudReplyData = {
     body: TakeCloudReplyRequest;

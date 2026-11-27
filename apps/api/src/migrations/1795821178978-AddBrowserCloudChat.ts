@@ -19,6 +19,13 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   the same `collectedAt IS NULL` update as the hook's and the host's, so
  *   only one of the three ever has a reply; a send claude.ai refused is
  *   handed back (both null again).
+ * - `session_cloud_reply."leaseUntil"`: how long the extension's claim holds
+ *   before the reply counts as waiting again, set with the claim and cleared
+ *   when the extension says claude.ai took it. A claim whose answer was lost,
+ *   or whose worker Chrome stopped before it posted, would otherwise keep the
+ *   reply from the hook and the hosts for good. Only a `browser` claim has
+ *   one (`CHK_session_cloud_reply_lease`). No index: an expired lease is
+ *   found among one session's or one author's few claimed rows.
  */
 export class AddBrowserCloudChat1795821178978 implements MigrationInterface {
   name = 'AddBrowserCloudChat1795821178978';
@@ -33,7 +40,10 @@ export class AddBrowserCloudChat1795821178978 implements MigrationInterface {
       `ALTER TABLE session_cloud_reply
          DROP CONSTRAINT "CHK_session_cloud_reply_delivered_via",
          ADD CONSTRAINT "CHK_session_cloud_reply_delivered_via"
-           CHECK ("deliveredVia" IN ('hook', 'host', 'browser'))`,
+           CHECK ("deliveredVia" IN ('hook', 'host', 'browser')),
+         ADD COLUMN "leaseUntil" timestamptz,
+         ADD CONSTRAINT "CHK_session_cloud_reply_lease"
+           CHECK ("leaseUntil" IS NULL OR "deliveredVia" = 'browser')`,
     );
   }
 
@@ -43,6 +53,8 @@ export class AddBrowserCloudChat1795821178978 implements MigrationInterface {
     );
     await queryRunner.query(
       `ALTER TABLE session_cloud_reply
+         DROP CONSTRAINT "CHK_session_cloud_reply_lease",
+         DROP COLUMN "leaseUntil",
          DROP CONSTRAINT "CHK_session_cloud_reply_delivered_via",
          ADD CONSTRAINT "CHK_session_cloud_reply_delivered_via"
            CHECK ("deliveredVia" IN ('hook', 'host'))`,

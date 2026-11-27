@@ -38,6 +38,7 @@ Sessions the console starts in Claude Code cloud (New session → Where →
 is what this extension sees. To send it:
 
 1. In the console, create a personal API token with **`sessions:write`**,
+   and **`cloud-chat:write`** too for the chat (below),
    limited to your workspace (a token not pinned to a workspace has none to
    act in, and the API answers `AUTH_002`).
 2. In the popup's **Oppenheimer** section, enter the API's URL and the
@@ -75,7 +76,15 @@ reads in the Claude apps, your messages included:
   (`POST /v1/sessions/{id}/events`, a `user` event, the call
   `claude --cloud` makes). The session runs it at once, mid-turn too. One
   claude.ai refuses is handed back (`…/cloud-replies/{id}/release`) for the
-  session's Stop hook. The loop runs while the worker does: each open request
+  session's Stop hook, and one it took is confirmed (`…/{id}/delivered`).
+  An unconfirmed claim lapses after a minute, so a reply whose post never
+  happened (a lost answer, a worker Chrome stopped) waits again instead of
+  being lost.
+- **The token.** The chat's routes ask for `cloud-chat:write` beside
+  `sessions:write`: a token that only manages sessions (an `opp` or MCP one)
+  can neither read nor take the replies you type. Without it the extension
+  still reports states; the chat says why it stopped in its stored
+  `chatProblem`. The loop runs while the worker does: each open request
   keeps it alive, and the minute's alarm or **Check now** starts it again.
 
 After the report it reads `GET /api/v1/sessions?resolved=false` with the same

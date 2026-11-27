@@ -99,8 +99,23 @@ export interface SessionCloudChatRepositoryPort {
    * Code cloud sessions that are still open, now claimed for the browser
    * extension to post on claude.ai as that person; oldest first. The same
    * claim as the hook's and the host's, so only one of them ever has a reply.
+   * The claim holds `leaseSeconds`: unconfirmed past it, the reply waits again
+   * for any of the three, so a claim whose post never happened is not lost.
    */
-  claimRepliesForBrowser(organizationId: string, authorId: string): Promise<BrowserCloudReply[]>;
+  claimRepliesForBrowser(
+    organizationId: string,
+    authorId: string,
+    leaseSeconds: number,
+  ): Promise<BrowserCloudReply[]>;
+  /**
+   * The extension's word that claude.ai took a reply it claimed: the claim no
+   * longer lapses. Whether it was the caller's claim, still held.
+   */
+  confirmBrowserDelivery(
+    organizationId: string,
+    authorId: string,
+    replyId: string,
+  ): Promise<boolean>;
   /**
    * Hands a reply the extension claimed back, when claude.ai refused it, so
    * the Stop hook or a host can deliver it. Whether it was the extension's.

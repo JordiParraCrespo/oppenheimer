@@ -121,3 +121,9 @@ export class ReleasedCloudReplyResponseDto {
   @ApiProperty({ description: 'Whether it was the caller’s claim, now handed back.' })
   released!: boolean;
 }
+
+/** `POST /v1/sessions/cloud-replies/{replyId}/delivered`. */
+export class ConfirmedCloudReplyResponseDto {
+  @ApiProperty({ description: 'Whether it was the caller’s claim, still held, now final.' })
+  delivered!: boolean;
+}

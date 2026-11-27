@@ -4,6 +4,7 @@ import {
   type ChatSync,
   type ClaimedReply,
   claimReplies,
+  confirmReply,
   eventsPage,
   fetchSessionEvents,
   forwardEvents,
@@ -173,8 +174,15 @@ async function chatLoop() {
       const headers = await claudeHeaders();
       for (const reply of replies) {
         const posted = await postReply(reply, headers);
-        if (posted.ok) hot.set(reply.cloudSessionId, Date.now());
-        else await releaseReply(oppenheimer, reply.id, posted.reason).catch(() => {});
+        if (posted.ok) {
+          hot.set(reply.cloudSessionId, Date.now());
+          // A confirmation that does not arrive lets the claim lapse, and the
+          // reply goes again: claude.ai keeps one message per id.
+          await confirmReply(oppenheimer, reply.id).catch(() => {});
+        } else {
+          // One not handed back lapses on its own within a minute.
+          await releaseReply(oppenheimer, reply.id, posted.reason).catch(() => {});
+        }
       }
     }
     await serial(syncChats);
@@ -195,8 +203,11 @@ async function syncChats() {
   const due = sessionsToSync(Object.values(state.sessions), synced, new Set(hot.keys()), clock);
   if (due.length === 0) return;
   const headers = await claudeHeaders();
-  try {
-    for (const session of due.slice(0, SESSIONS_PER_PASS)) {
+  let problem: string | null = null;
+  // One session's failure (a refused batch, a log claude.ai will not give)
+  // is said, and the others in the pass still go.
+  for (const session of due.slice(0, SESSIONS_PER_PASS)) {
+    try {
       const read = await fetchSessionEvents(session.id, headers, state.eventsEndpoint ?? null);
       if (!read) continue;
       const sent = await forwardEvents(
@@ -206,17 +217,15 @@ async function syncChats() {
         synced[session.id]?.sent ?? 0,
       );
       synced[session.id] = { sent, at: session.updatedAt ?? now() };
+    } catch (error) {
+      problem ??= `${session.id}: ${String((error as Error).message ?? error)}`;
     }
-    // Only the sessions still tracked keep a place, so the record stays small.
-    const kept = Object.fromEntries(Object.entries(synced).filter(([id]) => id in state.sessions));
-    await writeState({ chatSync: kept });
-    await chrome.storage.local.remove('chatProblem');
-  } catch (error) {
-    await writeState({
-      chatSync: synced,
-      chatProblem: { at: now(), detail: String((error as Error).message ?? error) },
-    });
   }
+  // Only the sessions still tracked keep a place, so the record stays small.
+  const kept = Object.fromEntries(Object.entries(synced).filter(([id]) => id in state.sessions));
+  await writeState({ chatSync: kept });
+  if (problem) await writeState({ chatProblem: { at: now(), detail: problem } });
+  else await chrome.storage.local.remove('chatProblem');
 }
 
 /** The headers claude.ai's app asks with: its version and beta, the organization, what the page taught. */

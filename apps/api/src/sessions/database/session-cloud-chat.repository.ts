@@ -28,6 +28,17 @@ interface ReplyRow {
 
 const REPLY_COLUMNS = `id, "authorId", "text", "createdAt", "collectedAt", "deliveredVia"`;
 
+/**
+ * A reply nothing has delivered: never claimed, or claimed by the extension
+ * whose lease ran out before it said claude.ai took it.
+ */
+const WAITING = `("collectedAt" IS NULL OR ("deliveredVia" = 'browser' AND "leaseUntil" < now()))`;
+
+/** The columns as a reader sees them: a lapsed lease reads as waiting. */
+const REPLY_AS_SEEN = `id, "authorId", "text", "createdAt",
+  CASE WHEN "deliveredVia" = 'browser' AND "leaseUntil" < now() THEN NULL ELSE "collectedAt" END AS "collectedAt",
+  CASE WHEN "deliveredVia" = 'browser' AND "leaseUntil" < now() THEN NULL ELSE "deliveredVia" END AS "deliveredVia"`;
+
 const asReply = (row: ReplyRow): CloudChatReply => ({
   id: row.id,
   authorId: row.authorId,
@@ -189,7 +200,7 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
   ): Promise<CloudChatReply[]> {
     // IDX_session_cloud_reply_session.
     const rows: ReplyRow[] = await this.replies.query(
-      `SELECT ${REPLY_COLUMNS} FROM session_cloud_reply
+      `SELECT ${REPLY_AS_SEEN} FROM session_cloud_reply
         WHERE "organizationId" = $1 AND "sessionId" = $2
         ORDER BY "createdAt", id LIMIT $3`,
       [organizationId, sessionId, limit],
@@ -202,10 +213,10 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     // second hook asking at once takes the next one or none, never the same.
     // An UPDATE comes back as `[rows, affected]`.
     const [rows]: [ReplyRow[], number] = await this.replies.query(
-      `UPDATE session_cloud_reply SET "collectedAt" = now(), "deliveredVia" = 'hook'
+      `UPDATE session_cloud_reply SET "collectedAt" = now(), "deliveredVia" = 'hook', "leaseUntil" = NULL
         WHERE id = (
           SELECT id FROM session_cloud_reply
-           WHERE "sessionId" = $1 AND "collectedAt" IS NULL
+           WHERE "sessionId" = $1 AND ${WAITING}
            ORDER BY "createdAt"
            LIMIT 1
            FOR UPDATE SKIP LOCKED)
@@ -219,8 +230,8 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     // The same `collectedAt IS NULL` claim as the hook's: under READ COMMITTED
     // the loser of a race re-reads the row the winner wrote and matches nothing.
     const [rows]: [ReplyRow[], number] = await this.replies.query(
-      `UPDATE session_cloud_reply SET "collectedAt" = now(), "deliveredVia" = 'host'
-        WHERE id = $1 AND "sessionId" = $2 AND "collectedAt" IS NULL
+      `UPDATE session_cloud_reply SET "collectedAt" = now(), "deliveredVia" = 'host', "leaseUntil" = NULL
+        WHERE id = $1 AND "sessionId" = $2 AND ${WAITING}
        RETURNING ${REPLY_COLUMNS}`,
       [replyId, sessionId],
     );
@@ -230,17 +241,20 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
   async claimRepliesForBrowser(
     organizationId: string,
     authorId: string,
+    leaseSeconds: number,
   ): Promise<BrowserCloudReply[]> {
     // The same `collectedAt IS NULL` claim as the hook's and the host's, for
     // every waiting reply of this person in an open Claude Code cloud session
     // with a claude.ai id; IDX_session_cloud_reply_author finds them.
     const [rows]: [(ReplyRow & { cloudSessionId: string })[], number] = await this.replies.query(
       `UPDATE session_cloud_reply reply
-          SET "collectedAt" = now(), "deliveredVia" = 'browser'
+          SET "collectedAt" = now(), "deliveredVia" = 'browser',
+              "leaseUntil" = now() + make_interval(secs => $3)
          FROM work_session session
         WHERE reply."authorId" = $2
           AND reply."organizationId" = $1
-          AND reply."collectedAt" IS NULL
+          AND (reply."collectedAt" IS NULL
+               OR (reply."deliveredVia" = 'browser' AND reply."leaseUntil" < now()))
           AND session.id = reply."sessionId"
           AND session."organizationId" = reply."organizationId"
           AND session.place = 'cloud'
@@ -250,7 +264,7 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
        RETURNING reply.id, reply."authorId", reply."text", reply."createdAt",
                  reply."collectedAt", reply."deliveredVia",
                  session."agentSessionId" AS "cloudSessionId"`,
-      [organizationId, authorId],
+      [organizationId, authorId, leaseSeconds],
     );
     return rows
       .map((row) => ({ ...asReply(row), cloudSessionId: row.cloudSessionId }))
@@ -263,8 +277,23 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     replyId: string,
   ): Promise<boolean> {
     const [, affected]: [unknown[], number] = await this.replies.query(
-      `UPDATE session_cloud_reply SET "collectedAt" = NULL, "deliveredVia" = NULL
+      `UPDATE session_cloud_reply SET "collectedAt" = NULL, "deliveredVia" = NULL, "leaseUntil" = NULL
         WHERE id = $1 AND "organizationId" = $2 AND "authorId" = $3 AND "deliveredVia" = 'browser'`,
+      [replyId, organizationId, authorId],
+    );
+    return affected === 1;
+  }
+
+  async confirmBrowserDelivery(
+    organizationId: string,
+    authorId: string,
+    replyId: string,
+  ): Promise<boolean> {
+    // Delivered for good: the lease goes, so nothing claims it again.
+    const [, affected]: [unknown[], number] = await this.replies.query(
+      `UPDATE session_cloud_reply SET "leaseUntil" = NULL
+        WHERE id = $1 AND "organizationId" = $2 AND "authorId" = $3
+          AND "deliveredVia" = 'browser' AND "leaseUntil" IS NOT NULL`,
       [replyId, organizationId, authorId],
     );
     return affected === 1;
@@ -272,7 +301,7 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
 
   async releaseHostClaim(sessionId: string, replyId: string): Promise<void> {
     await this.replies.query(
-      `UPDATE session_cloud_reply SET "collectedAt" = NULL, "deliveredVia" = NULL
+      `UPDATE session_cloud_reply SET "collectedAt" = NULL, "deliveredVia" = NULL, "leaseUntil" = NULL
         WHERE id = $1 AND "sessionId" = $2 AND "deliveredVia" = 'host'`,
       [replyId, sessionId],
     );

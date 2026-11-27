@@ -142,6 +142,14 @@ export type RecordCloudEventsDto = z.infer<typeof recordCloudEventsSchema>;
 export const MAX_BROWSER_REPLY_WAIT_SECONDS = 10;
 
 /**
+ * How long the extension's claim on a reply holds, in seconds, before the
+ * reply waits again unless the extension said claude.ai took it: long enough
+ * to post it, short enough that a claim lost with its answer, or with a
+ * worker Chrome stopped, holds the reply back for a minute at most.
+ */
+export const BROWSER_REPLY_LEASE_SECONDS = 60;
+
+/**
  * `POST /sessions/cloud-replies/claim`, from the browser extension: every
  * reply waiting in this workspace's Claude Code cloud sessions, now claimed
  * for the extension to post on claude.ai, waiting up to `wait` seconds for one.

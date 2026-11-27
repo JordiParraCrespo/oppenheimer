@@ -11812,6 +11812,63 @@
         ]
       }
     },
+    "/api/v1/sessions/cloud-replies/{replyId}/delivered": {
+      "post": {
+        "description": "What the browser extension says once claude.ai took a reply it claimed and posted: the claim stops lapsing, so the session’s Stop hook or a host never delivers it again. `delivered: false` when it was not the caller’s claim, or it lapsed and another way took it.",
+        "operationId": "confirmCloudReply",
+        "parameters": [
+          {
+            "name": "replyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmedCloudReplyResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Say claude.ai took a reply you claimed",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
     "/api/v1/sessions/cloud-replies/take": {
       "post": {
         "description": "What the Stop hook in a Claude Code cloud session asks when its agent ends a turn: the oldest reply typed in its chat that no hook has collected, now marked collected. With none waiting, the request waits up to `wait` seconds for one, then answers `text: null`.",
@@ -34736,6 +34793,18 @@
         },
         "required": [
           "released"
+        ]
+      },
+      "ConfirmedCloudReplyResponseDto": {
+        "type": "object",
+        "properties": {
+          "delivered": {
+            "type": "boolean",
+            "description": "Whether it was the caller’s claim, still held, now final."
+          }
+        },
+        "required": [
+          "delivered"
         ]
       },
       "TakeCloudReplyRequest": {

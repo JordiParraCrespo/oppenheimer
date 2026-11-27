@@ -38,6 +38,7 @@ export interface StoredState {
 
 /**
  * The person's Oppenheimer API and a personal API token with `sessions:write`
+ * (and `cloud-chat:write`, for the chat)
  * (which reads the sessions too, for the runner sessions that wait on them).
  * The token is theirs, for their own API: it is not a claude.ai credential,
  * and no claude.ai credential is ever sent with it. What it carries there is

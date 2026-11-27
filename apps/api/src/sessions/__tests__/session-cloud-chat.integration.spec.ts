@@ -313,12 +313,12 @@ describe('sessions: cloud chat replies (integration)', () => {
 
       // Breaks if the extension posts as its person a reply someone else typed,
       // or claims replies for a session it cannot post to.
-      const claimed = await chat.claimRepliesForBrowser(organizationId, authorId);
+      const claimed = await chat.claimRepliesForBrowser(organizationId, authorId, 60);
       expect(claimed.map((reply) => [reply.id, reply.cloudSessionId, reply.text])).toEqual([
         [mine.id, cloudSessionId, 'Also the signup page'],
       ]);
       expect(claimed[0].deliveredVia).toBe('browser');
-      expect(await chat.claimRepliesForBrowser(organizationId, authorId)).toEqual([]);
+      expect(await chat.claimRepliesForBrowser(organizationId, authorId, 60)).toEqual([]);
       // Breaks if the Stop hook or a host can still deliver it a second time.
       expect(await chat.claimReplyForHost(cloudId, mine.id)).toBeNull();
       expect((await chat.collectReply(cloudId))?.text).toBe('not yours to post');
@@ -326,7 +326,7 @@ describe('sessions: cloud chat replies (integration)', () => {
 
     it('hands a reply claude.ai refused back to the hook, and only the extension’s own claim', async () => {
       const reply = await chat.addReply(organizationId, cloudId, authorId, 'retry me', new Date());
-      await chat.claimRepliesForBrowser(organizationId, authorId);
+      await chat.claimRepliesForBrowser(organizationId, authorId, 60);
       // Breaks if a refused post is lost: it has to wait for the hook again.
       expect(await chat.releaseBrowserClaim(organizationId, authorId, reply.id)).toBe(true);
       expect((await chat.collectReply(cloudId))?.id).toBe(reply.id);
@@ -346,7 +346,7 @@ describe('sessions: cloud chat replies (integration)', () => {
           new Date(),
         );
         const [byBrowser, byHook, byHost] = await Promise.all([
-          chat.claimRepliesForBrowser(organizationId, authorId),
+          chat.claimRepliesForBrowser(organizationId, authorId, 60),
           chat.collectReply(cloudId),
           chat.claimReplyForHost(cloudId, reply.id),
         ]);
@@ -354,6 +354,39 @@ describe('sessions: cloud chat replies (integration)', () => {
           [byBrowser.length > 0, Boolean(byHook), Boolean(byHost)].filter(Boolean),
         ).toHaveLength(1);
       }
+    });
+
+    it('gives a claim the extension never confirmed back to the hook once its lease lapses', async () => {
+      const reply = await chat.addReply(
+        organizationId,
+        cloudId,
+        authorId,
+        'lost in transit',
+        new Date(),
+      );
+      // A lease already over: the claim's answer was lost, or Chrome stopped the worker.
+      await chat.claimRepliesForBrowser(organizationId, authorId, -1);
+      // Breaks if the console draws a reply nobody posted as sent, forever.
+      const [seen] = await chat.findReplies(organizationId, cloudId, 10);
+      expect(seen).toMatchObject({ id: reply.id, collectedAt: null, deliveredVia: null });
+      // Breaks if the hook, a host or the extension can never deliver it again.
+      expect((await chat.collectReply(cloudId))?.id).toBe(reply.id);
+      expect(await chat.confirmBrowserDelivery(organizationId, authorId, reply.id)).toBe(false);
+    });
+
+    it('keeps a claim claude.ai took, so nothing delivers it twice', async () => {
+      const reply = await chat.addReply(organizationId, cloudId, authorId, 'posted', new Date());
+      await chat.claimRepliesForBrowser(organizationId, authorId, 60);
+      expect(await chat.confirmBrowserDelivery(organizationId, authorId, reply.id)).toBe(true);
+      // Confirmed, its lease is gone: even a claim that would have lapsed stays.
+      await dataSource.query(
+        `UPDATE session_cloud_reply SET "createdAt" = now() - interval '1 hour' WHERE id = $1`,
+        [reply.id],
+      );
+      expect(await chat.collectReply(cloudId)).toBeNull();
+      expect(await chat.claimRepliesForBrowser(organizationId, authorId, 60)).toEqual([]);
+      const [seen] = await chat.findReplies(organizationId, cloudId, 10);
+      expect(seen).toMatchObject({ id: reply.id, deliveredVia: 'browser' });
     });
   });
 });

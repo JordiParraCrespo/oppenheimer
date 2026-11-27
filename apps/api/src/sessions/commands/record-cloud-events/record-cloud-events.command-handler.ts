@@ -48,6 +48,11 @@ export class RecordCloudEventsCommandHandler
     if (!scope.organizationId) throw new AppError(SessionErrors.NO_ACTIVE_ORGANIZATION);
 
     const [known] = await this.sessions.findCloudByCloudIds(scope, [command.cloudSessionId]);
+    // A session this workspace has under that id, but closed (launched here
+    // or adopted), stays closed: its events are not kept, nor is it adopted again.
+    if (!known && (await this.sessions.hasCloudSessionFor(scope, command.cloudSessionId))) {
+      return { sessionId: null, accepted: 0 };
+    }
     const session = known ?? (await this.adopt(command, scope.organizationId));
     if (!session) return { sessionId: null, accepted: 0 };
     if (known && !hasCloudChat(known)) {

@@ -126,6 +126,7 @@ export type {
   CloudChatReplyResponseDto,
   CloudChatResponseDto,
   CollectedCloudReplyResponseDto,
+  ConfirmedCloudReplyResponseDto,
   ConfirmWhatsappOwnerRequest,
   ConnectGmailRequest,
   ConnectGoogleCalendarRequest,

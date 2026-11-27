@@ -39,6 +39,11 @@ export interface ClaimedReply {
 
 /** Events one request to the API carries (`MAX_CLOUD_TRANSCRIPT_BATCH`). */
 export const EVENTS_BATCH = 200;
+/**
+ * The bytes of events one request carries, at most: well under the API's
+ * 512 KB body limit, whatever the title and the JSON around them add.
+ */
+export const EVENTS_BATCH_BYTES = 400_000;
 /** One event's line, at most (`MAX_CLOUD_TRANSCRIPT_LINE_BYTES`), as the session's hook cuts it. */
 const MAX_LINE_BYTES = 64_000;
 /** How long a string in a line too large may stay. */
@@ -137,18 +142,15 @@ export async function forwardEvents(
 ): Promise<number> {
   if (!cloudSessionIdPattern.test(session.id)) return sent;
   let held = Math.min(sent, events.length);
+  const title = cutTitle(session.title ?? '');
   while (held < events.length) {
-    const batch = events.slice(held, held + EVENTS_BATCH);
+    const batch = nextBatch(events, held);
     const response = await fetch(apiUrl(connection, '/api/v1/sessions/cloud-events'), {
       method: 'POST',
       headers: jsonHeaders(connection),
       body: JSON.stringify({
         cloudSessionId: session.id,
-        title:
-          Array.from(session.title ?? '')
-            .slice(0, MAX_TITLE)
-            .join('')
-            .trim() || undefined,
+        title,
         events: batch,
       }),
     });
@@ -156,6 +158,37 @@ export async function forwardEvents(
     held += batch.length;
   }
   return held;
+}
+
+/**
+ * The events from `from` that one request takes: at most `EVENTS_BATCH`, and
+ * at most `EVENTS_BATCH_BYTES` of them, but always at least one (a line is
+ * already cut to fit on its own).
+ */
+export function nextBatch(events: readonly ChatEvent[], from: number): ChatEvent[] {
+  const batch: ChatEvent[] = [];
+  let bytes = 0;
+  for (const event of events.slice(from, from + EVENTS_BATCH)) {
+    const size = byteLength(event.line) + byteLength(event.id) + 32;
+    if (batch.length > 0 && bytes + size > EVENTS_BATCH_BYTES) break;
+    batch.push(event);
+    bytes += size;
+  }
+  return batch;
+}
+
+/**
+ * The title as the API takes it: at most `MAX_TITLE` UTF-16 units, the
+ * measure its schema counts, cut between characters so no emoji is split;
+ * none when it is blank.
+ */
+export function cutTitle(title: string): string | undefined {
+  let cut = '';
+  for (const character of title.trim()) {
+    if (cut.length + character.length > MAX_TITLE) break;
+    cut += character;
+  }
+  return cut.trim() || undefined;
 }
 
 /** The person's waiting replies, claimed for this extension, waiting up to `wait` seconds for one. */
@@ -173,6 +206,22 @@ export async function claimReplies(
   if (!response.ok) throw await apiError(response);
   const { replies } = (await response.json()) as { replies?: ClaimedReply[] };
   return Array.isArray(replies) ? replies : [];
+}
+
+/**
+ * Tells the API claude.ai took a reply this extension claimed, so the claim
+ * stops lapsing and nothing delivers the reply again.
+ */
+export async function confirmReply(
+  connection: OppenheimerConnection,
+  replyId: string,
+): Promise<void> {
+  const path = `/api/v1/sessions/cloud-replies/${encodeURIComponent(replyId)}/delivered`;
+  const response = await fetch(apiUrl(connection, path), {
+    method: 'POST',
+    headers: jsonHeaders(connection),
+  });
+  if (!response.ok) throw await apiError(response);
 }
 
 /** Gives a reply claude.ai refused back to the API, so the session's Stop hook can take it. */

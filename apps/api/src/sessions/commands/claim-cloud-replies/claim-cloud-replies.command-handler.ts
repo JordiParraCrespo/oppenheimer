@@ -1,6 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
+import { BROWSER_REPLY_LEASE_SECONDS } from '@oppenheimer/shared';
 import type {
   BrowserCloudReply,
   SessionCloudChatRepositoryPort,
@@ -18,7 +19,9 @@ const POLL_MS = 1000;
  * on claude.ai as that person: the session runs one at once, mid-turn too,
  * instead of waiting for its Stop hook. With none waiting it looks again each
  * second for up to the wait asked. The claim is the repository's, the same as
- * the hook's and a host's, so a reply reaches the agent one way only.
+ * the hook's and a host's, so a reply reaches the agent one way only; it
+ * lapses unless the extension confirms it, so a post that never happened
+ * leaves the reply waiting again rather than lost.
  */
 @CommandHandler(ClaimCloudRepliesCommand)
 export class ClaimCloudRepliesCommandHandler
@@ -34,7 +37,11 @@ export class ClaimCloudRepliesCommandHandler
     if (!organizationId) throw new AppError(SessionErrors.NO_ACTIVE_ORGANIZATION);
     const until = Date.now() + command.waitSeconds * 1000;
     for (;;) {
-      const replies = await this.chat.claimRepliesForBrowser(organizationId, command.userId);
+      const replies = await this.chat.claimRepliesForBrowser(
+        organizationId,
+        command.userId,
+        BROWSER_REPLY_LEASE_SECONDS,
+      );
       const left = until - Date.now();
       if (replies.length > 0 || left <= 0) return replies;
       await new Promise((resolve) => setTimeout(resolve, Math.min(POLL_MS, left)));

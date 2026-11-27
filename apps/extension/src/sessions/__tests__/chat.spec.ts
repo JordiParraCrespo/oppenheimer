@@ -1,12 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   type ChatEvent,
+  cutTitle,
   EVENTS_BATCH,
+  EVENTS_BATCH_BYTES,
   eventsPage,
   fetchSessionEvents,
   fitLine,
   forwardEvents,
   inTimeOrder,
+  nextBatch,
   postReply,
   sessionsToSync,
 } from '../chat';
@@ -129,6 +132,36 @@ describe('sending the log to the console', () => {
     // Nothing new: nothing sent.
     expect(await forwardEvents(connection, session, events, events.length)).toBe(events.length);
     expect(bodies).toHaveLength(2);
+  });
+
+  it('keeps each request under the API’s body limit, however long the lines', async () => {
+    // Ordinary assistant and tool entries of about 3 KB: 200 of them were 627 KB.
+    const big: ChatEvent[] = Array.from({ length: 300 }, (_, i) => ({
+      id: `b${i}`,
+      line: JSON.stringify({ type: 'assistant', uuid: `b${i}`, text: 'x'.repeat(3_000) }),
+    }));
+    const sizes: number[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        sizes.push(new TextEncoder().encode(String(init.body)).length);
+        return json({ sessionId: 's', accepted: 1 });
+      }),
+    );
+    // Breaks if a batch goes over 512 KB: the API answers 413 and the session never syncs.
+    expect(await forwardEvents(connection, { id: ID, title: 't' }, big, 0)).toBe(300);
+    expect(Math.max(...sizes)).toBeLessThan(512 * 1024);
+    // One line too large to share a batch still goes, alone.
+    const huge = [{ id: 'h', line: 'x'.repeat(EVENTS_BATCH_BYTES) }];
+    expect(nextBatch(huge, 0)).toHaveLength(1);
+  });
+
+  it('cuts a title to what the API counts, never through an emoji', () => {
+    // Breaks if 200 characters with an emoji in them are refused as over 200.
+    const cut = cutTitle(`${'a'.repeat(199)}😀 and more`) ?? '';
+    expect(cut).toBe('a'.repeat(199));
+    expect(cutTitle(`${'a'.repeat(150)}${'😀'.repeat(60)}`)?.length).toBeLessThanOrEqual(200);
+    expect(cutTitle('   ')).toBeUndefined();
   });
 
   it('stops at a batch the API refuses, so the next read sends it again', async () => {

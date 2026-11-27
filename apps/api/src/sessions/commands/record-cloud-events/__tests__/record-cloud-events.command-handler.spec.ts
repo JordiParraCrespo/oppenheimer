@@ -64,6 +64,7 @@ describe('RecordCloudEventsCommandHandler', () => {
   beforeEach(() => {
     sessions = {
       findCloudByCloudIds: vi.fn().mockResolvedValue([]),
+      hasCloudSessionFor: vi.fn().mockResolvedValue(false),
       createIfUnclaimed: vi.fn().mockImplementation(async (session: WorkSessionEntity) => ({
         session,
         created: true,
@@ -123,6 +124,16 @@ describe('RecordCloudEventsCommandHandler', () => {
     });
     // Breaks if closing a session in the console is undone by the next read of claude.ai.
     expect(await record()).toEqual({ sessionId: null, accepted: 0 });
+    expect(chat.appendEvents).not.toHaveBeenCalled();
+  });
+
+  it('neither keeps nor adopts again a session launched here and closed', async () => {
+    // The open-sessions read misses a closed one; the any-state lookup finds it.
+    sessions.hasCloudSessionFor.mockResolvedValue(true);
+    // Breaks if closing a console-launched cloud session makes the next read
+    // of claude.ai adopt it as a second session.
+    expect(await record()).toEqual({ sessionId: null, accepted: 0 });
+    expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
     expect(chat.appendEvents).not.toHaveBeenCalled();
   });
 
