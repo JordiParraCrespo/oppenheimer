@@ -6,7 +6,7 @@ import { DEFAULT_OAUTH_SCOPES, PASSWORD_MIN_LENGTH, SCOPES } from '@oppenheimer/
 import { betterAuth } from 'better-auth';
 import { createAuthMiddleware } from 'better-auth/api';
 import { admin, bearer, mcp, organization } from 'better-auth/plugins';
-import { adminAc, defaultAc, userAc } from 'better-auth/plugins/admin/access';
+import { defaultAc, userAc } from 'better-auth/plugins/admin/access';
 import { Pool } from 'pg';
 import { databaseConfigFromEnv, poolOptions } from '../../config/database.config';
 import { CompleteSignUpCommand } from '../commands/complete-sign-up/complete-sign-up.command';
@@ -15,6 +15,7 @@ import { standingChangeOf } from './admin-ban-hook.util';
 import { dispatchFromAuthHook } from './auth-command-bus.util';
 import { authRateLimit } from './auth-rate-limit.util';
 import { betterAuthSecondaryStorage, sessionStore } from './better-auth-secondary-storage.adapter';
+import { CLOSED_ORGANIZATION_PATHS } from './closed-auth-paths.util';
 import { emailQueue, enqueueEmailBestEffort } from './email-queue.util';
 import { buildInvitationUrl } from './invitation-url.util';
 // oppenheimer:begin mobile
@@ -25,8 +26,8 @@ import { sessionDeleteHooks } from './session-delete-hook.util';
 /**
  * Access-control roles for the admin plugin. Every name listed in `adminRoles`
  * must be defined here, so `superadmin` is given the full admin statement set
- * (including `impersonate-admins`, which plain `admin` lacks). `admin`/`user`
- * reuse Better Auth's built-in roles.
+ * (including `impersonate-admins`, which plain `admin` lacks). `user` reuses
+ * Better Auth's built-in role.
  */
 const superadminAc = defaultAc.newRole({
   user: [
@@ -38,6 +39,29 @@ const superadminAc = defaultAc.newRole({
     'impersonate-admins',
     'delete',
     'set-password',
+    'set-email',
+    'get',
+    'update',
+  ],
+  session: ['list', 'revoke', 'delete'],
+});
+
+/**
+ * Better Auth's built-in `admin` without `set-role`. With it an `admin` could
+ * make itself `superadmin` (`/admin/set-role`, or a `role` on create-user or
+ * update-user, which Better Auth checks against the same permission), and so
+ * gain `impersonate-admins` and every other right kept from it. Who holds which
+ * platform role is the `superadmin`'s call alone.
+ */
+const adminRoleAc = defaultAc.newRole({
+  user: [
+    'create',
+    'list',
+    'ban',
+    'impersonate',
+    'delete',
+    'set-password',
+    'set-email',
     'get',
     'update',
   ],
@@ -118,6 +142,10 @@ const sessionDeletion = sessionDeleteHooks({
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3001',
   basePath: '/api/auth',
+  // Better Auth's organization writes, closed to HTTP clients: the façade is
+  // the one door, so the roster never changes without the application role
+  // that goes with it (`closed-auth-paths.util.ts`). `auth.api.*` is unaffected.
+  disabledPaths: [...CLOSED_ORGANIZATION_PATHS],
   secret: process.env.BETTER_AUTH_SECRET,
   database: pool,
   // Sessions are cached in Redis in front of the `session` table, so an
@@ -419,9 +447,10 @@ export const auth = betterAuth({
     // oppenheimer:end mobile
     admin({
       // Users whose `role` is one of these can call the admin plugin endpoints
-      // (list/ban/impersonate/set-role/...). CASL still governs the app's own
-      // REST routes; this only gates `/api/auth/admin/*`.
-      roles: { superadmin: superadminAc, admin: adminAc, user: userAc },
+      // (list/ban/impersonate/...; set-role is a superadmin's alone). CASL
+      // still governs the app's own REST routes; this only gates
+      // `/api/auth/admin/*`.
+      roles: { superadmin: superadminAc, admin: adminRoleAc, user: userAc },
       adminRoles: ['superadmin', 'admin'],
       defaultRole: 'user',
       adminUserIds,
@@ -433,11 +462,13 @@ export const auth = betterAuth({
       creatorRole: 'owner',
       membershipLimit: 100,
       invitationExpiresIn: 60 * 60 * 48,
-      // Invitation ids use random UUIDs through advanced.database.generateId.
-      // Better Auth cannot infer that a custom generator is opaque, so its
-      // default would require a freshly registered invitee to verify their
-      // email before accepting the very link that proves they received it.
-      requireEmailVerificationOnInvitation: false,
+      // An invitee proves they own the address before accepting. The link
+      // alone does not prove it: sign-up needs no verified email, and
+      // `list-user-invitations` (and the façade's list of my invitations)
+      // hands every invitation id for an address to whoever registered it
+      // first. So a fresh invitee verifies, then accepts; the verification
+      // email goes out on sign-up and signs them in.
+      requireEmailVerificationOnInvitation: true,
       // "Workspaces" are modelled on Better Auth teams. The `enabled` flag is
       // shared with the clients via @oppenheimer/auth so both sides must agree.
       teams: {

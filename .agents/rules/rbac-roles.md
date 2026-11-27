@@ -235,13 +235,18 @@ organization's role needs its `roleVersion`.
 
 Multi-tenancy and super-admin are provided by Better Auth's **`admin`** and
 **`organization`** plugins, configured in `apps/api/src/auth/infrastructure/better-auth.config.ts`. Their
-endpoints live under `/api/auth/*` (not NestJS controllers), so the frontend
-calls them through the `adminClient()` / `organizationClient()` client plugins,
-**not** the generated api-client.
+endpoints live under `/api/auth/*` (not NestJS controllers). The organization
+plugin's writes (roster, invitations, teams, organization create/update/delete)
+are closed to HTTP clients (`disabledPaths`, listed in
+`auth/infrastructure/closed-auth-paths.util.ts`): they change the roster
+without the application role, so clients go through the façade below, whose
+gateways call `auth.api.*`, which `disabledPaths` does not touch. A new write
+route Better Auth ships is added to that list.
 
 - **Super-admin** — the `admin` plugin (`adminRoles: ['superadmin','admin']`)
   gates `/api/auth/admin/*` (list/ban/impersonate/set-role) by the user's `role`
-  column. A `superadmin` system role is seeded; `BETTER_AUTH_ADMIN_USER_IDS`
+  column. `set-role` (and a `role` on create or update) is the `superadmin`'s
+  alone: an `admin` holding it could make itself one. A `superadmin` system role is seeded; `BETTER_AUTH_ADMIN_USER_IDS`
   bootstraps break-glass super admins by id. This is **separate** from CASL: CASL
   still governs the app's own REST routes.
 - **Two role stores, kept in sync** — the admin plugin's `set-role` writes the
