@@ -14,6 +14,8 @@ export interface IssuedRoutineWebhook {
   tokenHash: string;
   tokenPrefix: string;
   signingSecretSealed: Buffer | null;
+  /** Whether the issuer's email was verified at the issue (`CredentialIssuance`). */
+  issuedVerified: boolean;
 }
 
 export interface AutomationWebhookRepositoryPort {
@@ -21,6 +23,12 @@ export interface AutomationWebhookRepositoryPort {
   issue(webhook: IssuedRoutineWebhook): Promise<RoutineWebhookView>;
   /** Forget a routine's URL; a routine without one is not an error. */
   revoke(organizationId: string, automationId: string): Promise<void>;
+  /**
+   * Forget every URL of these workspaces that was issued, up to `issuedUpTo`,
+   * by someone whose email was not verified then. One statement; answers how
+   * many it removed.
+   */
+  revokeIssuedUnverified(organizationIds: readonly string[], issuedUpTo: Date): Promise<number>;
   findByTokenHash(tokenHash: string): Promise<RoutineWebhookRecord | null>;
   /** The URLs of these routines, by routine id; a routine without one is absent. */
   findViews(

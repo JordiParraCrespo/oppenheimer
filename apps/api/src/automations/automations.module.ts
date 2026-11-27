@@ -23,6 +23,7 @@ import { BotRoutineResolver } from './application/bot-routine.resolver';
 import { BranchSessionBotsResolver } from './application/branch-session-bots.resolver';
 import { ExternalEventReceivedDomainEventHandler } from './application/event-handlers/external-event-received.domain-event-handler';
 import { HostUnpairedPausesAutomationsDomainEventHandler } from './application/event-handlers/host-unpaired.domain-event-handler';
+import { PasswordResetRevokesWebhooksDomainEventHandler } from './application/event-handlers/password-reset.domain-event-handler';
 import { ProjectArchivedPausesAutomationsDomainEventHandler } from './application/event-handlers/project-archived.domain-event-handler';
 import { OwnerScopeResolver } from './application/owner-scope.resolver';
 import { RoutineWebhookResolver } from './application/routine-webhook.resolver';
@@ -221,6 +222,7 @@ const queryHandlers: Provider[] = [
     ExternalEventReceivedDomainEventHandler,
     HostUnpairedPausesAutomationsDomainEventHandler,
     ProjectArchivedPausesAutomationsDomainEventHandler,
+    PasswordResetRevokesWebhooksDomainEventHandler,
     AutomationRunsProcessor,
     AutomationSchedulesProcessor,
     AutomationRetentionProcessor,

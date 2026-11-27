@@ -56,6 +56,24 @@ export class HostPairingTokenRepository
     return record ? Some(this.mapper.toDomain(record)) : None;
   }
 
+  async revokeUnspentIssuedUnverified(
+    ownerUserId: string,
+    mintedUpTo: Date,
+    now: Date,
+  ): Promise<number> {
+    const [, affected] = (await this.repository.query(
+      `UPDATE "host_pairing_token"
+          SET "revokedAt" = $3, "updatedAt" = $3
+        WHERE "ownerUserId" = $1
+          AND "issuedVerified" = false
+          AND "redeemedAt" IS NULL
+          AND "revokedAt" IS NULL
+          AND "createdAt" <= $2`,
+      [ownerUserId, mintedUpTo, now],
+    )) as [unknown[], number];
+    return affected;
+  }
+
   async insertWithinCap(entity: HostPairingTokenEntity, fence: MintFence): Promise<boolean> {
     try {
       await this.repository.manager.transaction(async (manager) => {

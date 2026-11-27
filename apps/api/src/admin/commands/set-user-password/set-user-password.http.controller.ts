@@ -36,7 +36,11 @@ export class SetUserPasswordHttpController {
   @Version('1')
   @RequireScopes('admin:write')
   @CheckPolicies({ action: 'manage', subject: 'User' })
-  @ApiOperation({ summary: "Set a user's password" })
+  @ApiOperation({
+    summary: "Set a user's password",
+    description:
+      'Takes back what a password reset does: signs the account out everywhere, refuses its API tokens and OAuth grants issued before now, and unpairs the hosts and revokes the routine webhook URLs it was issued before its email was verified. ADMIN_008 here means the password was set but those could not be taken back: set it again.',
+  })
   @ApiResponse({ status: 200, type: AdminSuccessResponseDto })
   setPassword(
     @Req() req: Request,

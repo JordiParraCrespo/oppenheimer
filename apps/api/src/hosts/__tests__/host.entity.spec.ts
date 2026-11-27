@@ -26,6 +26,7 @@ function host(overrides: Partial<Parameters<typeof HostEntity.create>[0]['props'
       publicKeyFingerprint: current.fingerprint,
       lastSeenAt: null,
       unpairedAt: null,
+      issuedVerified: true,
       ...overrides,
     },
   });
@@ -42,6 +43,7 @@ describe('HostEntity.register', () => {
       publicKey: current.base64,
       publicKeyFingerprint: current.fingerprint,
       pairingTokenId: 'token-1',
+      issuedVerified: true,
     });
 
     expect(registered.domainEvents).toHaveLength(1);
@@ -62,6 +64,7 @@ describe('HostEntity.register', () => {
       publicKey: current.base64,
       publicKeyFingerprint: current.fingerprint,
       pairingTokenId: 'token-1',
+      issuedVerified: true,
     });
 
     expect(registered.id).toBe('host-1');

@@ -16,6 +16,7 @@ import {
   type RedeemedPairingToken,
 } from './host.repository.port';
 import { HostMetadataRepository } from './host-metadata.repository';
+import { HostPairingTokenOrmEntity } from './host-pairing-token.orm-entity';
 
 /**
  * Note what is absent from the reads: no owner test and no tenant filter.
@@ -96,6 +97,22 @@ export class HostRepository
     return (await this.withMetadata(records)).map((presence) => presence.host);
   }
 
+  async findPairedIssuedUnverifiedBySystem(
+    ownerUserId: string,
+    mintedUpTo: Date,
+  ): Promise<HostEntity[]> {
+    const records = await this.unscopedQuery(
+      'a password reset takes back the machines the account paired before its address was proven; the account is the scope',
+    )
+      .leftJoin(HostPairingTokenOrmEntity, 'token', 'token.redeemedHostId = host.id')
+      .where('host.ownerUserId = :ownerUserId', { ownerUserId })
+      .andWhere('host.unpairedAt IS NULL')
+      .andWhere('host.issuedVerified = false')
+      .andWhere('COALESCE(token.createdAt, host.createdAt) <= :mintedUpTo', { mintedUpTo })
+      .getMany();
+    return records.map((record) => this.mapper.toDomain(record));
+  }
+
   /**
    * The row, the outbox entries its events owe, and the timeline entries they
    * stand for, in one transaction. An unpaired host's current network stops
@@ -144,7 +161,7 @@ export class HostRepository
             AND "redeemedAt" IS NULL
             AND "revokedAt" IS NULL
             AND "expiresAt" > $2
-        RETURNING "id", "ownerUserId", "intendedName"`,
+        RETURNING "id", "ownerUserId", "intendedName", "issuedVerified"`,
         [input.tokenHash, input.now, hostId, input.redeemedFromIp],
       )) as [RedeemedPairingToken[], number];
 

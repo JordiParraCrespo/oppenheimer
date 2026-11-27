@@ -19,7 +19,10 @@ import { CompletePasswordResetCommand } from './complete-password-reset.command'
  * it is exchanged (`oauth-grant-gate.util.ts`). Nothing waits on the outbox.
  * The same transaction deletes the kernel's own OAuth grants, consents and
  * pending authorization codes, and stages `PasswordResetDomainEvent`, on which
- * api-tokens marks its tokens revoked so they read as revoked in the console.
+ * api-tokens marks its tokens revoked so they read as revoked in the console,
+ * hosts unpairs the machines and revokes the unspent pairing tokens issued
+ * before the address was verified, and automations revokes such webhook URLs
+ * (`credential-issuance.policy.ts` says why those, and only those).
  * The cached delegated sessions those credentials act through are dropped
  * last. Idempotent: a second run moves no cutoff back and finds nothing left.
  */

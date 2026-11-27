@@ -33,6 +33,7 @@ function token(redeemedHostId: string | null) {
       revokedAt: null,
       redeemedAt: redeemedHostId ? new Date() : null,
       redeemedHostId,
+      issuedVerified: true,
     },
   });
 }
@@ -52,6 +53,7 @@ function host() {
       publicKeyFingerprint: 'f'.repeat(64),
       lastSeenAt: new Date(),
       unpairedAt: null,
+      issuedVerified: true,
     },
   });
 }

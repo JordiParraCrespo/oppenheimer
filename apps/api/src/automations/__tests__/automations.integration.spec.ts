@@ -7,8 +7,10 @@ import { Some } from 'oxide.ts';
 import { DataSource, type EntityManager } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import type { InboundEventLookupPort } from '../../inbound-events/application/inbound-event-lookup.port';
+import type { WorkspaceLookupPort } from '../../organizations/application/workspace-lookup.port';
 import { AutomationLimitsResolver } from '../application/automation-limits.resolver';
 import { BranchSessionBotsResolver } from '../application/branch-session-bots.resolver';
+import { PasswordResetRevokesWebhooksDomainEventHandler } from '../application/event-handlers/password-reset.domain-event-handler';
 import { AutomationMapper } from '../automation.mapper';
 import { AutomationRunMapper } from '../automation-run.mapper';
 import { FireDueSchedulesCommand } from '../commands/fire-due-schedules/fire-due-schedules.command';
@@ -583,6 +585,7 @@ describe('automations: firing under the caps, and the runs list (integration)', 
         tokenHash: 'a'.repeat(64),
         tokenPrefix: 'owh_aaaaaa',
         signingSecretSealed: null,
+        issuedVerified: true,
       });
       const views = () => webhooks.findViews(organizationId, [routine.id]);
 
@@ -596,6 +599,68 @@ describe('automations: firing under the caps, and the runs list (integration)', 
       dropped.change({ triggers: [hourly(5)] }, new Date());
       expect(await automations.save(dropped, dropped.version)).toBe('saved');
       expect((await views()).has(routine.id)).toBe(false);
+    });
+
+    // Pre-account squatting on a deployment that delivered no email when the
+    // URL was issued: the squatter's URL starts runs with no sign-in.
+    // Regression: it survived the real owner's password reset.
+    it('loses on a password reset the URLs issued from an unverified address, up to the reset', async () => {
+      const botId = await insertBot();
+      const routineWith = async (name: string) => {
+        const routine = AutomationEntity.createRoutine({
+          organizationId,
+          ownerUserId: userId,
+          botId,
+          name,
+          prompt: 'Say whether it failed.',
+          triggers: [triggerFromInput({ source: 'webhook', event: 'webhook_received' }, 0)],
+          active: true,
+          credentialScopes: null,
+          now: new Date(),
+        });
+        await automations.insert(routine);
+        return routine.id;
+      };
+      const webhooks = new AutomationWebhookRepository(
+        dataSource.getRepository(AutomationWebhookOrmEntity),
+      );
+      const issue = (automationId: string, hash: string, issuedVerified: boolean) =>
+        webhooks.issue({
+          organizationId,
+          automationId,
+          tokenHash: hash.repeat(64),
+          tokenPrefix: `owh_${hash.repeat(6)}`,
+          signingSecretSealed: null,
+          issuedVerified,
+        });
+      const squatted = await routineWith('Squatted watch');
+      const proven = await routineWith('Proven watch');
+      const later = await routineWith('Issued after the reset');
+      await issue(squatted, 'b', false);
+      await issue(proven, 'c', true);
+      // A re-issue records the address as it is at the re-issue.
+      await issue(proven, 'd', true);
+      const resetAt = new Date();
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      await issue(later, 'e', false);
+      const handler = new PasswordResetRevokesWebhooksDomainEventHandler(
+        { ownedBy: async () => [organizationId] } as unknown as WorkspaceLookupPort,
+        webhooks,
+      );
+      await handler.handle({ userId, resetAt: resetAt.toISOString() });
+
+      const left = await webhooks.findViews(organizationId, [squatted, proven, later]);
+      expect([...left.keys()].sort()).toEqual([proven, later].sort());
+      // Delivered again, it takes nothing more.
+      await handler.handle({ userId, resetAt: resetAt.toISOString() });
+      expect((await webhooks.findViews(organizationId, [proven, later])).size).toBe(2);
+      // A workspace the account does not own is not touched.
+      const none = new PasswordResetRevokesWebhooksDomainEventHandler(
+        { ownedBy: async () => [] } as unknown as WorkspaceLookupPort,
+        webhooks,
+      );
+      await none.handle({ userId, resetAt: new Date().toISOString() });
+      expect((await webhooks.findViews(organizationId, [later])).size).toBe(1);
     });
 
     it('takes the scopes of the credential behind an edit, and keeps them through a pause', async () => {

@@ -17,6 +17,7 @@ function host(unpairedAt: Date | null = null, capabilities: HostCapabilities | n
       publicKeyFingerprint: 'f'.repeat(64),
       lastSeenAt: new Date(),
       unpairedAt,
+      issuedVerified: true,
     },
   });
 }

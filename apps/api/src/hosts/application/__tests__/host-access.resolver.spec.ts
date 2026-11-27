@@ -37,6 +37,7 @@ function host(
       publicKeyFingerprint: FINGERPRINT,
       lastSeenAt: null,
       unpairedAt,
+      issuedVerified: true,
     },
   });
 }

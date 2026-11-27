@@ -220,10 +220,12 @@ export const auth = betterAuth({
     // grants and unexchanged authorization codes outlive them, and the reset
     // is how a real owner recovers an address someone registered first. The
     // command writes the account's credential cutoff and deletes those in one
-    // transaction. What it does not take back: paired hosts and routine
-    // webhook URLs, which instead cannot be created before the email is
-    // verified (`mayIssueCredential`), and an OAuth exchange already past the
-    // grant gate at the instant of the reset (milliseconds).
+    // transaction; through the outbox, it then unpairs the hosts and revokes
+    // the webhook URLs issued before the email was verified (only a
+    // deployment without email delivery issues those, `mayIssueCredential`).
+    // What it does not take back: hosts and webhook URLs issued to a verified
+    // address, and an OAuth exchange already past the grant gate at the
+    // instant of the reset (milliseconds).
     //
     // Unlike every other hook this one fails the request: a reset answered 200
     // with no cutoff written would tell the owner the account is theirs while

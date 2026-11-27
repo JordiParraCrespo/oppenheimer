@@ -36,4 +36,13 @@ export interface HostPairingTokenRepositoryPort {
    * revoke included.
    */
   insertWithinCap(entity: HostPairingTokenEntity, fence: MintFence): Promise<boolean>;
+  /**
+   * Revoke, at `now`, every token `ownerUserId` minted up to `mintedUpTo`
+   * from an unverified address that has not been spent or revoked, with no
+   * access scope: a password reset is the system taking back what the account
+   * held. One statement, so a registration racing it either spends the token
+   * first (and its host is then found by `findPairedIssuedUnverifiedBySystem`)
+   * or finds it revoked. Answers how many it revoked.
+   */
+  revokeUnspentIssuedUnverified(ownerUserId: string, mintedUpTo: Date, now: Date): Promise<number>;
 }
