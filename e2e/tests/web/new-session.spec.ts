@@ -104,9 +104,7 @@ test.describe('New session', () => {
     // ── The foot row: what the agent may do, and how hard it thinks ──────────
     await page.getByRole('button', { name: 'Permission level' }).click();
     await page.getByRole('menuitemradio', { name: /^Auto/ }).click();
-    await expect(page.getByRole('button', { name: 'Permission level' })).toContainText(
-      'Auto',
-    );
+    await expect(page.getByRole('button', { name: 'Permission level' })).toContainText('Auto');
 
     // ── The first task ───────────────────────────────────────────────────────
     const task = 'fix the wallet list empty state on mobile';

@@ -212,8 +212,7 @@ export class AutoReviewIncompleteError extends Error {
 }
 
 /** A call too long to review whole, as its card says it. */
-export const AUTO_TOO_LONG_NOTE =
-  'Auto cannot read all of this call at once, so it asks.';
+export const AUTO_TOO_LONG_NOTE = 'Auto cannot read all of this call at once, so it asks.';
 
 /** A call whose review failed: it asks, and its card says why. */
 export const AUTO_UNCHECKED_NOTE = 'Auto could not review this just now, so it asks.';
