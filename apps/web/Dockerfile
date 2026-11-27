@@ -59,17 +59,24 @@ ENV API_UPSTREAM=api:3001
 # every user-defined network has. Set it where the image runs outside one.
 ENV NGINX_RESOLVER=127.0.0.11
 # Origins the Content-Security-Policy in nginx.conf admits beyond 'self'.
-# Defaults to the PostHog EU endpoints, matching VITE_POSTHOG_HOST's default,
-# and Sentry's ingestion hosts (sentry.io's US and EU regions), where the
-# console posts its error reports when VITE_SENTRY_DSN is set; widen it when
-# the analytics project is in another region, Sentry is self-hosted, or
-# VITE_API_URL points the app at a different origin.
-ENV CSP_EXTRA_ORIGINS="https://eu.i.posthog.com https://eu-assets.i.posthog.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io"
+# CSP_CONNECT_ORIGINS (`connect-src`) defaults to the PostHog EU endpoints,
+# matching VITE_POSTHOG_HOST's default, and Sentry's ingestion hosts
+# (sentry.io's US and EU regions), where the console posts its error reports
+# when VITE_SENTRY_DSN is set; widen it when the analytics project is in
+# another region, Sentry is self-hosted, or VITE_API_URL points the app at a
+# different origin. CSP_SCRIPT_ORIGINS (`script-src`) is only PostHog's assets
+# host, where its SDK loads its extensions from.
+ENV CSP_CONNECT_ORIGINS="https://eu.i.posthog.com https://eu-assets.i.posthog.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io"
+ENV CSP_SCRIPT_ORIGINS="https://eu-assets.i.posthog.com"
+# The variable there was before the two above. Set, it is added to
+# `connect-src` only (it used to widen `script-src` too); prefer
+# CSP_CONNECT_ORIGINS.
+ENV CSP_EXTRA_ORIGINS=""
 # Origins the console may frame beyond 'self': sessions' previews, as a
 # wildcard of the preview domain (`https://*.<PREVIEW_BASE_URL's domain>`).
 # Empty, the Browser tab's frame is refused; see the /session-previews skill.
 ENV CSP_FRAME_ORIGINS=""
-ENV NGINX_ENVSUBST_FILTER='(API_UPSTREAM|NGINX_RESOLVER|CSP_EXTRA_ORIGINS|CSP_FRAME_ORIGINS)'
+ENV NGINX_ENVSUBST_FILTER='(API_UPSTREAM|NGINX_RESOLVER|CSP_CONNECT_ORIGINS|CSP_SCRIPT_ORIGINS|CSP_EXTRA_ORIGINS|CSP_FRAME_ORIGINS)'
 COPY apps/web/nginx.conf /etc/nginx/templates/default.conf.template
 EXPOSE 3000
 CMD ["nginx", "-g", "daemon off;"]

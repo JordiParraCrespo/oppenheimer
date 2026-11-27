@@ -334,7 +334,7 @@ pieces from your plan, following `references/templates.md`:
 - **Data:**
   - Never ship a placeholder number or fake row. If the value isn't
     available, render nothing.
-  - A new third-party origin goes in `CSP_EXTRA_ORIGINS`.
+  - A new third-party origin goes in `CSP_CONNECT_ORIGINS`, and in `CSP_SCRIPT_ORIGINS` only if it serves script the console runs.
   - An HTTP call goes through the product package, never a `fetch` in a
     screen.
 

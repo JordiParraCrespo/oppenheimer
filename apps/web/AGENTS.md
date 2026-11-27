@@ -75,7 +75,7 @@ pnpm --filter @oppenheimer/e2e e2e:web  # a screen wired to the API gets a spec 
 ## Serving
 
 Compression, cache headers and the Content-Security-Policy live in
-`nginx.conf`. A new third-party origin goes in `CSP_EXTRA_ORIGINS`; anything
+`nginx.conf`. A new third-party origin goes in `CSP_CONNECT_ORIGINS`, and in `CSP_SCRIPT_ORIGINS` only if it serves script the console runs; anything
 the browser must run before React is a file in `public/`, because the policy
 admits no inline script.
 
