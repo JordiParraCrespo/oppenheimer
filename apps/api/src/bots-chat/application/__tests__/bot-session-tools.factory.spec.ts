@@ -406,7 +406,7 @@ describe('BotSessionToolsFactory', () => {
     });
   });
 
-  // What breaks this: a grant given for sessions at approve for me, or the
+  // What breaks this: a grant given for sessions at Auto, or the
   // Full access preset, starting an agent with every check off unseen.
   it('asks for a session at full access on a card of its own, offering only this call, under Auto', async () => {
     const { commandBus, approvals, call } = setup('auto');

@@ -98,11 +98,6 @@ export const LEDGER = [
   },
   {
     file: 'bots-chat/domain/bot-auto-review.policy.ts',
-    starts: 'Auto left this to you',
-    why: "an approval card's note, for the person",
-  },
-  {
-    file: 'bots-chat/domain/bot-auto-review.policy.ts',
     starts: 'Auto could not review',
     why: "an approval card's note, for the person",
   },

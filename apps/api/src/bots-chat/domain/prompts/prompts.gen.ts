@@ -2730,7 +2730,7 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "sessions/tools.start-session-agent": "Which coding agent; claude-code when omitted.",
   "sessions/tools.start-session-model": "The agent's model, by id or by name as the person said it. {{modelChoicesByAgent}} A model the agent does not have is refused with the list it has.",
   "sessions/tools.start-session-effort": "How hard the model thinks, as the CLI names it (low, medium, high, xhigh, max; Codex also minimal and ultra). The model's own default when omitted; a level the model does not offer is refused with the ones it does.",
-  "sessions/tools.start-session-permission": "What the agent may do without asking: auto (default; approve for me, still checking each action), full (no checks at all, only when the person asks for it; the person always approves such a session on its own card), or ask (it stops at every approval, which the person or answer_session must answer).",
+  "sessions/tools.start-session-permission": "What the agent may do without asking: auto (default; Auto, still checking each action), full (no checks at all, only when the person asks for it; the person always approves such a session on its own card), or ask (it stops at every approval, which the person or answer_session must answer).",
   "sessions/tools.start-session-base-branch": "The branch the session's own branch starts from; the repository's base branch when omitted. Not with folder.",
   "sessions/tools.start-session-name": "A short name for the session.",
   "sessions/tools.start-session-watch": "Be woken when its task needs input or ends (default true).",

@@ -131,4 +131,11 @@ describe('launchPhrase', () => {
     ).toBe('Opus 5.5, high effort, full access');
     expect(launchPhrase('claude-code', {})).toBe('');
   });
+
+  // What breaks this: a card naming a level by a word the console's
+  // permission chip no longer shows.
+  it('names each level as the permission chip does', () => {
+    expect(launchPhrase('claude-code', { permission: 'ask' })).toBe('asking for approval');
+    expect(launchPhrase('claude-code', { permission: 'auto' })).toBe('auto');
+  });
 });
