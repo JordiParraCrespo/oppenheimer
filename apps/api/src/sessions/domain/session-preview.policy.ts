@@ -9,8 +9,33 @@
 /** The path a preview origin redeems its ticket on, before the app's own. */
 export const PREVIEW_ENTER_PATH = '/__oppenheimer/enter';
 
-/** The cookie a preview origin keeps its reader in. Taken off every request the app sees. */
-export const PREVIEW_COOKIE = '__oppenheimer_preview';
+/**
+ * The cookie a preview origin keeps its reader in. Taken off every request the
+ * app sees. `__Host-`: the browser takes it only `Secure`, on `Path=/` and with
+ * no `Domain`, so a page on a sibling preview cannot plant one that this
+ * origin would be sent. The name it had before (`__oppenheimer_preview`) is no
+ * longer read: a reader holding only that one is sent back through a ticket.
+ */
+export const PREVIEW_COOKIE = '__Host-oppenheimer_preview';
+
+/**
+ * The same cookie where the browser keeps no `Secure` cookie (a plain-http
+ * preview domain that is not `localhost`), which cannot carry the prefix.
+ * Such a deployment has no protection against a sibling's cookie.
+ */
+export const PREVIEW_COOKIE_INSECURE = 'oppenheimer_preview';
+
+/** Every name the preview cookie has had, taken off what the app is sent. */
+export const PREVIEW_COOKIE_NAMES = [
+  PREVIEW_COOKIE,
+  PREVIEW_COOKIE_INSECURE,
+  '__oppenheimer_preview',
+] as const;
+
+/** The preview cookie's name where the browser does, or does not, keep a `Secure` cookie. */
+export function previewCookieName(secure: boolean): string {
+  return secure ? PREVIEW_COOKIE : PREVIEW_COOKIE_INSECURE;
+}
 
 /** The lowest and highest port a preview reaches: the session's own, never a system one. */
 export const PREVIEW_MIN_PORT = 1024;

@@ -67,6 +67,13 @@ revoked share or a closed session ends the preview as it ends a terminal.
 - Every preview answer carries `frame-ancestors` naming the console's
   origin: only the console frames a preview.
 - The cookie is taken off the request before it reaches the app.
+- The cookie's name carries the `__Host-` prefix, so the browser takes it
+  only `Secure`, on `Path=/` and with no `Domain`: a page on a sibling
+  preview cannot plant one this origin is sent. Every preview still shares
+  the preview domain's site, so one app can set a cookie (`Domain=<preview
+  domain>`) every other app is sent; a deployment closes that by putting the
+  preview domain on the Public Suffix List, or by one registrable domain per
+  preview.
 
 **The app sees `localhost`.** The relay forwards raw TCP, so HTTP/1.1, keep-
 alive, server-sent events and WebSockets (a dev server's hot reload) all

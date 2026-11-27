@@ -1,6 +1,9 @@
 import { createHmac, hkdfSync, timingSafeEqual } from 'node:crypto';
 import type { IncomingHttpHeaders, OutgoingHttpHeaders } from 'node:http';
-import { PREVIEW_COOKIE } from '../../sessions/domain/session-preview.policy';
+import {
+  PREVIEW_COOKIE_NAMES,
+  previewCookieName,
+} from '../../sessions/domain/session-preview.policy';
 
 /**
  * The pieces of a preview origin's HTTP that are pure: its cookie, and what
@@ -72,13 +75,18 @@ function mac(key: Buffer, body: string): string {
   return createHmac('sha256', key).update(body).digest('base64url');
 }
 
-/** One cookie's value out of a `Cookie` header. */
-export function cookieValue(header: string | undefined, name: string): string | undefined {
+/**
+ * Every value a `Cookie` header carries under one name, in the order sent.
+ * More than one can arrive (a partitioned and an unpartitioned copy, or one a
+ * page planted), so a reader tries each rather than trusting the first.
+ */
+export function cookieValues(header: string | undefined, name: string): string[] {
+  const values: string[] = [];
   for (const part of (header ?? '').split(';')) {
     const [key, ...rest] = part.trim().split('=');
-    if (key === name) return rest.join('=');
+    if (key === name) values.push(rest.join('='));
   }
-  return undefined;
+  return values;
 }
 
 /**
@@ -86,14 +94,15 @@ export function cookieValue(header: string | undefined, name: string): string | 
  * is `SameSite=None; Partitioned`, so it is sent only under the console's
  * site: another site that frames or posts to the preview carries none. Opened
  * in a tab of its own it is `Lax`. `Secure` wherever the browser takes it
- * (https, or a `localhost` name).
+ * (https, or a `localhost` name), which is also when it carries the
+ * `__Host-` prefix: never a `Domain`, always `Path=/`.
  */
 export function previewSetCookie(
   value: string,
   options: { embed: boolean; secure: boolean },
 ): string {
   const parts = [
-    `${PREVIEW_COOKIE}=${value}`,
+    `${previewCookieName(options.secure)}=${value}`,
     'Path=/',
     'HttpOnly',
     `Max-Age=${Math.floor(PREVIEW_COOKIE_TTL_MS / 1000)}`,
@@ -166,7 +175,7 @@ export function upstreamHeaders(
     out.referer = local + referer.slice(options.previewOrigin.length);
   }
   const cookie =
-    typeof out.cookie === 'string' ? withoutCookie(out.cookie, PREVIEW_COOKIE) : undefined;
+    typeof out.cookie === 'string' ? withoutCookies(out.cookie, PREVIEW_COOKIE_NAMES) : undefined;
   if (cookie) out.cookie = cookie;
   else delete out.cookie;
   return out;
@@ -181,11 +190,11 @@ function partitioned(cookie: string): string {
   return [pair, ...kept, 'SameSite=None', 'Secure', 'Partitioned'].join('; ');
 }
 
-function withoutCookie(header: string, name: string): string {
+function withoutCookies(header: string, names: readonly string[]): string {
   return header
     .split(';')
     .map((part) => part.trim())
-    .filter((part) => part && part.split('=')[0] !== name)
+    .filter((part) => part && !names.includes(part.split('=')[0] as string))
     .join('; ');
 }
 
@@ -227,7 +236,8 @@ export function downstreamHeaders(
   const cookies = out['set-cookie'];
   if (Array.isArray(cookies)) {
     out['set-cookie'] = cookies.map((cookie) => {
-      const local = cookie.replace(/;\s*domain=[^;]*/i, '');
+      // Every `Domain`: a second one would still name a parent of the preview.
+      const local = cookie.replace(/;\s*domain=[^;]*/gi, '');
       return options.partitionCookies ? partitioned(local) : local;
     });
   }

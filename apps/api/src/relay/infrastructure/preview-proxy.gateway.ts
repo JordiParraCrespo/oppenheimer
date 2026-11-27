@@ -25,10 +25,10 @@ import {
   type AttachTicket,
 } from '../../sessions/application/session-lookup.port';
 import {
-  PREVIEW_COOKIE,
   PREVIEW_ENTER_PATH,
   type PreviewAddress,
   previewAddressOf,
+  previewCookieName,
   previewOrigin,
   safePreviewPath,
 } from '../../sessions/domain/session-preview.policy';
@@ -36,7 +36,7 @@ import { BoundedMap } from './bounded-map.util';
 import { BrowserAttachGateway, REAUTHORIZE_INTERVAL_MS } from './browser-attach.gateway';
 import { LinkPortStream, PortRefusedError } from './link-port-stream.util';
 import {
-  cookieValue,
+  cookieValues,
   downstreamHeaders,
   PREVIEW_COOKIE_TTL_MS,
   type PreviewCookieClaim,
@@ -315,16 +315,17 @@ export class PreviewProxyGateway implements OnApplicationBootstrap, OnApplicatio
     req: IncomingMessage,
     address: PreviewAddress,
   ): Promise<{ claim: PreviewCookieClaim; link: RunnerLink } | null> {
-    const value = cookieValue(req.headers.cookie, PREVIEW_COOKIE);
-    const claim = verifyPreviewCookie(this.cookieKey, value, Date.now());
-    if (!claim || !value || claim.sessionId !== address.sessionId || claim.port !== address.port) {
-      return null;
+    const now = Date.now();
+    for (const value of cookieValues(req.headers.cookie, previewCookieName(this.secureCookies))) {
+      const claim = verifyPreviewCookie(this.cookieKey, value, now);
+      if (!claim || claim.sessionId !== address.sessionId || claim.port !== address.port) continue;
+      const verdict = await this.judge(value, claim);
+      if (!verdict.allowed || !verdict.hostId) continue;
+      const link = this.links.find(verdict.hostId);
+      if (!link?.capabilities.includes('port.forward')) continue;
+      return { claim, link };
     }
-    const verdict = await this.judge(value, claim);
-    if (!verdict.allowed || !verdict.hostId) return null;
-    const link = this.links.find(verdict.hostId);
-    if (!link?.capabilities.includes('port.forward')) return null;
-    return { claim, link };
+    return null;
   }
 
   private judge(key: string, claim: PreviewCookieClaim): Judged['verdict'] {

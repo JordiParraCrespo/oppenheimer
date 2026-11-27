@@ -66,7 +66,14 @@ What any deployment needs, whatever fronts it:
 1. **A domain of its own for previews**, a different registrable domain from
    the console's (`example-preview.dev` beside `app.example.com`), never a
    subdomain of it: a preview runs what a session's agent wrote, and a
-   sibling of the console could set cookies the console reads.
+   sibling of the console could set cookies the console reads. Every
+   preview is a subdomain of that one domain, so a preview's app can still
+   set a cookie with `Domain=<preview domain>` that every other preview's
+   app is sent (it can break another app, or fix a session into it; the
+   preview's own cookie is `__Host-`, which no sibling can plant). To close
+   that, put the preview domain on the
+   [Public Suffix List](https://publicsuffix.org/submit/) (each preview is
+   then a site of its own), or give each preview its own registrable domain.
 2. **Wildcard DNS and TLS** for `*.<preview domain>`, pointed at the API's
    preview port (`PREVIEW_PORT`, 3011),
    with `Host` passed through untouched and WebSockets allowed (hot reload).
@@ -100,7 +107,10 @@ Everything above is one setting in `config/host.env` plus Cloudflare:
    curl -s https://dev.example.com/api/v1/health/capabilities | grep -o '"session_previews":[a-z]*'   # true
    ```
 
-The preview's cookie is `SameSite=None; Secure; Partitioned` when framed: a
+The preview's cookie is `__Host-oppenheimer_preview` (`Secure`, `Path=/`, no
+`Domain`; plain `oppenheimer_preview` only on a plain-http preview domain
+that is not `localhost`, where the browser keeps no `Secure` cookie), and
+`SameSite=None; Secure; Partitioned` when framed: a
 third-party cookie keyed to the console's site. Chrome, Edge and Firefox keep
 it; Safari keeps partitioned cookies from 18.4. In a browser that refuses it,
 Open in a new tab still works.
