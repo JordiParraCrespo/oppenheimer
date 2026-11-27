@@ -87,8 +87,8 @@ export function tabsToClose(keys: readonly string[], key: string, which: CloseTa
 /**
  * The tab to show once the menu of `key` closes `closed`: the one on screen
  * when it stays, else `key` itself when it stays (a browser lights the tab
- * whose menu it was), else what closing `key` alone would show; null when
- * nothing is left.
+ * whose menu it was), else the first tab left after the one on screen, else
+ * the last left before it; null when nothing is left.
  */
 export function tabAfterClosingMany(
   keys: readonly string[],
@@ -98,8 +98,10 @@ export function tabAfterClosingMany(
 ): string | null {
   if (shown === null || !closed.includes(shown)) return shown;
   if (!closed.includes(key)) return key;
-  const left = keys.filter((one) => one === shown || !closed.includes(one));
-  return tabAfterClosing(left, shown, shown);
+  const at = keys.indexOf(shown);
+  const remaining = keys.filter((one) => !closed.includes(one));
+  const before = remaining.filter((one) => keys.indexOf(one) < at);
+  return remaining.find((one) => keys.indexOf(one) > at) ?? before.at(-1) ?? null;
 }
 
 /**

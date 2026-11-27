@@ -117,6 +117,10 @@ describe('open tabs', () => {
     expect(tabAfterClosingMany(keys, 'session:c', 'session:b', ['session:b', 'session:c'])).toBe(
       'session:d',
     );
+    // Nothing left after it: the last one left before it.
+    expect(
+      tabAfterClosingMany(keys, 'session:d', 'session:c', ['session:b', 'session:c', 'session:d']),
+    ).toBe('session:a');
     expect(tabAfterClosingMany(keys, 'session:a', 'session:a', keys)).toBeNull();
     expect(tabAfterClosingMany(keys, null, 'session:a', keys)).toBeNull();
   });
