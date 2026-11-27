@@ -341,11 +341,18 @@ describe('markersBefore', () => {
       at('2026-10-15T09:00:00', 'glm-5.3'),
       at('2026-10-15T10:00:00', 'glm-4.6'),
     ];
-    expect(markersBefore(blocks, 0)).toEqual({ day: null, model: null });
-    expect(markersBefore(blocks, 1)).toEqual({ day: null, model: null });
-    expect(markersBefore(blocks, 2).day?.getDate()).toBe(15);
-    expect(markersBefore(blocks, 2).model).toBeNull();
-    expect(markersBefore(blocks, 3)).toEqual({ day: null, model: blocks[3]?.turn });
+    expect(markersBefore(blocks, 0, true)).toEqual({ day: null, model: null });
+    expect(markersBefore(blocks, 1, true)).toEqual({ day: null, model: null });
+    expect(markersBefore(blocks, 2, true).day?.getDate()).toBe(15);
+    expect(markersBefore(blocks, 2, true).model).toBeNull();
+    expect(markersBefore(blocks, 3, true)).toEqual({ day: null, model: blocks[3]?.turn });
+  });
+
+  /** The quiet chat names no model: a switch with the tool calls hidden draws no note, the day line stays. */
+  it('marks no model switch while the tool calls are hidden', () => {
+    const blocks = [at('2026-10-14T09:00:00', 'glm-5.3'), at('2026-10-15T10:00:00', 'glm-4.6')];
+    expect(markersBefore(blocks, 1, false).model).toBeNull();
+    expect(markersBefore(blocks, 1, false).day?.getDate()).toBe(15);
   });
 });
 

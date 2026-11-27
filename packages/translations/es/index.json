@@ -2265,8 +2265,8 @@
         "unknown": "algo salió mal"
       },
       "openSession": "Abrir sesión",
-      "hideToolCalls": "Ocultar llamadas a herramientas, rutinas y cambios de tareas",
-      "showToolCalls": "Mostrar llamadas a herramientas, rutinas y cambios de tareas",
+      "hideToolCalls": "Ocultar el trabajo del bot: herramientas, rutinas, modelo y tiempo",
+      "showToolCalls": "Mostrar el trabajo del bot: herramientas, rutinas, modelo y tiempo",
       "goal": {
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",

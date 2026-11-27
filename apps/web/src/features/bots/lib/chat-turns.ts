@@ -120,23 +120,25 @@ export function turnPhase(turn: BotTurnEntity, wrote: boolean): TurnPhase {
 }
 
 /**
- * What a finished turn's trail carries: `full` (its model, time and tokens,
- * Copy, Retry), `retry` (Retry alone), or `none`. While the chat hides its
- * tool calls, a completed turn that did nothing but run tools has said
- * nothing to trail, and only the newest keeps Retry; a stopped or empty turn
- * keeps all of it.
+ * What a finished turn's trail carries. With the tool calls shown, `full`:
+ * how long it worked, its model and tokens, then Copy, React and Retry.
+ * Hidden, the chat reads like a messenger: `quiet` keeps the actions and
+ * says only Stopped, never the time, model or tokens; a completed turn that
+ * did nothing but run tools has said nothing to trail, so only the newest
+ * keeps Retry (`retry`) and the rest trail `none`.
  */
 export function turnTrail(
   block: ChatTurnBlock,
   phase: TurnPhase | null,
   toolCallsShown: boolean,
   retryable: boolean,
-): 'full' | 'retry' | 'none' {
+): 'full' | 'quiet' | 'retry' | 'none' {
+  if (toolCallsShown) return 'full';
   const onlyRanTools =
     phase === 'completed' &&
     block.answer.length > 0 &&
     block.answer.every((message) => message.role === 'activity');
-  if (toolCallsShown || !onlyRanTools) return 'full';
+  if (!onlyRanTools) return 'quiet';
   return retryable ? 'retry' : 'none';
 }
 
@@ -250,11 +252,14 @@ function askedAt(block: ChatTurnBlock): Date | undefined {
 /**
  * The markers before a turn (AI Elements' Marker): the day, when it is not
  * the day the turn before was asked on; the model, when the turn runs on
- * another than the turn before. The first turn has neither.
+ * another than the turn before and the tool calls are shown (the quiet
+ * chat names no model, as it names none in a trail). The first turn has
+ * neither.
  */
 export function markersBefore(
   blocks: readonly ChatTurnBlock[],
   index: number,
+  toolCallsShown: boolean,
 ): { day: Date | null; model: BotTurnEntity | null } {
   const block = blocks[index];
   const previous = index > 0 ? blocks[index - 1] : undefined;
@@ -265,7 +270,12 @@ export function markersBefore(
   const { turn } = block;
   const prior = previous.turn;
   const model =
-    turn && prior && (turn.model !== prior.model || turn.provider !== prior.provider) ? turn : null;
+    toolCallsShown &&
+    turn &&
+    prior &&
+    (turn.model !== prior.model || turn.provider !== prior.provider)
+      ? turn
+      : null;
   return { day, model };
 }
 

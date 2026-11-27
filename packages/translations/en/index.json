@@ -2216,8 +2216,8 @@
         "unknown": "something went wrong"
       },
       "openSession": "Open session",
-      "hideToolCalls": "Hide tool calls, routine runs and task updates",
-      "showToolCalls": "Show tool calls, routine runs and task updates",
+      "hideToolCalls": "Hide the bot’s work: tool calls, routine runs, model and time",
+      "showToolCalls": "Show the bot’s work: tool calls, routine runs, model and time",
       "goal": {
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
