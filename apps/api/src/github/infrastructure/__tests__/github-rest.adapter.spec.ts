@@ -444,6 +444,14 @@ describe('reading the authorizing person’s organization membership', () => {
       adapter.readOrganizationMembership(AUTHORIZATION, 'acme-labs'),
     ).rejects.toMatchObject({ code: 'GITHUB_015' });
   });
+
+  it('lets any other failure through as itself, never as a missing membership', async () => {
+    const { adapter } = build([{ status: 500, body: { message: 'Server Error' } }]);
+
+    await expect(
+      adapter.readOrganizationMembership(AUTHORIZATION, 'acme-labs'),
+    ).rejects.toMatchObject({ code: 'GITHUB_009', extensions: { upstreamStatus: 500 } });
+  });
 });
 
 describe('GitHub’s rate limit', () => {
