@@ -27,7 +27,10 @@ export class MembershipEndedDomainEventHandler {
     private readonly apiTokens: ApiTokenRepositoryPort,
   ) {}
 
-  @OnEvent(MembershipEndedDomainEvent.name)
+  // `suppressErrors: false`: a revocation that fails is thrown for the outbox
+  // to retry. Swallowed, the event would be marked delivered with the tokens
+  // still live, and they would work again once the person is re-added.
+  @OnEvent(MembershipEndedDomainEvent.name, { suppressErrors: false })
   async handle(event: Pick<MembershipEndedDomainEvent, 'aggregateId' | 'userId'>): Promise<void> {
     const revoked = await this.apiTokens.revokePinnedTo(
       event.userId,
