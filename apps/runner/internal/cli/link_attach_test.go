@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"runtime"
@@ -97,6 +98,17 @@ type heldAttach struct {
 	entered chan struct{}
 	// readOnly is what the last attach asked for.
 	readOnly bool
+	// scrollback is what a scrollback read answers, and scrolled the target
+	// and line count it was last asked for.
+	scrollback string
+	scrolled   chan string
+}
+
+func (t *heldAttach) CaptureScrollback(_ context.Context, target string, lines int) (string, error) {
+	if t.scrolled != nil {
+		t.scrolled <- fmt.Sprintf("%s %d", target, lines)
+	}
+	return t.scrollback, nil
 }
 
 func (t *heldAttach) Attach(_ context.Context, _ string, _ sessionsapp.Size, readOnly bool) (sessionsapp.Attachment, error) {

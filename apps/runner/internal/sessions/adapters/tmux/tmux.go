@@ -431,6 +431,13 @@ func (s *Server) CaptureHistory(ctx context.Context, target string, lines int) (
 	return s.command(ctx, "capture-pane", "-p", "-t", target, "-S", fmt.Sprintf("-%d", lines))
 }
 
+// CaptureScrollback returns the visible screen and up to lines lines above
+// it, each with its colours (`-e`). It reads the pane alone: no client is
+// put in copy mode, so nobody's view of the pane moves.
+func (s *Server) CaptureScrollback(ctx context.Context, target string, lines int) (string, error) {
+	return s.command(ctx, "capture-pane", "-p", "-e", "-t", target, "-S", fmt.Sprintf("-%d", max(lines, 0)))
+}
+
 // Launch replaces the shell a window was made with by command, in dir.
 // `respawn-pane -k` makes the program the pane's own process, as `exec` would,
 // on a fresh screen: no line is typed for it, and neither the shell's prompt

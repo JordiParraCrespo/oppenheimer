@@ -9,6 +9,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import {
   ATTACH_CLOSE_CODES,
   type AttachmentChatMessage,
+  type AttachmentHistoryPageMessage,
   type AttachServerMessage,
   attachClientMessageSchema,
 } from '@oppenheimer/shared/protocol';
@@ -502,6 +503,19 @@ class BrowserAttachment implements AttachmentSink {
     });
   }
 
+  history(message: AttachmentHistoryPageMessage): void {
+    if (this.finished || this.ws.readyState !== this.ws.OPEN) return;
+    if (this.ws.bufferedAmount > BROWSER_MAX_BUFFERED_BYTES) {
+      this.ws.close(1008, 'slow consumer');
+      return;
+    }
+    this.tell({
+      type: 'history',
+      text: message.text,
+      ...(message.truncated ? { truncated: true } : {}),
+    });
+  }
+
   refused(code: string, detail?: string): void {
     if (this.finished) return;
     this.finished = true;
@@ -545,7 +559,22 @@ class BrowserAttachment implements AttachmentSink {
       case 'chat.older':
         this.chatOlder(message.data.before);
         return;
+      case 'history.ask':
+        this.historyAsk(message.data.lines);
+        return;
     }
+  }
+
+  /**
+   * The reader scrolled back through the terminal and asks for its
+   * scrollback: a watcher, whose wheel never reaches tmux. It reads what the
+   * attachment already shows, so a share that lets someone watch lets them
+   * scroll back too. A runner that does not answer is asked nothing.
+   */
+  private historyAsk(lines: number): void {
+    if (!this.attached || this.attachmentId === null) return;
+    if (!this.link.capabilities.includes('attachment.history')) return;
+    this.link.send({ type: 'attachment.history', attachmentId: this.attachmentId, lines });
   }
 
   /**

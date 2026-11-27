@@ -97,6 +97,20 @@ export const CHAT_BATCH_MAX_ENTRIES = 256;
 /** How many slash commands one chat `reset` names at most (`attachment.chat`'s `commands`). */
 export const CHAT_COMMANDS_MAX = 200;
 
+/**
+ * The most lines of a terminal's scrollback one `attachment.history` asks for:
+ * what a watcher scrolls back through on a shared session, whose wheel never
+ * reaches tmux.
+ */
+export const ATTACHMENT_HISTORY_MAX_LINES = 5000;
+
+/**
+ * The largest `attachment.history.page` text, with its colours: its last
+ * bytes are kept, cut at a line, so the page and its envelope fit one frame
+ * (`LINK_MAX_FRAME_BYTES`).
+ */
+export const ATTACHMENT_HISTORY_MAX_BYTES = 384 * 1024;
+
 /** What the reader can do to a session's device from the console (`device.input`). */
 export const DEVICE_INPUT_KINDS = ['tap', 'swipe', 'text', 'key', 'button'] as const;
 export const DEVICE_KEYS = ['enter', 'backspace', 'escape', 'tab'] as const;

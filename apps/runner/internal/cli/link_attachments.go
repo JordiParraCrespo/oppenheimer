@@ -11,6 +11,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
@@ -31,6 +33,7 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch ui
 	att := &attachment{
 		id: m.AttachmentID, sessionID: m.SessionID, window: m.Window, pty: pty, cancel: cancel,
 		flow: newFlowWindow(), epoch: epoch, input: make(chan []byte, attachmentInput), readOnly: readOnly,
+		history: make(chan int, 1),
 	}
 	if m.ChatTail {
 		// The console can ask for older turns, so the chat goes tail first.
@@ -58,6 +61,51 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch ui
 	go h.pump(readCtx, att)
 	go h.inputPump(readCtx, att)
 	go h.chat(readCtx, att)
+	go h.history(readCtx, att)
+}
+
+// historyWait bounds one scrollback read: tmux answers in milliseconds, and
+// a stuck one must not hold the next ask.
+const historyWait = 10 * time.Second
+
+// history answers the attachment's `attachment.history` asks while it is
+// open, one at a time, each with one `attachment.history.page`. A read that
+// fails answers with an empty page, so the console stops waiting.
+func (h *linkHandler) history(ctx context.Context, att *attachment) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case lines := <-att.history:
+			readCtx, cancel := context.WithTimeout(ctx, historyWait)
+			text, err := h.app.Sessions.Scrollback(readCtx, att.sessionID, att.window, lines)
+			cancel()
+			if err != nil {
+				h.logger.Debug("could not read the session's scrollback", slog.String("session", att.sessionID), slog.Any("error", err))
+				text = ""
+			}
+			if ctx.Err() != nil {
+				return
+			}
+			page, truncated := historyTail(text, link.AttachmentHistoryMaxBytes)
+			_ = h.client.Send(link.AttachmentHistoryPage{
+				Type: link.TypeAttachmentHistoryPage, AttachmentID: att.id, Text: page, Truncated: truncated,
+			})
+		}
+	}
+}
+
+// historyTail keeps the last max bytes of text, starting at a line, so a
+// page never opens mid-line or mid-escape. It reports whether it cut.
+func historyTail(text string, max int) (string, bool) {
+	if len(text) <= max {
+		return text, false
+	}
+	tail := text[len(text)-max:]
+	if at := strings.IndexByte(tail, '\n'); at >= 0 {
+		return tail[at+1:], true
+	}
+	return "", true
 }
 
 // chat follows the attached session's conversation for the console's chat

@@ -525,6 +525,7 @@
     }
   },
   "shared": {
+    "backToLive": "Volver al directo",
     "viewOnly": "Solo ver",
     "canWrite": "Puede editar",
     "endsIn": "Termina en {{time}}",

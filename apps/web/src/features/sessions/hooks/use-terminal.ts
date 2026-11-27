@@ -87,6 +87,9 @@ export function useTerminal(
   const [awaySince, setAwaySince] = useState<number | null>(null);
   // The link came back from being away, for the moment the pane says so.
   const [reconnected, setReconnected] = useState(false);
+  // A watcher's scrollback page, while one is open over the grid: how to
+  // close it (`bindWatcherHistory`).
+  const [closeHistory, setCloseHistory] = useState<(() => void) | null>(null);
   // Bumped to open a new stream after an end.
   const [generation, setGeneration] = useState(0);
   const streamRef = useRef<SessionStream | null>(null);
@@ -135,6 +138,8 @@ export function useTerminal(
       // A reconnect replays the scrollback, so a session that has already run
       // answers this on its first frame and the waiting state never shows.
       onFirstOutput: () => setHasOutput(true),
+      // Wrapped: a function handed to a state setter would be called as an updater.
+      onHistory: (close) => setCloseHistory(close ? () => close : null),
       // The chat over the grid says what the agent's spinner says.
       onActivity: chat ? (activity) => chat.setActivity(activity) : undefined,
       // and what it suggests sending next, which the composer offers.
@@ -178,6 +183,7 @@ export function useTerminal(
     document.addEventListener('visibilitychange', wake);
 
     return () => {
+      setCloseHistory(null);
       window.removeEventListener('online', wake);
       document.removeEventListener('visibilitychange', wake);
       offStatus();
@@ -246,6 +252,8 @@ export function useTerminal(
 
   return {
     containerRef,
+    /** Closes the watcher's scrollback page and shows the live grid; null while none is open. */
+    closeHistory,
     status,
     hasOutput,
     ended,

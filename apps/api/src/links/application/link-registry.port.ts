@@ -2,6 +2,7 @@ import type {
   AttachmentChatMessage,
   AttachmentDirectAnswerMessage,
   AttachmentDirectRefusedMessage,
+  AttachmentHistoryPageMessage,
   AttachmentPathMessage,
   DesktopPointerMessage,
   DeviceInfoMessage,
@@ -26,6 +27,12 @@ export interface AttachmentSink {
    * terminal (0.7), as the runner compacted them. Relayed, never read here.
    */
   chat(message: AttachmentChatMessage): void;
+  /**
+   * The pane's scrollback a terminal attachment asked for
+   * (`attachment.history`), as tmux holds it. Relayed, never read here. Only
+   * a terminal implements it.
+   */
+  history?(message: AttachmentHistoryPageMessage): void;
   /**
    * Which device a device attachment shows (`device.info`), before its
    * frames. Only a device attachment implements it; a terminal never hears one.

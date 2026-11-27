@@ -1,6 +1,7 @@
 import { z } from 'zod/v4';
 import {
   ATTACHMENT_CREDIT_WINDOW_BYTES,
+  ATTACHMENT_HISTORY_MAX_BYTES,
   CHAT_BATCH_MAX_ENTRIES,
   CHAT_COMMANDS_MAX,
   CHAT_ENTRY_MAX_BYTES,
@@ -80,6 +81,7 @@ export function toProtocolJsonSchema(): Record<string, unknown> {
       chatCommandsMax: CHAT_COMMANDS_MAX,
       execOutputMaxBytes: HOST_EXEC_OUTPUT_MAX_BYTES,
       terminalScreenMaxBytes: TERMINAL_SCREEN_MAX_BYTES,
+      attachmentHistoryMaxBytes: ATTACHMENT_HISTORY_MAX_BYTES,
       computerScreenMaxEdge: COMPUTER_SCREEN_MAX_EDGE,
       computerScreenshotMaxBytes: COMPUTER_SCREENSHOT_MAX_BYTES,
       sessionChangesMaxFiles: SESSION_CHANGES_MAX_FILES,

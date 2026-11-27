@@ -1813,8 +1813,8 @@ describe('browser attach socket', () => {
       vi.mocked(h.lookup.shareAdmits).mockResolvedValue(admits);
     }
 
-    async function attachedThrough(ticket: string) {
-      const runner = await runnerUp(h);
+    async function attachedThrough(ticket: string, capabilities?: string[]) {
+      const runner = await runnerUp(h, capabilities ? { capabilities } : undefined);
       sockets.push(runner);
       const browser = ws(h.origin, '/api/v1/relay/attach', {}, [ticket]);
       sockets.push(browser);
@@ -1868,6 +1868,47 @@ describe('browser attach socket', () => {
       // anyone a session is shared with to watch. The resize after it is what arrives.
       const next = nextMessage(runner);
       browser.send(Buffer.from('rm -rf ~\r'), { binary: true });
+      browser.send(JSON.stringify({ type: 'resize', cols: 100, rows: 30 }));
+      expect((await next).text).toMatchObject({ type: 'session.resize', cols: 100 });
+    });
+
+    it('lets a read share scroll back: its ask reaches the runner and the page comes back', async () => {
+      // What breaks this: a watcher's terminal that cannot scroll at all, since
+      // its wheel never reaches tmux.
+      shareIs(true);
+      const { runner, browser } = await attachedThrough(shareTicket(true), [
+        'attachment.history',
+      ]);
+      const asked = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'history.ask', lines: 5000 }));
+      expect((await asked).text).toEqual({
+        type: 'attachment.history',
+        attachmentId: 1,
+        lines: 5000,
+      });
+
+      const page = nextMessage(browser);
+      runner.send(
+        JSON.stringify({
+          type: 'attachment.history.page',
+          attachmentId: 1,
+          text: '\u001b[32mok\u001b[0m\n',
+          truncated: true,
+        }),
+      );
+      expect((await page).text).toEqual({
+        type: 'history',
+        text: '\u001b[32mok\u001b[0m\n',
+        truncated: true,
+      });
+    });
+
+    it('never asks a runner that does not answer for the scrollback', async () => {
+      // What breaks this: a message the runner does not know, sent to one that predates it.
+      shareIs(true);
+      const { runner, browser } = await attachedThrough(shareTicket(true));
+      const next = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'history.ask', lines: 5000 }));
       browser.send(JSON.stringify({ type: 'resize', cols: 100, rows: 30 }));
       expect((await next).text).toMatchObject({ type: 'session.resize', cols: 100 });
     });

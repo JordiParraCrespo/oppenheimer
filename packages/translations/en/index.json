@@ -1406,6 +1406,7 @@
       }
     },
     "shared": {
+      "backToLive": "Back to live",
       "viewOnly": "View only",
       "canWrite": "Can edit",
       "endsIn": "Ends in {{time}}",

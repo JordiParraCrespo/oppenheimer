@@ -287,6 +287,12 @@ func (t *Terminals) CaptureHistory(ctx context.Context, target string, _ int) (s
 	return t.CaptureBody(ctx, target)
 }
 
+// CaptureScrollback implements app.Terminals: the fake keeps no scrollback
+// and no colours.
+func (t *Terminals) CaptureScrollback(ctx context.Context, target string, _ int) (string, error) {
+	return t.CaptureBody(ctx, target)
+}
+
 // Launched is what a window was last launched with.
 type Launched struct {
 	Dir     string

@@ -29,6 +29,7 @@ import {
   terminalMinimumContrastRatio,
 } from './terminal-theme';
 import { bindUserTurns } from './user-turns';
+import { bindWatcherHistory } from './watcher-history';
 
 /** The platform test xterm itself uses to pick its Mac behaviour. */
 const IS_MAC = typeof navigator !== 'undefined' && /^Mac/.test(navigator.platform);
@@ -58,6 +59,12 @@ export interface SessionTerminalOptions {
    * keeps the pane from looking as though typing would do something.
    */
   readOnly?: boolean;
+  /**
+   * A watcher's scrollback page opened (with a way to close it) or closed
+   * (null): a read-only pane scrolls back through a page the host reads for
+   * it (`bindWatcherHistory`), since its wheel never reaches tmux.
+   */
+  onHistory?: (close: (() => void) | null) => void;
   /**
    * Whether predictive local echo may draw (`typeahead.ts`): the
    * `terminal_typeahead` flag, read through a getter so the flag arriving
@@ -247,8 +254,18 @@ export function mountSessionTerminal(
     };
   };
 
+  // A watcher's notches up open the pane's scrollback instead: tmux takes no
+  // input from it, and its copy mode would move everyone's view.
+  const history = options.readOnly
+    ? bindWatcherHistory(term, container, stream, (close) => options.onHistory?.(close))
+    : null;
+
   term.attachCustomWheelEventHandler((event) => {
     const lines = wheelLines(event, term.rows);
+    if (history && term.buffer.active.type !== 'normal') {
+      history.wheel(lines);
+      return false;
+    }
     if (term.buffer.active.type !== 'normal') {
       // The program's, batched: never xterm's own per-event report.
       if (lines !== 0) {
@@ -370,6 +387,7 @@ export function mountSessionTerminal(
     : undefined;
 
   return () => {
+    history?.dispose();
     unbindActivity?.();
     unbindSuggestion?.();
     unbindFeedback?.();

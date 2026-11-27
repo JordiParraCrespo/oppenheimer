@@ -78,6 +78,18 @@ export interface SessionStream {
    * `older`. Optional, as `onChat` is.
    */
   askOlderChat?(before: number): void;
+  /**
+   * A page of the pane's scrollback asked for with `askHistory`: its lines
+   * and its screen, with their colours, the screen's last. `truncated` says
+   * its oldest lines were left out. Optional, as `askHistory` is.
+   */
+  onHistory?(listener: (page: { text: string; truncated: boolean }) => void): () => void;
+  /**
+   * Asks the host for up to `lines` lines of the pane's scrollback, for a
+   * watcher whose wheel never reaches tmux; the page comes to `onHistory`.
+   * Optional: a stream whose wheel scrolls the pane itself has no need.
+   */
+  askHistory?(lines: number): void;
   /** Keystrokes, already encoded by the terminal. */
   send(data: string): void;
   resize(cols: number, rows: number): void;
@@ -183,6 +195,9 @@ export class AttachSessionStream implements SessionStream {
   private readonly statusListeners = new Set<(status: StreamStatus) => void>();
   private readonly endListeners = new Set<(reason: StreamEnd) => void>();
   private readonly chatListeners = new Set<(batch: ChatBatch) => void>();
+  private readonly historyListeners = new Set<
+    (page: { text: string; truncated: boolean }) => void
+  >();
   private readonly socketFactory: SocketFactory;
   private readonly schedule: Schedule;
   private readonly encoder = new TextEncoder();
@@ -252,6 +267,15 @@ export class AttachSessionStream implements SessionStream {
     this.tell({ type: 'chat.older', before });
   }
 
+  onHistory(listener: (page: { text: string; truncated: boolean }) => void): () => void {
+    this.historyListeners.add(listener);
+    return () => this.historyListeners.delete(listener);
+  }
+
+  askHistory(lines: number): void {
+    this.tell({ type: 'history.ask', lines });
+  }
+
   resize(cols: number, rows: number): void {
     if (cols < 1 || rows < 1) return;
     this.viewport = { cols, rows };
@@ -276,6 +300,7 @@ export class AttachSessionStream implements SessionStream {
     this.dataListeners.clear();
     this.endListeners.clear();
     this.chatListeners.clear();
+    this.historyListeners.clear();
     this.paths.dispose();
     const open = this.socket;
     this.socket = null;
@@ -419,6 +444,11 @@ export class AttachSessionStream implements SessionStream {
       case 'chat':
         for (const listener of this.chatListeners) listener(message);
         return;
+      case 'history': {
+        const page = { text: message.text, truncated: message.truncated ?? false };
+        for (const listener of this.historyListeners) listener(page);
+        return;
+      }
     }
   }
 }

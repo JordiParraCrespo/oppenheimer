@@ -125,6 +125,15 @@ What follows is the design built on 2026-10-08 and replaced on
   console also disables xterm's input, which is only so the pane does not
   look typeable. `session.attach` carries an optional `readOnly`; a runner
   that predates it attaches normally and the relay still keeps it read-only.
+- **A watcher scrolls back without moving the pane** (2026-11-27). A member
+  scrolls through tmux's copy mode, which is the pane's: a guest's wheel
+  there would scroll the owner's view, and tmux ignores it from a read-only
+  client anyway. A guest's wheel up asks the host instead for the pane's
+  scrollback and screen (`history.ask`, `attachment.history`, up to 5,000
+  lines, colours kept), and the console draws that page over the live grid;
+  scrolling back to its end, or Escape, returns to live. What it reads is
+  what the attachment already shows, older, so a share that lets someone
+  watch lets them scroll back.
 - **The secret is a 256-bit random token, stored only as its SHA-256**, like
   an API token. It is shown once, at creation; a lost link is revoked and
   made again. In the console the address is `/shared#<token>`: the secret is

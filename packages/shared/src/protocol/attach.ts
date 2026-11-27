@@ -2,6 +2,8 @@ import { z } from 'zod/v4';
 import { DEVICE_CHOICES_MAX, deviceChoiceSchema, deviceSwipeDurationSchema } from './devices.js';
 import { attachTicketHintSchema } from './hint.js';
 import {
+  ATTACHMENT_HISTORY_MAX_BYTES,
+  ATTACHMENT_HISTORY_MAX_LINES,
   CHAT_BATCH_MAX_ENTRIES,
   CHAT_COMMANDS_MAX,
   CHAT_ENTRY_MAX_BYTES,
@@ -107,6 +109,16 @@ export const attachChatOlderSchema = z.object({
 });
 
 /**
+ * Up to `lines` lines of the terminal's scrollback, for a watcher on a
+ * read-only share who scrolled up: its wheel never reaches tmux. Relayed as
+ * `attachment.history`; answered with `history`.
+ */
+export const attachHistoryAskSchema = z.object({
+  type: z.literal('history.ask'),
+  lines: z.number().int().positive().max(ATTACHMENT_HISTORY_MAX_LINES),
+});
+
+/**
  * On a desktop socket (a ticket from `POST /hosts/{id}/desktop-ticket`), the
  * reader takes control of the host's desktop or goes back to watching.
  * Relayed as `desktop.control`. Binary frames on that socket are RFB, both
@@ -125,6 +137,7 @@ export const attachClientMessageSchema = z.discriminatedUnion('type', [
   attachDeviceInputSchema,
   attachDeviceSelectSchema,
   attachChatOlderSchema,
+  attachHistoryAskSchema,
   attachDesktopControlSchema,
 ]);
 
@@ -211,6 +224,16 @@ export const attachChatSchema = z.object({
 });
 
 /**
+ * The runner's `attachment.history.page`, relayed as it came: the pane's
+ * scrollback and screen with their colours, the screen's lines last.
+ */
+export const attachHistorySchema = z.object({
+  type: z.literal('history'),
+  text: z.string().max(ATTACHMENT_HISTORY_MAX_BYTES),
+  truncated: z.boolean().optional(),
+});
+
+/**
  * On a device attachment, which device the session has: the runner's
  * `device.info`, again after each `device.select`. JPEG frames of its screen
  * follow as binary frames, each one whole image, and the browser credits each
@@ -260,6 +283,7 @@ export const attachServerMessageSchema = z.discriminatedUnion('type', [
   attachDirectUnavailableSchema,
   attachDirectPathSchema,
   attachChatSchema,
+  attachHistorySchema,
   attachDeviceSchema,
   attachDesktopSchema,
   attachPointerSchema,

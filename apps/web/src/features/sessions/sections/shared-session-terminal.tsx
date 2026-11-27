@@ -2,10 +2,12 @@ import {
   Button,
   cn,
   EmptyState,
+  FloatingChip,
   Terminal,
   TerminalStatusBar,
   TerminalStatusItem,
 } from '@oppenheimer/design-system-web';
+import { ArrowDown } from '@oppenheimer/design-system-web/icons';
 import { useSharedSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
@@ -46,12 +48,15 @@ export function SharedSessionTerminal({
   const createStream = useSharedSessionStream(slug);
   const { chat, cover } = reading;
   const { shown: chatShown } = useChatReading(reading);
-  const { containerRef, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
-    chat,
-    agentWindow: true,
-    readOnly,
-    onEnd,
-  });
+  const { containerRef, closeHistory, status, hasOutput, ended, retryNow } = useTerminal(
+    createStream,
+    {
+      chat,
+      agentWindow: true,
+      readOnly,
+      onEnd,
+    },
+  );
 
   return (
     <Terminal className={cn('min-h-0 flex-1 overflow-hidden', chatShown && 'bg-transparent')}>
@@ -66,6 +71,16 @@ export function SharedSessionTerminal({
                 <EmptyState.Title>{t('sessions.session.starting.title')}</EmptyState.Title>
               </EmptyState.Header>
             </EmptyState>
+          </div>
+        ) : null}
+        {closeHistory && !chatShown ? (
+          // A watcher scrolled back through the pane's scrollback: the live
+          // grid is one press away.
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-3 font-sans">
+            <FloatingChip className="pointer-events-auto" onClick={closeHistory}>
+              <ArrowDown />
+              {t('sessions.shared.backToLive')}
+            </FloatingChip>
           </div>
         ) : null}
         {chatShown ? <ChatCover>{cover}</ChatCover> : null}

@@ -21,7 +21,13 @@ import {
   deviceSelectSchema,
 } from './devices.js';
 import { hintSchema } from './hint.js';
-import { CHAT_BATCH_MAX_ENTRIES, CHAT_COMMANDS_MAX, CHAT_ENTRY_MAX_BYTES } from './link.js';
+import {
+  ATTACHMENT_HISTORY_MAX_BYTES,
+  ATTACHMENT_HISTORY_MAX_LINES,
+  CHAT_BATCH_MAX_ENTRIES,
+  CHAT_COMMANDS_MAX,
+  CHAT_ENTRY_MAX_BYTES,
+} from './link.js';
 import {
   portCloseSchema,
   portListingSchema,
@@ -149,6 +155,12 @@ export const RUNNER_CAPABILITIES = [
    * answered with the turns before an offset.
    */
   'attachment.chat.older',
+  /**
+   * Answers `attachment.history` with `attachment.history.page`: the pane's
+   * scrollback and screen as tmux holds them, for a watcher to scroll through
+   * in the console without moving the pane anyone else is looking at.
+   */
+  'attachment.history',
   /**
    * Answers `device.attach`: the session has a simulator or emulator of its
    * own on this host, whose screen streams as JPEG frames and which takes
@@ -1776,6 +1788,37 @@ export const attachmentChatOlderSchema = z.object({
 
 export type AttachmentChatOlderMessage = z.infer<typeof attachmentChatOlderSchema>;
 
+/**
+ * Asks for up to `lines` lines of an attachment's scrollback, above its
+ * screen: a watcher on a read-only share scrolled up. Its wheel never reaches
+ * tmux (a read-only client), and tmux's copy mode is the pane's, so scrolling
+ * it there would move every reader's view; the console shows this page
+ * instead. Answered with `attachment.history.page`. Sent only to a runner
+ * that named `attachment.history`.
+ */
+export const attachmentHistorySchema = z.object({
+  type: z.literal('attachment.history'),
+  attachmentId: attachmentIdSchema,
+  lines: z.number().int().positive().max(ATTACHMENT_HISTORY_MAX_LINES),
+});
+
+export type AttachmentHistoryMessage = z.infer<typeof attachmentHistorySchema>;
+
+/**
+ * An attachment's scrollback and screen, as `capture-pane -e` reads them:
+ * lines with their colours, the screen's last. `truncated` says the text was
+ * cut at its start to `ATTACHMENT_HISTORY_MAX_BYTES`. Empty when the pane is
+ * gone.
+ */
+export const attachmentHistoryPageSchema = z.object({
+  type: z.literal('attachment.history.page'),
+  attachmentId: attachmentIdSchema,
+  text: z.string().max(ATTACHMENT_HISTORY_MAX_BYTES),
+  truncated: z.boolean().optional(),
+});
+
+export type AttachmentHistoryPageMessage = z.infer<typeof attachmentHistoryPageSchema>;
+
 /* ------------------------------------------------------------------ the union */
 
 /**
@@ -1836,6 +1879,8 @@ export const protocolMessageSchema = z.discriminatedUnion('type', [
   attachmentPathSchema,
   attachmentChatSchema,
   attachmentChatOlderSchema,
+  attachmentHistorySchema,
+  attachmentHistoryPageSchema,
   deviceAttachSchema,
   deviceInfoSchema,
   deviceInputSchema,
