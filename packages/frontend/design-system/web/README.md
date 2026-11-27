@@ -29,7 +29,8 @@ Wire the styles into the app's CSS entry alongside Tailwind:
   aliases for light and dark, the type ladder, space, the control ramp, radii,
   elevation, motion, the shadcn names aliased onto them, and the Tailwind
   `@theme` mapping. Utilities: `figures` (tabular mono), `eyebrow` (the 11px
-  uppercase label), `glass`, `scrollbar-thin`.
+  uppercase label), `glass`, `scrollbar-thin`, `scrollbar-strong` (the chat's
+  bar, in muted ink with a longer thumb).
 - No vendored faces: `--font-sans` / `--font-display` / `--font-mono` are the
   system stacks (SF Pro and SF Mono on Apple platforms, the platform's UI face
   elsewhere)

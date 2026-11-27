@@ -154,7 +154,7 @@ export function SessionChat({
         <div
           ref={scroller}
           tabIndex={-1}
-          className="min-h-0 flex-1 overflow-y-auto pt-6 pb-4 outline-none [overflow-anchor:none]"
+          className="scrollbar-strong min-h-0 flex-1 overflow-y-auto pt-6 pb-4 outline-none [overflow-anchor:none]"
         >
           <TerminalColumn ref={content} className="flex min-h-full flex-col">
             {loading ? (
