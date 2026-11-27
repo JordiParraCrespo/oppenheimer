@@ -2167,3 +2167,10 @@ earlier note:
   from a row's menu), whose choices apply to a live share as they are
   picked; the guest page is the session's own bar and a full-width
   terminal ("Share as a popover").
+- Note 33 drew a session's tabs 240px wide, and New session's plus took
+  no room while it stepped aside, so the tabs narrowed when a session was
+  created. Tabs are now 160px, and the plus keeps its room on New session
+  ("no layout shift when creating a new session").
+- Notes 05 and 25 called the middle permission level, sessions' and bots'
+  alike, "Approve for me". It is now "Auto" (2026-11-27): the same level,
+  stored as `auto`, under a shorter name the owner asked for.

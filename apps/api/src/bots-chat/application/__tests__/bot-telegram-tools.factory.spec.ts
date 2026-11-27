@@ -155,7 +155,7 @@ describe('BotTelegramToolsFactory', () => {
     );
   });
 
-  it('asks before sending under Approve for me, and sends nothing yet', async () => {
+  it('asks before sending under Auto, and sends nothing yet', async () => {
     const { command, tool } = setup();
     const ctx = context();
     vi.mocked(ctx.approvals.request).mockResolvedValue({ approvalId: 'appr-1' } as never);

@@ -15,7 +15,7 @@ import type { BotToolContext } from '../bot-tool.factory';
 
 /**
  * Commenting, reviewing, merging and review sessions reach GitHub or a host
- * in the owner's name, so they ask: under Approve for me nothing is
+ * in the owner's name, so they ask: under Auto nothing is
  * dispatched, a card names the pull request by repository, number and
  * title, and a merge's card is pinned to the head it was raised on, so a
  * push while it waits is never merged unseen. Under Full access the
@@ -89,7 +89,7 @@ function setup(
   return { call, definition, context, approvals, dispatched, watches };
 }
 
-describe('BotPullRequestToolsFactory under Approve for me', () => {
+describe('BotPullRequestToolsFactory under Auto', () => {
   it('raises a merge card that names the pull request and is pinned to its head, and merges nothing', async () => {
     const { call, approvals, dispatched } = setup('auto');
 

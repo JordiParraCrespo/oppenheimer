@@ -348,7 +348,7 @@ describe('defineBotTool, the owner’s rules', () => {
   });
 });
 
-describe('defineBotTool, Approve for me’s reviewer', () => {
+describe('defineBotTool, Auto’s reviewer', () => {
   const allow: BotAutoVerdict = {
     outcome: 'allow',
     risk: 'medium',
@@ -392,7 +392,7 @@ describe('defineBotTool, Approve for me’s reviewer', () => {
     expect(run).not.toHaveBeenCalled();
     expect(approvals.request).toHaveBeenCalledWith(
       expect.objectContaining({
-        reviewNote: 'Approve for me left this to you: Nothing you said asks for this.',
+        reviewNote: 'Auto left this to you: Nothing you said asks for this.',
       }),
     );
   });
@@ -423,7 +423,7 @@ describe('defineBotTool, Approve for me’s reviewer', () => {
     expect(run).not.toHaveBeenCalled();
     expect(approvals.request).toHaveBeenCalledWith(
       expect.objectContaining({
-        reviewNote: 'Approve for me could not review this just now, so it asks.',
+        reviewNote: 'Auto could not review this just now, so it asks.',
       }),
     );
   });

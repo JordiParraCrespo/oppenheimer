@@ -1085,7 +1085,7 @@
           "description": "El agente pregunta antes de ejecutar nada."
         },
         "auto": {
-          "label": "Aprobar por mí",
+          "label": "Auto",
           "description": "Las ediciones y los comandos seguros se ejecutan; el resto sigue preguntando."
         },
         "full": {
@@ -1278,6 +1278,12 @@
       "move": "Mover las seleccionadas a un proyecto",
       "delete": "Eliminar las seleccionadas",
       "clear": "Quitar la selección"
+    },
+    "group": {
+      "actions": "Acciones de {{name}}",
+      "hideAll": "Ocultar todas las sesiones",
+      "showAll": "Mostrar todas las sesiones",
+      "deleteAll": "Eliminar todas las sesiones…"
     },
     "deleteSessions": {
       "title_one": "¿Eliminar {{count}} sesión?",
@@ -1875,7 +1881,14 @@
     "tabs": {
       "label": "Sesiones abiertas",
       "new": "Nueva sesión",
-      "close": "Cerrar {{name}}"
+      "close": "Cerrar {{name}}",
+      "menu": {
+        "close": "Cerrar pestaña",
+        "closeOthers": "Cerrar las demás pestañas",
+        "closeLeft": "Cerrar pestañas a la izquierda",
+        "closeRight": "Cerrar pestañas a la derecha",
+        "closeAll": "Cerrar todas las pestañas"
+      }
     }
   },
   "bots": {
@@ -2096,7 +2109,7 @@
           "description": "Te pregunta antes de todo lo que sale de Oppenheimer."
         },
         "auto": {
-          "label": "Aprobar por mí",
+          "label": "Auto",
           "description": "Un revisor deja ejecutarse lo que pediste; lo arriesgado sigue preguntando."
         },
         "full": {
@@ -2699,7 +2712,7 @@
         },
         "preset": {
           "ask": "Las herramientas que dejas en su valor por defecto siguen Pedir aprobación: todo lo que sale de Oppenheimer pregunta antes.",
-          "auto": "Las herramientas que dejas en su valor por defecto siguen Aprobar por mí: todo lo que sale de Oppenheimer pasa antes por un revisor, que deja ejecutarse lo que pediste y te deja el resto a ti. Una herramienta que pones en Preguntar siempre pregunta.",
+          "auto": "Las herramientas que dejas en su valor por defecto siguen Auto: todo lo que sale de Oppenheimer pasa antes por un revisor, que deja ejecutarse lo que pediste y te deja el resto a ti. Una herramienta que pones en Preguntar siempre pregunta.",
           "full": "Las herramientas que dejas en su valor por defecto siguen Acceso total: se ejecutan sin preguntar, también las que siempre preguntan. Enviar correo, y lo que pones en Preguntar o pide una regla, siguen esperando tu sí."
         },
         "decisions": {
@@ -5169,6 +5182,8 @@
     "sessionMoved": "«{{name}}» se ha movido a {{project}}.",
     "sessionHidden": "«{{name}}» ocultada. Muestra las sesiones ocultas desde el menú de filtros.",
     "sessionShown": "«{{name}}» visible de nuevo.",
+    "sessionsHidden": "{{n}} sesiones ocultas. Muestra las sesiones ocultas desde el menú de filtros.",
+    "sessionsShown": "{{n}} sesiones mostradas.",
     "sessionsMoved": "{{n}} sesiones se han movido a {{project}}.",
     "projectCreated": "Se ha creado «{{name}}».",
     "projectSaved": "Se ha guardado «{{name}}».",

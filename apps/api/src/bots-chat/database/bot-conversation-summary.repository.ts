@@ -46,6 +46,12 @@ export class BotConversationSummaryRepository
     return won;
   }
 
+  /**
+   * One fold owed for the bot. The queue keeps one pending job per aggregate
+   * (`onePendingPerAggregate` in `QueueModule`), keyed by the bot id: a fold
+   * reads everything its summary does not cover, so a turn end that stages
+   * while one waits (a rate limit's wait included) is covered by it.
+   */
   async stageSummarize(
     organizationId: string,
     botId: string,

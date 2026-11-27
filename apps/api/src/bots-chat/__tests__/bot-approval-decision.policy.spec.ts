@@ -9,7 +9,7 @@ import { type BotPermissions, NO_PERMISSIONS } from '../domain/bot-tool-permissi
 
 /**
  * The order an asking call's checks run in, as one decision table: escalate,
- * then a grant, then the owner's rules, then Approve for me's reviewer, then
+ * then a grant, then the owner's rules, then Auto's reviewer, then
  * the card; and what each level and setting does to it. A regression here is
  * a call run that should have asked (a reviewer read before an ask rule, a
  * Full access escalation still carded the other way round) or a card nobody
@@ -39,7 +39,7 @@ function plan(
 }
 
 describe('approvalPlan', () => {
-  it('escalates under Ask for approval and Approve for me, never under Full access', () => {
+  it('escalates under Ask for approval and Auto, never under Full access', () => {
     expect(plan({ preset: 'ask', escalates: true })).toEqual({ kind: 'escalate' });
     expect(plan({ preset: 'auto', escalates: true })).toEqual({ kind: 'escalate' });
     expect(plan({ preset: 'full', escalates: true, asks: false })).toEqual({
@@ -55,7 +55,7 @@ describe('approvalPlan', () => {
     });
   });
 
-  it('under Approve for me, reads every rule first and then the reviewer', () => {
+  it('under Auto, reads every rule first and then the reviewer', () => {
     expect(plan({ permissions: withRules(askRule) })).toMatchObject({
       kind: 'review',
       reviews: ['rules', 'auto'],

@@ -92,7 +92,7 @@ export const QWEN_AGENT: CodingAgentDefinition = Object.freeze({
     }),
     // `--approval-mode plan|default|auto-edit|auto|yolo`. Ask is `default`
     // ("Require approval for file edits or shell commands"), sent although
-    // Qwen's own default is `auto`. Approve for me is `auto`, its LLM
+    // Qwen's own default is `auto`. Auto is `auto`, its LLM
     // classifier ("safe actions auto-approve, risky ones are blocked");
     // `auto-edit` would still ask at every command. Full access is `yolo`,
     // through the same flag: `--yolo` with `--approval-mode` is refused.

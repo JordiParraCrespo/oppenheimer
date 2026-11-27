@@ -188,7 +188,7 @@
         "description": "The agent asks before it runs anything."
       },
       "auto": {
-        "label": "Approve for me",
+        "label": "Auto",
         "description": "Edits and safe commands run; the rest still asks."
       },
       "full": {
@@ -380,6 +380,12 @@
     "move": "Move selected to a project",
     "delete": "Delete selected",
     "clear": "Clear selection"
+  },
+  "group": {
+    "actions": "Actions for {{name}}",
+    "hideAll": "Hide all sessions",
+    "showAll": "Show all sessions",
+    "deleteAll": "Delete all sessions…"
   },
   "deleteSessions": {
     "title_one": "Delete {{count}} session?",
@@ -952,6 +958,13 @@
   "tabs": {
     "label": "Open sessions",
     "new": "New session",
-    "close": "Close {{name}}"
+    "close": "Close {{name}}",
+    "menu": {
+      "close": "Close tab",
+      "closeOthers": "Close other tabs",
+      "closeLeft": "Close tabs to the left",
+      "closeRight": "Close tabs to the right",
+      "closeAll": "Close all tabs"
+    }
   }
 }

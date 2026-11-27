@@ -20,7 +20,8 @@ export function useOpenTabs(shownKey: string | null) {
   const keys = stored.filter((key) => openTabOf(key) !== null);
   return {
     keys: shownKey === null ? keys : withTabOpen(keys, shownKey),
-    close: (key: string) => setStored((current) => current.filter((one) => one !== key)),
+    close: (closed: readonly string[]) =>
+      setStored((current) => current.filter((one) => !closed.includes(one))),
     /** Keeps the tabs drawn in `order`, the reader's drag. */
     // A tab another browser tab closed while this drag was held stays closed.
     reorder: (order: readonly string[]) =>

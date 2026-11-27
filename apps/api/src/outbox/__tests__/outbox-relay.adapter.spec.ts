@@ -12,12 +12,16 @@ import { OutboxRelayService } from '../infrastructure/outbox-relay.adapter';
  * retries are `OutboxRelay`'s, proven in `outbox.integration.spec.ts`.
  */
 describe('OutboxRelayService delivery', () => {
-  function relayWith(queues: ReadonlyMap<string, Queue>) {
+  function relayWith(
+    queues: ReadonlyMap<string, Queue>,
+    onePending: ReadonlySet<string> = new Set(),
+  ) {
     const emitter = { emitAsync: vi.fn().mockResolvedValue([]) };
     const relay = new OutboxRelayService(
       {} as OutboxService,
       emitter as unknown as EventEmitter2,
       queues,
+      onePending,
     );
     const publish = (message: Partial<OutboxMessageRecord>) =>
       (relay as unknown as { publish(m: OutboxMessageRecord): Promise<void> }).publish({
@@ -37,6 +41,46 @@ describe('OutboxRelayService delivery', () => {
     await publish({ topic: 'bot-turns' });
 
     expect(queue.add).toHaveBeenCalledWith('run', { a: 1 }, { jobId: 'row-1' });
+  });
+
+  // Regression: every turn past the summary threshold staged its own row, and
+  // each became its own job, so one rate-limited bot held a pile of delayed
+  // summaries that all woke at the reset and were refused again.
+  it('adds a row of a one-pending-per-aggregate queue deduplicated on its queue, job and aggregate', async () => {
+    const queue = { add: vi.fn().mockResolvedValue(undefined) };
+    const { publish } = relayWith(
+      new Map([['bot-summaries', queue as unknown as Queue]]),
+      new Set(['bot-summaries']),
+    );
+
+    await publish({ topic: 'bot-summaries', eventName: 'fold', aggregateId: 'bot-1' });
+
+    expect(queue.add).toHaveBeenCalledWith(
+      'fold',
+      { a: 1 },
+      {
+        jobId: 'row-1',
+        deduplication: { id: 'bot-summaries:fold:bot-1', keepLastIfActive: true },
+      },
+    );
+  });
+
+  it('adds a row with no aggregate, or of any other queue, by its row id alone', async () => {
+    const summaries = { add: vi.fn().mockResolvedValue(undefined) };
+    const turns = { add: vi.fn().mockResolvedValue(undefined) };
+    const { publish } = relayWith(
+      new Map([
+        ['bot-summaries', summaries as unknown as Queue],
+        ['bot-turns', turns as unknown as Queue],
+      ]),
+      new Set(['bot-summaries']),
+    );
+
+    await publish({ topic: 'bot-summaries', aggregateId: null });
+    await publish({ topic: 'bot-turns', aggregateId: 'bot-1' });
+
+    expect(summaries.add).toHaveBeenCalledWith('run', { a: 1 }, { jobId: 'row-1' });
+    expect(turns.add).toHaveBeenCalledWith('run', { a: 1 }, { jobId: 'row-1' });
   });
 
   it('fails the delivery of a topic no queue was registered for', async () => {

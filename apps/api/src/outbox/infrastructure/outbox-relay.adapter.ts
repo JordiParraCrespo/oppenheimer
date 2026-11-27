@@ -8,8 +8,8 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { type OutboxMessageRecord, OutboxRelay, OutboxService } from '@oppenheimer/backend-ddd';
-import type { Queue } from 'bullmq';
-import { OUTBOX_QUEUES } from '../../queue/queue.di-tokens';
+import type { JobsOptions, Queue } from 'bullmq';
+import { OUTBOX_ONE_PENDING_PER_AGGREGATE, OUTBOX_QUEUES } from '../../queue/queue.di-tokens';
 
 /**
  * NestJS host for the `OutboxRelay` from `@oppenheimer/backend-ddd`: `event` rows are
@@ -30,6 +30,9 @@ export class OutboxRelayService implements OnApplicationBootstrap, OnApplication
     private readonly eventEmitter: EventEmitter2,
     // Every queue `QueueModule` registers as `stagedOnOutbox`, keyed by name.
     @Inject(OUTBOX_QUEUES) private readonly queues: ReadonlyMap<string, Queue>,
+    // Those of them that keep one pending job per aggregate (`onePendingPerAggregate`).
+    @Inject(OUTBOX_ONE_PENDING_PER_AGGREGATE)
+    private readonly onePendingPerAggregate: ReadonlySet<string>,
   ) {
     this.relay = new OutboxRelay(outbox, (message) => this.publish(message), {
       owner: `${hostname()}:${process.pid}`,
@@ -56,11 +59,29 @@ export class OutboxRelayService implements OnApplicationBootstrap, OnApplication
       // same job id and BullMQ deduplicates instead of running it twice.
       await queue.add(message.eventName, message.payload, {
         jobId: message.id,
+        ...this.deduplicationOf(message),
       });
       return;
     }
     // Listeners receive the deserialized event payload — a plain object with
     // the same fields the original DomainEvent instance carried.
     await this.eventEmitter.emitAsync(message.eventName, message.payload);
+  }
+
+  /**
+   * For a queue that keeps one pending job per aggregate, the BullMQ
+   * deduplication that folds this row into the job already waiting or delayed
+   * for its aggregate, or keeps it for after the one running. The id names the
+   * queue, the job and the aggregate, so two aggregates never share one.
+   */
+  private deduplicationOf(message: OutboxMessageRecord): Pick<JobsOptions, 'deduplication'> {
+    if (!message.topic || !message.aggregateId) return {};
+    if (!this.onePendingPerAggregate.has(message.topic)) return {};
+    return {
+      deduplication: {
+        id: `${message.topic}:${message.eventName}:${message.aggregateId}`,
+        keepLastIfActive: true,
+      },
+    };
   }
 }

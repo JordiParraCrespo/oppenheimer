@@ -52,7 +52,7 @@ export interface BotCreationPlan {
 /** What each level is called on the composer's approval chip. */
 export const BOT_PERMISSION_LABELS: Readonly<Record<BotPermission, string>> = {
   ask: 'Ask for approval',
-  auto: 'Approve for me',
+  auto: 'Auto',
   full: 'Full access',
 };
 

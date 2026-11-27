@@ -71,7 +71,7 @@ const RESERVED_ADD = new Set(['TRASH', 'SPAM', 'DRAFT', 'SENT']);
 
 /**
  * Mail, organizing: read state, stars, importance, labels, the inbox and Trash,
- * on threads or messages of the owner's Gmail. Each asks under Approve for me
+ * on threads or messages of the owner's Gmail. Each asks under Auto
  * and runs on its own under Full access, except `trash_mail`, which asks under
  * Full access too until the owner allows it (Settings, or "always" on its
  * card); bringing threads back from Trash never asks. A card stores the

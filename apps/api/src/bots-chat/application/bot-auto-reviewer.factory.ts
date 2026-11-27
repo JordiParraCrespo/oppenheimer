@@ -20,14 +20,14 @@ type BotReviewEngine = Pick<
 /** How long one review may take before the call asks instead. */
 const AUTO_REVIEW_TIME_LIMIT_MS = 30_000;
 
-/** Decides, under Approve for me, whether a call runs without the owner; throws when it cannot say, and the call then asks. */
+/** Decides, under Auto, whether a call runs without the owner; throws when it cannot say, and the call then asks. */
 export interface BotAutoReviewer {
   /** `signal` is the turn's: a turn stopped mid-review stops the review with it. */
   review(call: BotReviewedCall, signal?: AbortSignal): Promise<BotAutoVerdict>;
 }
 
 /**
- * The reviewer a turn's asking calls are read by under Approve for me: the
+ * The reviewer a turn's asking calls are read by under Auto: the
  * turn's own provider, model and key, one completion per call with no tools
  * (`BotCompletionResolver`), shown the owner's own words and the call, never
  * the bot's text or what its tools returned.

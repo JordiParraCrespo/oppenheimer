@@ -10,14 +10,16 @@ import { Plus } from '@oppenheimer/design-system-web/icons';
 import type { ProjectEntity, SessionEntity } from '@oppenheimer/frontend-consumer';
 import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { useGroupSessionsMenu } from '../hooks/use-group-sessions-menu';
 import { emptyMessage } from '../lib/session-groups';
 import { SessionRows } from './session-rows';
 
 /**
  * One project's group in the sidebar; `project` is null for sessions whose
- * project the list does not hold, which get a header with no actions. A
+ * project the list does not hold, whose header has only the group's menu. A
  * project's header starts a session in it; the project itself is managed
- * from Plan's Projects view. Its
+ * from Plan's Projects view. The header's ellipsis, or a right-click on it,
+ * hides or deletes every session the group lists (`useGroupSessionsMenu`). Its
  * rows (`SessionRows`) own their ages' clock. It is a section rather than a
  * component because the header's "one of mine is open" mark subscribes to the route, a boolean per
  * group, so a navigation re-renders only the groups whose mark moved.
@@ -36,6 +38,7 @@ export function ProjectGroup({
   onNewSessionHere,
   onShare,
   onDelete,
+  onDeleteAll,
   onWrite,
 }: {
   project: ProjectEntity | null;
@@ -53,6 +56,8 @@ export function ProjectGroup({
   onNewSessionHere: (project: ProjectEntity) => void;
   onShare: (session: SessionEntity) => void;
   onDelete: (session: SessionEntity) => void;
+  /** Delete every session the group lists, after the sidebar's dialog asks. */
+  onDeleteAll: (sessions: SessionEntity[]) => void;
   onWrite: (error: Error | null) => void;
 }) {
   const { t } = useTranslation();
@@ -61,6 +66,7 @@ export function ProjectGroup({
       ? t('projects.unassigned')
       : project.name
     : t('sessions.sidebar.unfiled');
+  const menu = useGroupSessionsMenu({ label, sessions, onDeleteAll, onWrite });
   const current = useRouterState({
     select: (state) =>
       sessions.some((session) => state.location.pathname === `/sessions/${session.id}`),
@@ -81,16 +87,24 @@ export function ProjectGroup({
         open={open}
         onOpenChange={onOpenChange}
         current={current}
+        // A right-click on the header opens the group's menu, not the browser's.
+        onContextMenu={menu.onContextMenu}
+        menuOpen={menu.menuOpen}
         actions={
-          project ? (
-            <IconButton
-              size="xs"
-              variant="quiet"
-              aria-label={t('sessions.sidebar.newSessionHere', { name: label })}
-              onClick={() => onNewSessionHere(project)}
-            >
-              <Plus />
-            </IconButton>
+          project || menu.action ? (
+            <>
+              {menu.action}
+              {project ? (
+                <IconButton
+                  size="xs"
+                  variant="quiet"
+                  aria-label={t('sessions.sidebar.newSessionHere', { name: label })}
+                  onClick={() => onNewSessionHere(project)}
+                >
+                  <Plus />
+                </IconButton>
+              ) : null}
+            </>
           ) : undefined
         }
       />

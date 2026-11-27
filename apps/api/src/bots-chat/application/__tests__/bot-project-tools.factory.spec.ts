@@ -503,7 +503,7 @@ describe('BotProjectToolsFactory', () => {
       expect(result.content).toMatch(/^SESSIONS_005: /);
     });
 
-    it('runs without asking under Approve for me: a move stays inside Oppenheimer and can be put back', async () => {
+    it('runs without asking under Auto: a move stays inside Oppenheimer and can be put back', async () => {
       const { context, call } = setup({
         query: (query) => (query instanceof FindSessionQuery ? session() : WORKSPACE),
         command: () => ({ sessionId: SESSION_ID, hints: [] }),

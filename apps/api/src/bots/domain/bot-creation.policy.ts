@@ -7,7 +7,7 @@ import {
   preferredKeyedProvider,
 } from '@oppenheimer/shared';
 
-/** The level a bot made in the console starts at: Approve for me, the reviewer. */
+/** The level a bot made in the console starts at: Auto, the reviewer. */
 export const BOT_DEFAULT_PERMISSION: BotPermission = 'auto';
 
 /** The provider a bot made with none named starts on when no provider has a key: Anthropic. */
@@ -25,7 +25,7 @@ export function providerForNewBot(keyed: readonly BotProvider[]): BotProvider {
 /**
  * How loose a level is: its place in `BOT_PERMISSIONS`, which lists them
  * from the strictest (`ask`, Ask for approval: what reaches outside
- * Oppenheimer asks) through `auto` (Approve for me: a reviewer decides) to
+ * Oppenheimer asks) through `auto` (Auto: a reviewer decides) to
  * the loosest (`full`, Full access: nothing asks).
  */
 function loosenessOf(permission: BotPermission): number {

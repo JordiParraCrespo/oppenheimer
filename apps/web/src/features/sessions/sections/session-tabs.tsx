@@ -10,10 +10,18 @@ import {
 import { PlusIcon } from '@oppenheimer/design-system-web/icons';
 import { useDragLabels } from '@oppenheimer/frontend-web';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SessionTabMenu, type TabMenuPoint } from '../components/session-tab-menu';
 import { useDrawnTabs } from '../hooks/use-drawn-tabs';
-import { type OpenTab, openTabKey, openTabOf, tabAfterClosing } from '../lib/open-tabs';
+import {
+  type CloseTabs,
+  type OpenTab,
+  openTabKey,
+  openTabOf,
+  tabAfterClosingMany,
+  tabsToClose,
+} from '../lib/open-tabs';
 import { SessionOpenTab } from './session-open-tab';
 import { ShownSessionTab } from './shown-session-tab';
 
@@ -31,9 +39,14 @@ const TABS_GROUP = 'tabs';
  * starts past 5px), and the strip keeps that order on this device with the
  * tabs themselves (`useOpenTabs`), so it outlives the page.
  *
+ * A right-click on a tab opens its menu, a browser's closes (`SessionTabMenu`):
+ * when the page on screen closes with them, the tab the menu was opened on
+ * is shown if it stays, else its neighbour, else New session.
+ *
  * New session keeps the strip, the tabs open as they were, and ends it with
  * a lit New session tab of its own, which is not kept: the plus that leads
- * there steps aside while it shows, and leaving the page leaves no tab.
+ * there steps aside while it shows, its room kept so the tabs keep their
+ * width when the session is created, and leaving the page leaves no tab.
  *
  * A tab whose session or bot is gone (deleted here or on another device)
  * is left off once the list it belongs to has answered without it; until a
@@ -64,9 +77,14 @@ export function SessionTabs({
     (_move, next) => reorder(next[TABS_GROUP] ?? []),
   );
 
-  const close = (key: string) => {
-    const next = tabAfterClosing(order, shownKey, key);
-    closeTab(key);
+  // The point stays after the menu shuts, so it fades out where it stood.
+  const [menu, setMenu] = useState<{ key: string; at: TabMenuPoint; open: boolean } | null>(null);
+  const menuIndex = menu ? order.indexOf(menu.key) : -1;
+
+  const close = (key: string, which: CloseTabs = 'this') => {
+    const closed = tabsToClose(order, key, which);
+    const next = tabAfterClosingMany(order, shownKey, key, closed);
+    closeTab(closed);
     if (next === shownKey) return;
     const tab = next ? openTabOf(next) : null;
     if (!tab) void navigate({ to: '/sessions/new' });
@@ -121,16 +139,37 @@ export function SessionTabs({
           className="contents"
         >
           {drawn.map((one) => (
-            <SortableChatTab key={one.key} id={one.key}>
+            <SortableChatTab
+              key={one.key}
+              id={one.key}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                setMenu({ key: one.key, at: { x: event.clientX, y: event.clientY }, open: true });
+              }}
+            >
               {tabOf(one)}
             </SortableChatTab>
           ))}
         </SortableGroup>
       </DragProvider>
+      <SessionTabMenu
+        open={menu?.open === true && menuIndex >= 0}
+        at={menu?.at ?? null}
+        index={menuIndex}
+        count={order.length}
+        onClose={(which) => {
+          if (menu) close(menu.key, which);
+        }}
+        onDismiss={() => setMenu((current) => current && { ...current, open: false })}
+      />
       {shown ? null : (
-        <ChatTab active icon={<PlusIcon />} render={<Link to="/sessions/new" search={true} />}>
-          {t('sessions.tabs.new')}
-        </ChatTab>
+        <>
+          <ChatTab active icon={<PlusIcon />} render={<Link to="/sessions/new" search={true} />}>
+            {t('sessions.tabs.new')}
+          </ChatTab>
+          {/* The plus's room, kept while it steps aside, so no tab narrows when the session is created. */}
+          <span aria-hidden className="ml-0.5 size-(--control-h-sm) shrink-0" />
+        </>
       )}
     </ChatTabStrip>
   );

@@ -155,7 +155,11 @@ function ChatTabStrip({
  * and its link wear, and where the tab tells it the name it draws.
  */
 const TabSort = React.createContext<
-  (ReturnType<typeof useSortableControl> & { setName: (name: string | undefined) => void }) | null
+  | (ReturnType<typeof useSortableControl> & {
+      setName: (name: string | undefined) => void;
+      onContextMenu?: (event: React.MouseEvent) => void;
+    })
+  | null
 >(null);
 
 /**
@@ -168,13 +172,26 @@ const TabSort = React.createContext<
  * a swipe along the strip scrolls it rather than dragging. It draws nothing of its own, so the strip's
  * spacing and hairlines are the tabs' as ever. A drag is announced by the
  * name the tab draws (its text), or `label`. Where the order is kept is
- * the app's.
+ * the app's. `onContextMenu` is a right-click anywhere on the tab, its close
+ * included: the app's own menu for it, in place of the browser's.
  */
-function SortableChatTab({ id, label, children }: { id: string; label?: string; children: React.ReactNode }) {
+function SortableChatTab({
+  id,
+  label,
+  onContextMenu,
+  children,
+}: {
+  id: string;
+  label?: string;
+  onContextMenu?: (event: React.MouseEvent) => void;
+  children: React.ReactNode;
+}) {
   // A screen reader hears the name the tab draws, unless the caller names it.
   const [name, setName] = React.useState<string>();
   const sortable = useSortableControl({ id, data: { type: 'chat-tab', label: label ?? name } });
-  return <TabSort.Provider value={{ ...sortable, setName }}>{children}</TabSort.Provider>;
+  return (
+    <TabSort.Provider value={{ ...sortable, setName, onContextMenu }}>{children}</TabSort.Provider>
+  );
 }
 
 /** Each kind of dot on a tab's mark, and what a screen reader hears when the caller names nothing. */
@@ -190,7 +207,7 @@ const TAB_ATTENTION = {
  * inside a hairline, and a hairline between two tabs that are not shown.
  */
 const TAB_FRAME = cn(
-  'group/tab relative flex h-(--control-h-sm) min-w-24 shrink basis-60 items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-sm text-fg-muted transition-colors duration-fast',
+  'group/tab relative flex h-(--control-h-sm) min-w-24 shrink basis-40 items-center gap-2.5 rounded-sm border border-transparent pr-1 pl-3 text-sm text-fg-muted transition-colors duration-fast',
   'data-active:border-border-subtle data-active:bg-(--chat-tab-lit) data-active:font-medium data-active:text-fg',
   "not-first:before:absolute not-first:before:top-1/2 not-first:before:-translate-y-1/2 not-first:before:-left-0.75 not-first:before:h-3.5 not-first:before:w-px not-first:before:bg-border-subtle not-first:before:content-['']",
   'data-active:before:hidden [[data-active]+&]:before:hidden',
@@ -198,7 +215,7 @@ const TAB_FRAME = cn(
 
 /**
  * One open thing in a `ChatTabStrip`: its mark, its name, its close. Every
- * tab is the same width whatever its name, the way a browser's are: 240px
+ * tab is the same width whatever its name, the way a browser's are: 160px
  * while the strip has room, then all shrinking alike down to 96px as more
  * open, past which the strip scrolls; so lighting a tab never moves the
  * strip. The close of a tab not shown takes no room until it is hovered or
@@ -247,6 +264,7 @@ function ChatTab({
       data-active={active || undefined}
       title={title}
       {...sortable?.node}
+      onContextMenu={sortable?.onContextMenu}
       className={cn(
         TAB_FRAME,
         'hover:bg-hover-surface hover:text-fg hover:before:hidden [:hover+&]:before:hidden',

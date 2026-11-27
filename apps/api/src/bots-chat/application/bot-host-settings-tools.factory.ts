@@ -29,7 +29,7 @@ import {
  * asks it to, instead of telling them to type `runner browser on`. It is
  * offered only on the person's own turns in their chat (never a contact's,
  * a routine's or a wake's), so what a page, a mail or another person says
- * cannot reach it; under Approve for me every call is its own card.
+ * cannot reach it; under Auto every call is its own card.
  */
 @Injectable()
 export class BotHostSettingsToolsFactory implements BotToolArea {

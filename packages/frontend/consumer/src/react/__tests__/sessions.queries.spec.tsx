@@ -19,6 +19,7 @@ import {
   useSessionStartProgress,
   useSessions,
   useSessionWindows,
+  useSetSessionsHidden,
   useSuspenseSession,
   watchSessionStart,
 } from '../sessions.queries';
@@ -48,6 +49,7 @@ function setup(
     listWindows?: unknown;
     openWindow?: unknown;
     closeWindow?: unknown;
+    setHidden?: unknown;
   },
   // The console's own defaults, for the specs whose rule is its stale window.
   defaultOptions: ConstructorParameters<typeof QueryClient>[0] = {
@@ -676,5 +678,57 @@ describe("a session's terminal windows", () => {
     const { wrapper } = setup({ listWindows });
     renderHook(() => useSessionWindows(undefined), { wrapper });
     expect(listWindows).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * A sidebar group's Hide all is one batch: a few writes in flight at once,
+ * and the list read again once at the end. One re-read per row walked every
+ * page of the list once per session and spent the API's per-minute
+ * allowance; a burst of writes crossed it outright.
+ */
+describe('useSetSessionsHidden', () => {
+  it('keeps at most four writes in flight and reads the list once', async () => {
+    let inFlight = 0;
+    let most = 0;
+    const setHidden = vi.fn(async (id: string, hidden: boolean) => {
+      inFlight += 1;
+      most = Math.max(most, inFlight);
+      await pause(5);
+      inFlight -= 1;
+      return sessionEntity({ id, hidden });
+    });
+    const findAll = vi.fn().mockResolvedValue([]);
+    const { wrapper, queryClient } = setup({ setHidden, findAll });
+    renderHook(() => useSessions(), { wrapper });
+    await waitFor(() => expect(findAll).toHaveBeenCalledTimes(1));
+    const { result } = renderHook(() => useSetSessionsHidden(), { wrapper });
+
+    const ids = Array.from({ length: 10 }, (_, index) => `s-${index}`);
+    const outcome = await result.current.mutateAsync({ ids, hidden: true });
+
+    expect(setHidden).toHaveBeenCalledTimes(10);
+    expect(most).toBe(4);
+    expect(outcome.changed.map((session) => session.id).sort()).toEqual([...ids].sort());
+    expect(queryClient.getQueryData(sessionsKeys.detail('s-3'))).toMatchObject({ hidden: true });
+    await waitFor(() => expect(findAll).toHaveBeenCalledTimes(2));
+    await pause(50);
+    expect(findAll).toHaveBeenCalledTimes(2);
+  });
+
+  it('writes the rest when one is refused, and names the refused one', async () => {
+    const refusal = new Error('refused');
+    const setHidden = vi.fn(async (id: string, hidden: boolean) => {
+      if (id === 's-1') throw refusal;
+      return sessionEntity({ id, hidden });
+    });
+    const { wrapper } = setup({ setHidden, findAll: vi.fn().mockResolvedValue([]) });
+    const { result } = renderHook(() => useSetSessionsHidden(), { wrapper });
+
+    const outcome = await result.current.mutateAsync({ ids: ['s-0', 's-1', 's-2'], hidden: true });
+
+    expect(outcome.failed).toEqual(['s-1']);
+    expect(outcome.reason).toBe(refusal);
+    expect(outcome.changed.map((session) => session.id).sort()).toEqual(['s-0', 's-2']);
   });
 });

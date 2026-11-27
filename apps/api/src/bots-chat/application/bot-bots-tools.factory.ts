@@ -64,7 +64,7 @@ import {
  * `ask_bot`, which hand another bot a message as a queued turn of its own
  * (the answer to an ask comes back the same way, never by waiting); and
  * `create_bot`, which makes the person a new bot, and `update_bot`, which
- * changes existing ones, several at once (both ask under Approve for me).
+ * changes existing ones, several at once (both ask under Auto).
  */
 @Injectable()
 export class BotPeerToolsFactory implements BotToolArea {

@@ -88,6 +88,7 @@ export type {
 } from './session-steps';
 export { localTerminalsModule, SessionsModule } from './sessions.module';
 export { SessionsService } from './sessions.service';
+export { settleEach } from './settle-each';
 export type {
   DeviceChoice,
   DeviceInfo,

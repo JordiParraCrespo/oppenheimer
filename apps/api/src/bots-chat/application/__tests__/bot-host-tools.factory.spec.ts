@@ -165,7 +165,7 @@ describe('BotHostToolsFactory', () => {
     const named = (query: unknown) =>
       query instanceof FindHostQuery ? { host: { name: 'pop-os' }, online: true } : [];
 
-    it('asks first under Approve for me, the card naming the host, and sends nothing', async () => {
+    it('asks first under Auto, the card naming the host, and sends nothing', async () => {
       const { commandBus, approvals, call } = setup(named);
       await call('update_host_runner', { host_id: POP_OS });
       expect(approvals.request.mock.calls[0][0]).toMatchObject({

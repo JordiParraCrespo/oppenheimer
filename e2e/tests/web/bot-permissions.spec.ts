@@ -20,7 +20,7 @@ test('a bot’s tools set and reset, and its rules written and removed', async (
 
   await page.goto(`/bots/${bot.id}/settings/permissions`);
   await expect(page.getByRole('heading', { name: 'Permissions', level: 1 })).toBeVisible();
-  await expect(page.getByText(/follow Approve for me/)).toBeVisible();
+  await expect(page.getByText(/follow Auto/)).toBeVisible();
   await expect(
     page.getByText('Nothing yet. “Always allow for …” on a request adds it here.'),
   ).toBeVisible();
@@ -37,7 +37,7 @@ test('a bot’s tools set and reset, and its rules written and removed', async (
   await search.fill('comment on pull');
   await expect(page).toHaveURL(/q=comment/);
 
-  // An outside tool asks under Approve for me; Off takes it away, Default gives it back.
+  // An outside tool asks under Auto; Off takes it away, Default gives it back.
   await expect(comment.getByRole('button', { name: 'Ask' })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -102,7 +102,7 @@ test('a bot’s tools set and reset, and its rules written and removed', async (
 });
 
 /**
- * The three levels, the sessions' own: a new bot starts at Approve for me
+ * The three levels, the sessions' own: a new bot starts at Auto
  * (the reviewer), and each level says on Settings → Permissions how the
  * tools left on their default stand. Trashing mail, which always asks, runs
  * under Full access, which raises no card; sending mail still asks there.
