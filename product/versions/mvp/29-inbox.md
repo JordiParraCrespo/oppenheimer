@@ -720,9 +720,14 @@ turn it off. This replaces "A long wait is told once more" above:
   take the card away. Once the session goes back to work it leaves the list.
   A first try with a bare text box sent through `POST /sessions/{id}/prompt`
   was not what the owner meant ("it is not the session streamed"); it never
-  shipped. It is keyed by
-  the session and when its turn ended (`unattended:<id>:<time>`, the host's
-  `observedSince` else the turn-end event's time), so the next
+  shipped.
+- **Follow-up.** The thirty minutes count from `observedSince`, else the
+  log's last event: a rename or a move of a session left unread restarts
+  them, so the item comes later than it should, never earlier. A stored
+  turn-end time on the session would make the count exact. It is keyed by
+  the session and its unread turn (`unattended:<id>:turn:<seq>`, the
+  session's `unreadReport`, which only a new turn changes), so a rename or a
+  move does not bring a turn marked Done back, and so the next
   turn left unread comes back however the last one was marked. It counts
   under Sessions in the Type facet and in the rail's count.
 - **Amber is already there.** A session waiting on you (amber) is an Inbox

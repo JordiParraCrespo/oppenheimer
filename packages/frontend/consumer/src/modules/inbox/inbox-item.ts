@@ -173,12 +173,13 @@ function turnEndedAt(session: SessionEntity): Date {
 }
 
 /**
- * A session left unread by when its turn ended: the next turn left unread is
- * a new occurrence, so a Done on the last one never hides it. Not by
- * `stateSeq`, which moves only with the lifecycle, never with a turn.
+ * A session left unread by its unread turn (`unreadReport`, `turn:<seq>`),
+ * which no other event in its log moves: a Done or a snooze stays on that
+ * turn, and the next turn left unread is a new occurrence. A row from an API
+ * that does not say falls back to when the turn ended.
  */
 function unattendedItemKey(session: SessionEntity): string {
-  return `unattended:${session.id}:${turnEndedAt(session).toISOString()}`;
+  return `unattended:${session.id}:${session.unreadReport ?? turnEndedAt(session).toISOString()}`;
 }
 
 function runItemKey(run: { id: string }): string {

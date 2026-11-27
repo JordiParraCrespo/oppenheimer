@@ -257,6 +257,7 @@ export type SessionEntityProps = Pick<
       | 'cloud'
       | 'cloudSessionId'
       | 'hidden'
+      | 'unreadReport'
     >
   >;
 
@@ -333,6 +334,11 @@ export class SessionEntity {
    * a script or the reader hid. Kept by the API, so every device agrees.
    */
   readonly hidden: boolean = false;
+  /**
+   * The finished turn nobody has read yet (`turn:<seq>`), the same while it
+   * stays unread whatever else the log records; null once read or with none.
+   */
+  readonly unreadReport: string | null = null;
 
   constructor(props: SessionEntityProps) {
     assignProps(this, props);

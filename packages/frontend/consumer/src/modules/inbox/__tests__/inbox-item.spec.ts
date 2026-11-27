@@ -513,6 +513,31 @@ describe('composeInbox: a session nobody has moved forward', () => {
   });
 });
 
+describe('composeInbox: an unattended turn named by the API', () => {
+  const unread = (report: string, lastEventMinutesAgo: number) =>
+    new SessionEntity({
+      ...session('s1', { state: 'ready-for-review', observedSince: null }),
+      lastEventAt: at(lastEventMinutesAgo),
+      unreadReport: report,
+    });
+
+  // The regression: keyed by the last log entry, a rename (or a move, or a
+  // hide) of a session whose turn was marked Done gave it a new key, and the
+  // same turn came back thirty minutes later.
+  it('keeps a Done on the turn when something else moves its log, and asks again for the next turn', () => {
+    const first = composeInbox(sources({ sessions: [unread('turn:7', 40)] }), [], NOW).open;
+    expect(first.map((item) => item.key)).toEqual(['unattended:s1:turn:7']);
+    const done = [mark('unattended:s1:turn:7', 'done')];
+    const renamedLater = unread('turn:7', 31);
+    expect(composeInbox(sources({ sessions: [renamedLater] }), done, NOW).open).toEqual([]);
+    expect(
+      composeInbox(sources({ sessions: [unread('turn:9', 31)] }), done, NOW).open.map(
+        (item) => item.key,
+      ),
+    ).toEqual(['unattended:s1:turn:9']);
+  });
+});
+
 describe('composeInbox: what a bot told you', () => {
   const told = (noticeId: string, minutesAgo: number, botId = 'bot-1') =>
     new WorkspaceBotNoticeEntity(noticeId, botId, 'Ops', 'Release 1.4 is out.', at(minutesAgo));

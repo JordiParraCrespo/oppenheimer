@@ -33389,6 +33389,12 @@
             "description": "Hidden from the console’s sidebar until the person shows hidden sessions (`PUT /sessions/{id}/visibility`, or `hidden` at create). Display only: a hidden session runs like any other.",
             "example": false
           },
+          "unreadReport": {
+            "type": "string",
+            "nullable": true,
+            "description": "The finished turn nobody has read yet (`ready-for-review`, the console’s blue dot), named the same while it stays unread, whatever else the log records: what `POST /sessions/{id}/report/acknowledge` reads. Null when there is none or it was read.",
+            "example": "turn:42"
+          },
           "hints": {
             "description": "What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.",
             "example": [],
@@ -33475,6 +33481,7 @@
           "checkouts",
           "cloud",
           "hidden",
+          "unreadReport",
           "hints",
           "decision",
           "agentReport",
