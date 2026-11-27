@@ -3,7 +3,7 @@ import { AppError, CapabilitiesService } from '@oppenheimer/backend-core';
 import { CREDENTIAL_OWNER } from '../auth.di-tokens';
 import { AuthErrors } from '../domain/auth.errors';
 import { mayIssueCredential } from '../domain/credential-issuance.policy';
-import type { CredentialIssuancePort } from './credential-issuance.port';
+import type { CredentialIssuance, CredentialIssuancePort } from './credential-issuance.port';
 import type { CredentialOwnerPort } from './credential-owner.port';
 
 /**
@@ -18,11 +18,12 @@ export class CredentialIssuanceResolver implements CredentialIssuancePort {
     private readonly capabilities: CapabilitiesService,
   ) {}
 
-  async assertMayIssue(userId: string): Promise<void> {
+  async assertMayIssue(userId: string): Promise<CredentialIssuance> {
     const owner = await this.owners.requireActiveOwner(userId);
     if (!mayIssueCredential(owner, { emailDelivery: this.emailDelivery })) {
       throw new AppError(AuthErrors.EMAIL_VERIFICATION_REQUIRED);
     }
+    return { ownerEmailVerified: owner.emailVerified === true };
   }
 
   /** Without it no address can be verified; `mayIssueCredential` says why that lifts the rule. */

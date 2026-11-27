@@ -54,6 +54,7 @@ function token(
       revokedAt: null,
       redeemedAt: null,
       redeemedHostId: null,
+      issuedVerified: true,
       ...overrides,
     },
   });
@@ -74,6 +75,7 @@ function existingHost(fingerprint: string, publicKey: string) {
       publicKeyFingerprint: fingerprint,
       lastSeenAt: null,
       unpairedAt: null,
+      issuedVerified: true,
     },
   });
 }

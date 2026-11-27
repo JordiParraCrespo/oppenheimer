@@ -113,6 +113,7 @@ describe('MintPairingTokenCommandHandler', () => {
       tokenHash: 'cd'.repeat(32),
       createdFromIp: null,
       expiresAt: new Date(Date.now() + 60_000),
+      issuedVerified: true,
     });
     vi.mocked(tokens.findOneById).mockResolvedValueOnce(Some(old));
 

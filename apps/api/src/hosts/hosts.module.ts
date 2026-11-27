@@ -9,6 +9,7 @@ import { UsersModule } from '../users/user.module';
 import { DesktopTicketFactory } from './application/desktop-ticket.factory';
 import { HostNetworkChangedDomainEventHandler } from './application/event-handlers/host-network-changed.domain-event-handler';
 import { HostRegisteredDomainEventHandler } from './application/event-handlers/host-registered.domain-event-handler';
+import { PasswordResetUnpairsHostsDomainEventHandler } from './application/event-handlers/password-reset.domain-event-handler';
 import { HostAccessResolver } from './application/host-access.resolver';
 import { HostAccountErasure } from './application/host-account-erasure.resolver';
 import { HostAssertionResolver } from './application/host-assertion.resolver';
@@ -194,6 +195,7 @@ const resolvers: Provider[] = [
     HostPrincipalGuard,
     HostRegisteredDomainEventHandler,
     HostNetworkChangedDomainEventHandler,
+    PasswordResetUnpairsHostsDomainEventHandler,
     HostRetentionProcessor,
   ],
   // The application ports, and nothing else. A consumer that could inject

@@ -24,10 +24,17 @@ reset takes back API tokens, OAuth grants and browser sessions.
   chain began earlier, including a token minted by one, is refused; it deletes
   the account's OAuth grants, consents and unexchanged authorization codes; and
   the tokens are then marked revoked. Browser sessions are signed out as
-  before. A reset does not take back paired hosts or routine webhook URLs,
-  which instead cannot be created before the email is verified, nor an OAuth
-  exchange already past the grant gate at the instant of the reset (a window
-  of milliseconds). If that transaction fails, the reset answers an error
+  before. Paired hosts and routine webhook URLs record whether the owner's
+  email was verified when they were issued (a migration adds
+  `"issuedVerified"` to `host_pairing_token`, `host` and
+  `automation_webhook`, backfilled from the owner's address as it is now);
+  a reset unpairs the hosts, revokes the unspent pairing tokens and revokes
+  the webhook URLs issued unverified, which only a deployment without email
+  delivery issues, and keeps the rest. `POST
+  /v1/admin/users/{id}/set-password` now takes back what a reset does, and
+  signs the account's sessions out; when it cannot, it answers `ADMIN_008`
+  and is retried. A reset does not take back an OAuth exchange already past
+  the grant gate at the instant of the reset (a window of milliseconds). If that transaction fails, the reset answers an error
   rather than success (the new password is already stored; resetting again
   from a new link completes it). Better Auth's
   rate limit keys on the client address `TRUST_PROXY` trusts (the socket's at

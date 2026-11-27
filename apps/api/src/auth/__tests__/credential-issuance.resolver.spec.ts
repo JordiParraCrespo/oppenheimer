@@ -40,7 +40,7 @@ describe('CredentialIssuanceResolver', () => {
   it('issues to a verified account where the deployment delivers email', async () => {
     const { resolver } = issuance({ emailDelivery: true, emailVerified: true });
 
-    await expect(resolver.assertMayIssue('user-1')).resolves.toBeUndefined();
+    await expect(resolver.assertMayIssue('user-1')).resolves.toEqual({ ownerEmailVerified: true });
   });
 
   // No delivery: no address can ever be verified, and no reset email can
@@ -49,7 +49,7 @@ describe('CredentialIssuanceResolver', () => {
   it('issues to an unverified account where the deployment delivers no email', async () => {
     const { resolver } = issuance({ emailDelivery: false, emailVerified: false });
 
-    await expect(resolver.assertMayIssue('user-1')).resolves.toBeUndefined();
+    await expect(resolver.assertMayIssue('user-1')).resolves.toEqual({ ownerEmailVerified: false });
   });
 
   it('still refuses an owner that is not active, with or without delivery', async () => {

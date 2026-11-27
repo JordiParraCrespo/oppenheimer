@@ -30,6 +30,7 @@ function token(revokedAt: Date | null = null) {
       revokedAt,
       redeemedAt: null,
       redeemedHostId: null,
+      issuedVerified: true,
     },
   });
 }

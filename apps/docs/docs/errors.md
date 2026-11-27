@@ -135,8 +135,10 @@ cannot be used as a probing oracle.
 (MCP) grant, minting a host pairing token and issuing a routine's webhook URL,
 for an account whose email address is not verified yet, on a deployment that
 delivers email (the `email_delivery` capability: SMTP or Resend configured).
-Without delivery no address can be verified, and no "Forgot password" email
-can recover one somebody registered first, so the rule does not apply there.
+Without delivery no address can be verified, so the rule does not apply
+there; a host paired or a webhook URL issued that way records that the
+address was unverified, and a later password reset (or an administrator's
+set-password) unpairs that host and revokes that URL.
 Verify the address from the link in the verification email, then try again;
 the link expires after an hour, and the console's alert for this code offers
 **Resend verification email** (Better Auth's

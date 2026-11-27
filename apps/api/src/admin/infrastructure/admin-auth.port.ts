@@ -65,6 +65,12 @@ export interface AdminAuthPort {
     sessionId: string,
   ): Promise<AdminSuccessResponseDto>;
   revokeAllSessions(headers: IncomingHttpHeaders, userId: string): Promise<AdminSuccessResponseDto>;
+  /**
+   * Sign every session of `userId` out, as a password reset does. No
+   * permission check of its own: it is the second half of `setPassword`,
+   * which the caller was already allowed.
+   */
+  endSessions(userId: string): Promise<void>;
 
   /**
    * Start acting as `userId`, on a session the provider issues for it.

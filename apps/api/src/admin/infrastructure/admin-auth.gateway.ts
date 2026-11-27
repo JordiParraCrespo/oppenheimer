@@ -227,6 +227,17 @@ export class AdminAuthGateway implements AdminAuthPort {
     return AdminUserMapper.toSuccess(result);
   }
 
+  /**
+   * Through Better Auth's own adapter, as `revokeSessionsOnPasswordReset`
+   * does, so its `session.delete.before` hook drops each cached copy. Then the
+   * delegated sessions cached for the user's credentials.
+   */
+  async endSessions(userId: string): Promise<void> {
+    const context = await auth.$context;
+    await context.internalAdapter.deleteUserSessions(userId);
+    await this.delegatedSessions.invalidateForUser(userId);
+  }
+
   async impersonate(headers: IncomingHttpHeaders, userId: string): Promise<string[]> {
     const { headers: outHeaders } = await invokeAdminApi(() =>
       auth.api.impersonateUser({

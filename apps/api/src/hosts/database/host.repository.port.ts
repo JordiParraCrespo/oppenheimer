@@ -43,6 +43,8 @@ export interface RedeemedPairingToken {
    * nobody can read.
    */
   redeemedHostId: string;
+  /** Whether the owner's email was verified at the mint; the host inherits it. */
+  issuedVerified: boolean;
 }
 
 export interface RedeemAndRegisterInput {
@@ -100,6 +102,15 @@ export interface HostRepositoryPort {
    * it launched, which started on `hostId`.
    */
   findPairedWithInventoryForMachine(hostId: string, ownerUserId: string): Promise<HostEntity[]>;
+  /**
+   * The hosts `ownerUserId` still has paired that were paired from an
+   * unverified address (`issuedVerified` false) with a token minted up to
+   * `mintedUpTo`, with no access scope: a password reset is the system taking
+   * back what the account held. Bounded by the mint, not the registration,
+   * so a token minted before the reset and spent just after it is found; a
+   * host with no token row is bounded by its own creation.
+   */
+  findPairedIssuedUnverifiedBySystem(ownerUserId: string, mintedUpTo: Date): Promise<HostEntity[]>;
   /**
    * Writes a loaded host back, only if nobody has written it since it was
    * loaded; otherwise `VersionConflictException` and nothing is written,

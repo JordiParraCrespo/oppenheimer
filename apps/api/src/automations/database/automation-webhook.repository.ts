@@ -20,12 +20,14 @@ export class AutomationWebhookRepository implements AutomationWebhookRepositoryP
     // A new URL is a new row: issued now, never received.
     const [row]: AutomationWebhookOrmEntity[] = await this.repository.query(
       `INSERT INTO automation_webhook
-         ("organizationId", "automationId", "tokenHash", "tokenPrefix", "signingSecretSealed")
-       VALUES ($1, $2, $3, $4, $5)
+         ("organizationId", "automationId", "tokenHash", "tokenPrefix", "signingSecretSealed",
+          "issuedVerified")
+       VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT ("organizationId", "automationId") DO UPDATE SET
          "tokenHash" = EXCLUDED."tokenHash",
          "tokenPrefix" = EXCLUDED."tokenPrefix",
          "signingSecretSealed" = EXCLUDED."signingSecretSealed",
+         "issuedVerified" = EXCLUDED."issuedVerified",
          "lastReceivedAt" = NULL,
          "createdAt" = now(),
          "updatedAt" = now()
@@ -36,6 +38,7 @@ export class AutomationWebhookRepository implements AutomationWebhookRepositoryP
         webhook.tokenHash,
         webhook.tokenPrefix,
         webhook.signingSecretSealed,
+        webhook.issuedVerified,
       ],
     );
     return viewOf(row);
@@ -43,6 +46,22 @@ export class AutomationWebhookRepository implements AutomationWebhookRepositoryP
 
   async revoke(organizationId: string, automationId: string): Promise<void> {
     await this.repository.delete({ organizationId, automationId });
+  }
+
+  async revokeIssuedUnverified(
+    organizationIds: readonly string[],
+    issuedUpTo: Date,
+  ): Promise<number> {
+    if (organizationIds.length === 0) return 0;
+    // A re-issue rewrites "createdAt", so it is the moment this URL was issued.
+    const [, affected] = (await this.repository.query(
+      `DELETE FROM automation_webhook
+        WHERE "organizationId" = ANY($1::uuid[])
+          AND "issuedVerified" = false
+          AND "createdAt" <= $2`,
+      [[...organizationIds], issuedUpTo],
+    )) as [unknown[], number];
+    return affected;
   }
 
   async findByTokenHash(tokenHash: string): Promise<RoutineWebhookRecord | null> {

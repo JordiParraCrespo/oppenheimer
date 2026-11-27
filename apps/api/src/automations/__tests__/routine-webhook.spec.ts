@@ -63,6 +63,7 @@ function setup(
   });
   let stored: (IssuedRoutineWebhook & { lastReceivedAt: Date | null }) | null = null;
   const webhooks: AutomationWebhookRepositoryPort = {
+    revokeIssuedUnverified: vi.fn(async () => 0),
     issue: vi.fn(async (webhook: IssuedRoutineWebhook) => {
       stored = { ...webhook, lastReceivedAt: null };
       return {

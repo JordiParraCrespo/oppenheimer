@@ -27,10 +27,13 @@ export interface IssuedWebhook {
  * once. Only a routine with a webhook trigger has one, so the bot that
  * writes triggers never holds a URL or a secret: the person issues them here.
  *
- * The URL starts a run with no sign-in and a password reset does not take it
- * back, so where the deployment delivers email the person must have proven
- * their address first (`CREDENTIAL_ISSUANCE`): otherwise whoever registered
- * the address first keeps a trigger the real owner's recovery cannot reach.
+ * The URL starts a run with no sign-in and a password reset keeps it when it
+ * was issued from a verified address, so where the deployment delivers email
+ * the person must have proven their address first (`CREDENTIAL_ISSUANCE`):
+ * otherwise whoever registered the address first keeps a trigger the real
+ * owner's recovery cannot reach. Where it delivers none the URL is issued and
+ * records that the address was unproven (`issuedVerified`), and a later reset
+ * revokes it.
  */
 @CommandHandler(IssueRoutineWebhookCommand)
 export class IssueRoutineWebhookCommandHandler
@@ -47,7 +50,7 @@ export class IssueRoutineWebhookCommandHandler
   ) {}
 
   async execute(command: IssueRoutineWebhookCommand): Promise<IssuedWebhook> {
-    await this.issuance.assertMayIssue(command.scope.userId);
+    const issuance = await this.issuance.assertMayIssue(command.scope.userId);
     const routine = await this.routines.require(command.scope, command.botId, command.routineId);
     if (!routine.triggers.some((trigger) => trigger.source === 'webhook')) {
       throw new AppError(AutomationErrors.WEBHOOK_TRIGGER_MISSING);
@@ -63,6 +66,7 @@ export class IssueRoutineWebhookCommandHandler
       tokenHash: token.hash,
       tokenPrefix: token.prefix,
       signingSecretSealed: signingSecret ? this.sealer.seal(signingSecret) : null,
+      issuedVerified: issuance.ownerEmailVerified,
     });
     return { view, token: token.token, signingSecret };
   }

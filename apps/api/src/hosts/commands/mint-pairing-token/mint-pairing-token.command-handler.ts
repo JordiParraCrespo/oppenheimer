@@ -25,10 +25,10 @@ export interface MintPairingTokenResult {
 }
 
 /**
- * A paired host is a credential a password reset leaves alone, so where the
- * deployment delivers email the account must have proven its address first
- * (`CREDENTIAL_ISSUANCE`): otherwise whoever registered it first keeps a
- * machine the real owner's recovery cannot reach.
+ * Where the deployment delivers email the account must have proven its
+ * address first (`CREDENTIAL_ISSUANCE`), or whoever registered it first would
+ * pair a machine; where it delivers none the token records that the address
+ * was unproven (`issuedVerified`), and a later reset unpairs its host.
  */
 @CommandHandler(MintPairingTokenCommand)
 export class MintPairingTokenCommandHandler
@@ -55,7 +55,7 @@ export class MintPairingTokenCommandHandler
 
     // After the deployment's answer, so `GET /health/capabilities` still says
     // what minting would.
-    await this.issuance.assertMayIssue(command.userId);
+    const issuance = await this.issuance.assertMayIssue(command.userId);
 
     const now = new Date();
     const replacing = await this.replacedToken(command);
@@ -71,6 +71,7 @@ export class MintPairingTokenCommandHandler
       tokenHash: secret.hash,
       createdFromIp: command.createdFromIp,
       expiresAt: new Date(now.getTime() + lifetimeMs),
+      issuedVerified: issuance.ownerEmailVerified,
     });
 
     const minted = await this.tokens.insertWithinCap(token, {
