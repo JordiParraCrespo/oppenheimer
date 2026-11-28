@@ -22,7 +22,7 @@
  * membership). The role routes (`create-role` and the rest) are not mounted:
  * dynamic access control is off.
  *
- * `product/versions/mvp/08-auth.md`: workspaces are personal, with no roster,
+ * `product/design/foundations/auth.md`: workspaces are personal, with no roster,
  * invitations or teams in the console; this is the server holding the same
  * line. Opening one again is the teams slice's decision.
  */
