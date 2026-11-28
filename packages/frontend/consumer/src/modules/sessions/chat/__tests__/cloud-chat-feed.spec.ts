@@ -166,6 +166,47 @@ describe('CloudChatFeed', () => {
     stop();
   });
 
+  it('still draws the chat from scratch when the first read after the switch fails', async () => {
+    // Regression: the switch changed the source, its reread failed, and the
+    // retry appended the extension's lines after the hook's.
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const prompt = (uuid: string, text: string) =>
+      line({ type: 'user', uuid, message: { role: 'user', content: text } });
+    const logged = [prompt('e1', 'Fix the login page'), prompt('e2', 'Also the signup page')];
+    const pages: (CloudChatPage | Error)[] = [
+      { lines: [prompt('h1', 'Fix the login page')], next: 1, source: 'hook', replies: [] },
+      { lines: logged, next: 2, source: 'browser', replies: [] },
+      new Error('offline'),
+      { lines: logged, next: 2, source: 'browser', replies: [] },
+    ];
+    const source: CloudChatSource = {
+      read: vi.fn(async () => {
+        const page = pages.shift() ?? {
+          lines: [],
+          next: 2,
+          source: 'browser' as const,
+          replies: [],
+        };
+        if (page instanceof Error) throw page;
+        return page;
+      }),
+      reply: vi.fn(async () => {}),
+    };
+    const feed = new CloudChatFeed(source, chat, {
+      everyMs: 1000,
+      onPending: () => {},
+      onReplyFailed: () => {},
+    });
+    const stop = feed.start();
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual([
+      'Fix the login page',
+      'Also the signup page',
+    ]);
+    stop();
+  });
+
   it('shows a reply the extension posted on claude.ai as sent until the log has its words', async () => {
     vi.useFakeTimers();
     const chat = new SessionChat();

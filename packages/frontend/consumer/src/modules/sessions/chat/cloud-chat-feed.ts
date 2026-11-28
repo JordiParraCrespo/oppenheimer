@@ -148,6 +148,12 @@ export class CloudChatFeed {
   private readonly echoed = new Map<string, number>();
   /** The prompts the log holds, for the replies the extension posted. */
   private prompts: TypedPrompt[] = [];
+  /**
+   * The next read draws the chat from scratch: the first one, and the one
+   * after the source switched. It stays set until a read is drawn, so a
+   * failed read is not followed by one that appends instead.
+   */
+  private reset = true;
   private typed = '';
   private stopped = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
@@ -173,7 +179,7 @@ export class CloudChatFeed {
     const release = this.chat.connect((data) => this.type(data), undefined, {
       interruptible: false,
     });
-    void this.read(true);
+    void this.read();
     return () => {
       this.stopped = true;
       if (this.timer) clearTimeout(this.timer);
@@ -243,9 +249,10 @@ export class CloudChatFeed {
     return pending;
   }
 
-  private async read(first: boolean): Promise<void> {
+  private async read(): Promise<void> {
     if (this.timer) clearTimeout(this.timer);
     try {
+      const first = this.reset;
       const page = await this.source.read(this.next);
       if (this.stopped) return;
       if (this.origin !== null && page.source !== this.origin) {
@@ -255,7 +262,8 @@ export class CloudChatFeed {
         this.next = 0;
         this.echoed.clear();
         this.prompts = [];
-        return this.read(true);
+        this.reset = true;
+        return this.read();
       }
       this.origin = page.source;
       const read = page.lines.map(asChatLine);
@@ -270,11 +278,12 @@ export class CloudChatFeed {
           entries: read.map((each) => each.line),
         });
       }
+      this.reset = false;
       this.next = page.next;
       this.options.onPending(this.pending(page.replies));
     } catch {
       // A failed read is tried again on the next tick; the chat keeps what it drew.
     }
-    if (!this.stopped) this.timer = setTimeout(() => void this.read(false), this.options.everyMs);
+    if (!this.stopped) this.timer = setTimeout(() => void this.read(), this.options.everyMs);
   }
 }
