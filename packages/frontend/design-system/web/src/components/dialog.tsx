@@ -8,7 +8,7 @@ import { cn } from '../lib/utils';
 import { IconButton } from './icon-button';
 
 /**
- * Dialog — the one modal surface: 28px radius on the popover tier, the modal
+ * Dialog — the one modal surface: 16px radius on the popover tier, the modal
  * shadow (one of three layers allowed one), over a scrim with a 3px blur.
  * Enters with the 4px rise plus fade over 220ms; nothing slides in from an edge.
  *

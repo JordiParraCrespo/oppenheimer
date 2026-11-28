@@ -326,7 +326,7 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   Between turns a `ChatMarker` notes a model switch and a
   `TranscriptDivider` a new day. Next steps are `ChatSuggestion` pills;
   the way back to the latest turn is `FloatingChip variant="round"`; the
-  box is `ChatComposer`, a 28px card growing from two lines to eight, which
+  box is `ChatComposer`, a 16px-radius card growing from two lines to eight, which
   shares `Composer`'s send rules and send button (`internal/composer-send`)
   rather than branching inside it. The trace lives in `chat-trace.tsx`,
   apart from the agent's tool-call groups in `chat-work.tsx`.

@@ -14,7 +14,7 @@ type CarouselSlide = {
 };
 
 /**
- * ImageCarousel — the photo panel beside the auth forms: a 28px-radius frame,
+ * ImageCarousel — the photo panel beside the auth forms: a 16px-radius frame,
  * slides cross-fading over 700ms every 5.2s, a caption per slide, and pill
  * dots that also jump to a slide. Autoplay pauses on hover and focus and stops
  * under reduced motion. The caption sits on a bottom scrim so it reads over any

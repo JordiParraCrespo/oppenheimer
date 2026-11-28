@@ -66,7 +66,7 @@ function TemplateItem({
 /**
  * TemplateTiles — starting points picked by clicking the whole tile (a new
  * bot's Blank, GitHub, Sessions, Plan): as many 150px columns as fit, 8px
- * apart. Each `TemplateTile` is a button on the card at the 18px radius, its
+ * apart. Each `TemplateTile` is a button on the card at the 12px radius, its
  * glyph in muted ink over the name at 14px medium and a 12.5px line; the
  * pointer takes it to the control's hover grey. `TemplateGrid` stays for
  * templates read before they are added (the automations'), with their trigger

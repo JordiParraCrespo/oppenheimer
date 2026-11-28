@@ -8,7 +8,7 @@ import { IconButton } from './icon-button';
 
 /**
  * What the agent cannot go on without (Chat Components, Decisions). A
- * blocking request takes the composer's place as a card: 18px radius on a
+ * blocking request takes the composer's place as a card: 12px radius on a
  * hairline, the request at 15px medium, what it would touch, then numbered
  * `ChoiceRow`s. The number keys pick a row, and only while focus is inside
  * the card, so typing elsewhere never answers for the person.

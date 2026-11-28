@@ -26,7 +26,7 @@ import { variedWidth } from '../internal/varied-width';
  *   edge.
  * - `TaskColumn`: the head (the status on `StatusDot`, the count in mono, a
  *   + to add)
- *   over a tray on the hover wash, 18px round, that tints toward the
+ *   over a tray on the hover wash, 12px round, that tints toward the
  *   selected wash while a card would land in it. Its `foot` is the
  *   `TaskColumnAdd` button or a `TaskComposer`, and under it, in a column
  *   that folds some of its cards away (Done's older ones), `TaskColumnMore`.

@@ -7,7 +7,7 @@ import { cn } from '../lib/utils';
  * content from 88px up. Same focus and invalid treatment as Input.
  *
  * `variant="code"` is a file edited in place (a bot's SOUL.md and
- * INSTRUCTIONS.md): the 18px reading radius, mono at 13px on 1.65, 16px by
+ * INSTRUCTIONS.md): the 12px reading radius, mono at 13px on 1.65, 16px by
  * 18px of padding, and at least 320px tall, so a page of text reads as a page.
  */
 function Textarea({

@@ -89,7 +89,7 @@ function ComposerNoticeFrame({ notice, children }: { notice?: React.ReactNode; c
 }
 
 /**
- * Composer — the prompt box: an 18px-radius field holding a growing textarea,
+ * Composer — the prompt box: a 12px-radius field holding a growing textarea,
  * then a foot row with the tools. Focus takes the blue border and ring. Enter
  * submits, Shift+Enter inserts a newline; while `busy` the send button becomes
  * a stop button in the same corner.
@@ -297,7 +297,7 @@ function Composer({
 }
 
 /**
- * ComposerPill — New session's prompt: one 28px-radius box holding a line that
+ * ComposerPill — New session's prompt: one 16px-radius box holding a line that
  * grows, with Add files (+) at its start and the mic and the round send at its
  * end, so the box reads as a sentence to finish rather than a form to fill. It
  * stands as tall as a session chat's `ChatComposer` (`inline`), 46px for one

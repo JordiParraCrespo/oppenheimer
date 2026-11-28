@@ -570,7 +570,7 @@ export default function Page() {
         id="cards"
         title="Card"
         meta="card.tsx"
-        desc="The content container: 18px radius, a subtle hairline, the lit surface on the canvas, no shadow. Header, content and footer carry the 24px padding; padded puts it on the card for a single block."
+        desc="The content container: 12px radius, a subtle hairline, the lit surface on the canvas, no shadow. Header, content and footer carry the 24px padding; padded puts it on the card for a single block."
         code={`<Card><CardHeader><CardTitle>…</CardTitle><CardDescription>…</CardDescription></CardHeader><CardContent>…</CardContent></Card>`}
       >
         <Card className="w-full max-w-90">
@@ -915,7 +915,7 @@ export default function Page() {
         id="textarea"
         title="Textarea"
         meta="textarea.tsx"
-        desc="The multi-line field at the 10px radius, sized to its content from 88px. The code variant is a file edited in place (a bot's SOUL.md and INSTRUCTIONS.md): mono at 13px, the 18px reading radius, at least 320px tall."
+        desc="The multi-line field at the 10px radius, sized to its content from 88px. The code variant is a file edited in place (a bot's SOUL.md and INSTRUCTIONS.md): mono at 13px, the 12px reading radius, at least 320px tall."
         code={`<Textarea placeholder="Session name" />
 <Textarea variant="code" aria-label="INSTRUCTIONS.md" defaultValue={file} />`}
       >
@@ -958,7 +958,7 @@ export default function Page() {
         id="composer"
         title="Composer"
         meta="composer.tsx"
-        desc="The prompt box: an 18px field with a growing textarea, then the foot row, which reads left to right as scope of action, then engine. Bottom left is what the run may touch: attachments and the permission level. Bottom right is who drives it and how hard it thinks: the agent and model, the effort, then mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop. On New session the composer is tabbed: the scope chips sit in a grey band fused to the top of the field, each a borderless ChipSelectTrigger in its tab variant, so host, repositories and branch read as one sentence over the box, which grows to 128px at 15px. New session itself now opens on ComposerPill: one 28px-radius box, Add files at the start of a line that grows, the mic and send at its end, and under it a ComposerChoices row — where it runs and what it may touch on the left, the agent and effort pushed right."
+        desc="The prompt box: a 12px-radius field with a growing textarea, then the foot row, which reads left to right as scope of action, then engine. Bottom left is what the run may touch: attachments and the permission level. Bottom right is who drives it and how hard it thinks: the agent and model, the effort, then mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop. On New session the composer is tabbed: the scope chips sit in a grey band fused to the top of the field, each a borderless ChipSelectTrigger in its tab variant, so host, repositories and branch read as one sentence over the box, which grows to 128px at 15px. New session itself now opens on ComposerPill: one 16px-radius box, Add files at the start of a line that grows, the mic and send at its end, and under it a ComposerChoices row — where it runs and what it may touch on the left, the agent and effort pushed right."
         code={`<Composer value={v} onValueChange={setV} onSubmit={start} onAttach={pick}
   scope={<><ChipSelect variant="tab" … /><RepositorySelect variant="tab" … /></>}
   tools={<PermissionMenu options={levels} value={level} onValueChange={setLevel} />}
@@ -1082,7 +1082,7 @@ export default function Page() {
         id="dialog"
         title="Dialog"
         meta="dialog.tsx"
-        desc="The one modal surface: 440px by default, 28px radius, the modal shadow, a blurred scrim, a 4px rise. The console's forms are dialogs over it: New project and Project settings at 540px, Add a host at 520px, the automation editor at 640px. Add a host opens from the composer's host chip: one sentence, the agent prompt in a card with Copy prompt and its text behind a fold, the token line with Install manually instead across from it, and Connection rows that resolve in place. Destructive copy states the cost and the button says exactly what it does."
+        desc="The one modal surface: 440px by default, 16px radius, the modal shadow, a blurred scrim, a 4px rise. The console's forms are dialogs over it: New project and Project settings at 540px, Add a host at 520px, the automation editor at 640px. Add a host opens from the composer's host chip: one sentence, the agent prompt in a card with Copy prompt and its text behind a fold, the token line with Install manually instead across from it, and Connection rows that resolve in place. Destructive copy states the cost and the button says exactly what it does."
         code={`<Dialog><DialogTrigger render={<Button />}>Add a host…</DialogTrigger><DialogContent><DialogHeader><DialogTitle>Add a host</DialogTitle>…`}
       >
         <AddHostDialogDemo />

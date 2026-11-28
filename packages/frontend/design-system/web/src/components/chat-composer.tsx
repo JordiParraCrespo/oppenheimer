@@ -46,7 +46,7 @@ function sendButtonClass(layout: 'stacked' | 'inline', busy: boolean): string {
 }
 
 /**
- * ChatComposer — a bot's composer (Bots): a card at the 28px radius with no
+ * ChatComposer — a bot's composer (Bots): a card at the 16px radius with no
  * border until it takes focus (the plain border then, no ring), its text at
  * 15px growing from two lines to eight, then a foot row: `tools` (the
  * approval level) on the left, `engine` (model, effort) on the right, and
