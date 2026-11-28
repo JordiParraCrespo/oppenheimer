@@ -272,30 +272,74 @@ test.describe('Bots', () => {
     expect(await ok<unknown[]>(await api.get(`/api/v1/bots/${bot.id}/routines`))).toEqual([]);
   });
 
-  test('a workspace keeps one key per model provider, and never shows it', async () => {
+  test("a provider's key replaced in place, another added and removed, none ever shown", async () => {
     const { api } = await signedUpContext('botproviders');
     type Provider = {
       provider: string;
       configured: boolean;
       keyHint: string | null;
       isDefault: boolean;
+      keys: { id: string; keyHint: string; spentAt: string | null }[];
     };
     const list = () => api.get('/api/v1/model-providers');
 
     const empty = await ok<Provider[]>(await list());
     expect(empty).toEqual([
-      { provider: 'anthropic', configured: false, keyHint: null, updatedAt: null, isDefault: true },
-      { provider: 'glm', configured: false, keyHint: null, updatedAt: null, isDefault: false },
-      { provider: 'openai', configured: false, keyHint: null, updatedAt: null, isDefault: false },
-      { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null, isDefault: false },
-      { provider: 'xai', configured: false, keyHint: null, updatedAt: null, isDefault: false },
-      { provider: 'groq', configured: false, keyHint: null, updatedAt: null, isDefault: false },
+      {
+        provider: 'anthropic',
+        configured: false,
+        keyHint: null,
+        updatedAt: null,
+        isDefault: true,
+        keys: [],
+      },
+      {
+        provider: 'glm',
+        configured: false,
+        keyHint: null,
+        updatedAt: null,
+        isDefault: false,
+        keys: [],
+      },
+      {
+        provider: 'openai',
+        configured: false,
+        keyHint: null,
+        updatedAt: null,
+        isDefault: false,
+        keys: [],
+      },
+      {
+        provider: 'chatgpt',
+        configured: false,
+        keyHint: null,
+        updatedAt: null,
+        isDefault: false,
+        keys: [],
+      },
+      {
+        provider: 'xai',
+        configured: false,
+        keyHint: null,
+        updatedAt: null,
+        isDefault: false,
+        keys: [],
+      },
+      {
+        provider: 'groq',
+        configured: false,
+        keyHint: null,
+        updatedAt: null,
+        isDefault: false,
+        keys: [],
+      },
       {
         provider: 'elevenlabs',
         configured: false,
         keyHint: null,
         updatedAt: null,
         isDefault: false,
+        keys: [],
       },
     ]);
 
@@ -310,6 +354,29 @@ test.describe('Bots', () => {
     const glm = (await ok<Provider[]>(stored)).find((row) => row.provider === 'glm');
     // The workspace's only key is the default until another is marked.
     expect(glm).toMatchObject({ configured: true, keyHint: '9876', isDefault: true });
+    expect(glm?.keys).toHaveLength(1);
+
+    // Another key goes after the first; a call moves to it when the first runs out of credit.
+    await ok(
+      await api.post('/api/v1/model-providers/glm/keys', { data: { apiKey: `${secret}-5555` } }),
+      204,
+    );
+    const two = (await ok<Provider[]>(await list())).find((row) => row.provider === 'glm');
+    expect(two?.keys.map((key) => key.keyHint)).toEqual(['9876', '5555']);
+    await ok(await api.delete(`/api/v1/model-providers/glm/keys/${two?.keys[0].id}`), 204);
+    const one = (await ok<Provider[]>(await list())).find((row) => row.provider === 'glm');
+    // The default goes with the provider's next key.
+    expect(one).toMatchObject({ keyHint: '5555', isDefault: true });
+    await expectProblemDocument(
+      await api.put(`/api/v1/model-providers/glm/keys/${randomUUID()}`, {
+        data: { apiKey: secret },
+      }),
+      { status: 404, code: 'BOTS_050' },
+    );
+    await expectProblemDocument(
+      await api.post('/api/v1/model-providers/chatgpt/keys', { data: { apiKey: secret } }),
+      { status: 422, code: 'BOTS_017' },
+    );
 
     await expectProblemDocument(
       await api.put('/api/v1/model-providers/mistral', { data: { apiKey: secret } }),
