@@ -45,7 +45,7 @@ at, what was wrong on them, and what is still open.
   repository's own branch, a push, merge or release). It fails closed on an
   event with no association, and is a fixed rule with no per-trigger
   opt-out (`github/domain/github-event-actor.policy.ts`; handler tests that
-  fail on the old code). Note 27's 2026-11-03 call, that a stranger's comment
+  fail on the old code). `design/bots/bot-subscriptions.md`'s 2026-11-03 call, that a stranger's comment
   wakes a watching bot, changed with it.
 - **I, routine webhooks unsigned by default** (same branch): a URL asked for
   through the API without `signed` is signed when `BOTS_PROVIDER_KEY` is set;

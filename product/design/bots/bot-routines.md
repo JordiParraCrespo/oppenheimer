@@ -417,7 +417,9 @@ clock, spent tokens to say `nothing_to_report`. So:
 - A routine fired by people outside the workspace (an issue opened by
   anyone) keeps the bot's *ask* tools asking: an unattended turn cannot
   approve its own card. Since 2026-11-27 a GitHub event fires a routine only
-  when an insider of the repository caused it (note 16, "Insiders only"): a
+  when an insider of the repository caused it
+  ([`../automations/automations-architecture.md`](../automations/automations-architecture.md),
+  "Insiders only"): a
   stranger's issue or comment on a public repository starts no run.
 
 ## 7. The Routines tab
