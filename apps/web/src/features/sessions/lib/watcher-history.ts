@@ -169,8 +169,18 @@ export function bindWatcherHistory(
       phase = 'open';
       open(page.text);
     }) ?? (() => {});
-  // A page drawn at the old width would wrap wrongly; the next notch asks again.
-  const offResize = term.onResize(() => close());
+  // A new width wraps the page's lines anew: it closes, and the next notch
+  // asks again. Height alone is the grid making room (a failure under it
+  // going away on Try again): the ask stands, and an open page takes the rows.
+  let cols = term.cols;
+  const offResize = term.onResize((size) => {
+    if (size.cols !== cols) {
+      cols = size.cols;
+      close();
+      return;
+    }
+    overlay?.view.resize(size.cols, size.rows);
+  });
 
   return {
     wheel(lines) {

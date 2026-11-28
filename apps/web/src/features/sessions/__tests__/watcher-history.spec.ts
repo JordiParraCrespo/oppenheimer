@@ -132,6 +132,30 @@ describe('bindWatcherHistory', () => {
     term.dispose();
   });
 
+  it('keeps a retry asked while the grid only grows taller', async () => {
+    // What breaks this: the failure under the grid going away on Try again,
+    // the grid taking its rows, and that resize dropping the ask, so the
+    // page that answers it is ignored and nothing opens.
+    const { term, container } = liveGrid();
+    const { stream, answer } = watcherStream();
+    const onChange = vi.fn();
+    const history = bindWatcherHistory(term, container, stream, onChange);
+
+    history.wheel(-3);
+    answer({ text: '', truncated: false, failed: true });
+    onChange.mock.lastCall?.[0].retry();
+    term.resize(term.cols, term.rows + 2);
+    answer({ text: `${scrollback}\n`, truncated: false });
+    await settle();
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ kind: 'open' });
+
+    // A new width wraps the page's lines anew: that one closes it.
+    term.resize(term.cols + 10, term.rows);
+    expect(container.querySelector('[data-slot="terminal-history"]')).toBeNull();
+    history.dispose();
+    term.dispose();
+  });
+
   it('says a page that never came, rather than waiting on it', () => {
     vi.useFakeTimers();
     try {
