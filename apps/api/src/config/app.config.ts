@@ -15,39 +15,53 @@ export function resolveLogFile(value: string | undefined): string | undefined {
   return isAbsolute(value) ? value : resolve(findWorkspaceRoot() ?? process.cwd(), value);
 }
 
-const schema = z.object({
-  port: z.coerce.number().default(3001),
-  nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
-  // **Required** — the app must fail fast and loud at boot without it. Only
-  // keys whose absence removes an optional feature (OAuth, S3, SMTP)
-  // get the optional-capability treatment; see `capabilities.module.ts`.
-  betterAuthSecret: z.string().min(8),
-  betterAuthUrl: z.string().url().default('http://localhost:3001'),
-  frontendUrl: z.string().url().default('http://localhost:3000'),
-  // Base of the RFC 7807 `type` URIs in error responses. Point it at wherever
-  // this deployment documents its error catalog.
-  errorTypeBaseUrl: z.string().url().default('https://oppenheimer.dev/errors'),
-  // Number of reverse-proxy hops in front of the API (Express `trust proxy`).
-  // 0 = trust none (direct connection). Behind nginx/ingress set it to the
-  // hop count so `req.ip` is the real client — the throttler's auth-failure
-  // budget keys on it and API-token IP allowlists check it. Never blindly trust all
-  // proxies (`true`), which lets a client spoof `X-Forwarded-For`.
-  trustProxy: z.coerce.number().int().min(0).default(0),
-  // **Optional capability** — the Bull Board queue dashboard at `/admin/queues`
-  // is mounted only when BOTH credentials are set and the password is at least
-  // `BULL_BOARD_MIN_PASSWORD_LENGTH` long, and then behind HTTP Basic auth.
-  // Otherwise the dashboard is not exposed at all: its job
-  // payloads carry tokenized password-reset/invitation URLs, so it must never
-  // be public.
-  bullBoardUsername: z.string().optional(),
-  bullBoardPassword: z.string().optional(),
-  // **Optional** — a file the API also writes its log lines to, as JSON, for a
-  // shipper to tail (`pnpm monitoring:up` runs Grafana Alloy over `.logs/`,
-  // into Loki). Unset, logs go to stdout only. A relative path is taken from
-  // the repository root, so `.logs/api.log` is the same file wherever the
-  // API is started from.
-  logFile: z.string().optional().transform(resolveLogFile),
-});
+const schema = z
+  .object({
+    port: z.coerce.number().default(3001),
+    nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
+    // **Required** — the app must fail fast and loud at boot without it. Only
+    // keys whose absence removes an optional feature (OAuth, S3, SMTP)
+    // get the optional-capability treatment; see `capabilities.module.ts`.
+    betterAuthSecret: z.string().min(8),
+    betterAuthUrl: z.string().url().default('http://localhost:3001'),
+    frontendUrl: z.string().url().default('http://localhost:3000'),
+    // Base of the RFC 7807 `type` URIs in error responses. Point it at wherever
+    // this deployment documents its error catalog.
+    errorTypeBaseUrl: z.string().url().default('https://oppenheimer.dev/errors'),
+    // Number of reverse-proxy hops in front of the API (Express `trust proxy`).
+    // 0 = trust none (direct connection). Behind nginx/ingress set it to the
+    // hop count so `req.ip` is the real client — the throttler's auth-failure
+    // budget keys on it and API-token IP allowlists check it. Never blindly trust all
+    // proxies (`true`), which lets a client spoof `X-Forwarded-For`.
+    trustProxy: z.coerce.number().int().min(0).default(0),
+    // **Optional capability** — the Bull Board queue dashboard at `/admin/queues`
+    // is mounted only when BOTH credentials are set and the password is at least
+    // `BULL_BOARD_MIN_PASSWORD_LENGTH` long, and then behind HTTP Basic auth.
+    // Otherwise the dashboard is not exposed at all: its job
+    // payloads carry tokenized password-reset/invitation URLs, so it must never
+    // be public.
+    bullBoardUsername: z.string().optional(),
+    bullBoardPassword: z.string().optional(),
+    // **Optional** — a file the API also writes its log lines to, as JSON, for a
+    // shipper to tail (`pnpm monitoring:up` runs Grafana Alloy over `.logs/`,
+    // into Loki). Unset, logs go to stdout only. A relative path is taken from
+    // the repository root, so `.logs/api.log` is the same file wherever the
+    // API is started from.
+    logFile: z.string().optional().transform(resolveLogFile),
+  })
+  .superRefine((config, context) => {
+    // Everything signed with the secret (session cookies, the preview cookie)
+    // can be forged by whoever knows it, so production refuses the value
+    // `.env.example` ships and anything short enough to guess.
+    if (config.nodeEnv !== 'production') return;
+    if (config.betterAuthSecret.length < 32 || /change-me/i.test(config.betterAuthSecret)) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['betterAuthSecret'],
+        message: 'must be at least 32 random characters in production (openssl rand -base64 32)',
+      });
+    }
+  });
 
 export const appConfig = registerAs('app', () =>
   parseEnv('app', schema, {

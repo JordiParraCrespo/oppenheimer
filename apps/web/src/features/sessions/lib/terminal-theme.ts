@@ -102,6 +102,11 @@ export function readTerminalTheme(): ITheme {
     cursor: read('--term-caret'),
     cursorAccent: read('--term-bg'),
     selectionBackground: read('--term-selection'),
+    // The chat's bar (`scrollbar-strong`), not xterm's faint grey: a long
+    // scrollback leaves a short thumb that has to be found by eye.
+    scrollbarSliderBackground: read('--fg-muted'),
+    scrollbarSliderHoverBackground: read('--fg'),
+    scrollbarSliderActiveBackground: read('--fg'),
 
     black: fg,
     red,

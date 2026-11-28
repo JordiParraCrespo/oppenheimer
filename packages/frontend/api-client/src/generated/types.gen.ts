@@ -1700,7 +1700,7 @@ export type SessionResponseDto = {
      */
     agent: 'claude-code' | 'codex' | 'opencode' | 'grok' | 'pi' | 'omp' | 'antigravity' | 'zcode' | 'fx' | 'hermes' | 'muse' | 'qwen' | 'shell' | 'cursor';
     /**
-     * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).
+     * Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/design/sessions/session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).
      */
     place: 'worktree' | 'folder' | 'cloud';
     /**
@@ -1713,7 +1713,7 @@ export type SessionResponseDto = {
     cloudSessionId?: string | null;
     launch: SessionLaunchResponseDto;
     /**
-     * The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/versions/mvp/03-control-plane.md`).
+     * The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/design/foundations/control-plane.md`).
      */
     state: 'working' | 'waiting-on-you' | 'ready-for-review' | 'landing' | 'idle' | 'resolved';
     /**
@@ -1727,7 +1727,7 @@ export type SessionResponseDto = {
     agentSessionId?: string | null;
     lastEventAt?: string | null;
     /**
-     * When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/versions/mvp/29-inbox.md` §3).
+     * When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/design/console/inbox.md` §3).
      */
     observedSince?: string | null;
     /**
@@ -1747,6 +1747,10 @@ export type SessionResponseDto = {
      * Hidden from the console’s sidebar until the person shows hidden sessions (`PUT /sessions/{id}/visibility`, or `hidden` at create). Display only: a hidden session runs like any other.
      */
     hidden: boolean;
+    /**
+     * The finished turn nobody has read yet (`ready-for-review`, the console’s blue dot), named the same while it stays unread, whatever else the log records: what `POST /sessions/{id}/report/acknowledge` reads. Null when there is none or it was read.
+     */
+    unreadReport: string | null;
     /**
      * What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.
      */

@@ -10,7 +10,7 @@ The end of every task. `ketchup` catches the user up on this chat since their
 last message, and `recall` rebuilds the last week across their sessions;
 `recap` closes the task in front of you, so they can leave the session after
 reading one message. The product's bots and the agents in Oppenheimer's
-sessions end their tasks the same way (`25-bots.md`, the runner's session
+sessions end their tasks the same way (`product/design/bots/bots.md`, the runner's session
 note): one shape, everywhere they read a finished task.
 
 Write in the `bro` voice. Keep the turn read-only: what the recap suggests,

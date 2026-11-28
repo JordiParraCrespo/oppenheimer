@@ -3076,7 +3076,7 @@
             "bearer": []
           }
         ],
-        "summary": "Add an existing user as a member",
+        "summary": "Add an existing user as a member (platform administrators)",
         "tags": [
           "Organization members"
         ]
@@ -9927,7 +9927,7 @@
         ]
       },
       "post": {
-        "description": "A new worktree: repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the control plane names the working branch (`sessionBranchName`) and each checkout on the response carries it. Or a folder already on the host (`folder`, an absolute path, never with `checkouts`), where nothing is cloned or written (`product/versions/mvp/24-session-places.md`). Without a `projectId` the session lands in the workspace’s Unassigned project (`product/versions/mvp/03-control-plane.md`). With `teleport`, a Claude Code cloud session’s id, the agent continues that cloud session in the new worktree (`claude --teleport`) instead of starting a conversation; it takes one checkout and no `prompt`.",
+        "description": "A new worktree: repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the control plane names the working branch (`sessionBranchName`) and each checkout on the response carries it. Or a folder already on the host (`folder`, an absolute path, never with `checkouts`), where nothing is cloned or written (`product/design/sessions/session-places.md`). Without a `projectId` the session lands in the workspace’s Unassigned project (`product/design/foundations/control-plane.md`). With `teleport`, a Claude Code cloud session’s id, the agent continues that cloud session in the new worktree (`claude --teleport`) instead of starting a conversation; it takes one checkout and no `prompt`.",
         "operationId": "createSession",
         "parameters": [
           {
@@ -10053,7 +10053,7 @@
     },
     "/api/v1/sessions/cloud": {
       "post": {
-        "description": "The vendor’s own agent (Cursor’s, today) on one repository, from its base branch, on the caller’s key for the vendor (`PUT /cloud-agents/providers/{provider}/credential`), listed with every session in the place `cloud`: no host, terminal or checkout. Its row opens the agent’s page at the vendor, where it is followed up and stopped; its state follows what the vendor says about its run (`product/next-steps/cloud-agents.md`).",
+        "description": "The vendor’s own agent (Cursor’s, today) on one repository, from its base branch, on the caller’s key for the vendor (`PUT /cloud-agents/providers/{provider}/credential`), listed with every session in the place `cloud`: no host, terminal or checkout. Its row opens the agent’s page at the vendor, where it is followed up and stopped; its state follows what the vendor says about its run (`product/design/sessions/cloud-agents.md`).",
         "operationId": "startCloudSession",
         "parameters": [
           {
@@ -12752,7 +12752,7 @@
     },
     "/api/v1/hosts/{id}/folders": {
       "get": {
-        "description": "The sub-directories of one folder on the host, listed by its runner now: names only, hidden ones left out, with the branch of each that is a git repository. Nothing is cached. `recent` is the caller’s own earlier folder sessions on this host (`product/versions/mvp/24-session-places.md`).",
+        "description": "The sub-directories of one folder on the host, listed by its runner now: names only, hidden ones left out, with the branch of each that is a git repository. Nothing is cached. `recent` is the caller’s own earlier folder sessions on this host (`product/design/sessions/session-places.md`).",
         "operationId": "findHostFolders",
         "parameters": [
           {
@@ -12868,7 +12868,7 @@
     },
     "/api/v1/hosts/{id}/folders/search": {
       "get": {
-        "description": "The folders under the host’s home whose name holds `q`, found by its runner now: a walk a few levels deep that skips hidden folders and dependency trees and does not look inside git repositories. Best match first, at most fifty; `truncated` says there may be more (`product/versions/mvp/24-session-places.md`).",
+        "description": "The folders under the host’s home whose name holds `q`, found by its runner now: a walk a few levels deep that skips hidden folders and dependency trees and does not look inside git repositories. Best match first, at most fifty; `truncated` says there may be more (`product/design/sessions/session-places.md`).",
         "operationId": "searchHostFolders",
         "parameters": [
           {
@@ -33297,7 +33297,7 @@
               "folder",
               "cloud"
             ],
-            "description": "Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/versions/mvp/24-session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).",
+            "description": "Where the session runs: `worktree`, a checkout the runner made for each repository, `folder`, a folder already on the host, where nothing is cloned or written (`product/design/sessions/session-places.md`), or `cloud`, a vendor's cloud: Claude Code's, started from the host and living on claude.ai/code, or one the control plane launched with no host (Cursor's, with `cloud` set).",
             "example": "worktree"
           },
           "folderPath": {
@@ -33325,7 +33325,7 @@
               "idle",
               "resolved"
             ],
-            "description": "The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/versions/mvp/03-control-plane.md`)."
+            "description": "The derived group the sidebar dot shows, computed from the row by `sessionGroup` (`product/design/foundations/control-plane.md`)."
           },
           "lifecycle": {
             "type": "string",
@@ -33355,7 +33355,7 @@
           "observedSince": {
             "format": "date-time",
             "type": "string",
-            "description": "When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/versions/mvp/29-inbox.md` §3).",
+            "description": "When the agent entered the state it was last observed in (`blocked`, `working`…); null until a second report of that state is recorded. A blocked wait is named by it (the Inbox, `product/design/console/inbox.md` §3).",
             "nullable": true
           },
           "stateSeq": {
@@ -33388,6 +33388,12 @@
             "type": "boolean",
             "description": "Hidden from the console’s sidebar until the person shows hidden sessions (`PUT /sessions/{id}/visibility`, or `hidden` at create). Display only: a hidden session runs like any other.",
             "example": false
+          },
+          "unreadReport": {
+            "type": "string",
+            "nullable": true,
+            "description": "The finished turn nobody has read yet (`ready-for-review`, the console’s blue dot), named the same while it stays unread, whatever else the log records: what `POST /sessions/{id}/report/acknowledge` reads. Null when there is none or it was read.",
+            "example": "turn:42"
           },
           "hints": {
             "description": "What the control plane could not do for this request. Empty on a read; `host_offline` means the command was recorded but no link to the host exists, so the work is owed.",
@@ -33475,6 +33481,7 @@
           "checkouts",
           "cloud",
           "hidden",
+          "unreadReport",
           "hints",
           "decision",
           "agentReport",

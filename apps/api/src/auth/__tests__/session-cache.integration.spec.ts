@@ -435,7 +435,9 @@ describe('Session cache (integration)', () => {
         [owner.id],
       );
 
-      const added = await call(`/api/v1/organizations/${organizationId}/members`, owner, {
+      // Adding someone else's account is a platform administrator's alone.
+      const admin = await signUpAdmin();
+      const added = await call(`/api/v1/organizations/${organizationId}/members`, admin, {
         method: 'POST',
         body: { userId: member.id, role: 'member' },
       });

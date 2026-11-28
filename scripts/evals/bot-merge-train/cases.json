@@ -1,0 +1,203 @@
+{
+  "bot": {
+    "name": "Juno"
+  },
+  "cases": [
+    {
+      "id": "release-train",
+      "message": "Merge the open pull requests of acme/api that are ready to go, in the right order, and tell me what's left and why.",
+      "repo": {
+        "name": "acme/api",
+        "repoId": "7101",
+        "installationId": "55"
+      },
+      "pulls": [
+        {
+          "number": 42,
+          "title": "Invoices API endpoints",
+          "author": "maria",
+          "base": "main",
+          "head": "feature/invoices-api",
+          "waiting": "6 days",
+          "checks": "all 9 passing",
+          "reviews": "approved by sam",
+          "description": "Adds GET/POST /v1/invoices.\n\nDepends on #41: it reads the invoices table that migration creates, so merge #41 first.",
+          "conversation": ["sam (2 days ago): LGTM, approved."],
+          "ready": true
+        },
+        {
+          "number": 41,
+          "title": "Invoices table migration",
+          "author": "maria",
+          "base": "main",
+          "head": "feature/invoices-migration",
+          "waiting": "5 days",
+          "checks": "all 9 passing",
+          "reviews": "approved by sam",
+          "description": "Creates the invoices table. Additive, no backfill.",
+          "conversation": ["sam (2 days ago): approved, the migration is additive."],
+          "ready": true
+        },
+        {
+          "number": 43,
+          "title": "Refactor auth middleware",
+          "author": "lee",
+          "base": "main",
+          "head": "lee/auth-middleware",
+          "waiting": "4 days",
+          "checks": "all 9 passing",
+          "reviews": "approved by maria",
+          "description": "Moves token parsing into one middleware.",
+          "conversation": [
+            "maria (3 days ago): approved.",
+            "lee (yesterday): Please hold off merging this: I found a session regression on staging. Pushing a fix tomorrow."
+          ],
+          "ready": false
+        },
+        {
+          "number": 44,
+          "title": "Bump lodash to 4.17.23",
+          "author": "renovate[bot]",
+          "base": "main",
+          "head": "renovate/lodash",
+          "waiting": "3 days",
+          "checks": "all 9 passing",
+          "reviews": "approved by sam",
+          "description": "Patch update.",
+          "conversation": ["sam (1 day ago): approved."],
+          "ready": true
+        },
+        {
+          "number": 45,
+          "title": "Invoices UI table",
+          "author": "maria",
+          "base": "main",
+          "head": "feature/invoices-ui",
+          "waiting": "2 days",
+          "checks": "all 9 passing",
+          "reviews": "approved by sam, then changes requested by lee",
+          "description": "Shows invoices in the console.",
+          "conversation": [
+            "sam (2 days ago): approved.",
+            "lee (yesterday, changes requested): The totals column ignores currency; amounts in EUR and USD are summed together."
+          ],
+          "ready": false
+        },
+        {
+          "number": 46,
+          "title": "Fix date parsing in reports",
+          "author": "sam",
+          "base": "main",
+          "head": "sam/date-parsing",
+          "waiting": "1 day",
+          "checks": "8 of 9 passing; unit-tests failing: reports.spec.ts expected 2026-03-01, got 2026-02-28",
+          "reviews": "approved by maria",
+          "description": "Parses report dates in UTC.",
+          "conversation": ["maria (today): approved."],
+          "ready": false
+        }
+      ],
+      "order": [[41, 42]]
+    },
+    {
+      "id": "hard-train",
+      "message": "Merge the open pull requests of acme/payments that are ready to go, in the right order, and tell me what's left and why.",
+      "repo": {
+        "name": "acme/payments",
+        "repoId": "7202",
+        "installationId": "55"
+      },
+      "pulls": [
+        {
+          "number": 64,
+          "title": "Retry failed payouts",
+          "author": "lee",
+          "base": "main",
+          "head": "lee/64",
+          "waiting": "7 days",
+          "checks": "all 9 passing",
+          "reviews": "approved by sam",
+          "description": "Retries a failed payout up to three times.",
+          "conversation": [
+            "sam (2 days ago): approved.",
+            "lee (yesterday): Note: this reads PAYOUT_RETRY_LIMIT, which #63 adds to the config. #63 has to land first or the worker crashes on boot."
+          ],
+          "ready": false
+        },
+        {
+          "number": 62,
+          "title": "Payments webhook handler",
+          "author": "maria",
+          "base": "main",
+          "head": "maria/62",
+          "waiting": "6 days",
+          "checks": "all 9 passing",
+          "reviews": "approved by sam",
+          "description": "Handles payment.succeeded and payment.failed events.",
+          "conversation": [
+            "sam (3 days ago): approved.",
+            "maria (2 days ago): This calls the client from #61, so #61 goes in first."
+          ],
+          "ready": true
+        },
+        {
+          "number": 61,
+          "title": "Payments API client",
+          "author": "maria",
+          "base": "main",
+          "head": "maria/61",
+          "waiting": "5 days",
+          "checks": "all 9 passing",
+          "reviews": "approved by sam",
+          "description": "A typed client for the payments provider.",
+          "conversation": ["sam (3 days ago): approved."],
+          "ready": true
+        },
+        {
+          "number": 63,
+          "title": "Add payout retry config",
+          "author": "lee",
+          "base": "main",
+          "head": "lee/63",
+          "waiting": "4 days",
+          "checks": "8 of 9 passing; config-schema failing: PAYOUT_RETRY_LIMIT has no default for the test environment",
+          "reviews": "approved by sam",
+          "description": "Adds PAYOUT_RETRY_LIMIT to the config schema.",
+          "conversation": ["sam (1 day ago): approved."],
+          "ready": false
+        },
+        {
+          "number": 65,
+          "title": "Idempotency keys on charges",
+          "author": "sam",
+          "base": "main",
+          "head": "sam/65",
+          "waiting": "3 days",
+          "checks": "all 9 passing",
+          "reviews": "approved by maria",
+          "description": "Sends an idempotency key with every charge.",
+          "conversation": [
+            "maria (4 days ago): approved.",
+            "sam (3 days ago): Hold off on merging, the key collides on retries in staging.",
+            "sam (yesterday): Fixed in the last commit and verified on staging. Good to merge."
+          ],
+          "ready": true
+        },
+        {
+          "number": 66,
+          "title": "Switch to the partner's v3 API",
+          "author": "maria",
+          "base": "main",
+          "head": "maria/66",
+          "waiting": "2 days",
+          "checks": "all 9 passing",
+          "reviews": "approved by sam",
+          "description": "Moves every call to the partner's v3 API.\n\nDo not merge before 1 December: the partner only switches v3 on for us that day, and v2 keeps working until then.",
+          "conversation": ["sam (2 days ago): approved."],
+          "ready": false
+        }
+      ],
+      "order": [[61, 62]]
+    }
+  ]
+}

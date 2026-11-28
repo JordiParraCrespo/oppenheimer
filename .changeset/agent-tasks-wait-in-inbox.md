@@ -8,7 +8,7 @@
 ---
 
 A task an agent made waits in Plan's Inbox until its person takes it up
-(`product/versions/mvp/29-inbox.md`, "Tasks an agent made").
+(`product/design/console/inbox.md`, "Tasks an agent made").
 
 - `@oppenheimer/api`: `task` gains `origin` (`person` | `agent`) and
   `triagedAt` (migration `AddTaskOriginAndTriage`). A task made by a bot or on

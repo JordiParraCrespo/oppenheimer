@@ -1,4 +1,4 @@
-<!-- What `use_browser` tells a model: its description, its parameters' (the tool, then the parameter), and its answers and refusals, from `bot-browser-tools.factory.ts` and `bot-browser.policy.ts` (`25-bots.md` §4.2, "Using a browser"). -->
+<!-- What `use_browser` tells a model: its description, its parameters' (the tool, then the parameter), and its answers and refusals, from `bot-browser-tools.factory.ts` and `bot-browser.policy.ts` (`product/design/bots/bots.md` §4.2, "Using a browser"). -->
 
 <!-- fragment: use-browser -->
 

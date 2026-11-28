@@ -162,7 +162,7 @@ export const TRIGGER_FILTER_FIELDS = ['baseBranch', 'branch', 'label', 'query'] 
 export type TriggerFilterField = (typeof TRIGGER_FILTER_FIELDS)[number];
 
 /**
- * How a filter compares. The frames offer one value or "any"; note 05's
+ * How a filter compares. The frames offer one value or "any"; product/archive/github-experience.md's
  * `contains`, `one_of` and `regex` are operators to add here, not a change to
  * any stored shape.
  */
@@ -453,7 +453,7 @@ export const AUTOMATION_SKIP_REASONS = [
   'unattended',
   /**
    * A bot's heartbeat with nothing new in its chat since its last beat
-   * (`26-bot-routines.md` §6): no model turn is spent to say nothing.
+   * (`product/design/bots/bot-routines.md` §6): no model turn is spent to say nothing.
    */
   'idle',
 ] as const;

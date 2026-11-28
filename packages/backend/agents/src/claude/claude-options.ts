@@ -24,13 +24,21 @@ export const TOOL_SEARCH_TOOL = 'ToolSearch';
 /**
  * Removed outright, so that nothing (a subagent, a settings file, a future
  * default) can bring one back. `tools` above is what is offered; this is the
- * belt to its braces.
+ * belt to its braces. The names are every built-in that Claude Code 2.1.300,
+ * the binary `@anthropic-ai/claude-agent-sdk` 0.3.300 ships, spells out
+ * (`sdk-tools.d.ts`, then `strings` on the binary); the skills proposer is
+ * named only through an import there and is left out. Recheck the list when
+ * the SDK is upgraded.
+ * `StructuredOutput` stays off it: it is how Claude Code answers an
+ * `outputFormat`, which a completion may ask for.
  */
 export const DISALLOWED_TOOLS = [
   'WebFetch',
   'Agent',
   'Task',
   'Bash',
+  'PowerShell',
+  'REPL',
   'BashOutput',
   'KillShell',
   'Read',
@@ -57,6 +65,43 @@ export const DISALLOWED_TOOLS = [
   'AskUserQuestion',
   'ListMcpResourcesTool',
   'ReadMcpResourceTool',
+  'ReadMcpResourceDirTool',
+  'RefreshMcpTools',
+  'TaskCreate',
+  'TaskGet',
+  'TaskList',
+  'TaskUpdate',
+  'TaskStop',
+  'SendMessage',
+  'ListAgents',
+  'PushNotification',
+  'ReadNotifications',
+  'LSP',
+  'Brief',
+  'SendUserMessage',
+  'SendUserFile',
+  'SubagentHandback',
+  'WebBrowser',
+  'SearchMcpRegistry',
+  'ListConnectors',
+  'SuggestConnectors',
+  'SuggestPluginInstall',
+  'SuggestSkills',
+  'ListPlugins',
+  'ListSkills',
+  'SearchPlugins',
+  'SearchSkills',
+  'Projects',
+  'ProposeGoal',
+  'ReportFindings',
+  'SendFeedback',
+  'Artifact',
+  'ArtifactComments',
+  'ArtifactData',
+  'ClaudeDesign',
+  'DesignSync',
+  'OfferChromeSetup',
+  'ShowOnboardingRolePicker',
 ];
 
 /**

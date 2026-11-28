@@ -10,7 +10,7 @@
 ---
 
 Sharing a session follows the `ShareSession` design
-(`product/versions/mvp/21-session-share-links.md`): one share per session
+(`product/design/sessions/session-share-links.md`): one share per session
 at one address, `/s/<slug>`, for named people or anyone signed in; view, or
 write for named people for 24 hours at most. The Share dialog opens from a
 row's menu and the terminal's status line, and the guest page is one bar

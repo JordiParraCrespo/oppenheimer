@@ -159,7 +159,7 @@ production without declaring what it requires is a programming error, and
 reporting it as a permission problem would send whoever hits it looking in the
 wrong place. `AUTHZ_004` is the same kind of fault: `@OrganizationScoped`
 names a path parameter the route does not have. Which organization a request
-is authorized in is `product/versions/mvp/08-auth.md`.
+is authorized in is `product/design/foundations/auth.md`.
 
 ## Access grants
 
@@ -477,7 +477,7 @@ work on and the defaults a new session is offered. It is metadata only: a sessio
 directory and branch never name it. Its `slug` is a stable handle derived once from
 its first name and never reissued. Every workspace also has one **Unassigned**
 project, where a session that names no project is listed. See
-`product/versions/mvp/10-api-modules-and-data-model.md`.
+`product/design/foundations/api-modules-and-data-model.md`.
 
 | Code                                   | Title                              | HTTP |
 | -------------------------------------- | ---------------------------------- | ---- |
@@ -591,7 +591,7 @@ are never reissued.
 scoped read cannot see it, and distinguishing the two would confirm the id.
 
 `SESSIONS_021`–`SESSIONS_023` belong to sharing a session
-(`product/versions/mvp/21-session-share-links.md`). `SESSIONS_022` comes first, for
+(`product/design/sessions/session-share-links.md`). `SESSIONS_022` comes first, for
 anybody signed out, before the address is looked up, so a signed-out caller learns
 nothing about it. `SESSIONS_021` is one answer for an address that was never shared,
 a share stopped or expired, and a share of a closed session: the guest can only ask
@@ -601,7 +601,7 @@ is its own — ask to be named; a list of people matches a verified email only.
 session has one share, and the code stays reserved so it is never reused.
 
 `SESSIONS_025`–`SESSIONS_031` belong to sessions in a folder already on the host
-(`product/versions/mvp/24-session-places.md`). `025` is a create with a `folder` for a
+(`product/design/sessions/session-places.md`). `025` is a create with a `folder` for a
 host whose live runner did not announce `session.folder`: it would refuse a session with
 no checkouts, and updating the runner is the fix. A host with no link right now is not
 refused: the session is recorded and its next hello is sent it. `026`–`031` answer the
@@ -614,12 +614,12 @@ a runner gives reads as `030`.
 `SESSIONS_039` is something only a session a host started has — its terminal, a checkout, a
 restart or stop, a share, a prompt or an answer typed into it — asked of a cloud session
 the control plane launched at its vendor (Cursor's), which no host started
-(`product/next-steps/cloud-agents.md`). Open it at the vendor, from its `cloud.url`, and
+(`product/design/sessions/cloud-agents.md`). Open it at the vendor, from its `cloud.url`, and
 do it there.
 
 `SESSIONS_032`–`SESSIONS_034` answer `POST /sessions/{id}/decision`, which answers
 what the session's agent waits on — a question it asked or a permission dialog
-(`product/versions/mvp/29-inbox.md`, slice 4). `032` is an answer whose `id` is not
+(`product/design/console/inbox.md`, slice 4). `032` is an answer whose `id` is not
 the decision pending now: it was answered already, at the terminal or from another
 tab, or the agent moved on to another. `033` is an answer that does not fit the
 pending decision (an option it lacks, several picks for one choice). `034` is a host
@@ -728,7 +728,7 @@ in the acknowledgement the runner reads, so one bad entry does not refuse a batc
 
 An automation is a saved prompt, where it runs, and the triggers — a schedule or a
 GitHub event — that start it. Every run is a session started as the automation's
-owner. See `product/versions/mvp/16-automations-architecture.md`.
+owner. See `product/design/automations/automations-architecture.md`.
 
 | Code                                         | Title                                       | HTTP |
 | -------------------------------------------- | ------------------------------------------- | ---- |
@@ -787,7 +787,7 @@ pauses the automation with a `pausedReason`.
 
 A bot is a worker you talk to: who it is, its soul and instructions with their
 history, and what it remembers, kept in the API; its turns run on its home host.
-See `product/versions/mvp/25-bots.md`.
+See `product/design/bots/bots.md`.
 
 | Code                                 | Title                                        | HTTP |
 | ------------------------------------ | -------------------------------------------- | ---- |
@@ -963,7 +963,7 @@ A home host the caller may not use answers `HOSTS_001`, as a session's does.
 
 Dictation: a recording in, the text it says out, heard by the workspace's
 ChatGPT sign-in or the deployment's own speech-to-text server
-(`VOICE_STT_*`). See `product/next-steps/voice.md`.
+(`VOICE_STT_*`). See `product/design/console/voice.md`.
 
 | Code                                 | Title                                                        | HTTP |
 | ------------------------------------ | ------------------------------------------------------------ | ---- |
@@ -998,7 +998,7 @@ at most two minutes, or Ogg/Opus that decodes to silence; `VOICE_010` is it rate
 
 The marks a person leaves on Inbox items: done, low, snoozed until a time,
 or deleted, and the reports an agent sends there with pictures. See
-`product/versions/mvp/29-inbox.md`.
+`product/design/console/inbox.md`.
 
 | Code                                 | Title                                                        | HTTP |
 | ------------------------------------ | ------------------------------------------------------------ | ---- |
@@ -1025,7 +1025,7 @@ another workspace. A report is answered once: `INBOX_006` on a second answer.
 ## Tasks
 
 Plan's board: tasks, the milestones over them, and the sessions a task started or
-links. See `product/versions/mvp/17-plan.md`.
+links. See `product/design/plan/plan.md`.
 
 | Code                                 | Title                                    | HTTP |
 | ------------------------------------ | ---------------------------------------- | ---- |
@@ -1057,7 +1057,7 @@ always lands, and still moves the version on.
 ## Calendar
 
 Plan's calendar: the workspace's own events, and a person's Google Calendar read
-through to Google and never stored. See `product/versions/mvp/20-plan-calendar.md`.
+through to Google and never stored. See `product/design/plan/plan-calendar.md`.
 
 | Code                                     | Title                                               | HTTP |
 | ---------------------------------------- | --------------------------------------------------- | ---- |
@@ -1093,7 +1093,7 @@ Remove one, or reconnect one already listed, which does not count again.
 ## Mail
 
 A person's own Gmail accounts, worked by their bots: the grant is kept sealed,
-and every read goes to Gmail when a bot asks. See `product/next-steps/mail.md`.
+and every read goes to Gmail when a bot asks. See `product/design/channels/mail.md`.
 
 | Code                             | Title                                                  | HTTP |
 | -------------------------------- | ------------------------------------------------------ | ---- |
@@ -1164,7 +1164,7 @@ files Gmail holds can wait with it. Attach files from mail, or send it now.
 
 A number a person owns, joined as a WhatsApp linked device by the runner on
 one of their hosts, and the messages it sees, kept for their bots. See
-`product/next-steps/whatsapp.md`.
+`product/design/channels/whatsapp.md`.
 
 | Code                                   | Title                                                       | HTTP |
 | -------------------------------------- | ----------------------------------------------------------- | ---- |
@@ -1216,7 +1216,7 @@ which is always theirs, or the number's chat with itself. A number allows
 
 A bot a person made with @BotFather, long-polled on the Bot API by the runner
 on one of their hosts, and the messages it receives, kept for their bots. See
-`product/next-steps/telegram.md`.
+`product/design/channels/telegram.md`.
 
 | Code                                   | Title                                                             | HTTP |
 | -------------------------------------- | ----------------------------------------------------------------- | ---- |
@@ -1250,7 +1250,7 @@ checked yet answers `TELEGRAM_007`: its Telegram name is not known until then.
 
 A bot's own Slack app, created from the manifest in the bot's Slack settings,
 whose events reach `POST /v1/slack/events?bot=<id>` and which answers its
-owner in the thread they asked in. See `product/next-steps/slack-for-bots.md`.
+owner in the thread they asked in. See `product/design/channels/slack-for-bots.md`.
 
 | Code                             | Title                                         | HTTP |
 | -------------------------------- | --------------------------------------------- | ---- |
@@ -1277,7 +1277,7 @@ or signed more than five minutes ago.
 A vendor's cloud (Cursor's Cloud Agents), where a cloud session runs on each
 person's own key for the vendor: the key, what the vendor offers, and its
 refusals of a launch (`POST /sessions/cloud`). See
-`product/next-steps/cloud-agents.md`.
+`product/design/sessions/cloud-agents.md`.
 
 | Code                                       | Title                                               | HTTP |
 | ------------------------------------------ | --------------------------------------------------- | ---- |
@@ -1507,7 +1507,7 @@ control plane counts it sent and never hands it to the Stop hook as well.
 
 `HOST_009` is `runner agents update` reporting that at least one agent CLI's
 updater failed; the service only logs it and retries. What to do about it is
-open question 4 of `product/versions/mvp/09-runner-install-and-update.md`.
+open question 4 of `product/design/runner/runner-install-and-update.md`.
 
 `HOST_010` is `runner agents install` or `runner tools install` asked for
 something it does not install: a name in neither catalog, a platform with no

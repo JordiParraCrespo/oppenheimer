@@ -159,7 +159,7 @@ What it lacks, by the owner's four asks:
 |-----|------------|---------|
 | Routines | Hexagon audit, frontend audit, backend review, Grok Bot watch, main red: four inspect code or a competitor, one repairs `main` | A loop that uses the product, one that looks at it, one that proposes what to build, one that improves the harness from its own mistakes |
 | Test suites | `pnpm ci:local` runs one end-to-end row, `e2e:api` (`scripts/ci/plan.mjs`); the `web` project "passes but is not a CI row yet" (`e2e/README.md`), and the fleet suites run on demand. `test-audit-campaign` exists as a skill with no schedule | Browser journeys on a schedule, a record of flaky tests, exploration beyond the written specs |
-| Idea creation | `product/next-steps/` is the owner's list, written by hand; Grok Bot watch proposes at most two changes when that one product ships | A ranked list fed by more than one competitor and by the product's own evidence |
+| Idea creation | `product/roadmap.md` is the owner's list, written by hand; Grok Bot watch proposes at most two changes when that one product ships | A ranked list fed by more than one competitor and by the product's own evidence |
 | UX enhancements | Screenshots are taken per pull request, of the routes that pull request touched | Anyone looking at the whole console, on a schedule, as a designer would |
 
 ## 5. Four loops to add

@@ -1,21 +1,21 @@
 # Agent coordination, tested
 
 > **Research, decides nothing.** Input for the Employees note that does
-> not exist yet (`versions/mvp/design/README.md` says the `Bots` and
+> not exist yet (`mockups/README.md` says the `Bots` and
 > `BotSettings` frames decide none of it) and for
-> `next-steps/0.6-mcp-cli-and-agent.md`, whose first open question is
+> `design/clients/mcp-cli-and-agent.md`, whose first open question is
 > who coordinates.
 
 The question: when several bots work for one workspace, how should they
 coordinate? The July 2026 Hugging Face intrusion is the one large record
 of agents coordinating by themselves, so the experiments use what it
 recorded as the misbehaviours to survive. Every number below comes from
-`agent-coordination/sim.mjs`, a seeded simulation: run it, and
-`agent-coordination/results.md` is what it prints.
+`spikes/agent-coordination/sim.mjs`, a seeded simulation: run it, and
+`spikes/agent-coordination/results.md` is what it prints.
 
 ```
-node product/research/agent-coordination/sim.mjs            # ~10 s, 100 seeds
-node product/research/agent-coordination/sim.mjs --json out.json
+node product/research/spikes/agent-coordination/sim.mjs            # ~10 s, 100 seeds
+node product/research/spikes/agent-coordination/sim.mjs --json out.json
 ```
 
 The run is deterministic: the same seeds give byte-identical output.
@@ -152,7 +152,7 @@ Sensitivity, every assumed rate scaled at once by a random factor in
    share to a person)`, an output of the model computed from its own
    assumed rates, not a measurement. The cost is safety: 4.5 bad actions
    through lanes against 1.4 with a person on everything, so the lane
-   policy's quality is the safety knob (note 15's lanes are the same
+   policy's quality is the safety knob (`reviewing-at-agent-speed.md`'s lanes are the same
    idea).
 6. **Broadcast is the expensive part.** Every agent reading every
    message is quadratic: 260 times the reads at 20 agents, 1,150 times
@@ -177,7 +177,7 @@ Sensitivity, every assumed rate scaled at once by a random factor in
 
 ## What was built from it
 
-`message_bot` and `ask_bot` (`versions/mvp/25-bots.md` §4.6, 2026-10-18)
+`message_bot` and `ask_bot` (`design/bots/bots.md` §4.6, 2026-10-18)
 take two of the six controls as they are, the sender recorded by the
 server and the secret scanner on messages, and add what the incident's
 failures called for beside them: a chain bounded in depth and turns,

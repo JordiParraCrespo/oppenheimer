@@ -2,7 +2,7 @@
 
 Does a bot save, leave alone and fix its skills at the right times?
 
-Since 2026-11-09 a bot learns on its own (`product/versions/mvp/25-bots.md`
+Since 2026-11-09 a bot learns on its own (`product/design/bots/bots.md`
 §4.1, "The bot learns on its own"):
 
 - **It saves unasked** after a task that took real work and is likely to

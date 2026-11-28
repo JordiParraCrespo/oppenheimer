@@ -6,7 +6,7 @@
 ---
 
 Answer a session's question or permission from its Inbox card (the console
-half of the Inbox's slice 4, `29-inbox.md`).
+half of the Inbox's slice 4, `inbox.md`).
 
 - `@oppenheimer/frontend-consumer`: `decision` on `SessionEntity`,
   `answerDecision` on the sessions repository and service, and

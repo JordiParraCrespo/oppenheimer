@@ -8,6 +8,7 @@ import type { ApiTokenRepositoryPort } from '../../database/api-token.repository
 import type { OrganizationMembershipReaderPort } from '../../database/organization-membership.repository.port';
 import { ApiTokenEntity } from '../../domain/api-token.entity';
 import { ApiTokenErrors } from '../../domain/api-token.errors';
+import { mintingRefusal } from '../../domain/minting-reach.policy';
 import { CreateApiTokenCommand } from './create-api-token.command';
 
 const MAX_ACTIVE_TOKENS_PER_USER = 50;
@@ -47,11 +48,15 @@ export class CreateApiTokenCommandHandler
       { organizationId: command.actor.organizationId ?? null },
     );
 
-    const exceeded = ungrantableScopes(ability, command.scopes);
-    if (exceeded.length > 0) {
+    const refusal = mintingRefusal(
+      ungrantableScopes(ability, command.scopes),
+      command.actor.credential,
+      command,
+    );
+    if (refusal) {
       throw new AppError(ApiTokenErrors.SCOPES_EXCEED_GRANTER, {
-        detail: `The caller may not grant: ${exceeded.join(', ')}`,
-        extensions: { ungrantableScopes: exceeded },
+        detail: refusal.detail,
+        extensions: { ungrantableScopes: refusal.ungrantableScopes },
       });
     }
 

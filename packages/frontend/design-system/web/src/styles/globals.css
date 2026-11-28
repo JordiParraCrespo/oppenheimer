@@ -732,6 +732,17 @@
   }
 }
 
+/* The rail's phone tab bar (`Rail`): under 768px, inside a rail that is not
+   the column at every width. Its items' tab-bar look is written once under
+   this variant, so the breakpoint and the layout it keys on live here. */
+@custom-variant rail-bar {
+  @media (width < 48rem) {
+    [data-slot="rail"][data-layout="responsive"] & {
+      @slot;
+    }
+  }
+}
+
 /* =============================================================================
    Theme mapping — tokens become Tailwind utilities.
    Imported by every app alongside `@import "tailwindcss"`.
@@ -1486,6 +1497,23 @@
   }
   &::-webkit-scrollbar-thumb {
     border-width: 2px;
+  }
+}
+
+/* The baseline bar in a stronger ink and a longer thumb, for a long reading
+   column on the terminal's ground (a session's chat): there the subtle thumb
+   is a short faint sliver at the far edge of a wide pane, hard to find. */
+@utility scrollbar-strong {
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--fg-muted);
+    min-height: 48px;
+  }
+  &::-webkit-scrollbar-thumb:hover,
+  &::-webkit-scrollbar-thumb:active {
+    background-color: var(--fg);
+  }
+  @supports not selector(::-webkit-scrollbar-thumb) {
+    scrollbar-color: var(--fg-muted) transparent;
   }
 }
 
