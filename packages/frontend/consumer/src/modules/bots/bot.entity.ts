@@ -268,6 +268,16 @@ export function documentConflictRevision(error: unknown): number | null {
  * last four characters, and whether a new bot starts on it. The key itself
  * never reaches the console.
  */
+/** One of a provider's stored keys: its last characters, and since when it is out of credit, if it is. */
+export class ModelProviderKeyEntity {
+  constructor(
+    public readonly id: string,
+    public readonly keyHint: string,
+    /** When a call on it was refused for credit or quota; calls move on to the next key meanwhile. */
+    public readonly spentAt: Date | null,
+  ) {}
+}
+
 export class ModelProviderEntity {
   constructor(
     public readonly provider: ModelProvider,
@@ -276,6 +286,8 @@ export class ModelProviderEntity {
     public readonly updatedAt: Date | null,
     /** Exactly one provider is: the one marked, else the key stored first, else Anthropic. */
     public readonly isDefault: boolean,
+    /** Every key stored, in the order a call tries them while none is spent. A sign-in is one. */
+    public readonly keys: readonly ModelProviderKeyEntity[] = [],
   ) {}
 }
 

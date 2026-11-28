@@ -151,7 +151,7 @@ describe('useWorkspaceEvents', () => {
     quiet();
     invalidated.length = 0;
     await send({ type: 'botTurn.changed', id: 't-1', botId: 'b-1' });
-    expect(invalidated).toEqual([botsKeys.activity(), botsKeys.lists()]);
+    expect(invalidated).toEqual([botsKeys.activity(), botsKeys.lists(), botsKeys.providerList()]);
 
     quiet();
     invalidated.length = 0;

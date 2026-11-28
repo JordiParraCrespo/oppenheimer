@@ -12,6 +12,7 @@ import {
   botTakesImages,
   isChannelOrigin,
 } from '@oppenheimer/shared';
+import type { TurnCredential } from '../../bots/application/turn-credentials.port';
 import {
   BOT_DOCUMENT_REPOSITORY,
   BOT_MEMORY_FACT_REPOSITORY,
@@ -80,6 +81,9 @@ export type BotTurnContext = Omit<BotTurnRequest, 'signal' | 'scratchDir' | 'ste
  * provider refusing the account reads nothing and ends at once
  * (`bot-provider-hold.policy.ts`).
  */
+/** A turn ready to run, and the credential it runs on, which a refusal for credit reports (`TurnCredentialsPort.spent`). */
+export type ResolvedBotTurn = BotTurnShape<BotTurnContext> & { credential: TurnCredential };
+
 @Injectable()
 export class BotTurnContextResolver {
   constructor(
@@ -110,7 +114,7 @@ export class BotTurnContextResolver {
 
   private readonly logger = new Logger(BotTurnContextResolver.name);
 
-  async resolve(turn: BotTurnEntity, now: Date): Promise<BotTurnShape<BotTurnContext> | null> {
+  async resolve(turn: BotTurnEntity, now: Date): Promise<ResolvedBotTurn | null> {
     if (!(await this.channels.answerable(turn))) return null;
     if (await this.hold.held(turn, now)) return null;
     const { prompt, images, command, message } = await this.opening.resolve(turn);
@@ -145,9 +149,10 @@ export class BotTurnContextResolver {
       preset: bot.permission,
       permissions,
     });
+    const { keyId: _keyId, ...access } = credential;
     const model = {
       provider: turn.provider,
-      ...credential,
+      ...access,
       model: turn.model,
       effort: ENGINE_EFFORTS.includes(turn.effort ?? '') ? (turn.effort as BotEffort) : null,
     };
@@ -268,7 +273,8 @@ export class BotTurnContextResolver {
       // against the window its last turn reported.
       contextWindow: lastContext?.window ?? null,
     };
-    return this.approvalStarted.shape(message, request);
+    const shape = await this.approvalStarted.shape(message, request);
+    return shape && { ...shape, credential };
   }
 
   /**

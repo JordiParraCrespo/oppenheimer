@@ -23862,6 +23862,290 @@
         ]
       }
     },
+    "/api/v1/model-providers/{provider}/keys": {
+      "post": {
+        "description": "Stored after the keys there. A call tries them in order and moves to the next when one runs out of credit. Sealed, and never returned.",
+        "operationId": "addModelProviderKey",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddModelProviderKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_012 — No such model provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BOTS_049 — The provider holds as many keys as it can",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "BOTS_017 — ChatGPT connects by signing in, not with a key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "BOTS_011 — Model providers are not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add another key for a model provider",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
+    "/api/v1/model-providers/{provider}/keys/{keyId}": {
+      "put": {
+        "description": "In its place among the others, and no longer marked out of credit. Sealed, and never returned.",
+        "operationId": "replaceModelProviderKey",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "keyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceModelProviderKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "TENANT_001 — No active workspace",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_050 — Provider key not found\n\nBOTS_012 — No such model provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "BOTS_017 — ChatGPT connects by signing in, not with a key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "BOTS_011 — Model providers are not configured on this server",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Replace one of a model provider's keys",
+        "tags": [
+          "Bots"
+        ]
+      },
+      "delete": {
+        "description": "The provider's other keys stay. With none left, its bots cannot answer until a key is stored again.",
+        "operationId": "deleteModelProviderKey",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "keyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BOTS_012 — No such model provider",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Forget one of a model provider's keys",
+        "tags": [
+          "Bots"
+        ]
+      }
+    },
     "/api/v1/model-providers/{provider}/default": {
       "put": {
         "description": "Only a provider the workspace has a key for. Bots already made keep their provider; a bot created naming none starts on this one, at its default model.",
@@ -41539,6 +41823,35 @@
           }
         }
       },
+      "ModelProviderKeyResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "keyHint": {
+            "type": "string",
+            "description": "The key's last four characters, so a person can tell which one it is."
+          },
+          "spentAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When a call on it was refused because the account behind it is out of credit or quota; null while it is not known to be spent. Calls move on to the next key, and come back to a spent one only once every key is spent."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "keyHint",
+          "spentAt",
+          "updatedAt"
+        ]
+      },
       "ModelProviderCredentialResponseDto": {
         "type": "object",
         "properties": {
@@ -41561,7 +41874,14 @@
           "keyHint": {
             "type": "string",
             "nullable": true,
-            "description": "The key's last four characters, so a person can tell which one is stored."
+            "description": "The first key's last four characters, so a person can tell which one is stored."
+          },
+          "keys": {
+            "description": "Every key stored for the provider, in the order a call tries them while none is spent. A sign-in is one.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelProviderKeyResponseDto"
+            }
           },
           "updatedAt": {
             "type": "string",
@@ -41577,11 +41897,38 @@
           "provider",
           "configured",
           "keyHint",
+          "keys",
           "updatedAt",
           "isDefault"
         ]
       },
       "PutModelProviderCredentialRequest": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "apiKey"
+        ]
+      },
+      "AddModelProviderKeyRequest": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "apiKey"
+        ]
+      },
+      "ReplaceModelProviderKeyRequest": {
         "type": "object",
         "properties": {
           "apiKey": {

@@ -172,18 +172,22 @@ export function pauseReasonOf(failure: BotTurnFailure | null): BotGoalPauseReaso
  * then the decision was held until that time (`waiting`) and the goal goes
  * on by itself. One the loop guard stopped, or that failed otherwise, pauses
  * it (`blocked`, `failed`). A turn stopped without fault
- * (`isTurnLimitFailure`: its model went silent, its worker restarted) goes on
- * like one that completed. Then: a claim that it is met is reviewed; a spent
+ * (`isTurnLimitFailure`: its model went silent, its worker restarted), or one
+ * refused for credit while the provider has another key left (`keyLeft`), goes
+ * on like one that completed. Then: a claim that it is met is reviewed; a spent
  * budget or `BOT_GOAL_IDLE_TURNS` turns without a tool pause it; a goal set
  * with a limit before 2026-11-09 ends when it runs out; any other goes on.
  */
 export function goalDecision(
   goal: BotGoalEntity,
   ended: EndedTurn & { provider: BotProvider },
+  keyLeft = false,
 ): GoalDecision {
   if (!isGoalTurn(goal, ended) || goal.paused) return { kind: 'skip' };
   if (ended.status === 'cancelled') return { kind: 'pause', reason: 'stopped', note: null };
-  if (ended.status === 'failed' && !stoppedAtTurnLimit(ended)) {
+  // A key out of credit with another left: the next turn runs on that one.
+  const handedOver = ended.failure === 'usage_limit' && keyLeft;
+  if (ended.status === 'failed' && !stoppedAtTurnLimit(ended) && !handedOver) {
     const reason = pauseReasonOf(ended.failure);
     // Held until the provider's own limit passed (`BotGoalEntity.hold`): it
     // has, so the goal's own bounds below decide, as after any other turn.

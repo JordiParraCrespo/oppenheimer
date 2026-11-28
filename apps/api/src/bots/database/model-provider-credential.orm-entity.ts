@@ -6,16 +6,16 @@ import {
   Entity,
   Index,
   PrimaryGeneratedColumn,
-  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 
 /**
- * A workspace's key for one model provider (`1791001700000-AddBotProviders`).
- * One per workspace and provider; the key is sealed, never stored in the clear.
+ * A workspace's key for a model provider (`1791001700000-AddBotProviders`).
+ * A provider may hold several, in order (`1795871743323-AddModelProviderKeyFailover`);
+ * the key is sealed, never stored in the clear.
  */
 @Entity('model_provider_credential')
-@Unique('UQ_model_provider_credential_provider', ['organizationId', 'provider'])
+@Index('IDX_model_provider_credential_order', ['organizationId', 'provider', 'position'])
 @Index('IDX_model_provider_credential_updated_by', ['updatedByUserId'], {
   where: '"updatedByUserId" IS NOT NULL',
 })
@@ -46,6 +46,14 @@ export class ModelProviderCredentialOrmEntity {
   /** The provider new bots start on (`1791002800000-AddModelProviderDefault`); one per workspace at most. */
   @Column({ type: 'boolean', default: false })
   markedDefault!: boolean;
+
+  /** Where the key stands among its provider's: a turn tries the lowest first. Ties go to the older row. */
+  @Column({ type: 'smallint', default: 0 })
+  position!: number;
+
+  /** When a turn on it was refused for credit or quota; null while it is not known to be spent. */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  spentAt!: Date | null;
 
   @Column({ type: 'uuid', nullable: true })
   updatedByUserId!: string | null;

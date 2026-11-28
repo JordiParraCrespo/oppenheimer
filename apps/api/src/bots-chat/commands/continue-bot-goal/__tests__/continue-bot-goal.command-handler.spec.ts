@@ -9,6 +9,7 @@
  * the workspace. Queuing the continuation itself is the resolver's spec.
  */
 import { Some } from 'oxide.ts';
+import type { TurnCredentialsPort } from '../../../../bots/application/turn-credentials.port';
 import type { BotGoalResolver } from '../../../application/bot-goal.resolver';
 import type { BotGoalReviewResolver } from '../../../application/bot-goal-review.resolver';
 import type { BotGoalRepositoryPort } from '../../../database/bot-goal.repository.port';
@@ -108,6 +109,7 @@ function setup(
     messages as unknown as BotMessageRepositoryPort,
     goalsOf as unknown as BotGoalResolver,
     reviewer as unknown as BotGoalReviewResolver,
+    { keyLeftAfter: async () => false } as unknown as TurnCredentialsPort,
   );
   const run = () => handler.execute(new ContinueBotGoalCommand({ turnId: turn.id }));
   return { goals, goalsOf, reviewer, run };

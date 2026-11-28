@@ -3,17 +3,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Inject, Logger } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
-import type { BotEngine } from '@oppenheimer/backend-agents';
+import type { BotEngineEvent } from '@oppenheimer/backend-agents';
 import { BotChannelAsItGoesFactory } from '../../application/bot-channel-as-it-goes.factory';
 import { BotDreamTriggerPolicy } from '../../application/bot-dream-trigger.policy';
-import { BotSteeringFactory } from '../../application/bot-steering.factory';
 import { BotSummaryTriggerPolicy } from '../../application/bot-summary-trigger.policy';
 import { BotTurnContextResolver } from '../../application/bot-turn-context.resolver';
 import { BotTurnFailureReportPolicy } from '../../application/bot-turn-failure-report.policy';
+import { BotTurnKeyFailoverResolver } from '../../application/bot-turn-key-failover.resolver';
 import { TurnCancelWatchFactory } from '../../application/turn-cancel-watch.factory';
-import { TurnTranscript, thrownFailure } from '../../application/turn-transcript.policy';
+import { thrownFailure } from '../../application/turn-transcript.policy';
 import { TurnWriteFactory } from '../../application/turn-write.factory';
-import { BOT_ENGINE, BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
+import { BOT_STREAM, BOT_TURN_REPOSITORY } from '../../bots-chat.di-tokens';
 import type { BotTurnRepositoryPort } from '../../database/bot-turn.repository.port';
 import type { BotTurnEntity } from '../../domain/bot-turn.entity';
 import type { BotStreamPort } from '../../infrastructure/bot-stream.port';
@@ -21,7 +21,8 @@ import { RunBotTurnCommand } from './run-bot-turn.command';
 
 /**
  * Runs one turn: claims it (one running turn per bot), reads
- * what it needs, runs the engine with its steering (unless what it read says
+ * what it needs, runs the engine on the provider's keys in turn
+ * (`BotTurnKeyFailoverResolver`) with its steering (unless what it read says
  * the turn takes none, or has nothing left to say, and so ends at once),
  * hands what the transcript writes to the turn's writer (`TurnWriteFactory`,
  * which on a channel also sends as it goes: `BotChannelAsItGoesFactory`),
@@ -37,12 +38,11 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
   constructor(
     @Inject(BOT_TURN_REPOSITORY) private readonly turns: BotTurnRepositoryPort,
     @Inject(BOT_STREAM) private readonly stream: BotStreamPort,
-    @Inject(BOT_ENGINE) private readonly engine: BotEngine,
     private readonly context: BotTurnContextResolver,
     private readonly cancelWatch: TurnCancelWatchFactory,
     private readonly summaries: BotSummaryTriggerPolicy,
     private readonly dreams: BotDreamTriggerPolicy,
-    private readonly steering: BotSteeringFactory,
+    private readonly keys: BotTurnKeyFailoverResolver,
     private readonly writes: TurnWriteFactory,
     private readonly failures: BotTurnFailureReportPolicy,
     private readonly asItGoes: BotChannelAsItGoesFactory,
@@ -84,18 +84,18 @@ export class RunBotTurnCommandHandler implements ICommandHandler<RunBotTurnComma
         return;
       }
       scratchDir = await mkdtemp(join(tmpdir(), 'bot-'));
-      const transcript = new TurnTranscript(turn);
-      // A message sent meanwhile that this turn cannot take waits for its own turn.
-      const steering = shape.takesSteers ? this.steering.steering(turn) : undefined;
-      const signal = watch.signal;
       const write = await this.asItGoes.wrap(turn, this.writes.writer(turn));
-      const request = { ...shape.request, signal, scratchDir, steering };
-      for await (const event of this.engine.run(request)) {
-        watch.saw(event);
-        for (const written of transcript.apply(event)) await write(written);
-      }
+      const saw = (event: BotEngineEvent) => watch.saw(event);
+      // A key out of credit hands the turn to the provider's next (`BotTurnKeyFailoverResolver`).
+      const { transcript, credential } = await this.keys.run(turn, shape, {
+        signal: watch.signal,
+        scratchDir,
+        write,
+        saw,
+      });
       transcript.endTurn(new Date(), watch.interruption);
       this.failures.ended(turn);
+      await this.keys.ended(turn, credential);
     } catch (error) {
       turn.end('failed', new Date(), thrownFailure(error));
       if (this.failures.thrown(turn, error)) {

@@ -120,6 +120,16 @@ describe('goalDecision', () => {
     expect(goalDecision(goal(), own('failed', 'refused'))).toMatchObject({ reason: 'failed' });
   });
 
+  // What breaks this: a goal pausing on a key that ran out of credit while the
+  // provider's next key has some, so the person resumes what could go on.
+  it('goes on after a refusal for credit while the provider has another key, and only then', () => {
+    expect(goalDecision(goal(), own('failed', 'usage_limit'), true)).toEqual({ kind: 'continue' });
+    expect(goalDecision(goal(), own('failed', 'credential'), true)).toMatchObject({
+      kind: 'pause',
+      reason: 'usage_limit',
+    });
+  });
+
   // What breaks this: a goal held for its provider's limit pausing once the
   // limit has passed, so the person must resume what could go on by itself.
   it('goes on after a provider limit it was held for, and pauses for one with no known end', () => {

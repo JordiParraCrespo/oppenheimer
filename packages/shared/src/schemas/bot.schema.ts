@@ -391,6 +391,12 @@ export const putModelProviderCredentialSchema = z.object({
 });
 export type PutModelProviderCredentialDto = z.infer<typeof putModelProviderCredentialSchema>;
 
+/**
+ * How many keys a workspace may hold for one provider: a turn whose key runs
+ * out of credit moves to the next, so a handful covers every real need.
+ */
+export const MODEL_PROVIDER_KEYS_MAX = 10;
+
 /** A ChatGPT sign-in in progress, as the API hands it out: opaque, sealed, a few KB at most. */
 export const CHATGPT_LOGIN_FLOW_MAX = 4096;
 

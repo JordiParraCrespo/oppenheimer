@@ -31,6 +31,7 @@ const NOT_A_CREDENTIAL: Record<string, string> = {
   '/v1/feature-flags/admin/:key/evaluate': "a feature flag's catalog key, its name",
   '/v1/feature-flags/segments/:key': "a segment's key, its name",
   '/v1/inbox/marks/:itemKey': 'which inbox item a mark is on, not a secret',
+  '/v1/model-providers/:provider/keys/:keyId': "a stored provider key's row id, never the key",
 };
 
 const SECRET = 'S3CRET-in-the-path';

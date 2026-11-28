@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { query } from '../../support/db';
 import { pairHost } from '../../support/sessions';
 import { provisionedUser, reloadFromServer, signInAs } from '../../support/web';
 
@@ -164,6 +165,53 @@ async function getBot(
   expect(response.status()).toBe(200);
   return (await response.json()) as { avatarColor: string; homeHostId: string | null };
 }
+
+test("a provider's second key, each on its own row, the one out of credit marked", async ({
+  page,
+}) => {
+  const owner = await provisionedUser('botkeys2');
+  await signInAs(page, owner.user);
+  await page.goto('/settings/model-providers');
+  const anthropic = page.getByTestId('model-provider').filter({ hasText: 'Anthropic' });
+
+  await anthropic.getByRole('button', { name: 'Add key' }).click();
+  const first = page.getByRole('dialog', { name: 'Anthropic key' });
+  await first.getByLabel('API key').fill('sk-ant-e2e-first-1111');
+  await first.getByRole('button', { name: 'Save key' }).click();
+  await expect(first).toBeHidden();
+
+  await anthropic.getByRole('button', { name: 'Add another Anthropic key' }).click();
+  const second = page.getByRole('dialog', { name: 'Another Anthropic key' });
+  await second.getByLabel('API key').fill('sk-ant-e2e-second-2222');
+  await second.getByRole('button', { name: 'Save key' }).click();
+  await expect(second).toBeHidden();
+  await expect(anthropic).toContainText('2 keys');
+  const keys = page.getByTestId('model-provider-key');
+  // Folded under the provider's chevron until it is opened.
+  await expect(keys).toHaveCount(0);
+  await anthropic.getByRole('button', { name: 'Show the Anthropic keys' }).click();
+  await expect(keys).toHaveCount(2);
+  await expect(keys.nth(0)).toContainText('Key ending in 1111');
+  await expect(keys.nth(1)).toContainText('Key ending in 2222');
+
+  // A turn refused for credit marks the key; the console says so on its row.
+  await query(
+    `UPDATE model_provider_credential SET "spentAt" = now() WHERE "organizationId" = $1 AND "keyHint" = '1111'`,
+    [owner.organizationId],
+  );
+  await page.reload();
+  await anthropic.getByRole('button', { name: 'Show the Anthropic keys' }).click();
+  await expect(keys.nth(0)).toContainText('Key ending in 1111 · out of credit');
+  await expect(anthropic).toContainText('2 keys · 1 out of credit');
+
+  // Removing one leaves the other as the provider's only key, back on one row.
+  await keys
+    .nth(0)
+    .getByRole('button', { name: 'Remove the Anthropic key ending in 1111' })
+    .click();
+  await expect(keys).toHaveCount(0);
+  await expect(anthropic).toContainText('Key ending in 2222');
+});
 
 test('a model provider key from Settings, and a bot with no key moved onto it', async ({
   page,

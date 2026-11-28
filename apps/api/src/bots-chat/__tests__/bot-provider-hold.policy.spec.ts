@@ -41,6 +41,16 @@ describe('heldByProvider', () => {
     }
   });
 
+  // What breaks this: a workspace's routines stopping for an hour on a spent key while the next has credit.
+  it('holds nothing after a refusal for credit while the provider has another key left', () => {
+    expect(
+      heldByProvider({ origin: 'routine' }, last('failed', 'usage_limit'), later(1000), true),
+    ).toBe(false);
+    expect(
+      heldByProvider({ origin: 'routine' }, last('failed', 'credential'), later(1000), true),
+    ).toBe(true);
+  });
+
   it('lets the turn run once the provider last answered, or failed for a reason of the turn', () => {
     expect(held('routine', last('completed', null))).toBe(false);
     expect(held('routine', last('failed', 'rate_limit'))).toBe(false);

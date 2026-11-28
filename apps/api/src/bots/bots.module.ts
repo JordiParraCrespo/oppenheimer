@@ -32,6 +32,8 @@ import { BotResource } from './bots.resource';
 import { ChatgptSignInMapper } from './chatgpt-sign-in.mapper';
 import { AcknowledgeBotCommandHandler } from './commands/acknowledge-bot/acknowledge-bot.command-handler';
 import { AcknowledgeBotHttpController } from './commands/acknowledge-bot/acknowledge-bot.http.controller';
+import { AddModelProviderKeyCommandHandler } from './commands/add-model-provider-key/add-model-provider-key.command-handler';
+import { AddModelProviderKeyHttpController } from './commands/add-model-provider-key/add-model-provider-key.http.controller';
 import { ClearBotMemoryCommandHandler } from './commands/clear-bot-memory/clear-bot-memory.command-handler';
 import { ClearBotMemoryHttpController } from './commands/clear-bot-memory/clear-bot-memory.http.controller';
 import { CreateBotCommandHandler } from './commands/create-bot/create-bot.command-handler';
@@ -52,10 +54,14 @@ import { DeleteBotSkillCommandHandler } from './commands/delete-bot-skill/delete
 import { DeleteBotSkillHttpController } from './commands/delete-bot-skill/delete-bot-skill.http.controller';
 import { DeleteModelProviderCredentialCommandHandler } from './commands/delete-model-provider-credential/delete-model-provider-credential.command-handler';
 import { DeleteModelProviderCredentialHttpController } from './commands/delete-model-provider-credential/delete-model-provider-credential.http.controller';
+import { DeleteModelProviderKeyCommandHandler } from './commands/delete-model-provider-key/delete-model-provider-key.command-handler';
+import { DeleteModelProviderKeyHttpController } from './commands/delete-model-provider-key/delete-model-provider-key.http.controller';
 import { PollChatgptLoginCommandHandler } from './commands/poll-chatgpt-login/poll-chatgpt-login.command-handler';
 import { PollChatgptLoginHttpController } from './commands/poll-chatgpt-login/poll-chatgpt-login.http.controller';
 import { PutModelProviderCredentialCommandHandler } from './commands/put-model-provider-credential/put-model-provider-credential.command-handler';
 import { PutModelProviderCredentialHttpController } from './commands/put-model-provider-credential/put-model-provider-credential.http.controller';
+import { ReplaceModelProviderKeyCommandHandler } from './commands/replace-model-provider-key/replace-model-provider-key.command-handler';
+import { ReplaceModelProviderKeyHttpController } from './commands/replace-model-provider-key/replace-model-provider-key.http.controller';
 import { RevertBotDocumentCommandHandler } from './commands/revert-bot-document/revert-bot-document.command-handler';
 import { RevertBotDocumentHttpController } from './commands/revert-bot-document/revert-bot-document.http.controller';
 import { SetDefaultModelProviderCommandHandler } from './commands/set-default-model-provider/set-default-model-provider.command-handler';
@@ -144,6 +150,9 @@ const httpControllers = [
   FindModelProviderCredentialsHttpController,
   PutModelProviderCredentialHttpController,
   DeleteModelProviderCredentialHttpController,
+  AddModelProviderKeyHttpController,
+  ReplaceModelProviderKeyHttpController,
+  DeleteModelProviderKeyHttpController,
   SetDefaultModelProviderHttpController,
   StartChatgptLoginHttpController,
   PollChatgptLoginHttpController,
@@ -169,6 +178,9 @@ const commandHandlers: Provider[] = [
   DeleteBotSkillCommandHandler,
   PutModelProviderCredentialCommandHandler,
   DeleteModelProviderCredentialCommandHandler,
+  AddModelProviderKeyCommandHandler,
+  ReplaceModelProviderKeyCommandHandler,
+  DeleteModelProviderKeyCommandHandler,
   SetDefaultModelProviderCommandHandler,
   StartChatgptLoginCommandHandler,
   PollChatgptLoginCommandHandler,

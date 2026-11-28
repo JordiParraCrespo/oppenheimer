@@ -36,7 +36,7 @@ Open a bot's settings from its menu. Every page saves with **Save**.
 
 ## Model providers
 
-Keys live in **Settings → Model providers**, one per provider for the workspace, stored encrypted and never shown again.
+Keys live in **Settings → Model providers**, encrypted, never shown again; up to ten per provider, used in turn as credit runs out.
 
 | Provider | Models | How |
 | --- | --- | --- |

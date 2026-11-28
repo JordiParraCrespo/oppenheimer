@@ -2241,6 +2241,13 @@ one its decision belongs to:
   registrable domain of its own, because one app can still set a
   `Domain=` cookie every other preview is sent
   (`research/security-review-2026-11.md`).
+- `design/bots/bots.md` ("Keys stay in Oppenheimer") stored one key per
+  workspace and provider, and a spent key failed every turn until it was
+  replaced. On 2026-11-28 the owner asked for more than one key, with the
+  next one taken once a key's funds run out: a key provider holds up to
+  ten, in order, and a turn the provider refuses for credit before it wrote
+  anything runs again on the next key ("A provider can hold several keys,
+  and a spent one hands over").
 
 - `design/bots/bots.md` said a bot cannot see an earlier message's images
   and asks you to send one again. On 2026-11-28 a bot asked about an image

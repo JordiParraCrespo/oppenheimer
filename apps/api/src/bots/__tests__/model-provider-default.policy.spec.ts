@@ -20,6 +20,8 @@ const key = (provider: BotProvider, storedAt: string, markedDefault = false) =>
       keyHint: 'abcd',
       updatedByUserId: null,
       markedDefault,
+      position: 0,
+      spentAt: null,
     },
   });
 

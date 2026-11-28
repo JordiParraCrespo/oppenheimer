@@ -181,7 +181,9 @@ function setup(
       findForRun: async () =>
         Some({ running: conversation.approval !== 'ran' } as BotApprovalEntity),
     } as unknown as BotApprovalRepositoryPort),
-    new BotTurnHoldPolicy(turns),
+    new BotTurnHoldPolicy(turns, {
+      keyLeftAfter: async () => false,
+    } as unknown as TurnCredentialsPort),
     new BotVoiceReplyResolver(
       {
         findChannelChat: async () => conversation.channelChat ?? null,

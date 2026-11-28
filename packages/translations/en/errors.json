@@ -365,7 +365,9 @@
     "BOTS_045": "Only your messages and the bot's words take a reaction.",
     "BOTS_046": "That form is no longer here.",
     "BOTS_047": "Some values do not fit the form.",
-    "BOTS_048": "That form was already sent, or the bot moved on."
+    "BOTS_048": "That form was already sent, or the bot moved on.",
+    "BOTS_049": "That provider already holds ten keys. Remove one before adding another.",
+    "BOTS_050": "That key is gone. Refresh to see the provider's keys."
   },
   "notFound": {
     "title": "That page does not exist",

@@ -222,9 +222,12 @@ export {
   useSuspenseScheduledMail,
 } from './mail.queries';
 export {
+  useAddModelProviderKey,
   useModelProviders,
   usePutModelProviderKey,
   useRemoveModelProviderKey,
+  useRemoveModelProviderKeyById,
+  useReplaceModelProviderKey,
   useSetDefaultModelProvider,
   useSuspenseModelProviders,
 } from './model-providers.queries';

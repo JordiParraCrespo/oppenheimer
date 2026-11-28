@@ -8,6 +8,7 @@ import {
 } from '../../../automations/domain/automation-limits.policy';
 import { AutomationRunEntity } from '../../../automations/domain/automation-run.entity';
 import { triggerFromInput } from '../../../automations/domain/trigger-config.policy';
+import type { TurnCredentialsPort } from '../../../bots/application/turn-credentials.port';
 import { BotErrors } from '../../../bots/domain/bots.errors';
 import type { BotModelAccessResolver } from '../../application/bot-model-access.resolver';
 import { BotTurnHoldPolicy } from '../../application/bot-turn-hold.policy';
@@ -105,7 +106,9 @@ function setup(
     access,
     turns,
     { publish } as unknown as BotStreamPort,
-    new BotTurnHoldPolicy(turns),
+    new BotTurnHoldPolicy(turns, {
+      keyLeftAfter: async () => false,
+    } as unknown as TurnCredentialsPort),
   );
   const context: RunTargetContext = {
     run,

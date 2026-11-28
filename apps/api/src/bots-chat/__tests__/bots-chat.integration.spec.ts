@@ -1841,7 +1841,9 @@ describe('bots chat (integration)', () => {
         create: () => ({ review: async () => ({ outcome: 'ask', reason: 'unused' }) }),
       } as unknown as BotAutoReviewerFactory,
       new BotApprovalStartedPolicy(approvals),
-      new BotTurnHoldPolicy(turns),
+      new BotTurnHoldPolicy(turns, {
+        keyLeftAfter: async () => false,
+      } as unknown as TurnCredentialsPort),
       // No turn here is a contact's on WhatsApp, so none is offered a voice reply.
       { maxChars: async () => null } as unknown as BotVoiceReplyResolver,
     );

@@ -43,14 +43,20 @@ export function holdableOrigin(origin: BotTurnOrigin): boolean {
 /** The bot's last turn on the provider that reached it or failed, as the hold reads it. */
 export type LastProviderTurn = Pick<BotTurnEntity, 'status' | 'failure' | 'endedAt'>;
 
-/** Whether the turn ends without running, held by the provider's refusal of the account. */
+/**
+ * Whether the turn ends without running, held by the provider's refusal of the
+ * account. A refusal for credit holds nothing while the provider has another
+ * key not marked spent (`keyLeft`): the next turn runs on it.
+ */
 export function heldByProvider(
   turn: Pick<BotTurnEntity, 'origin'>,
   last: LastProviderTurn | null,
   now: Date,
+  keyLeft = false,
 ): boolean {
   if (!holdableOrigin(turn.origin)) return false;
   if (!last || last.status !== 'failed' || !last.endedAt) return false;
   if (!isAccountFailure(last.failure)) return false;
+  if (last.failure === 'usage_limit' && keyLeft) return false;
   return now.getTime() - last.endedAt.getTime() < BOT_PROVIDER_HOLD_MS;
 }
