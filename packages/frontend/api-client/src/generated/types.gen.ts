@@ -4588,6 +4588,14 @@ export type PutModelProviderCredentialRequest = {
     apiKey: string;
 };
 
+export type AddModelProviderKeyRequest = {
+    apiKey: string;
+};
+
+export type ReplaceModelProviderKeyRequest = {
+    apiKey: string;
+};
+
 export type ChatgptLoginResponseDto = {
     /**
      * The sign-in, sealed: opaque to the console, handed back on every poll.
@@ -17189,7 +17197,7 @@ export type PutModelProviderCredentialResponses = {
 export type PutModelProviderCredentialResponse = PutModelProviderCredentialResponses[keyof PutModelProviderCredentialResponses];
 
 export type AddModelProviderKeyData = {
-    body: PutModelProviderCredentialRequest;
+    body: AddModelProviderKeyRequest;
     path: {
         provider: string;
     };
@@ -17270,7 +17278,7 @@ export type DeleteModelProviderKeyResponses = {
 export type DeleteModelProviderKeyResponse = DeleteModelProviderKeyResponses[keyof DeleteModelProviderKeyResponses];
 
 export type ReplaceModelProviderKeyData = {
-    body: PutModelProviderCredentialRequest;
+    body: ReplaceModelProviderKeyRequest;
     path: {
         provider: string;
         keyId: string;

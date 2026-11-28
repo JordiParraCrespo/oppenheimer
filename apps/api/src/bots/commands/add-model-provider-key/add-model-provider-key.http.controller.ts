@@ -18,8 +18,8 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import { PutModelProviderCredentialRequest } from '../put-model-provider-credential/put-model-provider-credential.request.dto';
 import { AddModelProviderKeyCommand } from './add-model-provider-key.command';
+import { AddModelProviderKeyRequest } from './add-model-provider-key.request.dto';
 
 @ApiTags('Bots')
 @ApiBearerAuth()
@@ -61,7 +61,7 @@ export class AddModelProviderKeyHttpController {
   async add(
     @CurrentAccessScope() scope: AccessScope,
     @Param('provider') provider: string,
-    @Body() body: PutModelProviderCredentialRequest,
+    @Body() body: AddModelProviderKeyRequest,
   ): Promise<void> {
     await this.commandBus.execute<AddModelProviderKeyCommand, string>(
       new AddModelProviderKeyCommand({ scope, provider, apiKey: body.apiKey }),

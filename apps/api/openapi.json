@@ -23881,7 +23881,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PutModelProviderCredentialRequest"
+                "$ref": "#/components/schemas/AddModelProviderKeyRequest"
               }
             }
           }
@@ -23999,7 +23999,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PutModelProviderCredentialRequest"
+                "$ref": "#/components/schemas/ReplaceModelProviderKeyRequest"
               }
             }
           }
@@ -41903,6 +41903,32 @@
         ]
       },
       "PutModelProviderCredentialRequest": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "apiKey"
+        ]
+      },
+      "AddModelProviderKeyRequest": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "apiKey"
+        ]
+      },
+      "ReplaceModelProviderKeyRequest": {
         "type": "object",
         "properties": {
           "apiKey": {

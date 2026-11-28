@@ -19,8 +19,8 @@ import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { CurrentAccessScope } from '../../../authz/decorators/current-access-scope.decorator';
 import { AccessScopeInterceptor } from '../../../authz/interceptors/access-scope.interceptor';
-import { PutModelProviderCredentialRequest } from '../put-model-provider-credential/put-model-provider-credential.request.dto';
 import { ReplaceModelProviderKeyCommand } from './replace-model-provider-key.command';
+import { ReplaceModelProviderKeyRequest } from './replace-model-provider-key.request.dto';
 
 @ApiTags('Bots')
 @ApiBearerAuth()
@@ -59,7 +59,7 @@ export class ReplaceModelProviderKeyHttpController {
     @CurrentAccessScope() scope: AccessScope,
     @Param('provider') provider: string,
     @Param('keyId', new ParseUUIDPipe()) keyId: string,
-    @Body() body: PutModelProviderCredentialRequest,
+    @Body() body: ReplaceModelProviderKeyRequest,
   ): Promise<void> {
     await this.commandBus.execute<ReplaceModelProviderKeyCommand, string>(
       new ReplaceModelProviderKeyCommand({ scope, provider, keyId, apiKey: body.apiKey }),
