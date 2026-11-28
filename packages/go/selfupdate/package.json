@@ -1,6 +1,6 @@
 {
   "name": "@oppenheimer/go-selfupdate",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Signed release manifests, verified downloads and atomic binary swaps for self-updating Go binaries",
   "scripts": {
