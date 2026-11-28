@@ -36,4 +36,11 @@ export interface ApiTokenRepositoryPort extends Omit<RepositoryPort<ApiTokenEnti
    * replicas write it at most once a minute.
    */
   touchLastUsedAt(id: string, at: Date): Promise<void>;
+
+  /**
+   * Revoke, at `now`, every token of `userId` not yet revoked whose pin names
+   * `organizationId`, in one transaction that stages each token's `ApiTokenRevokedDomainEvent`.
+   * Resolves the ids it revoked; none on a second call.
+   */
+  revokePinnedTo(userId: string, organizationId: string, now: Date): Promise<string[]>;
 }

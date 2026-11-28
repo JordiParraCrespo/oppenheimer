@@ -217,4 +217,141 @@ describe('Auth (integration)', () => {
       rotate.mockRestore();
     });
   });
+  async function signUpAs(prefix: string): Promise<{ id: string; email: string; token: string }> {
+    const email = `${prefix}-${randomUUID()}@example.com`;
+    const response = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password: 'Integration-test-password-1',
+        name: 'Some One',
+        firstName: 'Some',
+        lastName: 'One',
+      }),
+    });
+    expect(response.ok).toBe(true);
+    const { user } = (await response.json()) as { user: { id: string } };
+    return { id: user.id, email, token: response.headers.get('set-auth-token') ?? '' };
+  }
+
+  /** A fresh session, so the platform role the admin plugin checks is read after the update. */
+  async function signedInWithRole(role: string): Promise<{ id: string; token: string }> {
+    const account = await signUpAs(role);
+    await dataSource.query(`UPDATE "user" SET "role" = $1 WHERE "id" = $2`, [role, account.id]);
+    const response = await fetch(`${baseUrl}/api/auth/sign-in/email`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: account.email, password: 'Integration-test-password-1' }),
+    });
+    expect(response.ok).toBe(true);
+    return { id: account.id, token: response.headers.get('set-auth-token') ?? '' };
+  }
+
+  describe('Better Auth’s organization routes', () => {
+    /**
+     * Its own roster writes change who is in an organization without the
+     * application role that goes with it: a member removed or demoted there
+     * kept their `owner` row. The façade is the one door
+     * (`closed-auth-paths.util.ts`).
+     */
+    it('answer 404 to a client for every write of the roster, invitations or teams', async () => {
+      const { CLOSED_ORGANIZATION_PATHS } = await import(
+        '../infrastructure/closed-auth-paths.util'
+      );
+      const caller = await signUpAs('closed');
+      const [{ organizationId }] = await dataSource.query(
+        `SELECT "organizationId" FROM "member" WHERE "userId" = $1`,
+        [caller.id],
+      );
+
+      expect(CLOSED_ORGANIZATION_PATHS).toContain('/organization/remove-member');
+      for (const path of CLOSED_ORGANIZATION_PATHS) {
+        const response = await fetch(`${baseUrl}/api/auth${path}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', authorization: `Bearer ${caller.token}` },
+          body: JSON.stringify({ organizationId, memberIdOrEmail: caller.email, role: 'member' }),
+        });
+        expect({ path, status: response.status }).toEqual({ path, status: 404 });
+      }
+
+      // Nothing was written: still the one owner of their own workspace.
+      const members = await dataSource.query(
+        `SELECT "userId", "role" FROM "member" WHERE "organizationId" = $1`,
+        [organizationId],
+      );
+      expect(members).toEqual([{ userId: caller.id, role: 'owner' }]);
+    });
+
+    it('keep the reads open', async () => {
+      const caller = await signUpAs('reads');
+      const response = await fetch(`${baseUrl}/api/auth/organization/list`, {
+        headers: { authorization: `Bearer ${caller.token}` },
+      });
+      expect(response.status).toBe(200);
+      expect((await response.json()) as unknown[]).toHaveLength(1);
+    });
+
+    // `disabledPaths` is checked by Better Auth's router alone; the façade's
+    // gateways call `auth.api.*`, which must keep working.
+    it('still serve the façade, which calls them on the server', async () => {
+      const caller = await signUpAs('facade');
+      const [{ organizationId }] = await dataSource.query(
+        `SELECT "organizationId" FROM "member" WHERE "userId" = $1`,
+        [caller.id],
+      );
+      const response = await fetch(
+        `${baseUrl}/api/v1/organizations/${organizationId}/invitations`,
+        {
+          method: 'POST',
+          headers: {
+            accept: 'application/json',
+            'content-type': 'application/json',
+            authorization: `Bearer ${caller.token}`,
+          },
+          body: JSON.stringify({ email: `invitee-${randomUUID()}@example.com` }),
+        },
+      );
+      expect(response.status).toBe(201);
+    });
+  });
+
+  describe('the admin plugin’s platform roles', () => {
+    const setRole = (token: string, userId: string, role: string) =>
+      fetch(`${baseUrl}/api/auth/admin/set-role`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId, role }),
+      });
+    const roleOf = async (userId: string) =>
+      (await dataSource.query(`SELECT "role" FROM "user" WHERE "id" = $1`, [userId]))[0].role;
+
+    // Regression: Better Auth's built-in `admin` holds `set-role`, so an admin
+    // could make itself `superadmin` and take `impersonate-admins` with it.
+    it('refuse an admin promoting itself to superadmin, straight or through the façade', async () => {
+      const admin = await signedInWithRole('admin');
+
+      expect((await setRole(admin.token, admin.id, 'superadmin')).status).toBe(403);
+      const facade = await fetch(`${baseUrl}/api/v1/admin/users/${admin.id}/role`, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          authorization: `Bearer ${admin.token}`,
+        },
+        body: JSON.stringify({ role: 'superadmin' }),
+      });
+      expect(facade.status).toBe(403);
+      expect(((await facade.json()) as { code?: string }).code).toBe('ADMIN_003');
+      expect(await roleOf(admin.id)).toBe('admin');
+    });
+
+    it('leave setting a role to a superadmin', async () => {
+      const superadmin = await signedInWithRole('superadmin');
+      const target = await signUpAs('promoted');
+
+      expect((await setRole(superadmin.token, target.id, 'admin')).status).toBe(200);
+      expect(await roleOf(target.id)).toBe('admin');
+    });
+  });
 });

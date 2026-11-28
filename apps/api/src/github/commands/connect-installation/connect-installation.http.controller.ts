@@ -54,7 +54,8 @@ export class ConnectInstallationHttpController {
   })
   @ApiProblemResponse({
     status: 403,
-    description: 'GitHub does not list that installation for the authorizing account',
+    description:
+      'The authorizing account is not the installation’s account or an owner of its organization, or GitHub does not list the installation for it',
     code: 'GITHUB_004',
   })
   @ApiProblemResponse({

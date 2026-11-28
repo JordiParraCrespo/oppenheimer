@@ -822,6 +822,70 @@ describe('API tokens & scopes (integration)', () => {
       expect(response.body?.code).toBe('TOKEN_007');
     });
 
+    /**
+     * Removing a member (or leaving) ends in `MembershipAccessPolicy.revoke`,
+     * which stages the ended membership on the outbox; this module revokes the
+     * tokens pinned to that organization. Until it is delivered the resolver
+     * refuses them anyway; once it is, adding the person back does not bring
+     * the old tokens back. A token that follows its owner's memberships is
+     * untouched.
+     */
+    it('revokes a removed member’s tokens pinned to the organization, and refuses them meanwhile', async () => {
+      await grantOwnerPermissions([
+        { action: 'read', subject: 'Member' },
+        { action: 'read', subject: 'ApiToken' },
+        { action: 'create', subject: 'ApiToken' },
+      ]);
+      const organizationId = '66666666-6666-4666-8666-666666666666';
+      const memberId = '77777777-7777-4777-8777-777777777777';
+      await dataSource.query(
+        `INSERT INTO "organization" ("id", "name", "slug", "createdAt")
+           VALUES ($1, 'Left Org', 'left-org', now())`,
+        [organizationId],
+      );
+      const addMember = () =>
+        dataSource.query(
+          `INSERT INTO "member" ("id", "organizationId", "userId", "role", "createdAt")
+             VALUES ($1, $2, $3, 'member', now())`,
+          [memberId, organizationId, user.id],
+        );
+      await addMember();
+
+      const pinned = await mintToken({
+        name: 'pinned-to-left',
+        scopes: ['members:read'],
+        organizationIds: [organizationId],
+      });
+      const following = await mintToken({ name: 'follows-owner', scopes: ['members:read'] });
+      expect((await call('/api/v1/me/credential', { token: pinned.token })).status).toBe(200);
+
+      // Better Auth's delete, then what the façade's remove-member does after it.
+      await dataSource.query('DELETE FROM "member" WHERE "id" = $1', [memberId]);
+      const { MembershipAccessPolicy } = await import(
+        '../../organizations/application/membership-access.policy'
+      );
+      await app.get(MembershipAccessPolicy).revoke(user.id, organizationId);
+
+      const meanwhile = await call('/api/v1/me/credential', { token: pinned.token });
+      expect(meanwhile.status).toBe(401);
+      expect(meanwhile.body?.code).toBe('TOKEN_003');
+
+      await vi.waitFor(async () => {
+        const rows: { id: string; revokedAt: Date | null }[] = await dataSource.query(
+          'SELECT "id", "revokedAt" FROM "api_token" WHERE "id" = ANY($1)',
+          [[pinned.id, following.id]],
+        );
+        const revokedAt = new Map(rows.map((row) => [row.id, row.revokedAt]));
+        expect(revokedAt.get(pinned.id)).not.toBeNull();
+        expect(revokedAt.get(following.id)).toBeNull();
+      });
+
+      await addMember();
+      const readded = await call('/api/v1/me/credential', { token: pinned.token });
+      expect(readded.status).toBe(401);
+      expect((await call('/api/v1/me/credential', { token: following.token })).status).toBe(200);
+    });
+
     it('refuses to scope a token to an organization the creator does not belong to', async () => {
       const response = await call('/api/v1/tokens', {
         method: 'POST',
