@@ -1,0 +1,52 @@
+{
+  "bot": { "name": "Compras" },
+  "cases": [
+    {
+      "id": "which-product",
+      "earlier": [
+        {
+          "role": "user",
+          "content": "",
+          "images": [{ "id": "7c1d2e4f-0a3b-4c5d-8e9f-1a2b3c4d5e6f", "name": "image.png" }]
+        }
+      ],
+      "message": "Whici is this product?",
+      "seen": "A photo of a supermarket shelf: a 1 L bottle of extra virgin olive oil, label \"Oro del Sur, Picual, cosecha 2026\", price tag 9,45 €.",
+      "mustView": "7c1d2e4f-0a3b-4c5d-8e9f-1a2b3c4d5e6f"
+    },
+    {
+      "id": "detail-after-answer",
+      "earlier": [
+        {
+          "role": "user",
+          "content": "What does this error say?",
+          "images": [{ "id": "2b6e9a10-4c7d-4e8f-9a1b-3c5d7e9f1a2b", "name": "screenshot.png" }]
+        },
+        {
+          "role": "assistant",
+          "content": "It's a payment failure from the checkout page: the card was declined by the bank."
+        }
+      ],
+      "message": "What's the exact error code it shows? I need it for the bank.",
+      "seen": "A browser screenshot of a checkout page with a red banner: \"Payment declined (code DO-5112). Try another card.\"",
+      "mustView": "2b6e9a10-4c7d-4e8f-9a1b-3c5d7e9f1a2b"
+    },
+    {
+      "id": "nothing-to-look-at",
+      "earlier": [
+        {
+          "role": "user",
+          "content": "Is this the oil I usually buy?",
+          "images": [{ "id": "5f0e1d2c-3b4a-4596-8877-665544332211", "name": "oil.jpg" }]
+        },
+        {
+          "role": "assistant",
+          "content": "Yes: Oro del Sur Picual, 1 L, the same one as last month's order."
+        }
+      ],
+      "message": "Great. Add two bottles to next week's shopping list.",
+      "seen": "A photo of a 1 L bottle of Oro del Sur Picual olive oil.",
+      "mustView": null
+    }
+  ]
+}

@@ -48,6 +48,7 @@ recording), and add a `pnpm eval:<name>` script.
 | A WhatsApp group: who a line is for, answering or keeping out (`core/turn-context.contact-group*`, `contactReplyOf`) | `pnpm eval:bot-group-chat` |
 | Getting started, a new bot's first reply | `pnpm eval:bot-first-chat` |
 | Reactions: `react`, the reaction line of how a turn goes | `pnpm eval:bot-react` |
+| Earlier images: `view_image`, the history's image notes (`core/turn-images`, `core/tools-images`) | `pnpm eval:bot-earlier-image` |
 | The composer's suggested next message | `pnpm eval:bot-suggestion` |
 | Auto's reviewer: `bot-auto-review.policy.ts`, `core/job-auto-review.md` | `pnpm eval:bot-auto-review` |
 | The core system prompt, the toolbox, the agent engines | the bot evals nearest the change, `--runs 1` each; the whole set before a large change |

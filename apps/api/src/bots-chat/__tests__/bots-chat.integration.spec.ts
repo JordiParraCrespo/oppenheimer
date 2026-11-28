@@ -1376,6 +1376,57 @@ describe('bots chat (integration)', () => {
     expect(claimed.map((stored) => stored.id)).toEqual([image.id]);
   });
 
+  // What breaks this: `view_image` loading an image of another conversation,
+  // another bot or another workspace, or an upload no message carries yet.
+  it('finds an image to look at again only in the conversation whose message carries it', async () => {
+    const bot = await create('Viewing Bot');
+    const photo = sent(bot, '[image]');
+    const pending = BotMessageEntity.create({
+      id: photo.message.id,
+      props: { ...photo.message.getProps(), pendingMedia: { kind: 'whatsapp_image' } },
+    });
+    await turns.enqueue(photo.turn, pending, null);
+    const opening = (await messages.findOpening(organizationId, photo.turn.id)) as BotMessageEntity;
+    const upload = (name: string) =>
+      BotAttachmentEntity.upload(
+        {
+          organizationId: bot.organizationId,
+          botId: bot.id,
+          uploadedByUserId: null,
+          mimeType: 'image/png',
+          sizeBytes: 2048,
+          name,
+        },
+        'png',
+      );
+    const carried = upload('image.png');
+    const unsent = upload('draft.png');
+    await attachments.insert(carried);
+    await attachments.insert(unsent);
+    opening.read('', [carried.toMessageAttachment()]);
+    await messages.saveReading(opening);
+    const other = await create('Other Viewing Bot');
+
+    const found = await attachments.findInConversation(
+      organizationId,
+      bot.id,
+      opening.conversationId,
+      carried.id,
+    );
+    expect(found.unwrap().id).toBe(carried.id);
+    const none = [
+      [organizationId, bot.id, randomUUID(), carried.id],
+      [organizationId, other.id, opening.conversationId, carried.id],
+      [randomUUID(), bot.id, opening.conversationId, carried.id],
+      [organizationId, bot.id, opening.conversationId, unsent.id],
+    ] as const;
+    for (const [org, botId, conversationId, id] of none) {
+      expect((await attachments.findInConversation(org, botId, conversationId, id)).isNone()).toBe(
+        true,
+      );
+    }
+  });
+
   // What breaks this: a voice note's words read but lost, so the next turn's history reads
   // "[voice note]"; the note read again on a retry; or the words written onto another
   // workspace's message.

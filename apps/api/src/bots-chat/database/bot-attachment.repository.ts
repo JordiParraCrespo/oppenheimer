@@ -105,6 +105,27 @@ export class BotAttachmentRepository
     return records.map((record) => this.mapper.toDomain(record));
   }
 
+  async findInConversation(
+    organizationId: string,
+    botId: string,
+    conversationId: string,
+    id: string,
+  ): Promise<Option<BotAttachmentEntity>> {
+    // PK_bot_attachment, then PK_bot_message for the message that carries it.
+    const record = await this.repository
+      .createQueryBuilder('attachment')
+      .where('attachment.id = :id', { id })
+      .andWhere('attachment.organizationId = :organizationId', { organizationId })
+      .andWhere('attachment.botId = :botId', { botId })
+      .andWhere(
+        `EXISTS (SELECT 1 FROM bot_message m WHERE m.id = attachment."messageId"
+          AND m."organizationId" = :organizationId AND m."conversationId" = :conversationId)`,
+        { conversationId },
+      )
+      .getOne();
+    return record ? Some(this.mapper.toDomain(record)) : None;
+  }
+
   async findForMessage(organizationId: string, messageId: string): Promise<BotAttachmentEntity[]> {
     // IDX_bot_attachment_message.
     const records = await this.repository.find({ where: { messageId, organizationId } });

@@ -15,6 +15,17 @@ export interface BotAttachmentRepositoryPort {
     botId: string,
     ids: readonly string[],
   ): Promise<BotAttachmentEntity[]>;
+  /**
+   * One image of a bot carried by a message of `conversationId`: what
+   * `view_image` may load again. An unsent upload, or an image of another
+   * conversation of the bot (a contact's), is none.
+   */
+  findInConversation(
+    organizationId: string,
+    botId: string,
+    conversationId: string,
+    id: string,
+  ): Promise<Option<BotAttachmentEntity>>;
   /** The images a message carries, in no order. */
   findForMessage(organizationId: string, messageId: string): Promise<BotAttachmentEntity[]>;
   /**
