@@ -498,3 +498,99 @@ test('says in the popup when the token cannot carry the chat', async ({
     popup.getByText('The chat needs a token with sessions:write and cloud-chat:write'),
   ).toBeVisible({ timeout: 15_000 });
 });
+
+test('holds a reply claude.ai refused for its lease instead of posting it again at once', async ({
+  context,
+  claude,
+  worker,
+  extensionId,
+}) => {
+  const ID = 'session_01RefusedPost00';
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'POST',
+  };
+  let claimable = [
+    { id: '1c9f0c2e-6b8c-4f1e-9c9e-2f0e6b0e8a12', cloudSessionId: ID, text: 'go on' },
+  ];
+  const released: string[] = [];
+  await context.route('http://localhost:3001/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    const path = new URL(request.url()).pathname;
+    if (path.endsWith('/cloud-replies/claim')) {
+      const replies = claimable;
+      claimable = [];
+      return route.fulfill({ headers: cors, json: { replies } });
+    }
+    if (path.endsWith('/release')) released.push(path);
+    return route.fulfill({ headers: cors, json: { matched: 0, sessionId: null, accepted: 0 } });
+  });
+  let posts = 0;
+  await context.route('https://claude.ai/v1/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'POST') {
+      posts += 1;
+      return route.fulfill({ status: 403, json: {} });
+    }
+    // The session's log reads, empty: the refused post is the only problem.
+    if (new URL(request.url()).pathname.endsWith('/teleport-events')) {
+      return route.fulfill({ json: { data: [] } });
+    }
+    return route.fallback();
+  });
+  await worker.evaluate(() =>
+    chrome.storage.local.set({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_test' },
+    }),
+  );
+  claude.sessions = [running(ID, 'Refused')];
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.getByRole('button', { name: 'Check now' }).click();
+
+  // Both routes were tried once; the reply was neither handed back nor posted again.
+  await expect.poll(() => posts).toBe(2);
+  await popup.waitForTimeout(2_000);
+  expect(posts).toBe(2);
+  expect(released).toEqual([]);
+  // Breaks if claude.ai's refusal reads as a token problem, or not at all.
+  await expect(
+    popup.getByText(/The chats aren.t reaching Oppenheimer: claude\.ai refused a reply \(403\)/),
+  ).toBeVisible();
+});
+
+test('says in the popup when claude.ai gives no session’s log', async ({
+  context,
+  claude,
+  worker,
+  extensionId,
+}) => {
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'POST',
+  };
+  await context.route('http://localhost:3001/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    if (new URL(request.url()).pathname.endsWith('/cloud-replies/claim')) {
+      return route.fulfill({ headers: cors, json: { replies: [] } });
+    }
+    return route.fulfill({ headers: cors, json: { matched: 0 } });
+  });
+  await worker.evaluate(() =>
+    chrome.storage.local.set({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_test' },
+    }),
+  );
+  // Every log route answers 404 (the fixture's fake claude.ai), the list still works.
+  claude.sessions = [running('session_01NoLogRoute00', 'No log')];
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  // Breaks if a pass that read no log clears the warning, and the console's
+  // copy goes stale behind a healthy-looking popup.
+  await expect(popup.getByText(/claude\.ai gave no event log/)).toBeVisible({ timeout: 20_000 });
+});

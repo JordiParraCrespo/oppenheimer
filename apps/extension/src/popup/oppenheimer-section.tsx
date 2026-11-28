@@ -16,6 +16,13 @@ import type { OppenheimerConnection, ReportStatus } from '@/sessions/store';
 import { useConnection } from './hooks/use-connection';
 
 /**
+ * Oppenheimer's own 403, as the extension words it (`403 <title>`, alone or
+ * after a session's id): the token lacks a scope. claude.ai's refusals are
+ * worded apart (`claude.ai refused a reply (403)`) and never match.
+ */
+const OPPENHEIMER_REFUSED_TOKEN = /(^|: )403 /;
+
+/**
  * Oppenheimer: where the statuses go. Connected, the worker reports what the
  * cloud sessions are doing after every check, and the console draws the
  * ones its workspace launched. The token is a personal API token from the
@@ -70,8 +77,8 @@ export function OppenheimerSection({
           ) : null}
           {chatProblem ? (
             <Callout tone="warning">
-              {/* A refused token is the one cause the person can fix here: it lacks the chat's scope. */}
-              {chatProblem.detail.includes('403')
+              {/* Oppenheimer refusing the token is the one cause the person can fix here: it lacks the chat's scope. */}
+              {OPPENHEIMER_REFUSED_TOKEN.test(chatProblem.detail)
                 ? t('oppenheimer.chatScope')
                 : t('oppenheimer.chatUnsent', { detail: chatProblem.detail })}
             </Callout>
