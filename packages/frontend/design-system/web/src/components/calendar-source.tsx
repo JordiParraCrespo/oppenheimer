@@ -23,7 +23,7 @@ const TONE_TEXT: Record<CalendarAccent, string> = {
  *   with its glyph and a `Checkbox` on the right. The whole row toggles
  *   it; a source that is off fades back.
  * - `CalendarAccountList`: every connected account, for more than one: a
- *   grouped list on the hover wash at the 14px radius, hairlines between
+ *   grouped list on the hover wash at the 10px radius, hairlines between
  *   `CalendarAccountRow`s and `CalendarAccountAdd` last.
  */
 function CalendarLayerItem({

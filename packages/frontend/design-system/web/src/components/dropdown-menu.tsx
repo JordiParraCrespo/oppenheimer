@@ -10,7 +10,7 @@ const ITEM_CLASSES =
   "group/dropdown-menu-item relative flex w-full cursor-default items-center gap-2.5 rounded-sm px-2.5 py-2 text-operate text-fg outline-hidden select-none transition-colors duration-instant data-highlighted:bg-hover-surface data-disabled:pointer-events-none data-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.75 [&>svg]:text-fg-subtle";
 
 /**
- * DropdownMenu — the popover tier: 14px radius, 4px padding, the popover
+ * DropdownMenu — the popover tier: 10px radius, 4px padding, the popover
  * shadow, a 4px rise plus fade over 140ms. Items are 14px rows at the 10px
  * radius with a hover wash.
  *

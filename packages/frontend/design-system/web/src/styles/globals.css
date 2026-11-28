@@ -459,13 +459,13 @@
     --term-status-h: 36px;
 
     /* =====================================================================
-       Radii — six, and no others: type into a 10, press a pill, read in an 18
+       Radii — six, and no others: type into a 10, press a pill, read in a 12
        ================================================================== */
     --radius-xs: 6px; /* swatches, tag dots, inline code */
     --radius-sm: 10px; /* inputs, menu items, small controls */
-    --radius-md: 14px; /* popovers, menus, nested panels */
-    --radius-lg: 18px; /* cards */
-    --radius-xl: 28px; /* modals, hero surfaces, large media */
+    --radius-md: 10px; /* popovers, menus, nested panels */
+    --radius-lg: 12px; /* cards */
+    --radius-xl: 16px; /* modals, hero surfaces, large media */
     --radius-pill: 980px; /* every button, chip, badge, person avatar, tab (a bot avatar is a rounded square) */
     /* The navigation column (every sidebar, the settings nav): its rows, heads,
        search and row actions, whatever their height, so it reads as one list. */

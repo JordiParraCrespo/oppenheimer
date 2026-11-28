@@ -7,7 +7,7 @@ import { IconButton } from './icon-button';
 
 /**
  * AccessList — who can open a shared thing, and until when (Share's Who has
- * access). A hairline card at the 14px radius, hairlines between the rows.
+ * access). A hairline card at the 10px radius, hairlines between the rows.
  * The first row is the owner, who cannot be removed; a link is a row of its
  * own ("Anyone with the link"), so stopping it reads like removing a person.
  *

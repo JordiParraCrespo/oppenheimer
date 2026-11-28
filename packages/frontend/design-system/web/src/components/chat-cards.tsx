@@ -154,7 +154,7 @@ const PLAN_LABELS: ProposedPlanLabels = {
 };
 
 /**
- * ProposedPlanCard — what plan mode hands back: on the 28px hero card, a
+ * ProposedPlanCard — what plan mode hands back: on the 16px hero card, a
  * Plan pill and the title with the plan's own actions (copy, download), the
  * steps at 15px, then the foot: the fold toggle for a long plan, Refine,
  * and Implement, the turn's one primary action, split with its options
@@ -558,7 +558,7 @@ function BotExchangeFoldTurn({
 
 /**
  * ProposedFile — a file a bot proposes for itself (its INSTRUCTIONS.md), on
- * an 18px card: the file's glyph and mono name, a "Proposed by" pill, the
+ * a 12px card: the file's glyph and mono name, a "Proposed by" pill, the
  * added lines in green mono, then what can be done about it. While it waits
  * that is `actions`: quiet `ProposedFileAction`s (Review in settings,
  * Reject) and the caller's Accept. Once decided it is `outcome`, in muted

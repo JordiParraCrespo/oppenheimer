@@ -3,10 +3,10 @@ import { cn } from '../lib/utils';
 
 /**
  * The corner a placeholder takes, so it has the shape of what it stands in
- * for. `md` (14px) is the default block; the rest are the system's own radii:
+ * for. `md` (10px) is the default block; the rest are the system's own radii:
  *
  * - `sm` (10px): a sidebar row while the session list loads.
- * - `lg` (18px): a whole card, as Run history draws while its runs load.
+ * - `lg` (12px): a whole card, as Run history draws while its runs load.
  * - `pill`: a round mark, like the account avatar on Connect GitHub.
  * - `none`: a pane that fills its frame edge to edge (an opening session's
  *   terminal).

@@ -23,7 +23,7 @@ import { IconButton } from './icon-button';
  *   toggle that does nothing), then actions that name what they do (Copy error, Continue
  *   task, Change model) and the dismiss.
  * - `ChatNotice`: one line about the run (a rate limit near or reached, a
- *   provider reconnecting), on the card at the 14px radius: a glyph or a
+ *   provider reconnecting), on the card at the 10px radius: a glyph or a
  *   dot in its tone, the line, at most one action or the dismiss.
  * - `FloatingChip`: a 28px pill that floats over the transcript while what
  *   it points to is scrolled away ("2 running ↑", Jump to latest), on the

@@ -296,9 +296,9 @@ export function ControlRamp() {
 const RADII: [string, string, string][] = [
   ['6px', 'rounded-xs', 'swatches, inline code, kbd'],
   ['10px', 'rounded-sm', 'anything you type into, menu rows'],
-  ['14px', 'rounded-md', 'menus, popovers, chip selects'],
-  ['18px', 'rounded-lg', 'cards, the composer'],
-  ['28px', 'rounded-xl', 'modals, hero surfaces'],
+  ['10px', 'rounded-md', 'menus, popovers, chip selects'],
+  ['12px', 'rounded-lg', 'cards, the composer'],
+  ['16px', 'rounded-xl', 'modals, hero surfaces'],
   ['980px', 'rounded-pill', 'anything you press'],
 ];
 

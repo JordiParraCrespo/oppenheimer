@@ -45,13 +45,13 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   height. The three share one size map (`internal/control-size.ts`).
   A smaller or larger field is a `size` the caller asks for, never a height
   of the component's own.
-- **Six radii and no others**: 6 · 10 · 14 · 18 · 28 · pill. Type into a 10,
-  press a pill, read inside an 18. The navigation column (every sidebar
+- **Six radii and no others**: 6 · 10 · 10 · 12 · 16 · pill (xs, sm, md, lg, xl). Type into a 10,
+  press a pill, read inside a 12. The navigation column (every sidebar
   and the settings nav) is one radius, `--radius-nav` (`rounded-nav`, the
   6): its rows, group heads, search and row actions, whatever their
   height, so the column reads as one list. A surface there takes
-  `rounded-nav`, never a rung by name. A menu item stays 10, concentric
-  with its 14 popover.
+  `rounded-nav`, never a rung by name. A menu item stays 10, the same
+  `--radius-md` (10) as its popover.
 - **Surfaces never cast shadows.** Depth is tonal. Only popovers, modals and
   glass carry one.
 - **Motion** is 80 / 140 / 220 / 400ms, eased, never bouncy; a 4px rise plus
@@ -326,7 +326,7 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   Between turns a `ChatMarker` notes a model switch and a
   `TranscriptDivider` a new day. Next steps are `ChatSuggestion` pills;
   the way back to the latest turn is `FloatingChip variant="round"`; the
-  box is `ChatComposer`, a 28px card growing from two lines to eight, which
+  box is `ChatComposer`, a 16px-radius card growing from two lines to eight, which
   shares `Composer`'s send rules and send button (`internal/composer-send`)
   rather than branching inside it. The trace lives in `chat-trace.tsx`,
   apart from the agent's tool-call groups in `chat-work.tsx`.

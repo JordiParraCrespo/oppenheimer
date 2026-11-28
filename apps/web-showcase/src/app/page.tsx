@@ -199,7 +199,7 @@ export default function Page() {
         id="radius"
         title="Radii"
         meta="rounded-xs · sm · md · lg · xl · pill"
-        desc="Six radii and no others. The rule reads: type into a 10, press a pill, read inside an 18. If a value is not in this list, it is wrong."
+        desc="Six radii and no others. The rule reads: type into a 10, press a pill, read inside a 12. If a value is not in this list, it is wrong."
       >
         <Radii />
       </Spec>
@@ -570,7 +570,7 @@ export default function Page() {
         id="cards"
         title="Card"
         meta="card.tsx"
-        desc="The content container: 18px radius, a subtle hairline, the lit surface on the canvas, no shadow. Header, content and footer carry the 24px padding; padded puts it on the card for a single block."
+        desc="The content container: 12px radius, a subtle hairline, the lit surface on the canvas, no shadow. Header, content and footer carry the 24px padding; padded puts it on the card for a single block."
         code={`<Card><CardHeader><CardTitle>…</CardTitle><CardDescription>…</CardDescription></CardHeader><CardContent>…</CardContent></Card>`}
       >
         <Card className="w-full max-w-90">
@@ -915,7 +915,7 @@ export default function Page() {
         id="textarea"
         title="Textarea"
         meta="textarea.tsx"
-        desc="The multi-line field at the 10px radius, sized to its content from 88px. The code variant is a file edited in place (a bot's SOUL.md and INSTRUCTIONS.md): mono at 13px, the 18px reading radius, at least 320px tall."
+        desc="The multi-line field at the 10px radius, sized to its content from 88px. The code variant is a file edited in place (a bot's SOUL.md and INSTRUCTIONS.md): mono at 13px, the 12px reading radius, at least 320px tall."
         code={`<Textarea placeholder="Session name" />
 <Textarea variant="code" aria-label="INSTRUCTIONS.md" defaultValue={file} />`}
       >
@@ -958,7 +958,7 @@ export default function Page() {
         id="composer"
         title="Composer"
         meta="composer.tsx"
-        desc="The prompt box: an 18px field with a growing textarea, then the foot row, which reads left to right as scope of action, then engine. Bottom left is what the run may touch: attachments and the permission level. Bottom right is who drives it and how hard it thinks: the agent and model, the effort, then mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop. On New session the composer is tabbed: the scope chips sit in a grey band fused to the top of the field, each a borderless ChipSelectTrigger in its tab variant, so host, repositories and branch read as one sentence over the box, which grows to 128px at 15px. New session itself now opens on ComposerPill: one 28px-radius box, Add files at the start of a line that grows, the mic and send at its end, and under it a ComposerChoices row — where it runs and what it may touch on the left, the agent and effort pushed right."
+        desc="The prompt box: a 12px-radius field with a growing textarea, then the foot row, which reads left to right as scope of action, then engine. Bottom left is what the run may touch: attachments and the permission level. Bottom right is who drives it and how hard it thinks: the agent and model, the effort, then mic and the round primary send. Enter submits, Shift+Enter breaks a line; while busy the send button becomes stop. On New session the composer is tabbed: the scope chips sit in a grey band fused to the top of the field, each a borderless ChipSelectTrigger in its tab variant, so host, repositories and branch read as one sentence over the box, which grows to 128px at 15px. New session itself now opens on ComposerPill: one 16px-radius box, Add files at the start of a line that grows, the mic and send at its end, and under it a ComposerChoices row — where it runs and what it may touch on the left, the agent and effort pushed right."
         code={`<Composer value={v} onValueChange={setV} onSubmit={start} onAttach={pick}
   scope={<><ChipSelect variant="tab" … /><RepositorySelect variant="tab" … /></>}
   tools={<PermissionMenu options={levels} value={level} onValueChange={setLevel} />}
@@ -1082,7 +1082,7 @@ export default function Page() {
         id="dialog"
         title="Dialog"
         meta="dialog.tsx"
-        desc="The one modal surface: 440px by default, 28px radius, the modal shadow, a blurred scrim, a 4px rise. The console's forms are dialogs over it: New project and Project settings at 540px, Add a host at 520px, the automation editor at 640px. Add a host opens from the composer's host chip: one sentence, the agent prompt in a card with Copy prompt and its text behind a fold, the token line with Install manually instead across from it, and Connection rows that resolve in place. Destructive copy states the cost and the button says exactly what it does."
+        desc="The one modal surface: 440px by default, 16px radius, the modal shadow, a blurred scrim, a 4px rise. The console's forms are dialogs over it: New project and Project settings at 540px, Add a host at 520px, the automation editor at 640px. Add a host opens from the composer's host chip: one sentence, the agent prompt in a card with Copy prompt and its text behind a fold, the token line with Install manually instead across from it, and Connection rows that resolve in place. Destructive copy states the cost and the button says exactly what it does."
         code={`<Dialog><DialogTrigger render={<Button />}>Add a host…</DialogTrigger><DialogContent><DialogHeader><DialogTitle>Add a host</DialogTitle>…`}
       >
         <AddHostDialogDemo />
@@ -1093,7 +1093,7 @@ export default function Page() {
         id="dropdown"
         title="DropdownMenu"
         meta="dropdown-menu.tsx"
-        desc="The popover tier: 14px radius, 14px rows, submenus for the filter facets. The console's menus share every part: filters with values; the account menu with its e-mail header, Appearance and Language as pane rows that slide the same menu to their options behind a back row, and a destructive Log out; the permission menu with icon rows and a warning tone."
+        desc="The popover tier: 10px radius, 14px rows, submenus for the filter facets. The console's menus share every part: filters with values; the account menu with its e-mail header, Appearance and Language as pane rows that slide the same menu to their options behind a back row, and a destructive Log out; the permission menu with icon rows and a warning tone."
         code={`<DropdownMenuPaneItem value="Match system" onClick={() => setPane('theme')}><MoonIcon /> Appearance</DropdownMenuPaneItem>
 <DropdownMenuBack onClick={() => setPane('root')}>Appearance</DropdownMenuBack>`}
       >
@@ -1366,7 +1366,7 @@ const drag = useDraggable({ id, data: { type: 'task' } });    // drag.handleProp
         id="taskboard"
         title="TaskBoard · MilestoneCard"
         meta="task-board.tsx · milestone-card.tsx · page-header.tsx"
-        desc="Plan's tasks by status, on the drag layer. A column is a SortableGroup with its head (the status on StatusDot, the count in mono, a + to add) over an 18px tray on the hover wash that tints toward the selected wash while a card would land in it; its foot is Add task or the composer. A card has a round Checkbox (green when done, the title struck), the title, two lines of notes, the project and milestone, the due date in mono (red when overdue, full ink when due within a day), the linked session as a chip that opens it, and Start session on hover. A selected card (⌘/Ctrl- or Shift-clicked, to act on with others) takes the selected wash and a ring, and TaskSelectionBar floats at the viewport's foot with how many and what they can do together. The board is one row of however many columns it is given, as wide as its parent. A task's status reads on the run-state dots (TASK_STATUS_STATE: Not started idle, In progress running, In review pending, Done completed). Milestones sit above the board: a 4px bar of the share done, full ink and green at 100%, and the milestone's name is a toggle that narrows the board, its menu beside it. The page opens on PageHeaderRow at its display size. Drag cards within and across columns, check one off, add one, pick a milestone."
+        desc="Plan's tasks by status, on the drag layer. A column is a SortableGroup with its head (the status on StatusDot, the count in mono, a + to add) over a 12px tray on the hover wash that tints toward the selected wash while a card would land in it; its foot is Add task or the composer. A card has a round Checkbox (green when done, the title struck), the title, two lines of notes, the project and milestone, the due date in mono (red when overdue, full ink when due within a day), the linked session as a chip that opens it, and Start session on hover. A selected card (⌘/Ctrl- or Shift-clicked, to act on with others) takes the selected wash and a ring, and TaskSelectionBar floats at the viewport's foot with how many and what they can do together. The board is one row of however many columns it is given, as wide as its parent. A task's status reads on the run-state dots (TASK_STATUS_STATE: Not started idle, In progress running, In review pending, Done completed). Milestones sit above the board: a 4px bar of the share done, full ink and green at 100%, and the milestone's name is a toggle that narrows the board, its menu beside it. The page opens on PageHeaderRow at its display size. Drag cards within and across columns, check one off, add one, pick a milestone."
         code={`<DragProvider {...useSortableGroups(groups, setGroups, save)} overlay={(a) => <TaskCard title={titleOf(a.id)} />}>
   <TaskBoard>
     <TaskColumn id="todo" status="todo" label="Not started" count={4} items={groups.todo} onAdd={add} foot={<TaskColumnAdd onClick={add}>Add task</TaskColumnAdd>}>

@@ -4,7 +4,7 @@ import type * as React from 'react';
 import { cn } from '../lib/utils';
 
 /**
- * Card — the content container: 18px radius, a hairline in `--border-subtle`,
+ * Card — the content container: 12px radius, a hairline in `--border-subtle`,
  * the lit surface on the canvas, and **no shadow**. Depth is tonal: white on
  * `#f5f5f7`, `#1a1a1c` on `#121213`. A drop shadow on a card is the fastest
  * way to make this system look cheap.

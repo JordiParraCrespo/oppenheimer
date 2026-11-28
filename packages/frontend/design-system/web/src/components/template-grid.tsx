@@ -6,7 +6,7 @@ import { cn } from '../lib/utils';
  * TemplateGrid — starting points under the routine table: a two-column
  * grid (one column under 320px) of items, each a 36px round glyph on the
  * card colour, a name, a two-line description, a meta line naming the
- * trigger, and an Add button. Items take the hover wash on a 14px radius.
+ * trigger, and an Add button. Items take the hover wash on a 10px radius.
  */
 function TemplateGrid({ className, ...props }: React.ComponentProps<'div'>) {
   return (
@@ -66,7 +66,7 @@ function TemplateItem({
 /**
  * TemplateTiles — starting points picked by clicking the whole tile (a new
  * bot's Blank, GitHub, Sessions, Plan): as many 150px columns as fit, 8px
- * apart. Each `TemplateTile` is a button on the card at the 18px radius, its
+ * apart. Each `TemplateTile` is a button on the card at the 12px radius, its
  * glyph in muted ink over the name at 14px medium and a 12.5px line; the
  * pointer takes it to the control's hover grey. `TemplateGrid` stays for
  * templates read before they are added (the automations'), with their trigger
