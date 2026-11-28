@@ -106,7 +106,7 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     organizationId: string,
     sessionId: string,
     events: readonly CloudChatEvent[],
-    from?: number,
+    from: number,
   ): Promise<number> {
     if (events.length === 0) return 0;
     return this.outbox.transaction(async (manager) => {
@@ -123,30 +123,23 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
                WHERE "sessionId" = $1 AND "eventId" IS NOT NULL)`,
         [sessionId],
       );
-      // New events only (an id held already, or twice in the batch, is
-      // skipped). With `from`, each at its place in the log, so stretches
-      // sent in any order by any browser read in the log's order, and a place
-      // held already is skipped too; without, after the last line held.
+      // New events only, each at its place in the log, so stretches sent in
+      // any order by any browser read in the log's order. An id or a place
+      // held already, or an id twice in the batch, is skipped.
       const inserted: unknown[] = await manager.query(
         `WITH batch AS (
            SELECT DISTINCT ON (id) id, line, ordinality
              FROM unnest($3::text[], $4::text[]) WITH ORDINALITY AS e(id, line, ordinality)
             ORDER BY id, ordinality),
          fresh AS (
-           SELECT id, line, ordinality, row_number() OVER (ORDER BY ordinality) AS n
+           SELECT id, line, ordinality
              FROM batch
             WHERE NOT EXISTS (
               SELECT 1 FROM session_cloud_line held
-               WHERE held."sessionId" = $2 AND held."eventId" = batch.id)),
-         base AS (
-           SELECT coalesce(max("seq") + 1, 0) AS next
-             FROM session_cloud_line WHERE "sessionId" = $2)
+               WHERE held."sessionId" = $2 AND held."eventId" = batch.id))
          INSERT INTO session_cloud_line ("organizationId", "sessionId", "seq", "eventId", "line")
-         SELECT $1, $2,
-                (CASE WHEN $5::integer IS NULL THEN base.next + fresh.n - 1
-                      ELSE $5::integer + fresh.ordinality - 1 END)::integer,
-                fresh.id, fresh.line
-           FROM fresh, base
+         SELECT $1, $2, ($5::integer + fresh.ordinality - 1)::integer, fresh.id, fresh.line
+           FROM fresh
          ON CONFLICT DO NOTHING
          RETURNING "seq"`,
         [
@@ -154,7 +147,7 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
           sessionId,
           events.map((event) => event.id),
           events.map((event) => event.line),
-          from ?? null,
+          from,
         ],
       );
       return inserted.length;

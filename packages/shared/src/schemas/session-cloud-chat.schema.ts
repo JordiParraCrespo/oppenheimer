@@ -121,26 +121,31 @@ export const MAX_CLOUD_SESSION_TITLE = 200;
  * session this workspace does not know yet is adopted. An event already held
  * is skipped, so a batch sent again changes nothing.
  */
-export const recordCloudEventsSchema = z.object({
-  cloudSessionId: cloudSessionRefSchema,
-  /** The session's title on claude.ai, which names an adopted session. */
-  title: z.string().trim().max(MAX_CLOUD_SESSION_TITLE).optional(),
-  events: z
-    .array(
-      z.object({
-        id: z.string().min(1).max(128),
-        line: z.string().max(MAX_CLOUD_TRANSCRIPT_LINE_BYTES),
-      }),
-    )
-    .min(1)
-    .max(MAX_CLOUD_TRANSCRIPT_BATCH),
-  /**
-   * The place in the claude.ai log of the batch's first event; the others
-   * follow it. Each line is kept at its place, so stretches sent in any order,
-   * by any browser, read in the log's order. Absent: after the lines held.
-   */
-  from: z.number().int().min(0).max(10_000_000).optional(),
-});
+export const recordCloudEventsSchema = z
+  .object({
+    cloudSessionId: cloudSessionRefSchema,
+    /** The session's title on claude.ai, which names an adopted session. */
+    title: z.string().trim().max(MAX_CLOUD_SESSION_TITLE).optional(),
+    events: z
+      .array(
+        z.object({
+          id: z.string().min(1).max(128),
+          line: z.string().max(MAX_CLOUD_TRANSCRIPT_LINE_BYTES),
+        }),
+      )
+      .min(1)
+      .max(MAX_CLOUD_TRANSCRIPT_BATCH),
+    /**
+     * The place in the claude.ai log of the batch's first event; the others
+     * follow it. Each line is kept at its place, so stretches sent in any order,
+     * by any browser, read in the log's order. Required: a batch without it was
+     * sent by an extension built before places, and appending it after the
+     * lines held scrambles the copy for good.
+     */
+    from: z.number().int().min(0).max(10_000_000),
+  })
+  // An unknown field (an old build's `placement`) is refused, not dropped.
+  .strict();
 
 export type RecordCloudEventsDto = z.infer<typeof recordCloudEventsSchema>;
 

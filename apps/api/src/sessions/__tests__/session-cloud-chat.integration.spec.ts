@@ -257,13 +257,18 @@ describe('sessions: cloud chat replies (integration)', () => {
       ];
       // Breaks if a resent or doubled event is stored twice, or the hook's
       // lines stay beside claude.ai's and the chat shows the turn twice.
-      expect(await chat.appendEvents(organizationId, cloudId, first)).toBe(2);
-      expect(await chat.appendEvents(organizationId, cloudId, first.slice(0, 2))).toBe(0);
+      expect(await chat.appendEvents(organizationId, cloudId, first, 0)).toBe(2);
+      expect(await chat.appendEvents(organizationId, cloudId, first.slice(0, 2), 0)).toBe(0);
       expect(
-        await chat.appendEvents(organizationId, cloudId, [
-          { id: 'e2', line: entry('e2', 'On it') },
-          { id: 'e3', line: entry('e3', 'Also the signup page') },
-        ]),
+        await chat.appendEvents(
+          organizationId,
+          cloudId,
+          [
+            { id: 'e2', line: entry('e2', 'On it') },
+            { id: 'e3', line: entry('e3', 'Also the signup page') },
+          ],
+          1,
+        ),
       ).toBe(1);
       expect(await chat.findSource(cloudId)).toBe('browser');
       const lines = await chat.findLines(cloudId, 0, 10);
@@ -324,8 +329,8 @@ describe('sessions: cloud chat replies (integration)', () => {
           line: entry(`e${from + i}`, 'x'),
         }));
       const [a, b] = await Promise.all([
-        chat.appendEvents(organizationId, cloudId, batch(0)),
-        chat.appendEvents(organizationId, cloudId, batch(10)),
+        chat.appendEvents(organizationId, cloudId, batch(0), 0),
+        chat.appendEvents(organizationId, cloudId, batch(10), 10),
       ]);
       expect(a + b).toBe(30);
       const seqs = (await chat.findLines(cloudId, 0, 100)).map((each) => each.seq);

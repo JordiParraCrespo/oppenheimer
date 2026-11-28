@@ -2102,7 +2102,7 @@ export type RecordCloudEventsRequest = {
         id: string;
         line: string;
     }>;
-    from?: number;
+    from: number;
 };
 
 export type RecordedCloudEventsResponseDto = {

@@ -10,8 +10,8 @@ export class RecordCloudEventsCommand extends CommandBase {
   readonly cloudSessionId: string;
   readonly title: string | undefined;
   readonly events: readonly CloudChatEvent[];
-  /** The log place of the first event; absent, after the lines held. */
-  readonly from: number | undefined;
+  /** The log place of the first event; the others follow it. */
+  readonly from: number;
 
   constructor(props: CommandProps<RecordCloudEventsCommand>) {
     super(props);

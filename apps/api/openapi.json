@@ -34717,7 +34717,8 @@
         },
         "required": [
           "cloudSessionId",
-          "events"
+          "events",
+          "from"
         ]
       },
       "RecordedCloudEventsResponseDto": {

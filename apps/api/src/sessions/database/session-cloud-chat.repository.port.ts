@@ -63,8 +63,8 @@ export interface SessionCloudChatRepositoryPort {
     organizationId: string,
     sessionId: string,
     events: readonly CloudChatEvent[],
-    /** The log place of the first event; absent, after the lines held. */
-    from?: number,
+    /** The log place of the first event; the others follow it. */
+    from: number,
   ): Promise<number>;
   /**
    * How many lines the copy holds before `before`. A reader compares it with

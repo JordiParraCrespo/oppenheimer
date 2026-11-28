@@ -484,10 +484,10 @@ export function sessionsToSync(
 
 /**
  * The rules a session's copy in the console was built by. A sync kept under
- * older ones (whose copy the API dropped, `NumberCloudLinesByLogPosition`) reads the
+ * older ones (whose copy the API dropped, `DropOutOfPlaceCloudCopies`) reads the
  * log again from its first page and sends it newest first.
  */
-export const CHAT_COPY_VERSION = 4;
+export const CHAT_COPY_VERSION = 5;
 
 /** A session's sync, unless it was kept under older copy rules: then it counts as never read. */
 export function current(sync: ChatSync | undefined): ChatSync | undefined {
