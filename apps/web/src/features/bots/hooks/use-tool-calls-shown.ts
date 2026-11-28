@@ -10,10 +10,13 @@ const TOOL_CALLS_KEY = 'oppenheimer.bots.toolCallsShown';
 const TOOL_CALLS_ID = 'chat';
 
 /**
- * Whether a bot's chat draws its tool calls, the routine runs that did
- * nothing else and the lines for a followed project's task updates, and the
- * toggle in the chat's bar that shows them. Hidden
- * until the reader shows them. The reader's, so the API never hears of it.
+ * Which of a bot chat's two views the reader is on. Hidden (the default) is
+ * the quiet chat, read like a messenger: the messages, the day, and that the
+ * bot is thinking. Shown adds the work: each tool call, the routine runs that
+ * did nothing else, a followed project's task updates, what the running call
+ * is doing with its clock and subagents, a model switch, and each turn's
+ * time, model and tokens. The wrench in the chat's bar switches them. The
+ * reader's, so the API never hears of it.
  */
 export function useToolCallsShown() {
   const { open, setOpen } = useStoredFold(TOOL_CALLS_KEY, TOOL_CALLS_ID);

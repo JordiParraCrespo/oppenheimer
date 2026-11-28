@@ -9,6 +9,7 @@ import { InboxReportCard } from '@/features/inbox/sections/inbox-report-card';
 import { InboxRunCard } from '@/features/inbox/sections/inbox-run-card';
 import { InboxSessionCard } from '@/features/inbox/sections/inbox-session-card';
 import { InboxTaskCard } from '@/features/inbox/sections/inbox-task-card';
+import { InboxUnattendedCard } from '@/features/inbox/sections/inbox-unattended-card';
 
 /**
  * The item in the reading pane as its kind's message, keyed as the deck is
@@ -35,6 +36,16 @@ export function InboxItemMessage({
     case 'botNotice':
       return (
         <InboxBotNoticeCard
+          key={inboxCardKey(item)}
+          item={item}
+          copy={copy}
+          from={from}
+          age={age}
+        />
+      );
+    case 'unattended':
+      return (
+        <InboxUnattendedCard
           key={inboxCardKey(item)}
           item={item}
           copy={copy}

@@ -5,7 +5,7 @@
 ---
 
 A linked WhatsApp number answers its owner
-(`product/next-steps/answering-on-telegram-and-whatsapp.md`, slice 3).
+(`product/design/channels/answering-on-telegram-and-whatsapp.md`, slice 3).
 
 - `@oppenheimer/api`: `PATCH /v1/whatsapp/accounts/{id}` chooses the
   number's default bot. `POST …/owner` names the owner's own number, which

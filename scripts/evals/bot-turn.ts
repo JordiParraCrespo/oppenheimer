@@ -85,6 +85,12 @@ export interface TurnRequest {
   maxTokens?: number;
   /** Sent on the Messages API path; the Agent SDK takes none, so it samples at its default. */
   temperature?: number;
+  /**
+   * A turn that grades another (a judge, a grader): run as the eval set it
+   * up, never under `BOT_EVAL_ADVISOR` or `BOT_EVAL_EFFORT`, which are for
+   * the bot's turns being compared.
+   */
+  grading?: boolean;
 }
 
 export interface Transport {
@@ -259,6 +265,9 @@ function claudeCode(model: string): Transport['turn'] {
       calls.push(made);
       return { content: [{ type: 'text' as const, text: made.content }], isError: made.isError };
     });
+    // A grading turn runs as the eval set it up; only the bot's turns are compared.
+    const advisor = request.grading ? undefined : EVAL_ADVISOR;
+    const effort = request.grading ? undefined : EVAL_EFFORT;
     const cwd = mkdtempSync(join(tmpdir(), 'bot-eval-'));
     let stopped: string | undefined;
     let searches = 0;
@@ -269,14 +278,26 @@ function claudeCode(model: string): Transport['turn'] {
         options: {
           model,
           // As the engine sends it (`claudeSystemPrompt`): how to call the tools on Claude Code.
-          systemPrompt: claudeSystemPrompt({ systemPrompt: request.system, tools: request.tools }),
+          systemPrompt: claudeSystemPrompt({
+            systemPrompt:
+              advisor && EVAL_ADVISOR_NUDGE
+                ? `${request.system}\n\n${ADVISOR_NUDGE}`
+                : request.system,
+            tools: request.tools,
+          }),
           cwd,
           tools: deferring ? ['ToolSearch'] : [],
           allowedTools: [
             ...request.tools.map((tool) => `mcp__oppenheimer__${tool.name}`),
             ...(deferring ? ['ToolSearch'] : []),
           ],
-          env: { ...process.env, ENABLE_TOOL_SEARCH: deferring ? 'true' : 'false' },
+          env: {
+            ...process.env,
+            ENABLE_TOOL_SEARCH: deferring ? 'true' : 'false',
+            ...(advisor ? { CLAUDE_CODE_ENABLE_EXPERIMENTAL_ADVISOR_TOOL: '1' } : {}),
+          },
+          ...(advisor ? { settings: { advisorModel: advisor } } : {}),
+          ...(effort ? { effort } : {}),
           permissionMode: 'dontAsk',
           mcpServers: { oppenheimer: { type: 'sdk', name: 'oppenheimer', instance: mcp } },
           strictMcpConfig: true,
@@ -299,8 +320,9 @@ function claudeCode(model: string): Transport['turn'] {
               unprefixed.push(block.name);
             }
           }
-        } else if (message.type === 'result' && message.subtype !== 'success') {
-          stopped = message.subtype;
+        } else if (message.type === 'result') {
+          tally(message.modelUsage);
+          if (message.subtype !== 'success') stopped = message.subtype;
         }
       }
     } catch (error) {
@@ -317,6 +339,69 @@ function claudeCode(model: string): Transport['turn'] {
       ...(stopped ? { stopped } : {}),
     };
   };
+}
+
+/**
+ * Set-ups an eval can be run under on the Claude Code login, to compare
+ * them on the same cases: `BOT_EVAL_ADVISOR` gives the turn an advisor
+ * (Claude Code's `advisorModel`, with `CLAUDE_CODE_ENABLE_EXPERIMENTAL_ADVISOR_TOOL`, the gate it sits behind), and
+ * `BOT_EVAL_EFFORT` an effort level. Either set, the run ends with what each
+ * model spent, the advisor's apart.
+ */
+// biome-ignore lint/suspicious/noUndeclaredEnvVars: a root script, not a Turborepo task — nothing caches its output.
+const EVAL_ADVISOR = process.env.BOT_EVAL_ADVISOR;
+// biome-ignore lint/suspicious/noUndeclaredEnvVars: a root script, not a Turborepo task — nothing caches its output.
+const EVAL_EFFORT = process.env.BOT_EVAL_EFFORT as
+  | 'low'
+  | 'medium'
+  | 'high'
+  | 'xhigh'
+  | 'max'
+  | undefined;
+/**
+ * `BOT_EVAL_ADVISOR_NUDGE`: with an advisor, one line more in the bot's
+ * system prompt telling it to consult the advisor before it acts, to
+ * measure whether advice it is made to ask for changes what it gets right.
+ */
+// biome-ignore lint/suspicious/noUndeclaredEnvVars: a root script, not a Turborepo task — nothing caches its output.
+const EVAL_ADVISOR_NUDGE = process.env.BOT_EVAL_ADVISOR_NUDGE === '1';
+const ADVISOR_NUDGE =
+  'You have an advisor. Before you take an action that changes something (a merge, a session, a message sent, a look set or not set), call the advisor once with what you plan to do, and weigh its answer.';
+const spent = new Map<string, { turns: number; input: number; output: number; usd: number }>();
+
+function tally(usage: Record<string, unknown> | undefined): void {
+  for (const [model, raw] of Object.entries(usage ?? {})) {
+    const counts = raw as {
+      inputTokens: number;
+      outputTokens: number;
+      cacheReadInputTokens: number;
+      cacheCreationInputTokens: number;
+      costUSD: number;
+    };
+    const row = spent.get(model) ?? { turns: 0, input: 0, output: 0, usd: 0 };
+    row.turns += 1;
+    row.input += counts.inputTokens + counts.cacheReadInputTokens + counts.cacheCreationInputTokens;
+    row.output += counts.outputTokens;
+    row.usd += counts.costUSD;
+    spent.set(model, row);
+  }
+}
+
+if (EVAL_ADVISOR || EVAL_EFFORT) {
+  process.on('exit', () => {
+    const setup = [
+      EVAL_EFFORT && `effort ${EVAL_EFFORT}`,
+      EVAL_ADVISOR && `advisor ${EVAL_ADVISOR}`,
+    ]
+      .filter(Boolean)
+      .join(', ');
+    console.log(`\nSpent (${setup}):`);
+    for (const [model, row] of spent) {
+      console.log(
+        `  ${model.padEnd(20)} ${row.turns} runs  ${row.input} in  ${row.output} out  $${row.usd.toFixed(3)} at list`,
+      );
+    }
+  });
 }
 
 /** Runs `work` over `items`, at most `limit` at a time, in order. */

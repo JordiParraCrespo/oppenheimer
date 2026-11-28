@@ -9,7 +9,7 @@ start sessions on a schedule or an event, and the runs they made)
 are the product; `organizations`, `profile` and `permissions` are the account
 chrome it keeps. `organizations` is the *personal workspace* only — read it,
 rename it, create one for an account that has none. Workspaces have no roster
-(`product/versions/mvp/08-auth.md`): there is no member or invitation hook
+(`product/design/foundations/auth.md`): there is no member or invitation hook
 here, on purpose, and the teams slice adds them when it arrives. Platform-free
 logic only; the UI that renders it lives in `apps/web` or the web kit. The layer model
 and the full "add a module" cookbook are

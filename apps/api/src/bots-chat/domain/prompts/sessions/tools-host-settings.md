@@ -1,4 +1,4 @@
-<!-- What `set_host_settings` tells a model: its description, its parameters' (the tool, then the parameter), and its answers, from `bot-host-settings-tools.factory.ts` and `bot-host-settings.policy.ts` (`25-bots.md` §4.2, "The host's switches"). The owner asked for it on 2026-11-24: a bot that answered "only you can run `runner browser on`" after they said "do it yourself" was a guardrail they did not want. -->
+<!-- What `set_host_settings` tells a model: its description, its parameters' (the tool, then the parameter), and its answers, from `bot-host-settings-tools.factory.ts` and `bot-host-settings.policy.ts` (`product/design/bots/bots.md` §4.2, "The host's switches"). The owner asked for it on 2026-11-24: a bot that answered "only you can run `runner browser on`" after they said "do it yourself" was a guardrail they did not want. -->
 
 <!-- fragment: set-host-settings -->
 

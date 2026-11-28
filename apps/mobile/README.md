@@ -1,6 +1,6 @@
 # @oppenheimer/mobile
 
-Oppenheimer on a phone (0.5, `product/next-steps/0.5-mobile.md`), drawn from
+Oppenheimer on a phone (0.5, `product/design/clients/mobile.md`), drawn from
 the version-1 export's `Mobile.dc.html`. Today it is the shell: the welcome
 screen (a social provider through a deep link, or email), email sign-in,
 password reset, and the signed-in app's five sections in the console rail's

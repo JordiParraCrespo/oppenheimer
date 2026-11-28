@@ -27,22 +27,47 @@ import { useSortableControl } from './drag';
  * starts after 5px). Where the order is kept is the app's.
  *
  * Under 768px a column that never leaves takes too much of the width, so the
- * rail is a tab bar fixed along the bottom of the screen instead: the same
- * buttons in a row, spread across it, above the home indicator, with the
- * hairline on top. The mark and the tips (there is no hover on a phone) are
- * dropped. The page under it keeps clear of it with `RAIL_BAR_CLEARANCE`.
+ * rail is a tab bar instead: a 64px pill floating 12px above the home
+ * indicator and 12px in from each edge, frosted over the page, each item its
+ * glyph over its short name, the current one on its own rounded wash. The
+ * mark and the tips (there is no hover on a phone) are dropped. The page
+ * under it keeps clear of it with `RAIL_BAR_CLEARANCE`. A rail that is a
+ * specimen rather than chrome (the showcase's) passes `layout="column"` and
+ * stays the column at every width; the items read the layout from the rail,
+ * so a lifted copy outside it is the round button. The frost is a layer
+ * under the items (`before:`), not the bar's own: a backdrop filter on the
+ * bar would make it the box a fixed descendant is placed in, and the drag
+ * overlay, drawn inside it, would land off the screen.
  */
 const RAIL = {
-  surface: 'z-20 flex shrink-0 items-center gap-1.5 border-border-subtle bg-sidebar',
-  bar: 'fixed inset-x-0 bottom-0 h-[calc(var(--spacing)*14+env(safe-area-inset-bottom))] justify-around border-t px-2 pb-[env(safe-area-inset-bottom)]',
-  column: 'md:relative md:inset-auto md:h-auto md:w-14 md:flex-col md:justify-start md:border-t-0 md:border-r md:px-0 md:py-3.5',
+  surface: 'group/rail z-20 flex shrink-0 items-center',
+  bar: 'fixed inset-x-3 bottom-[calc(var(--spacing)*3+env(safe-area-inset-bottom))] h-16 gap-0.5 rounded-[2rem] p-1.5 shadow-popover before:absolute before:inset-0 before:-z-10 before:rounded-[inherit] before:bg-popover/85 before:backdrop-blur-xl md:before:hidden md:relative md:inset-auto md:bottom-auto md:h-auto md:w-14 md:flex-col md:justify-start md:gap-1.5 md:rounded-none md:border-border-subtle md:border-r md:bg-sidebar md:px-0 md:py-3.5 md:shadow-none',
+  column: 'relative w-14 flex-col justify-start gap-1.5 border-border-subtle border-r bg-sidebar py-3.5',
 };
 
-/** What a page beside the rail reserves at its foot, so the phone's bar never covers it. */
-const RAIL_BAR_CLEARANCE = 'pb-[calc(var(--spacing)*14+env(safe-area-inset-bottom))] md:pb-0';
+/** The phone's tab-bar look of an item (`rail-bar:`, `globals.css`). */
+const BAR_ITEM =
+  'rail-bar:h-full rail-bar:w-auto rail-bar:min-w-0 rail-bar:flex-1 rail-bar:flex-col rail-bar:gap-0.5 rail-bar:rounded-[1.625rem]';
 
-function Rail({ className, ...props }: React.ComponentProps<'nav'>) {
-  return <nav data-slot="rail" className={cn(RAIL.surface, RAIL.bar, RAIL.column, className)} {...props} />;
+/** What a page beside the rail reserves at its foot, so the phone's floating bar never covers it. */
+const RAIL_BAR_CLEARANCE = 'pb-[calc(var(--spacing)*22+env(safe-area-inset-bottom))] md:pb-0';
+
+function Rail({
+  className,
+  layout = 'responsive',
+  ...props
+}: React.ComponentProps<'nav'> & {
+  /** `responsive`: the floating tab bar on a phone, the column from 768px. `column`: the column at every width. */
+  layout?: 'responsive' | 'column';
+}) {
+  return (
+    <nav
+      data-slot="rail"
+      data-layout={layout}
+      className={cn(RAIL.surface, layout === 'column' ? RAIL.column : RAIL.bar, className)}
+      {...props}
+    />
+  );
 }
 
 /**
@@ -60,7 +85,7 @@ function RailMark({ className, label, render, ref, ...props }: useRender.Compone
       'aria-label': label,
       'aria-hidden': label ? undefined : true,
       className: cn(
-        'mb-2.5 hidden size-8 items-center justify-center rounded-md outline-none md:flex focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+        'mb-2.5 hidden size-8 items-center justify-center rounded-md outline-none group-data-[layout=column]/rail:flex md:flex focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
         className,
       ),
       ...props,
@@ -71,6 +96,7 @@ function RailMark({ className, label, render, ref, ...props }: useRender.Compone
 
 function RailItem({
   label,
+  shortLabel,
   count,
   attention,
   active,
@@ -83,6 +109,8 @@ function RailItem({
 }: useRender.ComponentProps<'button'> & {
   /** The accessible name, and what the tip beside the button reads ("Sessions"). */
   label: string;
+  /** The name under the glyph in the phone's tab bar, when `label` is too long for it ("PRs"). */
+  shortLabel?: string;
   /** Shown after the name in the tip, and read out as the button's description. */
   count?: React.ReactNode;
   /** A 7px amber dot on the corner. */
@@ -108,16 +136,24 @@ function RailItem({
       'aria-current': active ? 'page' : undefined,
       className: cn(
         'group/rail-item relative flex size-10 items-center justify-center rounded-pill text-fg-muted no-underline outline-none transition-[background-color,color,transform] duration-instant ease-standard hover:bg-hover-surface hover:text-fg hover:no-underline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 active:scale-[0.975] data-active:bg-hover-surface data-active:text-fg [&_svg:not([class*=size-])]:size-[18px]',
+        BAR_ITEM,
         className,
       ),
       ...props,
       children: (
         <>
           {children}
+          <span
+            aria-hidden
+            data-slot="rail-item-label"
+            className="hidden w-full truncate px-0.5 text-center font-medium text-[0.6875rem] leading-tight rail-bar:block"
+          >
+            {shortLabel ?? label}
+          </span>
           {attention ? (
             <span
               aria-hidden
-              className="absolute top-1.5 right-1.5 size-1.75 rounded-pill bg-warning ring-2 ring-sidebar"
+              className="absolute top-1.5 right-1.5 size-1.75 rounded-pill bg-warning ring-2 ring-sidebar rail-bar:top-2 rail-bar:right-auto rail-bar:left-[calc(50%+var(--spacing)*1.5)] rail-bar:ring-popover"
             />
           ) : null}
           <RailTip count={hasCount ? count : undefined} countId={countId}>

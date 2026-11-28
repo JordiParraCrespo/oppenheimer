@@ -79,7 +79,7 @@ Those pieces live with the API and the console, not here:
   the scope catalog advertised as `scopes_supported`).
 - `apps/api/src/auth/application/credential-scope.resolver.ts`: OAuth grants
   resolved beside API tokens. A grant is not pinned to an organization yet,
-  so workspace routes refuse it (`product/next-steps/0.6-mcp-cli-and-agent.md`).
+  so workspace routes refuse it (`product/design/clients/mcp-cli-and-agent.md`).
 - `apps/web/src/routes/oauth/consent.tsx`: where the person approves or
   narrows a grant.
 

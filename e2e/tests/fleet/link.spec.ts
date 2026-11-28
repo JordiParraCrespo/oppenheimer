@@ -4,7 +4,7 @@ import { attach, pairedHosts, type Terminal } from '../../support/fleet';
 import { connectInstallation, createSession } from '../../support/sessions';
 
 /**
- * One link per host, however many sessions it runs (01, "Parties and
+ * One link per host, however many sessions it runs (`product/design/foundations/protocol.md`, "Parties and
  * sockets"): ten sessions attached at once ride the runner's one connection,
  * which it opened once and never had to open again.
  *

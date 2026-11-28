@@ -2,7 +2,7 @@
 
 Does a bot write each fact to the right memory?
 
-A bot has two memories (`product/versions/mvp/25-bots.md` §4.1):
+A bot has two memories (`product/design/bots/bots.md` §4.1):
 
 - **its own** (`memory: "yours"`, the default): read by that bot alone. Its
   job goes here: the person's projects, repositories, folders, hosts,

@@ -261,6 +261,7 @@ export class WorkSessionMapper
     );
     dto.cloud = entity.cloudRun ? SessionCloudRunMapper.toResponse(entity.cloudRun) : null;
     dto.hidden = entity.hidden;
+    dto.unreadReport = entity.unreadReportHash;
     return dto;
   }
 

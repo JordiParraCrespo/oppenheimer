@@ -43,7 +43,7 @@ var (
 	// An allowlist a bot asked to grow past what the policy file holds.
 	ErrExecAllowFull = problem.New("EXEC_009", http.StatusRequestEntityTooLarge, "The host's allowlist is full")
 	// A bot using the host's screen, mouse and keyboard (`computer.act`,
-	// 25 §4.2). The codes are the protocol's, named in packages/shared's
+	// product/design/bots/bots.md §4.2). The codes are the protocol's, named in packages/shared's
 	// computerActSchema.
 	ErrComputerOff        = problem.New("COMPUTER_001", http.StatusForbidden, "Using this host's screen is off")
 	ErrComputerNoScreen   = problem.New("COMPUTER_002", http.StatusFailedDependency, "This host has no screen the runner can use")

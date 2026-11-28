@@ -3,7 +3,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 /**
  * A contact's turn: a turn a bot runs for someone who is not its owner, a
  * person or a group a WhatsApp number allows
- * (`product/next-steps/answering-on-telegram-and-whatsapp.md` §3). It is
+ * (`product/design/channels/answering-on-telegram-and-whatsapp.md` §3). It is
  * queued on the owner's account, as every turn is, so `bot_turn."contact"`
  * is what tells the turn to run without the owner's tools or memory, and
  * which kind of chat it answers: `direct` (one person) or `group`; null for

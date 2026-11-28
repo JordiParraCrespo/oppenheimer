@@ -1,9 +1,9 @@
-# Lessons from herdr and from a minimal SSH web terminal (formerly note 13)
+# Lessons from herdr and from a minimal SSH web terminal
 
 Two codebases read in full after the runner was built, to check the
 architecture against prior art: `herdrdev/herdr` (Rust, ~366 source
 files, Apache-2.0) and `wuchihsu/go-ssh-web-client` (Go, 340 lines).
-Note 03 already cited herdr from its website; this note is from the
+`../archive/machines-and-vm-provisioning.md` already cited herdr from its website; this note is from the
 source.
 
 ## 1. herdr
@@ -49,7 +49,7 @@ That is a trade, not a win on every axis:
 
 For a browser product where the machine is remote and the session must
 outlive the tab, the wifi, and an upgrade of our own binary, surviving
-processes is the feature. Our note 01 already chose the terminal as the
+processes is the feature. Our `../archive/terminal-first.md` already chose the terminal as the
 primitive; this is the same choice one level down, and herdr is the
 evidence for what the alternative costs.
 
@@ -76,7 +76,7 @@ fallback** for agents without hooks, with hook authority cleared on
 process exit.
 
 Three of those land directly on our open question 2 in
-`versions/mvp/02-runner.md`:
+`design/runner/runner.md`:
 
 1. **Hooks beat scraping** where an agent has them. Scraping stays as
    the fallback, and the arbitration lives in one place. The open
@@ -126,13 +126,13 @@ between a demo and a product:
   into thousands of frames. Ours reads 32 KB.
 - **Frame types inverted.** PTY bytes go as text frames and the resize
   message as binary. Bytes are binary and control messages are JSON —
-  that was already our decision (01 §framing); this is the worked
+  that was already our decision (`../design/foundations/protocol.md` §framing); this is the worked
   example of what the other way costs.
 - **`ssh.InsecureIgnoreHostKey`**, which the file itself flags as not
   for production. Our equivalent is the pinned control-plane
   fingerprint (F6), and it is not optional.
 - **No flow control**, so a runaway process floods the socket. We ack
-  consumed bytes and pause the PTY (01 §flow control).
+  consumed bytes and pause the PTY (`../design/foundations/protocol.md` §flow control).
 - A goroutine leak worth remembering: two goroutines both send on a
   `closeSig` channel of capacity one, and the second blocks forever.
 
@@ -191,7 +191,7 @@ and "Core is a runtime, not a multiplexer".
 
 ### Measured
 
-`herdr-bench/` (its README says how to run it) drives tmux as the runner's
+`spikes/herdr-bench/` (its README says how to run it) drives tmux as the runner's
 adapter does, herdr-core over its socket, and a bare PTY, on one 4-vCPU
 Linux machine (tmux 3.4, herdr-core 0.1.16). Key to echo, ms, p50 / p99:
 

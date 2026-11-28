@@ -6,10 +6,13 @@ import type { InboxItem } from '@oppenheimer/frontend-consumer';
  * keyed by the session instead, so a refused answer's error stays over the
  * decision it now waits on; a bot's notice by the bot, so a new notice from a
  * bot you are answering in place (a notice is the bot's latest, under a new
- * id) leaves its chat open and your draft focused.
+ * id) leaves its chat open and your draft focused; a session left
+ * unattended by the session, so an event in its log (which renames its turn)
+ * leaves its open session where it is.
  */
 export function inboxCardKey(item: InboxItem): string {
   if (item.kind === 'session') return `session:${item.session.id}`;
+  if (item.kind === 'unattended') return `unattended:${item.session.id}`;
   if (item.kind === 'botNotice') return `botNotice:${item.notice.botId}`;
   return item.key;
 }

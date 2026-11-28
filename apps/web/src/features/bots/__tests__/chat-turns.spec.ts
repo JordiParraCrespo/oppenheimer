@@ -1,20 +1,24 @@
 import type {
   BotConversationEntity,
   BotMessageEntity,
+  BotToolStep,
   BotTurnEntity,
 } from '@oppenheimer/frontend-consumer';
+import type { BotSubagentProgress } from '@oppenheimer/shared/schemas/bot';
 import { describe, expect, it } from 'vitest';
 import {
   type ChatTurnBlock,
   chatTurns,
   compactTokens,
   isQuietRoutineRun,
+  liveLineFor,
   markersBefore,
   newestSentId,
   replyText,
   retryContent,
   turnDurationMs,
   turnPhase,
+  turnTrail,
   visibleTurns,
 } from '../lib/chat-turns';
 
@@ -341,11 +345,18 @@ describe('markersBefore', () => {
       at('2026-10-15T09:00:00', 'glm-5.3'),
       at('2026-10-15T10:00:00', 'glm-4.6'),
     ];
-    expect(markersBefore(blocks, 0)).toEqual({ day: null, model: null });
-    expect(markersBefore(blocks, 1)).toEqual({ day: null, model: null });
-    expect(markersBefore(blocks, 2).day?.getDate()).toBe(15);
-    expect(markersBefore(blocks, 2).model).toBeNull();
-    expect(markersBefore(blocks, 3)).toEqual({ day: null, model: blocks[3]?.turn });
+    expect(markersBefore(blocks, 0, true)).toEqual({ day: null, model: null });
+    expect(markersBefore(blocks, 1, true)).toEqual({ day: null, model: null });
+    expect(markersBefore(blocks, 2, true).day?.getDate()).toBe(15);
+    expect(markersBefore(blocks, 2, true).model).toBeNull();
+    expect(markersBefore(blocks, 3, true)).toEqual({ day: null, model: blocks[3]?.turn });
+  });
+
+  /** The quiet chat names no model: a switch with the tool calls hidden draws no note, the day line stays. */
+  it('marks no model switch while the tool calls are hidden', () => {
+    const blocks = [at('2026-10-14T09:00:00', 'glm-5.3'), at('2026-10-15T10:00:00', 'glm-4.6')];
+    expect(markersBefore(blocks, 1, false).model).toBeNull();
+    expect(markersBefore(blocks, 1, false).day?.getDate()).toBe(15);
   });
 });
 
@@ -434,5 +445,80 @@ describe('a task wake while the tool calls are hidden', () => {
   it('draws every task line once the tool calls show', () => {
     const shown = visibleTurns(blocks, true);
     expect(shown.map((block) => block.asked.map((row) => row.id))).toEqual([['e-t1'], ['e-t2']]);
+  });
+});
+
+describe('turnTrail', () => {
+  const replied = block('completed', [], [said('r', 'assistant', 'Done.')]);
+  const ranTools = block('completed', [], [said('a', 'activity', '')]);
+
+  /**
+   * The two views' trails, decided once. What breaks this: the quiet chat
+   * trailing time, model or tokens, its actions standing under every reply,
+   * or a stopped turn losing its Stopped behind a hover.
+   */
+  it('trails everything, always, while the tool calls are shown', () => {
+    expect(turnTrail(replied, 'completed', true, false)).toEqual({
+      meta: 'full',
+      actions: 'always',
+    });
+    expect(turnTrail(ranTools, 'completed', true, false)).toEqual({
+      meta: 'full',
+      actions: 'always',
+    });
+  });
+
+  it('trails a reply with its actions on hover and no words while they are hidden', () => {
+    expect(turnTrail(replied, 'completed', false, false)).toEqual({
+      meta: 'none',
+      actions: 'onHover',
+    });
+  });
+
+  it('keeps Stopped standing, with its actions, on a stopped turn', () => {
+    expect(turnTrail(block('cancelled', []), 'cancelled', false, true)).toEqual({
+      meta: 'stopped',
+      actions: 'always',
+    });
+  });
+
+  it('trails a turn that only ran tools only when it is the newest, for its Retry', () => {
+    expect(turnTrail(ranTools, 'completed', false, false)).toBeNull();
+    expect(turnTrail(ranTools, 'completed', false, true)).toEqual({
+      meta: 'none',
+      actions: 'onHover',
+    });
+  });
+});
+
+describe('liveLineFor', () => {
+  const step = { callId: 'c1', name: 'web_search' } as BotToolStep;
+  const child: BotSubagentProgress = {
+    task: 'a',
+    state: 'running',
+    toolCalls: [],
+    startedAt: null,
+    durationMs: null,
+  };
+  const startedAt = new Date('2026-11-27T10:00:00Z');
+  const running = { step, subagents: { c1: [child] }, startedAt, writing: false };
+
+  /**
+   * What breaks this: the quiet chat's live line naming the running call,
+   * counting its subagents or ticking a clock, or staying under the words
+   * as they stream in.
+   */
+  it('shows the call, its subagents and the clock while the tool calls are shown', () => {
+    expect(liveLineFor(true, running)).toEqual({ step, subagents: [child], since: startedAt });
+    expect(liveLineFor(true, { ...running, writing: true })).not.toBeNull();
+  });
+
+  it('is a thinking word alone while they are hidden, and none once words stream in', () => {
+    expect(liveLineFor(false, running)).toEqual({
+      step: undefined,
+      subagents: undefined,
+      since: null,
+    });
+    expect(liveLineFor(false, { ...running, writing: true })).toBeNull();
   });
 });

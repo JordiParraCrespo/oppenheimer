@@ -1,5 +1,6 @@
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { inboxAnswered } from '@oppenheimer/frontend-consumer/react';
+import { inboxHeld } from './inbox-held';
 
 /**
  * What happened in the Inbox on this visit: the items sent to the end with
@@ -54,6 +55,7 @@ export const inboxVisit = {
     write({ ...visit, later: add(visit.later, key) });
   },
   done(item: InboxItem) {
+    inboxHeld.release(item.key);
     write({
       ...visit,
       done: add(visit.done, item.key),
@@ -63,6 +65,7 @@ export const inboxVisit = {
   },
   /** Deleted: out of Show done, and cleared. */
   forget(key: string) {
+    inboxHeld.release(key);
     write({
       ...visit,
       done: visit.done.filter((k) => k !== key),
@@ -71,6 +74,7 @@ export const inboxVisit = {
   },
   /** Snoozed, or put away some other way that leaves no row for this visit. */
   cleared(key: string) {
+    inboxHeld.release(key);
     write({ ...visit, cleared: add(visit.cleared, key) });
   },
   /**
@@ -79,6 +83,7 @@ export const inboxVisit = {
    * cleared once.
    */
   answered(key: string, ...alsoSettles: string[]) {
+    inboxHeld.release(key);
     inboxAnswered.add(key, ...alsoSettles);
     write({ ...visit, cleared: add(visit.cleared, key) });
   },
@@ -90,6 +95,7 @@ export const inboxVisit = {
   },
   clear() {
     inboxAnswered.clear();
+    inboxHeld.release(inboxHeld.get()?.key ?? '');
     if (visit !== EMPTY) write(EMPTY);
   },
 };

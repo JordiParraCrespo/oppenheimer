@@ -7,7 +7,7 @@
 "@oppenheimer/translations": patch
 ---
 
-Bots, the Needs input card (`product/versions/mvp/25-bots.md` §5).
+Bots, the Needs input card (`product/design/bots/bots.md` §5).
 
 - `@oppenheimer/shared`: `BOT_APPROVAL_STATUSES`, `decideBotApprovalSchema`,
   `findBotApprovalsSchema`, the `event` message role and the `approval`

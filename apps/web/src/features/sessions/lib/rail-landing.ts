@@ -19,7 +19,7 @@ export type RailItemId = (typeof RAIL_ROUTES)[number]['id'];
 export const RAIL_ORDER_KEY = 'oppenheimer.rail.order';
 
 /**
- * The Inbox goes first for everyone once (`29-inbox.md`, "Its own page"): an
+ * The Inbox goes first for everyone once (`product/design/console/inbox.md`, "Its own page"): an
  * order stored while it was Plan's section lacks it, and gets it at the
  * front rather than the end. Once the reader drags, the order they drop is
  * kept as it is.

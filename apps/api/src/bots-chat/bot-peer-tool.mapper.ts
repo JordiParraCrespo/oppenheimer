@@ -251,7 +251,7 @@ export function engineLabelOf(provider: BotProvider, model: string | null): stri
 }
 
 /**
- * `update_bot`'s input (`25-bots.md` §4.6): the bots to change, by id, and
+ * `update_bot`'s input (`product/design/bots/bots.md` §4.6): the bots to change, by id, and
  * what to change on each. A field left out stays as it is.
  */
 export interface UpdateBotsInput {
