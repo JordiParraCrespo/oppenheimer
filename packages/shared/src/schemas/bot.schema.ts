@@ -995,7 +995,7 @@ export const BOT_CHECK_BACK_ABOUT_MAX = 300;
 
 /**
  * A bot checking back on something it delegated or waits on, from its own
- * `check_back` call (`27-bot-subscriptions.md` §7.3): one line opening the
+ * `check_back` call (`product/design/bots/bot-subscriptions.md` §7.3): one line opening the
  * turn of each look. A chain is the looks at one thing, step 0 first, each
  * look's call setting the next while the thing is still pending.
  */

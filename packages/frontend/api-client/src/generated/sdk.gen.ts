@@ -1450,7 +1450,7 @@ export const findSessions = <ThrowOnError extends boolean = false>(options?: Opt
 /**
  * Start a session
  *
- * A new worktree: repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the control plane names the working branch (`sessionBranchName`) and each checkout on the response carries it. Or a folder already on the host (`folder`, an absolute path, never with `checkouts`), where nothing is cloned or written (`product/versions/mvp/24-session-places.md`). Without a `projectId` the session lands in the workspace’s Unassigned project (`product/versions/mvp/03-control-plane.md`). With `teleport`, a Claude Code cloud session’s id, the agent continues that cloud session in the new worktree (`claude --teleport`) instead of starting a conversation; it takes one checkout and no `prompt`.
+ * A new worktree: repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the control plane names the working branch (`sessionBranchName`) and each checkout on the response carries it. Or a folder already on the host (`folder`, an absolute path, never with `checkouts`), where nothing is cloned or written (`product/design/sessions/session-places.md`). Without a `projectId` the session lands in the workspace’s Unassigned project (`product/design/foundations/control-plane.md`). With `teleport`, a Claude Code cloud session’s id, the agent continues that cloud session in the new worktree (`claude --teleport`) instead of starting a conversation; it takes one checkout and no `prompt`.
  */
 export const createSession = <ThrowOnError extends boolean = false>(options: Options<CreateSessionData, ThrowOnError>): RequestResult<CreateSessionResponses, CreateSessionErrors, ThrowOnError> => (options.client ?? client).post<CreateSessionResponses, CreateSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1465,7 +1465,7 @@ export const createSession = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * Start a session in the cloud
  *
- * The vendor’s own agent (Cursor’s, today) on one repository, from its base branch, on the caller’s key for the vendor (`PUT /cloud-agents/providers/{provider}/credential`), listed with every session in the place `cloud`: no host, terminal or checkout. Its row opens the agent’s page at the vendor, where it is followed up and stopped; its state follows what the vendor says about its run (`product/next-steps/cloud-agents.md`).
+ * The vendor’s own agent (Cursor’s, today) on one repository, from its base branch, on the caller’s key for the vendor (`PUT /cloud-agents/providers/{provider}/credential`), listed with every session in the place `cloud`: no host, terminal or checkout. Its row opens the agent’s page at the vendor, where it is followed up and stopped; its state follows what the vendor says about its run (`product/design/sessions/cloud-agents.md`).
  */
 export const startCloudSession = <ThrowOnError extends boolean = false>(options: Options<StartCloudSessionData, ThrowOnError>): RequestResult<StartCloudSessionResponses, StartCloudSessionErrors, ThrowOnError> => (options.client ?? client).post<StartCloudSessionResponses, StartCloudSessionErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1869,7 +1869,7 @@ export const moveSession = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * List a folder on a host
  *
- * The sub-directories of one folder on the host, listed by its runner now: names only, hidden ones left out, with the branch of each that is a git repository. Nothing is cached. `recent` is the caller’s own earlier folder sessions on this host (`product/versions/mvp/24-session-places.md`).
+ * The sub-directories of one folder on the host, listed by its runner now: names only, hidden ones left out, with the branch of each that is a git repository. Nothing is cached. `recent` is the caller’s own earlier folder sessions on this host (`product/design/sessions/session-places.md`).
  */
 export const findHostFolders = <ThrowOnError extends boolean = false>(options: Options<FindHostFoldersData, ThrowOnError>): RequestResult<FindHostFoldersResponses, FindHostFoldersErrors, ThrowOnError> => (options.client ?? client).get<FindHostFoldersResponses, FindHostFoldersErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
@@ -1880,7 +1880,7 @@ export const findHostFolders = <ThrowOnError extends boolean = false>(options: O
 /**
  * Search the folders on a host
  *
- * The folders under the host’s home whose name holds `q`, found by its runner now: a walk a few levels deep that skips hidden folders and dependency trees and does not look inside git repositories. Best match first, at most fifty; `truncated` says there may be more (`product/versions/mvp/24-session-places.md`).
+ * The folders under the host’s home whose name holds `q`, found by its runner now: a walk a few levels deep that skips hidden folders and dependency trees and does not look inside git repositories. Best match first, at most fifty; `truncated` says there may be more (`product/design/sessions/session-places.md`).
  */
 export const searchHostFolders = <ThrowOnError extends boolean = false>(options: Options<SearchHostFoldersData, ThrowOnError>): RequestResult<SearchHostFoldersResponses, SearchHostFoldersErrors, ThrowOnError> => (options.client ?? client).get<SearchHostFoldersResponses, SearchHostFoldersErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

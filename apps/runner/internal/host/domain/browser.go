@@ -9,7 +9,7 @@ import (
 )
 
 // BrowserPolicy is whether this host lets bots drive a browser of their own
-// on it (`browser.act`, 25 §4.2). Like ComputerPolicy it is the host's own
+// on it (`browser.act`, product/design/bots/bots.md §4.2). Like ComputerPolicy it is the host's own
 // setting, in a file `runner browser` writes, or a bot when the person asked
 // it to (`host.settings.set`): a browser here reaches whatever this machine reaches, its local network included.
 type BrowserPolicy struct {

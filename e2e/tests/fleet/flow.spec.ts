@@ -4,7 +4,7 @@ import { attach, pairedHosts, type Terminal } from '../../support/fleet';
 import { connectInstallation, createSession } from '../../support/sessions';
 
 /**
- * Flow control on the link (01, "Flow control and reconnect"): panes printing
+ * Flow control on the link (`product/design/foundations/protocol.md`, "Flow control and reconnect"): panes printing
  * tens of megabytes finish and still answer — credit keeps flowing back, so
  * no pane stalls for good — and typing in a quiet pane on the same host is not
  * queued behind them, because the runner's writer takes attachments in turn.

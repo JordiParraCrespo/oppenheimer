@@ -10,7 +10,7 @@
 ---
 
 Update a host's runner from the console: **Update runner** in a host card's
-menu on Settings → Hosts (09 §5, "Manual control").
+menu on Settings → Hosts (`product/design/runner/runner-install-and-update.md` §5, "Manual control").
 
 - `@oppenheimer/api`: `POST /v1/hosts/{id}/update` sends `host.update` down
   the host's link, through the links module's registry, and answers `202`.

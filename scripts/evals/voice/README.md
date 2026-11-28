@@ -1,7 +1,7 @@
 # Voice eval
 
 Does dictation write what the speaker meant, as well as Wispr Flow does?
-Issue #393 and `product/next-steps/voice.md` ("How we know it works") ask
+Issue #393 and `product/design/console/voice.md` ("How we know it works") ask
 for this: about 30 real clips, the owner's voice among them, in Spanish,
 English, Catalan and mixed, each with the text it should become.
 

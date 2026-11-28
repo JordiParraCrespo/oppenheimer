@@ -2,9 +2,9 @@
 
 Open question 4 of [the desktop spike](desktop-app-spike.md) asked
 whether the desktop should be Electron or Tauri. This note answers it with
-a Tauri twin of that spike (`desktop-tauri/`) and the same bench run in
+a Tauri twin of that spike (`spikes/desktop-tauri/`) and the same bench run in
 both shells. It decides nothing. If the owner picks a shell, the decision
-goes in the numbered desktop note under `versions/mvp/` that the spike
+goes in the numbered desktop note under `design/` that the spike
 already calls for.
 
 ## What was built
@@ -14,14 +14,14 @@ already calls for.
   reached through `window.oppenheimerDesktop`. That is the `LocalTerminals`
   port the console already binds (`apps/web/src/lib/oppenheimer.ts`), so
   `apps/web` needs no change for either shell.
-- **Electron** is the spike as it was (`desktop-spike/`). It gained one
+- **Electron** is the spike as it was (`spikes/desktop-spike/`). It gained one
   hook: print when the console has loaded and run the bench script under
   `OPPENHEIMER_BENCH`.
-- **Tauri 2.12** (`desktop-tauri/src-tauri/src/main.rs`) implements the
+- **Tauri 2.12** (`spikes/desktop-tauri/src-tauri/src/main.rs`) implements the
   bridge in Rust: an HTTP `GET` and a WebSocket over the runner's Unix
   socket (tokio and tungstenite), the same 1 MiB / 256 KiB credit window,
   attachments owned by the page that opened them and closed when it
-  navigates. The page side (`desktop-tauri/bridge.js`) is an
+  navigates. The page side (`spikes/desktop-tauri/bridge.js`) is an
   initialization script that turns Tauri's IPC and a channel into the same
   contract the Electron preload exposes.
 
@@ -29,13 +29,13 @@ already calls for.
 
 Both shells loaded the production build of `apps/web` (`vite preview`,
 with the `/api` proxy) against the real API from `scripts/stack/stack.mjs`.
-`desktop-tauri/bench/run.mjs` starts each shell with a fresh profile, five
+`spikes/desktop-tauri/bench/run.mjs` starts each shell with a fresh profile, five
 times each and alternating which goes first. In each run the page signs in
 through the console's own form, sits idle for five seconds, then drives
 the bridge against a stub of the runner's socket (`bench/stub-runner.mjs`:
 the same routes, echo on, and 21 MiB of output on request). Memory is
 summed over the whole process tree. The raw runs are in
-`desktop-tauri/results/`.
+`spikes/desktop-tauri/results/`.
 
 | Median of 5 runs | Electron 37 | Tauri 2.12 (WebKitGTK 2.52) |
 |---|---|---|
@@ -56,7 +56,7 @@ summed over the whole process tree. The raw runs are in
 | AppImage (brings its own engine) | 110 MiB | 77 MiB |
 
 Both rendered the console the same way after sign-in
-(`desktop-tauri/screenshots/`). Electron also shows its default
+(`spikes/desktop-tauri/screenshots/`). Electron also shows its default
 `File / Edit / View` menu bar, which the spike never removed.
 
 ### What the numbers needed
@@ -104,7 +104,7 @@ Both rendered the console the same way after sign-in
    are.
 5. **Tauri ties the console to each platform's WebView.** That means WebKit
    on macOS and Linux and WebView2 on Windows, so CSS, WebRTC (the direct
-   path, 22) and xterm's WebGL renderer have to be tested in each.
+   path, `../design/runner/direct-terminal-path.md`) and xterm's WebGL renderer have to be tested in each.
    Electron ships one Chromium, the same engine the console is developed
    and tested in.
 
@@ -125,7 +125,7 @@ Both rendered the console the same way after sign-in
 ## For the owner
 
 **Decided 2026-11-16: Electron.** The owner kept Electron for the desktop
-on the recommendation below (`../README.md`, "decisions that changed").
+on the recommendation below (`../decisions.md`).
 
 Recommendation: **stay on Electron for the first desktop.** Make Tauri a
 macOS-only question, and measure it on a Mac before choosing it. On the one

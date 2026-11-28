@@ -5,7 +5,7 @@ can see the person's hosts, start a coding session on any of them, prompt it,
 wait on it, close it, schedule automations, ask a bot and work the Plan board.
 It speaks protocol revision **`2026-07-28`**, and clients that still open with
 the 2025 `initialize` handshake are served from the same tool registry. The
-design is `product/next-steps/0.6-mcp-cli-and-agent.md`.
+design is `product/design/clients/mcp-cli-and-agent.md`.
 
 The agent sees only the tools its credential may use. The tool list is
 filtered by the credential's **effective scopes** (what it was granted,
@@ -99,7 +99,7 @@ stateless: every request re-resolves its credential.
 
 Not yet usable for workspace tools: an OAuth grant is not pinned to an
 organization, so the API answers the workspace's routes as it does for an
-unpinned token. The fix is open in `product/next-steps/0.6-mcp-cli-and-agent.md`.
+unpinned token. The fix is open in `product/design/clients/mcp-cli-and-agent.md`.
 Until then, the hosted entrypoint works with pinned API tokens.
 
 ## Configuration

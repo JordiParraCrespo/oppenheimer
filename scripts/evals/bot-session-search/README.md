@@ -4,7 +4,7 @@ Does a bot reach for `search_sessions` when it should, and query it well?
 
 Since 2026-11-09 a bot can search every session of the workspace, on any
 host and closed ones included, for the words of its name and log
-(`product/versions/mvp/25-bots.md` §4.2, "Searching every session"). Before,
+(`product/design/bots/bots.md` §4.2, "Searching every session"). Before,
 it could list the sessions of the moment and read one it had the id of, but
 not find where "the auth bug" was worked on last week. The search only helps
 if the model:

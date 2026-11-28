@@ -1,7 +1,7 @@
 # Orca's bots beside ours (2026-11-20)
 
 The owner asked how Orca's bots compare with ours. Orca (Stably, MIT,
-`orca.dev`, formerly `onorca.dev`) is the desktop app note 00 calls our
+`orca.dev`, formerly `onorca.dev`) is the desktop app `../archive/vision-and-plan.md` calls our
 closest analogue. Bots first appear in its changelog at 1.4.265, released on
 2026-11-19 ("Work with Orca Bots — managed agent sessions get their tools
 and identity"), so this reads a feature that is one day old.
@@ -14,14 +14,14 @@ Sources: `orca.dev/bots`, `orca.dev/docs/bots`, `…/docs/bots/connectors`,
 `8e0c267e` (2026-11-20). It confirms most of the docs and corrects a few
 rows below, which now cite it. Paths there are relative to Orca's `src/`.
 Claims drawn from file names, or from silence, are marked as inferred. Our side is the user guide (`apps/docs/docs/guide/bots.md`,
-`routines-and-watches.md`, `bot-skills.md`) and notes
-`versions/mvp/25-bots.md` and `26-bot-routines.md`.
+`routines-and-watches.md`, `bot-skills.md`) and
+`design/bots/bots.md` and `design/bots/bot-routines.md`.
 
 ## 1. The one real difference: where the bot's loop runs
 
 | | Orca | Oppenheimer |
 | --- | --- | --- |
-| The bot's own loop | A Claude Code or Codex session (or another supported agent) that "lives in a folder on one computer" (read) | An LLM loop inside the control plane. It has no shell, no files and no host (25 §1) |
+| The bot's own loop | A Claude Code or Codex session (or another supported agent) that "lives in a folder on one computer" (read) | An LLM loop inside the control plane. It has no shell, no files and no host (`../design/bots/bots.md` §1) |
 | Who pays for the model | The user's agent subscription: "no new model bill, no markup" (read) | A workspace key per provider (Anthropic, OpenAI, xAI, GLM), or a ChatGPT sign-in that bills the subscription |
 | Code work | Hands off to **workers**: CLI sessions, each in its own worktree. The worker's pull request "comes back to the bot", and the bot "hands you the worktree" (read) | Starts a **session** on a host, then follows it: it wakes on input, done, failed or stuck, and reviews the work every ten minutes for up to an hour |
 | When the computer sleeps | Requests wait in Orca Cloud for up to a day (read). The bot itself is down while the machine is | The bot keeps answering. Only the sessions it starts need a host |
@@ -46,7 +46,7 @@ follows from this difference.
 | Watches within a task | A worker's turn stopping (finished, errored, needs input, exited, lost) and its permission prompts wake the bot. Pull requests do **not**: the bot must make a one-off automation on the PR's CI and review events. A read-only look-around runs every 4 hours on weekdays by default. No stall timer found (§6) | Sessions (input, done, failed, stopped), pull requests, projects and milestones; stall check; work review every ten minutes; `/loop`, `/goal` |
 | Tools | The CLI's own tools (shell, files), the `orca` CLI and `gh` through the shell, the owner's MCP servers plus its own, Composio, Google. No Orca MCP server is injected (§6) | Oppenheimer's own tools (sessions, hosts, plan, GitHub, automations, mail, WhatsApp, Telegram, other bots), web search and fetch, read-only subagents. No MCP |
 | Permissions | The CLI's own modes: Claude Code `default`, `acceptEdits`, `auto`, or `--dangerously-skip-permissions` for Full access; Codex's approval and sandbox policy. The default is Full access (`shared/settings/default-global-settings.ts:174,270`). Merging and sending mail have no gate in code; the rules are prompt text (`main/bots/bot-preamble.ts:58`). What code does enforce: read-only background runs, through a PreToolUse hook that overrides Full access | Approve for me or Full access, plus Allow/Ask/Off per tool, standing grants and plain-language rules. Sending, scheduling or trashing mail always asks. A merge is pinned to the head shown on its card. All enforced in the control plane |
-| Who may ask a bot | Only you by default. People you add act with *your* access | Only you: workspaces are personal (note 08) |
+| Who may ask a bot | Only you by default. People you add act with *your* access | Only you: workspaces are personal (`../design/foundations/auth.md`) |
 | Where results land | In the thread, pull request or issue where the bot was asked; a "Needs you" queue across bots | The bot's chat; Needs input cards; the Inbox |
 | Data held by the vendor | Orca Cloud relays Slack, GitHub, Linear and webhooks, and keeps some text, including webhook bodies, for up to 7 days | Everything is held by Oppenheimer, which runs the control plane |
 
@@ -97,15 +97,15 @@ The notes that own each area decide these.
 
 1. **A webhook trigger for routines**, signed and rotatable, with the body
    marked as outside data like mail is today. Our guide already lists it as
-   not built (`26-bot-routines.md`).
+   not built (`../design/bots/bot-routines.md`).
 2. **Asking a bot from a GitHub mention or a label** (`bot:<name>`), with
    the answer in the pull request or issue. The GitHub App already receives
    these events. This is the smallest form of Orca's main reach
-   (`25-bots.md` §4.4, `next-steps/channels.md`).
+   (`../design/bots/bots.md` §4.4, `design/channels/channels.md`).
 3. **Bot templates**, created with their routines paused, which is Orca's
-   safe default (`25-bots.md` §1).
+   safe default (`../design/bots/bots.md` §1).
 4. **cron/RRULE schedules** and a **precheck** (a cheap condition that skips
-   a run) on routines and automations (`26-bot-routines.md`).
+   a run) on routines and automations (`../design/bots/bot-routines.md`).
 5. **Import** from OpenClaw or Hermes, mapping them to `SOUL.md`, memory,
    skills and paused routines. This has low value until someone asks for it.
 
@@ -192,7 +192,7 @@ What this adds to §4:
 
 - **An own-pull-request guard.** Check whether a routine on "pull request
   opened" fires for a pull request that the bot's own session opened. If it
-  does, add Orca's guard (`26-bot-routines.md`).
+  does, add Orca's guard (`../design/bots/bot-routines.md`).
 - **Restoring memory lines.** A fact removed outside `forget` comes back.
   This matters only if a bot ever edits its memory as a file; ours goes
   through tools.

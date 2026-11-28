@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
  * A bot's empty chat, on its own page and beside a session: its face, its
  * name and one line on what it is there for, centred and quiet, leaving the
  * room to the box under it. Until 2026-11-16 the page asked for a job at
- * 34px over four tiles (`25-bots.md` §3); the owner found it loud.
+ * 34px over four tiles (`bots.md` §3); the owner found it loud.
  */
 export function BotHello({
   name,

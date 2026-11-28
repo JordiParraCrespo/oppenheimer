@@ -13,7 +13,7 @@ import { SESSION_LOOKUP } from '../../sessions/sessions.di-tokens';
 /**
  * `credentials.token` → `credentials.grant`: the runner asks on the link for one
  * session repository's installation token, because the link is the only channel
- * already authenticated per host (01).
+ * already authenticated per host (`product/design/foundations/protocol.md`).
  *
  * Before minting: the session and checkout exist and are live, the session runs on
  * **this** link's host, the named repository is the checkout's, and the session's

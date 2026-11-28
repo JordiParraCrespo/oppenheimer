@@ -27,5 +27,7 @@
   "employees": "Employees",
   "account": "Account",
   "pullRequestsShort": "PRs",
-  "inbox": "Inbox"
+  "inbox": "Inbox",
+  "employeesShort": "Bots",
+  "automationsShort": "Autos"
 }

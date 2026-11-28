@@ -10,7 +10,7 @@ group, saying their line before was for Adri, and the bot cut in with
 (`core/turn-context.contact-group-who`) to read the last messages, work out
 who the new one is for, answer only what is for it, and otherwise reply
 `[silent]`, which `contactReplyOf` sends to no one. The design is
-`product/next-steps/answering-on-telegram-and-whatsapp.md` §5 (2026-11-25).
+`product/design/channels/answering-on-telegram-and-whatsapp.md` §5 (2026-11-25).
 
 The unit specs prove that a `[silent]` reply reaches no one
 (`deliver-channel-reply.command-handler.spec.ts`). This eval proves the half

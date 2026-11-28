@@ -8,7 +8,7 @@
 ---
 
 `opp` and the MCP server: people, scripts and agents on other hosts drive
-Oppenheimer over the API (`product/next-steps/0.6-mcp-cli-and-agent.md`).
+Oppenheimer over the API (`product/design/clients/mcp-cli-and-agent.md`).
 
 - `@oppenheimer/cli`: new. `opp hosts`, `projects`, `sessions
   list|get|run|send|wait|stop|close`, `automations

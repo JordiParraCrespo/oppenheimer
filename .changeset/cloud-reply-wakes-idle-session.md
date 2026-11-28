@@ -9,7 +9,7 @@
 ---
 
 A reply typed in a Claude Code cloud session's chat wakes the session when
-it is idle (`product/next-steps/cloud-agents.md`, "Waking an idle session").
+it is idle (`product/design/sessions/cloud-agents.md`, "Waking an idle session").
 
 - `@oppenheimer/shared`: the link's `cloud.reply` and `cloud.replied`, the
   `session.cloud.reply` capability, the `cloud-reply-wakes` queue,

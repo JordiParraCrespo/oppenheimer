@@ -5,7 +5,7 @@
 // On 2026-11-23 Oppie started a release session, said it would verify the
 // release before calling it done, and went silent until the owner asked
 // "Have you finished?". A bot now sets its own look with `check_back` on
-// anything it delegates or waits on (`27-bot-subscriptions.md` §7.3), and a
+// anything it delegates or waits on (`product/design/bots/bot-subscriptions.md` §7.3), and a
 // look speaks only when the work moved or needs help.
 //
 // Two kinds of case in `cases.json`: `ask`, a message from the person about
