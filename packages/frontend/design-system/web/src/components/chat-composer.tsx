@@ -32,8 +32,8 @@ const DEFAULT_CHAT_COMPOSER_LABELS: ChatComposerLabels = {
 };
 
 /**
- * The send button's look, by layout and state. Inline, send is ink and rests
- * on the wash until there is something to send, and Stop, the one control a
+ * The send button's look, by layout and state. Inline, send is ink and shows
+ * only once there is something to send, and Stop, the one control a
  * reader reaches for while the agent works, takes the action blue. Stacked,
  * send is the primary and Stop the ink.
  */
@@ -146,8 +146,8 @@ function ChatComposer({
    * one row, the field opening at one line with send at its end, and `tools`
    * and `engine` as a quiet line under the box, so it does not crowd the
    * conversation above it. Its send is ink, not the blue: a round button
-   * that sits on the wash until there is something to send; while `busy`
-   * its stop takes the blue.
+   * that appears once there is something to send; while `busy` its stop
+   * takes the blue.
    */
   layout?: 'stacked' | 'inline';
   /**
@@ -173,6 +173,10 @@ function ChatComposer({
   });
 
   const inline = layout === 'inline';
+  // Inline, send comes in only once there is something to send: an empty
+  // row is the field, the mic and nothing else. Stop and a blocked send
+  // (which says why) stay.
+  const sendShown = !inline || busy || blocked || canSend;
   const field = (
     <CommandField
       inputRef={(node) => {
@@ -205,21 +209,23 @@ function ChatComposer({
   const send = (
     <>
       {dictation?.mic ? <span className="ml-1 flex">{dictation.mic}</span> : null}
-      <ComposerSendButton
-        busy={busy}
-        blocked={blocked}
-        canSend={canSend}
-        sendBlockedReason={sendBlockedReason}
-        labels={label}
-        onClick={submit}
-        className={sendButtonClass(layout, busy)}
-      >
-        {busy ? (
-          <span aria-hidden className="size-2.25 rounded-[2px] bg-current" />
-        ) : (
-          <ArrowUpIcon className="size-4" strokeWidth={2.2} />
-        )}
-      </ComposerSendButton>
+      {sendShown ? (
+        <ComposerSendButton
+          busy={busy}
+          blocked={blocked}
+          canSend={canSend}
+          sendBlockedReason={sendBlockedReason}
+          labels={label}
+          onClick={submit}
+          className={sendButtonClass(layout, busy)}
+        >
+          {busy ? (
+            <span aria-hidden className="size-2.25 rounded-[2px] bg-current" />
+          ) : (
+            <ArrowUpIcon className="size-4" strokeWidth={2.2} />
+          )}
+        </ComposerSendButton>
+      ) : null}
     </>
   );
   const paperclip = onAttach ? (

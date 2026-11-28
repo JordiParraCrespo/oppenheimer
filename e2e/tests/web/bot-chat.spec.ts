@@ -46,7 +46,9 @@ test('a GLM bot answers in its chat', async ({ page }) => {
   await page.getByRole('button', { name: /^Show the bot’s work/ }).click();
   await expect(page.locator('[data-slot="message-trail"]')).toContainText('GLM-5.3');
   await page.getByRole('button', { name: /^Hide the bot’s work/ }).click();
-  await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
+  // The turn is over and the box is empty: no Stop, and no send until something is written.
+  await expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Send' })).toHaveCount(0);
   // The sidebar's row previews the last thing said, in its tooltip.
   await page.locator('[data-slot="bot-row"]').filter({ hasText: 'Fruit Bot' }).hover();
   await expect(page.locator('[data-slot="tooltip-content"]')).toContainText(/pineapple/i);
