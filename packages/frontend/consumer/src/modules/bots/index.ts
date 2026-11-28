@@ -35,7 +35,7 @@ export {
   type WorkspaceBotApprovalEntity,
   type WorkspaceBotNoticeEntity,
 } from './bot-conversation.entity';
-export { type BotGroupSection, botGroupSections } from './bot-group-sections';
+export { type BotGroupSection, botGroupSections, botMatchesQuery } from './bot-group-sections';
 export type {
   BotPermissionRule,
   BotPermissionsEntity,

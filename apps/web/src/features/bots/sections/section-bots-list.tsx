@@ -4,7 +4,7 @@ import {
   SidebarEmptyRow,
   SortableGroup,
 } from '@oppenheimer/design-system-web';
-import type { BotEntity } from '@oppenheimer/frontend-consumer';
+import { type BotEntity, botMatchesQuery } from '@oppenheimer/frontend-consumer';
 import { useSuspenseSectionBots } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, useDragLabels, useOfflineOnce } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
@@ -46,8 +46,8 @@ export function SectionBotsList({
   const { bots, group, handlers, error: moveError, reset } = useSectionBotOrder(section, listed);
   const dragLabels = useDragLabels();
   useRememberSectionBotCount(section, bots.length);
-  const term = query.trim().toLowerCase();
-  const matched = term ? bots.filter((bot) => bot.name.toLowerCase().includes(term)) : bots;
+  const term = query.trim();
+  const matched = bots.filter((bot) => botMatchesQuery(bot, term));
 
   return (
     <>
@@ -67,7 +67,7 @@ export function SectionBotsList({
         </SidebarEmptyRow>
       ) : matched.length === 0 ? (
         <SidebarEmptyRow className="ml-3.5">
-          {t('bots.sidebar.noMatch', { query: query.trim() })}
+          {t('bots.sidebar.noMatch', { query: term })}
         </SidebarEmptyRow>
       ) : (
         <DragProvider

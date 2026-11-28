@@ -5,9 +5,9 @@ import {
 } from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, QueryState, SidebarSearchField } from '@oppenheimer/frontend-web';
+import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SectionBotsRowsSkeleton } from '@/features/bots/components/section-bots-rows-skeleton';
 import { useNewBot } from '@/features/bots/hooks/use-create-bot';
@@ -30,20 +30,21 @@ import { SectionBotsMenu } from './section-bots-menu';
  * (`useFoldedBots`), the panel closing on its height, and a fold leaves the bots' faces beside the label
  * (`SectionBotFaces`), the plus and its alerts.
  *
- * A `searchable` heading (Sessions') draws Search bots at the top of its
- * panel, so the field folds away with the rows and shows only while they
- * do. The settled search narrows the rows by name; it is not kept, and a
- * fold leaves it as it was.
+ * A `search` is drawn at the top of the panel, so it folds away with the
+ * rows and shows only while they do; `query`, its settled value, narrows the
+ * rows. A heading with neither lists every bot (`SearchableSectionBots` is
+ * the one that searches).
  */
 export function SectionBots({
   section,
-  searchable = false,
+  search,
+  query = '',
 }: {
   section: BotSection;
-  searchable?: boolean;
+  search?: ReactNode;
+  query?: string;
 }) {
   const { t } = useTranslation();
-  const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [saving, setSaving] = useState<ReadonlyMap<string, readonly BotSection[]>>(new Map());
   const fold = useFoldedBots(section);
@@ -99,14 +100,7 @@ export function SectionBots({
         className="mx-3 mb-2"
       />
       <SidebarFoldPanel open={fold.open}>
-        {searchable ? (
-          <SidebarSearchField
-            value={query}
-            onChange={setQuery}
-            label={t('bots.sidebar.search')}
-            clearLabel={t('bots.sidebar.clearSearch')}
-          />
-        ) : null}
+        {search}
         <QueryState>
           <QueryState.Pending>
             <SectionBotsRowsSkeleton count={rememberedBotCount(section)} />

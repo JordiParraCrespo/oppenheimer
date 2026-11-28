@@ -15,6 +15,17 @@ export interface BotGroupSection {
 }
 
 /**
+ * Whether `bot` is one a sidebar's settled search keeps: its name holds the
+ * search, ignoring case and the spaces around it. An empty search keeps
+ * every bot. Employees, its pinned bots and a section's Bots heading all
+ * narrow by this one rule.
+ */
+export function botMatchesQuery(bot: BotEntity, query: string): boolean {
+  const term = query.trim().toLowerCase();
+  return !term || bot.name.toLowerCase().includes(term);
+}
+
+/**
  * The Employees list's sections for a settled search: the groups in their order,
  * each with its bots by position, and Ungrouped above the group
  * `ungroupedBefore` names, or last when it names none or a group that is
@@ -37,9 +48,9 @@ export function botGroupSections(
     ungroupedBefore,
   }: { keepUngrouped?: boolean; hidden?: readonly string[]; ungroupedBefore?: string } = {},
 ): BotGroupSection[] {
-  const term = query.trim().toLowerCase();
+  const term = query.trim();
   const matches = (bot: BotEntity) =>
-    term ? bot.name.toLowerCase().includes(term) : !hidden.includes(bot.id);
+    term ? botMatchesQuery(bot, term) : !hidden.includes(bot.id);
   const known = new Set(groups.map((group) => group.id));
   const hiddenIn = (groupId: string | null) =>
     term

@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { SectionBotsSkeleton } from '@/features/bots/sections/section-bots-skeleton';
+import { SearchableSectionBotsSkeleton } from '@/features/bots/sections/searchable-section-bots-skeleton';
 import { SessionsSidebar } from '@/features/sessions/sections/sessions-sidebar';
 import type { ConsoleList } from '@/lib/console';
 
@@ -39,6 +39,12 @@ const SectionBots = lazy(() =>
     default: module.SectionBots,
   })),
 );
+/** Sessions' Bots heading, which searches its rows. */
+const SearchableSectionBots = lazy(() =>
+  import('@/features/bots/sections/searchable-section-bots').then((module) => ({
+    default: module.SearchableSectionBots,
+  })),
+);
 
 /**
  * The sidebar body beside the rail, for the list the address is under. Route
@@ -51,7 +57,7 @@ const SectionBots = lazy(() =>
  * draws them, and each sidebar takes them as its `bots` slot and places
  * them where the design does. On sessions, the first page most visits
  * open, the bots' code arriving after the shell's holds its place
- * (`SectionBotsSkeleton`) so the list under it does not drop when it lands.
+ * (`SearchableSectionBotsSkeleton`) so the list under it does not drop when it lands.
  * Two features that never import each other.
  */
 export function ConsoleSidebar({ list }: { list: ConsoleList }) {
@@ -59,8 +65,8 @@ export function ConsoleSidebar({ list }: { list: ConsoleList }) {
     return (
       <SessionsSidebar
         bots={
-          <Suspense fallback={<SectionBotsSkeleton section="sessions" searchable />}>
-            <SectionBots section="sessions" searchable />
+          <Suspense fallback={<SearchableSectionBotsSkeleton section="sessions" />}>
+            <SearchableSectionBots section="sessions" />
           </Suspense>
         }
       />
