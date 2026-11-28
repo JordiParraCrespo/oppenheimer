@@ -94,6 +94,24 @@ describe('bindWatcherHistory', () => {
     term.dispose();
   });
 
+  it('keeps a cleared screen’s blank rows, so the lines above it still scroll', async () => {
+    // What breaks this: every trailing newline trimmed, the blank rows of a
+    // screen a program cleared with them, and the history pulled up into
+    // the screen, so there is nothing above it and scrolling up does nothing.
+    const { term, container } = liveGrid();
+    const { stream, answer } = watcherStream();
+    const onChange = vi.fn();
+    const history = bindWatcherHistory(term, container, stream, onChange);
+
+    history.wheel(-3);
+    const screen = ['$ clear', '$ ', ...Array.from({ length: term.rows - 2 }, () => '')];
+    answer({ text: `old 1\nold 2\nold 3\n${screen.join('\n')}\n`, truncated: false });
+    await settle();
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ kind: 'open' });
+    history.dispose();
+    term.dispose();
+  });
+
   it('stays on the live grid when there is nothing above the screen', async () => {
     const { term, container } = liveGrid();
     const { stream, answer } = watcherStream();

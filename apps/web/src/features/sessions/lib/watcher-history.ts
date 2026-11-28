@@ -139,7 +139,10 @@ export function bindWatcherHistory(
     });
 
     // The cursor is the live grid's, not the page's.
-    view.write(`\u001b[?25l${text.replace(/\n+$/, '')}`, () => {
+    // Only the last line's separator goes: the blank rows before it are the
+    // screen's own, and they place where the scrollback ends.
+    const page = text.endsWith('\n') ? text.slice(0, -1) : text;
+    view.write(`\u001b[?25l${page}`, () => {
       if (overlay?.view !== view) return;
       if (view.buffer.active.baseY === 0) {
         // Nothing above the screen: nothing to scroll back through.
