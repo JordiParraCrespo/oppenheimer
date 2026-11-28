@@ -69,6 +69,11 @@ type Launch struct {
 	// (the context, the plan's usage) for the chat. It is this host's, so it
 	// is set at each launch and never saved.
 	StatusLine string `json:"-"`
+	// RemoteControl is the name Claude Code registers the session under with
+	// Remote Control, so the Claude app and claude.ai/code reach it as well
+	// as the console; "" registers none. It is the host's switch (`runner
+	// remote-control`), read at each launch and never saved.
+	RemoteControl string `json:"-"`
 	// Wrap is what the agent's command line runs under: the runner's `pty`
 	// wrapper, which answers the agent's OSC 7501 probe and keeps what it
 	// reports. It names this host's binary, so it is set at each launch and
@@ -254,6 +259,11 @@ func (l Launch) Args(agent Agent) []string {
 	args := append([]string(nil), m.always...)
 	if l.StatusLine != "" && agent == AgentClaude {
 		args = append(args, "--settings", statusLineSettings(l.StatusLine))
+	}
+	if l.RemoteControl != "" && agent == AgentClaude {
+		// The name is always given: `--remote-control` takes an optional
+		// one, and with none it would take the next word, the first task.
+		args = append(args, "--remote-control", l.RemoteControl)
 	}
 	if l.Server != nil && agent.ServesConversation() {
 		args = append(args, "--port", strconv.Itoa(l.Server.Port), "--hostname", "127.0.0.1")

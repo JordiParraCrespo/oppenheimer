@@ -100,6 +100,8 @@ func dispatch(ctx context.Context, args []string) (int, error) {
 		return computerPolicy(ctx, args)
 	case "browser":
 		return browserPolicy(ctx, args)
+	case "remote-control":
+		return remoteControlPolicy(ctx, args)
 	case "desktop":
 		return desktopSharing(ctx, args)
 	case "credential-helper":
@@ -365,6 +367,21 @@ func browserPolicy(ctx context.Context, args []string) (int, error) {
 	}
 	usage(os.Stderr)
 	return cli.ExitUsage, errors.New("usage: runner browser [status] | runner browser on | runner browser off")
+}
+
+// remoteControlPolicy dispatches `runner remote-control`: whether Claude
+// Code sessions here are reachable from the Claude app too.
+func remoteControlPolicy(ctx context.Context, args []string) (int, error) {
+	switch {
+	case len(args) == 0 || (len(args) == 1 && args[0] == "status"):
+		return withApp(ctx, func(_ context.Context, app *cli.App) error { return app.RemoteControlShow(os.Stdout) })
+	case len(args) == 1 && (args[0] == "on" || args[0] == "off"):
+		return withApp(ctx, func(ctx context.Context, app *cli.App) error {
+			return app.RemoteControlSet(ctx, os.Stdout, args[0] == "on")
+		})
+	}
+	usage(os.Stderr)
+	return cli.ExitUsage, errors.New("usage: runner remote-control [status] | runner remote-control on | runner remote-control off")
 }
 
 // computerPolicy dispatches `runner computer`: whether bots may use this
@@ -743,6 +760,8 @@ var commandSections = []struct {
 		{"runner exec deny <entry>...", "add or remove programs on the allowlist; bots run them with argv\n(no shell) in ~/oppenheimer/bots/<bot> unless they name a folder"},
 		{"runner browser [status]", "whether bots may drive a browser of their own on this host (off\nunless you say so), and the browser they would get"},
 		{"runner browser on|off", "turn it on or off; each bot gets its own profile, never yours"},
+		{"runner remote-control [status]", "whether Claude Code sessions here also open in the Claude app and on\nclaude.ai/code, under the claude.ai account claude is signed in as (off\nunless you say so)"},
+		{"runner remote-control on|off", "turn it on or off; sessions take it at their next start or restart"},
 		{"runner computer [status]", "whether bots may see this host's screen and use its mouse and\nkeyboard (off unless you say so), and the screen they would use"},
 		{"runner computer on|off", "turn it on or off; on a Mac, also allow the runner under Screen\nRecording and Accessibility in System Settings"},
 	}},

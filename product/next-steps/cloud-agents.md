@@ -466,6 +466,39 @@ answered `{"ok":true,…}` and the idle session ran the message.
   handed back). Recording the account on the session is the fix if that
   turns out to happen.
 
+## Remote Control for host sessions (2026-11-26)
+
+The owner asked what else Claude's remote session surfaces offer beyond
+`claude --cloud`. Read again on 2026-11-26: there is still no public API
+for a person's claude.ai cloud sessions; the scheduled-task fire endpoint is
+the one HTTP route (experimental, a token per task). Of what is left, Remote
+Control was picked first: the person's host sessions also open in the
+Claude app, and no credential crosses Oppenheimer. Decided:
+
+- **The host's switch, off by default.** `runner remote-control on|off`
+  writes `~/.oppenheimer/remote-control.json`, beside the bots' switches.
+  It is read at each launch of a session's window 0, the first and every
+  restart, so a change reaches a session at its next start, never one
+  already running. A file that cannot be read is off: a launch never fails
+  on it.
+- **What it launches.** Claude Code only, with `--remote-control <name>`,
+  the session's name on the host (`<repository>/<slug>`), else its id. The
+  name is always given: the flag takes an optional one and would otherwise
+  take the first task. Another window's Claude Code gets none, so a session
+  registers once.
+- **Whose account.** The one the host's `claude` is signed in as; `runner
+  remote-control` prints it. A `claude` signed in with an API key rather
+  than a claude.ai account has no Remote Control: the flag is ignored and
+  the session starts as before (checked in a cloud session, whose `claude`
+  answers "Unknown command: /remote-control").
+- **Not yet.** A switch in the console (the host reporting it in its facts,
+  `host.settings.set` carrying it, a toggle on the host's page) is the next
+  pull request; an "Open in the Claude app" link would read the session's
+  URL off the screen, and is not built. Codex's `remote-control` is
+  experimental and left alone. What it costs per session (one open
+  connection from each `claude`) is to be measured on a host signed in to
+  claude.ai.
+
 ## Follow-ups to a cloud agent (2026-11-05)
 
 Jordi asked for two-way messaging between bots and coding agents, cloud

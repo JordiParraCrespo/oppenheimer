@@ -91,6 +91,10 @@ A bot can look at a host's screen and use its mouse and keyboard once it is turn
 
 A bot can also drive a browser of its own on a host, once you ask it to turn that on or run `runner browser on` there: [Bots using a browser](./browser-use.md).
 
+## Reaching sessions from the Claude app
+
+Run `runner remote-control on` on a host and its Claude Code sessions also open in the Claude app and on claude.ai/code, through Claude Code's own Remote Control, under the claude.ai account that host's `claude` is signed in as. A session picks it up the next time it starts or restarts; one already running keeps how it started. `runner remote-control off` turns it off again, and `runner remote-control` shows which it is and the account. It does nothing for a `claude` signed in with an API key, and on a Team or Enterprise plan an admin has to allow Remote Control.
+
 ## Updates
 
 The runner keeps itself on the current signed release. It checks at boot and every six hours, then waits for a quiet moment (no agent working, no terminal attached) for up to 24 hours before updating; urgent updates apply within 15 minutes. A new version that will not stay up is rolled back automatically. Sessions keep running through an update; open terminals reconnect in a few seconds.

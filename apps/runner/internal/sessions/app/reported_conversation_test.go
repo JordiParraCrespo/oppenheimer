@@ -34,6 +34,11 @@ func (t *reportedTranscripts) report(session, conversation string) {
 
 func newConversationService(t *testing.T) (*app.Service, *fake.Terminals, *reportedTranscripts) {
 	t.Helper()
+	return newConversationServiceWith(t, nil)
+}
+
+func newConversationServiceWith(t *testing.T, remoteControl func() bool) (*app.Service, *fake.Terminals, *reportedTranscripts) {
+	t.Helper()
 	terminals := fake.NewTerminals()
 	transcripts := &reportedTranscripts{now: map[string]string{}}
 	svc, err := app.New(app.Options{
@@ -46,6 +51,7 @@ func newConversationService(t *testing.T) (*app.Service, *fake.Terminals, *repor
 			}
 			return "'/opt/runner' statusline --session " + session
 		},
+		RemoteControl: remoteControl,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -135,5 +141,52 @@ func TestOnlyWindowZerosStatusLineNamesTheSession(t *testing.T) {
 	line := terminals.Launches[session.Target(window.Index)].Command
 	if !strings.Contains(line, "statusline") || strings.Contains(line, "--session") {
 		t.Fatalf("window %d runs %q, want a status line that names no session", window.Index, line)
+	}
+}
+
+// The host's Remote Control switch is read at each launch of window 0, the
+// first and every restart, so turning it on reaches a session at its next
+// start and off takes it away again; it never reaches another window's
+// agent, which would register a second session under the same name. The
+// regression: the switch saved into the session's launch and outliving
+// `runner remote-control off`, or read once at startup.
+func TestRemoteControlFollowsTheHostsSwitchAtEachLaunchOfWindowZero(t *testing.T) {
+	ctx := context.Background()
+	on := false
+	svc, terminals, _ := newConversationServiceWith(t, func() bool { return on })
+	session := openClaudeSession(t, svc)
+	if line := terminals.Launches[session.Target(0)].Command; strings.Contains(line, "--remote-control") {
+		t.Fatalf("switched off, window 0 runs %q", line)
+	}
+
+	on = true
+	if _, err := svc.Stop(ctx, session.ID); err != nil {
+		t.Fatal(err)
+	}
+	restarted, err := svc.Restart(ctx, session.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if line := terminals.CommandOf(restarted.TmuxName()); !strings.Contains(line, "--remote-control "+session.Name) {
+		t.Fatalf("switched on, the restart runs %q, want Remote Control named after the session", line)
+	}
+	window, err := svc.OpenWindow(ctx, session.ID, app.WindowInput{Agent: domain.AgentClaude})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if line := terminals.Launches[session.Target(window.Index)].Command; strings.Contains(line, "--remote-control") {
+		t.Fatalf("window %d runs %q", window.Index, line)
+	}
+
+	on = false
+	if _, err := svc.Stop(ctx, session.ID); err != nil {
+		t.Fatal(err)
+	}
+	restarted, err = svc.Restart(ctx, session.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if line := terminals.CommandOf(restarted.TmuxName()); strings.Contains(line, "--remote-control") {
+		t.Fatalf("switched off again, the restart runs %q", line)
 	}
 }

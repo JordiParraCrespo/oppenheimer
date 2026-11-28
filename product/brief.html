@@ -265,6 +265,7 @@ td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;c
   <span class="k">one human</span><span>A target is bound to the person who logged the CLI in on it. Two people on one server means two targets with two homes. "One subscription, one person" stays true without us touching tokens.</span>
   <span class="k">API keys</span><span>Unattended runs (webhook, cron, issue label) use an API key from the project vault, not a subscription. That is the only vendor credential the vault ever holds.</span>
 </div>
+<p>The same posture reaches the Claude app (2026-11-26): with <code>runner remote-control on</code> on a host, its Claude Code sessions start with Claude Code's own Remote Control, so they also open in the Claude app and on claude.ai/code under the account the host's <code>claude</code> is signed in as. The CLI holds that connection; no credential passes through us. Off by default, read at each start and restart (<code>next-steps/cloud-agents.md</code>, "Remote Control for host sessions").</p>
 
 
 

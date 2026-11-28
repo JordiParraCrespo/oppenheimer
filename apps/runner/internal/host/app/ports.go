@@ -99,6 +99,14 @@ type BrowserPolicies interface {
 	Save(domain.BrowserPolicy) error
 }
 
+// RemoteControlPolicies is where the host keeps whether its Claude Code
+// sessions register with Remote Control (`runner remote-control`). Load
+// answers the default, off, when nothing was ever saved.
+type RemoteControlPolicies interface {
+	Load() (domain.RemoteControlPolicy, error)
+	Save(domain.RemoteControlPolicy) error
+}
+
 // Browsers is the bots' browsers on this host: one each, started on a bot's
 // first open and kept between its actions. A host with no browser to start
 // answers an error that wraps domain.ErrNoBrowser; a ref the page no longer

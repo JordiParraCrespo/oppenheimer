@@ -165,12 +165,14 @@ func New(version string) (*App, error) {
 		Installer:     lockedInstaller{paths: paths, next: system.Installer{}},
 		Directories:   folders.Disk{},
 		WorkspaceRoot: paths.Workspaces, Version: version,
-		ClaudeAccount:    func() string { return system.ClaudeAccount(claudeConfigPath(paths)) },
-		ExecPolicies:     execpolicy.File{Path: paths.ExecPolicy()},
-		Executor:         system.Executor{},
-		ComputerPolicies: policyfile.Computer{Path: paths.ComputerPolicy()},
-		BrowserPolicies:  policyfile.Browser{Path: paths.BrowserPolicy()},
-		Browsers:         chrome.New(chrome.Options{Dir: paths.Browsers()}),
+		ClaudeAccount:         func() string { return system.ClaudeAccount(claudeConfigPath(paths)) },
+		ExecPolicies:          execpolicy.File{Path: paths.ExecPolicy()},
+		Executor:              system.Executor{},
+		ComputerPolicies:      policyfile.Computer{Path: paths.ComputerPolicy()},
+		BrowserPolicies:       policyfile.Browser{Path: paths.BrowserPolicy()},
+		RemoteControlPolicies: policyfile.RemoteControl{Path: paths.RemoteControlPolicy()},
+		ClaudeHelp:            system.ClaudeHelp,
+		Browsers:              chrome.New(chrome.Options{Dir: paths.Browsers()}),
 		Desktop: hostdesktop.New(hostdesktop.Options{
 			Display: os.Getenv("DISPLAY"), Home: paths.UserHome,
 			Wayland: hostdesktop.WaylandSession(os.Getenv("XDG_SESSION_TYPE"), os.Getenv("WAYLAND_DISPLAY"), os.Getenv("XDG_RUNTIME_DIR")),
@@ -260,6 +262,13 @@ func New(version string) (*App, error) {
 		// Claude Code hands its status line the context and the plan's usage,
 		// which the chat shows; the runner's own takes them on the way.
 		StatusLine: statusLineCommand,
+		// Claude Code sessions are reachable from the Claude app too when the
+		// host says so; a setting that cannot be read is off, never a failed
+		// launch.
+		RemoteControl: func() bool {
+			policy, err := hostSvc.RemoteControlPolicy()
+			return err == nil && policy.Enabled
+		},
 		// Each agent is handed the runner's MCP server (`runner mcp`), the
 		// same commands as `runner sessions …` as tools. The session and
 		// the socket are its arguments, not its environment, which Codex
