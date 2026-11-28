@@ -73,7 +73,9 @@ export function eventsUrls(sessionId: string, learned: string | null): string[] 
  * `{ data: [{ payload: <entry> }] , next_cursor }` on one route and the entries
  * themselves on another, so an event is its `payload` when it has one.
  */
-export function eventsPage(body: unknown): { events: ChatEvent[]; next: string | null } | null {
+export function eventsPage(
+  body: unknown,
+): { events: ChatEvent[]; next: string | null; newestFirst: boolean } | null {
   const record = asRecord(body);
   if (!record || !Array.isArray(record.data)) return null;
   const events = record.data.flatMap((raw): ChatEvent[] => {
@@ -94,7 +96,11 @@ export function eventsPage(body: unknown): { events: ChatEvent[]; next: string |
   const more = record.has_more !== false && Boolean(next);
   // A page sorted newest first is turned the right way up.
   const newestFirst = record.sort_order === 'desc';
-  return { events: newestFirst ? events.reverse() : events, next: more ? (next ?? null) : null };
+  return {
+    events: newestFirst ? events.reverse() : events,
+    next: more ? (next ?? null) : null,
+    newestFirst,
+  };
 }
 
 /** Where a read of a session's log carries on: a page of a route, and how many events come before it. */
@@ -144,7 +150,10 @@ export async function fetchSessionEvents(
       return paged.href;
     };
     const first = await readPage(pageUrl(start.cursor), headers);
-    if (!first) continue;
+    // A route that pages newest first ends on the oldest events: carrying on
+    // from its last page would never reach a new one. Only a route that pages
+    // oldest first is read; the next one is tried.
+    if (!first || first.newestFirst || pagesNewestFirst(start.url)) continue;
     const events = [...first.events];
     let pageCursor = start.cursor;
     let pageOffset = start.offset;
@@ -170,6 +179,13 @@ export async function fetchSessionEvents(
     };
   }
   return null;
+}
+
+/** Whether a route asks for its log newest first. */
+export function pagesNewestFirst(url: string): boolean {
+  const order =
+    new URL(url).searchParams.get('sort_order') ?? new URL(url).searchParams.get('order');
+  return order?.toLowerCase() === 'desc';
 }
 
 async function readPage(url: string, headers: Record<string, string>) {

@@ -56,6 +56,8 @@ const PASTE_MARKS = ['\u001b[200~', '\u001b[201~'];
 const ESCAPE = '\u001b';
 const ENTER = '\r';
 const FEEDBACK = /^Stop hook feedback:\n(?:\[[^\]]*\]: )?/;
+/** How far claude.ai's clock may be behind the API's when a posted reply is matched by its words. */
+const CLOCK_SKEW_MS = 60_000;
 
 /**
  * A transcript line as the chat should read it. A reply reaches the agent as
@@ -63,8 +65,12 @@ const FEEDBACK = /^Stop hook feedback:\n(?:\[[^\]]*\]: )?/;
  * feedback" line; that line is the person's message, at the point the agent
  * took it, so it is read as one. Every other line is as it was written.
  */
-function asChatLine(raw: string): { line: string; reply: string | null } {
-  const unchanged = { line: raw, reply: null };
+function asChatLine(raw: string): {
+  line: string;
+  reply: string | null;
+  prompt: TypedPrompt | null;
+} {
+  const unchanged = { line: raw, reply: null, prompt: null };
   let line: Record<string, unknown>;
   try {
     line = JSON.parse(raw) as Record<string, unknown>;
@@ -82,14 +88,33 @@ function asChatLine(raw: string): { line: string; reply: string | null } {
   }
   const body = content.replace(FEEDBACK, '');
   const at = body.indexOf(CLOUD_REPLY_PREAMBLE);
-  // A prompt as the person typed it: what a reply the extension posted on
-  // claude.ai comes back as, so its words are counted to match it by.
-  if (at < 0) return { line: raw, reply: body.trim() || null };
+  if (at < 0) {
+    // A prompt as the person typed it: what a reply the extension posted on
+    // claude.ai comes back as, under the reply's own id.
+    const when = typeof line.timestamp === 'string' ? Date.parse(line.timestamp) : Number.NaN;
+    return {
+      ...unchanged,
+      prompt: {
+        id: typeof line.uuid === 'string' ? line.uuid : null,
+        text: body.trim(),
+        at: Number.isFinite(when) ? when : null,
+      },
+    };
+  }
   const text = body.slice(at + CLOUD_REPLY_PREAMBLE.length).trim();
   return {
     line: JSON.stringify({ ...line, isMeta: false, message: { ...message, content: text } }),
     reply: text,
+    prompt: null,
   };
+}
+
+/** A prompt the log holds, to find a reply the extension posted in it. */
+interface TypedPrompt {
+  id: string | null;
+  text: string;
+  /** When it was written, ms; null when the line does not say. */
+  at: number | null;
 }
 
 /**
@@ -121,6 +146,8 @@ export class CloudChatFeed {
   private origin: CloudChatOrigin | null = null;
   /** How many times each reply's words came back in the transcript. */
   private readonly echoed = new Map<string, number>();
+  /** The prompts the log holds, for the replies the extension posted. */
+  private prompts: TypedPrompt[] = [];
   private typed = '';
   private stopped = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
@@ -167,6 +194,30 @@ export class CloudChatFeed {
   }
 
   /**
+   * Whether a reply the extension posted is in the log: the prompt claude.ai
+   * keeps under the reply's own id, or, where claude.ai gave it another id, a
+   * prompt with its words written once it was claimed, each prompt counted
+   * once. An earlier prompt with the same words ("continue") never is.
+   */
+  private posted(reply: CloudChatReply, used: Set<TypedPrompt>): boolean {
+    const byId = this.prompts.find((prompt) => prompt.id === reply.id);
+    if (byId) {
+      used.add(byId);
+      return true;
+    }
+    const claimed = reply.collectedAt?.getTime() ?? Number.POSITIVE_INFINITY;
+    const byWords = this.prompts.find(
+      (prompt) =>
+        !used.has(prompt) &&
+        prompt.text === reply.text &&
+        prompt.at !== null &&
+        prompt.at >= claimed - CLOCK_SKEW_MS,
+    );
+    if (byWords) used.add(byWords);
+    return Boolean(byWords);
+  }
+
+  /**
    * A hook's reply is in the transcript the moment it is taken, since the hook
    * hands it over as the turn ends. A host's comes back only once the
    * session has run it, so it reads as sent until the transcript holds its
@@ -174,17 +225,20 @@ export class CloudChatFeed {
    */
   private pending(replies: readonly CloudChatReply[]): PendingCloudReply[] {
     const unmatched = new Map(this.echoed);
+    const used = new Set<TypedPrompt>();
     const pending: PendingCloudReply[] = [];
     for (const reply of replies) {
       if (reply.collectedAt === null) {
         pending.push({ ...reply, state: 'waiting' });
         continue;
       }
+      if (reply.deliveredVia === 'browser') {
+        if (!this.posted(reply, used)) pending.push({ ...reply, state: 'sent' });
+        continue;
+      }
       const seen = unmatched.get(reply.text) ?? 0;
       if (seen > 0) unmatched.set(reply.text, seen - 1);
-      else if (reply.deliveredVia === 'host' || reply.deliveredVia === 'browser') {
-        pending.push({ ...reply, state: 'sent' });
-      }
+      else if (reply.deliveredVia === 'host') pending.push({ ...reply, state: 'sent' });
     }
     return pending;
   }
@@ -200,11 +254,13 @@ export class CloudChatFeed {
         this.origin = page.source;
         this.next = 0;
         this.echoed.clear();
+        this.prompts = [];
         return this.read(true);
       }
       this.origin = page.source;
       const read = page.lines.map(asChatLine);
-      for (const { reply } of read) {
+      for (const { reply, prompt } of read) {
+        if (prompt) this.prompts.push(prompt);
         if (reply !== null) this.echoed.set(reply, (this.echoed.get(reply) ?? 0) + 1);
       }
       if (first || read.length > 0) {

@@ -177,9 +177,10 @@ describe('CloudChatFeed', () => {
       collectedAt: at,
       deliveredVia: 'browser' as const,
     };
+    // The extension posts a reply under the reply's own id, which the log keeps.
     const echo = line({
       type: 'user',
-      uuid: 'e9',
+      uuid: 'r1',
       message: { role: 'user', content: 'Also the signup page' },
     });
     const { source } = sourceOf([
@@ -200,6 +201,47 @@ describe('CloudChatFeed', () => {
     expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual([
       'Also the signup page',
     ]);
+    stop();
+  });
+
+  it('never takes an earlier prompt with the same words for a reply the extension posted', async () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const claimed = new Date('2026-11-27T10:05:00Z');
+    const posted = {
+      id: 'r7',
+      text: 'continue',
+      createdAt: claimed,
+      collectedAt: claimed,
+      deliveredVia: 'browser' as const,
+    };
+    const earlier = line({
+      type: 'user',
+      uuid: 'old',
+      timestamp: '2026-11-27T09:00:00Z',
+      message: { role: 'user', content: 'continue' },
+    });
+    const later = line({
+      type: 'user',
+      uuid: 'claude-gave-it-another-id',
+      timestamp: '2026-11-27T10:05:03Z',
+      message: { role: 'user', content: 'continue' },
+    });
+    const { source } = sourceOf([
+      { lines: [earlier], next: 1, source: 'browser', replies: [posted] },
+      { lines: [later], next: 2, source: 'browser', replies: [posted] },
+    ]);
+    const pending: string[][] = [];
+    const feed = new CloudChatFeed(source, chat, {
+      everyMs: 1000,
+      onPending: (now) => pending.push(now.map((reply) => `${reply.id}:${reply.state}`)),
+      onReplyFailed: () => {},
+    });
+    const stop = feed.start();
+    await vi.advanceTimersByTimeAsync(1000);
+    // Breaks if an hour-old "continue" hides the new one as delivered, or if a
+    // prompt with its words written after the claim does not count.
+    expect(pending).toEqual([['r7:sent'], []]);
     stop();
   });
 });

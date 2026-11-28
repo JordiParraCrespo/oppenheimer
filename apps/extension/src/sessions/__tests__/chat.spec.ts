@@ -10,6 +10,7 @@ import {
   forwardEvents,
   inTimeOrder,
   nextBatch,
+  pagesNewestFirst,
   postReply,
   sessionsToSync,
 } from '../chat';
@@ -147,6 +148,31 @@ describe('reading a session’s log from claude.ai', () => {
     );
     const read = await fetchSessionEvents(ID, {}, null);
     expect(read).toMatchObject({ complete: true, resume: { cursor: 'c2', offset: 1 } });
+  });
+
+  it('skips a route that pages newest first, whose last page is the oldest', async () => {
+    const urls: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL) => {
+        const href = String(url);
+        urls.push(href);
+        if (href.startsWith('https://claude.ai/learned/')) {
+          return json({
+            data: [{ payload: entry('n2', 'b') }],
+            sort_order: 'desc',
+            next_cursor: 'c',
+          });
+        }
+        return json({ data: [{ payload: entry('u1', 'a') }] });
+      }),
+    );
+    // Breaks if a newest-first route is carried on from its last page, which
+    // holds its oldest events, and new messages never come.
+    const read = await fetchSessionEvents(ID, {}, 'https://claude.ai/learned/{id}/events');
+    expect(urls[1]).toContain('/teleport-events');
+    expect(read?.events.map((event) => event.id)).toEqual(['u1']);
+    expect(pagesNewestFirst('https://claude.ai/x/events?sort_order=desc')).toBe(true);
   });
 
   it('answers nothing when no route has the log, rather than an empty one', async () => {

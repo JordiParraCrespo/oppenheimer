@@ -109,3 +109,7 @@ export async function disconnectOppenheimer() {
     'chatProblem',
   ]);
 }
+
+export async function clearChatProblem() {
+  await chrome.storage.local.remove('chatProblem');
+}

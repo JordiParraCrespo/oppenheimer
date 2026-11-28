@@ -29,15 +29,24 @@ interface ReplyRow {
 const REPLY_COLUMNS = `id, "authorId", "text", "createdAt", "collectedAt", "deliveredVia"`;
 
 /**
- * A reply nothing has delivered: never claimed, or claimed by the extension
- * whose lease ran out before it said claude.ai took it.
+ * The one rule for a lapsed lease: a claim of the extension's that it did not
+ * confirm before `leaseUntil` waits again. Every claim and every read of a
+ * reply's state goes through it, so the takers and the console never disagree
+ * about what a lapsed claim is. `alias` qualifies the columns in a join.
  */
-const WAITING = `("collectedAt" IS NULL OR ("deliveredVia" = 'browser' AND "leaseUntil" < now()))`;
+function lapsed(alias = ''): string {
+  return `(${alias}"deliveredVia" = 'browser' AND ${alias}"leaseUntil" < now())`;
+}
 
-/** The columns as a reader sees them: a lapsed lease reads as waiting. */
+/** A reply nothing has delivered: never claimed, or a claim that lapsed. */
+function waiting(alias = ''): string {
+  return `(${alias}"collectedAt" IS NULL OR ${lapsed(alias)})`;
+}
+
+/** The columns as a reader sees them: a lapsed claim reads as waiting. */
 const REPLY_AS_SEEN = `id, "authorId", "text", "createdAt",
-  CASE WHEN "deliveredVia" = 'browser' AND "leaseUntil" < now() THEN NULL ELSE "collectedAt" END AS "collectedAt",
-  CASE WHEN "deliveredVia" = 'browser' AND "leaseUntil" < now() THEN NULL ELSE "deliveredVia" END AS "deliveredVia"`;
+  CASE WHEN ${lapsed()} THEN NULL ELSE "collectedAt" END AS "collectedAt",
+  CASE WHEN ${lapsed()} THEN NULL ELSE "deliveredVia" END AS "deliveredVia"`;
 
 const asReply = (row: ReplyRow): CloudChatReply => ({
   id: row.id,
@@ -217,7 +226,7 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
       `UPDATE session_cloud_reply SET "collectedAt" = now(), "deliveredVia" = 'hook', "leaseUntil" = NULL
         WHERE id = (
           SELECT id FROM session_cloud_reply
-           WHERE "sessionId" = $1 AND ${WAITING}
+           WHERE "sessionId" = $1 AND ${waiting()}
            ORDER BY "createdAt"
            LIMIT 1
            FOR UPDATE SKIP LOCKED)
@@ -232,7 +241,7 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     // the loser of a race re-reads the row the winner wrote and matches nothing.
     const [rows]: [ReplyRow[], number] = await this.replies.query(
       `UPDATE session_cloud_reply SET "collectedAt" = now(), "deliveredVia" = 'host', "leaseUntil" = NULL
-        WHERE id = $1 AND "sessionId" = $2 AND ${WAITING}
+        WHERE id = $1 AND "sessionId" = $2 AND ${waiting()}
        RETURNING ${REPLY_COLUMNS}`,
       [replyId, sessionId],
     );
@@ -254,8 +263,7 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
          FROM work_session session
         WHERE reply."authorId" = $2
           AND reply."organizationId" = $1
-          AND (reply."collectedAt" IS NULL
-               OR (reply."deliveredVia" = 'browser' AND reply."leaseUntil" < now()))
+          AND ${waiting('reply.')}
           AND session.id = reply."sessionId"
           AND session."organizationId" = reply."organizationId"
           AND session.place = 'cloud'
