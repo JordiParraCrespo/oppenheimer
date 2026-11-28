@@ -81,10 +81,13 @@ export const sendCloudReplySchema = z.object({
 
 export type SendCloudReplyDto = z.infer<typeof sendCloudReplySchema>;
 
+/** The lines one read of a cloud chat answers when it names no `limit`. */
+export const CLOUD_CHAT_PAGE_LINES = 500;
+
 /** `GET /sessions/{id}/cloud-chat`: the lines numbered `from` on, at most `limit`. */
 export const findCloudChatSchema = z.object({
   from: z.coerce.number().int().min(0).default(0),
-  limit: z.coerce.number().int().min(1).max(1000).default(500),
+  limit: z.coerce.number().int().min(1).max(1000).default(CLOUD_CHAT_PAGE_LINES),
 });
 
 export type FindCloudChatDto = z.infer<typeof findCloudChatSchema>;

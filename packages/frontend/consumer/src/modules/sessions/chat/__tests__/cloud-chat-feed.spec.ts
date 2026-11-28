@@ -1,4 +1,7 @@
-import { CLOUD_REPLY_PREAMBLE } from '@oppenheimer/shared/schemas/session-cloud-chat';
+import {
+  CLOUD_CHAT_PAGE_LINES,
+  CLOUD_REPLY_PREAMBLE,
+} from '@oppenheimer/shared/schemas/session-cloud-chat';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CloudChatFeed, type CloudChatPage, type CloudChatSource } from '../cloud-chat-feed';
 import { SessionChat } from '../session-chat';
@@ -204,6 +207,37 @@ describe('CloudChatFeed', () => {
       'Fix the login page',
       'Also the signup page',
     ]);
+    stop();
+  });
+
+  it('reads a long chat’s pages back to back and draws it once, at its latest turn', async () => {
+    // Regression: one page of 500 lines a tick, so a long chat showed its
+    // oldest turns for a minute before its latest.
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const prompt = (n: number) =>
+      line({ type: 'user', uuid: `p${n}`, message: { role: 'user', content: `turn ${n}` } });
+    const page = (from: number, count: number): CloudChatPage => ({
+      lines: Array.from({ length: count }, (_, i) => prompt(from + i)),
+      next: from + count,
+      source: 'browser',
+      replies: [],
+    });
+    const { source } = sourceOf([page(0, CLOUD_CHAT_PAGE_LINES), page(CLOUD_CHAT_PAGE_LINES, 3)]);
+    const drawn: number[] = [];
+    chat.subscribe(() => drawn.push(chat.snapshot().turns.length));
+    const feed = new CloudChatFeed(source, chat, {
+      everyMs: 60_000,
+      onPending: () => {},
+      onReplyFailed: () => {},
+    });
+    const stop = feed.start();
+    await vi.advanceTimersByTimeAsync(10);
+    const turns = chat.snapshot().turns;
+    expect(turns).toHaveLength(CLOUD_CHAT_PAGE_LINES + 3);
+    expect(turns.at(-1)?.prompt?.text).toBe(`turn ${CLOUD_CHAT_PAGE_LINES + 2}`);
+    // Never drawn half loaded, oldest turns first.
+    expect(drawn.filter((count) => count > 0 && count < CLOUD_CHAT_PAGE_LINES + 3)).toEqual([]);
     stop();
   });
 

@@ -1,4 +1,5 @@
 import {
+  CLOUD_CHAT_PAGE_LINES,
   CLOUD_REPLY_PREAMBLE,
   type CloudChatSource as CloudChatOrigin,
   type CloudReplyDelivery,
@@ -154,6 +155,8 @@ export class CloudChatFeed {
    * failed read is not followed by one that appends instead.
    */
   private reset = true;
+  /** A reset's history is still arriving: its pages are read back to back. */
+  private loading = false;
   private typed = '';
   private stopped = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
@@ -251,8 +254,10 @@ export class CloudChatFeed {
 
   private async read(): Promise<void> {
     if (this.timer) clearTimeout(this.timer);
+    let failed = false;
     try {
       const first = this.reset;
+      if (first) this.loading = true;
       const page = await this.source.read(this.next);
       if (this.stopped) return;
       if (this.origin !== null && page.source !== this.origin) {
@@ -271,19 +276,24 @@ export class CloudChatFeed {
         if (prompt) this.prompts.push(prompt);
         if (reply !== null) this.echoed.set(reply, (this.echoed.get(reply) ?? 0) + 1);
       }
-      if (first || read.length > 0) {
-        this.chat.apply({
-          reset: first,
-          history: first ? 'end' : undefined,
-          entries: read.map((each) => each.line),
-        });
+      // A full page has more after it. While the history loads, the next page
+      // is read at once, not a tick later: a long chat came in 500 lines a
+      // tick and showed its oldest turns for a minute before its latest.
+      const more = page.lines.length >= CLOUD_CHAT_PAGE_LINES;
+      const history = this.loading ? (more ? 'more' : 'end') : undefined;
+      if (first || read.length > 0 || history === 'end') {
+        this.chat.apply({ reset: first, history, entries: read.map((each) => each.line) });
       }
       this.reset = false;
+      if (!more) this.loading = false;
       this.next = page.next;
       this.options.onPending(this.pending(page.replies));
     } catch {
       // A failed read is tried again on the next tick; the chat keeps what it drew.
+      failed = true;
     }
-    if (!this.stopped) this.timer = setTimeout(() => void this.read(), this.options.everyMs);
+    if (this.stopped) return;
+    const wait = this.loading && !failed ? 0 : this.options.everyMs;
+    this.timer = setTimeout(() => void this.read(), wait);
   }
 }
