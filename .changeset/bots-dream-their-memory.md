@@ -6,7 +6,7 @@
 "@oppenheimer/translations": minor
 ---
 
-Bots dream: an offline pass of the bot's own model tidies the memory it wrote (`25-bots.md` §4.1, "Dreaming"; from Managed Agents' dreams).
+Bots dream: an offline pass of the bot's own model tidies the memory it wrote (`bots.md` §4.1, "Dreaming"; from Managed Agents' dreams).
 
 - After a turn, once the bot keeps 8 facts of its own and has written 10 since its last dream (at most daily, only while "Learn automatically" is on), a `bot-dreams` job merges duplicates, drops what is stale or contradicted, rewrites each fact as one clear sentence and adds at most five the conversation shows will matter, checked against the conversation summary and the newest messages.
 - Only the bot's own facts are rewritten; what the person wrote and what other bots share stay as they are. A merged log fact keeps its day.

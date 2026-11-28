@@ -1,12 +1,12 @@
-# The developer-tools landscape, September 2026 (formerly note 16)
+# The developer-tools landscape, September 2026
 
 The owner asked on 2026-09-28 for research into other developer
 productivity tools. This note maps five groups against Oppenheimer:
 AI code review, agent consoles, PR workflow and merge, engineering
 analytics, and dev environments. It ends with what to take and where we
 stand. It feeds the Pull requests area
-([`next-steps/0.2-pull-requests.md`](../next-steps/0.2-pull-requests.md))
-and note 15's lanes, auto-merge and review sessions.
+([`design/pull-requests/pull-requests.md`](../design/pull-requests/pull-requests.md))
+and `reviewing-at-agent-speed.md`'s lanes, auto-merge and review sessions.
 
 Numbers a vendor published about itself are marked (v). Claims found
 only in an aggregator or a blog are marked (u), for unverified. Sources
@@ -37,20 +37,20 @@ Ellipsis pivoted to managed cloud agents. Korbit is shutting down.
 - **Almost all of them read the diff.** Only CodeRabbit's sandboxed
   checks, Baz's browser checks and Bugbot's Autofix run anything, and
   none does *check out, build, run the tests and the app, then report* as
-  its core review. Note 15's prepared review session, on the user's own
+  its core review. `reviewing-at-agent-speed.md`'s prepared review session, on the user's own
   host with their toolchain, is still open ground.
 - **Auto-approve by readable policy is now real.** Macroscope keeps its
   policy in a file in the repository (`.macroscope/approvability.md`).
   Its defaults — docs, tests, code behind a disabled flag and simple
   fixes approved; migrations, auth, billing and infra escalated — are
-  almost exactly note 15 §4.2. Copilot's approval is path-scoped.
+  almost exactly `reviewing-at-agent-speed.md` §4.2. Copilot's approval is path-scoped.
   Neither acts in the user's name, and neither ran the code.
 - **Effort and risk.** CodeRabbit shows both (the owner's screenshot,
-  note 15 §5.3), and Sourcery shows risk. Nobody explains how they
+  `reviewing-at-agent-speed.md` §5.3), and Sourcery shows risk. Nobody explains how they
   derive them. Ours are a formula and a gate, and the brief says so.
 - **Learning from the reviewer** is table stakes: CodeRabbit's
   Learnings, Bugbot's remembered rules, Baz's reviewers trained on past
-  threads. Note 15 does not have it yet (§6.1 below).
+  threads. `reviewing-at-agent-speed.md` does not have it yet (§6.1 below).
 - **Benchmarks** move month to month: Greptile, cubic and CodeRabbit have
   each topped Martian's F1 board in 2026. By late 2025, AI bots took part
   in 14.9% of 40.3M public PRs (u).
@@ -59,7 +59,7 @@ Ellipsis pivoted to managed cloud agents. Korbit is shutting down.
 
 | Tool | Shape | Notable | Status |
 |------|-------|---------|--------|
-| **Orca** (Stably) | Desktop app: any CLI agent in worktrees | WebGL terminal, an embedded browser with a design mode, inline diff comments sent to the agent, SSH remote worktrees, a mobile companion, a CLI agents use to drive it | MIT, free. **Our closest analogue** (note 00) |
+| **Orca** (Stably) | Desktop app: any CLI agent in worktrees | WebGL terminal, an embedded browser with a design mode, inline diff comments sent to the agent, SSH remote worktrees, a mobile companion, a CLI agents use to drive it | MIT, free. **Our closest analogue** (`../archive/vision-and-plan.md`) |
 | **Superset** | Electron IDE for agents | Sidebar status (working, needs input, done) with chimes and dock badges; any machine over SSH as a host that keeps running while the laptop sleeps; automations that open PRs; mobile | Free to start |
 | **Conductor** | Mac app, one worktree workspace per task | Linear and GitHub issues as context, then diff, review and PR in one place | Free. $22M Series A (u) |
 | **Codex app** (OpenAI) | Desktop, worktree isolation | Review queue, local Automations, a PR review pane with GitHub comments inline | 8M weekly users. OpenAI is acquiring Ona |
@@ -104,7 +104,7 @@ alone is a hard business. What is not crowded:
 - **Sapling / ReviewStack, ghstack, spr:** one PR per commit.
   ReviewStack shows only the commit under review.
 - **Pullpo, Axolo:** a Slack channel per PR. Pullpo adds AI summaries
-  (note 15).
+  (`reviewing-at-agent-speed.md`).
 
 ## 4. Engineering analytics
 
@@ -142,7 +142,7 @@ from the session's own token and host-time records.
 **Where this leaves us:** these are the alternative to our model. They
 rent a clean machine per task; we use the developer's own warm machine,
 at no cloud cost. That is what makes a *prepared* review session cheap
-enough to run for every PR (note 15 §5.1).
+enough to run for every PR (`reviewing-at-agent-speed.md` §5.1).
 
 ## 6. What to take
 
@@ -150,10 +150,10 @@ Each item is tied to the tool it comes from and the note it changes.
 
 1. **Learn from the reviewer** (CodeRabbit Learnings, Bugbot remember,
    Baz custom reviewers). When the person drops, edits or keeps a
-   drafted finding (note 15 §5.3), store it as a rule on the repository's
+   drafted finding (`reviewing-at-agent-speed.md` §5.3), store it as a rule on the repository's
    review automation. The next review's context pack includes the rules.
    Readable, editable, and in the repository if the person wants.
-2. **The policy as a file in the repository** (Macroscope). Note 15
+2. **The policy as a file in the repository** (Macroscope). `reviewing-at-agent-speed.md`
    §4.2's auto-merge policy can live in `.oppenheimer/review.md` as well
    as in the console, so it is reviewed like code and travels with the
    repository.
@@ -164,18 +164,18 @@ Each item is tied to the tool it comes from and the note it changes.
    its session*, widened to any PR.
 4. **Attention states on sessions** (Superset): working, needs input,
    done, with a sound and a badge. The runner's hook-based state
-   detection already exists (`versions/mvp/02-runner.md` §9).
+   detection already exists (`design/runner/runner.md` §9).
 5. **One "My Work" inbox** (Copilot app, Codex review queue): sessions
    waiting on you, PRs where it is your turn and automation output, in
    one triage list. The queue's turn rules extend to sessions.
-6. **Flaky tests in the queue** (Trunk): note 15 §6.4, plus a session
+6. **Flaky tests in the queue** (Trunk): `reviewing-at-agent-speed.md` §6.4, plus a session
    sent to fix a flake that crosses a threshold.
 7. **Stack-aware lanes** (Aviator, gh-stack, ReviewStack): a stack is
    laned and reviewed commit by commit, and can auto-merge in part.
 8. **Event-triggered sessions** (Warp Oz, Codex Automations): a failed
    check, a flaky test or an error alert starts a prepared session on a
-   host. It is an automation trigger (13).
-9. **Guided reading order** (Linear Guided Reviews): confirms note 15
+   host. It is an automation trigger (`../design/automations/automations.md`).
+9. **Guided reading order** (Linear Guided Reviews): confirms `reviewing-at-agent-speed.md`
    §5.3's code-computed reading order, with glue code set apart.
 10. **Mobile approvals** (Orca, Superset, Nimbalyst): the Quick lane on a
     phone. It belongs to 0.5.

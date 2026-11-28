@@ -1,7 +1,6 @@
-# Session boot time, measured (formerly note 14)
+# Session boot time, measured
 
-A measurement note, cited elsewhere as note 14 of the top-level series;
-it is not `versions/mvp/14-hosts-settings.md`. It was written on 2026-09-30, after
+A measurement note, written on 2026-09-30, after
 reports that a new session takes about 30 s to show a terminal. It records:
 
 - where that time goes, measured from the browser;
@@ -10,8 +9,8 @@ reports that a new session takes about 30 s to show a terminal. It records:
 - which experimental changes moved the numbers.
 
 It decides nothing. The questions it raised are in the notes that own them:
-02 open question 9 (network work before Send, decided 2026-10-02 in 02 §5)
-and 05 open question 8 (when the pane attaches). §4 measures what was done.
+`../design/runner/runner.md` open question 9 (network work before Send, decided 2026-10-02 in `../design/runner/runner.md` §5)
+and `../design/console/screens.md` open question 8 (when the pane attaches). §4 measures what was done.
 
 Every number is from one Linux sandbox with 4 cores, reaching github.com
 through a proxy. The instrument is `e2e/tests/fleet/boot-bench.spec.ts`. It
@@ -32,7 +31,7 @@ Times are from the click on Send.
 | microsoft/vscode, later sessions | 0.45–0.5 s | 0.2–0.8 s | 0.8–1.4 s | 2.4 s |
 
 - The 30 s is **the first session on a large repository**. A blobless clone
-  and the first checkout (02 §5) run while the person waits.
+  and the first checkout (`../design/runner/runner.md` §5) run while the person waits.
 - On a later session the clone step is the fetch of the base, about 0.5 s
   against github.com, and the spare makes the worktree step short.
 - The agent step (`tmux new-session`) takes 8–35 ms. Claude Code's own first
@@ -90,7 +89,7 @@ directly:
 
 | Clone | Clone | Worktree | Total |
 |---|---|---|---|
-| `--filter=blob:none` (02 §5) | 21.1 s | 7.4 s | 28.5 s |
+| `--filter=blob:none` (`../design/runner/runner.md` §5) | 21.1 s | 7.4 s | 28.5 s |
 | `--filter=tree:0` | 4.7 s | 10.7 s | 15.4 s |
 | `--depth=1` | 4.7 s | 7.2 s | 11.9 s |
 | `--depth=1 --filter=blob:none` | 0.9 s | 19.5 s | 20.4 s |
@@ -110,7 +109,7 @@ Two things were checked:
 
 Two changes since the first measurement. #218 builds the session's pane
 before the clone, so the terminal is there at once and the agent is typed
-into it once the worktree exists. Then (02 §5, 2026-10-02) New session sends
+into it once the worktree exists. Then (`../design/runner/runner.md` §5, 2026-10-02) New session sends
 `repository.prepare` when a host and a repository are picked, a first clone
 is shallow and deepened in the background, and checkouts run one worker per
 core. The same harness now waits for the agent's own first screen

@@ -4,7 +4,7 @@ The owner asked what Oppenheimer can bring from Hermes Agent, Nous
 Research's open-source agent (MIT, released February 2026). This note reads
 its published docs; no code is taken, and its repository was not read. What
 was seen on a fetched page is marked as such; the rest is inference and says
-so. Two of its ideas are proposed for `versions/mvp/25-bots.md`, §4.1
+so. Two of its ideas are proposed for `design/bots/bots.md`, §4.1
 (Skills) and §4.2 (sessions); that note owns what is decided and built.
 
 Sources: `hermes-agent.nousresearch.com/docs` (the landing page, fetched),
@@ -43,12 +43,12 @@ used here.
 
 | Hermes | Here |
 |--------|------|
-| `SOUL.md`, agent-curated memory, a user model | A bot's SOUL.md and instructions, memory facts with a tier and a scope, *About you*, dreaming (`versions/mvp/25-bots.md` §4.1) |
+| `SOUL.md`, agent-curated memory, a user model | A bot's SOUL.md and instructions, memory facts with a tier and a scope, *About you*, dreaming (`design/bots/bots.md` §4.1) |
 | Skills, slash commands | `bot_skill`, `use_skill`, `save_skill`, `/<name>` (§4.1, Skills) |
-| Cron | Routines and the heartbeat (`versions/mvp/26-bot-routines.md`), automations |
-| Subagents | `delegate` (§4.7); on a host, `runner sessions run\|send\|wait` (`next-steps/agent-tools.md`) |
-| MCP, a CLI | `apps/mcp`, `opp` (`next-steps/0.6-mcp-cli-and-agent.md`) |
-| The gateway | Telegram and WhatsApp built, mail and Slack designed (`next-steps/channels.md`) |
+| Cron | Routines and the heartbeat (`design/bots/bot-routines.md`), automations |
+| Subagents | `delegate` (§4.7); on a host, `runner sessions run\|send\|wait` (`design/sessions/agent-tools.md`) |
+| MCP, a CLI | `apps/mcp`, `opp` (`design/clients/mcp-cli-and-agent.md`) |
+| The gateway | Telegram and WhatsApp built, mail and Slack designed (`design/channels/channels.md`) |
 | Command approval | Allow, Ask or Off per tool, approval cards, rules (§5) |
 | Search of a session | `search_chat`, for the bot's own chat only |
 
@@ -58,16 +58,16 @@ used here.
 |---|------|---------------------|-------|
 | 1 | Skills the agent writes and fixes unasked | §4.1, Skills | proposed 2026-11-09 |
 | 2 | Search across every past session | §4.2, sessions | proposed 2026-11-09 |
-| 3 | Sandboxes that sleep when idle as a backend | A kind of host beside the runner on your own machine: one interface, several drivers (`10-sleep-wake-and-pricing.md`, `research/sessions-in-microvms.md`) | no |
-| 4 | Specialist bots in one group chat, answering when mentioned | `versions/mvp/25-bots.md` §7, "group chats with several bots" | no |
+| 3 | Sandboxes that sleep when idle as a backend | A kind of host beside the runner on your own machine: one interface, several drivers (`archive/sleep-wake-and-pricing.md`, `research/sessions-in-microvms.md`) | no |
+| 4 | Specialist bots in one group chat, answering when mentioned | `design/bots/bots.md` §7, "group chats with several bots" | no |
 | 5 | Skills in an open format, shared | A library for all of a person's bots (§4.1, "Not built"); `SKILL.md` would let one skill serve a bot, `runner --skill` and the agent in a session | no |
 | 6 | Import from another agent | A bot made from an OpenClaw or Hermes setup's SOUL.md, memory and skills | no |
 | 7 | Hermes as an agent in a session | An agent kind beside Claude Code and Codex; it takes any model endpoint | no |
 | 8 | `execute_code`; a routine's result sent to a channel; Discord | Bulk tool work in one step; routines that report on Telegram or WhatsApp; the cheapest channel after Telegram | no |
 
-## 4. What is proposed for 25
+## 4. What is proposed for `../design/bots/bots.md`
 
-Rows 1 and 2 of §3. The rules of each are in `versions/mvp/25-bots.md` and
+Rows 1 and 2 of §3. The rules of each are in `design/bots/bots.md` and
 nowhere else:
 
 - **§4.1, Skills**: a bot that saves and fixes its skills without being
@@ -90,6 +90,6 @@ nowhere else:
 - **Trajectory export and RL.** We train no models.
 - **The Tool Gateway** (web, image and speech tools behind Nous's portal).
   One vendor for every tool is what `integrate-provider` exists to avoid.
-- **20+ platforms.** `next-steps/channels.md` chose a thin adapter per
+- **20+ platforms.** `design/channels/channels.md` chose a thin adapter per
   channel and depth in each.
 - **Honcho.** *About you* and the general memory cover it for now.

@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Bots no longer get a heartbeat by default, and a heartbeat wakes twice a
- * day rather than every hour (`26-bot-routines.md` §6, "Changed 2026-11-15"):
+ * day rather than every hour (`product/design/bots/bot-routines.md` §6, "Changed 2026-11-15"):
  * an hourly model turn on every bot with a job, around the clock, was
  * spending the owner's tokens to say nothing.
  *

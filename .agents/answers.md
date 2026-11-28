@@ -9,8 +9,8 @@ the pull request the task opens, or in a one-line `go` pull request of
 its own when the task opens none. Keep the user's meaning and the source;
 a later answer replaces the line it contradicts, with the new date.
 
-Product decisions (what the product does) live in `product/README.md`,
-"decisions that changed"; this file holds how the work is done.
+Product decisions (what the product does) live in `product/decisions.md`;
+this file holds how the work is done.
 
 | Date | Question | Answer | Source |
 | --- | --- | --- | --- |
@@ -42,5 +42,7 @@ Product decisions (what the product does) live in `product/README.md`,
 | 2026-11-24 | Must a change to the bots, or anything agentic, be evaluated? | Yes, on any machine: whatever a model is shown or can call runs through the evals that cover it before a push, a new tool or rule with a case of its own; a reason (`record.mjs --skip`) answers a change no eval can see. | this file's pull request |
 | 2026-11-25 | Claude Code now has its own `/ship`: what is our merge-without-asking lane called? | `go`: the skill, the command (`/go <fix>`, `/go 42`) and the label. | JordiParraCrespo/oppenheimer#1070 |
 | 2026-11-26 | A mobile pull request can't be verified on a device in a cloud session (no emulator or simulator): merge it? | Yes, on the checks that can run there (tsc, tests, `expo export` bundles, the diff), with the verifier and the pull request saying plainly the native rendering was not seen on a phone. | JordiParraCrespo/oppenheimer#1084 |
+| 2026-11-26 | Housekeeping `product/`: tidy in place, restructure, or rewrite the notes' prose? | Restructure: design by area, the pre-MVP notes archived, next steps merged into the design, the decision lists in one file, the READMEs real indexes; note bodies untouched beyond links. | this file's pull request |
+| 2026-11-26 | The design exports and the spikes' code in `product/`: keep, delete, or leave? | Keep, but out of the notes: the exports in `product/mockups/`, code and captures in `product/research/spikes/`. | this file's pull request |
 | 2026-11-27 | Where does the plan for a set of tasks live (a product note, or the chat)? | In the chat: each decision is recorded in the pull request that builds it, with no planning note of its own. | this file's pull request |
 | 2026-11-27 | A cloud session's chat in the console: which sessions, and which way do replies go? | Whatever works: every cloud session on the claude.ai account, adopted when the console did not start it, read from claude.ai's own log by the browser extension; replies posted by the extension on claude.ai as the person, the hook and the host wake kept for when no Chrome runs it. | this file's pull request |

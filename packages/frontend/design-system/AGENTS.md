@@ -10,7 +10,7 @@ package**, one per platform:
 
 ## The system
 
-The source is the Claude Design export in `product/versions/mvp/design/`:
+The source is the Claude Design export in `product/mockups/`:
 `_ds/…/tokens/*.css` for the tokens and `readme.md` for the rationale, and
 the `version1/` artboards for what the screens actually do. Its one sentence:
 **the product is the work, and the design system is the silence around it.**

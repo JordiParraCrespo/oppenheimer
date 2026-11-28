@@ -45,7 +45,7 @@ func (s *Service) ComputerScreen(ctx context.Context) (domain.Screen, error) {
 }
 
 // Computer does one action on the host's screen for a bot and answers with
-// what the screen shows after it (`computer.act`, 25 §4.2). The setting is
+// what the screen shows after it (`computer.act`, product/design/bots/bots.md §4.2). The setting is
 // read from disk on every call, so `runner computer off` stops the next
 // action without a restart, and it is checked before the screen is touched:
 // a host that is off says nothing about what it has.

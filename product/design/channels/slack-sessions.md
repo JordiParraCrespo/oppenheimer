@@ -1,0 +1,27 @@
+# 0.4 — Slack: sessions
+
+**Goal:** start and follow **sessions** from Slack, and hear from a
+session in Slack when it needs someone.
+
+Reaching a **bot** in Slack is not this note: since 2026-10-22 it is the
+Slack channel of [`channels.md`](channels.md) §7.2 (one Oppenheimer app
+installed per workspace, events over HTTP, the bot's name on each
+message). This note keeps only what is about sessions, and builds on that
+same app and its install rather than a second one.
+
+## What exists to build on
+
+- The Slack channel of `channels.md`: the app, its install, the signed
+  events endpoint, the owner's Slack user linked to their account.
+- Sessions and their event log (`../foundations/api-modules-and-data-model.md`).
+- The untrusted-payload envelope `../../archive/github-experience.md` §6–§7 proposes for GitHub
+  events applies to Slack messages the same way.
+
+## Questions to answer first
+
+1. Which direction first: notifications out (session waiting on input,
+   PR opened, CI red), or commands in (start a session from a message or
+   a thread)?
+2. One Slack thread per session, with replies sent into the session?
+3. Is a session started from Slack always started by a bot (the channel's
+   bot, with `start_session`), or does Slack also start sessions directly?

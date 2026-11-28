@@ -3156,7 +3156,7 @@ describe('bots chat (integration)', () => {
     expect(lastMessagePreview).toBe('Show me a chart');
   });
 
-  describe('subscriptions (27-bot-subscriptions.md)', () => {
+  describe('subscriptions (bot-subscriptions.md)', () => {
     const SESSION = '7b1c4f9e-0000-4000-8000-0000000000aa';
 
     function watching(
@@ -3544,7 +3544,7 @@ describe('bots chat (integration)', () => {
   // What breaks this: a turn's cache tokens lost on the way to the row; a
   // queued turn that never ran counted; a sum read as a string; what a goal
   // review spent missing from /usage, or outliving the chat it was for.
-  describe('usage (25-bots.md §4.1, /usage)', () => {
+  describe('usage (bots.md §4.1, /usage)', () => {
     it('sums the turns that ran by model, and the calls outside them by purpose', async () => {
       const bot = await create('Spender');
       const ran = await runningTurn(bot);
@@ -3632,7 +3632,7 @@ describe('bots chat (integration)', () => {
     });
   });
 
-  describe('goals (25-bots.md §4.1)', () => {
+  describe('goals (bots.md §4.1)', () => {
     function goalFor(bot: BotEntity, originTurnId: string, objective = 'Ship it') {
       return BotGoalEntity.set({
         organizationId: bot.organizationId,
@@ -4060,7 +4060,7 @@ describe('bots chat (integration)', () => {
       expect(await goals.findForBot(bot.organizationId, bot.id)).toBeNull();
     });
   });
-  describe('loops (25-bots.md §4.1, /loop)', () => {
+  describe('loops (bots.md §4.1, /loop)', () => {
     function loopFor(bot: BotEntity, originTurnId: string, intervalMinutes: number | null = 5) {
       return BotLoopEntity.set(
         {

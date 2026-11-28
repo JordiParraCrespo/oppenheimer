@@ -1,0 +1,886 @@
+# Runner
+
+The host agent. One Go binary, installed as your own user on a machine
+you own, that turns that machine into a place sessions run: it holds one
+outbound connection to the control plane, owns the git worktrees, owns
+the tmux server the sessions live in, and streams their terminals. It
+opens no port and never runs as root.
+
+Installing it and keeping it current are their own document:
+[Runner install and update](runner-install-and-update.md).
+
+## Decided
+
+### 1. Shape of the process
+
+- **One binary, one long-lived process, no inbound port.** The daemon
+  dials out to the control plane over a single WebSocket and keeps it
+  open. Everything the browser asks for arrives on that link; nothing
+  reaches the host from outside (`../foundations/scope.md` §"No ports on the host, ever").
+- **The only local listener is a Unix socket**, `~/.oppenheimer/run/runner.sock`,
+  mode 0600, owned by the user. It answers the git credential helper and
+  the read-only queries `status` uses.
+- It is **its own small router**, not the template's API bound to a
+  socket. `httpx` and `problem` are reused for the middleware and the
+  error documents; `apikeys`, the scope guards, the bearer middleware
+  and `/v1/ws` are not mounted on it and must never be. A host agent
+  that exposes nothing should not carry a copy of the control plane's
+  inbound surface, and the way to keep that true is to keep the route
+  list short enough to read: health, host facts, sessions, updates, and
+  the credential lookup.
+- There are no scopes on that socket. It is 0600 and the caller is the
+  same uid; a bearer model taped onto filesystem permissions would be
+  ceremony. If a local client ever needs to be told apart from another,
+  that is when to add one.
+- **One runner per host.** A `flock` on `~/.oppenheimer/run/runner.lock`
+  makes a second start fail loudly instead of fighting over the tmux
+  server and the worktrees. "Host" means one Unix user on one machine:
+  the tmux socket name is the constant `oppenheimer`, so a second runner
+  under the same user — even with its own `RUNNER_HOME` — shares the tmux
+  server and would report the first one's sessions as unclaimed. Two
+  hosts on one machine are two users.
+- **The tmux server is a sibling, not a child.** The runner can die,
+  restart or be replaced by a new version without touching a session
+  (§6). That single fact is what makes updates cheap (`runner-install-and-update.md` §5).
+- Runs as the user's own account: launchd user agent on macOS, systemd
+  user unit with lingering on Linux. Never as root, never with sudo
+  except the one optional package-manager step the installer asks about
+  (F10, `runner-install-and-update.md` §2).
+
+### 2. Subcommands
+
+One binary, one code path per job, so the installer, the service and the
+user-facing diagnostics are the same artifact and the same version.
+
+| Subcommand | Role |
+|---|---|
+| `run` | the daemon: link, sessions, tmux, worktrees, credential socket. What the service unit starts |
+| `serve` | the control-plane-facing HTTP service on a TCP port, which is what the container image runs. The host agent is `run`, which opens no port |
+| `register` | redeem a registration token: generate the keypair, send the public key and host facts, receive the host id and the control plane's key fingerprint, write `config.json`. The token comes from `--token-file`, `OPPENHEIMER_REGISTRATION_TOKEN` or `--token`; `--workspaces` chooses where sessions live; `--keep-existing` keeps a pairing to the same control plane instead of spending the token again; a machine that looks temporary is refused unless `--allow-container` (`runner-install-and-update.md` §3) |
+| `install` / `uninstall` | write, load and remove the launchd or systemd user unit; `uninstall` also revokes the host key, and refuses while the runner's sessions run unless `--force`, which ends them (`runner-install-and-update.md` §4) |
+| `workspaces` | where sessions' checkouts live and why (`config`, `env` or `default`); `--set` moves it for new sessions, refused while any session has a checkout in the old one |
+| `status` | local diagnostics: link state, sessions, versions, preflight, disk. Exit codes are a contract, as in `apps/cli` |
+| `credential-helper` | git's credential protocol on stdin/stdout, answered over the Unix socket (§8) |
+| `update` | check, apply, pin or roll back a version (`runner-install-and-update.md` §5) |
+| `agents update` | bring every installed agent CLI current now, the round `run` does on its own (§10) |
+| `agents install <name>` | install an agent CLI the host lacks, user-level, with the catalog's installer (§10) |
+| `tools [ls]` / `tools install gh` | the host tools and how to get a missing one; installs `gh`, prints the package manager's command for `git` and `tmux` (§10) |
+| `selfcheck` | a staged binary proving it can parse the config and speak the protocol before it becomes the service (`runner-install-and-update.md` §5) |
+| `version` | version, commit, build date, protocol range |
+
+The research brief's `hypervisor`, `guest` and `proxy` subcommands
+(`../../archive/machines-and-vm-provisioning.md`) arrive with the VM slice. Only `run` and its helpers are MVP.
+
+### 3. Package map
+
+The layout is `apps/runner`'s hexagon
+([ARCHITECTURE.md](../../../apps/runner/ARCHITECTURE.md)). The runner has
+three I/O surfaces — one outbound link, one 0600 Unix socket, one sibling
+tmux server — and the contexts follow the aggregates, not the surfaces.
+
+```
+apps/runner/
+cmd/runner/main.go          signals, flags, subcommand dispatch — no wiring
+internal/
+  cli/                      composition root of the subcommands (the host agent)
+  server/                   composition root of `serve`, the template's HTTP service
+  pairing/                  identity: registration token, host keypair, boot JWT
+  sessions/                 the aggregate: worktree + tmux session + windows
+    adapters/tmux git manifest state
+  host/                     the inventory a preflight and a heartbeat report
+  service/                  the launchd agent and the systemd user unit
+  updates/                  channel, safe window, staging, health gate, rollback
+  config/ scopes/           as today
+packages/go/
+  selfupdate/               verify a signed manifest, swap a binary atomically
+```
+
+**The link is a port, not a context.** The outbound socket, its reconnect
+ladder and its epoch belong behind a `Link` interface that `sessions` and
+`pairing` use; the transport adapter is wired by the composition root and
+the message vocabulary is `../foundations/protocol.md`'s. A context called `link` that owned command
+dispatch and an event queue would be a second place where session
+lifecycle lives.
+
+`host` is a context because it has a rule — the order in which a host's
+blocking conditions are reported, root before platform before tools
+before disk — and an error catalog the installer, the CLI and the console
+all render. It is a small one, and it should stay small: everything else
+about a host is heartbeat payload.
+
+`apikeys` is the template's inbound credential surface. It goes when the
+link lands: what dies with it is the TCP listener, the `opr_` keys and
+HS256 as the host's identity.
+
+One error catalog per context, in `<ctx>/domain/errors.go`, and adapters
+map their failures onto it: `TMUX_*` and `GIT_*` are how the tmux and git
+adapters fail, and they live in `sessions`. `RUNNER_*` is the generic
+layer every route shares, from `packages/go/core/problem`. Codes are
+unique and documented, and `internal/arch/catalog_test.go` fails the
+build when either stops being true.
+
+### 4. The link to the control plane
+
+The wire is [`protocol.md`](../foundations/protocol.md): frame layout and the attachment id,
+hello, heartbeat, the hint vocabulary, the command list, flow control,
+the reconnect ladder, and which three calls are ordinary HTTPS instead.
+What belongs here is what the runner does with it:
+
+- It dials out and keeps one link open. Registration and release
+  manifests are HTTPS and do not need it, which is what lets a runner
+  the control plane refuses on protocol grounds still fetch the version
+  that fixes it (`runner-install-and-update.md` §5).
+- On connect it sends the snapshot of what it is holding, and lets the
+  control plane reconcile. The runner keeps no durable outbox: a laptop
+  that was shut for a week has nothing worth replaying, and a snapshot
+  is both cheaper and less wrong.
+- Every event it appends carries the idempotency key `<runId>:<n>`,
+  where `runId` is minted at process start and `n` is its own counter,
+  so a batch replayed after a lost ack is de-duplicated by the control
+  plane and the key depends on nothing the link assigned (`../foundations/api-modules-and-data-model.md`).
+- It pauses a PTY when an attachment's window is exhausted, so one
+  runaway build stalls its own pane.
+- It survives the link being down indefinitely. Sessions keep running;
+  tmux does not care.
+- **Session commands run on the process's lifetime, not the link's.** The
+  read loop hands each one to a lane per session and goes back to
+  reading, so a slow create never holds up the pongs that keep the link
+  up, or the `credentials.grant` its own clone is waiting on. A lane runs
+  its session's commands one at a time, in arrival order: an input or a
+  stop sent right after a create waits for the session, and a
+  redelivered create runs once the first has ended. **An attach is the
+  one command that does not use the lane.** It needs the session's tmux
+  name and nothing else, and that exists long before the create lands, so
+  it waits on the session's own terminal instead; queued, it would sit
+  out the clone and the agent launch for work it does not depend on,
+  which is what building the terminal first exists to avoid. Nothing else
+  is let past: a stop sent during a create is still answered after it. The context those
+  commands run on is the daemon's, so a link that drops mid-clone does
+  not take the clone with it; their outcomes reach the control plane
+  through the event log, which is resent on the next link. The one
+  exception is an attach: its id belongs to the link that allocated it,
+  so one still queued when that link ends is dropped and the browser
+  reattaches — and so is one whose PTY finishes opening after that link
+  ended, whose PTY is closed rather than streamed on the next link.
+  Host commands follow the same rule, each on a lane of its own:
+  `host.update` on one, so a download that outlives the link it was asked
+  on still finishes, and `host.preflight` on another, so a preflight never
+  waits behind a download. What the read loop still does itself is only
+  what cannot block: a credit, a resize of an open attachment (one whose
+  attach is still opening keeps its place behind it in the lane), and a
+  browser's keystrokes, which go to a bounded queue per attachment that
+  one goroutine writes to the PTY. A PTY that stops taking them — a wedged
+  `tmux attach` client — fills its queue, and that attachment is closed
+  (`attachment.closed`, "input stalled") instead of stalling every other
+  one on the link. Event batches the link refuses while it stays up (a
+  full control queue) are offered again every few seconds, in order, and
+  at most 4096 wait: past that the oldest is dropped with a warning, and
+  the next hello's snapshot reconciles. A batch the link took but that
+  has had no ack for a minute — an ack lost on the control plane's side,
+  a batch it dropped — is sent again on the same ticker, with every
+  batch made after it, in order (`../foundations/protocol.md`, "events.append and events.ack"),
+  rather than waiting pending until the link happens to drop.
+- **Except when the control plane says the host was unpaired**: an HTTP
+  `410` at the handshake or a `4410` close (`../foundations/protocol.md`). That is not a drop but a
+  verdict, so the link stops redialling, the revocation is written to
+  `config.json`, and later boots do not dial either — the daemon stays up,
+  quiet, so the service manager does not restart it into the same refusal
+  every few seconds. `runner status` says what happened; a fresh
+  registration replaces the revoked identity without `--force`. The
+  verdict also stops the runner's sessions (tmux ends, every checkout
+  stays): unpairing is a person removing the host, which stops the
+  sessions on it (`../foundations/control-plane.md`, `hosts-settings.md`), and an agent left running would work where no
+  console can see it. A dropped link still leaves sessions running.
+- **As built (`internal/link`, `internal/cli/link*.go`):** the link is a
+  port with one transport adapter, as §3 says; the composition root maps
+  each message onto the session service. The launch argv comes from
+  `sessions/domain/launch_catalog.gen.go`, **generated** from
+  `packages/shared/src/agents/catalog.ts` at the shared package's build
+  and checked against it by the catalog's own test, so a catalog edit
+  reaches this host or fails the build. Still its own, not yet §5's: the
+  session layout (`<repo>/worktrees/<slug>`), one checkout per session
+  (a frame with any other number is refused with `SESS_002`), and the
+  first prompt read off the transcript.
+
+### 5. Sessions
+
+A session is a directory of checkouts plus a tmux session plus its
+windows. The layout and every name in it are `../foundations/api-modules-and-data-model.md`'s
+(`workspaces/<org>/{repos,sessions}`; it supersedes `../../archive/workspace-layout.md` §1). There
+is no project level: a project is metadata the control plane keeps, and
+`session.create` does not name one (2026-09-26, `../foundations/api-modules-and-data-model.md`). Create, in order, each step resumable because the previous
+one is observable on disk, and each reported as a `session.step` (`../foundations/protocol.md`)
+as it starts and lands: `host` running when the frame arrives and done
+once create accepts it, then `clone` (the stores), `worktree` (the
+checkouts) and `agent` (window 0's program), each landing with the time
+it took on the host. A failure is `session.failed`; the step that
+started last is the one that failed.
+
+**The terminal is made first, before the stores.** It is a stage like the
+others but has no step on the wire — the stepper stays
+`host/clone/worktree/agent` — because what it reports is
+`session.started`: the moment the session has a pane to attach to (`../foundations/protocol.md`).
+It starts in the directory the worktree will occupy, which does not exist
+yet. Once it does, the pane's shell is replaced by the agent, started in
+the worktree (`tmux respawn-pane`): nothing is typed to start it, so the
+screen opens on what the agent draws, and it runs under the runner's own
+`PATH`, as it did when the agent was the session's first command. A
+create spends its seconds on the clone and the worktree, and with the pane
+made last every one of them was a spinner; made first, an attach waits on
+nothing, and the console shows the steps until the agent runs (`../console/screens.md`). A
+stage that fails after it kills the pane: a
+terminal with nothing running in it is not a session.
+
+Then, in order:
+
+1. Write the `.oppenheimer` marker into
+   `sessions/<slug>/` **before** anything else. Only
+   a directory carrying it is ours to delete, ever (`../foundations/api-modules-and-data-model.md`, the rules
+   learned from Orca).
+2. For each checkout, ensure the workspace's store
+   `repos/<store>.git` exists and is fetched (the runner still keeps it
+   at `<owner>/<repo>/main`, until `../foundations/api-modules-and-data-model.md`'s layout lands). The store
+   is blobless and has no working tree. The first clone is **shallow at
+   the base** (`git clone --depth=1 --branch <base> --no-checkout`, the
+   refspec then widened to every branch), which is all a worktree needs
+   and on microsoft/vscode a third of a blobless clone's time (5.4 s
+   against 18.3 s, `../../research/session-boot-time.md`); the history follows in the background
+   (`fetch --unshallow --filter=blob:none`, the store marked a promisor
+   of `blob:none`), which leaves the store exactly the blobless clone it
+   always was. That fetch takes no lock: while it runs, a create uses a
+   base the clone brought rather than fetching beside it, and waits for it
+   only for a branch the clone did not bring. A store left shallow by a
+   restart is deepened by its next fetch. A create then fetches only the ref
+   its worktree is made from — the base, or the existing branch it
+   checks out — with no tags and git's automatic gc off, and a ref that
+   is not a branch on the remote fails the create. The one exception is
+   an **empty repository** (GitHub's "no README", no ref at all): the
+   runner pushes an empty `Initial commit` to the base, which makes it the
+   repository's default branch, and cuts the session from it; a prepare
+   (§5's spare, made while the form is open) leaves it empty. Both go through the
+   credential helper (§8), and so does a blob the session's shell reads
+   later (`git log -p`, `blame`). The store
+   is found **by GitHub id**, never by name: the runner writes
+   `git config oppenheimer.repo-id <id>` into the bare repo when it
+   creates it as `<owner>--<repo>.git`, suffixes the name if that one is
+   taken by a different id, and reports the name back to the control
+   plane, which records it on the checkout as a fact. A GitHub rename
+   therefore moves nothing on disk.
+   A first clone lands beside its final name and is renamed into place
+   whole, so one cut short leaves nothing that looks like a store.
+3. `git worktree add sessions/<slug>/<dir>` from the store, on the
+   branch `session.create` names — `oppenheimer/<slug>`, or the one its
+   checkouts already recorded — created from the chosen base.
+   When a worktree is not possible, clone instead and **report which
+   mode was used**, because cleanup differs. A session may have zero
+   checkouts.
+   The path is derived from the session id, so what an interrupted
+   attempt left there is this session's own and the next create takes it
+   over rather than refusing it: a worktree registered on the session's
+   branch is adopted (one git left locked `initializing` has its checkout
+   finished), a registration whose directory is gone is pruned, and a
+   branch the attempt cut is reused only while it holds nothing the base
+   does not. Anything else at the path is `SESS_004`.
+   Each store keeps one **spare** worktree beside the sessions'
+   (`worktrees/.spare`), detached at the base the last create used and
+   fully checked out. A create for a new branch moves it to the
+   session's path and checks out the session's branch there, which
+   writes only what changed on the base since; the runner then makes
+   the next spare in the background. A spare still being made is waited
+   for — it is already writing the files a plain add would write again
+   beside it — a finished one on disk is taken after a restart, and
+   something at `.spare` the store never registered is left alone.
+   `repository.prepare` (`../foundations/protocol.md`) builds the store and the spare **before** a
+   create is asked for: New session sends it as soon as a host and a
+   repository are picked, so the create that follows only moves the spare
+   and cuts its branch. Session branches are cut `--no-track`: they are
+   pushed to a branch of their own, never pulled from their base.
+   A detached worktree at a session's path is a claim cut short
+   between the move and the checkout; the next attempt finishes it.
+   The cost is one checked-out tree per repository on the host.
+4. `tmux new-session -d -s <id> -c <cwd>` on the dedicated socket, where
+   `<cwd>` is the checkout the control plane names as the working
+   directory, or the session directory when it names none, with the
+   session's environment set once (§6).
+5. Window 0 runs the agent — `claude`, `codex`, `opencode` or `grok`
+   from the host's own installation and login — or, for the blank terminal,
+   nothing: tmux starts the user's login shell and the session is a
+   worktree and a terminal. The login URL an agent prints is detected by
+   the classifier and sent to the browser as a button, linkified only
+   for that agent's own vendor hosts (§9, F3).
+
+   **The launch is argv, assembled from the catalog, and never a string.**
+   `session.create` carries what the person chose — a model, a permission
+   level, an effort, a first task (`../foundations/protocol.md`) — as structured fields, and the
+   runner turns each into arguments by looking its value up in that
+   agent's `launch` map in `packages/shared/src/agents/catalog.ts`. The
+   maps hold argument *vectors*, so the runner concatenates and never
+   parses, and a value that would need quoting cannot become a second
+   word. It **drops** a choice it has no entry for rather than failing
+   the launch: a thinking budget is never worth refusing a session over,
+   and the console has already hidden a control the catalog declares
+   nothing for.
+
+   **Effort is keyed by model** (changed 2026-09-29). The agent's
+   `launch.effort` is how it spells *any* level — `--effort <effort>`,
+   `-c model_reasoning_effort=<effort>`, `--reasoning-effort <effort>`,
+   OpenCode's `OPENCODE_CONFIG_CONTENT` naming the build agent's model
+   and variant — with `<effort>` and `<model>` replaced inside each word;
+   which levels exist is the model row's list. The runner spells a level
+   only when the launch's model (the agent's default when none is named)
+   lists it, so a model id is spliced in only once the catalog knows it,
+   and a level it lacks is dropped, never forwarded to a CLI that would
+   refuse it or pass it to an API that would. A launch saved before this
+   carries an old product stop and no `effortIsLevel` mark; on restart its
+   effort is not sent and the CLI runs at its own default, rather than
+   reading `medium` with a meaning nobody chose. An effort's environment
+   never names a variable a permission level sets (the catalog spec holds
+   it); if one ever did, the permission level wins, because an effort must
+   not loosen what the agent may do. The table is `launch_catalog.gen.go`, generated from the catalog
+   and checked against it, and the runner's own agent list is one map
+   from its agent names to catalog ids; an id it does not know launches
+   nothing and is never read as Claude Code.
+
+   **A permission level is one object: argv and environment.** Claude
+   Code, Codex and Grok take their level as flags, so their `env` is
+   empty; Grok's `--permission-mode` is Claude Code's vocabulary, and
+   Ask is its `default` rather than its own `auto`, which approves on its
+   own.
+   OpenCode's TUI has one approval flag, `--auto`, which is Full access;
+   Ask and Auto are an `OPENCODE_PERMISSION` block, whose rules
+   land after its build agent's default `"*": "allow"` and so win
+   (checked against opencode 1.18.32's `debug agent build`). That default
+   is why the two halves are never separable: an Ask started without its
+   environment would be Full access. The runner spells the environment as
+   `env NAME=value` in front of window 0's command — env(1) rather than a
+   shell assignment, because tmux hands the line to the user's own shell,
+   and on the command line rather than in the tmux session, so a shell
+   tab does not inherit it. First launch and Restart build the line the
+   same way.
+
+   **Every launch starts in a trusted folder.** Claude Code asks "do you
+   trust the files in this folder?" the first time it opens one, before
+   any permission mode applies, and a session's folder is always new to
+   it. The folder is one the runner made, or the person picked, for the
+   session, so before First launch and Restart the runner sets
+   `projects[<folder>].hasTrustDialogAccepted` in Claude Code's own
+   `~/.claude.json` (`$CLAUDE_CONFIG_DIR/.claude.json` when set), leaving
+   every other key as the CLI wrote it and swapping the file in with a
+   rename. It is best-effort: a launch whose folder could not be marked
+   still starts. On 2026-10-18 this was decided for Approve for me and
+   Full access only, Ask keeping the question for the person at the
+   terminal; on 2026-10-20 the owner asked for every session to start
+   pre-trusted, Ask included, since the question only stood between them
+   and the agent.
+
+   Codex asks the same question ("Trust this folder?"), keyed by the
+   repository's main checkout when the folder is a worktree of one. Since
+   2026-11-09 the runner answers it too: before a Codex launch it appends
+   `[projects."<folder>"] trust_level = "trusted"` to Codex's
+   `~/.codex/config.toml` (`$CODEX_HOME/config.toml` when set) for the
+   folder and that checkout. The file is the person's and often
+   hand-edited, so it is appended to as text, never re-encoded; a folder
+   Codex already has an answer for, trusted or untrusted, is left alone,
+   and a config the new table would break is not touched. Trusting a
+   folder lets Codex (and Claude Code) load the repository's own agent
+   config, whose MCP commands and hooks run before any approval; on
+   2026-11-09 the owner kept pre-trusting every session anyway, for every
+   repository, since the repositories are ones the person added themselves.
+
+   **The first task is the last argument, not something typed at a
+   running process.** Every CLI here takes it on its command line and
+   says so in its own help — `claude [options] [command] [prompt]`
+   ("Your prompt"), `codex [OPTIONS] [PROMPT]` ("Optional user prompt to
+   start the session"), `grok [OPTIONS] [PROMPT]` ("Initial prompt for
+   the interactive session"; its `-p` is single-turn and exits), and
+   `opencode [project] --prompt <text>` — so
+   the task is in the process's arguments before it starts. Writing into
+   window 0 once the TUI is up was the alternative and is rejected: it is
+   not how any of these CLIs takes a first task, and "the TUI is ready"
+   is the moment this design avoids needing to name anywhere else.
+   Nothing about the composer waits on a readiness signal that does not
+   exist. The blank terminal takes no task: what was typed in the
+   composer names the session, and the person types the first command.
+6. The control plane hears `session.created` with each checkout's
+   branch, path and mode, and the initial state.
+7. **When the launch carried no task**, the first user message is read
+   from the agent's own transcript (Claude Code keeps one under
+   `~/.claude/projects/`, keyed by cwd; Codex under `~/.codex/sessions/`;
+   Grok under `~/.grok/sessions/`, keyed by cwd; OpenCode in one
+   database under `~/.local/share/opencode/`),
+   never scraped from the PTY, and sent once as `prompt.first`, at most
+   2 KB. The control plane names the session from it (`../foundations/api-modules-and-data-model.md`); the transcript
+   itself never leaves the host. Claude Code's is the transcript read
+   today (`sessions/adapters/transcript`, found as
+   `projects/*/<session id>.jsonl` because the session id is the
+   conversation's name), on each poll until one is reported; the other
+   agents report nothing yet, so their sessions keep the slug until
+   renamed.
+
+   **When the launch carried one, the runner reports nothing.** It
+   already knows the first message — it put it there — and the control
+   plane wrote that entry in the same transaction as the session row
+   (`../foundations/control-plane.md`). A second report would be a duplicate the two writers cannot
+   dedupe against each other: the runner keys its entries `<runId>:<n>`
+   and the control plane keys its by command id, so a key is exactly what
+   they do not share. The `prompt` field on `session.create` is therefore
+   what decides which of the two writes the entry, and there is never a
+   moment when both do.
+
+Close pushes each checkout's branch if it has commits and a remote, then
+`git worktree remove` (or removes the directory, for a clone), prunes,
+and `tmux kill-session`. The runner commits nothing on the user's
+behalf and never passes `--force`: a checkout with unpushed work is
+reported as `dirty` with git's own message verbatim, and the control
+plane is what refuses the close unless the caller accepts the loss (`../foundations/api-modules-and-data-model.md`).
+Stop is not close: it ends the agent and the tmux session and leaves
+every checkout on disk for Restart.
+
+**The agent goes with its session** (2026-11-21). `kill-session` only
+hangs the pane up, and Claude Code was seen ignoring that hangup: on one
+host ~110 agents of closed sessions idled for ten days, ~8–10 GB, until
+the machine ran out of memory. So ending a terminal is now three steps.
+`runner pty` hangs its program's process group up when it is told to end
+(SIGHUP, SIGTERM, SIGINT, SIGQUIT) or its pane stops taking output, gives
+it 10 s to save its conversation and exit, then kills the group; a
+second SIGTERM, SIGINT or SIGQUIT kills at once (two SIGHUPs do not: a
+closing pane sends tmux's and the kernel's). Stop, close and `uninstall
+--force` then find the session's wrapper in the process table and do the
+same from outside, so `closed` means nothing of the session runs. And
+the daemon looks at boot and every 5 minutes for a wrapper whose session
+has no tmux session (closing and stopping kill it), and ends it the same
+way, logging the session and pid. The tmux session is the witness, not
+the daemon's map: `runner sessions restart` runs in a process of its own,
+and a session it restarts still reads stopped in the daemon for a while. A wrapper is this runner's only when it runs
+as this account and its command line is `pty --report <file> --` with
+the file in this runner's own `state/program-status/`: the user's own
+tmux and their other `claude` processes are never looked at.
+
+**Adoption on boot.** The runner lists tmux sessions on its socket,
+adopts those the control plane's snapshot reconciliation confirms,
+rehydrates each ring buffer from `capture-pane`, and **reports** the
+rest rather than reaping them (§11). Path shape and name shape are never
+authority: a person can run `git worktree add` by hand under
+`~/oppenheimer-ai/`, and only a directory carrying our `.oppenheimer`
+marker is ours to remove, and only when the control plane says so. **After a host reboot** tmux
+is gone: every session shows stopped with a Restart button that
+recreates window 0 in the same worktree, which survived. A session marked
+kept (`runner sessions keep`, 2026-11-02) does not wait for the button: a
+runner that starts on a host booted after it last saved the session map
+restarts each kept session that was running, reopening its conversation,
+and retries a failure from 1.5 s doubling to a minute.
+
+**An idle session stops on its own** (2026-11-24,
+`research/session-resume.md`). Stopping costs nothing to undo:
+the agent's processes go, and its checkouts, branch and conversation stay.
+So the daemon stops, every 5 minutes, each session that has been idle
+past the window (2 h by default; `RUNNER_IDLE_STOP` sets another duration,
+or `off`). Idle means the agent is `done` or `idle`, and nobody has been
+attached to it or typed into it for that long. The window runs from the
+later of the state's last change and the last look, so a session someone
+just read or typed into is not stopped. Before each stop it looks at the
+agent afresh (the poll loop's state can be 10 s old). It never stops a
+session that is `working` or `blocked`, runs a second agent in another
+window (only window 0's is read, and a stop ends every window), has a
+terminal attached now (from the console, or
+a tmux client on the host, counted with `list-clients`), is kept, or is a
+child whose parent is live. A parent stops only when every session that
+would stop with it (its children, theirs, and on down) is idle too, so an
+idle family stops parent first. It
+never closes one. Each stop takes the stop path (the wrapper hung up, then killed, as
+above), is announced like any other stop, and is logged with slog
+("stopped an idle session"). Opening the session in the console restarts
+it (`../console/screens.md`, "A stopped session comes back when it is opened"), and a bot,
+`opp sessions restart` or the MCP server's `restart_session` restart it
+without anyone opening it (2026-11-24, `../bots/bots.md`).
+
+**Caps.** 20 sessions per host by default, 2 MB ring buffer each, 32 KB
+PTY read buffer. Resize is coalesced once, by the console, over 50 ms;
+the runner applies each size as it arrives.
+
+### 6. tmux topology
+
+One tmux server per host on a dedicated socket (`tmux -L oppenheimer`)
+so it never collides with the user's own tmux. One tmux session per
+oppenheimer session, named by the session id, created with
+`new-session -d -s <id> -c <worktree>` and window 0 running the agent.
+Each browser tab is a tmux window in that session (`new-window`), so
+every tab has its own scrollback and resize, and a phone-sized tab does
+not shrink the laptop's. Window 0 is the agent; the side pane's Terminal
+tab opens plain shells as windows 1 and up, and the runner answers each
+open, close and listing with the windows tmux lists then (`session.windows`,
+`../foundations/protocol.md`), so a shell its user ended with `exit` is gone from the next listing.
+An open may name a second coding agent instead (`agent`,
+`session.window.agent`): the window is made the same way, named by the
+agent's catalog id (`new-window -n codex`, which tmux then never renames),
+and the agent is started in it as window 0's is at create, with
+`respawn-pane` after its folder is trusted and its executable held still,
+with the model, effort and permission level the open picked for it; each
+one not picked is the session's (its permission level always, its model and
+effort only when it is the session's own agent). A first task the open
+carries is the CLI's trailing positional, as window 0's is. A launch that fails kills the window. It is never
+the session's agent: state dots, the chat and the first prompt stay window
+0's. Closing the session is `kill-session`. Working
+directory, environment, and the credential helper socket are set once at
+creation and inherited by every window. The runner attaches by spawning
+a PTY running `tmux attach -t <id>:<window>` per browser connection, so
+several devices can view one window; tmux sizes the window to the
+smallest attached client, accepted for the MVP. The runner passes its
+own tmux config: status bar off, mouse on, 50k scrollback, no prefix
+key. State dots come from `capture-pane` on window 0 every few seconds,
+which is also how the login URL is detected. The tmux server outlives
+the runner, so a runner restart or upgrade loses nothing.
+
+tmux consumes a pane's synchronized-output markers (DEC 2026) and does
+not pass them on, so a TUI's hide, draw, show can reach the browser
+split across animation frames and paint frames with no cursor. The
+console puts the frame back: it opens synchronized output in front of
+the hide and closes it behind the show, or after 100 ms when no show
+follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
+
+### 7. Terminal streaming
+
+- One PTY per attached browser connection, one goroutine reading it,
+  one writer per link stream, bounded queues everywhere — a client that
+  cannot keep up is disconnected, never allowed to stall the runner
+  (`packages/go/ws`'s rule, applied to streams).
+- The **ring buffer** is per session window, a few MB, replayed as a
+  tail on attach so a reopened tab is not blank. It lives in memory: it
+  is a cache of tmux's own scrollback, not a second copy of record, and
+  it is rehydrated from `capture-pane -e` on adoption. Nothing is
+  written to disk (F12).
+- Resize goes straight through to the tmux window. The console holds a
+  drag's sizes for 50 ms and sends the one it settles on, so the runner
+  adds no timer of its own.
+- A **pasted file** (`session.image`: an image, a PDF, text) is pulled, not streamed: the
+  runner fetches it from the control plane over HTTPS on its own
+  goroutine, so the reader that pumps every pane never waits on it. It
+  re-checks the bytes against the generated file table (magic bytes for
+  the images and PDF; for text, valid UTF-8 with no control bytes and no
+  `#!` or markup opening), writes the file under `<command id><extension
+  from the table>`, never a name the person chose
+  (§11), and pastes the path through a tmux buffer named for the command,
+  as a bracketed paste. A paste that does not land deletes its file.
+- **Images attached to the first task** (`session.create`'s `images`)
+  are pulled the same way, all at once and before anything is made, and
+  not at all for a session the host already holds (a create sent again);
+  a pull that fails fails the create with the reason, and a create with
+  images and no task is refused. They are saved where pasted
+  images go (§11) just before the agent starts, and their paths are
+  appended to the prompt it is launched with, a blank line after the
+  task and one path to a line. The session keeps the task as typed, so
+  a restart, by which time the images went with the tmux session, names
+  no file that is gone.
+
+### 8. Git and credentials
+
+- A `credential-helper` subcommand that git in the session's shell
+  calls; it asks the runner over the Unix socket for the current
+  one-hour installation token for that session's repository. The session
+  id comes from the environment tmux set at creation, so a helper
+  invoked from another shell gets nothing. Nothing on disk (F10).
+- The runner's own git for a session — the clone and fetch of create,
+  the push of close — names the session the same way, so a private
+  repository clones before the session has a shell at all. The session
+  is known to the host from the moment its create begins (`creating`,
+  held in memory only, never reported or saved), which is what the
+  helper's ask resolves against; the control plane already treats a
+  `starting` session as one it may mint for. A clone that git gives up
+  on for want of a credential fails with `GIT_004`, saying which
+  repository and session had no token — never git's "could not read
+  Username", which points at a prompt nobody was shown.
+  Close marks its whole run with the session, as create does, and a
+  push for no session is refused with `GIT_004` before it reaches the
+  network: a push always needs the token, and GitHub's refusal would
+  read as work that could not be pushed.
+- The runner **pulls** a fresh token from the control plane before
+  expiry — it is the side that knows when the token is about to be used
+  — and the control plane may push `credentials.revoke` to drop it early
+  (`../foundations/protocol.md` open question 5).
+- Tokens live in memory, scoped to one session and one repository
+  (F21), and are never logged.
+
+### 9. Screen manifests and state
+
+- The classifier reads `capture-pane` on window 0 — every 1 s while a
+  client is attached, every 10 s when none is — and maps the screen to
+  working, blocked, done, idle or unknown (`../../archive/machines-and-vm-provisioning.md` §1), plus the login
+  URL. There is a manifest per agent: Claude Code's is the one watched
+  on real hosts; Codex's is provisional; OpenCode's is one title rule
+  (`OC |` with a spinner glyph in front while a turn runs) and reports
+  unknown for everything else until a soak on a live session produces
+  patterns of its own, rather than borrowing Claude's screen rules;
+  Grok's is provisional too — its sign-in screen reads blocked, watched
+  on a live session of grok 1.0.41, and so does its tool-approval
+  dialog, read off the binary and not yet watched — and it reports
+  unknown for everything else until a soak, its braille logo being why
+  no spinner rule is borrowed; the blank terminal's says idle at a
+  prompt and unknown otherwise. Each agent's login allowlist is its
+  catalog `loginTargets`, Grok's being `accounts.x.ai` and `auth.x.ai`.
+- **A manifest is one agent's rules, as data.** One JSON file per
+  agent, carrying a schema, an agent id, its own version and the engine
+  version it needs; each rule names the region it reads, the patterns
+  that match, the substrings that veto it, and a priority so the
+  highest match wins. A chain of ifs reports "working" for a session
+  that is actually blocked, because the spinner frame is still on
+  screen under the question (`../../research/lessons-from-herdr.md` §1).
+- **Regions** are `title`, `screen`, `bottom:N` and `top:N`. `title` is
+  the terminal title the agent sets through an escape sequence, read
+  with tmux's `#{pane_title}`, and it is the signal to trust: the agent
+  controls it, and nothing a person types into their prompt can appear
+  in it.
+- **Manifests ship without a binary.** The runner bundles a set so a
+  host with no control plane still classifies its sessions; anything in
+  `~/.oppenheimer/manifests/` replaces a bundled file by agent id, which
+  is how a fix for an agent's new spinner reaches hosts without a
+  release, a signature and a rollout. A file that does not parse is
+  skipped with a reason, never fatal.
+- Where an agent has lifecycle hooks, the hooks are authoritative and
+  the screen is the fallback; that half is still to build.
+- **The agent's own word comes first** (2026-11-02). An agent that speaks
+  OSC 7501, the Program Status Protocol (Claude Code from 2.1.295), says
+  itself whether it is idle, working, done, blocked (on a permission, a
+  question or a sign-in) or in error, with a message. It does so only to a
+  terminal that answers its `OSC 7501 ; ?` probe, which tmux does not, so
+  window 0 runs the agent under `runner pty`: a PTY of its own inside the
+  pane that answers the probe, keeps each report in
+  `state/program-status/<session>.json` and passes every other byte
+  through. While that file's wrapper lives and holds a report, its state
+  is the session's (`error` reads as `done`), and `agent.observed` carries
+  the report as `program`; the manifests above are the fallback, and only
+  the screen names a vendor login (`research/lessons-from-herdr.md` §4).
+- The vendor-login allowlist stays in code, not in a manifest: what the
+  console may turn into a clickable link should not travel over the
+  network (F3). It is **generated**, per agent, from the catalog's
+  `loginTargets` — a host compared for equality, and a path for GitHub's
+  device flow — the same list the link's own check is built from, so
+  the runner and the control plane cannot disagree. An agent's screen
+  offers only its own vendors' logins, and the blank terminal offers
+  none: a URL somebody prints in a shell is text, never a snapshot the
+  control plane would refuse.
+- Idle is terminal silence **and** a manifest state that is not working,
+  so a long unattended run is never called idle.
+- State changes go to the control plane as events; the control plane
+  derives the sidebar dot from them. An agent still blocked 15 s after it
+  was announced is announced once more: the control plane counts a
+  state's duration only from its second report, so a question asked once
+  would otherwise never make the session wait on anyone (found on
+  2026-10-26 by the Inbox's fleet spec). Since 2026-11-23 that second
+  report comes 3 s after the first, not 15 s: the session loop looks again
+  that soon after it sees an agent block, and the second report is now
+  what tells the person (`../console/inbox.md`, "A question reaches you in
+  seconds").
+
+### 10. Host facts and health
+
+Collected at register, on `host.preflight`, and summarised in every
+heartbeat: OS and arch, `git`, `tmux`, `claude`, `codex`, `opencode`,
+`grok` and `gh` presence and version (one list, `ProbedTools`), free disk on the
+workspaces filesystem, load, runner version and channel. Only `git` and
+`tmux` are required. A missing agent is a hint on the engine button, not
+a refusal — a session still opens and the shell's own "command not
+found" appears in the terminal — and the blank terminal needs no tool of
+its own. The list is also what the runner knows: every agent it can
+launch is probed, found or not (a test in `internal/cli` holds that),
+and a catalog agent with no entry is one this build would refuse, which
+the control plane refuses to create a session for (`../foundations/protocol.md`). Missing
+`tmux` is fatal for sessions and the installer offers to fix it (`runner-install-and-update.md`
+§2). **Disk pressure** is a status event before a session fails to
+write, not an error after (`../../research/lessons-from-grok-bot.md`).
+
+**Agent updates.** Installed agent CLIs stay current: `run` runs each
+one's own unattended updater, the catalog's `update`
+(`packages/shared/src/agents/catalog.ts`), shortly after boot and on a
+schedule after, one at a time and never beside the runner's own update
+check or another round, and a session starting that agent meanwhile
+waits for its update. A CLI one release behind is refused by its vendor the day a model
+ships that needs the newer one, and the person would find out in the
+session's terminal. A running session keeps the binary it started with;
+the next session starts the new one. An agent that is not installed is
+left alone, and so is one whose updater cannot run without asking.
+OpenCode's asks whenever it cannot tell how it was installed; it takes the
+method as a flag, so the catalog spells its updater with `<method>` and lists
+how to tell the method from where the executable really lives (`brew`, `bun`,
+`pnpm`, `npm`). An OpenCode none of them matches is left alone. *(Changed
+2026-10-12: until then OpenCode had no `update` and was never kept current.)*
+That includes one from `opencode.ai/install`, told apart by its
+`~/.opencode/bin`: its method, `curl`, reruns that script, which checks
+nothing, so it keeps OpenCode's own launch-time autoupdate and no more.
+*(Changed 2026-10-18: until then `curl` was a method and the runner ran the
+script hourly.)* An npm-installed CLI updates itself with `npm install -g`,
+which writes under npm's configured prefix rather than the one the running
+copy lives under, so the runner points npm at the prefix the executable
+resolves under (`npm_config_prefix`, from `<prefix>/lib/node_modules/`);
+for one it installed that is `~/.local`. A failure is logged and retried;
+`runner agents
+update` runs the round by hand (`runner-install-and-update.md` open question 4 says what to do when it
+fails). `RUNNER_AGENT_UPDATES=off` opts a host out.
+
+**Installing tools** (decided 2026-10-12). Updating is ours; installing is
+the person's choice, made by asking: `runner agents install <name>` for an
+agent CLI and `runner tools install gh` for GitHub's CLI. Both run the
+catalog's `install` entry (`packages/shared/src/agents/catalog.ts` for
+agents, `host-tools.ts` for `git`, `tmux` and `gh`), generated into the
+runner's `host_tools.gen.go`: a POSIX `sh` script per platform family,
+run as the runner's account with no terminal and nothing on stdin, under the
+same per-agent lock as an update, bounded at ten minutes. Every script
+installs to a user-level destination and none uses `sudo`. Where the
+vendor publishes release binaries with checksums, the script takes the
+latest release and checks it against the vendor's published SHA-256
+(`sha256sum` on Linux, `shasum -a 256` on macOS) before anything from it is
+unpacked or run, and a checksum that is missing, malformed or different
+stops the install (`release-install.ts`). Claude Code reads the version
+`downloads.claude.ai/claude-code-releases/latest` names, takes that
+version's `manifest.json`, downloads the binary for its platform (musl
+told from glibc, Rosetta from Intel, as `claude.ai/install.sh` does),
+verifies it against the manifest's checksum, and runs the verified
+binary's own `claude install <version>`, which links `~/.local/bin/claude`;
+`gh` on Linux is its release tarball, checked against the release's
+`checksums.txt`, and Homebrew on macOS. That trusts the vendor's release
+over HTTPS: it catches a download cut short, corrupted, or swapped on a
+mirror or CDN, not a compromised vendor. *(Changed 2026-10-17: until then
+Claude Code and OpenCode ran their vendors' install scripts, fetched to a
+file first, which nothing checked.)* Codex, OpenCode and Grok use their npm
+packages (`@openai/codex`, `opencode-ai`, `@xai-official/grok`) under a
+`~/.local` prefix, because that is a destination the catalog can name, and
+npm checks each package against the registry's integrity hash; OpenCode's
+platform binary comes the same way, as the package's optional dependency
+(`opencode-<platform>`). No agent install runs a script it downloaded.
+*(Changed 2026-10-18: until then OpenCode ran `opencode.ai/install`, because
+its GitHub releases publish no checksum for the CLI archives; open question
+11.)* Each entry names the directory it installs into, and the runner
+appends every such directory to its own `PATH` at start, so a tool it
+installed is found by the next probe and by the sessions' tmux server
+without the person editing a shell profile the service never reads. An
+install of a tool already on `PATH` does nothing. `git` and `tmux` stay with
+the package manager: the runner never takes root, so it answers `HOST_010`
+with the exact command (`brew install git tmux`, `sudo apt-get install -y
+git tmux`), and `runner tools` and `runner status` print the one line that
+gets each missing tool onto the host. Asking for the install from the
+console — a session for an agent the host lacks offering to install it —
+needs a link message and is open question 10.
+
+### 11. State on disk
+
+One tree, named here and pointed at from `runner-install-and-update.md`:
+
+```
+~/.oppenheimer/
+  config.json          0600  control plane URL, host id, key fingerprint, channel, pin,
+                             where sessions live, and when the host was unpaired
+  host.key             0600  the ed25519 private key (F8; rotation arrives with the link, `runner-install-and-update.md` §3)
+  state/sessions.json  0600  session id → checkouts (path, branch, repo, mode), cwd, agent
+  state/update.json    0600  what the last update did, and how often it has booted
+  manifests/                 agent manifests newer than the bundled ones (§9)
+  images/<session>/    0700  files pasted into or attached to a session's prompt (images, PDF, text), 0600 each, named by command id; dropped when the tmux session ends (stop, close, a reboot)
+  bin/                       runner-<version> binaries and the `current` symlink (`runner-install-and-update.md` §5)
+  run/                       runner.sock, runner.lock
+  log/                       runner.log, rotated at 10 MB × 3
+~/oppenheimer/<account>/<workspace>/{repos/<store>.git, sessions/<slug>/<dir>}   the work folder, the user's code (`../sessions/session-places.md` §2)
+```
+
+**The boot path trusts tmux.** It is the only one of the three that
+cannot be stale: a tmux session either exists on our socket or it does
+not. `state/sessions.json` is a cache that says which of those sessions
+is which, and the control plane is the source of truth for what *should*
+exist — which is a different question, and one the runner cannot ask
+while the link is down.
+
+So the runner never kills a session on boot. It adopts what tmux still
+holds, marks the rest stopped, and **reports** a tmux session with our
+prefix that no record claims rather than reaping it after a grace
+period. Ending someone's session is a decision the control plane makes
+with its own state in hand, not a side effect of a laptop booting
+offline. Logs never contain PTY bytes or tokens.
+
+### 12. Failure modes
+
+| Situation | What the runner does |
+|---|---|
+| Link down | Sessions keep running in tmux. Reconnect ladder, new epoch, snapshot on hello |
+| Control plane says the runner is too old | Update within the urgent delay, ignoring the safe window (`runner-install-and-update.md` §5) |
+| Runner killed or updated | tmux untouched; adopt on boot, rehydrate buffers, resume streams |
+| Host rebooted | Sessions stopped, worktrees intact, Restart recreates window 0; a kept session is restarted on its own (§5) |
+| A session left finished and unwatched | Stopped after `RUNNER_IDLE_STOP` (2 h), never closed; opening it restarts it (§5) |
+| `tmux` missing | Sessions refuse to start with `TMUX_001`; the UI shows the fix |
+| `claude` missing | Session starts; the terminal shows the install hint |
+| Disk nearly full | Status event and a banner before the failure, refuse new sessions under the floor |
+| Branch push rejected on close | Session closes, worktree kept, event carries the git error |
+| A second runner starts | Fails on the lock with `RUNNER_001`, never a split brain |
+
+### 13. Configuration
+
+The daemon reads `~/.oppenheimer/config.json` (written by `register`) for
+everything that identifies the host, and the repo's root `.env` only in
+development, through `internal/config` as today. Where sessions live is the
+one path a user chooses: `config.json` holds it, so every process — the
+service, `status`, `sessions` — resolves the same directory, and
+`RUNNER_WORKSPACES` still overrides it for development. The service unit
+carries the installer's `PATH` with empty and relative entries dropped,
+because the unit's working directory is the user's home and a `.` in
+`PATH` would let a file there shadow `git` or `tmux`. New variables get a note
+in the root `.env.example` under "Runner (apps/runner)" when the code
+lands; a paired host needs no environment at all, which is what lets the
+service unit be three lines.
+
+### 14. Deferred to the VM slice
+
+Guest agent, vsock, libvirt lifecycle, sleep tiers, account volumes,
+capacity gate, the egress proxy, and the `hypervisor`, `guest` and
+`proxy` subcommands. None of it changes a boundary above.
+
+## Open questions
+
+1. ~~tmux topology~~: decided above, one server per host on its own
+   socket, one tmux session per oppenheimer session, windows as tabs.
+2. ~~Screen manifests: regexes or hooks?~~ Decided in §9 from `../../research/lessons-from-herdr.md`:
+   hooks are authoritative where an agent has them, screen rules are the
+   fallback, and the rules carry priorities and `not` guards. What is
+   still open is the hook half — an agent that reports its own state
+   should not be guessed at — and the delivery: the runner reads
+   manifests from `~/.oppenheimer/manifests/`, and nothing writes there
+   yet, because that is the control plane's side of the link.
+3. ~~Idle detection input~~: decided in §9, silence **and** manifest
+   state.
+4. ~~macOS install~~: decided in `runner-install-and-update.md` §2 — a user launchd agent and a
+   quarantine-stripped binary need no notarization; only a `.app` would.
+   Changed 2026-11-04 (`runner-install-and-update.md` §2): the runner is a signed, notarized `.app` at
+   one fixed path, because a bare binary lost its macOS permissions on
+   every update.
+5. ~~Node and Claude Code presence~~: decided in §10 — check and hint for
+   `claude`, installer fixes `tmux`.
+6. ~~Package map~~: decided in §3.
+7. Schema language for the link messages: JSON Schema generated to both
+   languages, or protobuf (`../foundations/protocol.md` open question 1). The framing in §4
+   works either way; the decision belongs to the protocol note.
+8. Whether `sessions` should split into `sessions` and `workspaces` once
+   the VM slice adds a second kind of place a worktree can live. Today
+   git is an adapter of `sessions`; then it may want its own context.
+9. ~~**Network work before Send.**~~ Decided 2026-10-02 (§5): New session
+   sends `repository.prepare` when a host and a repository are picked; the
+   first clone is shallow and deepened in the background; checkouts run one
+   worker per core. Skipping a create's fetch when the store is fresh was
+   measured and **not** taken: a create sees its base as it is now, and the
+   fetch costs about half a second. A treeless clone was measured slower
+   than shallow (13.4 s against 9.3 s to a ready spare on vscode).
+10. **Installing from the console.** The runner installs agent CLIs and `gh`
+   when asked on the host (§10). The console's half is still missing: a
+   `host.install` link command answered with the install's outcome, an API
+   route under the host that sends it, and New session offering "Install
+   Codex on this host" when the inventory has no `codex` instead of starting
+   a session whose terminal says "command not found". The host facts already
+   carry every tool and version the console needs to show what each host can
+   run.
+11. ~~**Installing OpenCode without its script.**~~ Decided 2026-10-18
+   (§10): the npm package `opencode-ai`, under `~/.local` as Codex and Grok
+   are, so every agent installs through something that checks what it
+   downloaded. `opencode.ai/install` checks nothing, and OpenCode's GitHub
+   releases (`anomalyco/opencode`) publish no checksum for the CLI archives
+   (`latest.json` and `latest.yml` cover the desktop app only); the package
+   and the platform binary it resolves to (`opencode-<platform>`) are
+   checked against the registry's integrity hash. Its executable moves to
+   `~/.local/bin` and its `upgrade --method` to `npm`, with npm pointed at
+   `~/.local`. Not taken: the SHA-256 GitHub's release API reports per
+   asset, which is GitHub's digest rather than the vendor's and costs an API
+   call under the unauthenticated rate limit. An OpenCode already in
+   `~/.opencode/bin` is left to its own autoupdate.

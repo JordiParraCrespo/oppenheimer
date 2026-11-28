@@ -7,7 +7,7 @@ import { HOST_BROWSER } from '../../sessions.di-tokens';
 import { UseHostBrowserCommand } from './use-host-browser.command';
 
 /**
- * A bot's action in its browser on a host (`product/versions/mvp/25-bots.md`
+ * A bot's action in its browser on a host (`product/design/bots/bots.md`
  * §4.2, "Using a browser"). The host is checked with the same check a
  * session's create makes, so a bot reaches only the hosts its owner may
  * start work on. Whether the host then lets bots browse from it is its own
