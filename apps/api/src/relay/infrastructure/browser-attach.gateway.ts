@@ -101,8 +101,8 @@ export const REAUTHORIZE_INTERVAL_MS = 60_000;
 export const ATTACH_PING_INTERVAL_MS = 15_000;
 
 /**
- * What a runner names to be invited to a direct path (22): it answers offers,
- * and it proves itself on the channel (31). The console refuses a channel
+ * What a runner names to be invited to a direct path (`product/design/runner/direct-terminal-path.md`): it answers offers,
+ * and it proves itself on the channel (`product/design/runner/peer-to-peer-and-the-host-proof.md`). The console refuses a channel
  * whose host has not signed it, so a runner without the proof would only cost
  * the reader a negotiation that ends on the relay anyway.
  */
@@ -170,7 +170,9 @@ export class BrowserAttachGateway {
 
   private async judge(ws: WebSocket, ticket: string, early: EarlyFrame[]): Promise<void> {
     const claim = await this.cache.take<AttachTicket>(`${ATTACH_TICKET_PREFIX}${ticket}`);
-    if (!claim) {
+    // A preview ticket shares this key space but buys one port through the
+    // preview proxy, and it travels in a URL; it never opens a terminal here.
+    if (!claim || (claim.target !== undefined && claim.target !== 'device')) {
       endSocket(ws, 'unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
       return;
     }
@@ -256,12 +258,12 @@ export class BrowserAttachGateway {
   }
 
   /**
-   * Whether this attachment may move to a direct path (22), the ICE servers
-   * it gathers with and the host the browser pins the key of (31) if so.
+   * Whether this attachment may move to a direct path (`product/design/runner/direct-terminal-path.md`), the ICE servers
+   * it gathers with and the host the browser pins the key of (`product/design/runner/peer-to-peer-and-the-host-proof.md`) if so.
    * Only for a runner that can answer and prove itself, for a
    * person the `terminal_direct_path` flag is on for, and not through a share
    * link: its audience may be anyone, and a host's upload is somebody's home
-   * connection (22, "Several browsers"). `null` keeps the attachment on the
+   * connection (`product/design/runner/direct-terminal-path.md`, "Several browsers"). `null` keeps the attachment on the
    * relay, and the browser is never told it could have been otherwise.
    */
   private directPathFor(claim: AttachTicket, link: RunnerLink): DirectPathOffer | null {

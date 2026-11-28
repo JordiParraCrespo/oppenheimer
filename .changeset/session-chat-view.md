@@ -9,7 +9,7 @@
 ---
 
 A Claude Code session read as a chat, a proof of concept behind
-`session_chat_view` (`product/next-steps/0.7-terminal-and-chat.md`).
+`session_chat_view` (`product/design/sessions/terminal-and-chat.md`).
 
 - `@oppenheimer/shared`: `attachment.chat` on the link (capability
   `attachment.chat`, `ChatEntryMaxBytes`, `ChatBatchMaxEntries`), `chat` on

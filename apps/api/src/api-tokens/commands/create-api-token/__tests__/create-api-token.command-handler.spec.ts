@@ -137,4 +137,54 @@ describe('CreateApiTokenCommandHandler', () => {
     expect(stored.expiresAt).toBeInstanceOf(Date);
     expect(stored.ipAllowlist).toEqual(['203.0.113.0/24']);
   });
+
+  describe('minted with a token rather than a browser session', () => {
+    const narrow = { scopes: ['tokens:write' as const], organizationIds: ['org-1'] };
+
+    it('refuses scopes the presenting token lacks, though its owner holds them, and writes nothing', async () => {
+      await expect(
+        service.execute(
+          command({
+            actor: { id: 'user-1', role: 'user', credential: narrow },
+            scopes: ['hosts:write', 'tokens:write'],
+            organizationIds: ['org-1'],
+          }),
+        ),
+      ).rejects.toMatchObject({
+        code: 'TOKEN_002',
+        extensions: { ungrantableScopes: ['hosts:write'] },
+      });
+      expect(repo.insertWithinLimit).not.toHaveBeenCalled();
+    });
+
+    it('refuses to drop or widen the organizations the presenting token is pinned to', async () => {
+      for (const organizationIds of [undefined, ['org-1', 'org-2']]) {
+        await expect(
+          service.execute(
+            command({
+              actor: { id: 'user-1', role: 'user', credential: narrow },
+              scopes: ['tokens:write'],
+              organizationIds,
+            }),
+          ),
+        ).rejects.toMatchObject({ code: 'TOKEN_002' });
+      }
+      expect(repo.insertWithinLimit).not.toHaveBeenCalled();
+    });
+
+    it('mints within the presenting token’s reach, a write scope covering its read', async () => {
+      await service.execute(
+        command({
+          actor: {
+            id: 'user-1',
+            role: 'user',
+            credential: { scopes: ['tokens:write', 'hosts:write'], organizationIds: ['org-1'] },
+          },
+          scopes: ['hosts:read'],
+          organizationIds: ['org-1'],
+        }),
+      );
+      expect(repo.insertWithinLimit).toHaveBeenCalledTimes(1);
+    });
+  });
 });

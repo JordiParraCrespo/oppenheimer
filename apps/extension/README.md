@@ -11,7 +11,7 @@ Oppenheimer, it does the same for the sessions on your own hosts.
 | **Notification** | When a session comes to need you, fails or finishes; a click opens it. With Oppenheimer connected, also when a session on your hosts comes to wait on you or its agent sends a notice; a click opens it in the console |
 | **Popup** | Needs you, Running, and Done behind a switch. A row opens the session; its terminal button copies `claude --teleport <id>`. Its Oppenheimer section connects the console |
 
-The popup is the console's Inbox (`product/versions/mvp/design/version1/Brain.dc.html`)
+The popup is the console's Inbox (`product/mockups/version1/Brain.dc.html`)
 cut down to this one job, built from `@oppenheimer/design-system-web`. It
 speaks English or Spanish, as Chrome does; the copy is
 `@oppenheimer/translations` (`extension.json`).

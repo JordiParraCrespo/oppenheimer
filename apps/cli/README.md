@@ -4,7 +4,7 @@
 hosts, tell it more, wait on it; create automations; ask a bot; manage the
 board. People use it from a laptop, scripts use it in CI, and an agent in a
 session uses it to hand work to an agent on **another host**. The same
-commands work in each case. The design is `product/next-steps/0.6-mcp-cli-and-agent.md`.
+commands work in each case. The design is `product/design/clients/mcp-cli-and-agent.md`.
 
 ```bash
 pnpm --filter @oppenheimer/cli build

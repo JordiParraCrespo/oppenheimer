@@ -20,12 +20,14 @@ function tryKey(session: ReadOnOpenSession): string | null {
  * dot) is marked read, at once or when the reader comes back to the tab. A
  * turn that ends in a tab nobody is looking at stays blue until they do; a
  * session that sits at its prompt may not move for hours, so coming back to
- * the tab is also what tries a failed read again.
+ * the tab is also what tries a failed read again. With `enabled` false
+ * (the session drawn on an Inbox card, which its unread turn is what lists)
+ * nothing is read.
  */
-export function useReadOnOpen(session: ReadOnOpenSession): void {
+export function useReadOnOpen(session: ReadOnOpenSession, enabled = true): void {
   const { mutate } = useAcknowledgeSessionReport();
   const tried = useRef<string | null>(null);
-  const key = tryKey(session);
+  const key = enabled ? tryKey(session) : null;
   const { id } = session;
 
   useEffect(() => {

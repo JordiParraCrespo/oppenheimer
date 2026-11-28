@@ -1279,6 +1279,12 @@
       "delete": "Eliminar las seleccionadas",
       "clear": "Quitar la selección"
     },
+    "group": {
+      "actions": "Acciones de {{name}}",
+      "hideAll": "Ocultar todas las sesiones",
+      "showAll": "Mostrar todas las sesiones",
+      "deleteAll": "Eliminar todas las sesiones…"
+    },
     "deleteSessions": {
       "title_one": "¿Eliminar {{count}} sesión?",
       "title_many": "¿Eliminar {{count}} de sesiones?",
@@ -1313,6 +1319,7 @@
       "showAll": "Mostrar todos los proyectos",
       "pinnedOnly": "Solo fijadas",
       "showHidden": "Mostrar sesiones ocultas",
+      "unattended": "Recordarme tras 30 minutos sin leer",
       "newProject": "Nuevo proyecto…",
       "allStatuses": "Todos los estados",
       "statuses": {
@@ -2259,8 +2266,8 @@
         "unknown": "algo salió mal"
       },
       "openSession": "Abrir sesión",
-      "hideToolCalls": "Ocultar llamadas a herramientas, rutinas y cambios de tareas",
-      "showToolCalls": "Mostrar llamadas a herramientas, rutinas y cambios de tareas",
+      "hideToolCalls": "Ocultar el trabajo del bot: herramientas, rutinas, modelo y tiempo",
+      "showToolCalls": "Mostrar el trabajo del bot: herramientas, rutinas, modelo y tiempo",
       "goal": {
         "title": "Objetivo: {{objective}}",
         "progress": "{{step}} de {{limit}} continuaciones",
@@ -4298,6 +4305,14 @@
       "cleared_other": "Has despejado {{count}} elementos en esta visita.",
       "cleared_many": "Has despejado {{count}} elementos en esta visita."
     },
+    "unattended": {
+      "short": "{{name}} espera para seguir adelante",
+      "title": "{{name}} lleva más de 30 minutos sin leer",
+      "body": "Su turno terminó y nadie la ha abierto desde entonces. Responde aquí para ver lo que hizo y darle el siguiente paso, o abre la sesión.",
+      "reply": "Responder aquí",
+      "hideReply": "Ocultar respuesta",
+      "chat": "{{name}}, en directo"
+    },
     "notice": {
       "title": "{{name}} tiene novedades para ti"
     },
@@ -4344,9 +4359,7 @@
     },
     "alert": {
       "doneTitle": "{{name}} terminó su turno",
-      "doneBody": "Abre la sesión para ver qué hizo.",
-      "staleTitle": "{{name}} lleva 30 minutos esperando",
-      "staleBody": "Todavía te necesita. Abre la sesión para retomarla."
+      "doneBody": "Abre la sesión para ver qué hizo."
     }
   },
   "settings": {
@@ -4907,7 +4920,9 @@
     "employees": "Empleados",
     "account": "Cuenta",
     "pullRequestsShort": "PRs",
-    "inbox": "Bandeja"
+    "inbox": "Bandeja",
+    "employeesShort": "Bots",
+    "automationsShort": "Autos"
   },
   "language": {
     "label": "Idioma",
@@ -5177,6 +5192,8 @@
     "sessionMoved": "«{{name}}» se ha movido a {{project}}.",
     "sessionHidden": "«{{name}}» ocultada. Muestra las sesiones ocultas desde el menú de filtros.",
     "sessionShown": "«{{name}}» visible de nuevo.",
+    "sessionsHidden": "{{n}} sesiones ocultas. Muestra las sesiones ocultas desde el menú de filtros.",
+    "sessionsShown": "{{n}} sesiones mostradas.",
     "sessionsMoved": "{{n}} sesiones se han movido a {{project}}.",
     "projectCreated": "Se ha creado «{{name}}».",
     "projectSaved": "Se ha guardado «{{name}}».",

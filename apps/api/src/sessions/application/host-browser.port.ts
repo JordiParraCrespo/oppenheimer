@@ -23,7 +23,7 @@ export type HostBrowserOutcome =
 
 /**
  * What the module that owns the runner link implements so a bot can drive a
- * browser of its own on a host (`product/versions/mvp/25-bots.md` §4.2,
+ * browser of its own on a host (`product/design/bots/bots.md` §4.2,
  * "Using a browser"). It waits for the runner's answer; whether the host
  * lets bots browse from it at all is the host's own setting, which nothing
  * here sees. The page and its picture are never stored.

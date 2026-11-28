@@ -4,7 +4,7 @@ import type { AttachmentSignal, RunnerLink } from '../../links/application/link-
 /** What an attachment may offer its browser for a direct path (`directPathFor`). */
 export interface DirectPathOffer {
   iceServers: string[];
-  /** The host the channel reaches: the browser pins its key under this (31). */
+  /** The host the channel reaches: the browser pins its key under this (`product/design/runner/peer-to-peer-and-the-host-proof.md`). */
   hostId: string;
 }
 

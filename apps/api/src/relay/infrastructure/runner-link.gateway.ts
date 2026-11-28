@@ -79,7 +79,7 @@ const LINK_OVERLOADED = 1013;
 
 /**
  * Oldest protocol this control plane still speaks. The window is N-2 minor
- * versions of the runner (03); with one protocol version in existence the
+ * versions of the runner (`product/design/foundations/control-plane.md`); with one protocol version in existence the
  * floor is that version, and this is the constant that moves when it is not.
  */
 const MIN_SUPPORTED_PROTOCOL = PROTOCOL_VERSION;
@@ -96,7 +96,7 @@ const MIN_SUPPORTED_PROTOCOL = PROTOCOL_VERSION;
  *
  * The first frame after the upgrade must be `hello`; anything else, or nothing
  * within the timeout, closes the socket. A runner below `MIN_SUPPORTED_PROTOCOL` is
- * refused **with** `update_required` rather than dropped (01).
+ * refused **with** `update_required` rather than dropped (`product/design/foundations/protocol.md`).
  */
 @Injectable()
 export class RunnerLinkGateway {
@@ -463,7 +463,7 @@ export class RunnerLinkGateway {
       case 'attachment.direct.answer':
       case 'attachment.direct.refused':
       case 'attachment.path':
-        // The direct path's signalling (22) is its browser's, by attachment.
+        // The direct path's signalling (`product/design/runner/direct-terminal-path.md`) is its browser's, by attachment.
         link.attachment(message.attachmentId)?.signal(message);
         return;
       case 'attachment.chat':
@@ -480,7 +480,7 @@ export class RunnerLinkGateway {
         return;
       case 'port.opened':
       case 'desktop.opened':
-        // A port's or a desktop's connection is up; its bytes may flow (28).
+        // A port's or a desktop's connection is up; its bytes may flow (`product/design/sessions/session-previews.md`).
         link.attachment(message.attachmentId)?.opened?.();
         return;
       case 'desktop.pointer':

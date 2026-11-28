@@ -49,7 +49,7 @@ export class StartCloudSessionHttpController {
   @ApiOperation({
     summary: 'Start a session in the cloud',
     description:
-      'The vendor’s own agent (Cursor’s, today) on one repository, from its base branch, on the caller’s key for the vendor (`PUT /cloud-agents/providers/{provider}/credential`), listed with every session in the place `cloud`: no host, terminal or checkout. Its row opens the agent’s page at the vendor, where it is followed up and stopped; its state follows what the vendor says about its run (`product/next-steps/cloud-agents.md`).',
+      'The vendor’s own agent (Cursor’s, today) on one repository, from its base branch, on the caller’s key for the vendor (`PUT /cloud-agents/providers/{provider}/credential`), listed with every session in the place `cloud`: no host, terminal or checkout. Its row opens the agent’s page at the vendor, where it is followed up and stopped; its state follows what the vendor says about its run (`product/design/sessions/cloud-agents.md`).',
   })
   @ApiHeader({
     name: 'Idempotency-Key',

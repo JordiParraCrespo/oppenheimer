@@ -1,6 +1,6 @@
 package cli
 
-// `browser.act`: a bot driving a browser of its own on this host (25 §4.2,
+// `browser.act`: a bot driving a browser of its own on this host (product/design/bots/bots.md §4.2,
 // "Using a browser"), through the host service, which reads this host's own
 // setting first. Answered with `browser.page`, or `command.failed` with a
 // BROWSER_* code.

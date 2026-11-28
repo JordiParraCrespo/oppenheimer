@@ -44,7 +44,7 @@ export const attachCreditSchema = z.object({
 });
 
 /**
- * The browser's WebRTC offer for this attachment (22), with every candidate in
+ * The browser's WebRTC offer for this attachment (`product/design/runner/direct-terminal-path.md`), with every candidate in
  * it. Sent only after `attached` carried `direct`.
  */
 export const attachDirectOfferSchema = z.object({
@@ -148,7 +148,7 @@ export const attachAttachedSchema = z.object({
   type: z.literal('attached'),
   window: z.number().int().min(0),
   /**
-   * Present when this attachment may move to a direct path (22): the host can
+   * Present when this attachment may move to a direct path (`product/design/runner/direct-terminal-path.md`): the host can
    * answer, and the relay allows it for this audience. The ICE servers are the
    * ones the browser's peer connection gathers with.
    */

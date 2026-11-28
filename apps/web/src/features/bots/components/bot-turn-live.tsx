@@ -27,6 +27,7 @@ export function BotTurnLive({
   waitingOn,
   provider,
   since,
+  seed,
 }: {
   queued: boolean;
   /** The call running now, if one is. */
@@ -39,7 +40,10 @@ export function BotTurnLive({
   waitingOn?: 'rate_limit' | 'unavailable';
   /** The provider's name, for the wait. */
   provider: string;
+  /** When it started, for its clock; null draws none. */
   since: Date | null;
+  /** What picks the thinking word, so it holds while the clock is left out; `since` by default. */
+  seed?: number;
 }) {
   const { t } = useTranslation();
   const label = liveLabel({
@@ -47,7 +51,7 @@ export function BotTurnLive({
     step,
     subagents,
     writing,
-    seed: since?.getTime() ?? 0,
+    seed: seed ?? since?.getTime() ?? 0,
   });
   const text =
     !queued && waitingOn

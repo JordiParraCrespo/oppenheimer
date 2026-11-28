@@ -547,6 +547,8 @@ function SortableSidebarProjectGroup({
  * ink, as a label over its bots rather than a project to open. `marker` is
  * a glyph that stays at the row's end (a lock on the Built-in group, whose
  * bots cannot be moved or renamed), in place of actions it does not have.
+ * `menuOpen` keeps the actions shown while a menu among them is open, the
+ * pointer gone to it.
  */
 function SidebarProjectHeader({
   name,
@@ -557,6 +559,7 @@ function SidebarProjectHeader({
   onOpenChange,
   current,
   actions,
+  menuOpen,
   className,
   ...props
 }: Omit<React.ComponentProps<'div'>, 'children'> & {
@@ -570,6 +573,7 @@ function SidebarProjectHeader({
   marker?: React.ReactNode;
   /** Icon buttons, 22px, shown on hover. */
   actions?: React.ReactNode;
+  menuOpen?: boolean;
 }) {
   // Inside a `SortableSidebarProjectGroup` the header is the group's handle.
   const sortable = React.useContext(ProjectHandle);
@@ -579,6 +583,7 @@ function SidebarProjectHeader({
       data-open={open}
       data-current={current || undefined}
       data-tone={tone}
+      data-menu-open={menuOpen || undefined}
       className={cn(
         'group/project relative mb-1.5 flex h-7 items-center gap-0.5 rounded-nav pr-1 pl-2.5 transition-colors duration-fast hover:bg-hover-surface',
         sortable && 'touch-none',
@@ -617,7 +622,7 @@ function SidebarProjectHeader({
       {actions ? (
         <span
           {...(sortable ? dragIgnore : {})}
-          className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-fast group-hover/project:opacity-100 group-focus-within/project:opacity-100 [&_button]:size-[22px] [&_button]:rounded-nav [&_button]:text-sidebar-muted [&_button:hover]:text-fg [&_svg:not([class*=size-])]:size-3.5">
+          className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity duration-fast group-hover/project:opacity-100 group-focus-within/project:opacity-100 group-data-menu-open/project:opacity-100 [&_button]:size-[22px] [&_button]:rounded-nav [&_button]:text-sidebar-muted [&_button:hover]:text-fg [&_svg:not([class*=size-])]:size-3.5">
           {actions}
         </span>
       ) : null}

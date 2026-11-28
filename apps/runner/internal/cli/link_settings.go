@@ -1,7 +1,7 @@
 package cli
 
 // `host.settings.set`: a bot changes this host's browser, screen or exec
-// switch because the person asked it to (25 §4.2, "The host's switches"),
+// switch because the person asked it to (product/design/bots/bots.md §4.2, "The host's switches"),
 // writing the same files `runner browser`, `runner computer` and `runner
 // exec` do. Answered with `host.settings`, what the host now allows, or
 // `command.failed` with the code of the file that could not be written.

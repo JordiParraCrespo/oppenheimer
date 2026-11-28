@@ -4,7 +4,7 @@ import {
   SidebarProjectHeader,
   SortableGroup,
 } from '@oppenheimer/design-system-web';
-import { type ReactNode, useState } from 'react';
+import { type MouseEvent, type ReactNode, useState } from 'react';
 
 /**
  * A sidebar's Pinned: the rows the reader pinned, above the sidebar's own
@@ -15,7 +15,9 @@ import { type ReactNode, useState } from 'react';
  * and `children` their rows; with none, `emptyHint` says where a pin can be
  * dropped. A folded group draws no rows and holds none, and a drop on it
  * still lands. `current` lights the head when the open page is one of its
- * rows, for a sidebar whose groups mark that.
+ * rows, for a sidebar whose groups mark that. `actions` are the head's hover
+ * buttons and `onContextMenu` its right-click, with `menuOpen` holding the
+ * buttons shown while a menu among them is open.
  */
 export function SidebarPinnedGroup({
   id,
@@ -24,6 +26,9 @@ export function SidebarPinnedGroup({
   accepts,
   emptyHint,
   current,
+  actions,
+  onContextMenu,
+  menuOpen,
   children,
 }: {
   /** The `SortableGroup` key the caller's order hook knows Pinned by. */
@@ -34,6 +39,9 @@ export function SidebarPinnedGroup({
   accepts: readonly string[];
   emptyHint: ReactNode;
   current?: boolean;
+  actions?: ReactNode;
+  onContextMenu?: (event: MouseEvent) => void;
+  menuOpen?: boolean;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(true);
@@ -55,6 +63,9 @@ export function SidebarPinnedGroup({
           open={open}
           onOpenChange={setOpen}
           current={current}
+          actions={actions}
+          onContextMenu={onContextMenu}
+          menuOpen={menuOpen}
         />
         {!open ? null : items.length === 0 ? (
           <SidebarEmptyRow>{emptyHint}</SidebarEmptyRow>

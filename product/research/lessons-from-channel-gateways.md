@@ -3,7 +3,7 @@
 How four products let an agent be reached over WhatsApp, Slack and email,
 read on 2026-10-22 for one question: how do our bots get the same reach?
 This note is the read and decides nothing. The design it fed is
-[`next-steps/channels.md`](../next-steps/channels.md). Ideas are taken, no
+[`design/channels/channels.md`](../design/channels/channels.md). Ideas are taken, no
 code. Paths in backticks are relative to each source's root unless they
 start with a note path.
 
@@ -250,7 +250,7 @@ Read at `openclaw/openclaw` `7f919ca` (2026-10-24): `src/routing/resolve-route.t
 `docs/concepts/agent-bindings.md`, `session.md` and `multi-user.md`, for one
 question the owner asked: how does a message choose which agent answers it,
 per customer and per channel? The design it fed is
-[`next-steps/customers-and-routes.md`](../next-steps/customers-and-routes.md).
+[`design/channels/customers-and-routes.md`](../design/channels/customers-and-routes.md).
 
 - **A binding** is `{ agentId, match: { channel, accountId?, peer?, guildId?,
   teamId?, roles? } }` in config. Their own docs list "a support inbox routed
@@ -288,7 +288,7 @@ the owner asked when their Telegram bot did not answer `/start`: which bot
 answers, and who may talk to it. Hermes is Nous Research's open-source
 agent; one gateway process holds every platform, like OpenClaw's. The
 design it fed is
-[`next-steps/answering-on-telegram-and-whatsapp.md`](../next-steps/answering-on-telegram-and-whatsapp.md).
+[`design/channels/answering-on-telegram-and-whatsapp.md`](../design/channels/answering-on-telegram-and-whatsapp.md).
 
 - **Deny by default.** "By default, the gateway denies all users who are
   not in an allowlist or paired via DM. This is the safe default for a bot
@@ -332,4 +332,4 @@ design it fed is
 - **Per-chat overrides** set a room's model, provider and prompt.
 
 What we took from it, and what we changed, is
-[`next-steps/answering-on-telegram-and-whatsapp.md`](../next-steps/answering-on-telegram-and-whatsapp.md).
+[`design/channels/answering-on-telegram-and-whatsapp.md`](../design/channels/answering-on-telegram-and-whatsapp.md).
