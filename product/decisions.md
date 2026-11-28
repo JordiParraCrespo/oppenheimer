@@ -2202,6 +2202,15 @@ one its decision belongs to:
   access to one of its repositories); the owner approves and connects it
   themselves.
 
+- `design/foundations/auth.md` kept the starter's roster, invitation and
+  team routes only out of the console. The server now refuses Better
+  Auth's own `/api/auth/organization/*` writes too (2026-11-27, security
+  review B): they answer 404, the façade is the one door, an invitation
+  needs a verified email to accept, a replayed acceptance grants the
+  member's current role, and leaving or being removed revokes the API
+  tokens pinned to that workspace. Platform `admin` no longer holds
+  `set-role` (review F).
+
 ## The design
 
 - 2026-09-12: directory created; documents seeded with decisions from

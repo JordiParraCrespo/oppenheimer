@@ -1,31 +1,36 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DataSource, Not } from 'typeorm';
+import { OutboxService } from '@oppenheimer/backend-ddd';
+import { Not } from 'typeorm';
 import { Session } from '../../auth/database/session.orm-entity';
 import { AccessGrantOrmEntity } from '../../authz/database/access-grant.orm-entity';
 import type { UserRoleRepositoryPort } from '../../roles/database/user-role.repository.port';
 import { USER_ROLE_REPOSITORY } from '../../roles/roles.di-tokens';
+import { MembershipEndedDomainEvent } from '../domain/events/membership-ended.domain-event';
 import { MemberOrmEntity } from './member.orm-entity';
 import type { OrganizationAccessRepositoryPort } from './organization-access.repository.port';
 
 /**
- * One transaction for the three writes, so a failure part way leaves the
- * person exactly as they were rather than with no roles but a session still
- * acting in the organization. The roles go through `UserRoleRepositoryPort`
- * with this transaction's manager — `user_role` stays the roles module's to
- * write — and the session selection is written here, on the session table,
- * for the same reason `PersonalWorkspaceRepository` writes it: a port on the
- * auth kernel could not join this transaction.
+ * One transaction for the three writes and the event, so a failure part way
+ * leaves the person exactly as they were rather than with no roles but a
+ * session still acting in the organization. The roles go through
+ * `UserRoleRepositoryPort` with this transaction's manager — `user_role` stays
+ * the roles module's to write — and the session selection is written here, on
+ * the session table, for the same reason `PersonalWorkspaceRepository` writes
+ * it: a port on the auth kernel could not join this transaction.
+ * `MembershipEndedDomainEvent` is staged on the outbox in it, so the modules
+ * that owe the end of a membership something (the person's API tokens pinned
+ * here) hear of it exactly when it commits.
  */
 @Injectable()
 export class OrganizationAccessRepository implements OrganizationAccessRepositoryPort {
   constructor(
-    private readonly dataSource: DataSource,
     @Inject(USER_ROLE_REPOSITORY)
     private readonly userRoles: UserRoleRepositoryPort,
+    private readonly outbox: OutboxService,
   ) {}
 
   async revokeFor(userId: string, organizationId: string): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
+    await this.outbox.transaction(async (manager) => {
       await this.userRoles.setRolesForUser(userId, [], organizationId, manager);
       await manager.delete(AccessGrantOrmEntity, {
         organizationId,
@@ -44,6 +49,15 @@ export class OrganizationAccessRepository implements OrganizationAccessRepositor
         { userId, activeOrganizationId: organizationId },
         { activeOrganizationId: fallback?.organizationId ?? null, activeTeamId: null },
       );
+
+      await this.outbox.stageEvents(manager, [
+        new MembershipEndedDomainEvent({
+          aggregateId: organizationId,
+          userId,
+          reason:
+            'A membership ended; the API tokens its person pinned to the organization must be revoked',
+        }),
+      ]);
     });
   }
 }
