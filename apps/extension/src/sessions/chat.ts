@@ -236,12 +236,14 @@ export async function forwardEvents(
   session: Pick<TrackedSession, 'id' | 'title'>,
   events: readonly ChatEvent[],
   sent: number,
+  /** Where `events` start in the whole log: each batch says its place there. */
+  offset = 0,
 ): Promise<number> {
   if (!cloudSessionIdPattern.test(session.id)) return sent;
   let held = Math.min(sent, events.length);
   while (held < events.length) {
     const batch = nextBatch(events, held);
-    await sendBatch(connection, session, batch);
+    await sendBatch(connection, session, batch, offset + held);
     held += batch.length;
   }
   return held;
@@ -249,10 +251,10 @@ export async function forwardEvents(
 
 /**
  * Sends the console's copy of a log read whole, newest first: its newest
- * stretch after what the copy holds, so the console opens on the latest turn,
- * and each older stretch then before it. Events the copy holds are skipped by
- * their ids, so another browser syncing the same session loses nothing. A long session's chat showed its
- * oldest turns, and a copy read out of order kept that order, until this.
+ * stretch first, so the console opens on the latest turn, then each older
+ * one. Each batch says its place in the log and the API keeps every event at
+ * its place, so the copy reads in the log's order whatever another browser
+ * syncing the same session sent, and an event held already is skipped.
  * Answers how many events the copy now has: all of them.
  */
 export async function forwardNewestFirst(
@@ -261,15 +263,14 @@ export async function forwardNewestFirst(
   events: readonly ChatEvent[],
 ): Promise<number> {
   if (!cloudSessionIdPattern.test(session.id) || events.length === 0) return 0;
-  const batches: ChatEvent[][] = [];
+  const batches: { from: number; events: ChatEvent[] }[] = [];
   for (let from = 0; from < events.length; ) {
     const batch = nextBatch(events, from);
-    batches.push(batch);
+    batches.push({ from, events: batch });
     from += batch.length;
   }
-  batches.reverse();
-  for (const [index, batch] of batches.entries()) {
-    await sendBatch(connection, session, batch, index === 0 ? undefined : 'older');
+  for (const batch of batches.reverse()) {
+    await sendBatch(connection, session, batch.events, batch.from);
   }
   return events.length;
 }
@@ -278,7 +279,8 @@ async function sendBatch(
   connection: OppenheimerConnection,
   session: Pick<TrackedSession, 'id' | 'title'>,
   events: readonly ChatEvent[],
-  placement?: 'older',
+  /** The first event's place in the log. */
+  from: number,
 ): Promise<void> {
   const response = await fetch(apiUrl(connection, '/api/v1/sessions/cloud-events'), {
     method: 'POST',
@@ -287,7 +289,7 @@ async function sendBatch(
       cloudSessionId: session.id,
       title: cutTitle(session.title ?? ''),
       events,
-      ...(placement ? { placement } : {}),
+      from,
     }),
     signal: deadline(),
   });
@@ -482,10 +484,10 @@ export function sessionsToSync(
 
 /**
  * The rules a session's copy in the console was built by. A sync kept under
- * older ones (whose copy the API dropped, `AllowOlderCloudLines`) reads the
+ * older ones (whose copy the API dropped, `NumberCloudLinesByLogPosition`) reads the
  * log again from its first page and sends it newest first.
  */
-export const CHAT_COPY_VERSION = 3;
+export const CHAT_COPY_VERSION = 4;
 
 /** A session's sync, unless it was kept under older copy rules: then it counts as never read. */
 export function current(sync: ChatSync | undefined): ChatSync | undefined {

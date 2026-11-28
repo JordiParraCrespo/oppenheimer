@@ -1,12 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OutboxService } from '@oppenheimer/backend-ddd';
-import {
-  type CloudChatSource,
-  type CloudEventsPlacement,
-  type CloudReplyDelivery,
-  QUEUE_NAMES,
-} from '@oppenheimer/shared';
+import { type CloudChatSource, type CloudReplyDelivery, QUEUE_NAMES } from '@oppenheimer/shared';
 import type { EntityManager, Repository } from 'typeorm';
 import type {
   BrowserCloudReply,
@@ -112,7 +107,7 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     organizationId: string,
     sessionId: string,
     events: readonly CloudChatEvent[],
-    placement?: CloudEventsPlacement,
+    from?: number,
   ): Promise<number> {
     if (events.length === 0) return 0;
     return this.outbox.transaction(async (manager) => {
@@ -130,34 +125,37 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
         [sessionId],
       );
       // New events only (an id held already, or twice in the batch, is
-      // skipped), numbered in the batch's order: after the last line, or for
-      // an older stretch, ending just before the first one.
+      // skipped). With `from`, each at its place in the log, so stretches
+      // sent in any order by any browser read in the log's order, and a place
+      // held already is skipped too; without, after the last line held.
       const inserted: unknown[] = await manager.query(
         `WITH batch AS (
            SELECT DISTINCT ON (id) id, line, ordinality
              FROM unnest($3::text[], $4::text[]) WITH ORDINALITY AS e(id, line, ordinality)
             ORDER BY id, ordinality),
          fresh AS (
-           SELECT id, line, row_number() OVER (ORDER BY ordinality) AS n
+           SELECT id, line, ordinality, row_number() OVER (ORDER BY ordinality) AS n
              FROM batch
             WHERE NOT EXISTS (
               SELECT 1 FROM session_cloud_line held
                WHERE held."sessionId" = $2 AND held."eventId" = batch.id)),
          base AS (
-           SELECT CASE WHEN $5::boolean
-                       THEN coalesce(min("seq"), 0) - (SELECT count(*) FROM fresh)
-                       ELSE coalesce(max("seq") + 1, 0) END AS next
+           SELECT coalesce(max("seq") + 1, 0) AS next
              FROM session_cloud_line WHERE "sessionId" = $2)
          INSERT INTO session_cloud_line ("organizationId", "sessionId", "seq", "eventId", "line")
-         SELECT $1, $2, (base.next + fresh.n - 1)::integer, fresh.id, fresh.line
+         SELECT $1, $2,
+                (CASE WHEN $5::integer IS NULL THEN base.next + fresh.n - 1
+                      ELSE $5::integer + fresh.ordinality - 1 END)::integer,
+                fresh.id, fresh.line
            FROM fresh, base
+         ON CONFLICT DO NOTHING
          RETURNING "seq"`,
         [
           organizationId,
           sessionId,
           events.map((event) => event.id),
           events.map((event) => event.line),
-          placement === 'older',
+          from ?? null,
         ],
       );
       return inserted.length;

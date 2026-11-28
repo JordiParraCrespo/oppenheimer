@@ -219,10 +219,11 @@ export function createChatBridge({
               session,
               read.events,
               Math.max(0, known.sent - read.offset),
+              read.offset,
             )
           : read.offset === 0 && read.complete
             ? await forwardNewestFirst(state.oppenheimer, session, read.events)
-            : await forwardEvents(state.oppenheimer, session, read.events, 0);
+            : await forwardEvents(state.oppenheimer, session, read.events, 0, read.offset);
         synced[session.id] = {
           copy: CHAT_COPY_VERSION,
           sent: read.offset + sent,

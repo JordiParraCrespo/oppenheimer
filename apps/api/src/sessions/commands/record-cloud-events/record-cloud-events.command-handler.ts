@@ -64,7 +64,7 @@ export class RecordCloudEventsCommandHandler
       session.organizationId,
       session.id,
       command.events,
-      command.placement,
+      command.from,
     );
     return { sessionId: session.id, accepted };
   }

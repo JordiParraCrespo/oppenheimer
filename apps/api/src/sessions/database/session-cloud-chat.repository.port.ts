@@ -1,8 +1,4 @@
-import type {
-  CloudChatSource,
-  CloudEventsPlacement,
-  CloudReplyDelivery,
-} from '@oppenheimer/shared';
+import type { CloudChatSource, CloudReplyDelivery } from '@oppenheimer/shared';
 
 /** A line of a cloud session's transcript, numbered from 0. */
 export interface CloudChatLine {
@@ -73,7 +69,8 @@ export interface SessionCloudChatRepositoryPort {
     organizationId: string,
     sessionId: string,
     events: readonly CloudChatEvent[],
-    placement?: CloudEventsPlacement,
+    /** The log place of the first event; absent, after the lines held. */
+    from?: number,
   ): Promise<number>;
   /**
    * Where the session's copy starts: its first line's number, and when that

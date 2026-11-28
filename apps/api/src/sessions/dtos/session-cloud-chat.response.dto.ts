@@ -54,7 +54,7 @@ export class CollectedCloudReplyResponseDto {
 
 /** Where a cloud chat's copy starts. */
 export class CloudChatStartResponseDto {
-  @ApiProperty({ description: 'The first line’s number: 0 or below.' })
+  @ApiProperty({ description: 'The first line’s number.' })
   seq!: number;
 
   @ApiProperty({ format: 'date-time', description: 'When that line was stored.' })

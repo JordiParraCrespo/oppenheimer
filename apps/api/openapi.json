@@ -34707,11 +34707,12 @@
               ]
             }
           },
-          "placement": {
-            "type": "string",
-            "enum": [
-              "older"
-            ]
+          "from": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false,
+            "maximum": 10000000,
+            "exclusiveMaximum": false
           }
         },
         "required": [
@@ -34881,7 +34882,7 @@
         "properties": {
           "seq": {
             "type": "number",
-            "description": "The first line’s number: 0 or below."
+            "description": "The first line’s number."
           },
           "at": {
             "type": "string",

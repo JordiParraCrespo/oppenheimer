@@ -1,6 +1,5 @@
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { CommandBase, type CommandProps } from '@oppenheimer/backend-ddd';
-import type { CloudEventsPlacement } from '@oppenheimer/shared';
 import type { CloudChatEvent } from '../../database/session-cloud-chat.repository.port';
 
 export class RecordCloudEventsCommand extends CommandBase {
@@ -11,8 +10,8 @@ export class RecordCloudEventsCommand extends CommandBase {
   readonly cloudSessionId: string;
   readonly title: string | undefined;
   readonly events: readonly CloudChatEvent[];
-  /** Where the batch goes in the copy: after it (absent), from scratch, or before it. */
-  readonly placement: CloudEventsPlacement | undefined;
+  /** The log place of the first event; absent, after the lines held. */
+  readonly from: number | undefined;
 
   constructor(props: CommandProps<RecordCloudEventsCommand>) {
     super(props);
@@ -21,6 +20,6 @@ export class RecordCloudEventsCommand extends CommandBase {
     this.cloudSessionId = props.cloudSessionId;
     this.title = props.title;
     this.events = props.events;
-    this.placement = props.placement;
+    this.from = props.from;
   }
 }

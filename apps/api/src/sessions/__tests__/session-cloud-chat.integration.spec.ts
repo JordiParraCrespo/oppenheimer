@@ -278,23 +278,43 @@ describe('sessions: cloud chat replies (integration)', () => {
       expect(await chat.findLines(cloudId, 0, 10)).toHaveLength(3);
     });
 
-    it('takes a log sent newest first and puts each older stretch before what it holds', async () => {
-      // Regression: a log was numbered as it arrived, so a long chat opened on
-      // its oldest turns. Sent newest first, the copy still reads in order.
+    it('keeps each event at its place in the log, whatever order and whichever browser sends it', async () => {
+      // Regressions: a log numbered as it arrived opened a long chat on its
+      // oldest turns; and a stretch numbered before the whole copy, sent by a
+      // second browser over a copy holding the log's start, read 201–400,
+      // 1–200, 401.
       const event = (n: number) => ({ id: `e${n}`, line: entry(`e${n}`, `turn ${n}`) });
-      expect(await chat.appendEvents(organizationId, cloudId, [event(4), event(5)])).toBe(2);
+      const stretch = (from: number, to: number) =>
+        Array.from({ length: to - from + 1 }, (_, i) => event(from + i));
+      // One browser sent the log's first 200 events (places 0–199).
+      expect(await chat.appendEvents(organizationId, cloudId, stretch(1, 200), 0)).toBe(200);
       const before = await chat.findStart(cloudId);
-      expect(await chat.appendEvents(organizationId, cloudId, [event(2), event(3)], 'older')).toBe(
-        2,
-      );
-      // A resent older stretch adds nothing and moves nothing.
-      expect(await chat.appendEvents(organizationId, cloudId, [event(3)], 'older')).toBe(0);
-      expect(await chat.appendEvents(organizationId, cloudId, [event(1)], 'older')).toBe(1);
-      expect(await chat.appendEvents(organizationId, cloudId, [event(6)])).toBe(1);
-      // Another browser starting its own copy of the same log loses nothing of this one.
-      expect(await chat.appendEvents(organizationId, cloudId, [event(5)])).toBe(0);
-      expect(await chat.appendEvents(organizationId, cloudId, [event(1)], 'older')).toBe(0);
+      // Another reads the whole log, 401 events, and sends it newest first.
+      expect(await chat.appendEvents(organizationId, cloudId, [event(401)], 400)).toBe(1);
+      expect(await chat.appendEvents(organizationId, cloudId, stretch(201, 400), 200)).toBe(200);
+      expect(await chat.appendEvents(organizationId, cloudId, stretch(1, 200), 0)).toBe(0);
+      // A stretch sent again after a failure adds nothing and moves nothing.
+      expect(await chat.appendEvents(organizationId, cloudId, stretch(201, 220), 200)).toBe(0);
+      // A running session's next event, sent as the log grows.
+      expect(await chat.appendEvents(organizationId, cloudId, [event(402)], 401)).toBe(1);
 
+      const lines = await chat.findLines(cloudId, undefined, 1000);
+      expect(lines.map((each) => JSON.parse(each.line).uuid)).toEqual(
+        stretch(1, 402).map((each) => each.id),
+      );
+      expect(lines.map((each) => each.seq)).toEqual(Array.from({ length: 402 }, (_, i) => i));
+      expect((await chat.findStart(cloudId))?.seq).toBe(before?.seq);
+    });
+
+    it('moves its start when an older stretch lands below the newest one sent first', async () => {
+      const event = (n: number) => ({ id: `e${n}`, line: entry(`e${n}`, `turn ${n}`) });
+      expect(await chat.appendEvents(organizationId, cloudId, [event(4), event(5)], 3)).toBe(2);
+      expect((await chat.findStart(cloudId))?.seq).toBe(3);
+      expect(
+        await chat.appendEvents(organizationId, cloudId, [event(1), event(2), event(3)], 0),
+      ).toBe(3);
+      // The start moved, so a reader knows to read the copy again.
+      expect((await chat.findStart(cloudId))?.seq).toBe(0);
       const lines = await chat.findLines(cloudId, undefined, 10);
       expect(lines.map((each) => JSON.parse(each.line).uuid)).toEqual([
         'e1',
@@ -302,13 +322,7 @@ describe('sessions: cloud chat replies (integration)', () => {
         'e3',
         'e4',
         'e5',
-        'e6',
       ]);
-      expect(lines.map((each) => each.seq)).toEqual([-3, -2, -1, 0, 1, 2]);
-      // The start moved, so a reader knows to read the copy again.
-      const start = await chat.findStart(cloudId);
-      expect(start?.seq).toBe(-3);
-      expect(start?.seq).not.toBe(before?.seq);
     });
 
     it('numbers two batches written at once without a gap or a clash', async () => {

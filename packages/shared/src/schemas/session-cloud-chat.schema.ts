@@ -81,10 +81,6 @@ export const sendCloudReplySchema = z.object({
 
 export type SendCloudReplyDto = z.infer<typeof sendCloudReplySchema>;
 
-/** Where a batch of claude.ai events goes in a session's copy (`recordCloudEventsSchema`). */
-export const CLOUD_EVENTS_PLACEMENTS = ['older'] as const;
-export type CloudEventsPlacement = (typeof CLOUD_EVENTS_PLACEMENTS)[number];
-
 /** The lines one read of a cloud chat answers when it names no `limit`. */
 export const CLOUD_CHAT_PAGE_LINES = 500;
 
@@ -139,12 +135,11 @@ export const recordCloudEventsSchema = z.object({
     .min(1)
     .max(MAX_CLOUD_TRANSCRIPT_BATCH),
   /**
-   * Where the batch goes in the console's copy. Absent: after the lines held,
-   * as a running session's new events and a new copy's newest stretch.
-   * `older`: before every line held, the next older stretch of a log sent
-   * newest first. Nothing a browser sends removes a line another sent.
+   * The place in the claude.ai log of the batch's first event; the others
+   * follow it. Each line is kept at its place, so stretches sent in any order,
+   * by any browser, read in the log's order. Absent: after the lines held.
    */
-  placement: z.enum(CLOUD_EVENTS_PLACEMENTS).optional(),
+  from: z.number().int().min(0).max(10_000_000).optional(),
 });
 
 export type RecordCloudEventsDto = z.infer<typeof recordCloudEventsSchema>;

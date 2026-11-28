@@ -252,6 +252,8 @@ describe('sending the log to the console', () => {
     expect(await forwardEvents(connection, session, events, 3)).toBe(events.length);
     expect(bodies.map((body) => body.events.length)).toEqual([EVENTS_BATCH, 2]);
     expect(bodies[0]?.events[0]?.id).toBe('e3');
+    // Its place in the log: the read's own offset plus what was sent of it.
+    expect((bodies[0] as { from?: number }).from).toBe(3);
     expect(bodies[0]?.title).toBe('Fix the login page');
     // Nothing new: nothing sent.
     expect(await forwardEvents(connection, session, events, events.length)).toBe(events.length);
@@ -261,7 +263,7 @@ describe('sending the log to the console', () => {
   it('starts a copy with the log’s newest stretch, then sends each older one before it', async () => {
     // Regression: a long session's copy was sent oldest first and kept the
     // order it arrived in, so the console opened on its oldest turns.
-    const bodies: { events: ChatEvent[]; placement?: string }[] = [];
+    const bodies: { events: ChatEvent[]; from?: number }[] = [];
     vi.stubGlobal(
       'fetch',
       vi.fn(async (_url: string, init: RequestInit) => {
@@ -272,7 +274,8 @@ describe('sending the log to the console', () => {
     expect(
       await forwardNewestFirst(connection, { id: ID, title: 'Fix the login page' }, events),
     ).toBe(events.length);
-    expect(bodies.map((body) => body.placement)).toEqual([undefined, 'older']);
+    // Each batch says its place in the log, so the API keeps the log's order.
+    expect(bodies.map((body) => body.from)).toEqual([EVENTS_BATCH, 0]);
     expect(bodies[0]?.events.map((event) => event.id)).toEqual([
       'e200',
       'e201',

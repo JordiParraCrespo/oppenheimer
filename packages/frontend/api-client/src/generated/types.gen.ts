@@ -2102,7 +2102,7 @@ export type RecordCloudEventsRequest = {
         id: string;
         line: string;
     }>;
-    placement?: 'older';
+    from?: number;
 };
 
 export type RecordedCloudEventsResponseDto = {
@@ -2182,7 +2182,7 @@ export type SentCloudReplyResponseDto = {
 
 export type CloudChatStartResponseDto = {
     /**
-     * The first line’s number: 0 or below.
+     * The first line’s number.
      */
     seq: number;
     /**
