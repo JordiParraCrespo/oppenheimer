@@ -5,9 +5,11 @@ import {
   EVENTS_BATCH,
   EVENTS_BATCH_BYTES,
   eventsPage,
+  eventsUrls,
   fetchSessionEvents,
   fitLine,
   forwardEvents,
+  idPlaceholder,
   inTimeOrder,
   nextBatch,
   pagesNewestFirst,
@@ -96,8 +98,25 @@ describe('reading a session’s log from claude.ai', () => {
     );
     const read = await fetchSessionEvents(ID, {}, 'https://claude.ai/learned/{id}/events');
     expect(calls[0]).toBe(`https://claude.ai/learned/${ID}/events`);
-    expect(calls[1]).toContain(`/v1/code/sessions/${ID}/teleport-events`);
+    expect(calls[1]).toContain(
+      `/v1/code/sessions/${ID.replace('session_', 'cse_')}/teleport-events`,
+    );
     expect(read?.events.map((event) => event.id)).toEqual(['u1', 'u2']);
+  });
+
+  it('reads the code-session routes under the `cse_` id, and a learned route in the form the page used', () => {
+    // Regression: the canonical `session_` id went into `/v1/code/sessions/…`,
+    // which takes `cse_`, so no log was read where the session API's is missing.
+    const cse = ID.replace('session_', 'cse_');
+    const urls = eventsUrls(
+      ID,
+      `https://claude.ai/v1/code/sessions/${idPlaceholder(cse)}/teleport-events`,
+    );
+    expect(urls[0]).toBe(`https://claude.ai/v1/code/sessions/${cse}/teleport-events`);
+    expect(urls).toContain(`https://claude.ai/v1/sessions/${ID}/events?limit=1000`);
+    expect(eventsUrls(ID, `https://claude.ai/learned/${idPlaceholder(ID)}/events`)[0]).toBe(
+      `https://claude.ai/learned/${ID}/events`,
+    );
   });
 
   it('stops a long log at the page cap and carries on from there, never from its start again', async () => {

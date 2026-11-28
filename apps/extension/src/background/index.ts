@@ -1,6 +1,6 @@
 import type { TapMessage } from '@/content/tap-message';
 import { createTranslator, reasonText } from '@/i18n/translator';
-import { eventsPage, pagesNewestFirst } from '@/sessions/chat';
+import { eventsPage, idPlaceholder, pagesNewestFirst } from '@/sessions/chat';
 import { createChatBridge } from '@/sessions/chat-bridge';
 import { CLAUDE_ORIGIN, sessionUrl } from '@/sessions/links';
 import { sendReport } from '@/sessions/report';
@@ -276,7 +276,11 @@ async function fromPage({ url, headers, body }: TapMessage) {
     // Only a route that reads oldest first is worth learning (`chat.ts`).
     const page = eventsPage(body);
     if (!page || page.newestFirst || pagesNewestFirst(url)) return;
-    events.pathname = events.pathname.replace(EVENTS_PATH, '$1{id}$3');
+    events.pathname = events.pathname.replace(
+      EVENTS_PATH,
+      (_, head: string, pageId: string, tail: string) =>
+        `${head}${idPlaceholder(decodeURIComponent(pageId))}${tail}`,
+    );
     for (const key of ['cursor', 'after_id', 'before_id']) events.searchParams.delete(key);
     await writeState({ eventsEndpoint: decodeURI(events.href) });
     return;

@@ -402,7 +402,8 @@ test('carries a session’s chat to Oppenheimer and posts a reply typed there on
   await context.route('https://claude.ai/v1/**', (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
-    if (path === `/v1/code/sessions/${ID}/teleport-events`) {
+    // The code-session routes take the `cse_` form.
+    if (path === `/v1/code/sessions/${CSE}/teleport-events`) {
       return route.fulfill({
         json: {
           data: [

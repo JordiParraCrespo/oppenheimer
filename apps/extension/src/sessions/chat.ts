@@ -60,16 +60,28 @@ const MAX_TITLE = 200;
 
 /**
  * Where a session's log is read, in the order tried: the endpoint the page
- * taught (claude.ai's own request for it, with `{id}` for the session), then
- * the two the Claude Code CLI reads it from.
+ * taught (claude.ai's own request for it, with `{cse}` or `{id}` for the
+ * session, in whichever form the page used), then the two the Claude Code CLI
+ * reads it from. The code-session routes take the `cse_` form, the session API
+ * the `session_` one; `teleport-events` is tried with both.
  */
 export function eventsUrls(sessionId: string, learned: string | null): string[] {
-  const id = encodeURIComponent(sessionId);
-  return [
-    ...(learned ? [learned.replace('{id}', id)] : []),
-    `${CLAUDE_ORIGIN}/v1/code/sessions/${id}/teleport-events?limit=1000&from_first_event=true`,
+  const id = encodeURIComponent(canonicalCloudId(sessionId));
+  const cse = encodeURIComponent(codeSessionId(sessionId));
+  const teleport = (form: string) =>
+    `${CLAUDE_ORIGIN}/v1/code/sessions/${form}/teleport-events?limit=1000&from_first_event=true`;
+  const urls = [
+    ...(learned ? [learned.replace('{cse}', cse).replace('{id}', id)] : []),
+    teleport(cse),
+    teleport(id),
     `${CLAUDE_ORIGIN}/v1/sessions/${id}/events?limit=1000`,
   ];
+  return [...new Set(urls)];
+}
+
+/** The placeholder a learned route keeps for a session's id, in the form the page used. */
+export function idPlaceholder(pageId: string): '{cse}' | '{id}' {
+  return pageId.startsWith('cse_') ? '{cse}' : '{id}';
 }
 
 /**
