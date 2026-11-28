@@ -13,7 +13,12 @@ import { bindWatcherHistory } from '../lib/watcher-history';
 
 type Page = { text: string; truncated: boolean; failed?: boolean };
 
-function watcherStream(answers = true) {
+/**
+ * A watcher's stream. `host` is what its host can do: answer asks, or, an
+ * older runner, not (its `askHistory` asks nothing); `none` is a stream with
+ * no history at all.
+ */
+function watcherStream(host: 'answers' | 'older' | 'none' = 'answers') {
   let deliver: ((page: Page) => void) | null = null;
   const asked: number[] = [];
   const stream = {
@@ -23,7 +28,14 @@ function watcherStream(answers = true) {
         deliver = null;
       };
     },
-    askHistory: answers ? (lines: number) => asked.push(lines) : undefined,
+    askHistory:
+      host === 'none'
+        ? undefined
+        : (lines: number) => {
+            if (host === 'older') return false;
+            asked.push(lines);
+            return true;
+          },
   } as unknown as SessionStream;
   return { stream, asked, answer: (page: Page) => deliver?.(page) };
 }
@@ -137,9 +149,29 @@ describe('bindWatcherHistory', () => {
     }
   });
 
+  it('says nothing failed when the host cannot answer at all', () => {
+    // What breaks this: an older runner, which never answers, drawn after the
+    // wait as "Couldn't load the terminal's history".
+    vi.useFakeTimers();
+    try {
+      const { term, container } = liveGrid();
+      const { stream } = watcherStream('older');
+      const onChange = vi.fn();
+      const history = bindWatcherHistory(term, container, stream, onChange);
+      history.wheel(-3);
+      vi.advanceTimersByTime(10_000);
+      expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ kind: 'failed' }));
+      expect(container.querySelector('[data-slot="terminal-history"]')).toBeNull();
+      history.dispose();
+      term.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('asks nothing of a stream that cannot ask, and ignores notches down', () => {
     const { term, container } = liveGrid();
-    const silent = watcherStream(false);
+    const silent = watcherStream('none');
     const answering = watcherStream();
     bindWatcherHistory(term, container, silent.stream, vi.fn()).wheel(-3);
     const history = bindWatcherHistory(term, container, answering.stream, vi.fn());

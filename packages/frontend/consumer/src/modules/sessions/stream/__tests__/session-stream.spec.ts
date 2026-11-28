@@ -170,6 +170,22 @@ describe('AttachSessionStream', () => {
     expect(socket.controls()).toContainEqual({ type: 'credit', bytes: 5 });
   });
 
+  it('asks for a watcher’s scrollback only of a host that said it answers', async () => {
+    // What breaks this: an ask sent to a host that predates it, which never
+    // answers, so the console waits and then says the read failed.
+    const h = harness();
+    await h.flush();
+    const socket = h.sockets[0];
+    socket.open();
+    socket.text({ type: 'attached', window: 0 });
+    expect(h.stream.askHistory?.(5000)).toBe(false);
+    expect(socket.controls()).not.toContainEqual(expect.objectContaining({ type: 'history.ask' }));
+
+    socket.text({ type: 'attached', window: 0, history: true });
+    expect(h.stream.askHistory?.(5000)).toBe(true);
+    expect(socket.controls()).toContainEqual({ type: 'history.ask', lines: 5000 });
+  });
+
   it('goes live on attached, delivers bytes, credits them, and sends keystrokes as bytes', async () => {
     const h = harness();
     await h.flush();

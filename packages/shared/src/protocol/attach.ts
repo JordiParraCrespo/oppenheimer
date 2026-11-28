@@ -163,6 +163,12 @@ export const attachAttachedSchema = z.object({
       hostId: z.string().min(1).max(64).optional(),
     })
     .optional(),
+  /**
+   * Present when the host answers `history.ask` (its runner names
+   * `attachment.history`). Absent, a watcher's ask would go nowhere, so the
+   * console does not make one and says nothing failed.
+   */
+  history: z.literal(true).optional(),
 });
 
 /** The runner's answer to `direct.offer`. */

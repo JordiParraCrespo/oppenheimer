@@ -578,9 +578,14 @@ class BrowserAttachment implements AttachmentSink {
    * attachment already shows, so a share that lets someone watch lets them
    * scroll back too. A runner that does not answer is asked nothing.
    */
+  /** Whether the host reads a watcher's scrollback (`attachment.history`). */
+  private answersHistory(): boolean {
+    return this.link.capabilities.includes('attachment.history');
+  }
+
   private historyAsk(lines: number): void {
     if (!this.attached || this.attachmentId === null) return;
-    if (!this.link.capabilities.includes('attachment.history')) return;
+    if (!this.answersHistory()) return;
     // One ask in flight: a page is up to a frame and rides the host's link
     // ahead of its PTY frames, so a guest asking in a loop would starve the
     // owner's terminals. A page that never came frees the next ask in time.
@@ -649,6 +654,7 @@ class BrowserAttachment implements AttachmentSink {
       type: 'attached',
       window: this.claim.window,
       ...this.directPath.invitation(),
+      ...(this.answersHistory() ? { history: true as const } : {}),
     });
   }
 

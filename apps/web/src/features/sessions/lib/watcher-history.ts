@@ -34,8 +34,10 @@ const PAGE_WAIT_MS = 5_000;
  * returns to the live grid, which never stopped following the pane.
  *
  * A host that could not read the page, or no answer in `PAGE_WAIT_MS`, is
- * said as a failure with a retry, never as an empty scrollback. `onChange`
- * hears each state (`WatcherHistoryState`).
+ * said as a failure with a retry, never as an empty scrollback. A host that
+ * cannot answer at all (an older runner) is asked nothing and nothing is
+ * said: no page was coming. `onChange` hears each state
+ * (`WatcherHistoryState`).
  */
 export function bindWatcherHistory(
   term: Terminal,
@@ -73,10 +75,11 @@ export function bindWatcherHistory(
   };
 
   const ask = (lines: number) => {
-    if (!stream.askHistory) return;
+    // A host that cannot answer is asked nothing, and nothing failed: the
+    // grid stays as it was until its runner updates itself.
+    if (!stream.askHistory?.(ATTACHMENT_HISTORY_MAX_LINES)) return;
     phase = 'asking';
     pending = lines;
-    stream.askHistory(ATTACHMENT_HISTORY_MAX_LINES);
     waiting = setTimeout(fail, PAGE_WAIT_MS);
   };
 

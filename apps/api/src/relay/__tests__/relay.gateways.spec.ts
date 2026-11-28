@@ -1823,8 +1823,9 @@ describe('browser attach socket', () => {
       const attached = nextMessage(browser);
       browser.send(JSON.stringify({ type: 'resize', cols: 80, rows: 24 }));
       const message = (await attach).text;
-      expect((await attached).text).toEqual({ type: 'attached', window: 0 });
-      return { runner, browser, attach: message };
+      const said = (await attached).text;
+      expect(said).toMatchObject({ type: 'attached', window: 0 });
+      return { runner, browser, attach: message, attached: said };
     }
 
     it('never offers a direct path through a share, whatever the flag says', async () => {
@@ -1934,9 +1935,12 @@ describe('browser attach socket', () => {
     });
 
     it('never asks a runner that does not answer for the scrollback', async () => {
-      // What breaks this: a message the runner does not know, sent to one that predates it.
+      // What breaks this: a message the runner does not know, sent to one
+      // that predates it, or a browser not told, which waits on a page that
+      // never comes and says the read failed.
       shareIs(true);
-      const { runner, browser } = await attachedThrough(shareTicket(true));
+      const { runner, browser, attached } = await attachedThrough(shareTicket(true));
+      expect(attached).toEqual({ type: 'attached', window: 0 });
       const next = nextMessage(runner);
       browser.send(JSON.stringify({ type: 'history.ask', lines: 5000 }));
       browser.send(JSON.stringify({ type: 'resize', cols: 100, rows: 30 }));
