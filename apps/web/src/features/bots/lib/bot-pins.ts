@@ -1,4 +1,4 @@
-import type { BotEntity } from '@oppenheimer/frontend-consumer';
+import { type BotEntity, botMatchesQuery } from '@oppenheimer/frontend-consumer';
 
 /**
  * The bots the reader pinned to the top of the Employees sidebar, kept on
@@ -35,11 +35,10 @@ export function splitPinnedBots(
   pins: readonly string[],
   query: string,
 ): { pinned: BotEntity[]; rest: BotEntity[] } {
-  const term = query.trim().toLowerCase();
   const byId = new Map(bots.map((bot) => [bot.id, bot]));
   const pinned = pins
     .flatMap((id) => byId.get(id) ?? [])
-    .filter((bot) => !term || bot.name.toLowerCase().includes(term));
+    .filter((bot) => botMatchesQuery(bot, query));
   const set = new Set(pins);
   return { pinned, rest: bots.filter((bot) => !set.has(bot.id)) };
 }

@@ -7,7 +7,7 @@ import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SectionBotsRowsSkeleton } from '@/features/bots/components/section-bots-rows-skeleton';
 import { useNewBot } from '@/features/bots/hooks/use-create-bot';
@@ -29,8 +29,21 @@ import { SectionBotsMenu } from './section-bots-menu';
  * the rows are read under Suspense. The label folds the rows away
  * (`useFoldedBots`), the panel closing on its height, and a fold leaves the bots' faces beside the label
  * (`SectionBotFaces`), the plus and its alerts.
+ *
+ * A `search` is drawn at the top of the panel, so it folds away with the
+ * rows and shows only while they do; `query`, its settled value, narrows the
+ * rows. A heading with neither lists every bot (`SearchableSectionBots` is
+ * the one that searches).
  */
-export function SectionBots({ section }: { section: BotSection }) {
+export function SectionBots({
+  section,
+  search,
+  query = '',
+}: {
+  section: BotSection;
+  search?: ReactNode;
+  query?: string;
+}) {
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [saving, setSaving] = useState<ReadonlyMap<string, readonly BotSection[]>>(new Map());
@@ -87,6 +100,7 @@ export function SectionBots({ section }: { section: BotSection }) {
         className="mx-3 mb-2"
       />
       <SidebarFoldPanel open={fold.open}>
+        {search}
         <QueryState>
           <QueryState.Pending>
             <SectionBotsRowsSkeleton count={rememberedBotCount(section)} />
@@ -97,6 +111,7 @@ export function SectionBots({ section }: { section: BotSection }) {
               section={section}
               onAdd={() => setMenuOpen(true)}
               onHide={(bot) => placeBot(bot, false)}
+              query={query}
             />
           </QueryState.Data>
         </QueryState>
