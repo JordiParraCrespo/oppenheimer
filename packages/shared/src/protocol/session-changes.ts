@@ -4,7 +4,7 @@ import { checkoutIdSchema, commandIdSchema, gitRefSchema, sessionIdSchema } from
 /**
  * A session's changes, read off its worktrees on request: the messages behind
  * the `session.changes.read` capability, which the console's Review reads
- * (`product/versions/mvp/33-session-tabs.md` §5). Part of
+ * (`product/design/console/session-tabs.md` §5). Part of
  * `protocolMessageSchema`, which is where every kind is listed.
  *
  * Nothing is kept by the control plane: each read is git run on the host,

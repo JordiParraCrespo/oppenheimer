@@ -4,7 +4,7 @@
 > [`.agents/rules/go.md`](../../../.agents/rules/go.md) for the rules this
 > module is written under, [`packages/go/README.md`](../README.md) for how
 > the Go modules fit together, and
-> [`product/versions/mvp/09-runner-install-and-update.md`](../../../product/versions/mvp/09-runner-install-and-update.md)
+> [`product/design/runner/runner-install-and-update.md`](../../../product/design/runner/runner-install-and-update.md)
 > for the design it implements.
 
 ## Rules that are not style

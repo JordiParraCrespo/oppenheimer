@@ -1,0 +1,510 @@
+# 0.7 — Terminal and chat display
+
+**Goal:** improve the terminal, and show a session as a chat as well as
+a terminal.
+
+## What exists to build on
+
+- The terminal: xterm.js, tmux on the host, the PTY stream
+  (`../runner/runner.md`, `../foundations/protocol.md`).
+  `../../research/lessons-from-herdr.md` records tmux as a trade: agents survive a restart, at a cost
+  in terminal fidelity.
+- `../../archive/terminal-first.md`'s "Later" column for the terminal: serialized scrollback,
+  search, links.
+- `../../research/lessons-from-herdr.md` and `../runner/runner.md` §9: lifecycle hooks are
+  authoritative where an agent has them, screen reading the fallback —
+  the source a chat display would read from.
+- `../../research/lessons-from-synara-and-openclaw.md`: how two products
+  show a chat with Claude Code and Codex by driving their machine
+  interfaces, and what that costs in process survival.
+
+## Questions to answer first
+
+1. What does "improve the terminal" cover first: scrollback, search,
+   links, splits, latency (local echo), fidelity through tmux?
+2. Where does the chat come from: agent hooks and transcripts (Claude
+   Code writes a JSONL transcript), or parsing the screen?
+3. Is the chat read-only beside the terminal, or can you type into it,
+   and what happens for a blank-terminal session?
+4. Does the chat display change the "the session view stays a terminal"
+   decision (`../../decisions.md`), or sit beside it?
+
+## Proof of concept (2026-10-21)
+
+Built behind the `session_chat_view` release flag (off by default until 2026-10-22, on since, like every
+flag), to see
+a Claude Code session read as a chat without giving up what the terminal
+gives. It answers questions 2 to 4 for the proof of concept; question 1 is
+untouched.
+
+**Where the chat comes from: the agent's own transcript, not its machine
+interface.** Claude Code still runs in tmux, unmodified, signed in by the
+person, so a runner update leaves it running and every TUI feature is
+there. The runner already knows the transcript's path (the conversation is
+the session's id, `--session-id`), so while a browser is attached to a
+Claude Code session it follows `<conversation>.jsonl` and sends what is
+appended. This is the other answer to `../../research/lessons-from-synara-and-openclaw.md`
+§3: Synara, OpenClaw and T3 Code drive the CLI through stream-json or the
+Agent SDK and give up process survival; this keeps tmux and reads the
+file the CLI writes anyway. It also keeps `../../archive/terminal-first.md`'s subscription position:
+nothing reads or relays the person's Claude credentials.
+
+- **Runner** (`sessions/adapters/transcript/follow.go`; each agent's reader
+  says where its conversation is and how a line reads as an entry, Claude's
+  in `claude.go` and `claude_chat.go`): checks the file every 300 ms, holds a half-written line, starts over if
+  the file is replaced, and compacts each line before it leaves the host:
+  the CLI's bookkeeping lines are dropped, an empty thinking block (only
+  its signature) is dropped, and a tool's output and the file a tool wrote
+  are cut (4 KB and 6 KB). An image, pasted with a prompt or in a tool's
+  result (a screenshot the agent read), goes as a JPEG preview in the room
+  the entry has left under the link's 64 KB (`image_preview.go`: the
+  largest side from 1600px down that fits, on white where it was
+  transparent); one with no room, or a WebP the standard library cannot
+  read, is only named. The console shows the previews as tiles that open
+  whole over the page, ← and → through the others, the way Claude's own
+  chat does (2026-10-28).
+- **Wire**: `attachment.chat` on the link (capability `attachment.chat`),
+  `{ attachmentId, reset?, entries[] }`, each entry one compacted line as
+  JSON text; `chat` on the attach socket. The first batch of every
+  attachment carries `reset` and the history, so a reconnect is a fresh
+  history. The relay forwards it only to a person the flag is on for;
+  through a share link that person is the sharer, and the guest's pane
+  offers Terminal / Chat as a member's does, with a composer only on a
+  write share (2026-10-23; at first it was never sent through a share).
+- **Console**: `SessionChat` in the product package reads the entries into
+  turns of typed steps, Synara's classification (Bash as a command, Edit as
+  an edit with its line counts, TodoWrite as a task list, ExitPlanMode as a
+  plan, `mcp__*` as a tool call), results paired by `tool_use_id`. The
+  session's status bar offers Terminal / Chat; the chat is drawn over the
+  grid, which stays mounted at its size so tmux is never resized. A session
+  opens on Terminal (Chat from 2026-11-02 to 2026-11-04, `../../decisions.md`). It is the
+  design system's agent chat: `ChatTranscript`, `TurnHeader`, `ChatReply`,
+  `ToolCallGroup` folding a run of calls into one verb summary,
+  `ToolCallLive` for the call in flight, the task list fused on the
+  composer.
+- **Typing in the chat** types into the same PTY: a line as it is, several
+  lines as one bracketed paste, then Enter; Stop presses Escape. The chat
+  never reaches the agent any way the terminal could not. The protocol is
+  `SessionChat`'s (`send`, `interrupt`); the terminal's stream lends it its
+  input (`connect`), and the session pane, not the terminal, owns the chat
+  and draws it over the grid through the terminal's `cover` slot.
+- **How it reads** (after Synara, Codex's app and AI Elements, 2026-10-21):
+  the newest turn stays open and an older one folds to its words and cards;
+  a live turn's clock and its call in flight tick ("Running `pnpm test`
+  29s", in the present tense, under a sweeping shimmer); a group wears the
+  glyph its calls share; a file reads by its name with its folder after it;
+  a failed call shows its first error line without opening it; thinking is
+  open while it happens and then reads "Thought for 4s" (the gap to the next
+  transcript line); a settled turn that changed files ends on Codex's
+  changed-files card; folds animate their height; the chat, its frame and
+  the page bar are one ground.
+- **Since then** (2026-10-26): tool calls stay folded while the agent is in
+  them, the call in flight on the line under the summary; a long
+  conversation draws its latest 40 turns, the earlier ones a click away
+  (since 2026-11-04 a scroll to the top, which shows a spinner a moment
+  and then the 40 before), and the store rebuilds only the open turn per
+  line; Claude Code's
+  questions are answered in the composer's place, by number key from where
+  focus lands. A message sent while the agent works **waits in a queue** on
+  the composer (send now, edit, drop) and goes when the turn ends: the CLI
+  queues a message typed mid-turn too, but out of sight.
+- **Coming back to a session** (2026-11-04). The tab keeps the chats of
+  the last five sessions it read (`session-chats.ts`), as it keeps their
+  terminals' pictures: moving between sessions draws the conversation at
+  once, and the history the host sends again is checked against it and
+  changes nothing on screen where it matches. The host still sends the
+  whole transcript on every attach; sending its end first, and older turns
+  as the reader scrolls up, is the next step.
+- **Tail first** (2026-11-04). An attach no longer sends a conversation
+  from its first line. A long one was 4MB reads 300ms apart, a preview
+  made for every screenshot in it, all of it parsed in the browser, to
+  draw the last 40 turns; on dev.oppenheimer.build a 7.8MB one took
+  seconds before anything showed. Now:
+  - **The reset is the tail.** The runner reads back from the end of the
+    transcript (at most one 4MB read) to the line that opens the 40th
+    turn from the end, and sends from there, `reset` and `history` as
+    before. The batch that carries `reset` also carries `before`: the byte
+    offset in the transcript where what it sent starts. No `before`, or
+    0, is the whole conversation.
+  - **Older turns are asked for.** Scrolling to the top of the chat with
+    nothing more held sends `chat.older { before }` on the attach socket;
+    the relay passes it to the runner as `attachment.chat.older
+    { attachmentId, before }`, and the runner reads back from that offset
+    to the opening of the 40th turn before it and sends those lines as
+    `attachment.chat` batches marked `older: 'more' | 'end'`, the last
+    with the new `before`. The console prepends the page once it has all
+    come; the spinner at the top stays until then.
+  - **A cut is at a turn's opening.** The runner cuts only before a line
+    that opens a turn, a person's message (a user line that is neither a
+    tool's result, nor meta, nor a sidechain's), so a tool call is never
+    sent without its result. It needs no more of the console's reading
+    than that; a cut the console reads differently draws a turn with no
+    prompt at the top, which the next page completes.
+  - **A replay starts where the tail does.** A reconnect's reset now
+    begins mid-conversation, so the console finds its first line among
+    the lines it holds and checks the replay from there; what it holds
+    before it, older pages included, stays. A tail it cannot find is a
+    different conversation, drawn from the tail.
+  - **Who does it.** Claude Code's transcript, whose every line reads on
+    its own. Codex's and Grok's transcribers carry state from line to
+    line and OpenCode's conversation is read off its API, so they keep
+    sending the whole history, with no `before`, and the console keeps
+    every turn in memory as before.
+  - **Only for a reader that can ask.** The runner updates on its own, so
+    it may be newer than the control plane or a console tab left open.
+    Tail first is asked for on each attach: the browser says it can ask
+    for older turns (`chatTail` on the resize that starts the attach), the
+    relay passes `chatTail` on `session.attach` only to a runner that
+    names `attachment.chat.older` and only when the chat reaches that
+    reader, and the runner cuts a conversation only when told. Anything
+    older on the way gets the whole history, as before.
+- **The room left** (2026-10-26). The composer shows how full the context is
+  beside the model, opening to the context in tokens (with Compact) and the
+  plan's 5-hour and weekly limits with their resets, the way Orca's meters
+  read them. **The source is Claude Code's own status line, on the host,**
+  not a credential and not a call to Anthropic: the runner launches a
+  session's Claude Code with `--settings` naming `runner statusline` as its
+  status line, which keeps the figures the CLI hands it
+  (`context_window`, `rate_limits`) by conversation, and the chat follower
+  sends the latest as an `oppenheimer.status` entry beside the transcript.
+  The person's own status line, if they have one, is run on the same
+  payload and still draws the row; with none, the row reads
+  `ctx 32% · 5h 23% · 7d 41%`. Two costs, taken knowingly: a custom status
+  line hides Claude Code's footer hints ("esc to interrupt"), which the
+  activity manifest never relied on alone (the title outranks it); and the
+  windows only come for a Pro or Max sign-in, after the first answer, so an
+  API-key account sees the context and nothing else. Until the runner is
+  updated, the context is counted off the transcript's `usage` instead.
+- **Data reads as data** (2026-10-27). A fenced block that holds JSON
+  (`json`, `jsonc`, `json5`, or no language and an object or array) reads
+  as a tree behind Raw / Tree on its band, Copy keeping the text as written
+  (since 2026-11-11 it opens on Raw, the text as the agent wrote it):
+  keys in the attribute yellow, objects and arrays folding with their size
+  in mono, the path on hover, each ISO time followed by the instant in
+  words, in UTC. A run of `"key": value` lines lifted out of an object (an
+  agent's "change these two fields") reads as that object. A tool result
+  that is JSON (most MCP answers) opens as the same tree in its fold; output
+  the host cut short stays text. Synara draws neither: its JSON is coloured
+  code (read at `eaa61ed` and again 2026-10-27).
+- **One chat item model** (2026-10-31). The bots chat and the session chat
+  each grouped messages into turns and named tools their own way. There is
+  now one model for both, `@oppenheimer/shared/schemas/chat-item`: a turn
+  (`queued`, `in_progress`, `completed`, `interrupted`, `failed`) holds items
+  typed by what they are (`user_message`, `agent_message`, `reasoning`,
+  `command`, `file_read`, `file_search`, `file_change`, `web_search`,
+  `todo_list`, `plan`, `question`, `mcp_tool_call`, `tool_call`, `subagent`,
+  `event`), each `in_progress`, `completed` or `failed`, with when it started
+  and ended. It is Codex's app-server protocol made small (thread, turn,
+  item; the completed item wins over what streamed before it) with Grok's
+  habit of typing a tool call by what it does rather than by its name. Two
+  pure adapters in the product package read a bot's conversation and a
+  Claude Code transcript into it. The first thing both chats share is how a
+  tool call is read: one `classifyTool` (kind, chat item type, glyph name,
+  name in words, target) in the product package replaces the two tables.
+  What it decides by who defined the tool, a coding agent's CLI or a bot, is
+  only how an unknown tool reads: a bot's own tool in words and aimed at its
+  first text, a CLI tool as the CLI names it. Nothing on screen changed.
+  **The rest is one renderer:** draw both chats from the items rather than
+  from `ChatStep`s and `BotMessageEntity`s (the session chat first, since
+  its blocks map one to one), then fold the bots trace and the session's
+  tool groups into one group component over items, then feed the bots
+  stream's `tool.started`/`tool.finished` and the transcript follower as
+  item started/completed events, and only then the glyph maps, the verbs
+  (`bots.chat.activity.*` and `sessions.chat.verb.*`) and the todo readers,
+  which stay per chat until the renderer is one.
+- **Recorded conversations replay in the tests** (2026-10-31), after
+  Codex's TUI tests, which feed a recorded session's events into the chat
+  widget and look at what it drew. A session's recording is its Claude
+  Code transcript, JSONL line for line
+  (`apps/web/src/features/sessions/__tests__/replay/`); a bot's is what
+  its conversation read answered and what its stream sent, in order
+  (`…/bots/__tests__/replay/`). Each plays through the product package's
+  parser, repository and stream into the real section, and the specs read
+  the transcript back as a text outline: turns and steps in order, what is
+  folded or open, the write head, the live line, the failure. They are
+  where a renderer change proves it kept the order, never drew stored text
+  twice, and still shows an event it cannot read as its first line.
+- **Looking around folds; long output is capped** (2026-10-31, after
+  Codex's `exec_cell`). A run of calls that only look (Read, Grep, Glob,
+  LS, and a Bash command that is one obvious reader, lister or searcher:
+  `ls`, `tree`, `cat`, `head`, `tail`, `sed -n`, `rg`, `grep`, `git grep`,
+  `find` with only name and type predicates, after at most a `cd … &&` and
+  piped into at most `head`, `tail`, `wc`, `sort` or `grep`; a redirect, a
+  substitution, `;`, `&`, a newline, `-i`, `-exec` or `-delete` is never
+  looking) is one "Explored" line, "Exploring" while it runs, that names
+  what it looked at ("Read a.ts, b.ts · Searched cancel · Listed src"),
+  each file once however often it was read, and opens to the calls. Any
+  other call, a reply or a thought ends the run; a task list does not.
+  A bot's chat does the same over its read-only tools (`get_`, `list_`,
+  `read_`, `search_`, the web search and fetch). A call's text output
+  shows its first five lines, a line too long to read cut to its head and
+  tail, under "+N lines", which opens the whole of it; a JSON answer
+  stays a tree. Left for later: Codex also caps a running command's live
+  output to its head and tail, which the chat does not stream yet.
+
+Where a better display would pay next, from the transcripts a session
+writes and what Synara draws (2026-10-27), roughly by how often each
+appears:
+
+1. **Paths as file chips.** A path in inline code or a link becomes a chip
+   with its `FileIcon`, opening the file in the session's worktree (Synara
+   checks the file exists on the host first).
+2. **Long blocks and outputs fold.** A fence or a tool output past ~20 lines
+   shows its head with "Show N more lines"; a soft-wrap toggle on the band.
+3. **`diff` fences and `git diff` output as a diff**, through `DiffView`
+   rather than coloured text.
+4. **A command's output keeps its colours**: ANSI in a Bash result drawn as
+   the terminal would, stderr apart from stdout.
+5. **A Read result as code**: the file's own language highlighted, its
+   `cat -n` numbers moved to the gutter.
+6. **Tables that sort and fold** past ten rows, and a table whose separator
+   row is short repaired rather than shown as pipes (Synara's
+   `markdownTableRepair`).
+7. **GitHub alerts** (`> [!WARNING]`) as callouts, and links as chips with
+   their site or GitHub mark.
+8. **Pasted structured text** in a JSON tool input (an MCP call's
+   arguments) as the same tree under the row, and YAML, TOML and `.env`
+   blocks as key/value rows.
+9. **Math and diagrams**: KaTeX for `$…$`, Mermaid for a `mermaid` fence.
+   Built on 2026-11-24 in the shared `Markdown`, with visuals an agent shows
+   (typed blocks, and HTML in a sandboxed frame) beside it:
+   `research/generative-ui-in-chat.md` §6 and `research/visuals-in-the-chat.md` §6.
+
+What it does not do yet, and what a version of it would decide:
+
+1. **Token streaming.** The transcript gets a line per message and per
+   tool result, so a reply appears whole, not word by word. Lifecycle
+   hooks (`../runner/runner.md` §9) or reading the PTY for the reply in flight are the two
+   ways to get closer.
+2. **Approvals as UI.** A permission prompt is still answered in the
+   terminal; the chat shows the call waiting. Hooks are the source here too.
+3. **Opt-in per attachment.** The runner follows the transcript for every
+   Claude Code attachment and the relay drops it for people without the
+   flag; a version would have the browser ask for it.
+4. **Codex.** Done, with Grok: "Codex and Grok (2026-11-02)" below, after
+   OpenCode, which has no file and is read by its API ("OpenCode
+   (2026-11-02)").
+5. **The security note** (`../foundations/security-checklist.md`) should say in words that a conversation's
+   text now crosses the relay as text, which is no more than the terminal
+   bytes already carry.
+
+## OpenCode (2026-11-02)
+
+An OpenCode session has the chat too. OpenCode keeps no transcript file
+the runner could follow: since its 1.x versions a conversation lives in a
+SQLite database whose tables have moved more than once. What it does
+promise a shape for is its API, which its TUI serves when it is launched
+with `--port`. So:
+
+- **Launch.** The runner launches OpenCode with `--port <p> --hostname
+  127.0.0.1`, a port it found free on loopback a moment before, and
+  `OPENCODE_SERVER_PASSWORD` set to a password minted for the session, so
+  another account on the host cannot drive the agent through the port. The
+  port, the password and when the session first launched are saved with
+  the session (`Launch.Server`, in the 0600 state file, never sent to the
+  control plane), so a runner that restarted finds it again. A Restart
+  picks a fresh port and password and keeps the first launch's time. The
+  password is the session's tmux environment, never the launch command
+  line: that line is the arguments of the `runner pty` wrapper, which lives
+  as long as the agent, and any account on the host can read a process's
+  arguments (a review finding on the first version). Only `tmux
+  new-session -e` carries it in its arguments, for the instant that command
+  runs. A port handed out again before OpenCode binds it fails that
+  launch, and Restart picks another.
+- **Which conversation.** The session's conversation is the newest root
+  conversation OpenCode lists for the session's directory that was touched
+  since the session first launched. OpenCode keeps one store per
+  repository, so the worktrees of one repository share it: the runner asks
+  for its directory's conversations and checks each answer against it, so
+  another session's worktree never shows here. `/new` in the TUI is
+  followed, from its top; an older conversation in a folder session's
+  folder never shows as this one.
+- **Following.** While a browser is attached the runner reads
+  `/session?roots=true` and the conversation's messages: the whole history
+  once, then the last 20 messages at each check (the whole again when 20
+  no longer reach what was sent), at most every 300 ms while OpenCode's
+  `/event` stream says a session or a message changed, and every 2 s
+  without it. Each part is sent once it is finished: a prompt, a reply or a
+  thought whole, a tool call when it starts running (the live row) and its
+  result when it ends.
+- **The shape.** Each part goes as a line of the transcript the console
+  already reads (Claude Code's: `user`/`assistant`, `text`, `thinking`,
+  `tool_use`, `tool_result`, `usage`), so the console has one reader.
+  OpenCode's tools take the names the chat knows them by (`bash` is `Bash`,
+  `read` `Read`, `edit` `Edit`, `list` `LS`, `todowrite` `TodoWrite`,
+  `task` `Task`, `filePath` `file_path`, `oldString` `old_string`); one it
+  does not know (`apply_patch`, `question`, an MCP server's) keeps its own
+  name and reads as a call. A stopped turn (`MessageAbortedError`) is the
+  chat's interrupted note; any other error is a reply naming it, so a turn
+  never spins as working after OpenCode gave up.
+- **The console** names the session's agent on the chat (the composer's
+  line and placeholder, the empty state); a guest on a share, who is not
+  told the agent, sees neither. The context meter's fallback count assumes
+  a Claude model's window, so a turn another model answered shows no
+  meter.
+
+Not yet: a session launched without a task is not named from its first
+OpenCode prompt (`FirstPrompt` still reads files only); OpenCode's
+`question` tool is answered in the terminal, since the composer's picker
+types Claude Code's keys; and an OpenCode started before this runner
+version has no port, so its chat comes after a Restart.
+
+## Codex and Grok (2026-11-02)
+
+Codex and Grok sessions have the chat too, each read off the file its CLI
+keeps, the way Claude Code's is. The runner follows a file through one
+follower; what differs per agent is a *source*: where the session's file
+is, and how its lines read as the chat's transcript lines (Claude Code's
+shape, so the console still has one reader).
+
+- **Codex** keeps a conversation as a "rollout",
+  `~/.codex/sessions/YYYY/MM/DD/rollout-<time>-<id>.jsonl` (`$CODEX_HOME`).
+  Codex names it itself and is resumed with `resume --last`, so the
+  session's rollout is the newest one whose first line (`session_meta`)
+  was written in the session's directory and that was written to since
+  the session was created; the day folders since then are looked through
+  again every 2 s, for `/new`. A line is `{timestamp, type, payload}`. The
+  person's words come from `event_msg` `user_message` (the `response_item`
+  user messages carry the context Codex injects too); replies, reasoning
+  summaries, calls and outputs from `response_item`. Commands
+  (`exec_command`, `shell_command`, `shell`) read as `Bash`, failed when
+  the exit code is not 0; `update_plan` as the task list; `apply_patch` as
+  an `Edit` per file (a `Write` for a file it adds), with the lines it
+  removed and added; a web search as `WebSearch`. `turn_aborted` is the
+  interrupted note, and `token_count` becomes the chat's status: the
+  context against the model's window, and the plan's 5-hour and weekly
+  windows, so a Codex session has the composer's meter.
+- **Grok** keeps a session in `~/.grok/sessions/<encoded cwd>/<session
+  id>/` (`$GROK_HOME`), and the conversation there as `updates.jsonl`, the
+  Agent Client Protocol's session updates. The runner launches it with
+  `--session-id <session>`, so the folder is found by that name. ACP sends
+  what the agent says and thinks as chunks, so a run of one kind of chunk
+  is one prompt, reply or thought, sent once another update arrives or the
+  file has been quiet for 1.5 s: a reply appears whole, up to that long
+  after its last word. A tool call is read by its ACP kind and its raw
+  input (`execute` as `Bash`, `read` as `Read`, `edit` as `Edit` or
+  `Write` from its diff, `search` as `Grep` or `LS`, `fetch` as `WebFetch`
+  or `WebSearch`), sent once it runs and its result once it ends; an edit
+  waits for its end, when its diff is known. A plan is the task list. The
+  updates do not say which model answered, so a Grok turn names none.
+- **The console** names a model by the agent catalog's label when it has
+  one ("GPT-6.1 Sol", and OpenCode's ids without their provider), else a
+  Claude id as before.
+
+The formats were read from the CLIs themselves (`@openai/codex` 0.166, the
+strings of its binary; `@xai-official/grok` 1.0.70, the guide built into
+it), not watched in a signed-in session: the readers take each line
+loosely, and a line they do not know is left out, never an error.
+
+## The composer's `/` menu (2026-11-19)
+
+Typing `/` in a host session's chat composer opens a menu of what `/<name>`
+runs, as the bots composer has: the project's skills and commands first,
+since they are what the person cannot type from memory, then Claude Code's
+own commands that answer in the transcript (`/clear`, `/compact`,
+`/context`, `/cost`, `/init`, `/review`; one that opens a picker or an
+editor in the terminal is left out). The runner reads the project's from
+the folder the agent runs in, `.claude/skills/<dir>/SKILL.md` (by its front
+matter's `name`, leaving out `user-invocable: false`) and
+`.claude/commands/<path>.md` (a subfolder joined with `:`), and sends them
+with each `attachment.chat` reset as `commands`: a name and a description
+cut to 300 characters, at most 200 of them. Nothing else of those files
+leaves the host. A host that predates the list gets the built-ins alone; a
+cloud session gets no menu, since its replies go through `claude -p`.
+
+Left for later: the person's own skills (`~/.claude/skills`), plugin skills,
+and Codex's commands. A skill added while the chat is open shows on the
+next reconnect, since the list rides the reset.
+
+## Subagents (2026-11-06)
+
+The owner asked to see a session's subagents the way the terminal's footer
+lists them (each one's kind, task, clock and tokens): the chat showed a
+subagent's call, and only its answer once it ended. Now each subagent's
+own work reaches the chat while it runs, under the call that started it.
+
+- **The wire.** A subagent's own lines travel as the session's do, Claude
+  Code's shape, each marked `isSidechain` with the subagent's id
+  (`agentId`), and one `oppenheimer.subagent` entry per subagent, sent
+  again whenever it changes: its id, the call that started it
+  (`parentToolUseId`), its kind, name, task and model, how it stands
+  (`running`, `completed`, `failed`, `stopped`) and the tokens its context
+  held when the agent counts them. They are sent after the history, the
+  newest 64 subagents, each from at most its last 512 KB, and the console
+  hangs them under their call whatever order they arrive in.
+- **Claude Code** (2.1) keeps a subagent's conversation beside the
+  session's, in `<conversation>/subagents/agent-<id>.jsonl`, and what it is
+  in `agent-<id>.meta.json`: its kind, its task, the `Agent` call that
+  started it (`toolUseId`) and whether it has finished. A subagent's own
+  subagents name a call in its file, so they hang under it in turn.
+- **Codex** runs each subagent (`spawn_agent`) as a thread with a rollout of
+  its own, whose `session_meta` names the thread that started it
+  (`parent_thread_id`, and its nickname, role and path among the agents).
+  The session's subagents are the rollouts whose parent is the session's
+  thread or one of its subagents'; nothing in them names the call, so the
+  console matches the `spawn_agent` whose answer names the thread
+  (`agent_id`) or the task (`task_name`, the last part of the path). A
+  subagent's turns start and end as `task_started` and `task_complete`,
+  a stop as `turn_aborted`, and `token_count` is its tokens. Its rollout
+  shares the session's directory, so it is never taken for the session's
+  own conversation, which it was before this.
+- **OpenCode** (1.19) runs a subagent (`task`) in a conversation of its
+  own, which the call names (`state.metadata.sessionId`, with the model):
+  the runner reads it through the same API while the call runs and once
+  more after it ends. One level deep.
+- **Grok** says nothing in its updates about a subagent's work, so its
+  `Task` calls are rows with their task and how they ended, with no work
+  under them; so is any agent whose host is older than this.
+- **The console** draws calls that started subagents, side by side, as one
+  card ("2 subagents · 1 running"), a row each: the task, the kind (and a
+  Codex nickname), the model, how it stands with its clock, what it is
+  doing now or how it ended, its calls and tokens. A row opens to the
+  subagent's own work, drawn as a turn's blocks are. Only the turn the
+  subagent works in redraws.
+
+Read off the CLIs' own files and sources (Claude Code 2.1.318 on this
+machine, Codex's `codex-rs/protocol` and rollout policy, OpenCode 1.19.5's
+binary), not watched in a signed-in Codex or OpenCode session.
+
+## The model under the display (2026-10-31)
+
+What the chat is drawn from has its own document,
+[`chat-protocol.md`](chat-protocol.md); the display list above stays here.
+## Bot approvals as a request (2026-10-31)
+
+The bots chat's Needs input card took three things from Codex's
+app-server protocol. The card's buttons are the decisions the API chose
+for that call (`availableDecisions`: approve, approve for its subject,
+always allow, deny, deny and stop), drawn in that order with Codex's keys
+(`y`, `p`, `a`, `n`, `c`), and the decide endpoint accepts only those.
+*Deny* lets the bot carry on, as before; *Deny and stop* gives it no turn
+back and stops the asking turn if it still runs. A decision made in any
+tab is broadcast as `approval_resolved`, so every other tab takes the card
+down without a read and draws the decided line until the stored one
+lands. And a card raised while the bot's text is mid-line is held until a
+line ends or 600 ms pass. The session chat's approvals (item 2 above) are
+not part of it: they still wait on hooks.
+## Steer in the bots chat (2026-10-31)
+
+A message written to a bot while its turn runs now goes into that turn
+instead of waiting for the next one, the way Codex's composer steers a
+running turn (`turn/steer`). Enter steers; Alt+Enter queues it for after,
+as before. The turn takes it at its next call of one of our tools: the
+engine asks after each call, before the model reads the result, and the
+message rides that result to the model, marked as the person's and newer
+than what opened the turn. Both engines do it the same way, since every
+call of ours runs through one wrapper, so no engine needs a fallback of its
+own: a turn that calls no tool, or ends before its next call, leaves the
+steer what it was stored as, a queued turn, and it runs next. A message
+with images always waits. Only the running turn's own sender, on the same
+credential scopes, can steer it. Over the composer a steer is marked apart
+from a queued message, and either can be edited or removed until it is
+taken; in the transcript it sits inside the bot's answer, after the call
+that carried it, under a line saying it was steered in. Stored as
+`bot_turn."steer"`: taking it moves the message into the running turn and
+deletes its queued turn in one transaction under the bot's lock.
+
+Not yet: editing your last message and rewinding the conversation to it
+(Codex's `thread/rollback`, Grok's regenerate from a parent response), and
+Claude Code's own mid-turn input (`priority: 'next'` on a streamed user
+message), which would steer between the engine's own tools too.

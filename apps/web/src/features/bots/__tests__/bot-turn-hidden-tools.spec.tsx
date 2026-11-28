@@ -1,4 +1,4 @@
-import { BotMessageEntity, BotTurnEntity } from '@oppenheimer/frontend-consumer';
+import { BotMessageEntity, type BotToolStep, BotTurnEntity } from '@oppenheimer/frontend-consumer';
 import type { BotTurnStatus } from '@oppenheimer/shared/schemas/bot';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -82,4 +82,76 @@ describe('BotTurn with tool calls hidden', () => {
     expect(screen.getByText(/bots\.chat\.turn\.stopped/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'bots.chat.retry' })).toBeTruthy();
   });
+
+  /**
+   * The quiet chat reads like a messenger. What breaks this: a reply that
+   * still trails how long it worked, its model and tokens, so the default
+   * view reads as a log rather than a conversation.
+   */
+  it('trails a reply with its actions alone: no time, model or tokens', () => {
+    draw('completed', [replied], () => {});
+    expect(screen.getByRole('button', { name: 'bots.chat.copyReply' })).toBeTruthy();
+    expect(screen.queryByText(/glm-5/)).toBeNull();
+    expect(screen.queryByText(/bots\.chat\.workedFor|bots\.chat\.tokens/)).toBeNull();
+  });
+
+  it('trails the time, model and tokens once the tool calls are shown', () => {
+    drawShown('completed', [replied]);
+    expect(screen.getByText(/glm-5/)).toBeTruthy();
+  });
+
+  /**
+   * What breaks this: the live line naming the running call ("Searching the
+   * web for…") and its clock while the calls are hidden, or staying under
+   * the words as they stream in, so a messenger's "typing" reads as a log.
+   */
+  it('says only that the bot is thinking while a call runs, with no call named', () => {
+    draw('running', [running]);
+    const line = screen.getByText(/bots\.chat\.turn\.musing\./);
+    expect(line.textContent).not.toMatch(/activity/);
+  });
+
+  it('draws no live line once the reply streams in', () => {
+    const block: ChatTurnBlock = {
+      key: 't1',
+      turnId: 't1',
+      turn: turn('running'),
+      asked: [],
+      answer: [],
+    };
+    render(
+      <ToolCallsShownContext value={false}>
+        <BotTurn block={block} live="Hello" current subagents={{}} images={() => null} />
+      </ToolCallsShownContext>,
+    );
+    expect(screen.queryByText(/bots\.chat\.turn\./)).toBeNull();
+  });
 });
+
+const replied = new BotMessageEntity('m1', 't1', 'assistant', 'All set.', [], at);
+
+const running = new BotMessageEntity(
+  'a2',
+  't1',
+  'activity',
+  '',
+  [
+    {
+      ...(ranTools.steps[0] as BotToolStep),
+      callId: 'c2',
+      name: 'web_search',
+      input: { query: 'x' },
+      output: null,
+    },
+  ],
+  at,
+);
+
+function drawShown(status: BotTurnStatus, answer: BotMessageEntity[]) {
+  const block: ChatTurnBlock = { key: 't1', turnId: 't1', turn: turn(status), asked: [], answer };
+  render(
+    <ToolCallsShownContext value>
+      <BotTurn block={block} live={undefined} current subagents={{}} images={() => null} />
+    </ToolCallsShownContext>,
+  );
+}

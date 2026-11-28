@@ -15,7 +15,7 @@ export interface LocalTerminals {
   /**
    * Bytes the terminal has drained. The shell stops reading the runner while
    * too many are outstanding, so a slow pane leaves its backlog in tmux, as
-   * the relay's credit window does (01, "Flow control").
+   * the relay's credit window does (`product/design/foundations/protocol.md`, "Flow control").
    */
   credit(handle: number, bytes: number): void;
   close(handle: number): void;

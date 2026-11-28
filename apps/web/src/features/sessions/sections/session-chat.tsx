@@ -1,6 +1,7 @@
 import {
   AgentMark,
   ChatTranscript,
+  cn,
   EmptyState,
   FloatingChip,
   useStickToBottom,
@@ -22,6 +23,7 @@ import {
   useChatTurnIds,
 } from '../hooks/use-session-chat';
 import type { ChatAttach } from '../lib/chat-blocks';
+import { TERMINAL_MEASURE } from '../lib/terminal-measure';
 import { SessionChatActivity } from './session-chat-activity';
 import { SessionChatAttachingSend } from './session-chat-attaching-send';
 import { SessionChatFind } from './session-chat-find';
@@ -154,7 +156,12 @@ export function SessionChat({
         <div
           ref={scroller}
           tabIndex={-1}
-          className="scrollbar-strong min-h-0 flex-1 overflow-y-auto pt-6 pb-4 outline-none [overflow-anchor:none]"
+          // The column's width, as the terminal's grid scrolls in its own: the
+          // scrollbar stands beside the text, not at the pane's far edge.
+          className={cn(
+            TERMINAL_MEASURE,
+            'scrollbar-strong min-h-0 flex-1 overflow-y-auto pt-6 pb-4 outline-none [overflow-anchor:none]',
+          )}
         >
           <TerminalColumn ref={content} className="flex min-h-full flex-col">
             {loading ? (

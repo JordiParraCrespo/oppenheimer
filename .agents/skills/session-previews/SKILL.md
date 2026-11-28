@@ -6,7 +6,7 @@ description: Set up, check and troubleshoot sessions' previews, the session pane
 # Session previews
 
 A session's dev server, in the console's Browser tab and from anywhere the
-console opens. The design is `product/versions/mvp/30-session-previews.md`;
+console opens. The design is `product/design/sessions/session-previews.md`;
 read it before changing anything here. In one breath:
 
 ```

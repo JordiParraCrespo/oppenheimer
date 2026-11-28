@@ -199,6 +199,7 @@ export {
   usePutInboxMarks,
   useRefreshInbox,
   useSuspenseInbox,
+  useUnattendedSessionsShown,
 } from './inbox.queries';
 export {
   type ConnectInstallationVariables,
@@ -294,8 +295,10 @@ export {
   type OpenSessionWindowVariables,
   type PutSessionShareVariables,
   type RenameSessionVariables,
+  type SessionsWriteResult,
   type SetSessionHiddenVariables,
   type SetSessionSharePeopleVariables,
+  type SetSessionsHiddenVariables,
   type StopSessionShareVariables,
   useAcknowledgeSessionReport,
   useAnswerSessionDecision,
@@ -321,6 +324,7 @@ export {
   useSessionWindows,
   useSetSessionHidden,
   useSetSessionSharePeople,
+  useSetSessionsHidden,
   useStartCloudSession,
   useStopSessionShare,
   useSuspenseSession,

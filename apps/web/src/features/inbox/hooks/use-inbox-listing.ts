@@ -1,9 +1,11 @@
 import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { useSuspenseInbox } from '@oppenheimer/frontend-consumer/react';
+import { useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { inboxCopy, matchesQuery } from '../lib/inbox-copy';
 import { currentItem } from '../lib/inbox-current';
 import { listedItems } from '../lib/inbox-filter';
+import { heldCurrent, inboxHeld } from '../lib/inbox-held';
 import { useInboxSearch } from './use-inbox-search';
 import { useInboxVisit } from './use-inbox-visit';
 
@@ -11,7 +13,8 @@ import { useInboxVisit } from './use-inbox-visit';
  * What the list column draws and the reading pane takes its item from, in
  * one place so the two never disagree: the Inbox, its search, the open and
  * done items under the filter and the words, the item the address names
- * (else the one after the last in hand, else the first), and the visit.
+ * (else the one after the last in hand, else the first, unless a card the
+ * reader is working in holds the deck: `inboxHeld`), and the visit.
  */
 export function useInboxListing(now: number) {
   const { t } = useTranslation();
@@ -22,10 +25,16 @@ export function useInboxListing(now: number) {
 
   const found = (item: InboxItem) => matchesQuery(inboxCopy(item, t), search.query);
   const { open, done } = listedItems(inbox, visit, search.filter, search.showDone, found);
-  const current = currentItem(open, search.item, {
-    answered: inbox.answered,
-    done: visit.done,
-    following: visit.following,
-  });
+  const held = useSyncExternalStore(inboxHeld.subscribe, inboxHeld.get, inboxHeld.get);
+  const current = heldCurrent(
+    open,
+    search.item,
+    currentItem(open, search.item, {
+      answered: inbox.answered,
+      done: visit.done,
+      following: visit.following,
+    }),
+    held,
+  );
   return { inbox, search, open, done, current, visit };
 }

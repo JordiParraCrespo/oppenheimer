@@ -7,7 +7,7 @@
 // the owner's own chat sends what the bot writes before a tool call as the
 // call begins, a message sent meanwhile reaches the running turn with its
 // next tool result, and the turn's end sends only what came after its last
-// call (`product/next-steps/answering-on-telegram-and-whatsapp.md` §4).
+// call (`product/design/channels/answering-on-telegram-and-whatsapp.md` §4).
 //
 // Each case is one message from the owner on a channel. The runner builds
 // the bot's real system prompt and turn context (the channel's line and

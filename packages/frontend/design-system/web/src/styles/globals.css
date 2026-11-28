@@ -732,6 +732,17 @@
   }
 }
 
+/* The rail's phone tab bar (`Rail`): under 768px, inside a rail that is not
+   the column at every width. Its items' tab-bar look is written once under
+   this variant, so the breakpoint and the layout it keys on live here. */
+@custom-variant rail-bar {
+  @media (width < 48rem) {
+    [data-slot="rail"][data-layout="responsive"] & {
+      @slot;
+    }
+  }
+}
+
 /* =============================================================================
    Theme mapping — tokens become Tailwind utilities.
    Imported by every app alongside `@import "tailwindcss"`.

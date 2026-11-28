@@ -7,7 +7,7 @@
 ---
 
 Bots get built-in commands, as Claude Code has, and `/goal` is the first
-(`product/versions/mvp/25-bots.md` §4.1).
+(`product/design/bots/bots.md` §4.1).
 
 - `@oppenheimer/api`: a message `/goal <condition>` sets the bot's goal on
   the turn it queues, with up to 20 continuations, and that turn starts on
