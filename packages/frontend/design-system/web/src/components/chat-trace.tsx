@@ -25,7 +25,7 @@ import { cn } from '../lib/utils';
  *   failed command). Open, its children hang under the title. `action` is
  *   a control at the end of the line (Open session), outside the fold's
  *   trigger, so using it never opens the step.
- * - `TraceOutput`: what a step returned, on the card at the 14px radius:
+ * - `TraceOutput`: what a step returned, on the card at the 10px radius:
  *   mono 12.5px lines, numbered, scrolling past 256px. `maxLines` cuts a
  *   long one with "+N lines" under it, and while it is cut a line too long
  *   to read keeps only its head and tail; `0` keeps it behind "Show raw

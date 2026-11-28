@@ -110,7 +110,7 @@ function ComposerNoticeFrame({ notice, children }: { notice?: React.ReactNode; c
  *
  * `scope` is New session's tabbed form: the scope chips (`ChipSelectTrigger`,
  * `tab` variant) sit in a grey band fused to the top of the field (control
- * fill, 18px top radii, inset 18px each side). With a band the field is the
+ * fill, 12px top radii, inset 18px each side). With a band the field is the
  * taller one, 128px at 15px, because the sentence above has already said where
  * the work happens.
  *

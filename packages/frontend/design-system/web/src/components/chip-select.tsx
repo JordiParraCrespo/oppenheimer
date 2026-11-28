@@ -205,7 +205,7 @@ function ChipSelectTrigger({
 }
 
 /**
- * The listbox surface: 14px radius, 4px padding, the popover shadow.
+ * The listbox surface: 10px radius, 4px padding, the popover shadow.
  *
  * The density carries the pane's size, so a caller states one only to override
  * it (`RepositorySelect`, whose rows hold a branch cell). A `menu` pane takes

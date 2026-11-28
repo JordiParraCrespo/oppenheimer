@@ -6,7 +6,7 @@ import { cn } from '../lib/utils';
  * TemplateGrid — starting points under the routine table: a two-column
  * grid (one column under 320px) of items, each a 36px round glyph on the
  * card colour, a name, a two-line description, a meta line naming the
- * trigger, and an Add button. Items take the hover wash on a 14px radius.
+ * trigger, and an Add button. Items take the hover wash on a 10px radius.
  */
 function TemplateGrid({ className, ...props }: React.ComponentProps<'div'>) {
   return (

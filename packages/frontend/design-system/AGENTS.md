@@ -45,8 +45,8 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   height. The three share one size map (`internal/control-size.ts`).
   A smaller or larger field is a `size` the caller asks for, never a height
   of the component's own.
-- **Six radii and no others**: 6 · 10 · 14 · 18 · 28 · pill. Type into a 10,
-  press a pill, read inside an 18. The navigation column (every sidebar
+- **Six radii and no others**: 6 · 10 · 10 · 12 · 16 · pill (xs, sm, md, lg, xl). Type into a 10,
+  press a pill, read inside a 12. The navigation column (every sidebar
   and the settings nav) is one radius, `--radius-nav` (`rounded-nav`, the
   6): its rows, group heads, search and row actions, whatever their
   height, so the column reads as one list. A surface there takes
