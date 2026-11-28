@@ -59,8 +59,8 @@ export function ConsoleSidebar({ list }: { list: ConsoleList }) {
     return (
       <SessionsSidebar
         bots={
-          <Suspense fallback={<SectionBotsSkeleton section="sessions" />}>
-            <SectionBots section="sessions" />
+          <Suspense fallback={<SectionBotsSkeleton section="sessions" searchable />}>
+            <SectionBots section="sessions" searchable />
           </Suspense>
         }
       />

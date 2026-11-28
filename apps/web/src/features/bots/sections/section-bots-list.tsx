@@ -24,15 +24,21 @@ import { SectionBotRow } from './section-bot-row';
  * keyboard (Space picks a row up, Enter still opens it), on the heading's
  * own `DragProvider`. The order is the one Employees draws, so a drop here
  * moves the bot there and under every other heading that lists it.
+ *
+ * `query`, the heading's settled search, narrows the rows to the bots whose
+ * name holds it. While it does, no row drags, since a drop would lose the
+ * places of the bots it hides, and a search that matches none says so.
  */
 export function SectionBotsList({
   section,
   onAdd,
   onHide,
+  query = '',
 }: {
   section: BotSection;
   onAdd: () => void;
   onHide: (bot: BotEntity) => void;
+  query?: string;
 }) {
   const { t } = useTranslation();
   const { data: listed, error } = useSuspenseSectionBots(section);
@@ -40,6 +46,8 @@ export function SectionBotsList({
   const { bots, group, handlers, error: moveError, reset } = useSectionBotOrder(section, listed);
   const dragLabels = useDragLabels();
   useRememberSectionBotCount(section, bots.length);
+  const term = query.trim().toLowerCase();
+  const matched = term ? bots.filter((bot) => bot.name.toLowerCase().includes(term)) : bots;
 
   return (
     <>
@@ -57,6 +65,10 @@ export function SectionBotsList({
             {t('bots.section.add')}
           </button>
         </SidebarEmptyRow>
+      ) : matched.length === 0 ? (
+        <SidebarEmptyRow className="ml-3.5">
+          {t('bots.sidebar.noMatch', { query: query.trim() })}
+        </SidebarEmptyRow>
       ) : (
         <DragProvider
           {...handlers}
@@ -67,16 +79,17 @@ export function SectionBotsList({
         >
           <SortableGroup
             id={group}
-            items={bots.map((bot) => bot.id)}
-            accepts={['bot']}
+            items={matched.map((bot) => bot.id)}
+            accepts={term ? [] : ['bot']}
             data={{ label: t('bots.section.heading') }}
           >
             <BotList className="mx-3">
-              {bots.map((bot) => (
+              {matched.map((bot) => (
                 <SectionBotRow
                   key={bot.id}
                   bot={bot}
                   section={section}
+                  dragDisabled={Boolean(term)}
                   onHide={() => onHide(bot)}
                 />
               ))}

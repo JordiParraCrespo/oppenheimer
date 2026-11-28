@@ -20,16 +20,18 @@ import { SECTION_NAMES } from '@/features/bots/lib/section-names';
  * deletes it for good, behind the same confirmation as in Employees. A
  * section because it subscribes to the route, to light up on its own chat.
  * The row drags by itself (a click still opens the chat) on its heading's
- * drag layer. A right-click opens the row's menu at its ellipsis.
+ * drag layer, unless `dragDisabled`. A right-click opens the row's menu at its ellipsis.
  */
 export function SectionBotRow({
   bot,
   section,
   onHide,
+  dragDisabled = false,
 }: {
   bot: BotEntity;
   section: BotSection;
   onHide: () => void;
+  dragDisabled?: boolean;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -43,6 +45,7 @@ export function SectionBotRow({
     <>
       <SortableBotItem
         {...item}
+        disabled={dragDisabled}
         active={active}
         menuOpen={menu.open}
         onContextMenu={menu.onContextMenu}

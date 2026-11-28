@@ -136,4 +136,20 @@ describe('SectionBotsList', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: 'bots.sidebar.delete' }));
     expect(await screen.findByText('bots.delete.title')).toBeTruthy();
   });
+
+  it('narrows the rows to the bots whose name holds the search', () => {
+    listed.bots = [bot('b8', 'Release Bot', ['sessions']), bot('b9', 'Planning Bot', ['sessions'])];
+    render(
+      <SectionBotsList section="sessions" onAdd={() => {}} onHide={() => {}} query=" release " />,
+    );
+    const links = screen.getAllByRole('link');
+    expect(links.map((link) => link.textContent)).toEqual([expect.stringContaining('Release Bot')]);
+  });
+
+  it('says so when the search matches no bot, rather than offering to add one', () => {
+    listed.bots = [bot('b10', 'Release Bot', ['sessions'])];
+    render(<SectionBotsList section="sessions" onAdd={() => {}} onHide={() => {}} query="zzz" />);
+    expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.getByText('bots.sidebar.noMatch')).toBeTruthy();
+  });
 });

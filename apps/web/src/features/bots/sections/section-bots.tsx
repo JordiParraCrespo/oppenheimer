@@ -5,7 +5,7 @@ import {
 } from '@oppenheimer/design-system-web';
 import type { BotEntity } from '@oppenheimer/frontend-consumer';
 import { useUpdateBot } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert, QueryState } from '@oppenheimer/frontend-web';
+import { ErrorAlert, QueryState, SidebarSearchField } from '@oppenheimer/frontend-web';
 import type { BotSection } from '@oppenheimer/shared/schemas/bot';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,9 +29,21 @@ import { SectionBotsMenu } from './section-bots-menu';
  * the rows are read under Suspense. The label folds the rows away
  * (`useFoldedBots`), the panel closing on its height, and a fold leaves the bots' faces beside the label
  * (`SectionBotFaces`), the plus and its alerts.
+ *
+ * A `searchable` heading (Sessions') draws Search bots at the top of its
+ * panel, so the field folds away with the rows and shows only while they
+ * do. The settled search narrows the rows by name; it is not kept, and a
+ * fold leaves it as it was.
  */
-export function SectionBots({ section }: { section: BotSection }) {
+export function SectionBots({
+  section,
+  searchable = false,
+}: {
+  section: BotSection;
+  searchable?: boolean;
+}) {
   const { t } = useTranslation();
+  const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [saving, setSaving] = useState<ReadonlyMap<string, readonly BotSection[]>>(new Map());
   const fold = useFoldedBots(section);
@@ -87,6 +99,14 @@ export function SectionBots({ section }: { section: BotSection }) {
         className="mx-3 mb-2"
       />
       <SidebarFoldPanel open={fold.open}>
+        {searchable ? (
+          <SidebarSearchField
+            value={query}
+            onChange={setQuery}
+            label={t('bots.sidebar.search')}
+            clearLabel={t('bots.sidebar.clearSearch')}
+          />
+        ) : null}
         <QueryState>
           <QueryState.Pending>
             <SectionBotsRowsSkeleton count={rememberedBotCount(section)} />
@@ -97,6 +117,7 @@ export function SectionBots({ section }: { section: BotSection }) {
               section={section}
               onAdd={() => setMenuOpen(true)}
               onHide={(bot) => placeBot(bot, false)}
+              query={query}
             />
           </QueryState.Data>
         </QueryState>
