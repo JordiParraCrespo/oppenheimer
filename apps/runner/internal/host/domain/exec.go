@@ -127,6 +127,20 @@ func ValidExecEntry(entry string) error {
 	return nil
 }
 
+// ErrExecHomeInvalid refuses a bot's folder name that is not one plain path
+// segment: it is joined under the workspaces' `bots/`, so a separator, `.` or
+// `..` would start the run somewhere else.
+var ErrExecHomeInvalid = errors.New("a bot's folder is one name: no separator, not . or ..")
+
+// CheckExecHome says whether home names one folder directly under `bots/`.
+func CheckExecHome(home string) error {
+	if home == "" || home == "." || home == ".." || strings.ContainsAny(home, `/\`) ||
+		strings.ContainsRune(home, 0) || home != filepath.Base(home) {
+		return fmt.Errorf("%q: %w", home, ErrExecHomeInvalid)
+	}
+	return nil
+}
+
 // ExecRequest is one program to run for a bot.
 type ExecRequest struct {
 	Argv []string

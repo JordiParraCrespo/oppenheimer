@@ -71,6 +71,7 @@ describe('CredentialScopeResolver', () => {
           scopes: ['users:read'],
           resourceScope: toResourceScope(null),
           expiresAt: null,
+          mintingBounds: { expiresAt: null, ipAllowlist: null },
         }),
       ),
       ...overrides,
@@ -131,6 +132,12 @@ describe('CredentialScopeResolver', () => {
     expect(scope?.credentialId.startsWith('oauth:')).toBe(true);
     expect(scope?.credentialId).not.toContain('oauth-access-token');
     expect(scope?.expiresAt).toEqual(new Date('2026-01-01T00:00:00.000Z'));
+    // The access token's expiry is its hourly refresh, not the grant's end, so
+    // it bounds no token minted with it.
+    expect(scope?.mintingBounds).toEqual({
+      expiresAt: null,
+      ipAllowlist: null,
+    });
     expect(credentials.verifyOAuthGrant).toHaveBeenCalledTimes(1);
     expect(credentials.verifySession).not.toHaveBeenCalled();
   });
@@ -298,6 +305,7 @@ describe('CredentialScopeResolver', () => {
             scopes: [],
             resourceScope: toResourceScope(null),
             expiresAt: null,
+            mintingBounds: { expiresAt: null, ipAllowlist: null },
           }),
         ),
       });

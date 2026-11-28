@@ -74,6 +74,7 @@ const apiToken: ScopeContext = {
   scopes: ['organizations:read'],
   resourceScope: toResourceScope(['org-1']),
   expiresAt: null,
+  mintingBounds: { expiresAt: null, ipAllowlist: null },
   prefix: 'oppenheimer_pat_abc',
 };
 

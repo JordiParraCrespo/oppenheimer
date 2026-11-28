@@ -56,6 +56,9 @@ func (s *Service) Exec(ctx context.Context, req domain.ExecRequest) (domain.Exec
 		if s.workspace == "" {
 			return domain.ExecResult{}, domain.ErrExecFolder.WithDetail("this runner has no workspaces folder")
 		}
+		if err := domain.CheckExecHome(req.Home); err != nil {
+			return domain.ExecResult{}, domain.ErrExecFolder.WithDetail("%v", err).WithCause(err)
+		}
 		dir = filepath.Join(s.workspace, domain.BotsDir, req.Home)
 	}
 	if !filepath.IsAbs(dir) {

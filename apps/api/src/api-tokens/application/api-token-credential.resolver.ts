@@ -9,7 +9,7 @@ import { API_TOKEN_REPOSITORY, ORGANIZATION_MEMBERSHIP_READER } from '../api-tok
 import type { ApiTokenRepositoryPort } from '../database/api-token.repository.port';
 import type { OrganizationMembershipReaderPort } from '../database/organization-membership.repository.port';
 import type { ApiTokenEntity } from '../domain/api-token.entity';
-import { isLastUseStale } from '../domain/api-token.entity';
+import { API_TOKEN_CREDENTIAL_KIND, isLastUseStale } from '../domain/api-token.entity';
 import { ApiTokenErrors } from '../domain/api-token.errors';
 import { hashApiTokenSecret, isApiTokenSecret } from '../domain/api-token-secret.factory';
 
@@ -24,7 +24,7 @@ import { hashApiTokenSecret, isApiTokenSecret } from '../domain/api-token-secret
  */
 @Injectable()
 export class ApiTokenCredentialResolver implements CredentialResolverPort {
-  readonly kind = 'api-token';
+  readonly kind = API_TOKEN_CREDENTIAL_KIND;
 
   private readonly logger = new Logger(ApiTokenCredentialResolver.name);
 
@@ -75,7 +75,10 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
       scopes: token.scopes,
       resourceScope: token.resourceScope,
       expiresAt: token.expiresAt,
+      ipAllowlist: token.ipAllowlist,
       prefix: token.prefix,
+      // A token minted with this one may not outlive it or work from outside its addresses.
+      mintingBounds: { expiresAt: token.expiresAt, ipAllowlist: token.ipAllowlist },
     };
   }
 

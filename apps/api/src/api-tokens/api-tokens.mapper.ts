@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import type { Mapper } from '@oppenheimer/backend-ddd';
+import type { ScopeContext } from '../auth/domain/scope-context.types';
 import { ApiTokenOrmEntity } from './database/api-token.orm-entity';
 import { ApiTokenEntity } from './domain/api-token.entity';
+import type { MintingCredentialReach } from './domain/minting-reach.policy';
 import { ApiTokenResponseDto } from './dtos/api-token.response.dto';
 
 /**
@@ -13,6 +15,20 @@ import { ApiTokenResponseDto } from './dtos/api-token.response.dto';
 export class ApiTokenMapper
   implements Mapper<ApiTokenEntity, ApiTokenOrmEntity, ApiTokenResponseDto>
 {
+  /**
+   * The reach of the credential presenting a mint; none for a browser
+   * session. Its bounds are what its resolver stamped (`mintingBounds`).
+   */
+  toMintingReach(context: ScopeContext | null | undefined): MintingCredentialReach | undefined {
+    if (!context) return undefined;
+    return {
+      scopes: context.scopes,
+      organizationIds: context.resourceScope.organizationIds,
+      expiresAt: context.mintingBounds.expiresAt,
+      ipAllowlist: context.mintingBounds.ipAllowlist,
+    };
+  }
+
   toPersistence(entity: ApiTokenEntity): ApiTokenOrmEntity {
     const record = new ApiTokenOrmEntity();
     record.id = entity.id;

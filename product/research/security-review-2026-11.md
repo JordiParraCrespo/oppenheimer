@@ -74,6 +74,27 @@ at, what was wrong on them, and what is still open.
   `Idempotency-Key` it carries. Still open: the console's checkbox starts
   unticked (a visual change, waiting for its screenshots).
 
+On `claude/dazzling-darwin-pbdhdk-hardening`:
+
+- **H (the preview's own cookie).** It is `__Host-oppenheimer_preview`
+  (`Secure`, `Path=/`, no `Domain`), so a sibling preview cannot plant one;
+  every copy a request carries is tried, and every `Domain` is taken off an
+  app's `Set-Cookie`. A test with a planted copy first fails on the old code.
+- **I.** nginx logs `$uri`, never the query (the `Referer` cut at `?`), and
+  masks the token in the three paths that carry one (`/api/auth/reset-password/`,
+  `/api/v1/cloud-files/`, `/api/v1/routine-webhooks/`) as `[redacted]`;
+  `CSP_EXTRA_ORIGINS` is split into `CSP_CONNECT_ORIGINS` and
+  `CSP_SCRIPT_ORIGINS` (the old one now widens `connect-src` only); a control
+  character in a redirect path (`/\t/evil.example`) is refused by
+  `safePreviewPath` and `sanitizeRedirect`; the runner refuses a `host.exec`
+  `home` that is not one folder name (`EXEC_003`); `release-runner.yml` reads
+  its inputs through `env:` and checks them. Each with a test that fails on the
+  old code, but the nginx and workflow changes, which were read, not run.
+- **Two gaps the autoreview found in fix 2 and fix 6.** A token minted with an
+  API token may not outlive it or be accepted from addresses outside its IP
+  allowlist (`TOKEN_002`); production refuses `DB_PASSWORD=oppenheimer`, which
+  `.env.example` ships and satisfied the prod compose's required variable.
+
 ## Open: needs a decision
 
 | # | Severity | What | Proposed fix |
@@ -81,8 +102,7 @@ at, what was wrong on them, and what is still open.
 | C | P1 | **Pre-account squatting.** Sign-up does not need a verified email, and API tokens and OAuth grants survive a password reset. Someone registers `victim@corp.com` first, mints a token, and keeps it after the real owner recovers the account with "Forgot password" and pairs hosts | Require a verified email before minting a token or approving an OAuth grant, and revoke both on password reset |
 | D | P1 off Cloudflare | **Better Auth's sign-in rate limit trusts `X-Forwarded-For` as sent.** A deployment not behind Cloudflare gets unlimited password guesses by sending a new header each time; behind Cloudflare, one shared bucket can be held full | Set `advanced.ipAddress` to the same proxy depth as `TRUST_PROXY`, or have nginx overwrite the header |
 | G | P2 | Session tokens, OAuth access and refresh tokens, and social-login provider tokens are stored in plain text, so a database dump holds working credentials | Store digests (sessions) and encrypt (`account.encryptOAuthTokens`) |
-| H | P2 | All previews share one site, so a malicious dev server in one preview can set cookies for every other preview (break them, or fix a session into a dev app) | Put the preview domain on the Public Suffix List, or one registrable domain per preview |
-| I | P3 | Smaller: nginx access logs keep query strings (single-use tokens reach Loki); `CSP_EXTRA_ORIGINS` also widens `script-src`; a tab in a redirect path passes the open-redirect check; the runner joins `host.exec`'s `home` without a check (not reachable today); `release-runner.yml` puts inputs straight into `run:` | Each is a small change |
+| H | P2 | All previews share one site, so a malicious dev server in one preview can still set **app** cookies (`Domain=<preview domain>`) for every other preview's app (break it, or fix a session into it). The preview's own cookie can no longer be shadowed (above) | Put the preview domain on the Public Suffix List, or one registrable domain per preview (now in the `/session-previews` skill and `design/sessions/session-previews.md`) |
 
 ## Checked and found sound
 
