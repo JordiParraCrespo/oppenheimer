@@ -129,7 +129,7 @@ describe('BotComposer long pastes', () => {
 
     expect(field.value).toBe('');
     fireEvent.keyDown(field, { key: 'Enter' });
-    fireEvent.click(sendButton());
+    expect(screen.queryByRole('button', { name: 'bots.chat.send' })).toBeNull();
     expect(state.send).not.toHaveBeenCalled();
   });
 
