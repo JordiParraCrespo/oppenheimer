@@ -192,6 +192,9 @@ export class CloudChatFeed {
   start(): () => void {
     const release = this.chat.connect((data) => this.type(data), undefined, {
       interruptible: false,
+      // A reply shows in the chat as it is sent; the extension posts it at
+      // once, and claude.ai writes it down mid-turn too.
+      drawsSent: true,
     });
     void this.read();
     return () => {

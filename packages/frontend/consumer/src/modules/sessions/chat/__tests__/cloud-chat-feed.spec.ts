@@ -85,6 +85,53 @@ describe('CloudChatFeed', () => {
     stop();
   });
 
+  it('draws a reply in the chat the moment it is sent, mid-turn too, until claude.ai’s copy of it comes back', async () => {
+    vi.useFakeTimers();
+    const chat = new SessionChat();
+    const working = [
+      line({ type: 'user', uuid: 'u1', message: { role: 'user', content: 'Audit the repo' } }),
+      line({
+        type: 'assistant',
+        uuid: 'a1',
+        message: {
+          role: 'assistant',
+          content: [{ type: 'tool_use', id: 't1', name: 'Bash', input: { command: 'ls' } }],
+        },
+      }),
+    ];
+    const echo = line({
+      type: 'user',
+      uuid: 'u2',
+      message: { role: 'user', content: 'How are you' },
+    });
+    const { source } = sourceOf([
+      { next: 2, replies: [], source: 'browser', lines: working },
+      { next: 2, replies: [], source: 'browser', lines: [] },
+      { next: 3, replies: [], source: 'browser', lines: [echo] },
+    ]);
+    const feed = new CloudChatFeed(source, chat, {
+      everyMs: 1000,
+      onPending: () => {},
+      onReplyFailed: () => {},
+    });
+    const stop = feed.start();
+    await vi.advanceTimersByTimeAsync(0);
+
+    chat.post('How are you');
+    // Breaks if a cloud chat waits for the log to show the person's message:
+    // it would sit unseen for the seconds the extension and claude.ai take.
+    expect(chat.snapshot().sending.map((held) => held.text)).toEqual(['How are you']);
+
+    await vi.advanceTimersByTimeAsync(2_000);
+    // Breaks if the drawn message stays beside claude.ai's copy of it: shown twice.
+    expect(chat.snapshot().sending).toEqual([]);
+    expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual([
+      'Audit the repo',
+      'How are you',
+    ]);
+    stop();
+  });
+
   it('shows a reply a host sent as sent until the transcript has it, and one the hook holds as waiting', async () => {
     vi.useFakeTimers();
     const chat = new SessionChat();

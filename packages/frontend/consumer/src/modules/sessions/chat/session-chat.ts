@@ -613,6 +613,8 @@ export class SessionChat {
   private type: ((data: string) => void) | null = null;
   /** How the agent's prompt is emptied before a message; null for an agent that needs nothing. */
   private clear: CodingAgentClear | null = null;
+  /** Whether a message is drawn as it is sent, mid-turn too (`connect`'s `drawsSent`). */
+  private drawsSent = false;
   /** Asks the host for the turns before an offset, lent with the input (`connect`). */
   private askOlder: ((before: number) => void) | null = null;
   /** Where in the transcript the lines held start: 0 for its first line. */
@@ -933,10 +935,24 @@ export class SessionChat {
   connect(
     type: (data: string) => void,
     askOlder?: (before: number) => void,
-    { interruptible = true, clear }: { interruptible?: boolean; clear?: CodingAgentClear } = {},
+    {
+      interruptible = true,
+      clear,
+      drawsSent = false,
+    }: {
+      interruptible?: boolean;
+      clear?: CodingAgentClear;
+      /**
+       * Draw each message as it is sent, even mid-turn, until its prompt is
+       * in the transcript: a source that delivers it at once (a cloud
+       * session, which takes a message mid-turn and writes it down).
+       */
+      drawsSent?: boolean;
+    } = {},
   ): () => void {
     this.type = type;
     this.clear = clear ?? null;
+    this.drawsSent = drawsSent;
     this.askOlder = askOlder ?? null;
     if (this.state.interruptible !== interruptible) this.publish({ ...this.state, interruptible });
     return () => {
@@ -944,6 +960,7 @@ export class SessionChat {
       // keeps what it said.
       if (this.type !== type) return;
       this.type = null;
+      this.drawsSent = false;
       if (askOlder && this.askOlder === askOlder) this.askOlder = null;
       if (!this.state.interruptible) this.publish({ ...this.state, interruptible: true });
     };
@@ -979,7 +996,9 @@ export class SessionChat {
     }
     // A source that cannot stop the turn says itself what waits with it, and
     // one taken into the turn under way opens no prompt to replace it.
-    if (!empty && this.state.interruptible && !this.busy()) this.startSending(message);
+    if (!empty && (this.drawsSent || (this.state.interruptible && !this.busy()))) {
+      this.startSending(message);
+    }
   }
 
   /** Draws a message just typed until its prompt is in the transcript (`SentMessages`). */
