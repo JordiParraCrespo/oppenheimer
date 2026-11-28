@@ -11,6 +11,9 @@ export interface OrganizationAccessRepositoryPort {
    * joined first among those they are still in (or to none), with the
    * selected workspace cleared.
    *
+   * Raises `MembershipEndedDomainEvent` on the outbox in the same
+   * transaction, for what other modules owe the end of the membership.
+   *
    * Written behind Better Auth's back: the caller refreshes Better Auth's
    * cached copies of those sessions once this has committed.
    */

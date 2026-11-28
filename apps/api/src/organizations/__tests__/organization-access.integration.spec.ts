@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
 import { DataSource, type EntityManager } from 'typeorm';
 import { createTestDatabase } from '../../__tests__/integration-services';
 import { Session } from '../../auth/database/session.orm-entity';
@@ -30,6 +31,7 @@ describe('Organization access (integration)', () => {
       type: 'postgres',
       url: db.url,
       entities: [
+        OutboxMessageSchema,
         Session,
         AccessGrantOrmEntity,
         InvitationOrmEntity,
@@ -110,18 +112,28 @@ describe('Organization access (integration)', () => {
       `SELECT "activeOrganizationId" FROM "session" WHERE "id" = $1`,
       [ids.session],
     );
-    return { roles, grants, activeOrganizationId };
+    const [{ ended }] = await dataSource.query(
+      `SELECT count(*)::int AS ended FROM "outbox_message"
+        WHERE "eventName" = 'MembershipEndedDomainEvent' AND "aggregateId" = $1`,
+      [ids.left],
+    );
+    return { roles, grants, activeOrganizationId, ended };
   }
 
   it('takes the roles and grants, and moves the session to an organization still held, never the one left', async () => {
     const ids = await seedMembership();
 
-    await new OrganizationAccessRepository(dataSource, userRoles).revokeFor(ids.user, ids.left);
+    await new OrganizationAccessRepository(userRoles, new OutboxService(dataSource)).revokeFor(
+      ids.user,
+      ids.left,
+    );
 
     expect(await whatRemains(ids)).toEqual({
       roles: 0,
       grants: 0,
       activeOrganizationId: ids.kept,
+      // What the api-tokens module revokes the person's pinned tokens on.
+      ended: 1,
     });
   });
 
@@ -146,16 +158,17 @@ describe('Organization access (integration)', () => {
     });
 
     await expect(
-      new OrganizationAccessRepository(dataSource, failingAfterTheRoles).revokeFor(
-        ids.user,
-        ids.left,
-      ),
+      new OrganizationAccessRepository(
+        failingAfterTheRoles,
+        new OutboxService(dataSource),
+      ).revokeFor(ids.user, ids.left),
     ).rejects.toThrow('the next write failed');
 
     expect(await whatRemains(ids)).toEqual({
       roles: 1,
       grants: 1,
       activeOrganizationId: ids.left,
+      ended: 0,
     });
   });
 
@@ -171,7 +184,12 @@ describe('Organization access (integration)', () => {
 
     await dataSource.query(`DELETE FROM "organization" WHERE "id" = $1`, [ids.left]);
 
-    expect(await whatRemains(ids)).toEqual({ roles: 0, grants: 0, activeOrganizationId: null });
+    expect(await whatRemains(ids)).toEqual({
+      roles: 0,
+      grants: 0,
+      activeOrganizationId: null,
+      ended: 0,
+    });
   });
 
   /**

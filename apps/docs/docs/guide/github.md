@@ -10,7 +10,8 @@ Oppenheimer reaches your code through the **Oppenheimer GitHub App**. Signing in
 
 - During first-run, **Connect GitHub** installs the App on your account or on an organization. On GitHub's own page you choose **all repositories** or **selected** ones.
 - Later, every repository picker (New session's Repositories chip, a project's repositories) ends in **Manage repository access**, which opens the App's installation page on GitHub to add or remove repositories or install it on another account.
-- For an organization you do not own, the install becomes a request: an owner of the organization approves it on GitHub, then you choose Connect GitHub again and pick that organization.
+- For an organization you do not own, the install becomes a request: an owner of the organization approves it on GitHub. Connecting it to a workspace then needs an owner of the organization: only an active owner can connect an organization's installation, and only you can connect one on your personal account. Anyone else, an outside collaborator or a plain member, is refused, and nothing is connected.
+- Connecting an organization needs the App's **Members: read** organization permission accepted on the installation. Without it every organization connect is refused, even an owner's, with the same message as any other refused connect, which says the App may be missing that permission (personal accounts still connect); an owner of the organization accepts the new permission on GitHub, then connects it again with Connect GitHub.
 
 Only repositories an installation covers appear in the pickers. Archived repositories are marked.
 

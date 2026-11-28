@@ -34,7 +34,7 @@ const event = (overrides: Record<string, unknown> = {}) => ({
   subjectRef: '821374923',
   actorLogin: 'github-actions[bot]',
   actorIsOwnApp: false,
-  attributes: { number: 128, conclusion: 'failure', check: 'GitHub Actions' },
+  attributes: { number: 128, branch: 'fix/env', conclusion: 'failure', check: 'GitHub Actions' },
   metadata: { correlationId: 'corr-1', timestamp: Date.now() },
   ...overrides,
 });

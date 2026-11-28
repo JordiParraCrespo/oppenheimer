@@ -83,7 +83,7 @@ const TOKEN_ANSWER: Answer = {
 
 const INSTALLATION = {
   id: 45678901,
-  account: { login: 'acme-labs', type: 'Organization' },
+  account: { login: 'acme-labs', id: 91004417, type: 'Organization' },
   repository_selection: 'selected',
   suspended_at: null,
 };
@@ -357,10 +357,19 @@ describe('the installation claim proof', () => {
     expect(claim).toEqual({
       githubInstallationId: 45678901,
       accountLogin: 'acme-labs',
+      accountId: 91004417,
       accountType: 'Organization',
       repositorySelection: 'selected',
       suspendedAt: new Date('2026-09-19T09:00:00.000Z'),
     });
+  });
+
+  it('refuses an installation whose account carries no id, rather than proving a claim against nothing', async () => {
+    await expect(
+      build([
+        { body: { ...INSTALLATION, account: { login: 'acme-labs', type: 'User' } } },
+      ]).adapter.readInstallation(45678901),
+    ).rejects.toMatchObject({ code: 'GITHUB_009' });
   });
 
   it('refuses an installation GitHub describes without an account', async () => {
@@ -372,6 +381,76 @@ describe('the installation claim proof', () => {
         { body: { ...INSTALLATION, account: { login: 'acme-labs', type: 'Enterprise' } } },
       ]).adapter.readInstallation(45678901),
     ).rejects.toMatchObject({ code: 'GITHUB_009' });
+  });
+});
+
+describe('reading the authorizing person’s organization membership', () => {
+  const AUTHORIZATION = {
+    installations: [{ githubInstallationId: 45678901 }],
+    user: { githubUserId: 583231, login: 'ana' },
+    tokens: {
+      accessToken: 'ghu_ana',
+      accessExpiresAt: null,
+      refreshToken: null,
+      refreshExpiresAt: null,
+    },
+  };
+
+  it('asks about that organization with her own token', async () => {
+    const { adapter, http } = build([
+      { body: { state: 'active', role: 'admin', organization: { login: 'acme-labs' } } },
+    ]);
+
+    await expect(adapter.readOrganizationMembership(AUTHORIZATION, 'acme-labs')).resolves.toEqual({
+      active: true,
+      admin: true,
+    });
+    expect(http.calls[0].url).toBe('https://api.github.com/user/memberships/orgs/acme-labs');
+    expect(headerOf(http.calls[0].init, 'authorization')).toBe('Bearer ghu_ana');
+  });
+
+  it('reports a plain member and a pending invitation as what they are, never as an owner', async () => {
+    await expect(
+      build([{ body: { state: 'active', role: 'member' } }]).adapter.readOrganizationMembership(
+        AUTHORIZATION,
+        'acme-labs',
+      ),
+    ).resolves.toEqual({ active: true, admin: false });
+    await expect(
+      build([{ body: { state: 'pending', role: 'admin' } }]).adapter.readOrganizationMembership(
+        AUTHORIZATION,
+        'acme-labs',
+      ),
+    ).resolves.toEqual({ active: false, admin: true });
+  });
+
+  it.each([
+    ['403, the App without Members: read', 403, 'Resource not accessible by integration'],
+    ['404, not a member at all', 404, 'Not Found'],
+  ])('answers null on %s', async (_case, status, message) => {
+    const { adapter } = build([{ status, body: { message } }]);
+
+    await expect(
+      adapter.readOrganizationMembership(AUTHORIZATION, 'acme-labs'),
+    ).resolves.toBeNull();
+  });
+
+  it('answers a rate limit as GITHUB_015, not as a missing membership', async () => {
+    const { adapter } = build([
+      { status: 403, body: { message: 'You have exceeded a secondary rate limit.' } },
+    ]);
+
+    await expect(
+      adapter.readOrganizationMembership(AUTHORIZATION, 'acme-labs'),
+    ).rejects.toMatchObject({ code: 'GITHUB_015' });
+  });
+
+  it('lets any other failure through as itself, never as a missing membership', async () => {
+    const { adapter } = build([{ status: 500, body: { message: 'Server Error' } }]);
+
+    await expect(
+      adapter.readOrganizationMembership(AUTHORIZATION, 'acme-labs'),
+    ).rejects.toMatchObject({ code: 'GITHUB_009', extensions: { upstreamStatus: 500 } });
   });
 });
 

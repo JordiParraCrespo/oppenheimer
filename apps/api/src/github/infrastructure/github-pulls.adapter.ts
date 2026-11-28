@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
 import { GithubErrors } from '../domain/github.errors';
-import { isRepositoryInsider } from '../domain/github-pull-event.policy';
+import { isRepositoryInsider } from '../domain/github-event-actor.policy';
 import { GithubHttp, type StatusMap } from './github-http.adapter';
 import {
   OPEN_PULLS_PAGES,

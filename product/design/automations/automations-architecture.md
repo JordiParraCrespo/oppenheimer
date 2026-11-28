@@ -318,6 +318,7 @@ its run with the reason, so nothing disappears silently.
 |---|---|---|
 | Paused | firing | triggers ignored while paused; Run now passes |
 | Dedupe | firing | the unique `(automationId, causeKey)` |
+| Insiders | firing | a GitHub event a stranger caused is offered to no trigger, and writes no run (changed 2026-11-27, below) |
 | Loop | firing | skip events whose actor is our own App |
 | Own session | firing | a bot's routine skips an event on the branch of a session that bot started (`work_session.botId`; a host session's checkout or a cloud session's run, never a fork's branch): the session acts on GitHub as the owner, so Loop cannot see it (#956) |
 | Rate | firing | per automation and per workspace per hour |
@@ -325,6 +326,23 @@ its run with the reason, so nothing disappears silently.
 | Launchable | dispatch | owner still a member, host paired and usable by the owner, agent probed and headless-capable, project active |
 | Capacity | dispatch | live runs on the host and the disk floor; defers |
 | Staleness | dispatch | a run pending past its TTL expires |
+
+**Insiders only (changed 2026-11-27, security review E).** Until then any
+GitHub event on a watched repository could fire, so on a public repository a
+stranger's issue or comment launched an agent on the owner's host with text
+they wrote. Now `githubEventByInsider` (`github/domain/`) decides before
+matching, from GitHub's `author_association` the normalizer keeps: an issue,
+comment, mention, review or pull request (opened, draft, pushed) counts only
+when its author is the repository's `OWNER`, a `MEMBER` or a `COLLABORATOR`;
+a label only when a person other than the item's author added it (that takes
+triage access; an issue form's labels are applied as the author, an app's
+do not vouch) or the author is an insider; a check only on a branch of the
+repository (a fork's commit has none); a push, a merge and a release always,
+since GitHub lets only writers make them; any other type never. An event
+with no association fails closed. Unlike the other guards it writes no
+skipped run: strangers can cause events at any rate, and a row each would
+bury the history. There is no per-trigger opt-out ("anyone may trigger"): a
+field the console's editor does not show would be lost on its next save.
 
 ### Configuration
 

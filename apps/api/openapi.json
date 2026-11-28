@@ -4862,7 +4862,7 @@
             }
           },
           "403": {
-            "description": "GITHUB_004 — GitHub does not list that installation for the authorizing account",
+            "description": "GITHUB_004 — The authorizing account is not the installation’s account or an owner of its organization, or GitHub does not list the installation for it",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -37138,8 +37138,7 @@
         "type": "object",
         "properties": {
           "signed": {
-            "type": "boolean",
-            "default": false
+            "type": "boolean"
           }
         }
       },

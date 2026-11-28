@@ -45,8 +45,11 @@ export class IssueRoutineWebhookCommandHandler
     if (command.signed && !this.sealer.isConfigured()) {
       throw new AppError(AutomationErrors.WEBHOOK_SIGNING_UNAVAILABLE);
     }
+    // Signed unless the caller said otherwise; a deployment that cannot keep
+    // the secret issues an unsigned URL rather than none, and its answer says so.
+    const signed = command.signed ?? this.sealer.isConfigured();
     const token = issueWebhookToken();
-    const signingSecret = command.signed ? issueSigningSecret() : null;
+    const signingSecret = signed ? issueSigningSecret() : null;
     const view = await this.webhooks.issue({
       organizationId: routine.organizationId,
       automationId: routine.id,

@@ -5,8 +5,10 @@ import type { CredentialResolverPort } from '../../auth/application/credential-r
 import { CREDENTIAL_OWNER } from '../../auth/auth.di-tokens';
 import { AuthErrors } from '../../auth/domain/auth.errors';
 import type { ScopeContext, ScopedRequest } from '../../auth/domain/scope-context.types';
-import { API_TOKEN_REPOSITORY } from '../api-tokens.di-tokens';
+import { API_TOKEN_REPOSITORY, ORGANIZATION_MEMBERSHIP_READER } from '../api-tokens.di-tokens';
 import type { ApiTokenRepositoryPort } from '../database/api-token.repository.port';
+import type { OrganizationMembershipReaderPort } from '../database/organization-membership.repository.port';
+import type { ApiTokenEntity } from '../domain/api-token.entity';
 import { API_TOKEN_CREDENTIAL_KIND, isLastUseStale } from '../domain/api-token.entity';
 import { ApiTokenErrors } from '../domain/api-token.errors';
 import { hashApiTokenSecret, isApiTokenSecret } from '../domain/api-token-secret.factory';
@@ -16,8 +18,9 @@ import { hashApiTokenSecret, isApiTokenSecret } from '../domain/api-token-secret
  * `x-api-key`; this resolver claims the prefix they are minted with.
  *
  * Everything a token can fail on (unknown digest, revoked, expired, an address
- * outside its allowlist) is decided here, against this module's repository,
- * because this module is what those rules belong to.
+ * outside its allowlist, an organization pin its owner has left) is decided
+ * here, against this module's repository, because this module is what those
+ * rules belong to.
  */
 @Injectable()
 export class ApiTokenCredentialResolver implements CredentialResolverPort {
@@ -30,6 +33,8 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
     private readonly apiTokens: ApiTokenRepositoryPort,
     @Inject(CREDENTIAL_OWNER)
     private readonly owners: CredentialOwnerPort,
+    @Inject(ORGANIZATION_MEMBERSHIP_READER)
+    private readonly memberships: OrganizationMembershipReaderPort,
   ) {}
 
   /** Our secrets carry a namespace prefix, so the shape check is exact. */
@@ -49,6 +54,7 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
     // Revoked and expired share the credential error: distinguishing them
     // would tell an attacker which of their guesses used to be real.
     if (rejection) throw new AppError(AuthErrors.INVALID_CREDENTIAL);
+    if (!(await this.ownerStillHoldsPin(token))) throw new AppError(AuthErrors.INVALID_CREDENTIAL);
 
     // Best-effort usage stamp — never let it fail the request. The token is
     // already loaded, so skipping a fresh stamp costs nothing to decide.
@@ -74,6 +80,21 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
       // A token minted with this one may not outlive it or work from outside its addresses.
       mintingBounds: { expiresAt: token.expiresAt, ipAllowlist: token.ipAllowlist },
     };
+  }
+
+  /**
+   * Whether the owner is still a member of every organization the token is
+   * pinned to. Removing a member revokes their pinned tokens through the
+   * outbox (`MembershipEndedDomainEventHandler`); this is the backstop for the
+   * moment before that is delivered, and for an organization deleted outright.
+   * A token that follows its owner's memberships costs nothing here; a pinned
+   * one costs one read of `member` by its indexed `userId`.
+   */
+  private async ownerStillHoldsPin(token: ApiTokenEntity): Promise<boolean> {
+    const pinned = token.organizationIds;
+    if (!pinned) return true;
+    const held = new Set(await this.memberships.findOrganizationIdsForUser(token.userId));
+    return pinned.every((organizationId) => held.has(organizationId));
   }
 }
 

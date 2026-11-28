@@ -36,7 +36,7 @@ Create is on the last step.
 | Push to branch | the pushed branch |
 | Comment added, Label added, Issue opened, Mentioned @oppenheimer, Release published, a schedule, Run now | a fresh worktree on the default branch |
 
-The event's details reach the agent after the prompt, marked as outside data it should not take instructions from. Events caused by Oppenheimer's own GitHub App never trigger a run. A run may push to any branch its token reaches; there are no push guardrails yet.
+The event's details reach the agent after the prompt, marked as outside data it should not take instructions from. Events caused by Oppenheimer's own GitHub App never trigger a run, and neither do events by people outside the repository: an issue, comment, review, mention or pull request triggers a run only when its author is the repository's owner, a member of its organization or a collaborator. A label counts when someone other than the item's author added it, a check only on a branch of the repository (not a fork's commit), and a push, merge or release always. This cannot be switched off. A run may push to any branch its token reaches; there are no push guardrails yet.
 
 ## Pausing and Run now
 

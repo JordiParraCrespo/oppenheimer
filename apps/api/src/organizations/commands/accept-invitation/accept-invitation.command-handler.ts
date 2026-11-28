@@ -1,17 +1,20 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
-import { MembershipAccessPolicy } from '../../application/membership-access.policy';
-import type { WorkspaceLookupPort } from '../../application/workspace-lookup.port';
+import {
+  MembershipAccessPolicy,
+  type RosterEntry,
+} from '../../application/membership-access.policy';
 import type { InvitationRepositoryPort } from '../../database/invitation.repository.port';
+import type { MemberRepositoryPort } from '../../database/member.repository.port';
 import type { Invitation, InvitationCaller } from '../../domain/invitation.types';
 import type { InvitationAuthPort } from '../../infrastructure/invitation-auth.port';
 import type { OrganizationAuthPort } from '../../infrastructure/organization-auth.port';
 import {
   INVITATION_AUTH,
   INVITATION_REPOSITORY,
+  MEMBER_REPOSITORY,
   ORGANIZATION_AUTH,
-  WORKSPACE_LOOKUP,
 } from '../../organizations.di-tokens';
 import { AcceptInvitationCommand } from './accept-invitation.command';
 
@@ -25,7 +28,10 @@ import { AcceptInvitationCommand } from './accept-invitation.command';
  * Accepting twice is safe. A retry whose first attempt Better Auth committed
  * (the response was lost, or selecting the organization failed) finds the
  * invitation accepted and the caller a member, and finishes the job instead of
- * failing on an invitation that is no longer pending.
+ * failing on an invitation that is no longer pending. The replay grants the
+ * role the member holds on the roster now, never the one the invitation
+ * carried: an admin demoted since would otherwise get `owner` back by
+ * accepting their old invitation again.
  */
 @CommandHandler(AcceptInvitationCommand)
 export class AcceptInvitationCommandHandler
@@ -38,21 +44,21 @@ export class AcceptInvitationCommandHandler
     private readonly organizations: OrganizationAuthPort,
     @Inject(INVITATION_REPOSITORY)
     private readonly invitations: InvitationRepositoryPort,
-    @Inject(WORKSPACE_LOOKUP)
-    private readonly workspaces: WorkspaceLookupPort,
+    @Inject(MEMBER_REPOSITORY)
+    private readonly members: MemberRepositoryPort,
     private readonly membershipAccess: MembershipAccessPolicy,
   ) {}
 
   async execute({ headers, invitationId, caller }: AcceptInvitationCommand): Promise<AggregateID> {
     const replayed = await this.acceptedByCaller(invitationId, caller);
-    if (replayed && caller) {
-      await this.organizations.setActive(headers, replayed.organizationId);
+    if (replayed) {
+      await this.organizations.setActive(headers, replayed.membership.organizationId);
       // The membership predates this request, so there is nothing to undo.
       await this.membershipAccess.admit(
-        async () => rosterEntry(caller.id, replayed),
+        async () => replayed.membership,
         async () => {},
       );
-      return replayed.id;
+      return replayed.invitationId;
     }
 
     const { invitation } = await this.membershipAccess.admit(
@@ -82,14 +88,15 @@ export class AcceptInvitationCommandHandler
   }
 
   /**
-   * The invitation, when it is already accepted and the caller is who accepted
-   * it. Recipient email plus the membership it created prove the caller is
+   * The invitation and the caller's membership as the roster has it now, when
+   * the invitation is already accepted and the caller is who accepted it.
+   * Recipient email plus the membership it created prove the caller is
    * replaying their own acceptance, not claiming someone else's.
    */
   private async acceptedByCaller(
     invitationId: string,
     caller: InvitationCaller | null,
-  ): Promise<Invitation | null> {
+  ): Promise<{ invitationId: string; membership: RosterEntry } | null> {
     if (!caller) return null;
     const found = await this.invitations.findOneById(invitationId);
     if (found.isNone()) return null;
@@ -98,8 +105,10 @@ export class AcceptInvitationCommandHandler
     if (invitation.status !== 'accepted') return null;
     if (invitation.email.toLowerCase() !== caller.email.toLowerCase()) return null;
 
-    const isMember = await this.workspaces.isMember(invitation.organizationId, caller.id);
-    return isMember ? invitation : null;
+    const membership = await this.members.findMembership(invitation.organizationId, caller.id);
+    if (membership.isNone()) return null;
+    const { userId, organizationId, role } = membership.unwrap();
+    return { invitationId: invitation.id, membership: { userId, organizationId, role } };
   }
 }
 

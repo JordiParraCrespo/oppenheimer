@@ -1,4 +1,5 @@
-import { followedPullEvent, isRepositoryInsider } from '../domain/github-pull-event.policy';
+import { isRepositoryInsider } from '../domain/github-event-actor.policy';
+import { followedPullEvent } from '../domain/github-pull-event.policy';
 
 /**
  * Which stored GitHub events move a pull request someone follows, a session
@@ -11,7 +12,7 @@ const checkFailed = {
   eventType: 'check_failed',
   subjectRef: '123456',
   actorIsOwnApp: false,
-  attributes: { number: 128 },
+  attributes: { number: 128, branch: 'fix/env' },
 };
 
 describe('followedPullEvent', () => {
@@ -27,6 +28,27 @@ describe('followedPullEvent', () => {
     expect(followedPullEvent({ ...checkFailed, actorIsOwnApp: true })).toBeNull();
     expect(followedPullEvent({ ...checkFailed, source: 'linear' })).toBeNull();
     expect(followedPullEvent({ ...checkFailed, eventType: 'push' })).toBeNull();
+  });
+
+  it("wakes nobody for a stranger's comment or review, or a check on a fork's commit", () => {
+    // Regression (security review E): anyone can comment on a public
+    // repository, and each comment woke the bot or session that followed it.
+    const comment = { ...checkFailed, eventType: 'comment' };
+    expect(
+      followedPullEvent({ ...comment, attributes: { number: 128, authorAssociation: 'NONE' } }),
+    ).toBeNull();
+    expect(followedPullEvent({ ...comment, attributes: { number: 128 } })).toBeNull();
+    expect(
+      followedPullEvent({
+        ...checkFailed,
+        eventType: 'review',
+        attributes: { number: 128, authorAssociation: 'CONTRIBUTOR' },
+      }),
+    ).toBeNull();
+    expect(followedPullEvent({ ...checkFailed, attributes: { number: 128 } })).toBeNull();
+    expect(
+      followedPullEvent({ ...comment, attributes: { number: 128, authorAssociation: 'MEMBER' } }),
+    ).toEqual({ githubRepoId: '123456', number: 128, type: 'comment' });
   });
 
   it('wakes nobody for an issue, an event with no number, or a subject that is no repository id', () => {

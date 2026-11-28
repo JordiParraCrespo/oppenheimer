@@ -7,6 +7,7 @@ import { API_TOKEN_REPOSITORY, ORGANIZATION_MEMBERSHIP_READER } from './api-toke
 import { ApiTokenMapper } from './api-tokens.mapper';
 import { ApiTokenCredentialResolver } from './application/api-token-credential.resolver';
 import { ApiTokenRevokedDomainEventHandler } from './application/event-handlers/api-token-revoked.domain-event-handler';
+import { MembershipEndedDomainEventHandler } from './application/event-handlers/membership-ended.domain-event-handler';
 import { CreateApiTokenCommandHandler } from './commands/create-api-token/create-api-token.command-handler';
 import { CreateApiTokenHttpController } from './commands/create-api-token/create-api-token.http.controller';
 import { RevokeApiTokenCommandHandler } from './commands/revoke-api-token/revoke-api-token.command-handler';
@@ -70,6 +71,9 @@ const repositories: Provider[] = [
     // Revoking a token has to reach the session cached for it; the kernel
     // publishes the port, this module knows when to call it.
     ApiTokenRevokedDomainEventHandler,
+    // A token pinned to an organization is revoked when its owner's
+    // membership there ends; the organizations module raises the event.
+    MembershipEndedDomainEventHandler,
   ],
   exports: [API_TOKEN_REPOSITORY, ApiTokenMapper, TypeOrmModule],
 })
