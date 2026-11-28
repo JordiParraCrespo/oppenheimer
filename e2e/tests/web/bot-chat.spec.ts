@@ -39,9 +39,13 @@ test('a GLM bot answers in its chat', async ({ page }) => {
     timeout: 120_000,
   });
   await expect(page.locator('[data-slot="chat-reply"]').last()).toContainText(/pineapple/i);
-  // Under it, how it went: its model, and a copy button for the answer.
-  await expect(page.locator('[data-slot="message-trail"]')).toContainText('GLM-5.3');
+  // Under it, the quiet chat's trail: a copy button for the answer and no model;
+  // the wrench shows the bot's work, and the trail then says how it went.
   await expect(page.getByRole('button', { name: 'Copy reply' })).toBeVisible();
+  await expect(page.locator('[data-slot="message-trail"]')).not.toContainText('GLM-5.3');
+  await page.getByRole('button', { name: /^Show the bot’s work/ }).click();
+  await expect(page.locator('[data-slot="message-trail"]')).toContainText('GLM-5.3');
+  await page.getByRole('button', { name: /^Hide the bot’s work/ }).click();
   await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
   // The sidebar's row previews the last thing said, in its tooltip.
   await page.locator('[data-slot="bot-row"]').filter({ hasText: 'Fruit Bot' }).hover();

@@ -23,71 +23,35 @@ export function alertText(copy: InboxCopy): { title: string; body: string } {
   return { title: copy.short, body: copy.title !== copy.short ? copy.title : copy.body };
 }
 
-/** How long a session waits on the reader, amber or blue, before it is told again. */
-export const STALE_AFTER_MS = 30 * 60_000;
-
 /** What the alerts remember of one session between two looks at the list. */
 export interface SessionWatch {
   state: SessionEntity['state'];
-  /** When it entered `state`: the host's word for it, or when this tab first saw it there. */
-  since: number;
-  /** The host's `observedSince` at that look, so a stale one carried over is told from a fresh one. */
-  observed: number | undefined;
-  /** Whether this stay in `state` was already told as stale. */
-  staleTold: boolean;
-}
-
-/**
- * A session needs the reader: amber (it waits on them) or blue (its turn
- * ended). A launch stuck in `starting` is amber too, and the Inbox lists it,
- * so provisioning does not keep it out.
- */
-function needsReader(session: SessionEntity): boolean {
-  if (session.isClosing) return false;
-  return session.state === 'waiting-on-you' || session.state === 'ready-for-review';
 }
 
 /**
  * One look at the session list: the sessions whose turn just ended (the row's
- * dot went blue), the sessions that have needed the reader for
- * {@link STALE_AFTER_MS} without being opened, each told once per stay, and
- * what to remember for the next look. A first look (`watches` null) tells
- * nothing and only remembers, so opening the console does not announce what
- * was already blue or long waiting; a session still waiting thirty minutes
- * after that first look is reminded then.
+ * dot went blue), and what to remember for the next look. A first look
+ * (`watches` null) tells nothing and only remembers, so opening the console
+ * does not announce what was already blue. A session left blue is the
+ * Inbox's to remind about, not a notification's.
  */
 export function watchSessions(
   watches: ReadonlyMap<string, SessionWatch> | null,
   sessions: readonly SessionEntity[],
-  now: number,
-): { done: SessionEntity[]; stale: SessionEntity[]; watches: Map<string, SessionWatch> } {
+): { done: SessionEntity[]; watches: Map<string, SessionWatch> } {
   const done: SessionEntity[] = [];
-  const stale: SessionEntity[] = [];
   const next = new Map<string, SessionWatch>();
   for (const session of sessions) {
     const previous = watches?.get(session.id);
-    const observed = session.observedSince?.getTime();
-    const same = previous?.state === session.state;
-    // The host's time is trusted only when it moved between two looks: a
-    // session that fails keeps the agent's old `observedSince` while its
-    // group turns amber, and counting from it would call a wait a minute old
-    // thirty (or, on the first look, one never to be told). Otherwise the
-    // clock starts when this tab saw the move, which fails late, not early.
-    const fresh =
-      observed !== undefined && previous !== undefined && observed !== previous.observed;
-    const since = fresh ? observed : same ? previous.since : now;
-    const overdue = needsReader(session) && now - since >= STALE_AFTER_MS;
-    let staleTold = same ? previous.staleTold : false;
-    if (watches !== null) {
-      if (!same && session.state === 'ready-for-review' && needsReader(session)) {
-        done.push(session);
-      }
-      if (overdue && !staleTold) {
-        stale.push(session);
-        staleTold = true;
-      }
+    if (
+      watches !== null &&
+      previous?.state !== session.state &&
+      session.state === 'ready-for-review' &&
+      !session.isClosing
+    ) {
+      done.push(session);
     }
-    next.set(session.id, { state: session.state, since, observed, staleTold });
+    next.set(session.id, { state: session.state });
   }
-  return { done, stale, watches: next };
+  return { done, watches: next };
 }

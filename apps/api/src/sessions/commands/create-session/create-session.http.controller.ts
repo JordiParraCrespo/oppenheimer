@@ -50,7 +50,7 @@ export class CreateSessionHttpController {
   @ApiOperation({
     summary: 'Start a session',
     description:
-      'A new worktree: repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the control plane names the working branch (`sessionBranchName`) and each checkout on the response carries it. Or a folder already on the host (`folder`, an absolute path, never with `checkouts`), where nothing is cloned or written (`product/versions/mvp/24-session-places.md`). Without a `projectId` the session lands in the workspace’s Unassigned project (`product/versions/mvp/03-control-plane.md`). With `teleport`, a Claude Code cloud session’s id, the agent continues that cloud session in the new worktree (`claude --teleport`) instead of starting a conversation; it takes one checkout and no `prompt`.',
+      'A new worktree: repositories, each with the branch its checkout is created from; the agent is launched in the first unless `cwdGithubRepoId` says otherwise. There is no branch field: the control plane names the working branch (`sessionBranchName`) and each checkout on the response carries it. Or a folder already on the host (`folder`, an absolute path, never with `checkouts`), where nothing is cloned or written (`product/design/sessions/session-places.md`). Without a `projectId` the session lands in the workspace’s Unassigned project (`product/design/foundations/control-plane.md`). With `teleport`, a Claude Code cloud session’s id, the agent continues that cloud session in the new worktree (`claude --teleport`) instead of starting a conversation; it takes one checkout and no `prompt`.',
   })
   @ApiHeader({
     name: 'Idempotency-Key',

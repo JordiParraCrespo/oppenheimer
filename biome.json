@@ -82,7 +82,7 @@
       "!**/packages/frontend/api-client/src/common",
       "!**/packages/frontend/design-system/*/src/components",
       "!**/packages/frontend/design-system/*/src/internal",
-      "!**/product/versions/mvp/design",
+      "!**/product/mockups",
       "!**/apps/web-showcase",
       "!**/packages/shared/protocol-schema"
     ]

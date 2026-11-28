@@ -9,7 +9,7 @@
 ---
 
 New session's folder picker searches the host by name
-(`product/versions/mvp/24-session-places.md` §4).
+(`product/design/sessions/session-places.md` §4).
 
 - `@oppenheimer/shared`: the link gains `fs.find` and `fs.found` and the
   `fs.find` capability; `hostFolderSearchQuerySchema` is the endpoint's query.

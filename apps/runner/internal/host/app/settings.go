@@ -20,7 +20,7 @@ type Settings struct {
 }
 
 // SettingsChange is what a bot asked to change for the person
-// (`host.settings.set`, 25 §4.2): a nil field is left as it is, and Allow
+// (`host.settings.set`, product/design/bots/bots.md §4.2): a nil field is left as it is, and Allow
 // only adds to the allowlist.
 type SettingsChange struct {
 	Browser  *bool

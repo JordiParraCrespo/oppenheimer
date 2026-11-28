@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { BotSideChat } from '@/features/bots/sections/bot-side-chat';
 import { inboxSearchSchema } from '@/features/inbox/lib/inbox-search';
 import { InboxScreen } from '@/features/inbox/screens/inbox';
+import { SideSession } from '@/features/sessions/sections/side-session';
 
 /**
  * The Inbox: what needs you, a page of its own and the rail's first item,
@@ -9,7 +10,8 @@ import { InboxScreen } from '@/features/inbox/screens/inbox';
  * its deck side by side, and draws its own heads. The search names the item
  * on the deck, the list's words (`?q=`) and its facets. A bot's chat is the
  * bots feature's; the route composes it in, for a bot's notice to be
- * answered on its card.
+ * answered on its card; so is a session's, streamed as on its own page,
+ * for a session left unattended, without reading its turn.
  */
 export const Route = createFileRoute('/_authenticated/inbox')({
   validateSearch: inboxSearchSchema,
@@ -18,5 +20,10 @@ export const Route = createFileRoute('/_authenticated/inbox')({
 });
 
 function InboxRoute() {
-  return <InboxScreen botChat={(botId) => <BotSideChat botId={botId} />} />;
+  return (
+    <InboxScreen
+      botChat={(botId) => <BotSideChat botId={botId} />}
+      sessionChat={(sessionId) => <SideSession sessionId={sessionId} readOnOpen={false} />}
+    />
+  );
 }

@@ -6,7 +6,7 @@ when something moved?
 On 2026-11-23 Oppie started a release session, said it would verify the
 release before calling it done, and went silent until the owner asked "Have
 you finished?". Since then a bot sets its own look with `check_back` on
-anything it delegates or waits on (`product/versions/mvp/27-bot-subscriptions.md`
+anything it delegates or waits on (`product/design/bots/bot-subscriptions.md`
 §7.3), and a look speaks only when the work moved or needs help.
 
 ## The cases

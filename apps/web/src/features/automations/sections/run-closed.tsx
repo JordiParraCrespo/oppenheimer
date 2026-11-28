@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
  * a step from here, so there is no New session; the way out is back to the
  * automation that owns the run.
  *
- * What is still missing is the run transcript beside the terminal (13, "not
+ * What is still missing is the run transcript beside the terminal (`product/design/automations/automations.md`, "not
  * built"), which is the headless slice's structured output. Until it lands
  * this is the frame's shape without its left-hand column, and the branch is
  * the one concrete thing a reader can follow.

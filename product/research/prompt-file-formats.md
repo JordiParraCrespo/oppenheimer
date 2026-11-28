@@ -2,7 +2,7 @@
 
 2026-11-17. A read of how other agent products keep the words they send a
 model in files, beside our own `domain/prompts/*.md` (pull request #914,
-`versions/mvp/25-bots.md` §8). It follows
+`design/bots/bots.md` §8). It follows
 [`agent-stack-architecture.md`](agent-stack-architecture.md), which chose
 to start the refactor with the prompt's words. This note decides nothing.
 Code paths of ours are from the repository root.

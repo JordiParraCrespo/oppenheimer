@@ -13,7 +13,7 @@ import { FindSessionChangesQuery } from './find-session-changes.query';
 
 /**
  * The Review's read: what the session's checkouts changed, asked of its
- * runner now, never on a timer (`product/versions/mvp/33-session-tabs.md`
+ * runner now, never on a timer (`product/design/console/session-tabs.md`
  * §5). Like the Terminal tab's windows, a host with no link, or a runner that
  * cannot read changes, is an answer the Review draws rather than a failure; a
  * runner that does not answer in time is `SESSIONS_031`.

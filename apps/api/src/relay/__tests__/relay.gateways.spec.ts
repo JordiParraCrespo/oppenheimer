@@ -1554,7 +1554,7 @@ describe('browser attach socket', () => {
   });
 
   describe('the direct path', () => {
-    /** A runner that answers offers and proves itself on every channel (31). */
+    /** A runner that answers offers and proves itself on every channel (`product/design/runner/peer-to-peer-and-the-host-proof.md`). */
     const DIRECT = ['attachment.direct', 'attachment.direct.proof'];
     const OFFER = 'v=0\r\no=- 1 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n';
 

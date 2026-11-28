@@ -3,7 +3,7 @@
 The owner asked how OpenClaw and Grok Bot support skills, and for bots here
 to run them as slash commands. This note reads both products' published
 docs; no code is taken. What was seen on a fetched page is marked as such;
-the rest is inference and says so. What `versions/mvp/25-bots.md` built from
+the rest is inference and says so. What `design/bots/bots.md` built from
 it is §4.1, "Skills".
 
 Sources: `docs.openclaw.ai/tools/skills`, `docs.openclaw.ai/tools/slash-commands`,
@@ -58,7 +58,7 @@ nor ClawHub was read.
 - **Invoked by name** ("ask for a saved skill by name"). The fetched pages
   show no `/` menu; a third-party article says one exists. Not confirmed.
 
-## 3. What 25 §4.1 takes
+## 3. What `../design/bots/bots.md` §4.1 takes
 
 | Idea | Where it lands |
 |------|----------------|

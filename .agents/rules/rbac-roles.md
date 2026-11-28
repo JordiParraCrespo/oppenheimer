@@ -260,7 +260,7 @@ route Better Auth ships is added to that list.
   `organization`, `member`, `invitation` tables. **Sign-up provisions the
   personal workspace**: one organization with the account as its single
   `owner` member, so the session's `activeOrganizationId` is set from the
-  first sign-in (`product/versions/mvp/08-auth.md`). It is the app's own rule
+  first sign-in (`product/design/foundations/auth.md`). It is the app's own rule
   rather than Better Auth's, so it is a real vertical slice —
   `organizations/commands/provision-personal-workspace/`, dispatched from the
   Better Auth sign-up hook through `auth/infrastructure/auth-command-bus.util.ts`. It is
@@ -269,7 +269,7 @@ route Better Auth ships is added to that list.
   which makes the caller the owner of their own workspace and nothing else
   (no roster, no invitation, no second workspace); the seed re-runs the same
   handler. The check is on membership, not ownership — see
-  `product/versions/mvp/08-auth.md`, which records what that will mean once
+  `product/design/foundations/auth.md`, which records what that will mean once
   invitations exist. The default `user` role can *read* the organizations it belongs
   to and *create* one. Every path that creates a membership writes the
   org-scoped application role — the tenant `owner` system role for a Better
@@ -309,7 +309,7 @@ route Better Auth ships is added to that list.
   Impersonation forwards Better Auth's `Set-Cookie` to the client.
 - **Workspaces = teams** — modelled on the org plugin's teams feature
   (`team` / `teamMember`).
-- **Org-scoped CASL** — one request tenant, read `product/versions/mvp/08-auth.md`.
+- **Org-scoped CASL** — one request tenant, read `product/design/foundations/auth.md`.
   Read it with `tenantOrganizationIdOf(request)`. Scope tenant rows with the
   `${activeOrganizationId}` placeholder, which resolves to the tenant:
   `{ action: 'read', subject: 'Article', conditions: { organizationId: '${activeOrganizationId}' } }`,

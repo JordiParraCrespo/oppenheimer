@@ -6,7 +6,7 @@
 ---
 
 Settings → WhatsApp says who answers on a connected number
-(`product/next-steps/answering-on-telegram-and-whatsapp.md`, slice 3).
+(`product/design/channels/answering-on-telegram-and-whatsapp.md`, slice 3).
 
 - `@oppenheimer/web`: under each connected number, "Answers you" picks the
   bot that answers by default, or none, and "Your number" names the

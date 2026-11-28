@@ -7,9 +7,9 @@ conversation with Claude Code or Codex so well, when we show a terminal?
 2026-09-23). Neither is a competitor on hosts or worktrees. Both are
 the prior art for a **structured chat view** over coding agents. This
 note is the read and decides nothing: the session view is the terminal
-(`versions/mvp/00-scope.md`), and whether a session is also shown as a
+(`design/foundations/scope.md`), and whether a session is also shown as a
 chat is the question
-[`next-steps/0.7-terminal-and-chat.md`](../next-steps/0.7-terminal-and-chat.md)
+[`design/sessions/terminal-and-chat.md`](../design/sessions/terminal-and-chat.md)
 owns. Paths in backticks are relative to `product/`.
 
 ## 1. The one fact worth the read
@@ -89,7 +89,7 @@ None of it can be done with scraped screen output.
 
 **Process survival.** Our runner puts tmux between itself and the
 agent, so an update or a rollback leaves the agent running
-(`versions/mvp/02-runner.md` §1, §6; [`lessons-from-herdr.md`](lessons-from-herdr.md)). Both of these projects
+(`design/runner/runner.md` §1, §6; [`lessons-from-herdr.md`](lessons-from-herdr.md)). Both of these projects
 make the agent a **child of the server holding its pipes**.
 
 When that server restarts, the agent dies. Synara treats exit 143 as
@@ -103,7 +103,7 @@ turn in flight is lost.
 be rebuilt as UI, or are simply absent.
 
 **Transcripts leave the host.** Today the runner reads the agent's
-transcript and sends one line of it (`versions/mvp/10-api-modules-and-data-model.md`).
+transcript and sends one line of it (`design/foundations/api-modules-and-data-model.md`).
 A chat view sends the whole conversation to the browser. That is no
 more than the terminal bytes already carry through the relay, but the
 security note should say so in words.
@@ -112,14 +112,14 @@ security note should say so in words.
 
 The read stops at what they do and what it costs. If 0.7 wants a chat
 view, these are the questions it starts from, and the answers belong in
-the notes that own the session (`versions/mvp/01-protocol.md` for any
-event schema, `02-runner.md` for what holds the agent's pipes), not
+the notes that own the session (`design/foundations/protocol.md` for any
+event schema, `../design/runner/runner.md` for what holds the agent's pipes), not
 here:
 
 1. **Process survival.** Can a driven agent keep the guarantee tmux
    gives a terminal session, surviving a runner update? Both projects
    above give it up.
-2. **Subscription terms.** Note 01 settled that people log in to
+2. **Subscription terms.** `../archive/terminal-first.md` settled that people log in to
    `claude` and `codex` as they would on a laptop. Is driving the CLI in
    stream-json or app-server mode, on the person's own machine with
    their own login, covered the same way?
