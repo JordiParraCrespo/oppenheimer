@@ -1,6 +1,6 @@
 import type { ArgumentMetadata } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
-import { SanitizePipe } from './sanitize.pipe';
+import { KeepsMarkup, SanitizePipe } from './sanitize.pipe';
 
 const pipe = new SanitizePipe();
 
@@ -58,5 +58,21 @@ describe('SanitizePipe', () => {
     expect(pipe.transform(42, from('body'))).toBe(42);
     expect(pipe.transform(null, from('body'))).toBeNull();
     expect(pipe.transform(undefined, from('body'))).toBeUndefined();
+  });
+
+  it('keeps the body of a DTO marked as carrying markup as sent, and only its body', () => {
+    // Regression: a transcript line is JSON in a string, so `awk 'NR>=740 && NR<=825'`
+    // lost everything between `>` and `<` and was stored as broken JSON.
+    @KeepsMarkup()
+    class TranscriptBody {}
+    const line = '{"cmd":"awk \'NR>=740 && NR<=825\'","html":"<div>"}';
+    expect(pipe.transform({ lines: [line] }, { type: 'body', metatype: TranscriptBody })).toEqual({
+      lines: [line],
+    });
+    expect(pipe.transform('<b>x</b>', { type: 'query', metatype: TranscriptBody })).toBe('x');
+    class OtherBody {}
+    expect(pipe.transform({ note: '<b>x</b>' }, { type: 'body', metatype: OtherBody })).toEqual({
+      note: 'x',
+    });
   });
 });
