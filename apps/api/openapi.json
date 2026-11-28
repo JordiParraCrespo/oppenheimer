@@ -34710,7 +34710,6 @@
           "placement": {
             "type": "string",
             "enum": [
-              "replace",
               "older"
             ]
           }

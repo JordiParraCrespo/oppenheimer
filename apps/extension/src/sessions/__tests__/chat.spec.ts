@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  CHAT_COPY_VERSION,
   type ChatEvent,
   cutTitle,
   EVENTS_BATCH,
@@ -271,7 +272,7 @@ describe('sending the log to the console', () => {
     expect(
       await forwardNewestFirst(connection, { id: ID, title: 'Fix the login page' }, events),
     ).toBe(events.length);
-    expect(bodies.map((body) => body.placement)).toEqual(['replace', 'older']);
+    expect(bodies.map((body) => body.placement)).toEqual([undefined, 'older']);
     expect(bodies[0]?.events.map((event) => event.id)).toEqual([
       'e200',
       'e201',
@@ -442,7 +443,7 @@ describe('which sessions a pass reads', () => {
   it('reads the moving ones, the replied-to ones and, once, the ones active today', () => {
     const due = sessionsToSync(
       [running, fresh, read, old, replied],
-      { [read.id]: { sent: 4, at: read.updatedAt ?? '' } },
+      { [read.id]: { sent: 4, at: read.updatedAt ?? '', copy: CHAT_COPY_VERSION } },
       new Set([replied.id]),
       now,
     );
@@ -459,10 +460,42 @@ describe('which sessions a pass reads', () => {
     const synced = Object.fromEntries(
       busy
         .slice(0, 10)
-        .map((session) => [session.id, { sent: 1, at: '', readAt: '2026-11-27T11:59:00Z' }]),
+        .map((session) => [
+          session.id,
+          { sent: 1, at: '', readAt: '2026-11-27T11:59:00Z', copy: CHAT_COPY_VERSION },
+        ]),
     );
     // Breaks if the same ten are read on every pass and the rest never are.
     const due = sessionsToSync(busy, synced, new Set(), now);
     expect(due.slice(0, 2).map((session) => session.id)).toEqual([busy[10]?.id, busy[11]?.id]);
+  });
+
+  it('reads a copy built by older rules once, however long its session has been still, and first', () => {
+    // Regression: a session that had not moved since the upgrade kept its old
+    // copy for good, with its lines out of order and some cut short.
+    const stillUpgraded = tracked('session_stillupgraded', { updatedAt: '2026-11-20T11:00:00Z' });
+    const stillCurrent = tracked('session_stillcurrent1', { updatedAt: '2026-11-20T11:00:00Z' });
+    const synced = {
+      [stillUpgraded.id]: {
+        sent: 40,
+        at: stillUpgraded.updatedAt ?? '',
+        readAt: '2026-11-27T11:59:00Z',
+      },
+      [stillCurrent.id]: {
+        sent: 40,
+        at: stillCurrent.updatedAt ?? '',
+        readAt: '2026-11-27T11:59:00Z',
+        copy: CHAT_COPY_VERSION,
+      },
+      [running.id]: { sent: 2, at: '', readAt: '2026-11-27T11:58:00Z', copy: CHAT_COPY_VERSION },
+    };
+    const due = sessionsToSync([running, stillCurrent, stillUpgraded], synced, new Set(), now);
+    expect(due.map((session) => session.id)).toEqual([stillUpgraded.id, running.id]);
+    // Once read under the current rules, it is still again until it moves.
+    const after = {
+      ...synced,
+      [stillUpgraded.id]: { ...synced[stillUpgraded.id], copy: CHAT_COPY_VERSION },
+    };
+    expect(sessionsToSync([stillUpgraded], after, new Set(), now)).toEqual([]);
   });
 });

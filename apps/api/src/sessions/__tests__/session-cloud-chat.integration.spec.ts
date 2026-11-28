@@ -278,15 +278,12 @@ describe('sessions: cloud chat replies (integration)', () => {
       expect(await chat.findLines(cloudId, 0, 10)).toHaveLength(3);
     });
 
-    it('starts a copy again from its newest stretch and puts each older one before it', async () => {
-      // Regression: a log sent out of order stayed out of order, and a long
-      // chat opened on old turns. Sent newest first, the copy still reads in order.
+    it('takes a log sent newest first and puts each older stretch before what it holds', async () => {
+      // Regression: a log was numbered as it arrived, so a long chat opened on
+      // its oldest turns. Sent newest first, the copy still reads in order.
       const event = (n: number) => ({ id: `e${n}`, line: entry(`e${n}`, `turn ${n}`) });
-      await chat.appendEvents(organizationId, cloudId, [event(9), event(1)]);
+      expect(await chat.appendEvents(organizationId, cloudId, [event(4), event(5)])).toBe(2);
       const before = await chat.findStart(cloudId);
-      expect(
-        await chat.appendEvents(organizationId, cloudId, [event(4), event(5)], 'replace'),
-      ).toBe(2);
       expect(await chat.appendEvents(organizationId, cloudId, [event(2), event(3)], 'older')).toBe(
         2,
       );
@@ -294,6 +291,9 @@ describe('sessions: cloud chat replies (integration)', () => {
       expect(await chat.appendEvents(organizationId, cloudId, [event(3)], 'older')).toBe(0);
       expect(await chat.appendEvents(organizationId, cloudId, [event(1)], 'older')).toBe(1);
       expect(await chat.appendEvents(organizationId, cloudId, [event(6)])).toBe(1);
+      // Another browser starting its own copy of the same log loses nothing of this one.
+      expect(await chat.appendEvents(organizationId, cloudId, [event(5)])).toBe(0);
+      expect(await chat.appendEvents(organizationId, cloudId, [event(1)], 'older')).toBe(0);
 
       const lines = await chat.findLines(cloudId, undefined, 10);
       expect(lines.map((each) => JSON.parse(each.line).uuid)).toEqual([
@@ -308,7 +308,7 @@ describe('sessions: cloud chat replies (integration)', () => {
       // The start moved, so a reader knows to read the copy again.
       const start = await chat.findStart(cloudId);
       expect(start?.seq).toBe(-3);
-      expect(start?.at.getTime()).not.toBe(before?.at.getTime());
+      expect(start?.seq).not.toBe(before?.seq);
     });
 
     it('numbers two batches written at once without a gap or a clash', async () => {

@@ -119,21 +119,16 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
       // One writer per session at a time, the hook's appends included: each
       // new event is numbered against the lines held.
       await lockSessionLines(manager, sessionId);
-      if (placement === 'replace') {
-        // The copy starts again from this batch, the log's newest stretch.
-        await manager.query(`DELETE FROM session_cloud_line WHERE "sessionId" = $1`, [sessionId]);
-      } else {
-        // The first events replace the hook's copy: the two number the same
-        // conversation differently, and claude.ai's log is the whole of it.
-        await manager.query(
-          `DELETE FROM session_cloud_line
-            WHERE "sessionId" = $1 AND "eventId" IS NULL
-              AND NOT EXISTS (
-                SELECT 1 FROM session_cloud_line
-                 WHERE "sessionId" = $1 AND "eventId" IS NOT NULL)`,
-          [sessionId],
-        );
-      }
+      // The first events replace the hook's copy: the two number the same
+      // conversation differently, and claude.ai's log is the whole of it.
+      await manager.query(
+        `DELETE FROM session_cloud_line
+          WHERE "sessionId" = $1 AND "eventId" IS NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM session_cloud_line
+               WHERE "sessionId" = $1 AND "eventId" IS NOT NULL)`,
+        [sessionId],
+      );
       // New events only (an id held already, or twice in the batch, is
       // skipped), numbered in the batch's order: after the last line, or for
       // an older stretch, ending just before the first one.

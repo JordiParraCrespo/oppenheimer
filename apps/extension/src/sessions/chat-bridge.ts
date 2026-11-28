@@ -6,6 +6,7 @@ import {
   type ClaudePost,
   claimReplies,
   confirmReply,
+  current,
   fetchSessionEvents,
   forwardEvents,
   forwardNewestFirst,
@@ -188,9 +189,8 @@ export function createChatBridge({
     // One session's failure (a refused batch, a log claude.ai will not give)
     // is said, and the others in the pass still go.
     for (const session of due.slice(0, SESSIONS_PER_PASS)) {
-      // A copy built by older rules is started again from the log's first page.
-      const held = synced[session.id];
-      const known = held?.copy === CHAT_COPY_VERSION ? held : undefined;
+      // A sync kept under older copy rules reads the log again from its first page.
+      const known = current(synced[session.id]);
       try {
         const read = await fetchSessionEvents(
           session.id,
@@ -212,7 +212,7 @@ export function createChatBridge({
           continue;
         }
         // A copy started here is sent newest first when the whole log came;
-        // a log too long for one read starts again from its oldest stretch.
+        // a log too long for one read goes oldest stretch first.
         const sent = known
           ? await forwardEvents(
               state.oppenheimer,
@@ -222,7 +222,7 @@ export function createChatBridge({
             )
           : read.offset === 0 && read.complete
             ? await forwardNewestFirst(state.oppenheimer, session, read.events)
-            : await forwardEvents(state.oppenheimer, session, read.events, 0, 'replace');
+            : await forwardEvents(state.oppenheimer, session, read.events, 0);
         synced[session.id] = {
           copy: CHAT_COPY_VERSION,
           sent: read.offset + sent,

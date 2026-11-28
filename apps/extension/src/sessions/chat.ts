@@ -236,25 +236,22 @@ export async function forwardEvents(
   session: Pick<TrackedSession, 'id' | 'title'>,
   events: readonly ChatEvent[],
   sent: number,
-  /** Where the first batch goes: `replace` starts the console's copy again with it. */
-  first?: 'replace',
 ): Promise<number> {
   if (!cloudSessionIdPattern.test(session.id)) return sent;
   let held = Math.min(sent, events.length);
-  let placement = first;
   while (held < events.length) {
     const batch = nextBatch(events, held);
-    await sendBatch(connection, session, batch, placement);
-    placement = undefined;
+    await sendBatch(connection, session, batch);
     held += batch.length;
   }
   return held;
 }
 
 /**
- * Starts the console's copy of a log read whole, newest first: its newest
- * stretch replaces the copy, so the console opens on the latest turn, and
- * each older stretch then goes before it. A long session's chat showed its
+ * Sends the console's copy of a log read whole, newest first: its newest
+ * stretch after what the copy holds, so the console opens on the latest turn,
+ * and each older stretch then before it. Events the copy holds are skipped by
+ * their ids, so another browser syncing the same session loses nothing. A long session's chat showed its
  * oldest turns, and a copy read out of order kept that order, until this.
  * Answers how many events the copy now has: all of them.
  */
@@ -272,7 +269,7 @@ export async function forwardNewestFirst(
   }
   batches.reverse();
   for (const [index, batch] of batches.entries()) {
-    await sendBatch(connection, session, batch, index === 0 ? 'replace' : 'older');
+    await sendBatch(connection, session, batch, index === 0 ? undefined : 'older');
   }
   return events.length;
 }
@@ -281,7 +278,7 @@ async function sendBatch(
   connection: OppenheimerConnection,
   session: Pick<TrackedSession, 'id' | 'title'>,
   events: readonly ChatEvent[],
-  placement: 'replace' | 'older' | undefined,
+  placement?: 'older',
 ): Promise<void> {
   const response = await fetch(apiUrl(connection, '/api/v1/sessions/cloud-events'), {
     method: 'POST',
@@ -468,25 +465,34 @@ export function sessionsToSync(
     if (session.state === 'running' || session.state === 'needs-input') return true;
     const updated = session.updatedAt ? Date.parse(session.updatedAt) : Number.NaN;
     const recent = Number.isFinite(updated) && now - updated < day;
-    const known = synced[session.id];
-    // Changed since its last read, or never read at all.
-    return recent && (!known || (session.updatedAt ?? '') > known.at);
+    const known = current(synced[session.id]);
+    // A copy built by older rules is due once, however long the session has
+    // been still: until it is read again the console keeps no copy of it.
+    if (!known) return recent || synced[session.id] !== undefined;
+    // Changed since its last read.
+    return recent && (session.updatedAt ?? '') > known.at;
   });
-  // A pass reads a few: the ones replied to first, then the longest unread,
-  // so a cap on a pass rotates through every session that is due.
+  // A pass reads a few: the ones replied to first, then the longest unread
+  // (an outdated copy counts as never read), so a cap on a pass rotates
+  // through every session that is due.
   const order = (session: TrackedSession) =>
-    `${hot.has(session.id) ? 0 : 1}${synced[session.id]?.readAt ?? ''}`;
+    `${hot.has(session.id) ? 0 : 1}${current(synced[session.id])?.readAt ?? ''}`;
   return due.sort((a, b) => order(a).localeCompare(order(b)));
 }
 
-/** How far a session's log has gone to the API: events sent, and the activity time read up to. */
 /**
- * The rules a session's copy in the console was built by. A copy built by
- * older ones (numbered as it arrived, read from a route since dropped) is
- * started again, newest first, on the next read.
+ * The rules a session's copy in the console was built by. A sync kept under
+ * older ones (whose copy the API dropped, `AllowOlderCloudLines`) reads the
+ * log again from its first page and sends it newest first.
  */
-export const CHAT_COPY_VERSION = 2;
+export const CHAT_COPY_VERSION = 3;
 
+/** A session's sync, unless it was kept under older copy rules: then it counts as never read. */
+export function current(sync: ChatSync | undefined): ChatSync | undefined {
+  return sync?.copy === CHAT_COPY_VERSION ? sync : undefined;
+}
+
+/** How far a session's log has gone to the API: events sent, and the activity time read up to. */
 export interface ChatSync {
   /** Events of the whole log the console has. */
   sent: number;
