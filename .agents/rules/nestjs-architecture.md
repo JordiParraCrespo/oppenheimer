@@ -188,11 +188,14 @@ repository) follows the same rules by hand.
 Versioned and conditional writes cover one row. The races around them:
 
 - **A cap is checked in the statement or the lock that inserts.** "Count,
-  then insert if under 50" in two statements lets two requests both see 49. Serialize per owner in the insert's transaction
-  (`SELECT … FOR UPDATE` on the owner's row, or
-  `pg_advisory_xact_lock(hashtext(owner))`), or make the insert one
-  statement that counts (`INSERT … SELECT … WHERE (SELECT count(*) …) < $cap`)
-  and read `affected`.
+  then insert if under 50" in two statements lets two requests both see 49.
+  Serialize per owner in the insert's transaction (`SELECT … FOR UPDATE` on
+  the owner's row, or `pg_advisory_xact_lock(hashtext(owner))`), or keep the
+  count in a row of its own and claim a slot atomically
+  (`UPDATE … SET n = n + 1 WHERE owner = $1 AND n < $cap`, then read
+  `affected`). One `INSERT … SELECT … WHERE (SELECT count(*) …) < $cap` is
+  not enough: under READ COMMITTED each concurrent statement counts its own
+  snapshot, and both insert.
 - **What a save implies happens in the save's transaction, or through the
   outbox.** Revoking the URL a trigger used to have, clearing the code
   a request replaced: done as a call after the commit, a failure leaves the
