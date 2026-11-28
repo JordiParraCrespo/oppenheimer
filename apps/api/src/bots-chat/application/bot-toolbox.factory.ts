@@ -30,6 +30,7 @@ import { BotGuideToolsFactory } from './bot-guide-tools.factory';
 import { BotHostCommandToolsFactory } from './bot-host-command-tools.factory';
 import { BotHostSettingsToolsFactory } from './bot-host-settings-tools.factory';
 import { BotHostToolsFactory } from './bot-host-tools.factory';
+import { BotImageToolsFactory } from './bot-image-tools.factory';
 import { BotIssueToolsFactory } from './bot-issue-tools.factory';
 import { BotLoopToolsFactory } from './bot-loop-tools.factory';
 import { BotMailOrganizeToolsFactory } from './bot-mail-organize-tools.factory';
@@ -112,6 +113,7 @@ export class BotToolboxFactory {
     notices: BotNoticeToolsFactory,
     planWatches: BotPlanWatchToolsFactory,
     checkBacks: BotCheckBackToolsFactory,
+    images: BotImageToolsFactory,
   ) {
     this.areas = [
       self,
@@ -150,6 +152,7 @@ export class BotToolboxFactory {
       peers,
       web,
       visuals,
+      images,
       subagents,
     ];
   }

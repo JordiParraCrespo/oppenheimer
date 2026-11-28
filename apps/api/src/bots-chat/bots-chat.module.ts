@@ -36,6 +36,7 @@ import { BotHostCommandToolsFactory } from './application/bot-host-command-tools
 import { BotHostSettingsToolsFactory } from './application/bot-host-settings-tools.factory';
 import { BotHostTargetResolver } from './application/bot-host-target.resolver';
 import { BotHostToolsFactory } from './application/bot-host-tools.factory';
+import { BotImageToolsFactory } from './application/bot-image-tools.factory';
 import { BotIssueToolsFactory } from './application/bot-issue-tools.factory';
 import { BotLoopResolver } from './application/bot-loop.resolver';
 import { BotLoopToolsFactory } from './application/bot-loop-tools.factory';
@@ -567,6 +568,7 @@ const queryHandlers: Provider[] = [
     BotPeerToolsFactory,
     BotWebToolsFactory,
     BotVisualToolsFactory,
+    BotImageToolsFactory,
     BotMailToolsFactory,
     BotWhatsappToolsFactory,
     BotWhatsappGrantToolsFactory,

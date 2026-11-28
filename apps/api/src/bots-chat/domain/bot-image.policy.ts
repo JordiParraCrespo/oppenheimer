@@ -4,12 +4,14 @@ import { promptText } from './bot-prompt-text.policy';
 /**
  * What a turn is told of an earlier message's images: a
  * turn is sent only its own message's images, so an earlier message of
- * yours that carried some says so in its text, and that the bot cannot see
- * them now; one of the bot's says which it showed (`show_image`). The
- * history itself (`botHistory`) reads back whatever text it is given.
+ * yours that carried some says so in its text, with their ids, which
+ * `view_image` loads again; one of the bot's says which it showed
+ * (`show_image`). The history itself (`botHistory`) reads back whatever text
+ * it is given.
  */
 export function withEarlierImages(
   message: HistoryMessage & { attachments: readonly { id?: string; name: string }[] },
+  canView: boolean,
 ): HistoryMessage {
   const { role, content, event, steps, attachments } = message;
   // The reactions ride along whatever the images say (`reactionNotes`).
@@ -20,7 +22,7 @@ export function withEarlierImages(
   if (attachments.length === 0) return { role, content, event, steps, ...reactions };
   const note =
     role === 'user'
-      ? imagesNote(attachments)
+      ? imagesNote(attachments, canView)
       : role === 'assistant'
         ? shownNote(attachments.map((attachment) => attachment.name))
         : null;
@@ -52,13 +54,22 @@ function shownNote(names: readonly string[]): string {
 export const EARLIER_IMAGES_HEADROOM_TOKENS = 1_000;
 
 /**
- * The sentence that stands for images the bot was sent before and cannot see
- * now, with their ids, which a mail tool can still attach.
+ * The sentence that stands for images the bot was sent before and is not
+ * sent now, with their ids, which a mail tool attaches. On a turn offered
+ * `view_image` (`canView`) it says to look again with that tool; on any
+ * other it says the bot cannot see them, so it never names a tool the turn
+ * does not have.
  */
-export function imagesNote(images: readonly { id?: string; name: string }[]): string {
+export function imagesNote(
+  images: readonly { id?: string; name: string }[],
+  canView: boolean,
+): string {
   const count = images.length;
   const [what, them] = count === 1 ? ['an image', 'it'] : [`${count} images`, 'them'];
-  return promptText('core/turn-images.came-with', { what, ids: idsOf(images), them });
+  return promptText(
+    canView ? 'core/turn-images.came-with' : 'core/turn-images.came-with-unviewable',
+    { what, ids: idsOf(images), them },
+  );
 }
 
 /**
