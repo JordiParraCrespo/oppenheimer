@@ -269,11 +269,14 @@ export function createChatBridge({
         if (!read) {
           // A place to carry on from that no longer answers is dropped: the
           // next read starts from the first page.
+          // Kept as tried now, under these copy rules (`known` is current or
+          // none, so `sent` is theirs): a log that will not come waits behind
+          // the others instead of taking every pass's budget first.
           await keepHere({
             sent: known?.sent ?? 0,
             at: known?.at ?? '',
             readAt: now(),
-            copy: known?.copy,
+            copy: CHAT_COPY_VERSION,
           });
           // No route gave its log: the console's copy is stale, which the popup says.
           return `${sessionId}: claude.ai gave no event log`;
@@ -306,6 +309,7 @@ export function createChatBridge({
           sent: known?.sent ?? 0,
           at: known?.at ?? '',
           readAt: now(),
+          copy: CHAT_COPY_VERSION,
         });
         return `${sessionId}: ${String((error as Error).message ?? error)}`;
       }

@@ -325,4 +325,67 @@ describe('a pass over the sessions that are moving', () => {
     // workspace would never be sent those events.
     expect(data.chatSync).toBeUndefined();
   });
+
+  it('reads the other sessions while one never-read log keeps failing slowly', async () => {
+    const recent = new Date().toISOString();
+    const data = fakeStorage({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_x' },
+      sessions: {
+        [FIRST]: {
+          id: FIRST,
+          title: 'First',
+          state: 'done',
+          reason: null,
+          repo: null,
+          updatedAt: recent,
+        },
+        [SECOND]: {
+          id: SECOND,
+          title: 'Second',
+          state: 'done',
+          reason: null,
+          repo: null,
+          updatedAt: recent,
+        },
+      },
+    });
+    const real = Date.now.bind(Date);
+    let skew = 0;
+    vi.spyOn(Date, 'now').mockImplementation(() => real() + skew);
+    const event = { payload: { type: 'user', uuid: 'b', message: { content: 'b' } } };
+    let secondReads = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string) => {
+        const url = String(input);
+        if (
+          url.includes('claude.ai') &&
+          (url.includes(FIRST) || url.includes(FIRST.replace('session_', 'cse_')))
+        ) {
+          // Times out past the whole pass budget, then fails.
+          skew += 21_000;
+          throw new DOMException('timed out', 'TimeoutError');
+        }
+        if (url.includes('claude.ai')) {
+          secondReads += 1;
+          return json({ data: [event] });
+        }
+        return json({ accepted: 1 });
+      }),
+    );
+    const bridge = createChatBridge({
+      claudeHeaders: async () => ({}),
+      serial: (task) => task(),
+      postToClaude: async () => ({ status: 500 }),
+    });
+    try {
+      for (let pass = 0; pass < 3; pass += 1) await bridge.syncPass();
+    } finally {
+      vi.restoreAllMocks();
+    }
+    // Breaks if a failed read is kept as never read: it sorts first on every
+    // pass, takes the budget, and no other chat reaches the console again.
+    expect(secondReads).toBeGreaterThan(0);
+    expect((data.chatSync as Record<string, { sent: number }>)[SECOND]?.sent).toBe(1);
+  });
 });
