@@ -1,5 +1,301 @@
 # @oppenheimer/frontend-core
 
+## 0.4.0
+
+### Minor Changes
+
+- 3ffa099: Less boilerplate in the product package, the same behaviour.
+
+  - Repository methods are `callApi(X, async (api) => …)`, naming their failure once; `@MapApiError` is gone and `unwrap` is no longer exported (`unwrapBody` stays).
+  - Mutation hooks come from `defineMutation(useApp)({ run, invalidates | update })`; the consumer binds it as `mutation`.
+  - `SessionEntity`, `PullRequestEntity` and `AutomationRunEntity` take one props object (`XProps`), set with core's `assignProps`, which keeps a field's default where a prop is undefined. `@oppenheimer/frontend-consumer/testing` builds the three for tests.
+  - `ServerEventStream<TEvent>` in core is the Server-Sent Events stream `BotStream` and `WorkspaceEventStream` extend; the attach streams share their socket setup, and the device stream redials on the configured reconnect ladder.
+
+- ee06c2c: Credentials that outlive a session now need a verified email, and a password
+  reset takes back API tokens, OAuth grants and browser sessions.
+
+  - `@oppenheimer/api`: minting an API token, approving or exchanging an OAuth
+    (MCP) grant, minting a host pairing token and issuing a routine's webhook
+    URL are refused with `TOKEN_010` until the account's email is verified, on a
+    deployment that delivers email (`email_delivery`: SMTP or Resend; without it
+    no address can be verified, so the rule does not apply), and
+    the token endpoint refuses a `code` or `refresh_token` that is not a string.
+    A password reset ("Forgot password") takes back, in its own transaction, the
+    API tokens and OAuth grants issued before it: it sets the account's
+    credential cutoff (a migration adds `credential_cutoff` and
+    `api_token."issuedAt"`), from which every API token or OAuth grant whose
+    chain began earlier, including a token minted by one, is refused; it deletes
+    the account's OAuth grants, consents and unexchanged authorization codes; and
+    the tokens are then marked revoked. Browser sessions are signed out as
+    before. Paired hosts and routine webhook URLs record whether the owner's
+    email was verified when they were issued (a migration adds
+    `"issuedVerified"` to `host_pairing_token`, `host` and
+    `automation_webhook`, backfilled from the owner's address as it is now);
+    a reset unpairs the hosts, revokes the unspent pairing tokens and revokes
+    the webhook URLs issued unverified, which only a deployment without email
+    delivery issues, and keeps the rest. `POST
+/v1/admin/users/{id}/set-password` now takes back what a reset does, and
+    signs the account's sessions out; when it cannot, it answers `ADMIN_008`
+    and is retried. A reset does not take back an OAuth exchange already past
+    the grant gate at the instant of the reset (a window of milliseconds). If that transaction fails, the reset answers an error
+    rather than success (the new password is already stored; resetting again
+    from a new link completes it). Better Auth's
+    rate limit keys on the client address `TRUST_PROXY` trusts (the socket's at
+    `0`), never on `X-Forwarded-For` as sent. Social-login provider tokens are
+    stored encrypted. A migration renames `oauthApplication."redirectURLs"` to
+    the `redirectUrls` Better Auth writes, which had broken MCP client
+    registration.
+  - `@oppenheimer/cli`: `opp login` on an unverified account says to verify the
+    email first instead of pointing at a missing permission.
+  - `@oppenheimer/translations`: the message for `TOKEN_010`, and the copy of
+    the console's Resend verification email action.
+  - `@oppenheimer/frontend-core`: `useSendVerificationEmail` and
+    `IAuthClient.sendVerificationEmail`, a new verification link to the
+    signed-in account's own address.
+  - `@oppenheimer/frontend-web`: `ErrorAlert` draws `TOKEN_010` with a Resend
+    verification email action that says where the link went, or that it could
+    not be sent (Add host, onboarding's host step, a routine's webhook URL, the
+    MCP consent screen).
+  - `@oppenheimer/web`, `@oppenheimer/mobile`: their auth clients send the link
+    through Better Auth's `send-verification-email`.
+
+- c90bcf1: The console reports its own bugs to Sentry when `VITE_SENTRY_DSN` is set.
+
+  - `@oppenheimer/frontend-core`: `ErrorReportingService` (`app.errors`) over
+    an `IErrorReportingClient` port, a no-op by default. It reports a bug of
+    ours and drops a request the server answered or the network lost. The
+    query client hands it every failure but a 401; `useReportError` and
+    `useCaptureError` serve a boundary; sign-in and sign-out set the user, by
+    id only.
+  - `@oppenheimer/frontend-web`: `createWebErrorReportingClient`, Sentry loaded
+    in its own chunk only with a DSN, with no Session Replay and every URL,
+    cookie and console breadcrumb scrubbed. `RouteError` and `QueryState`
+    report what they catch.
+  - `@oppenheimer/web`: wires it, and uploads hidden source maps at build time
+    when `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_WEB_PROJECT` are set.
+
+- be38e84: The phone's Automations tab, as `Mobile.dc.html` draws it.
+
+  - `@oppenheimer/mobile`:
+    - **The list:** every automation on one card, with its trigger in words, how its last run went, and the system's switch that pauses it.
+    - **An automation's page:** Active and its next run (or why it is paused), the trigger, the instructions, where it runs, and its recent runs. Run now sits in glass at the foot. The system's ··· menu has Run now, Pause or Resume, Duplicate, and Delete behind the system's alert.
+  - `@oppenheimer/frontend-consumer`: an automation's words move here, beside the automations module, so both apps say them the same way: its trigger (`triggerListText`, `scheduleText`, `daysText`, `eventLabel`, …, from the web kit) and its status (`runState`, `nextRunText`, `nextInstantText`, `pausedReasonText`, `automationAgentText`, from the console's automations feature).
+  - `@oppenheimer/frontend-core`: the date helpers that wording rests on (`dateFormatter`, `viewerTimeZone`, `wallClock`, `weekdayDate`, `clock`, `dayOffset`) move down from the web kit, as product-free `Intl` formatting.
+  - `@oppenheimer/frontend-web`: re-exports the date helpers the console reads from the kernel; the trigger wording is no longer the kit's.
+  - `@oppenheimer/web`: imports the trigger and status wording from the product package, and `clock` and `dayOffset` from the kit rather than the automations feature's own `lib/time.ts`. Nothing the console shows changes.
+  - `@oppenheimer/translations`: `automations.mobile.*`; `common.comingToMobile.automations` is gone.
+
+- 00bcee3: The phone's Plan tab: your tasks, as the console's board lays them out.
+
+  - `@oppenheimer/mobile`:
+    - **The tab:** the four columns in order on one list. Done keeps the past week, and the rest is a tap away. The project is picked in the system's picker, the counts sit under the title, and Add task is at the foot of Not started. Each row has its done check, where it is filed, its due date, and its session line, which opens the session.
+    - **A task's page:** its notes, its column (the system's picker), project, milestone, due date, and its sessions. Delete sits behind the system's alert.
+  - `@oppenheimer/frontend-consumer`: these move here from the console's tasks feature, so both apps read and word a board the same way:
+    - the board's columns and counts (`boardColumnsOf`, `boardCounts`, `columnOf`, `doneCutoffOf`, `filingOf`, …);
+    - a task's card in words (`cardView`, `dueDayLabel`, `TaskDueTone`);
+    - its session line (`sessionLineOf`, `taskSessionsOf`, `sessionStateOf`, `mostUrgent`).
+  - `@oppenheimer/frontend-core`: `todayIn`, `daysBetween` and `nearDay`, calendar-day arithmetic in no timezone, move down from the web kit.
+  - `@oppenheimer/frontend-web`: re-exports `todayIn`; `daysBetween` and `nearDay` are no longer the kit's.
+  - `@oppenheimer/web`: imports the board, card and session-line helpers from the product package. Nothing the console shows changes.
+  - `@oppenheimer/translations`: `tasks.mobile.*`; `common.comingToMobile.plan` is gone.
+
+- 25e143a: The phone follows the workspace's change feed, so the Sessions tab moves when an agent starts waiting on you or a session starts from the computer.
+
+  - `@oppenheimer/frontend-core`: `OppenheimerApp.create` takes an `eventSource` factory (`EventSourceFactory`) for a platform without the browser's `EventSource`; unset, nothing changes.
+  - `@oppenheimer/frontend-consumer`: the workspace stream dials through that factory when one is bound.
+  - `@oppenheimer/frontend-mobile`: `createEventSourceFactory(headers)`, Server-Sent Events over `react-native-sse` carrying the session cookie; a refusal stays closed, a drop redials.
+  - `@oppenheimer/mobile`: the workspace gate holds the feed open for every tab.
+
+- 70eb8ea: The persisted query cache stores only what is listed. `createQueryPersistOptions` takes `persistedFeatures` (an allow-list) instead of `nonPersistedFeatures`; the kernel keeps `featureFlags`, `capabilities` and the cache owner, a read can still opt in with `PERSIST_META`, and `CONSUMER_NON_PERSISTED_FEATURES` is now `CONSUMER_PERSISTED_FEATURES` (the permission catalog). A feature nobody listed used to be stored and came back as plain JSON: the workspace list's `createdAt` restored as a string. The cache revision moves to 5, so caches written under the old policy are dropped.
+
+  The workspace event stream's refreshes and the polls it stands down are one table per event, and standing down is opt-in: a poll kind says `streamCanCover: true`, and only a read the stream announces in full stands down. A new poll kind, or a new read inside a feature the stream refreshes in part (a tasks read other than the list and the milestones), keeps polling.
+
+- b5a9490: Settings → About shows the version of the console and of the API it talks to. The API answers its version at `GET /health/version`.
+
+### Patch Changes
+
+- 8d1b3c4: Offline, the console says "Could not reach the server" once instead of once per failed read.
+- 9706ce9: Stop reporting a dropped connection to Sentry when it reached the reporter through a generated SDK call: the request's `AppError` now keeps the fetch `TypeError` itself as its cause.
+- Updated dependencies [6bc01b2]
+- Updated dependencies [bfb4d0d]
+- Updated dependencies [a602949]
+- Updated dependencies [fd6277d]
+- Updated dependencies [db4efe1]
+- Updated dependencies [ad7e6ac]
+- Updated dependencies [7b0e91d]
+- Updated dependencies [1d57cbf]
+- Updated dependencies [43193e4]
+- Updated dependencies [a2d35a8]
+- Updated dependencies [dfd07de]
+- Updated dependencies [e75f5fd]
+- Updated dependencies [bb76bed]
+- Updated dependencies [1df2b19]
+- Updated dependencies [172b7ab]
+- Updated dependencies [db21b92]
+- Updated dependencies [4c75b47]
+- Updated dependencies [344ce8c]
+- Updated dependencies [d314623]
+- Updated dependencies [d5d4fd4]
+- Updated dependencies [c5c09d0]
+- Updated dependencies [1819aa6]
+- Updated dependencies [be15bdc]
+- Updated dependencies [38ffaaf]
+- Updated dependencies [e315b92]
+- Updated dependencies [b6576e2]
+- Updated dependencies [a51a958]
+- Updated dependencies [fb3681f]
+- Updated dependencies [b283349]
+- Updated dependencies [cfa236a]
+- Updated dependencies [434deea]
+- Updated dependencies [0d83e40]
+- Updated dependencies [9ccced3]
+- Updated dependencies [6568fab]
+- Updated dependencies [a7c8731]
+- Updated dependencies [c4b0995]
+- Updated dependencies [be941d8]
+- Updated dependencies [b639f26]
+- Updated dependencies [929db14]
+- Updated dependencies [4faf606]
+- Updated dependencies [4fb1e39]
+- Updated dependencies [3d54930]
+- Updated dependencies [18e4a35]
+- Updated dependencies [7f18bbe]
+- Updated dependencies [8fc6c25]
+- Updated dependencies [39dbe36]
+- Updated dependencies [f46ca03]
+- Updated dependencies [d2ff254]
+- Updated dependencies [201ee3a]
+- Updated dependencies [502a40c]
+- Updated dependencies [ac929fa]
+- Updated dependencies [8deebf8]
+- Updated dependencies [5dfebed]
+- Updated dependencies [e338973]
+- Updated dependencies [87d0f96]
+- Updated dependencies [39d9703]
+- Updated dependencies [59809f9]
+- Updated dependencies [060dabb]
+- Updated dependencies [a23f236]
+- Updated dependencies [e0047a2]
+- Updated dependencies [f09b6b3]
+- Updated dependencies [3dbe5f1]
+- Updated dependencies [24ca7aa]
+- Updated dependencies [629ea1d]
+- Updated dependencies [bc448db]
+- Updated dependencies [581c202]
+- Updated dependencies [6dd3dc7]
+- Updated dependencies [6af341b]
+- Updated dependencies [8278d9c]
+- Updated dependencies [73ebf15]
+- Updated dependencies [ad1c673]
+- Updated dependencies [fcb29f7]
+- Updated dependencies [0044013]
+- Updated dependencies [0f9c3ca]
+- Updated dependencies [2128771]
+- Updated dependencies [f93ffbe]
+- Updated dependencies [8b529a9]
+- Updated dependencies [c11f8a3]
+- Updated dependencies [8baff58]
+- Updated dependencies [9f858e0]
+- Updated dependencies [b39d40f]
+- Updated dependencies [74b1f8b]
+- Updated dependencies [33cb1d8]
+- Updated dependencies [55acf65]
+- Updated dependencies [3230edb]
+- Updated dependencies [f6a81a2]
+- Updated dependencies [61f1092]
+- Updated dependencies [dc67559]
+- Updated dependencies [6eb8d65]
+- Updated dependencies [3666563]
+- Updated dependencies [17e4cd5]
+- Updated dependencies [d68e9c4]
+- Updated dependencies [d577bfe]
+- Updated dependencies [bdc964b]
+- Updated dependencies [500ddd1]
+- Updated dependencies [33cb1d8]
+- Updated dependencies [ab9a6f4]
+- Updated dependencies [3e1fa7d]
+- Updated dependencies [aeeb48b]
+- Updated dependencies [af020b8]
+- Updated dependencies [291469b]
+- Updated dependencies [fda123f]
+- Updated dependencies [a74c86a]
+- Updated dependencies [85c11ad]
+- Updated dependencies [48da240]
+- Updated dependencies [1484bc6]
+- Updated dependencies [60fe272]
+- Updated dependencies [7c0a70c]
+- Updated dependencies [c63402e]
+- Updated dependencies [ac40af9]
+- Updated dependencies [d2644b5]
+- Updated dependencies [0ed584c]
+- Updated dependencies [11265d7]
+- Updated dependencies [814aa6c]
+- Updated dependencies [5b48b5e]
+- Updated dependencies [9b0c57f]
+- Updated dependencies [6bb3a80]
+- Updated dependencies [a3cf769]
+- Updated dependencies [a3a780b]
+- Updated dependencies [1496a5f]
+- Updated dependencies [749cf21]
+- Updated dependencies [da6226c]
+- Updated dependencies [3b5d381]
+- Updated dependencies [9871b11]
+- Updated dependencies [bf71f50]
+- Updated dependencies [250c8d6]
+- Updated dependencies [04188eb]
+- Updated dependencies [a80436f]
+- Updated dependencies [146d7d1]
+- Updated dependencies [d4606c6]
+- Updated dependencies [0b173cc]
+- Updated dependencies [0a0c8a4]
+- Updated dependencies [1dbae54]
+- Updated dependencies [6917f62]
+- Updated dependencies [6168d0e]
+- Updated dependencies [71d4e51]
+- Updated dependencies [8b772b8]
+- Updated dependencies [d69ddc4]
+- Updated dependencies [e511fb2]
+- Updated dependencies [2c0fbb5]
+- Updated dependencies [ea93480]
+- Updated dependencies [c461e78]
+- Updated dependencies [45d642b]
+- Updated dependencies [fe61b51]
+- Updated dependencies [341cafa]
+- Updated dependencies [1f7f57b]
+- Updated dependencies [ac71ace]
+- Updated dependencies [04b0f76]
+- Updated dependencies [b5a9490]
+- Updated dependencies [d2df32e]
+- Updated dependencies [55f82ea]
+- Updated dependencies [514fce1]
+- Updated dependencies [f8eda6e]
+- Updated dependencies [db4ae58]
+- Updated dependencies [13374f0]
+- Updated dependencies [a68c88c]
+- Updated dependencies [a69aa94]
+- Updated dependencies [ec55a80]
+- Updated dependencies [cc244a1]
+- Updated dependencies [2d187ed]
+- Updated dependencies [8da03fc]
+- Updated dependencies [8fef0a2]
+- Updated dependencies [a56308b]
+- Updated dependencies [06b40ca]
+- Updated dependencies [3da961d]
+- Updated dependencies [a573d78]
+- Updated dependencies [62bef8b]
+- Updated dependencies [5b1c52a]
+- Updated dependencies [2f80e64]
+- Updated dependencies [4ee069d]
+- Updated dependencies [1af8fa3]
+- Updated dependencies [4ee069d]
+- Updated dependencies [f93932d]
+- Updated dependencies [edcc92d]
+- Updated dependencies [90cf44b]
+- Updated dependencies [718613c]
+- Updated dependencies [3029900]
+  - @oppenheimer/shared@0.4.0
+  - @oppenheimer/api-client@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes
