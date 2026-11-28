@@ -17,13 +17,20 @@ import {
 } from './chat';
 import { clearChatProblem, type OppenheimerConnection, readState, writeState } from './store';
 
-/** How long a session a reply was posted to is read at every turn of the loop. */
+/** How long a session a reply was posted to is read every `HOT_READ_MS`. */
 const HOT_MS = 3 * 60_000;
+/** How often a session just replied to is read, and how often the hot loop looks for one. */
+const HOT_READ_MS = 2_000;
+const IDLE_HOT_MS = 1_000;
+/** The shortest a turn of the reply loop takes when no reply came. */
+const MIN_CLAIM_MS = 1_000;
 /** How long the loop waits for a reply while a session is running, and while none is. */
 const BUSY_WAIT_SECONDS = 3;
 const IDLE_WAIT_SECONDS = 10;
 /** Sessions whose log one pass reads, at most. */
 const SESSIONS_PER_PASS = 10;
+/** How long a pass goes on starting sessions, so a pass ends and the next one reorders. */
+const PASS_BUDGET_MS = 20_000;
 /**
  * How long after its claim a reply may still be posted: the start of a post,
  * plus its two attempts (`POST_TIMEOUT_MS` each), ends inside the claim's lease.
@@ -53,13 +60,20 @@ export interface ChatBridge {
 }
 
 /**
- * The chat bridge between claude.ai and the person's Oppenheimer: a loop,
- * while Oppenheimer is connected, that claims the replies typed in the
- * console and posts them on claude.ai, then carries the logs of the sessions
- * that are moving to the console. It owns what the loop keeps: the sessions
- * just replied to, the pass's cap and order, and where each log has got to
- * (`chatSync`). One loop at a time; each request it has open keeps the worker
- * alive. What it does to a request is `chat.ts`.
+ * The chat bridge between claude.ai and the person's Oppenheimer, while
+ * Oppenheimer is connected. Three loops that never wait on each other:
+ *
+ * - **replies**: claims the replies typed in the console and posts them on
+ *   claude.ai at once;
+ * - **hot**: reads a session just replied to every few seconds, so the
+ *   person's message and the agent's answer reach the console as they come;
+ * - **sync**: carries the logs of the sessions that are moving, which for a
+ *   long log can take minutes.
+ *
+ * It owns what they keep: the sessions just replied to, the pass's cap and
+ * order, and where each log has got to (`chatSync`, each session's place
+ * written on its own so the loops never undo each other). What it does to a
+ * request is `chat.ts`.
  */
 export function createChatBridge({
   claudeHeaders,
@@ -68,6 +82,8 @@ export function createChatBridge({
 }: ChatBridgeDeps): ChatBridge {
   /** Sessions a reply was just posted to, and when. Lost with the worker, which is fine. */
   const hot = new Map<string, number>();
+  /** Sessions being read right now, by either loop: one read of a log at a time. */
+  const reading = new Set<string>();
   /**
    * Replies claude.ai took whose confirmation did not reach Oppenheimer, and
    * since when: confirmed again on every turn, so the claim does not lapse
@@ -76,23 +92,38 @@ export function createChatBridge({
   const unconfirmed = new Map<string, number>();
   /** The last refused post, said in the popup until a post goes or its claim lapses. */
   let refusal: { reason: string; until: number } | null = null;
+  /** Why the last pass could not carry a log, said in the popup. */
+  let syncProblem: string | null = null;
   let running = false;
 
   function run() {
     if (running) return;
     running = true;
-    void chatLoop().finally(() => {
+    void Promise.all([replyLoop(), hotLoop(), syncLoop()]).finally(() => {
       running = false;
     });
   }
 
-  async function chatLoop() {
+  async function connected() {
+    return (await readState()).oppenheimer ?? null;
+  }
+
+  async function sayProblem() {
+    if (refusal && Date.now() > refusal.until) refusal = null;
+    const problem =
+      syncProblem ?? (refusal ? `claude.ai refused a reply (${refusal.reason})` : null);
+    if (problem) await writeState({ chatProblem: { at: now(), detail: problem } });
+    else await clearChatProblem();
+  }
+
+  async function replyLoop() {
     for (;;) {
       const { oppenheimer, sessions } = await readState();
       if (!oppenheimer) return;
       await confirmDeliveries(oppenheimer);
       const busy = Object.values(sessions).some((session) => session.state === 'running');
       let replies: ClaimedReply[] = [];
+      const asked = Date.now();
       try {
         replies = await claimReplies(
           oppenheimer,
@@ -102,58 +133,76 @@ export function createChatBridge({
         await writeState({
           chatProblem: { at: now(), detail: String((error as Error).message ?? error) },
         });
-        await new Promise((resolve) => setTimeout(resolve, RETRY_MS));
+        await sleep(RETRY_MS);
         continue;
       }
-      if (replies.length > 0) {
-        const claimedAt = Date.now();
-        const headers = await claudeHeaders();
-        for (const reply of replies) {
-          // A claim near its lease's end is handed back, not posted: past the
-          // lease the Stop hook may take it, and a post then would be the
-          // second delivery. One started in time finishes inside the lease.
-          if (Date.now() - claimedAt > POST_START_WITHIN_MS) {
-            await releaseReply(oppenheimer, reply.id, 'lease').catch(() => {});
-            continue;
-          }
-          const posted = await postReply(reply, headers, postToClaude);
-          if (posted.outcome !== 'refused') {
-            // Taken, or maybe taken: either way it is this extension's to
-            // confirm, so the claim never lapses into a second delivery.
-            refusal = null;
-            hot.set(reply.cloudSessionId, Date.now());
-            unconfirmed.set(reply.id, Date.now());
-          } else {
-            // A refused post keeps its claim until the lease lapses: the
-            // reply then waits for the Stop hook or a host, and this
-            // extension, which cannot claim it meanwhile, tries it at most
-            // once a lease. Releasing it would have it claimed and refused
-            // again at once.
-            refusal = {
-              reason: posted.reason,
-              until: Date.now() + BROWSER_REPLY_LEASE_SECONDS * 1000,
-            };
-          }
-        }
-        await confirmDeliveries(oppenheimer);
-        // claude.ai asked to slow down: nothing goes to it for a while.
-        if (refusal?.reason === '429')
-          await new Promise((resolve) => setTimeout(resolve, RETRY_MS));
+      if (replies.length === 0) {
+        // The API holds a claim open while it waits; one that answered at once
+        // (a proxy, an older API) must not turn this into a busy loop.
+        if (Date.now() - asked < MIN_CLAIM_MS) await sleep(MIN_CLAIM_MS);
+        continue;
       }
-      const synced = await serial(syncPass);
-      // What the popup says: a pass that could not carry a log, else a refused post.
-      if (refusal && Date.now() > refusal.until) refusal = null;
-      const problem = synced ?? (refusal ? `claude.ai refused a reply (${refusal.reason})` : null);
-      if (problem) await writeState({ chatProblem: { at: now(), detail: problem } });
-      else await clearChatProblem();
+      const claimedAt = Date.now();
+      const headers = await claudeHeaders();
+      for (const reply of replies) {
+        // A claim near its lease's end is handed back, not posted: past the
+        // lease the Stop hook may take it, and a post then would be the
+        // second delivery. One started in time finishes inside the lease.
+        if (Date.now() - claimedAt > POST_START_WITHIN_MS) {
+          await releaseReply(oppenheimer, reply.id, 'lease').catch(() => {});
+          continue;
+        }
+        const posted = await postReply(reply, headers, postToClaude);
+        if (posted.outcome !== 'refused') {
+          // Taken, or maybe taken: either way it is this extension's to
+          // confirm, so the claim never lapses into a second delivery.
+          refusal = null;
+          hot.set(reply.cloudSessionId, Date.now());
+          unconfirmed.set(reply.id, Date.now());
+        } else {
+          // A refused post keeps its claim until the lease lapses: the
+          // reply then waits for the Stop hook or a host, and this
+          // extension, which cannot claim it meanwhile, tries it at most
+          // once a lease. Releasing it would have it claimed and refused
+          // again at once.
+          refusal = {
+            reason: posted.reason,
+            until: Date.now() + BROWSER_REPLY_LEASE_SECONDS * 1000,
+          };
+        }
+      }
+      await confirmDeliveries(oppenheimer);
+      await sayProblem();
+      // claude.ai asked to slow down: nothing goes to it for a while.
+      if (refusal?.reason === '429') await sleep(RETRY_MS);
     }
   }
 
-  /**
-   * One pass over the sessions that are moving: reads each one's log from
-   * claude.ai and sends the console what it does not have yet. A session the
-   * console has not seen is adopted there by the first batch.
-   */
+  /** Reads each session just replied to every few seconds, whatever the sync loop is doing. */
+  async function hotLoop() {
+    for (;;) {
+      if (!(await connected())) return;
+      const clock = Date.now();
+      for (const [id, at] of hot) if (clock - at > HOT_MS) hot.delete(id);
+      for (const id of hot.keys()) {
+        if (reading.has(id)) continue;
+        await syncOne(id).catch(() => null);
+      }
+      await sleep(hot.size > 0 ? HOT_READ_MS : IDLE_HOT_MS);
+    }
+  }
+
+  async function syncLoop() {
+    for (;;) {
+      if (!(await connected())) return;
+      syncProblem = await syncPass();
+      await sayProblem();
+      const { sessions } = await readState();
+      const busy = Object.values(sessions).some((session) => session.state === 'running');
+      await sleep((busy ? BUSY_WAIT_SECONDS : IDLE_WAIT_SECONDS) * 1000);
+    }
+  }
+
   /**
    * Tells Oppenheimer which posted replies claude.ai took. One that does not
    * get through stays to be told again, for as long as telling can still
@@ -175,41 +224,49 @@ export function createChatBridge({
     }
   }
 
-  /** Reads the sessions that are moving; answers why one could not be carried, or null. */
-  async function syncPass(): Promise<string | null> {
-    const state = await readState();
-    if (!state.oppenheimer) return null;
-    const clock = Date.now();
-    for (const [id, at] of hot) if (clock - at > HOT_MS) hot.delete(id);
-    const synced: Record<string, ChatSync> = { ...state.chatSync };
-    const due = sessionsToSync(Object.values(state.sessions), synced, new Set(hot.keys()), clock);
-    if (due.length === 0) return null;
-    const headers = await claudeHeaders();
-    let problem: string | null = null;
-    // One session's failure (a refused batch, a log claude.ai will not give)
-    // is said, and the others in the pass still go.
-    for (const session of due.slice(0, SESSIONS_PER_PASS)) {
+  /** Writes one session's place, leaving the others' as the other loop left them. */
+  function keep(sessionId: string, sync: ChatSync) {
+    return serial(async () => {
+      const { chatSync, sessions } = await readState();
+      const kept = Object.fromEntries(
+        Object.entries({ ...chatSync, [sessionId]: sync }).filter(([id]) => id in sessions),
+      );
+      await writeState({ chatSync: kept });
+    });
+  }
+
+  /**
+   * Reads one session's log from where the console's copy got to and sends
+   * it what it lacks; answers why it could not, or null. Each session's place
+   * is kept as soon as it is carried: the worker can be stopped at any time.
+   */
+  async function syncOne(sessionId: string): Promise<string | null> {
+    if (reading.has(sessionId)) return null;
+    reading.add(sessionId);
+    try {
+      const state = await readState();
+      const session = state.sessions[sessionId];
+      if (!state.oppenheimer || !session) return null;
       // A sync kept under older copy rules reads the log again from its first page.
-      const known = current(synced[session.id]);
+      const known = current(state.chatSync?.[sessionId]);
       try {
         const read = await fetchSessionEvents(
-          session.id,
-          headers,
+          sessionId,
+          await claudeHeaders(),
           state.eventsEndpoint ?? null,
           known?.resume ?? null,
         );
         if (!read) {
           // A place to carry on from that no longer answers is dropped: the
           // next read starts from the first page.
-          synced[session.id] = {
+          await keep(sessionId, {
             sent: known?.sent ?? 0,
             at: known?.at ?? '',
             readAt: now(),
             copy: known?.copy,
-          };
+          });
           // No route gave its log: the console's copy is stale, which the popup says.
-          problem ??= `${session.id}: claude.ai gave no event log`;
-          continue;
+          return `${sessionId}: claude.ai gave no event log`;
         }
         // A copy started here is sent newest first when the whole log came;
         // a log too long for one read goes oldest stretch first.
@@ -224,31 +281,55 @@ export function createChatBridge({
           : read.offset === 0 && read.complete
             ? await forwardNewestFirst(state.oppenheimer, session, read.events)
             : await forwardEvents(state.oppenheimer, session, read.events, 0, read.offset);
-        synced[session.id] = {
+        await keep(sessionId, {
           copy: CHAT_COPY_VERSION,
           sent: read.offset + sent,
           // Up to date only once read to the end; a read cut short is due again.
           at: read.complete ? (session.updatedAt ?? now()) : (known?.at ?? ''),
           resume: read.resume,
           readAt: now(),
-        };
+        });
+        return null;
       } catch (error) {
-        synced[session.id] = {
+        await keep(sessionId, {
           ...known,
           sent: known?.sent ?? 0,
           at: known?.at ?? '',
           readAt: now(),
-        };
-        problem ??= `${session.id}: ${String((error as Error).message ?? error)}`;
+        });
+        return `${sessionId}: ${String((error as Error).message ?? error)}`;
       }
+    } finally {
+      reading.delete(sessionId);
     }
-    // Only the sessions still tracked keep a place, so the record stays small.
-    const kept = Object.fromEntries(Object.entries(synced).filter(([id]) => id in state.sessions));
-    await writeState({ chatSync: kept });
+  }
+
+  /** Reads the sessions that are moving; answers why one could not be carried, or null. */
+  async function syncPass(): Promise<string | null> {
+    const state = await readState();
+    if (!state.oppenheimer) return null;
+    const clock = Date.now();
+    const due = sessionsToSync(
+      Object.values(state.sessions),
+      state.chatSync ?? {},
+      new Set(hot.keys()),
+      clock,
+    );
+    let problem: string | null = null;
+    // One session's failure (a refused batch, a log claude.ai will not give)
+    // is said, and the others in the pass still go.
+    for (const session of due.slice(0, SESSIONS_PER_PASS)) {
+      if (Date.now() - clock > PASS_BUDGET_MS) break;
+      problem ??= await syncOne(session.id);
+    }
     return problem;
   }
 
   return { run, syncPass };
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function now() {
