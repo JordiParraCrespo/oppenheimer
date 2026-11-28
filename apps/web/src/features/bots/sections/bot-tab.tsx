@@ -28,6 +28,13 @@ export function BotTab({
       active={active}
       icon={<BotAvatar option={{ initials: bot.initials }} size={16} face={bot.face} />}
       attention={attention}
+      attentionLabel={
+        attention === 'needs-you'
+          ? t('sessions.filters.statuses.needs-you')
+          : attention === 'unread'
+            ? t('sessions.sidebar.unreadLabel')
+            : undefined
+      }
       working={item.working}
       title={bot.name}
       render={<Link to="/sessions/bots/$botId" params={{ botId: bot.id }} />}

@@ -8,23 +8,24 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Input,
   PillTab,
   PillTabs,
 } from '@oppenheimer/design-system-web';
-import { Search } from '@oppenheimer/design-system-web/icons';
 import type { BotEntity, WhatsappChatRouteEntity } from '@oppenheimer/frontend-consumer';
 import { useRouteWhatsappChats } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ToolSearchField } from '@/features/bots/components/tool-search-field';
 
 type Tab = 'group' | 'person';
 
 /**
  * Picks chats of one number for this bot to answer: groups or people, a
  * search, and a tick per chat, each saying who answers it now, since adding
- * it moves it here from them. Owns its write; closes on success.
+ * it moves it here from them. The search field holds what is typed and hands
+ * the list the settled words, so a keystroke does not redraw every chat.
+ * Owns its write; closes on success.
  */
 export function AddBotWhatsappChatsDialog({
   botId,
@@ -90,16 +91,12 @@ export function AddBotWhatsappChatsDialog({
                 <PillTab value="group">{t('bots.settings.gateways.groups')}</PillTab>
                 <PillTab value="person">{t('bots.settings.gateways.people')}</PillTab>
               </PillTabs>
-              <Input
-                type="search"
+              <ToolSearchField
                 size="sm"
-                pill
                 className="ml-auto w-52 max-w-full"
-                leading={<Search className="size-3.5" aria-hidden />}
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={t('bots.settings.gateways.search')}
-                aria-label={t('bots.settings.gateways.search')}
+                onChange={setQuery}
+                label={t('bots.settings.gateways.search')}
               />
             </div>
             <ul className="m-0 flex max-h-80 list-none flex-col overflow-y-auto p-0">

@@ -30,10 +30,7 @@ export function useCountUp(target: number, duration = 700): number {
   const [value, setValue] = useState(() => (reducedMotion() ? target : 0));
   const [done, setDone] = useState(reducedMotion);
   useEffect(() => {
-    if (done) {
-      setValue(target);
-      return;
-    }
+    if (done) return;
     let frame = 0;
     const start = performance.now();
     const whole = Number.isInteger(target);
@@ -48,5 +45,5 @@ export function useCountUp(target: number, duration = 700): number {
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [target, duration, done]);
-  return value;
+  return done ? target : value;
 }

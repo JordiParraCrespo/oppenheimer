@@ -36,6 +36,13 @@ const GLYPHS: Record<Exclude<SessionGlyph, 'vendor'>, ReactNode> = {
   branch: undefined,
 };
 
+/** What a screen reader hears for the row's dot, in the reader's language. */
+const ATTENTION_LABEL = {
+  'needs-you': 'sessions.filters.statuses.needs-you',
+  done: 'sessions.filters.statuses.done',
+  unread: 'sessions.sidebar.unreadLabel',
+} as const;
+
 /**
  * The age is derived on render: `compactAge` returns unit and count, the words
  * are ours to translate, and `null` ("less than a minute") stays blank as in
@@ -189,7 +196,7 @@ export function SessionRow({
       title={statusHint}
       state={rowGlyphFor(session)}
       attention={attention}
-      attentionLabel={attention === 'unread' ? t('sessions.sidebar.unreadLabel') : undefined}
+      attentionLabel={attention ? t(ATTENTION_LABEL[attention]) : undefined}
       working={isWorking(session)}
       // The branch is the row's own default glyph.
       icon={glyph === 'vendor' ? <AgentMark agent={session.agent} /> : GLYPHS[glyph]}
