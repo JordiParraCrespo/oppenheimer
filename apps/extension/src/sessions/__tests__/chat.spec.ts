@@ -260,6 +260,7 @@ describe('sending the log to the console', () => {
 });
 
 describe('posting a reply on claude.ai', () => {
+  const online = () => true;
   const reply = {
     id: '0b8f0c2e-6b8c-4f1e-9c9e-2f0e6b0e8a11',
     cloudSessionId: ID,
@@ -269,7 +270,9 @@ describe('posting a reply on claude.ai', () => {
   it('posts it as the person’s message, with the reply’s id so a repeat is one message', async () => {
     const init = vi.fn(async (_url: string, _init: RequestInit) => json({}));
     vi.stubGlobal('fetch', init);
-    expect(await postReply(reply, { 'x-organization-uuid': 'org' })).toEqual({ ok: true });
+    expect(await postReply(reply, { 'x-organization-uuid': 'org' }, online)).toEqual({
+      outcome: 'posted',
+    });
     const [url, sent] = init.mock.calls[0] ?? [];
     expect(url).toBe(`https://claude.ai/v1/sessions/${ID}/events`);
     expect(JSON.parse(String(sent?.body))).toEqual({
@@ -285,12 +288,33 @@ describe('posting a reply on claude.ai', () => {
     expect(sent?.credentials).toBe('include');
   });
 
+  it('counts a post that got no answer as maybe delivered, and tries no other route', async () => {
+    const calls = vi.fn(async () => {
+      throw new DOMException('timed out', 'TimeoutError');
+    });
+    vi.stubGlobal('fetch', calls);
+    // Breaks if a post claude.ai may have taken is handed to the hook or a
+    // host, or posted again on the second route: the agent would get it twice.
+    expect(await postReply(reply, {}, online)).toEqual({ outcome: 'uncertain' });
+    expect(calls).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses at once when Chrome is offline, as nothing went', async () => {
+    const calls = vi.fn(async () => json({}));
+    vi.stubGlobal('fetch', calls);
+    expect(await postReply(reply, {}, () => false)).toEqual({
+      outcome: 'refused',
+      reason: 'offline',
+    });
+    expect(calls).not.toHaveBeenCalled();
+  });
+
   it('says why when claude.ai takes it on neither route, so it is handed back', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => json({}, 403)),
     );
-    expect(await postReply(reply, {})).toEqual({ ok: false, reason: '403' });
+    expect(await postReply(reply, {}, online)).toEqual({ outcome: 'refused', reason: '403' });
   });
 });
 

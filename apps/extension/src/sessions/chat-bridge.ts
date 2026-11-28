@@ -107,7 +107,9 @@ export function createChatBridge({ claudeHeaders, serial }: ChatBridgeDeps): Cha
             continue;
           }
           const posted = await postReply(reply, headers);
-          if (posted.ok) {
+          if (posted.outcome !== 'refused') {
+            // Taken, or maybe taken: either way it is this extension's to
+            // confirm, so the claim never lapses into a second delivery.
             refusal = null;
             hot.set(reply.cloudSessionId, Date.now());
             unconfirmed.set(reply.id, Date.now());

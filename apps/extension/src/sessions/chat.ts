@@ -313,13 +313,23 @@ export async function releaseReply(
 /**
  * Posts a reply on claude.ai as the person's next message in the session, the
  * call the Claude Code CLI makes for `claude --cloud`: a `user` event on the
- * session's log, with an id of its own so a repeat is one message. Tries the
- * session API, then the code-sessions route; says why when neither took it.
+ * session's log, with the reply's own id. Tries the session API, then the
+ * code-sessions route, each only when the one before certainly refused.
+ *
+ * - `posted`: claude.ai took it.
+ * - `uncertain`: a request went and no answer came (it timed out, or the
+ *   connection broke). claude.ai may have it, so it counts as delivered, as
+ *   a host's unconfirmed send does: a reply the agent gets twice is worse than
+ *   one the person sees stay "sent" and types again. No other route is tried.
+ * - `refused`: every route answered no, or this Chrome is offline and nothing
+ *   went; it is safe to deliver another way.
  */
 export async function postReply(
   reply: ClaimedReply,
   headers: Record<string, string>,
-): Promise<{ ok: true } | { ok: false; reason: string }> {
+  online: () => boolean = () => navigator.onLine,
+): Promise<{ outcome: 'posted' | 'uncertain' } | { outcome: 'refused'; reason: string }> {
+  if (!online()) return { outcome: 'refused', reason: 'offline' };
   const event = {
     type: 'user',
     uuid: reply.id,
@@ -335,19 +345,24 @@ export async function postReply(
       body: { events: [{ payload: event }] },
     },
   ];
-  let reason = 'network';
+  let reason = 'refused';
   for (const attempt of attempts) {
-    const response = await fetch(attempt.url, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify(attempt.body),
-      signal: AbortSignal.timeout(POST_TIMEOUT_MS),
-    }).catch(() => null);
-    if (response?.ok) return { ok: true };
-    if (response) reason = String(response.status);
+    let response: Response;
+    try {
+      response = await fetch(attempt.url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(attempt.body),
+        signal: AbortSignal.timeout(POST_TIMEOUT_MS),
+      });
+    } catch {
+      return { outcome: 'uncertain' };
+    }
+    if (response.ok) return { outcome: 'posted' };
+    reason = String(response.status);
   }
-  return { ok: false, reason };
+  return { outcome: 'refused', reason };
 }
 
 /**
