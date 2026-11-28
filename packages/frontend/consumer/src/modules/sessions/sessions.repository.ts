@@ -488,7 +488,7 @@ export class SessionsRepository {
       return {
         lines: data.lines,
         next: data.next,
-        start: data.start ? `${data.start.seq}@${data.start.at}` : null,
+        held: data.held,
         source: data.source,
         replies: data.replies.map((reply) => ({
           id: reply.id,

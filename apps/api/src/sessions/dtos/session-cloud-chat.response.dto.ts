@@ -52,15 +52,6 @@ export class CollectedCloudReplyResponseDto {
   text!: string | null;
 }
 
-/** Where a cloud chat's copy starts. */
-export class CloudChatStartResponseDto {
-  @ApiProperty({ description: 'The first line’s number.' })
-  seq!: number;
-
-  @ApiProperty({ format: 'date-time', description: 'When that line was stored.' })
-  at!: string;
-}
-
 /** `GET /v1/sessions/{id}/cloud-chat`. */
 export class CloudChatResponseDto {
   @ApiProperty({
@@ -74,12 +65,10 @@ export class CloudChatResponseDto {
   next!: number;
 
   @ApiProperty({
-    type: CloudChatStartResponseDto,
-    nullable: true,
     description:
-      'Where the copy starts: its first line’s number and when it was stored; null with no lines. When it moves, lines landed before what was read (an older stretch of the log) or the copy started again: read again with no `from`.',
+      'How many lines the copy holds before `next`. A reader that has read fewer since it read with no `from` missed lines that landed below what it read (a stretch of the log sent after a newer one): read again with no `from`.',
   })
-  start!: CloudChatStartResponseDto | null;
+  held!: number;
 
   @ApiProperty({
     enum: CLOUD_CHAT_SOURCES,

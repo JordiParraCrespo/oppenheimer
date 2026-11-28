@@ -2180,17 +2180,6 @@ export type SentCloudReplyResponseDto = {
     id: string;
 };
 
-export type CloudChatStartResponseDto = {
-    /**
-     * The first line’s number.
-     */
-    seq: number;
-    /**
-     * When that line was stored.
-     */
-    at: string;
-};
-
 export type CloudChatReplyResponseDto = {
     id: string;
     text: string;
@@ -2216,9 +2205,9 @@ export type CloudChatResponseDto = {
      */
     next: number;
     /**
-     * Where the copy starts: its first line’s number and when it was stored; null with no lines. When it moves, lines landed before what was read (an older stretch of the log) or the copy started again: read again with no `from`.
+     * How many lines the copy holds before `next`. A reader that has read fewer since it read with no `from` missed lines that landed below what it read (a stretch of the log sent after a newer one): read again with no `from`.
      */
-    start: CloudChatStartResponseDto | null;
+    held: number;
     /**
      * Where the lines come from: `hook`, the transcript the session’s hook sends; `browser`, the session’s log on claude.ai, which the browser extension reads. When it changes, the lines are numbered anew: read again from 0.
      */

@@ -38,12 +38,12 @@ export interface CloudChatPage {
   /** Where the next read starts. */
   next: number;
   /**
-   * Where the copy starts (its first line and when it was stored), as one
-   * token; null for an empty copy. When it moves, lines landed before those
-   * read, or the copy started again: the chat is read again from its start.
-   * Absent when the source says nothing of it.
+   * How many lines the copy holds before `next`. When it is not how many were
+   * read since the chat was read from its start, lines landed below what was
+   * read (a stretch of the log sent after a newer one): the chat is read
+   * again from its start. Absent when the source says nothing of it.
    */
-  start?: string | null;
+  held?: number;
   /**
    * Where the lines come from: the session's hook, or its log on claude.ai
    * read by the browser extension. The two number the lines apart, so a
@@ -152,8 +152,8 @@ function textOf(content: unknown): string | null {
 export class CloudChatFeed {
   /** Where the next read starts; null, from the copy's start. */
   private next: number | null = null;
-  /** Where the copy started when it was read from its start; undefined before then. */
-  private copyStart: string | null | undefined;
+  /** Lines read since the chat was last read from its start. */
+  private readCount = 0;
   /** Where the lines read so far came from; null before the first read. */
   private origin: CloudChatOrigin | null = null;
   /** How many times each reply's words came back in the transcript. */
@@ -272,7 +272,8 @@ export class CloudChatFeed {
       const page = await this.source.read(this.next);
       if (this.stopped) return;
       const switched = this.origin !== null && page.source !== this.origin;
-      const moved = !first && this.copyStart !== undefined && page.start !== this.copyStart;
+      const counted = (first ? 0 : this.readCount) + page.lines.length;
+      const moved = page.held !== undefined && page.held !== counted;
       if (switched || moved) {
         // The extension's lines replaced the hook's (numbered anew), an older
         // stretch of the log landed before what was read, or the copy started
@@ -284,7 +285,7 @@ export class CloudChatFeed {
         this.reset = true;
         return this.read();
       }
-      if (first) this.copyStart = page.start;
+      this.readCount = counted;
       this.origin = page.source;
       const read = page.lines.map(asChatLine);
       for (const { reply, prompt } of read) {

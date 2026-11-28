@@ -241,30 +241,35 @@ describe('CloudChatFeed', () => {
     stop();
   });
 
-  it('reads the chat again from its start when an older stretch lands before what it read', async () => {
-    // Regression: the copy only grew at its end, so a log sent newest first
-    // (its older stretches after) would never reach a chat already open.
+  it('reads the chat again from its start when lines land below what it read', async () => {
+    // Regressions: the copy only grew at its end, so a log sent newest first
+    // (its older stretches after) never reached a chat already open; and a
+    // stretch that landed between lines read, with the copy's start unmoved,
+    // was never drawn.
     vi.useFakeTimers();
     const chat = new SessionChat();
     const prompt = (uuid: string, text: string) =>
       line({ type: 'user', uuid, message: { role: 'user', content: text } });
     const { source } = sourceOf([
+      // The log's first event and its newest, at places 0 and 3.
       {
-        lines: [prompt('e3', 'Also the signup page')],
-        next: 1,
-        start: '0@a',
+        lines: [prompt('e1', 'Fix the login page'), prompt('e4', 'Also the signup page')],
+        next: 4,
+        held: 2,
         source: 'browser',
         replies: [],
       },
-      { lines: [], next: 1, start: '-2@b', source: 'browser', replies: [] },
+      // Places 1 and 2 landed below what was read: four held before 4.
+      { lines: [], next: 4, held: 4, source: 'browser', replies: [] },
       {
         lines: [
           prompt('e1', 'Fix the login page'),
           prompt('e2', 'And its test'),
-          prompt('e3', 'Also the signup page'),
+          prompt('e3', 'Then run it'),
+          prompt('e4', 'Also the signup page'),
         ],
-        next: 1,
-        start: '-2@b',
+        next: 4,
+        held: 4,
         source: 'browser',
         replies: [],
       },
@@ -277,11 +282,12 @@ describe('CloudChatFeed', () => {
     const stop = feed.start();
     await vi.advanceTimersByTimeAsync(1000);
     expect(source.read).toHaveBeenNthCalledWith(1, null);
-    expect(source.read).toHaveBeenNthCalledWith(2, 1);
+    expect(source.read).toHaveBeenNthCalledWith(2, 4);
     expect(source.read).toHaveBeenNthCalledWith(3, null);
     expect(chat.snapshot().turns.map((turn) => turn.prompt?.text)).toEqual([
       'Fix the login page',
       'And its test',
+      'Then run it',
       'Also the signup page',
     ]);
     stop();

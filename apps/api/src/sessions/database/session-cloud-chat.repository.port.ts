@@ -6,12 +6,6 @@ export interface CloudChatLine {
   line: string;
 }
 
-/** Where a session's copy of its log starts (`findStart`). */
-export interface CloudChatStart {
-  seq: number;
-  at: Date;
-}
-
 /** What a person typed in a cloud session's chat. */
 export interface CloudChatReply {
   id: string;
@@ -73,11 +67,11 @@ export interface SessionCloudChatRepositoryPort {
     from?: number,
   ): Promise<number>;
   /**
-   * Where the session's copy starts: its first line's number, and when that
-   * line was stored. Either moving tells a reader the copy changed below what
-   * it read (an older stretch landed, or the copy started again).
+   * How many lines the copy holds before `before`. A reader compares it with
+   * how many it has read: lines that landed below what it read (a stretch of
+   * the log sent after a newer one) make the two differ.
    */
-  findStart(sessionId: string): Promise<CloudChatStart | null>;
+  countLinesBefore(sessionId: string, before: number): Promise<number>;
   /** Where the session's lines came from: the extension once it has sent any, else the hook. */
   findSource(sessionId: string): Promise<CloudChatSource>;
   /** The lines numbered `from` and on, in order, at most `limit`. */

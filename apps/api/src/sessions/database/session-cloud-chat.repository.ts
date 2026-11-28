@@ -8,7 +8,6 @@ import type {
   CloudChatEvent,
   CloudChatLine,
   CloudChatReply,
-  CloudChatStart,
   CloudReplyWake,
   SessionCloudChatRepositoryPort,
 } from './session-cloud-chat.repository.port';
@@ -188,14 +187,13 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     return rows;
   }
 
-  async findStart(sessionId: string): Promise<CloudChatStart | null> {
-    // PK_session_cloud_line: the session's lowest number, one probe.
-    const [row]: { seq: number; createdAt: Date }[] = await this.lines.query(
-      `SELECT "seq", "createdAt" FROM session_cloud_line
-        WHERE "sessionId" = $1 ORDER BY "seq" LIMIT 1`,
-      [sessionId],
+  async countLinesBefore(sessionId: string, before: number): Promise<number> {
+    // PK_session_cloud_line: a range of one session's numbers, counted in the index.
+    const [row]: { held: string }[] = await this.lines.query(
+      `SELECT count(*) AS held FROM session_cloud_line WHERE "sessionId" = $1 AND "seq" < $2`,
+      [sessionId, before],
     );
-    return row ? { seq: row.seq, at: new Date(row.createdAt) } : null;
+    return Number(row?.held ?? 0);
   }
 
   async addReply(

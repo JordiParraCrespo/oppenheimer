@@ -34877,24 +34877,6 @@
           "id"
         ]
       },
-      "CloudChatStartResponseDto": {
-        "type": "object",
-        "properties": {
-          "seq": {
-            "type": "number",
-            "description": "The first line’s number."
-          },
-          "at": {
-            "type": "string",
-            "format": "date-time",
-            "description": "When that line was stored."
-          }
-        },
-        "required": [
-          "seq",
-          "at"
-        ]
-      },
       "CloudChatReplyResponseDto": {
         "type": "object",
         "properties": {
@@ -34951,15 +34933,9 @@
             "type": "number",
             "description": "The number to ask from next."
           },
-          "start": {
-            "nullable": true,
-            "description": "Where the copy starts: its first line’s number and when it was stored; null with no lines. When it moves, lines landed before what was read (an older stretch of the log) or the copy started again: read again with no `from`.",
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/CloudChatStartResponseDto"
-              }
-            ]
+          "held": {
+            "type": "number",
+            "description": "How many lines the copy holds before `next`. A reader that has read fewer since it read with no `from` missed lines that landed below what it read (a stretch of the log sent after a newer one): read again with no `from`."
           },
           "source": {
             "type": "string",
@@ -34980,7 +34956,7 @@
         "required": [
           "lines",
           "next",
-          "start",
+          "held",
           "source",
           "replies"
         ]

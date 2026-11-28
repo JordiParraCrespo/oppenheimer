@@ -288,7 +288,6 @@ describe('sessions: cloud chat replies (integration)', () => {
         Array.from({ length: to - from + 1 }, (_, i) => event(from + i));
       // One browser sent the log's first 200 events (places 0–199).
       expect(await chat.appendEvents(organizationId, cloudId, stretch(1, 200), 0)).toBe(200);
-      const before = await chat.findStart(cloudId);
       // Another reads the whole log, 401 events, and sends it newest first.
       expect(await chat.appendEvents(organizationId, cloudId, [event(401)], 400)).toBe(1);
       expect(await chat.appendEvents(organizationId, cloudId, stretch(201, 400), 200)).toBe(200);
@@ -303,26 +302,19 @@ describe('sessions: cloud chat replies (integration)', () => {
         stretch(1, 402).map((each) => each.id),
       );
       expect(lines.map((each) => each.seq)).toEqual(Array.from({ length: 402 }, (_, i) => i));
-      expect((await chat.findStart(cloudId))?.seq).toBe(before?.seq);
     });
 
-    it('moves its start when an older stretch lands below the newest one sent first', async () => {
+    it('counts the lines below a reader’s place, so a stretch that lands under it shows', async () => {
       const event = (n: number) => ({ id: `e${n}`, line: entry(`e${n}`, `turn ${n}`) });
-      expect(await chat.appendEvents(organizationId, cloudId, [event(4), event(5)], 3)).toBe(2);
-      expect((await chat.findStart(cloudId))?.seq).toBe(3);
-      expect(
-        await chat.appendEvents(organizationId, cloudId, [event(1), event(2), event(3)], 0),
-      ).toBe(3);
-      // The start moved, so a reader knows to read the copy again.
-      expect((await chat.findStart(cloudId))?.seq).toBe(0);
+      // The log's first and newest events, at places 0 and 3: a reader at 4 has read 2.
+      expect(await chat.appendEvents(organizationId, cloudId, [event(1)], 0)).toBe(1);
+      expect(await chat.appendEvents(organizationId, cloudId, [event(4)], 3)).toBe(1);
+      expect(await chat.countLinesBefore(cloudId, 4)).toBe(2);
+      // Places 1 and 2 land below it: the count moves, the copy's start does not.
+      expect(await chat.appendEvents(organizationId, cloudId, [event(2), event(3)], 1)).toBe(2);
+      expect(await chat.countLinesBefore(cloudId, 4)).toBe(4);
       const lines = await chat.findLines(cloudId, undefined, 10);
-      expect(lines.map((each) => JSON.parse(each.line).uuid)).toEqual([
-        'e1',
-        'e2',
-        'e3',
-        'e4',
-        'e5',
-      ]);
+      expect(lines.map((each) => JSON.parse(each.line).uuid)).toEqual(['e1', 'e2', 'e3', 'e4']);
     });
 
     it('numbers two batches written at once without a gap or a clash', async () => {
