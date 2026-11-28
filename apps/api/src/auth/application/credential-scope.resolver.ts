@@ -188,6 +188,9 @@ export class CredentialScopeResolver implements CredentialScopePort {
         resourceScope: toResourceScope(null),
         expiresAt: grant.accessTokenExpiresAt ? new Date(grant.accessTokenExpiresAt) : null,
         issuedAt: new Date(grant.issuedAt),
+        // The access token's expiry is the hour it is refreshed in, not the end
+        // of the grant, and a grant is not confined to addresses: no bound.
+        mintingBounds: { expiresAt: null, ipAllowlist: null },
       },
     };
   }

@@ -132,7 +132,8 @@ describe('preview proxy', () => {
       }
       res.writeHead(200, {
         'content-type': 'application/json',
-        'set-cookie': 'sid=1; Domain=localhost; Path=/',
+        // Two `Domain`s: the browser honours the last, so both must go.
+        'set-cookie': 'sid=1; Domain=localhost; Path=/; Domain=localhost',
       });
       res.end(
         JSON.stringify({
@@ -211,6 +212,10 @@ describe('preview proxy', () => {
     const cookie = (answer.headers['set-cookie'] ?? [])[0] ?? '';
     // Partitioned under the console's site, so another site framing it carries none.
     expect(cookie).toMatch(/SameSite=None; Secure; Partitioned/);
+    // `__Host-`: a sibling preview cannot plant one, having no `Domain` to set it on.
+    expect(cookie).toMatch(/^__Host-oppenheimer_preview=/);
+    expect(cookie).toMatch(/; Path=\/;/);
+    expect(cookie).not.toMatch(/domain=/i);
     return cookie.split(';')[0] as string;
   }
 
@@ -251,6 +256,23 @@ describe('preview proxy', () => {
       'sid=1; Path=/; SameSite=None; Secure; Partitioned',
     ]);
     expect(answer.headers['content-security-policy']).toBe(`frame-ancestors ${CONSOLE}`);
+  });
+
+  it('serves the reader whose cookie verifies when another under the same name comes first', async () => {
+    const cookie = await enter();
+    const planted = '__Host-oppenheimer_preview=e30.forged';
+    const answer = await ask(apiPort, previewHost, '/docs', { cookie: `${planted}; ${cookie}` });
+    expect(answer.status).toBe(200);
+    expect(JSON.parse(answer.body).cookie).toBeNull();
+  });
+
+  it('no longer reads the cookie under its old name: the reader comes back through a ticket', async () => {
+    const value = (await enter()).split('=').slice(1).join('=');
+    const answer = await ask(apiPort, previewHost, '/docs', {
+      cookie: `__oppenheimer_preview=${value}`,
+    });
+    expect(answer.status).toBe(401);
+    expect(link.opened).toBe(0);
   });
 
   it('brings a redirect to localhost back to the preview, framable by the console alone', async () => {

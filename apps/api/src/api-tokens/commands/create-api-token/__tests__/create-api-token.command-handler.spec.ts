@@ -239,5 +239,69 @@ describe('CreateApiTokenCommandHandler', () => {
       );
       expect(repo.insertWithinLimit).toHaveBeenCalledTimes(1);
     });
+
+    const inDays = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+
+    it('refuses a token that would outlive the presenting token, or never expire, and writes nothing', async () => {
+      const expiring = { ...narrow, expiresAt: inDays(7) };
+      for (const expiresInDays of [null, undefined, 8]) {
+        await expect(
+          service.execute(
+            command({
+              actor: { id: 'user-1', role: 'user', credential: expiring },
+              scopes: ['tokens:write'],
+              organizationIds: ['org-1'],
+              expiresInDays,
+            }),
+          ),
+        ).rejects.toMatchObject({ code: 'TOKEN_002', extensions: { ungrantableScopes: [] } });
+      }
+      expect(repo.insertWithinLimit).not.toHaveBeenCalled();
+    });
+
+    it('mints a token that expires before the presenting token does', async () => {
+      await service.execute(
+        command({
+          actor: { id: 'user-1', role: 'user', credential: { ...narrow, expiresAt: inDays(7) } },
+          scopes: ['tokens:write'],
+          organizationIds: ['org-1'],
+          expiresInDays: 6,
+        }),
+      );
+      expect(repo.insertWithinLimit).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses a token accepted from more addresses than the presenting token, and writes nothing', async () => {
+      const bound = { ...narrow, ipAllowlist: ['203.0.113.0/24'] };
+      for (const ipAllowlist of [undefined, [], ['198.51.100.7'], ['203.0.112.0/23']]) {
+        await expect(
+          service.execute(
+            command({
+              actor: { id: 'user-1', role: 'user', credential: bound },
+              scopes: ['tokens:write'],
+              organizationIds: ['org-1'],
+              ipAllowlist,
+            }),
+          ),
+        ).rejects.toMatchObject({ code: 'TOKEN_002', extensions: { ungrantableScopes: [] } });
+      }
+      expect(repo.insertWithinLimit).not.toHaveBeenCalled();
+    });
+
+    it('mints a token whose addresses lie within the presenting token’s', async () => {
+      await service.execute(
+        command({
+          actor: {
+            id: 'user-1',
+            role: 'user',
+            credential: { ...narrow, ipAllowlist: ['203.0.113.0/24'] },
+          },
+          scopes: ['tokens:write'],
+          organizationIds: ['org-1'],
+          ipAllowlist: ['203.0.113.7', '203.0.113.128/25'],
+        }),
+      );
+      expect(repo.insertWithinLimit).toHaveBeenCalledTimes(1);
+    });
   });
 });

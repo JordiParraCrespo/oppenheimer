@@ -136,6 +136,40 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
     return revoked.length;
   }
 
+  /**
+   * One transaction for every token and its event. The rows are locked as they
+   * are read, so a redelivery running beside the first waits and then finds
+   * them revoked, rather than both raising events. `@>` on the jsonb pin, after
+   * the `userId` index has narrowed the rows to one owner's (at most the mint
+   * limit of usable ones).
+   */
+  async revokePinnedTo(userId: string, organizationId: string, now: Date): Promise<string[]> {
+    const tokens = await this.outbox.transaction(async (manager) => {
+      const repository = manager.getRepository(ApiTokenOrmEntity);
+      const records = await repository
+        .createQueryBuilder('token')
+        .setLock('pessimistic_write')
+        .where('token.userId = :userId', { userId })
+        .andWhere('token.revokedAt IS NULL')
+        .andWhere('token.organizationIds @> :pin::jsonb', {
+          pin: JSON.stringify([organizationId]),
+        })
+        .getMany();
+      const revoked = records.map((record) => this.mapper.toDomain(record));
+      for (const token of revoked) {
+        token.revoke(now);
+        await repository.save(this.mapper.toPersistence(token));
+      }
+      await this.outbox.stageEvents(
+        manager,
+        revoked.flatMap((token) => token.domainEvents),
+      );
+      return revoked;
+    });
+    for (const token of tokens) token.clearEvents();
+    return tokens.map((token) => token.id);
+  }
+
   async delete(entity: ApiTokenEntity): Promise<boolean> {
     const result = await this.outbox.writeWithEvents([entity], (manager) =>
       manager.getRepository(ApiTokenOrmEntity).delete({

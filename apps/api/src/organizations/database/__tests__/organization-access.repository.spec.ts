@@ -10,21 +10,22 @@ function repositoryWith(fallback: { organizationId: string } | null) {
     findOne: vi.fn().mockResolvedValue(fallback),
     update: vi.fn().mockResolvedValue({ affected: 1 }),
   };
-  const dataSource = {
+  const outbox = {
     transaction: vi.fn(async (work: (m: typeof manager) => Promise<void>) => work(manager)),
+    stageEvents: vi.fn().mockResolvedValue(undefined),
   };
   const userRoles = { setRolesForUser: vi.fn().mockResolvedValue(undefined) };
-  const repository = new OrganizationAccessRepository(dataSource as never, userRoles as never);
-  return { repository, manager, dataSource, userRoles };
+  const repository = new OrganizationAccessRepository(userRoles as never, outbox as never);
+  return { repository, manager, outbox, userRoles };
 }
 
 describe('OrganizationAccessRepository.revokeFor', () => {
   it('takes the roles, grants and session selection in one transaction', async () => {
-    const { repository, manager, dataSource, userRoles } = repositoryWith(null);
+    const { repository, manager, outbox, userRoles } = repositoryWith(null);
 
     await repository.revokeFor('u1', 'org1');
 
-    expect(dataSource.transaction).toHaveBeenCalledOnce();
+    expect(outbox.transaction).toHaveBeenCalledOnce();
     // The roles module writes its own table, on this transaction's manager.
     expect(userRoles.setRolesForUser).toHaveBeenCalledWith('u1', [], 'org1', manager);
     expect(manager.delete).toHaveBeenCalledWith(AccessGrantOrmEntity, {
@@ -36,6 +37,22 @@ describe('OrganizationAccessRepository.revokeFor', () => {
       Session,
       { userId: 'u1', activeOrganizationId: 'org1' },
       { activeOrganizationId: null, activeTeamId: null },
+    );
+  });
+
+  // Staged on the revocation's own transaction: a listener that revokes the
+  // person's pinned tokens hears of every ended membership, and of none that
+  // rolled back.
+  it('stages the ended membership on the outbox, in the same transaction', async () => {
+    const { repository, manager, outbox } = repositoryWith(null);
+
+    await repository.revokeFor('u1', 'org1');
+
+    expect(outbox.stageEvents).toHaveBeenCalledWith(manager, [
+      expect.objectContaining({ aggregateId: 'org1', userId: 'u1' }),
+    ]);
+    expect(outbox.stageEvents.mock.calls[0][1][0].constructor.name).toBe(
+      'MembershipEndedDomainEvent',
     );
   });
 

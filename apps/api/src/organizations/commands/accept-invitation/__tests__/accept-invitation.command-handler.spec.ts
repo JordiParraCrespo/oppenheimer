@@ -24,7 +24,9 @@ describe('AcceptInvitationCommandHandler', () => {
     reopen: vi.fn(),
     markAccepted: vi.fn(),
   };
-  const workspaces = { isMember: vi.fn() };
+  const members = { findMembership: vi.fn() };
+  const membership = (role: string) =>
+    Some({ id: 'm2', organizationId: 'org1', userId: 'u2', role });
   const grant = vi.fn();
   // Behaves as `MembershipAccessPolicy.admit` does: write, grant, undo on failure.
   const membershipAccess = {
@@ -48,7 +50,7 @@ describe('AcceptInvitationCommandHandler', () => {
     // Reset, not clear: a test that makes `leave` reject must not hand that to the next.
     vi.resetAllMocks();
     invitations.findOneById.mockResolvedValue(None);
-    workspaces.isMember.mockResolvedValue(false);
+    members.findMembership.mockResolvedValue(None);
     grant.mockResolvedValue(undefined);
     invitations.reopen.mockResolvedValue(undefined);
     invitations.markAccepted.mockResolvedValue(undefined);
@@ -56,7 +58,7 @@ describe('AcceptInvitationCommandHandler', () => {
       invitationAuth as never,
       organizations as never,
       invitations as never,
-      workspaces as never,
+      members as never,
       membershipAccess as never,
     );
   });
@@ -132,7 +134,7 @@ describe('AcceptInvitationCommandHandler', () => {
 
   it('finishes an already-accepted invitation for the same member', async () => {
     invitations.findOneById.mockResolvedValue(Some({ ...invitation, status: 'accepted' }));
-    workspaces.isMember.mockResolvedValue(true);
+    members.findMembership.mockResolvedValue(membership('member'));
 
     expect(await accept({ id: 'u2', email: 'INVITEE@x.com' })).toBe('inv1');
     expect(invitationAuth.accept).not.toHaveBeenCalled();
@@ -140,9 +142,24 @@ describe('AcceptInvitationCommandHandler', () => {
     expect(grant).toHaveBeenCalledWith(expect.objectContaining({ userId: 'u2' }));
   });
 
+  // A demoted admin replaying the invitation that made them one: the replay
+  // grants what the roster says now, never what the invitation once said, or
+  // re-accepting would hand back the `owner` role the demotion took.
+  it('re-grants the member’s current organization role on a replay, not the invitation’s', async () => {
+    invitations.findOneById.mockResolvedValue(
+      Some({ ...invitation, role: 'admin', status: 'accepted' }),
+    );
+    members.findMembership.mockResolvedValue(membership('member'));
+
+    await accept({ id: 'u2', email: invitation.email });
+
+    expect(grant).toHaveBeenCalledTimes(1);
+    expect(grant).toHaveBeenCalledWith(expect.objectContaining({ role: 'member' }));
+  });
+
   it('does not leave a membership that predates the request', async () => {
     invitations.findOneById.mockResolvedValue(Some({ ...invitation, status: 'accepted' }));
-    workspaces.isMember.mockResolvedValue(true);
+    members.findMembership.mockResolvedValue(membership('member'));
     grant.mockRejectedValue(new Error('grant failed'));
 
     await expect(accept({ id: 'u2', email: invitation.email })).rejects.toThrow('grant failed');
@@ -165,7 +182,7 @@ describe('AcceptInvitationCommandHandler', () => {
 
     await accept({ id: 'u2', email: invitation.email });
 
-    expect(workspaces.isMember).toHaveBeenCalledWith('org1', 'u2');
+    expect(members.findMembership).toHaveBeenCalledWith('org1', 'u2');
     expect(invitationAuth.accept).toHaveBeenCalled();
   });
 });

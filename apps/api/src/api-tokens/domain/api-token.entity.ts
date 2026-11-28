@@ -69,6 +69,9 @@ export interface IssueApiTokenProps {
 }
 
 /** Why a credential was refused; see `rejectionReason`. */
+/** The `kind` an API token's credential context carries. */
+export const API_TOKEN_CREDENTIAL_KIND = 'api-token';
+
 export type ApiTokenRejection = 'revoked' | 'expired' | 'ip-not-allowed';
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;

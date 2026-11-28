@@ -63,3 +63,30 @@ func TestACommandPastTheLimitIsRefusedNotQueued(t *testing.T) {
 		t.Fatalf("a slot was not given back: %v", err)
 	}
 }
+
+// A bot's folder is one name under `bots/`: one that climbs out of it, names
+// a path inside another, or names `bots/` itself is refused before anything
+// is made or run.
+func TestABotFolderThatIsNotOneNameIsRefused(t *testing.T) {
+	ran := &countingExecutor{}
+	svc := app.New(app.Options{Prober: fake.New(), WorkspaceRoot: t.TempDir(), ExecPolicies: fullPolicy{}, Executor: ran})
+	for _, home := range []string{"", ".", "..", "../escape", "juno/../../escape", "a/b", `a\b`, "/etc"} {
+		_, err := svc.Exec(context.Background(), domain.ExecRequest{Argv: []string{"true"}, Home: home})
+		var prob *problem.Error
+		if !errors.As(err, &prob) || prob.Code != domain.ErrExecFolder.Code {
+			t.Errorf("home %q: err = %v, want %s", home, err, domain.ErrExecFolder.Code)
+		}
+	}
+	if ran.runs != 0 {
+		t.Fatalf("a refused folder ran %d programs", ran.runs)
+	}
+}
+
+// countingExecutor runs nothing and counts what it was asked to run.
+type countingExecutor struct{ runs int }
+
+func (c *countingExecutor) Run(context.Context, domain.ExecRequest) (domain.ExecResult, error) {
+	c.runs++
+	code := 0
+	return domain.ExecResult{ExitCode: &code}, nil
+}

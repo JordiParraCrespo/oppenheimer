@@ -60,6 +60,7 @@ export class CreateApiTokenCommandHandler
       ungrantableScopes(ability, command.scopes),
       command.actor.credential,
       command,
+      new Date(),
     );
     if (refusal) {
       throw new AppError(ApiTokenErrors.SCOPES_EXCEED_GRANTER, {

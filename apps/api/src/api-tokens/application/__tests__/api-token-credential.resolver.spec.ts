@@ -7,6 +7,7 @@ import type { CredentialOwnerPort } from '../../../auth/application/credential-o
 import { AuthErrors } from '../../../auth/domain/auth.errors';
 import type { CredentialOwner, ScopedRequest } from '../../../auth/domain/scope-context.types';
 import type { ApiTokenRepositoryPort } from '../../database/api-token.repository.port';
+import type { OrganizationMembershipReaderPort } from '../../database/organization-membership.repository.port';
 import { ApiTokenEntity } from '../../domain/api-token.entity';
 import { hashApiTokenSecret } from '../../domain/api-token-secret.factory';
 import { ApiTokenCredentialResolver } from '../api-token-credential.resolver';
@@ -26,6 +27,7 @@ const request = (ip = '203.0.113.7') => ({ headers: {}, ip }) as ScopedRequest;
 describe('ApiTokenCredentialResolver', () => {
   let apiTokens: ApiTokenRepositoryPort;
   let owners: CredentialOwnerPort;
+  let memberships: OrganizationMembershipReaderPort;
   let resolver: ApiTokenCredentialResolver;
 
   beforeEach(() => {
@@ -38,7 +40,8 @@ describe('ApiTokenCredentialResolver', () => {
       findActiveOwner: vi.fn(),
       requireActiveOwner: vi.fn().mockResolvedValue(owner),
     };
-    resolver = new ApiTokenCredentialResolver(apiTokens, owners);
+    memberships = { findOrganizationIdsForUser: vi.fn().mockResolvedValue(['org-1']) };
+    resolver = new ApiTokenCredentialResolver(apiTokens, owners, memberships);
   });
 
   const stored = (
@@ -90,6 +93,20 @@ describe('ApiTokenCredentialResolver', () => {
       prefix: token.prefix,
     });
     expect(scope.resourceScope).toEqual(toResourceScope(['org-1']));
+  });
+
+  // Regression: a token minted with a short-lived or address-bound token
+  // outlived it or worked from anywhere.
+  it('bounds a token minted with this one by its own expiry and allowlist', async () => {
+    const { token, secret } = stored({ expiresInDays: 7, ipAllowlist: ['203.0.113.0/24'] });
+
+    const scope = await resolver.resolve(secret, request('203.0.113.7'));
+
+    expect(scope.mintingBounds).toEqual({
+      expiresAt: token.expiresAt,
+      ipAllowlist: ['203.0.113.0/24'],
+    });
+    expect(token.expiresAt).toBeInstanceOf(Date);
   });
 
   it('records the usage without letting a failed stamp fail the request', async () => {
@@ -174,6 +191,25 @@ describe('ApiTokenCredentialResolver', () => {
     await expect(resolver.resolve(secret, fromSocket)).resolves.toMatchObject({
       kind: 'api-token',
     });
+  });
+
+  // The backstop behind revoking a removed member's pinned tokens: until the
+  // outbox delivers that revocation, the token must not keep acting in an
+  // organization its owner has left.
+  it('refuses a pinned token once its owner is no longer a member of its organization', async () => {
+    const { secret } = stored({ organizationIds: ['org-1', 'org-2'] });
+    vi.mocked(memberships.findOrganizationIdsForUser).mockResolvedValue(['org-2', 'org-3']);
+
+    await expect(resolver.resolve(secret, request())).rejects.toMatchObject({ code: 'TOKEN_003' });
+    expect(memberships.findOrganizationIdsForUser).toHaveBeenCalledWith(owner.id);
+  });
+
+  it('reads no memberships for a token that follows its owner’s', async () => {
+    const { secret } = stored();
+
+    await resolver.resolve(secret, request());
+
+    expect(memberships.findOrganizationIdsForUser).not.toHaveBeenCalled();
   });
 
   it('refuses a token whose owner can no longer act', async () => {

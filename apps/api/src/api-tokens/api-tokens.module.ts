@@ -8,6 +8,7 @@ import { ApiTokenMapper } from './api-tokens.mapper';
 import { ApiTokenCredentialResolver } from './application/api-token-credential.resolver';
 import { ApiTokenRevokedDomainEventHandler } from './application/event-handlers/api-token-revoked.domain-event-handler';
 import { PasswordResetDomainEventHandler } from './application/event-handlers/password-reset.domain-event-handler';
+import { MembershipEndedDomainEventHandler } from './application/event-handlers/membership-ended.domain-event-handler';
 import { CreateApiTokenCommandHandler } from './commands/create-api-token/create-api-token.command-handler';
 import { CreateApiTokenHttpController } from './commands/create-api-token/create-api-token.http.controller';
 import { RevokeApiTokenCommandHandler } from './commands/revoke-api-token/revoke-api-token.command-handler';
@@ -74,6 +75,9 @@ const repositories: Provider[] = [
     // A password reset takes back the tokens minted before it; the kernel
     // raises the event, this module owns what it costs a token.
     PasswordResetDomainEventHandler,
+    // A token pinned to an organization is revoked when its owner's
+    // membership there ends; the organizations module raises the event.
+    MembershipEndedDomainEventHandler,
   ],
   exports: [API_TOKEN_REPOSITORY, ApiTokenMapper, TypeOrmModule],
 })

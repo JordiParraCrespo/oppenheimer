@@ -29,7 +29,9 @@ A routine is skipped and paused when it cannot run, with the reason in the chat:
 
 **Quiet runs.** A turn nobody is waiting on (a routine, a wake, a goal, a loop) can end with nothing to report: the chat shows only a collapsed line, and you get no message. A routine's quiet run shows nothing at all, unless the chat is set to show tool calls.
 
-**While you're away.** Routines keep running on their schedule whether or not you read what they say; nothing pauses them because you have not opened the chat. To stop one, pause it on the Routines tab or ask the bot.
+**While you're away.** Routines keep running whether or not you read what they say or open the chat. To stop one, pause it on the Routines tab or ask the bot.
+
+Only a repository's owner, members and collaborators trigger a GitHub routine or wake a watch.
 
 Mail older than two days, spam, trash and chats never wake a Gmail routine; email and event text reach the bot marked as outside data, never as instructions.
 
@@ -47,7 +49,7 @@ curl -X POST "https://…/api/v1/routine-webhooks/owh_…" \
   -d '{"deploy":"web","status":"failed"}'
 ```
 
-**Signing.** A signed URL takes only requests with an `x-oppenheimer-signature` header of the form `t=<unix seconds>,v1=<signature>`, where the signature is the hex HMAC-SHA256 of `<t>.<body>` (the timestamp, a dot, then the exact body) with the signing secret. A request more than five minutes old or new is refused, so a captured request cannot be replayed later.
+**Signing.** A signed URL takes only requests with an `x-oppenheimer-signature` header of the form `t=<unix seconds>,v1=<signature>`, where the signature is the hex HMAC-SHA256 of `<t>.<body>` (the timestamp, a dot, then the exact body) with the signing secret. A request more than five minutes old or new is refused, as is one posted twice.
 
 ```bash
 t=$(date +%s); body='{"status":"failed"}'

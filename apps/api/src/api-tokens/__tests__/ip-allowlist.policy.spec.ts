@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isIpAllowed, matchesIpRule } from '../domain/ip-allowlist.policy';
+import { allowlistWithin, isIpAllowed, matchesIpRule } from '../domain/ip-allowlist.policy';
 
 describe('matchesIpRule', () => {
   it('matches a bare IPv4 address exactly', () => {
@@ -76,5 +76,48 @@ describe('isIpAllowed', () => {
 
   it('denies a restricted credential whose source address is unknown', () => {
     expect(isIpAllowed(['198.51.100.0/24'], null)).toBe(false);
+  });
+});
+
+describe('allowlistWithin', () => {
+  it('holds anything within no allowlist, and no allowlist within none but that', () => {
+    expect(allowlistWithin(['203.0.113.7'], null)).toBe(true);
+    expect(allowlistWithin(null, [])).toBe(true);
+    expect(allowlistWithin(null, ['203.0.113.0/24'])).toBe(false);
+    expect(allowlistWithin([], ['203.0.113.0/24'])).toBe(false);
+  });
+
+  it('holds addresses and narrower blocks inside a block, and nothing that reaches past it', () => {
+    expect(allowlistWithin(['203.0.113.7', '203.0.113.128/25'], ['203.0.113.0/24'])).toBe(true);
+    expect(allowlistWithin(['203.0.112.0/23'], ['203.0.113.0/24'])).toBe(false);
+    expect(allowlistWithin(['203.0.113.7', '198.51.100.1'], ['203.0.113.0/24'])).toBe(false);
+  });
+
+  it('reads an IPv4 rule inside its mapped IPv6 range, and never across families', () => {
+    expect(allowlistWithin(['203.0.113.7'], ['::ffff:203.0.113.0/120'])).toBe(true);
+    expect(allowlistWithin(['2001:db8::1'], ['203.0.113.0/24'])).toBe(false);
+    expect(allowlistWithin(['2001:db8::/48'], ['2001:db8::/32'])).toBe(true);
+  });
+
+  it('holds a range the parent’s rules cover only together, and not one they leave a gap in', () => {
+    expect(allowlistWithin(['203.0.113.0/24'], ['203.0.113.0/25', '203.0.113.128/25'])).toBe(true);
+    expect(
+      allowlistWithin(
+        ['203.0.113.0/24'],
+        ['203.0.113.0/25', '203.0.113.128/26', '203.0.113.192/26'],
+      ),
+    ).toBe(true);
+    expect(allowlistWithin(['203.0.113.0/24'], ['203.0.113.0/25', '203.0.113.192/26'])).toBe(false);
+    expect(allowlistWithin(['203.0.112.0/23'], ['203.0.113.0/25', '203.0.113.128/25'])).toBe(false);
+  });
+
+  it('decides a wide range against many narrow rules without walking its addresses', () => {
+    const narrow = Array.from({ length: 200 }, (_, index) => `10.0.${index}.1`);
+    expect(allowlistWithin(['0.0.0.0/0'], narrow)).toBe(false);
+    expect(allowlistWithin(['::/0'], narrow)).toBe(false);
+  });
+
+  it('holds a malformed entry within nothing', () => {
+    expect(allowlistWithin(['not-an-ip'], ['0.0.0.0/0'])).toBe(false);
   });
 });

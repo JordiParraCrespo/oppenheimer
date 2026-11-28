@@ -2,23 +2,22 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
-import { GithubUserGrantResolver } from '../../application/github-user-grant.resolver';
 import { InstallStateResolver } from '../../application/install-state.resolver';
+import { InstallationClaimResolver } from '../../application/installation-claim.resolver';
 import type { GithubInstallationRepositoryPort } from '../../database/github-installation.repository.port';
 import { GithubErrors } from '../../domain/github.errors';
 import { GithubInstallationEntity } from '../../domain/github-installation.entity';
-import { GITHUB_APP, GITHUB_INSTALLATION_REPOSITORY } from '../../github.di-tokens';
+import { GITHUB_INSTALLATION_REPOSITORY } from '../../github.di-tokens';
 import { GithubInstallationMapper } from '../../github-installation.mapper';
-import type { GithubAppPort, GithubInstallationClaim } from '../../infrastructure/github-app.port';
+import type { GithubInstallationClaim } from '../../infrastructure/github-app.port';
 import { ConnectInstallationCommand } from './connect-installation.command';
 
 /**
  * Most of this handler is the proof, in two halves, with no fallback for
  * either. The install `state` proves this console user started this install
  * in this workspace (see `InstallStateResolver`). The OAuth `code` proves
- * which GitHub account can see the installation: exchanging it and asking
- * GitHub is the only thing that stops a forged id handing out one-hour tokens
- * to another account's repositories.
+ * which GitHub account authorized; that account must see the installation and
+ * control the account it is on (see `InstallationClaimResolver`).
  *
  * A claim is something a workspace *holds*: a live row elsewhere is a
  * conflict, this workspace's own disconnected row is revived, and another
@@ -31,17 +30,19 @@ export class ConnectInstallationCommandHandler
   constructor(
     @Inject(GITHUB_INSTALLATION_REPOSITORY)
     private readonly installations: GithubInstallationRepositoryPort,
-    @Inject(GITHUB_APP)
-    private readonly github: GithubAppPort,
     private readonly mapper: GithubInstallationMapper,
     private readonly installState: InstallStateResolver,
-    private readonly userGrants: GithubUserGrantResolver,
+    private readonly claims: InstallationClaimResolver,
   ) {}
 
   async execute(command: ConnectInstallationCommand): Promise<AggregateID> {
     // First, and spent even if GitHub then fails: one state buys one attempt.
     await this.installState.redeem(command.state, command.userId, command.organizationId);
-    const claim = await this.proveClaim(command);
+    const claim = await this.claims.prove(
+      command.userId,
+      command.code,
+      command.githubInstallationId,
+    );
 
     const live = await this.installations.findLiveByGithubInstallationId(
       command.githubInstallationId,
@@ -90,27 +91,5 @@ export class ConnectInstallationCommandHandler
     installation.reconnect(this.mapper.toRefreshProps(claim, userId));
     await this.installations.save(installation);
     return installation.id;
-  }
-
-  /** The claimed installation: proven visible, then read from GitHub. */
-  private async proveClaim(command: ConnectInstallationCommand): Promise<GithubInstallationClaim> {
-    if (!this.github.isConfigured()) {
-      throw new AppError(GithubErrors.APP_NOT_CONFIGURED);
-    }
-
-    const authorization = await this.github.listUserInstallations(command.code);
-    const canSee = authorization.installations.some(
-      (candidate) => candidate.githubInstallationId === command.githubInstallationId,
-    );
-    if (!canSee) {
-      throw new AppError(GithubErrors.INSTALLATION_NOT_CLAIMABLE, {
-        detail: `GitHub does not list installation ${command.githubInstallationId} for the authorizing account`,
-        extensions: { githubInstallationId: command.githubInstallationId },
-      });
-    }
-
-    // The user token the code bought: kept, so the Pull requests area can act in this person's name.
-    await this.userGrants.keep(command.userId, authorization.user, authorization.tokens);
-    return this.github.readInstallation(command.githubInstallationId);
   }
 }

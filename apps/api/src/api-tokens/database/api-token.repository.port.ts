@@ -47,4 +47,11 @@ export interface ApiTokenRepositoryPort extends Omit<RepositoryPort<ApiTokenEnti
    * how many it revoked.
    */
   revokeIssuedBefore(userId: string, issuedBefore: Date, now: Date): Promise<number>;
+
+  /**
+   * Revoke, at `now`, every token of `userId` not yet revoked whose pin names
+   * `organizationId`, in one transaction that stages each token's `ApiTokenRevokedDomainEvent`.
+   * Resolves the ids it revoked; none on a second call.
+   */
+  revokePinnedTo(userId: string, organizationId: string, now: Date): Promise<string[]>;
 }

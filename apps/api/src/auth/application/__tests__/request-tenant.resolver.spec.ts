@@ -35,6 +35,7 @@ const tokenFor = (organizationIds: string[]): ScopeContext => ({
   resourceScope: toResourceScope(organizationIds),
   expiresAt: null,
   issuedAt: new Date(0),
+  mintingBounds: { expiresAt: null, ipAllowlist: null },
 });
 
 describe('RequestTenantResolver', () => {

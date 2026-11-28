@@ -10,6 +10,7 @@ import { GithubAccessResolver } from './application/github-access.resolver';
 import { GithubTokenResolver } from './application/github-token.resolver';
 import { GithubUserGrantResolver } from './application/github-user-grant.resolver';
 import { InstallStateResolver } from './application/install-state.resolver';
+import { InstallationClaimResolver } from './application/installation-claim.resolver';
 import { IssueAccessResolver } from './application/issue-access.resolver';
 import { PullRequestDirectoryResolver } from './application/pull-request-directory.resolver';
 import { PullRequestListingResolver } from './application/pull-request-listing.resolver';
@@ -166,6 +167,7 @@ const adapters: Provider[] = [
   // The one client both GitHub adapters send through: one in-flight cap, one pause per bucket.
   GithubHttp,
   InstallStateResolver,
+  InstallationClaimResolver,
   GithubUserGrantResolver,
   GithubTokenResolver,
   // One fill per snapshot key, whether the queue, the figures or one pull request's screen asks.

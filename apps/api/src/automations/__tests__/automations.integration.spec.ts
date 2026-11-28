@@ -285,7 +285,7 @@ describe('automations: firing under the caps, and the runs list (integration)', 
         subjectRef: '101',
         externalId,
         actorIsOwnApp: false,
-        attributes: { baseBranch: 'main' },
+        attributes: { baseBranch: 'main', authorAssociation: 'OWNER' },
       }),
     );
   }

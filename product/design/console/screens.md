@@ -13,8 +13,9 @@
   in the same tone; Continue waits for an available address. (3)
   Connect GitHub, on the account or an organization, all or selected
   repos, skippable; a member who can only request an organization's
-  install is told an owner has to approve it (`setup_action=request`),
-  then connects it by choosing the organization again; until it is done the
+  install is told an owner has to approve it on GitHub and connect it
+  here themselves (`setup_action=request`; only the installation's account
+  or an owner of its organization can connect it, 2026-11-27); until it is done the
   repo chip lists nothing and its foot row is the way out (below). (4) Add a host, agent first (2026-10-13 export):
   the agent prompt in a card with Copy prompt, the prompt text behind its
   fold, the one-hour token's line under it with "Install manually

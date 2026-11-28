@@ -20,6 +20,16 @@ history) to work on the MVP.
   No roster UI, no invitations, no teams in the MVP; the routes the
   starter ships for them stay unexposed in the console and come back
   with the teams slice on the same tables.
+  The server holds the same line (2026-11-27): Better Auth's own
+  organization writes (`/api/auth/organization/*`: the roster,
+  invitations, teams, and organization create, update and delete) answer
+  404 to clients, so a membership only changes through the façade,
+  which writes the application role with it
+  (`auth/infrastructure/closed-auth-paths.util.ts`). Its invitation
+  routes stay for the teams slice, hardened: accepting needs a verified
+  email, accepting again grants the member's current role rather than
+  the invitation's, and a membership that ends revokes the API tokens
+  its person pinned to the workspace.
 - **Sign-up opens the first-run flow, not the console.** Registering —
   by email or through a provider — lands on `/onboarding/workspace`,
   because the hook can provision a workspace but cannot name it. The

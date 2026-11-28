@@ -25,6 +25,7 @@ describe('HostPrincipalGuard', () => {
     scopes: [],
     resourceScope: toResourceScope(null),
     expiresAt: null,
+    mintingBounds: { expiresAt: null, ipAllowlist: null },
   });
 
   beforeEach(() => {
@@ -65,6 +66,7 @@ describe('HostPrincipalGuard', () => {
       resourceScope: toResourceScope(null),
       expiresAt: null,
       issuedAt: new Date(0),
+      mintingBounds: { expiresAt: null, ipAllowlist: null },
     });
 
     await expect(guard.canActivate(context())).rejects.toMatchObject({ code: 'HOSTS_005' });

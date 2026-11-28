@@ -2,45 +2,62 @@ import { registerAs } from '@nestjs/config';
 import { z } from 'zod';
 import { parseEnv } from './env';
 
-const schema = z.object({
-  host: z.string().default('localhost'),
-  port: z.coerce.number().default(5432),
-  username: z.string().default('oppenheimer'),
-  password: z.string().default('oppenheimer'),
-  database: z.string().default('oppenheimer'),
-  // Off by default: query logging buries every other line under a wall of
-  // SELECTs. Even when enabled, bound parameters are never logged — see
-  // `TypeOrmQueryLogger`.
-  logQueries: z
-    .enum(['true', 'false'])
-    .default('false')
-    .transform((value) => value === 'true'),
-  // Pool sizing and timeouts. Each is required, with a safe default: an
-  // unbounded wait or statement is how one slow query hangs the whole API, so
-  // there is no "unset" state to model. On a timeout `0` means "no limit", in
-  // `pg` as in Postgres, and is the only way to switch one off.
-  //
-  // Connections TypeORM may open for the API's own queries, per replica.
-  poolMax: z.coerce.number().int().min(1).default(10),
-  // Connections Better Auth may open (sign-in, session lookups, the auth rate
-  // limiter), per replica. A second pool, counted against the same budget.
-  authPoolMax: z.coerce.number().int().min(1).default(5),
-  // How long a query waits for a free connection before failing (ms).
-  connectionTimeoutMs: z.coerce.number().int().min(0).default(5_000),
-  // Longest a single statement may run (ms). Boot migrations run on their own
-  // connection without it; see the TypeORM block in `app.module.ts`.
-  statementTimeoutMs: z.coerce.number().int().min(0).default(15_000),
-  // Longest a statement waits for a row or table lock (ms), e.g. the
-  // `FOR UPDATE` a session-log append takes.
-  lockTimeoutMs: z.coerce.number().int().min(0).default(5_000),
-  // A transaction left idle this long is ended by Postgres and its locks
-  // released (ms).
-  idleInTransactionTimeoutMs: z.coerce.number().int().min(0).default(30_000),
-});
+const schema = z
+  .object({
+    // Read here only to refuse the development password in production.
+    nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
+    host: z.string().default('localhost'),
+    port: z.coerce.number().default(5432),
+    username: z.string().default('oppenheimer'),
+    password: z.string().default('oppenheimer'),
+    database: z.string().default('oppenheimer'),
+    // Off by default: query logging buries every other line under a wall of
+    // SELECTs. Even when enabled, bound parameters are never logged — see
+    // `TypeOrmQueryLogger`.
+    logQueries: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    // Pool sizing and timeouts. Each is required, with a safe default: an
+    // unbounded wait or statement is how one slow query hangs the whole API, so
+    // there is no "unset" state to model. On a timeout `0` means "no limit", in
+    // `pg` as in Postgres, and is the only way to switch one off.
+    //
+    // Connections TypeORM may open for the API's own queries, per replica.
+    poolMax: z.coerce.number().int().min(1).default(10),
+    // Connections Better Auth may open (sign-in, session lookups, the auth rate
+    // limiter), per replica. A second pool, counted against the same budget.
+    authPoolMax: z.coerce.number().int().min(1).default(5),
+    // How long a query waits for a free connection before failing (ms).
+    connectionTimeoutMs: z.coerce.number().int().min(0).default(5_000),
+    // Longest a single statement may run (ms). Boot migrations run on their own
+    // connection without it; see the TypeORM block in `app.module.ts`.
+    statementTimeoutMs: z.coerce.number().int().min(0).default(15_000),
+    // Longest a statement waits for a row or table lock (ms), e.g. the
+    // `FOR UPDATE` a session-log append takes.
+    lockTimeoutMs: z.coerce.number().int().min(0).default(5_000),
+    // A transaction left idle this long is ended by Postgres and its locks
+    // released (ms).
+    idleInTransactionTimeoutMs: z.coerce.number().int().min(0).default(30_000),
+  })
+  .superRefine((config, context) => {
+    // `.env.example` and the dev compose ship `oppenheimer`, and a blank
+    // DB_PASSWORD falls back to it: production must not boot on a password
+    // printed in the repository.
+    if (config.nodeEnv !== 'production') return;
+    if (config.password === 'oppenheimer' || config.password.trim() === '') {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['password'],
+        message: 'must be set to a password of its own in production, not the development default',
+      });
+    }
+  });
 
 export type DatabaseConfig = z.infer<typeof schema>;
 
 const ENV_KEYS = {
+  nodeEnv: 'NODE_ENV',
   host: 'DB_HOST',
   port: 'DB_PORT',
   username: 'DB_USERNAME',

@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { emptyScope } from '@oppenheimer/backend-authz';
+import type { CacheService } from '@oppenheimer/backend-cache';
 import { AppError, CapabilitiesService, type KeySealer } from '@oppenheimer/backend-core';
 import { WEBHOOK_BODY_KEPT_CHARS } from '@oppenheimer/shared/automations';
 import { None, Some } from 'oxide.ts';
@@ -47,8 +48,28 @@ function webhookTrigger(): AutomationTriggerProps {
   return triggerFromInput({ source: 'webhook', event: 'webhook_received' }, 0);
 }
 
+/** Redis's `SET NX EX`, in memory: what the replay guard claims a signature with. */
+function claims(): Pick<CacheService, 'setIfAbsent'> & { ttls: number[] } {
+  const held = new Set<string>();
+  const ttls: number[] = [];
+  return {
+    ttls,
+    setIfAbsent: vi.fn(async (key: string, _value: unknown, ttlSeconds: number) => {
+      ttls.push(ttlSeconds);
+      if (held.has(key)) return false;
+      held.add(key);
+      return true;
+    }),
+  };
+}
+
 function setup(
-  options: { triggers?: AutomationTriggerProps[]; cap?: number; emailVerified?: boolean } = {},
+  options: {
+    triggers?: AutomationTriggerProps[];
+    cap?: number;
+    sealer?: KeySealer;
+    emailVerified?: boolean;
+  } = {},
 ) {
   const routine = AutomationEntity.createRoutine({
     organizationId: 'org-1',
@@ -131,14 +152,16 @@ function setup(
       emailVerified: options.emailVerified ?? true,
     })),
   };
+  const keySealer = options.sealer ?? sealer;
   const issue = new IssueRoutineWebhookCommandHandler(
     new BotRoutineResolver(automations),
     webhooks,
-    sealer,
+    keySealer,
     new CredentialIssuanceResolver(owners, new CapabilitiesService({ email_delivery: true })),
   );
+  const cache = claims();
   const receive = new ReceiveRoutineWebhookCommandHandler(
-    new RoutineWebhookResolver(webhooks, automations, sealer),
+    new RoutineWebhookResolver(webhooks, automations, keySealer, cache as unknown as CacheService),
     webhooks,
     runs,
     limits,
@@ -157,11 +180,17 @@ function setup(
         idempotencyKey: headers.idempotencyKey,
       }),
     );
-  const issueUrl = (signed = false) =>
+  /** `null`: the caller does not say whether to sign. */
+  const issueUrl = (signed: boolean | null = false) =>
     issue.execute(
-      new IssueRoutineWebhookCommand({ scope, botId: 'bot-1', routineId: routine.id, signed }),
+      new IssueRoutineWebhookCommand({
+        scope,
+        botId: 'bot-1',
+        routineId: routine.id,
+        signed: signed ?? undefined,
+      }),
     );
-  return { routine, fired, webhooks, issueUrl, post, getStored: () => stored };
+  return { routine, fired, webhooks, issueUrl, post, cache, getStored: () => stored };
 }
 
 function sign(secret: string, body: string, at: Date): string {
@@ -271,6 +300,61 @@ describe("a routine's webhook", () => {
     const answer = await post(token, body, { signature: sign(signingSecret, body, now) });
     expect(answer.status).toBe('queued');
     expect(fired).toHaveLength(1);
+  });
+
+  it('refuses a signed request sent again inside its window, whatever Idempotency-Key it carries', async () => {
+    // Regression (security review I): the signature covers the timestamp and
+    // the body, not the unsigned Idempotency-Key, so anyone who saw one signed
+    // request could post it again for five minutes, each time a new run.
+    const { issueUrl, post, fired, cache } = setup();
+    const { token, signingSecret } = await issueUrl(true);
+    if (!signingSecret) throw new Error('no secret');
+    const body = '{"deploy":42}';
+    const signature = sign(signingSecret, body, new Date());
+    expect((await post(token, body, { signature })).status).toBe('queued');
+    expect(await codeOf(post(token, body, { signature }))).toBe('AUTOMATIONS_011');
+    expect(await codeOf(post(token, body, { signature, idempotencyKey: 'fresh' }))).toBe(
+      'AUTOMATIONS_011',
+    );
+    expect(fired).toHaveLength(1);
+    // Held for as long as the timestamp could still pass: five minutes either side.
+    expect(Math.min(...cache.ttls)).toBeGreaterThanOrEqual(600);
+
+    // The sender signing again, at a new second, is a new request.
+    const later = sign(signingSecret, body, new Date(Date.now() + 1000));
+    expect((await post(token, body, { signature: later })).status).toBe('queued');
+  });
+
+  it('refuses a signature header with two timestamps, so a used signature cannot be replayed under a new key', async () => {
+    // Regression (review): verification read the last `t=` and the replay key
+    // the first, so a captured `t=100,v1=…` posted again as `t=1,t=100,v1=…`
+    // verified and claimed a fresh key, one run per prefixed `t=`.
+    const { issueUrl, post, fired } = setup();
+    const { token, signingSecret } = await issueUrl(true);
+    if (!signingSecret) throw new Error('no secret');
+    const body = '{"deploy":43}';
+    const signature = sign(signingSecret, body, new Date());
+    expect((await post(token, body, { signature })).status).toBe('queued');
+    expect(await codeOf(post(token, body, { signature: `t=1,${signature}` }))).toBe(
+      'AUTOMATIONS_011',
+    );
+    expect(await codeOf(post(token, body, { signature: `t=2,${signature}` }))).toBe(
+      'AUTOMATIONS_011',
+    );
+
+    const fresh = sign(signingSecret, body, new Date(Date.now() + 1000));
+    const doubled = `${fresh.split(',')[0]},${fresh}`;
+    expect(await codeOf(post(token, body, { signature: doubled }))).toBe('AUTOMATIONS_011');
+    expect(fired).toHaveLength(1);
+  });
+
+  it('signs a new URL unless the caller asks otherwise, when the deployment can keep a secret', async () => {
+    const signedByDefault = await setup().issueUrl(null);
+    expect(signedByDefault.signingSecret).toMatch(/^owhsec_/);
+    expect((await setup().issueUrl(false)).signingSecret).toBeNull();
+    const unconfigured: KeySealer = { ...sealer, isConfigured: () => false };
+    expect((await setup({ sealer: unconfigured }).issueUrl(null)).signingSecret).toBeNull();
+    expect(await codeOf(setup({ sealer: unconfigured }).issueUrl(true))).toBe('AUTOMATIONS_015');
   });
 
   it('runs nothing for a paused routine, or one whose webhook trigger was removed', async () => {

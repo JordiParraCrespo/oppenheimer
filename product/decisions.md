@@ -2194,6 +2194,46 @@ one its decision belongs to:
   (`../runner/runner.md` §6). Where a line was ambiguous, the note it meant
   was read from its context.
 
+- `design/console/screens.md` had a member who could only request an
+  organization's GitHub install connect it once an owner approved, by
+  choosing the organization again. Since 2026-11-27 only the
+  installation's own account or an owner of its organization can connect
+  it (a security review: GitHub lists an installation for anyone with
+  access to one of its repositories); the owner approves and connects it
+  themselves.
+
+- `design/foundations/auth.md` kept the starter's roster, invitation and
+  team routes only out of the console. The server now refuses Better
+  Auth's own `/api/auth/organization/*` writes too (2026-11-27, security
+  review B): they answer 404, the façade is the one door, an invitation
+  needs a verified email to accept, a replayed acceptance grants the
+  member's current role, and leaving or being removed revokes the API
+  tokens pinned to that workspace. Platform `admin` no longer holds
+  `set-role` (review F).
+
+- `design/bots/bot-subscriptions.md` (2026-11-03, the owner's call) let
+  anyone who can comment on a followed pull request wake the bot, and
+  `design/automations/automations-architecture.md` let any GitHub event on
+  a watched repository fire an automation or routine. Since 2026-11-27
+  (security review E) only events the repository's insiders cause (its
+  owner, members and collaborators, by GitHub's `author_association`; a
+  check only on the repository's own branch) fire a run or wake a bot or
+  session; a stranger's issue, comment or review starts nothing, with no
+  opt-out yet (`design/automations/automations-architecture.md`, "Insiders
+  only"). `design/bots/bot-routines.md`: a routine webhook URL asked for
+  through the API without `signed` is now signed, and a signed request is
+  accepted once.
+
+- `design/sessions/session-previews.md` named the preview's own cookie
+  plainly and left the preview domain's site shared by every preview
+  unsaid. On 2026-11-27, after a security review, the cookie is
+  `__Host-oppenheimer_preview` (`Secure`, `Path=/`, no `Domain`), so a
+  sibling preview cannot plant one, and the note advises a deployment to
+  put the preview domain on the Public Suffix List, or give each preview a
+  registrable domain of its own, because one app can still set a
+  `Domain=` cookie every other preview is sent
+  (`research/security-review-2026-11.md`).
+
 ## The design
 
 - 2026-09-12: directory created; documents seeded with decisions from

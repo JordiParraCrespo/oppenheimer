@@ -332,7 +332,7 @@
       "GITHUB_001": "No hemos encontrado esa instalación de GitHub.",
       "GITHUB_002": "GitHub no está configurado en este servidor.",
       "GITHUB_003": "Otro espacio de trabajo ya ha conectado esa instalación de GitHub.",
-      "GITHUB_004": "GitHub no muestra esa instalación para tu cuenta.",
+      "GITHUB_004": "Solo la cuenta en la que está una instalación, o un propietario de su organización, puede conectarla aquí, y GitHub tiene que mostrártela. Si eres propietario, puede que a la GitHub App le falte el permiso Members: read.",
       "GITHUB_005": "Ese enlace de GitHub ha caducado. Vuelve a empezar la instalación.",
       "GITHUB_006": "Elige un espacio de trabajo antes de conectar GitHub.",
       "GITHUB_007": "No hemos podido verificar ese webhook de GitHub.",
@@ -4990,7 +4990,7 @@
         "unstarted": "Este enlace de GitHub no se inició aquí. Vuelve a conectar GitHub.",
         "connectedAll": "Todos los repositorios de la cuenta",
         "connectedPending": "Conectado",
-        "requested": "Solicitud enviada. Un propietario de la organización tiene que aprobar la instalación en GitHub. Cuando lo haga, elige Conectar GitHub de nuevo y selecciona la organización para añadir sus repositorios aquí."
+        "requested": "Solicitud enviada. Un propietario de la organización tiene que aprobar la instalación en GitHub y después conectarla aquí: solo un propietario de la organización puede conectar su instalación."
       },
       "host": {
         "title": "Añade tu primer host",
