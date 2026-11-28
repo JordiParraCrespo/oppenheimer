@@ -460,3 +460,41 @@ test('carries a session’s chat to Oppenheimer and posts a reply typed there on
   await expect.poll(() => forwarded.at(0)?.events.map((event) => event.id)).toEqual(['u1', 'a1']);
   expect(forwarded[0]).toMatchObject({ cloudSessionId: ID, title: 'Fix login' });
 });
+
+test('says in the popup when the token cannot carry the chat', async ({
+  context,
+  worker,
+  extensionId,
+}) => {
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'POST',
+  };
+  await context.route('http://localhost:3001/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    if (new URL(request.url()).pathname.endsWith('/cloud-replies/claim')) {
+      // A token made before the chat needed `cloud-chat:write`.
+      return route.fulfill({
+        status: 403,
+        headers: cors,
+        json: { title: 'The credential lacks a required scope', code: 'TOKEN_005' },
+      });
+    }
+    return route.fulfill({ headers: cors, json: { matched: 0 } });
+  });
+  await worker.evaluate(() =>
+    chrome.storage.local.set({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_test' },
+    }),
+  );
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  // Breaks if the popup reads as a healthy connection while no chat goes and
+  // no reply is posted.
+  await expect(
+    popup.getByText('The chat needs a token with sessions:write and cloud-chat:write'),
+  ).toBeVisible({ timeout: 15_000 });
+});

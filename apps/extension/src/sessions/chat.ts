@@ -50,6 +50,11 @@ const MAX_LINE_BYTES = 64_000;
 const KEEP_CHARS = 4_000;
 /** Pages of 1,000 events one read of a session's log goes through, at most. */
 const MAX_EVENT_PAGES = 20;
+/**
+ * How long one attempt to post a reply on claude.ai may take. Both attempts
+ * together stay well inside the claim's lease (`BROWSER_REPLY_LEASE_SECONDS`).
+ */
+export const POST_TIMEOUT_MS = 12_000;
 /** The longest title the API keeps for a session it adopts (`MAX_CLOUD_SESSION_TITLE`). */
 const MAX_TITLE = 200;
 
@@ -336,6 +341,7 @@ export async function postReply(
       credentials: 'include',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify(attempt.body),
+      signal: AbortSignal.timeout(POST_TIMEOUT_MS),
     }).catch(() => null);
     if (response?.ok) return { ok: true };
     if (response) reason = String(response.status);

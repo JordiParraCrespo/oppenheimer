@@ -73,6 +73,8 @@
     "launched": "Reporting to {{host}} · {{count}} launched there",
     "notReporting": "Not reporting: {{detail}}",
     "runnerUnread": "Can't read the sessions on your hosts: {{detail}}",
+    "chatUnsent": "The chats aren’t reaching Oppenheimer: {{detail}}",
+    "chatScope": "The chat needs a token with sessions:write and cloud-chat:write. Create one in the console and connect again.",
     "notAUrl": "That is not a URL.",
     "permission": "Chrome needs your permission to reach {{origin}}.",
     "refused": "Oppenheimer refused: {{detail}}",

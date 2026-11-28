@@ -1,3 +1,4 @@
+import { BROWSER_REPLY_LEASE_SECONDS } from '@oppenheimer/shared/schemas/session-cloud-chat';
 import {
   type ChatSync,
   type ClaimedReply,
@@ -5,6 +6,7 @@ import {
   confirmReply,
   fetchSessionEvents,
   forwardEvents,
+  POST_TIMEOUT_MS,
   postReply,
   releaseReply,
   sessionsToSync,
@@ -18,6 +20,11 @@ const BUSY_WAIT_SECONDS = 3;
 const IDLE_WAIT_SECONDS = 10;
 /** Sessions whose log one pass reads, at most. */
 const SESSIONS_PER_PASS = 10;
+/**
+ * How long after its claim a reply may still be posted: the start of a post,
+ * plus its two attempts (`POST_TIMEOUT_MS` each), ends inside the claim's lease.
+ */
+const POST_START_WITHIN_MS = BROWSER_REPLY_LEASE_SECONDS * 1000 - 2 * POST_TIMEOUT_MS - 6_000;
 /** A failed claim waits this long before the next one. */
 const RETRY_MS = 15_000;
 
@@ -78,8 +85,16 @@ export function createChatBridge({ claudeHeaders, serial }: ChatBridgeDeps): Cha
         continue;
       }
       if (replies.length > 0) {
+        const claimedAt = Date.now();
         const headers = await claudeHeaders();
         for (const reply of replies) {
+          // A claim near its lease's end is handed back, not posted: past the
+          // lease the Stop hook may take it, and a post then would be the
+          // second delivery. One started in time finishes inside the lease.
+          if (Date.now() - claimedAt > POST_START_WITHIN_MS) {
+            await releaseReply(oppenheimer, reply.id, 'lease').catch(() => {});
+            continue;
+          }
           const posted = await postReply(reply, headers);
           if (posted.ok) {
             hot.set(reply.cloudSessionId, Date.now());

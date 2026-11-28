@@ -28,11 +28,14 @@ export function OppenheimerSection({
   connection,
   report,
   runnerProblem,
+  chatProblem,
 }: {
   connection: OppenheimerConnection | undefined;
   report: ReportStatus | undefined;
   /** Why the sessions on the person's hosts could not be read, while they cannot. */
   runnerProblem: { detail: string } | undefined;
+  /** Why the chats stopped reaching Oppenheimer, while they cannot. */
+  chatProblem: { detail: string } | undefined;
 }) {
   const { t } = useTranslation();
   const { connect, disconnect, pending, problem } = useConnection();
@@ -63,6 +66,14 @@ export function OppenheimerSection({
           {runnerProblem ? (
             <Callout tone="warning">
               {t('oppenheimer.runnerUnread', { detail: runnerProblem.detail })}
+            </Callout>
+          ) : null}
+          {chatProblem ? (
+            <Callout tone="warning">
+              {/* A refused token is the one cause the person can fix here: it lacks the chat's scope. */}
+              {chatProblem.detail.includes('403')
+                ? t('oppenheimer.chatScope')
+                : t('oppenheimer.chatUnsent', { detail: chatProblem.detail })}
             </Callout>
           ) : null}
         </>

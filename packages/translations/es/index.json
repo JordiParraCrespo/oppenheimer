@@ -5382,6 +5382,8 @@
       "launched": "Informando a {{host}} · {{count}} iniciadas allí",
       "notReporting": "Sin informar: {{detail}}",
       "runnerUnread": "No se pueden leer las sesiones de tus equipos: {{detail}}",
+      "chatUnsent": "Los chats no llegan a Oppenheimer: {{detail}}",
+      "chatScope": "El chat necesita un token con sessions:write y cloud-chat:write. Crea uno en la consola y vuelve a conectar.",
       "notAUrl": "Eso no es una URL.",
       "permission": "Chrome necesita tu permiso para contactar con {{origin}}.",
       "refused": "Oppenheimer lo rechazó: {{detail}}",

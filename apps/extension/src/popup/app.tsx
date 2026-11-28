@@ -127,6 +127,7 @@ export function App() {
           connection={state.oppenheimer}
           report={state.report}
           runnerProblem={state.runnerProblem}
+          chatProblem={state.chatProblem}
         />
 
         <a
