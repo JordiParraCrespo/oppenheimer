@@ -193,9 +193,11 @@ function ChatComposer({
       // placeholder keeps to one line, clipped: `field-sizing-content` sizes
       // to it too, so a long suggestion would otherwise open a second line.
       className="field-sizing-content max-h-52 resize-none bg-transparent text-fg outline-none placeholder:overflow-hidden placeholder:whitespace-nowrap placeholder:text-field-placeholder"
+      // Inline, 11px over and 9px under, as in `ComposerPill`: even padding
+      // draws the capitals a pixel above the buttons beside them.
       box={cn(
         'w-full text-[15px] leading-[1.55] tracking-[-0.011em]',
-        inline ? cn('min-h-11 py-2.5 pr-0', onAttach || emoji ? 'pl-1' : 'pl-4.5') : 'min-h-18 px-5 pt-4 pb-2',
+        inline ? cn('min-h-11 pt-2.75 pb-2.25 pr-0', onAttach || emoji ? 'pl-1' : 'pl-4.5') : 'min-h-18 px-5 pt-4 pb-2',
       )}
     />
   );

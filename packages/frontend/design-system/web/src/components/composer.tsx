@@ -420,8 +420,11 @@ function ComposerPill({
             placeholder={placeholder}
             disabled={disabled}
             rows={1}
+            // 11px over, 9px under: the 23.25px line leaves 0.75px of the
+            // 44px row spare, and the capitals sit above the line's middle,
+            // so even padding draws the text a pixel above the buttons.
             className={cn(
-              'field-sizing-content max-h-52 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2.5 text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
+              'field-sizing-content max-h-52 min-h-11 min-w-0 flex-1 resize-none bg-transparent pt-2.75 pb-2.25 text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
               onAttach || emoji ? 'pl-1' : 'pl-4.5',
             )}
           />
