@@ -163,7 +163,9 @@ export class BrowserAttachGateway {
 
   private async judge(ws: WebSocket, ticket: string, early: EarlyFrame[]): Promise<void> {
     const claim = await this.cache.take<AttachTicket>(`${ATTACH_TICKET_PREFIX}${ticket}`);
-    if (!claim) {
+    // A preview ticket shares this key space but buys one port through the
+    // preview proxy, and it travels in a URL; it never opens a terminal here.
+    if (!claim || (claim.target !== undefined && claim.target !== 'device')) {
       endSocket(ws, 'unauthorized', ATTACH_CLOSE_CODES.UNAUTHORIZED);
       return;
     }

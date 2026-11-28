@@ -42,6 +42,7 @@ recording), and add a `pnpm eval:<name>` script.
 | Following, searching and unblocking sessions | `pnpm eval:bot-session-follow`, `eval:bot-session-search`, `eval:bot-session-unblock` |
 | Check-backs, loops, waiting on async work | `pnpm eval:bot-check-back` |
 | A routine's run meeting a blocker | `pnpm eval:bot-blocked-run` |
+| Work of several steps: merging a repository's ready pull requests in order past traps | `pnpm eval:bot-merge-train` |
 | Doing what was asked and nothing more (the scope bullet in "How a turn goes") | `pnpm eval:bot-scope` |
 | Channels (Telegram, WhatsApp): answer first, then the work | `pnpm eval:bot-channel-ack` |
 | A WhatsApp group: who a line is for, answering or keeping out (`core/turn-context.contact-group*`, `contactReplyOf`) | `pnpm eval:bot-group-chat` |
@@ -66,4 +67,10 @@ pnpm eval:bot-memory --case name --runs 1
 
 A bot eval runs on the Messages API with `ANTHROPIC_API_KEY`, else through
 the Claude Agent SDK on the machine's Claude Code login, which works in a
-cloud session as it is. Each README says its cases, flags and results so far.
+cloud session as it is. On the Claude Code login any bot eval also runs
+under another set-up, to compare them on the same cases:
+`BOT_EVAL_EFFORT=high`, `BOT_EVAL_ADVISOR=claude-opus-5-5` (with
+`BOT_EVAL_ADVISOR_NUDGE=1`, a line telling the bot to consult it), each
+ending with what every model spent; a turn that grades another
+(`grading: true`) keeps the eval's own set-up
+(`product/research/bot-advisor.md`). Each README says its cases, flags and results so far.

@@ -444,6 +444,113 @@ describe('composeInbox: what an agent told you', () => {
   });
 });
 
+describe('composeInbox: a session nobody has moved forward', () => {
+  const blue = (id: string, minutesAgo: number) =>
+    session(id, { state: 'ready-for-review', observedSince: at(minutesAgo) });
+
+  it('lists a session whose finished turn has sat unread for thirty minutes, dated from the turn', () => {
+    const view = composeInbox(sources({ sessions: [blue('s1', 31), blue('s2', 29)] }), [], NOW);
+    expect(view.open).toHaveLength(1);
+    expect(view.open[0]).toMatchObject({
+      kind: 'unattended',
+      key: `unattended:s1:${at(31).toISOString()}`,
+      since: at(31),
+      projectIds: ['p-app'],
+    });
+  });
+
+  // The regression: the reader turned the reminders off in the sidebar and the
+  // Inbox (and the rail's count) still listed them.
+  it('lists none when the reader turned them off', () => {
+    const view = composeInbox(sources({ sessions: [blue('s1', 45)] }), [], NOW, new Set(), {
+      unattended: false,
+    });
+    expect(view.open).toEqual([]);
+  });
+
+  // The reader muted this one session from its row: it must not remind them,
+  // while every other session still does.
+  it('lists none for a session the reader muted, and still the others', () => {
+    const view = composeInbox(
+      sources({ sessions: [blue('s1', 45), blue('s2', 45)] }),
+      [],
+      NOW,
+      new Set(),
+      { unattended: true, muted: new Set(['s1']) },
+    );
+    expect(view.open.map((item) => item.key)).toEqual([`unattended:s2:${at(45).toISOString()}`]);
+  });
+
+  it('leaves out a session read, still working or waiting on you, which the Inbox already lists', () => {
+    const view = composeInbox(
+      sources({
+        sessions: [
+          session('s-idle', { state: 'idle', observedSince: at(60) }),
+          session('s-work', { state: 'working', observedSince: at(60) }),
+          session('s-amber', { state: 'waiting-on-you', observedSince: at(60) }),
+        ],
+      }),
+      [],
+      NOW,
+    );
+    expect(view.open.map((item) => item.kind)).toEqual(['session']);
+  });
+
+  it('brings the next turn left unread back after the last one was marked done', () => {
+    const done = [mark(`unattended:s1:${at(40).toISOString()}`, 'done')];
+    expect(composeInbox(sources({ sessions: [blue('s1', 40)] }), done, NOW).open).toEqual([]);
+    expect(
+      composeInbox(sources({ sessions: [blue('s1', 35)] }), done, NOW).open.map(
+        (item) => item.kind,
+      ),
+    ).toEqual(['unattended']);
+    expect(inboxSubject(`unattended:s1:${at(35).toISOString()}`)).toBe('unattended:s1');
+  });
+
+  // The regression: a turn that ends is reported once, so a blue session has
+  // no `observedSince`; keyed by `stateSeq`, which no turn moves, a Done on
+  // one turn hid every later turn of the session.
+  it('names a turn by its last event when the host confirmed no state, so the next turn comes back', () => {
+    const unread = (lastEventMinutesAgo: number) =>
+      new SessionEntity({
+        ...session('s1', { state: 'ready-for-review', observedSince: null }),
+        lastEventAt: at(lastEventMinutesAgo),
+      });
+    const first = composeInbox(sources({ sessions: [unread(40)] }), [], NOW).open;
+    expect(first).toMatchObject([{ kind: 'unattended', since: at(40) }]);
+    const done = [mark(first[0].key, 'done')];
+    expect(composeInbox(sources({ sessions: [unread(40)] }), done, NOW).open).toEqual([]);
+    expect(
+      composeInbox(sources({ sessions: [unread(35)] }), done, NOW).open.map((item) => item.kind),
+    ).toEqual(['unattended']);
+  });
+});
+
+describe('composeInbox: an unattended turn named by the API', () => {
+  const unread = (report: string, lastEventMinutesAgo: number) =>
+    new SessionEntity({
+      ...session('s1', { state: 'ready-for-review', observedSince: null }),
+      lastEventAt: at(lastEventMinutesAgo),
+      unreadReport: report,
+    });
+
+  // The regression: keyed by the last log entry, a rename (or a move, or a
+  // hide) of a session whose turn was marked Done gave it a new key, and the
+  // same turn came back thirty minutes later.
+  it('keeps a Done on the turn when something else moves its log, and asks again for the next turn', () => {
+    const first = composeInbox(sources({ sessions: [unread('turn:7', 40)] }), [], NOW).open;
+    expect(first.map((item) => item.key)).toEqual(['unattended:s1:turn:7']);
+    const done = [mark('unattended:s1:turn:7', 'done')];
+    const renamedLater = unread('turn:7', 31);
+    expect(composeInbox(sources({ sessions: [renamedLater] }), done, NOW).open).toEqual([]);
+    expect(
+      composeInbox(sources({ sessions: [unread('turn:9', 31)] }), done, NOW).open.map(
+        (item) => item.key,
+      ),
+    ).toEqual(['unattended:s1:turn:9']);
+  });
+});
+
 describe('composeInbox: what a bot told you', () => {
   const told = (noticeId: string, minutesAgo: number, botId = 'bot-1') =>
     new WorkspaceBotNoticeEntity(noticeId, botId, 'Ops', 'Release 1.4 is out.', at(minutesAgo));

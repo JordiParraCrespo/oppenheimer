@@ -1267,6 +1267,12 @@
       "delete": "Delete selected",
       "clear": "Clear selection"
     },
+    "group": {
+      "actions": "Actions for {{name}}",
+      "hideAll": "Hide all sessions",
+      "showAll": "Show all sessions",
+      "deleteAll": "Delete all sessions…"
+    },
     "deleteSessions": {
       "title_one": "Delete {{count}} session?",
       "title_other": "Delete {{count}} sessions?",
@@ -1298,6 +1304,7 @@
       "showAll": "Show all projects",
       "pinnedOnly": "Pinned only",
       "showHidden": "Show hidden sessions",
+      "unattended": "Remind me after 30 minutes unread",
       "newProject": "New project…",
       "allStatuses": "All statuses",
       "statuses": {
@@ -2209,8 +2216,8 @@
         "unknown": "something went wrong"
       },
       "openSession": "Open session",
-      "hideToolCalls": "Hide tool calls, routine runs and task updates",
-      "showToolCalls": "Show tool calls, routine runs and task updates",
+      "hideToolCalls": "Hide the bot’s work: tool calls, routine runs, model and time",
+      "showToolCalls": "Show the bot’s work: tool calls, routine runs, model and time",
       "goal": {
         "title": "Goal: {{objective}}",
         "progress": "{{step}} of {{limit}} continuations",
@@ -4210,6 +4217,14 @@
       "cleared_one": "You cleared {{count}} item on this visit.",
       "cleared_other": "You cleared {{count}} items on this visit."
     },
+    "unattended": {
+      "short": "{{name}} is waiting to move forward",
+      "title": "{{name}} has sat unread for over 30 minutes",
+      "body": "Its turn ended and nobody has opened it since. Reply here to see what it did and give it the next step, or open the session.",
+      "reply": "Reply here",
+      "hideReply": "Hide reply",
+      "chat": "{{name}}, live"
+    },
     "notice": {
       "title": "{{name}} has news for you"
     },
@@ -4256,9 +4271,7 @@
     },
     "alert": {
       "doneTitle": "{{name}} finished its turn",
-      "doneBody": "Open the session to see what it did.",
-      "staleTitle": "{{name}} has waited 30 minutes",
-      "staleBody": "It still needs you. Open the session to pick it up."
+      "doneBody": "Open the session to see what it did."
     }
   },
   "settings": {
@@ -5082,6 +5095,8 @@
     "sessionMoved": "“{{name}}” moved to {{project}}.",
     "sessionHidden": "“{{name}}” hidden. Show hidden sessions from the filter menu.",
     "sessionShown": "“{{name}}” shown.",
+    "sessionsHidden": "{{n}} sessions hidden. Show hidden sessions from the filter menu.",
+    "sessionsShown": "{{n}} sessions shown.",
     "sessionsMoved": "{{n}} sessions moved to {{project}}.",
     "projectCreated": "“{{name}}” created.",
     "projectSaved": "“{{name}}” saved.",

@@ -168,6 +168,7 @@ function toEntity(data: SessionResponseDto): SessionEntity {
       : null,
     cloudSessionId: data.cloudSessionId ?? null,
     hidden: data.hidden ?? false,
+    unreadReport: data.unreadReport ?? null,
   });
 }
 

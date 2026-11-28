@@ -107,7 +107,7 @@ export function BotTranscript({
             ) : null}
             <ErrorAlert error={olderError} fallback={t('bots.chat.olderFailed')} />
             {blocks.map((block, index) => {
-              const markers = markersBefore(blocks, index);
+              const markers = markersBefore(blocks, index, toolCallsShown);
               return (
                 <Fragment key={block.key}>
                   {markers.day ? (

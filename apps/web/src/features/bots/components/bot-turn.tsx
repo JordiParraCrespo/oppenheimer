@@ -31,6 +31,7 @@ import { useToolCallsShownInChat } from '@/features/bots/hooks/use-tool-calls-sh
 import {
   type ChatTurnBlock,
   compactTokens,
+  liveLineFor,
   replyText,
   turnDurationMs,
   turnPhase,
@@ -57,6 +58,12 @@ import { runningStep } from '@/features/bots/lib/tool-activity';
  * behind the one the bot is on draws neither (`current`), so the chat shows
  * one live line at a time; a turn that never reached its model has no trail,
  * and neither does one that only ran tools while the chat hides them.
+ *
+ * Hidden tool calls (the default) make the chat read like a messenger: no
+ * trace, a live line that only says the bot is thinking (no call named, no
+ * clock, no subagents) and goes once its words stream in, and a trail of
+ * actions with no time, model or tokens. What each view draws is decided
+ * once, in `turnTrail` and `liveLineFor`.
  *
  * You react to your message from its actions, and to the bot's answer from
  * its trail, which reacts to its last words (`onReact`): a pill of quick
@@ -117,7 +124,8 @@ export function BotTurn({
   // A turn that ended without a word or a token never reached its model: nothing to trail.
   const tokens = turn ? turn.inputTokens + turn.outputTokens : 0;
   const silent = phase === 'completed' && block.answer.length === 0 && tokens === 0;
-  const trail = turnTrail(block, phase, useToolCallsShownInChat(), Boolean(onRetry));
+  const toolCallsShown = useToolCallsShownInChat();
+  const trail = turnTrail(block, phase, toolCallsShown, Boolean(onRetry));
   const ran = turn ? turnDurationMs(turn) : null;
   // The trail's reaction is to the bot's last words in the turn.
   const lastWords = [...block.answer]
@@ -142,6 +150,12 @@ export function BotTurn({
         .filter(Boolean)
         .join(' · ')
     : undefined;
+  const line = liveLineFor(toolCallsShown, {
+    step,
+    subagents,
+    startedAt: turn?.startedAt ?? null,
+    writing: Boolean(live),
+  });
 
   return (
     <div className="flex flex-col gap-4.5">
@@ -188,7 +202,11 @@ export function BotTurn({
           </ChatUserMessage>
         ),
       )}
-      <div data-slot="bot-turn" data-phase={phase ?? undefined} className="flex flex-col gap-3">
+      <div
+        data-slot="bot-turn"
+        data-phase={phase ?? undefined}
+        className="group/turn flex flex-col gap-3"
+      >
         {block.answer.map((message) =>
           message.role === 'activity' ? (
             <BotActivity key={message.id} steps={message.steps} live={active} />
@@ -216,15 +234,16 @@ export function BotTurn({
         {behind
           ? null
           : (working ??
-            (turn && active ? (
+            (turn && active && line ? (
               <BotTurnLive
                 queued={turn.status === 'queued'}
-                step={step}
-                subagents={step ? subagents[step.callId] : undefined}
+                step={line.step}
+                subagents={line.subagents}
                 writing={Boolean(live)}
                 waitingOn={waitingOn}
                 provider={BOT_PROVIDER_CATALOG[turn.provider].label}
-                since={turn.startedAt}
+                since={line.since}
+                seed={turn.startedAt?.getTime() ?? 0}
               />
             ) : null))}
         {turn && phase === 'failed' ? (
@@ -235,8 +254,9 @@ export function BotTurn({
             onOpenProviders={onOpenProviders}
           />
         ) : null}
-        {turn && !active && !silent && trail !== 'none' ? (
+        {turn && !active && !silent && trail ? (
           <MessageTrail
+            className={trail.actions === 'onHover' ? ON_HOVER : undefined}
             actions={
               <>
                 {lastWords && onReact ? (
@@ -261,10 +281,20 @@ export function BotTurn({
                 ) : null}
               </>
             }
-            meta={trail === 'full' ? meta : undefined}
+            meta={
+              trail.meta === 'full'
+                ? meta
+                : trail.meta === 'stopped'
+                  ? t('bots.chat.turn.stopped')
+                  : undefined
+            }
           />
         ) : null}
       </div>
     </div>
   );
 }
+
+/** A trail shown only while the turn is hovered or holds focus (`TrailView`'s `onHover`). */
+const ON_HOVER =
+  'opacity-0 transition-opacity duration-fast group-hover/turn:opacity-100 group-focus-within/turn:opacity-100';
