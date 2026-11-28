@@ -47,7 +47,8 @@ export class FindCloudChatHttpController {
     name: 'from',
     required: false,
     type: Number,
-    description: 'The number of the first line to read: a read’s `next`, or 0',
+    description:
+      'The number of the first line to read: a read’s `next`; absent, the copy’s first line (`start`)',
   })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Lines at most' })
   @ApiResponse({ status: 200, type: CloudChatResponseDto })

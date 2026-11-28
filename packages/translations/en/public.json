@@ -66,10 +66,10 @@
     },
     "extension": {
       "title": "4. The Chrome extension",
-      "intro": "The Oppenheimer extension for Chrome lists your Claude Code cloud sessions and tells you which ones need you. This is its only purpose.",
-      "reads": "It reads your list of sessions from claude.ai, using the sign-in already in your browser. To find that list, it watches claude.ai’s own page load it and notes the address it was asked at and the request’s anthropic-* and x-organization-* headers, which name the organization and the app’s version. It also reads one cookie, lastActiveOrg, which says whose sessions to ask for. It never reads, keeps or sends your claude.ai sign-in, any other cookie, or any claude.ai token.",
-      "stores": "It keeps, in Chrome’s storage on your computer: that list (each session’s id, title, state, repository, when it last changed and, when claude.ai gives one, its short status note, such as why it stopped); the address and headers it noted; and the last error it met. If you connect it to Oppenheimer, it also keeps the address you entered and the token you created for it.",
-      "sends": "Nothing leaves your computer unless you connect it to an Oppenheimer workspace. Once you do, after each check it sends that workspace the id and state of each session it tracks; the workspace keeps the ones it started and discards the rest. Nothing is sold, used for advertising or shared with anyone else.",
+      "intro": "The Oppenheimer extension for Chrome lists your Claude Code cloud sessions, tells you which ones need you and, once you connect it to Oppenheimer, carries each session’s conversation to your Oppenheimer console and your replies from it back to the session. This is its only purpose.",
+      "reads": "It reads your list of sessions, and the conversation of each session that is running or was active in the last day, from claude.ai, using the sign-in already in your browser. To find them, it watches claude.ai’s own page load them and notes the address it was asked at and the request’s anthropic-* and x-organization-* headers, which name the organization and the app’s version. It also reads one cookie, lastActiveOrg, which says whose sessions to ask for. It never reads, keeps or sends your claude.ai sign-in, any other cookie, or any claude.ai token.",
+      "stores": "It keeps, in Chrome’s storage on your computer: that list (each session’s id, title, state, repository, when it last changed and, when claude.ai gives one, its short status note, such as why it stopped); how many of each session’s messages it has passed on; the addresses and headers it noted; and the last error it met. It does not keep the conversations. If you connect it to Oppenheimer, it also keeps the address you entered and the token you created for it.",
+      "sends": "Nothing leaves your computer unless you connect it to an Oppenheimer workspace. Once you do, it sends that workspace the id and state of each session it tracks and the conversation of each session it reads (every message, yours and the agent’s, and what the agent’s tools did); the workspace keeps them as that session’s chat, adding a session it did not start. When you reply to a session in Oppenheimer, it posts your reply to that session on claude.ai as your message. Nothing is sold, used for advertising or shared with anyone else.",
       "removal": "Disconnect it from the popup to delete the address and token, or remove the extension to delete everything it kept."
     },
     "eyebrow": "Legal",
@@ -78,7 +78,7 @@
       "separateConsent": "Google Sign-In does not grant access to Gmail, Drive or any other Google service. If your organization later enables a supported Google integration, we request the relevant permissions through a separate consent screen and use that data only to provide the integration you selected.",
       "title": "3. Google Sign-In and Google user data"
     },
-    "lastUpdated": "Last updated: 24 November 2026.",
+    "lastUpdated": "Last updated: 27 November 2026.",
     "purposes": {
       "body": "We process data to provide and administer the service, authenticate users, support team collaboration, keep the service secure, respond to requests and comply with law. Depending on the context, our legal basis is performance of a contract, our legitimate interests in operating and securing the service, consent where required, or compliance with a legal obligation.",
       "title": "5. Purposes and legal bases"

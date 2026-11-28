@@ -452,6 +452,15 @@ export class WorkSessionRepository
     return this.withCheckouts(record);
   }
 
+  async hasCloudSessionFor(scope: AccessScope, cloudId: string): Promise<boolean> {
+    // IDX_work_session_cloud_id, whatever the state.
+    const found = await this.scopedQuery(scope)
+      .andWhere(`session.place = 'cloud'`)
+      .andWhere('session.agentSessionId = :cloudId', { cloudId })
+      .getExists();
+    return found;
+  }
+
   async findCloudByCloudIds(
     scope: AccessScope,
     cloudIds: readonly string[],

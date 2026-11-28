@@ -60,6 +60,7 @@ function harness(
   {
     hosts = ['host-1', 'host-2'],
     claimed = reply as CloudChatReply | null,
+    deferredUntil = null as Date | null,
     outcome = { kind: 'sent', hostId: 'host-1' } as CloudSessionReplyOutcome,
   } = {},
 ) {
@@ -69,7 +70,11 @@ function harness(
   const chat = {
     claimReplyForHost: vi.fn().mockResolvedValue(claimed),
     releaseHostClaim: vi.fn().mockResolvedValue(undefined),
-  } satisfies Pick<SessionCloudChatRepositoryPort, 'claimReplyForHost' | 'releaseHostClaim'>;
+    deferWakeWhileLeased: vi.fn().mockResolvedValue(deferredUntil),
+  } satisfies Pick<
+    SessionCloudChatRepositoryPort,
+    'claimReplyForHost' | 'releaseHostClaim' | 'deferWakeWhileLeased'
+  >;
   const accounts = {
     signedInLike: vi.fn().mockResolvedValue(hosts),
   } satisfies HostClaudeAccountsPort;
@@ -103,6 +108,18 @@ describe('waking a cloud session with a reply', () => {
   it('sends nothing for a reply the hook already took', async () => {
     const { run, replies } = harness(cloudSession(), { claimed: null });
     await expect(run()).resolves.toBe('taken');
+    expect(replies.send).not.toHaveBeenCalled();
+  });
+
+  it('comes back when the browser extension’s unconfirmed claim lapses, sending nothing now', async () => {
+    const { run, replies, chat } = harness(cloudSession(), {
+      claimed: null,
+      deferredUntil: new Date('2026-11-28T01:00:01Z'),
+    });
+    // Breaks if a reply the extension holds but never posts is left to no one:
+    // the wake that found it held must be staged again for the lease's end.
+    await expect(run()).resolves.toBe('deferred');
+    expect(chat.deferWakeWhileLeased).toHaveBeenCalledWith('s-1', 'reply-1');
     expect(replies.send).not.toHaveBeenCalled();
   });
 

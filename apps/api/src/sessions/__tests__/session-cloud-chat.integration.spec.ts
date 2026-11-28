@@ -10,9 +10,11 @@ import {
 } from '../database/session-cloud-chat.repository';
 import { SessionCloudLineOrmEntity } from '../database/session-cloud-line.orm-entity';
 import { SessionCloudReplyOrmEntity } from '../database/session-cloud-reply.orm-entity';
+import { SessionCloudRunOrmEntity } from '../database/session-cloud-run.orm-entity';
 import { WorkSessionOrmEntity } from '../database/work-session.orm-entity';
 import { WorkSessionRepository } from '../database/work-session.repository';
 import { WorkSessionEventOrmEntity } from '../database/work-session-event.orm-entity';
+import { adoptedCloudEntries, adoptionKey } from '../domain/session-log-entry.factory';
 import { SESSION_EVENT_KINDS } from '../domain/session-state.policy';
 import { WorkSessionEntity } from '../domain/work-session.entity';
 import { WorkSessionMapper } from '../work-session.mapper';
@@ -44,6 +46,7 @@ describe('sessions: cloud chat replies (integration)', () => {
         WorkSessionEventOrmEntity,
         SessionCloudLineOrmEntity,
         SessionCloudReplyOrmEntity,
+        SessionCloudRunOrmEntity,
         OutboxMessageSchema,
       ],
       synchronize: false,
@@ -174,5 +177,278 @@ describe('sessions: cloud chat replies (integration)', () => {
   it('claims a reply only for its own session', async () => {
     const reply = await addReply();
     expect(await chat.claimReplyForHost(randomUUID(), reply.id)).toBeNull();
+  });
+
+  describe('as the browser extension reads and replies', () => {
+    let cloudId: string;
+    let cloudSessionId: string;
+
+    /** A claude.ai session adopted the way `RecordCloudEventsCommandHandler` does it. */
+    const adopt = async (): Promise<{ id: string; cloudId: string }> => {
+      const [project]: { id: string }[] = await dataSource.query(
+        `SELECT id FROM "project" WHERE "organizationId" = $1 LIMIT 1`,
+        [organizationId],
+      );
+      const claudeId = `session_${randomUUID().replace(/-/g, '').slice(0, 24)}`;
+      const work = WorkSessionEntity.requestCloud({
+        id: randomUUID(),
+        cloudRun: null,
+        organizationId,
+        projectId: project.id,
+        createdByUserId: authorId,
+        slug: `calm-heron-${randomUUID().slice(0, 6)}`,
+        agent: 'claude-code',
+        name: 'Fix the login page',
+        idempotencyKey: adoptionKey(claudeId),
+      });
+      const outcome = await sessions.createIfUnclaimed(
+        work,
+        adoptedCloudEntries({ userId: authorId, cloudSessionId: claudeId }),
+      );
+      return { id: outcome.session.id, cloudId: claudeId };
+    };
+
+    const entry = (uuid: string, text: string) =>
+      JSON.stringify({ type: 'user', uuid, message: { role: 'user', content: text } });
+
+    beforeEach(async () => {
+      ({ id: cloudId, cloudId: cloudSessionId } = await adopt());
+    });
+
+    it('adopts a claude.ai session once, as a hostless cloud session that knows its claude.ai id', async () => {
+      // Breaks if a second batch racing the first adopts the session again, or
+      // if the adopted row lacks the id every cloud read finds it by.
+      const again = await sessions.createIfUnclaimed(
+        WorkSessionEntity.requestCloud({
+          id: randomUUID(),
+          cloudRun: null,
+          organizationId,
+          projectId: (
+            await dataSource.query(`SELECT "projectId" FROM work_session WHERE id = $1`, [cloudId])
+          )[0].projectId,
+          createdByUserId: authorId,
+          slug: `calm-heron-${randomUUID().slice(0, 6)}`,
+          agent: 'claude-code',
+          idempotencyKey: adoptionKey(cloudSessionId),
+        }),
+        adoptedCloudEntries({ userId: authorId, cloudSessionId }),
+      );
+      expect(again).toMatchObject({ created: false });
+      expect(again.session.id).toBe(cloudId);
+      const [row]: { hostId: string | null; place: string; agentSessionId: string }[] =
+        await dataSource.query(
+          `SELECT "hostId", place, "agentSessionId" FROM work_session WHERE id = $1`,
+          [cloudId],
+        );
+      expect(row).toEqual({ hostId: null, place: 'cloud', agentSessionId: cloudSessionId });
+    });
+
+    it('keeps each event once, in order, and replaces the hook’s copy with the first batch', async () => {
+      // The hook got there first: its lines are what the chat read until now.
+      expect(await chat.appendLines(organizationId, cloudId, 0, ['{"hook":0}', '{"hook":1}'])).toBe(
+        2,
+      );
+      expect(await chat.findSource(cloudId)).toBe('hook');
+
+      const first = [
+        { id: 'e1', line: entry('e1', 'Fix the login page') },
+        { id: 'e2', line: entry('e2', 'On it') },
+        { id: 'e1', line: entry('e1', 'Fix the login page') },
+      ];
+      // Breaks if a resent or doubled event is stored twice, or the hook's
+      // lines stay beside claude.ai's and the chat shows the turn twice.
+      expect(await chat.appendEvents(organizationId, cloudId, first, 0)).toBe(2);
+      expect(await chat.appendEvents(organizationId, cloudId, first.slice(0, 2), 0)).toBe(0);
+      expect(
+        await chat.appendEvents(
+          organizationId,
+          cloudId,
+          [
+            { id: 'e2', line: entry('e2', 'On it') },
+            { id: 'e3', line: entry('e3', 'Also the signup page') },
+          ],
+          1,
+        ),
+      ).toBe(1);
+      expect(await chat.findSource(cloudId)).toBe('browser');
+      const lines = await chat.findLines(cloudId, 0, 10);
+      expect(lines.map((each) => each.seq)).toEqual([0, 1, 2]);
+      expect(lines.map((each) => JSON.parse(each.line).uuid)).toEqual(['e1', 'e2', 'e3']);
+
+      // Breaks if the hook, still running in the session, writes its own
+      // numbering into lines the extension now owns.
+      expect(await chat.appendLines(organizationId, cloudId, 2, ['{"hook":2}', '{"hook":3}'])).toBe(
+        0,
+      );
+      expect(await chat.findLines(cloudId, 0, 10)).toHaveLength(3);
+    });
+
+    it('keeps each event at its place in the log, whatever order and whichever browser sends it', async () => {
+      // Regressions: a log numbered as it arrived opened a long chat on its
+      // oldest turns; and a stretch numbered before the whole copy, sent by a
+      // second browser over a copy holding the log's start, read 201–400,
+      // 1–200, 401.
+      const event = (n: number) => ({ id: `e${n}`, line: entry(`e${n}`, `turn ${n}`) });
+      const stretch = (from: number, to: number) =>
+        Array.from({ length: to - from + 1 }, (_, i) => event(from + i));
+      // One browser sent the log's first 200 events (places 0–199).
+      expect(await chat.appendEvents(organizationId, cloudId, stretch(1, 200), 0)).toBe(200);
+      // Another reads the whole log, 401 events, and sends it newest first.
+      expect(await chat.appendEvents(organizationId, cloudId, [event(401)], 400)).toBe(1);
+      expect(await chat.appendEvents(organizationId, cloudId, stretch(201, 400), 200)).toBe(200);
+      expect(await chat.appendEvents(organizationId, cloudId, stretch(1, 200), 0)).toBe(0);
+      // A stretch sent again after a failure adds nothing and moves nothing.
+      expect(await chat.appendEvents(organizationId, cloudId, stretch(201, 220), 200)).toBe(0);
+      // A running session's next event, sent as the log grows.
+      expect(await chat.appendEvents(organizationId, cloudId, [event(402)], 401)).toBe(1);
+
+      const lines = await chat.findLines(cloudId, undefined, 1000);
+      expect(lines.map((each) => JSON.parse(each.line).uuid)).toEqual(
+        stretch(1, 402).map((each) => each.id),
+      );
+      expect(lines.map((each) => each.seq)).toEqual(Array.from({ length: 402 }, (_, i) => i));
+    });
+
+    it('counts the lines below a reader’s place, so a stretch that lands under it shows', async () => {
+      const event = (n: number) => ({ id: `e${n}`, line: entry(`e${n}`, `turn ${n}`) });
+      // The log's first and newest events, at places 0 and 3: a reader at 4 has read 2.
+      expect(await chat.appendEvents(organizationId, cloudId, [event(1)], 0)).toBe(1);
+      expect(await chat.appendEvents(organizationId, cloudId, [event(4)], 3)).toBe(1);
+      expect(await chat.countLinesBefore(cloudId, 4)).toBe(2);
+      // Places 1 and 2 land below it: the count moves, the copy's start does not.
+      expect(await chat.appendEvents(organizationId, cloudId, [event(2), event(3)], 1)).toBe(2);
+      expect(await chat.countLinesBefore(cloudId, 4)).toBe(4);
+      const lines = await chat.findLines(cloudId, undefined, 10);
+      expect(lines.map((each) => JSON.parse(each.line).uuid)).toEqual(['e1', 'e2', 'e3', 'e4']);
+    });
+
+    it('numbers two batches written at once without a gap or a clash', async () => {
+      const batch = (from: number) =>
+        Array.from({ length: 20 }, (_, i) => ({
+          id: `e${from + i}`,
+          line: entry(`e${from + i}`, 'x'),
+        }));
+      const [a, b] = await Promise.all([
+        chat.appendEvents(organizationId, cloudId, batch(0), 0),
+        chat.appendEvents(organizationId, cloudId, batch(10), 10),
+      ]);
+      expect(a + b).toBe(30);
+      const seqs = (await chat.findLines(cloudId, 0, 100)).map((each) => each.seq);
+      expect(seqs).toEqual(Array.from({ length: 30 }, (_, i) => i));
+    });
+
+    it('hands the extension its person’s waiting replies in open Claude Code cloud sessions only', async () => {
+      const mine = await chat.addReply(
+        organizationId,
+        cloudId,
+        authorId,
+        'Also the signup page',
+        new Date(),
+      );
+      // The worktree session of the outer fixture has no claude.ai id: never the extension's.
+      await chat.addReply(organizationId, sessionId, authorId, 'not a cloud session', new Date());
+      const someoneElse = randomUUID();
+      await dataSource.query(
+        `INSERT INTO "user" ("id", "email", "name", "firstName", "lastName", "emailVerified")
+         VALUES ($1, $2, 'Bo', 'Bo', 'Li', true)`,
+        [someoneElse, `${someoneElse}@example.com`],
+      );
+      await chat.addReply(organizationId, cloudId, someoneElse, 'not yours to post', new Date());
+
+      // Breaks if the extension posts as its person a reply someone else typed,
+      // or claims replies for a session it cannot post to.
+      const claimed = await chat.claimRepliesForBrowser(organizationId, authorId, 60);
+      expect(claimed.map((reply) => [reply.id, reply.cloudSessionId, reply.text])).toEqual([
+        [mine.id, cloudSessionId, 'Also the signup page'],
+      ]);
+      expect(claimed[0].deliveredVia).toBe('browser');
+      expect(await chat.claimRepliesForBrowser(organizationId, authorId, 60)).toEqual([]);
+      // Breaks if the Stop hook or a host can still deliver it a second time.
+      expect(await chat.claimReplyForHost(cloudId, mine.id)).toBeNull();
+      expect((await chat.collectReply(cloudId))?.text).toBe('not yours to post');
+    });
+
+    it('hands a reply claude.ai refused back to the hook, and only the extension’s own claim', async () => {
+      const reply = await chat.addReply(organizationId, cloudId, authorId, 'retry me', new Date());
+      await chat.claimRepliesForBrowser(organizationId, authorId, 60);
+      // Breaks if a refused post is lost: it has to wait for the hook again.
+      expect(await chat.releaseBrowserClaim(organizationId, authorId, reply.id)).toBe(true);
+      expect((await chat.collectReply(cloudId))?.id).toBe(reply.id);
+      // Breaks if a late release takes back a reply the hook delivered.
+      expect(await chat.releaseBrowserClaim(organizationId, authorId, reply.id)).toBe(false);
+      const [held] = await chat.findReplies(organizationId, cloudId, 10);
+      expect(held).toMatchObject({ deliveredVia: 'hook' });
+    });
+
+    it('gives a reply to one of the extension, the hook and a host when they race for it', async () => {
+      for (let round = 0; round < 10; round += 1) {
+        const reply = await chat.addReply(
+          organizationId,
+          cloudId,
+          authorId,
+          `round ${round}`,
+          new Date(),
+        );
+        const [byBrowser, byHook, byHost] = await Promise.all([
+          chat.claimRepliesForBrowser(organizationId, authorId, 60),
+          chat.collectReply(cloudId),
+          chat.claimReplyForHost(cloudId, reply.id),
+        ]);
+        expect(
+          [byBrowser.length > 0, Boolean(byHook), Boolean(byHost)].filter(Boolean),
+        ).toHaveLength(1);
+      }
+    });
+
+    it('gives a claim the extension never confirmed back to the hook once its lease lapses', async () => {
+      const reply = await chat.addReply(
+        organizationId,
+        cloudId,
+        authorId,
+        'lost in transit',
+        new Date(),
+      );
+      // A lease already over: the claim's answer was lost, or Chrome stopped the worker.
+      await chat.claimRepliesForBrowser(organizationId, authorId, -1);
+      // Breaks if the console draws a reply nobody posted as sent, forever.
+      const [seen] = await chat.findReplies(organizationId, cloudId, 10);
+      expect(seen).toMatchObject({ id: reply.id, collectedAt: null, deliveredVia: null });
+      // Breaks if the hook, a host or the extension can never deliver it again.
+      expect((await chat.collectReply(cloudId))?.id).toBe(reply.id);
+      expect(await chat.confirmBrowserDelivery(organizationId, authorId, reply.id)).toBe(false);
+    });
+
+    it('keeps a claim claude.ai took, so nothing delivers it twice', async () => {
+      const reply = await chat.addReply(organizationId, cloudId, authorId, 'posted', new Date());
+      await chat.claimRepliesForBrowser(organizationId, authorId, 60);
+      expect(await chat.confirmBrowserDelivery(organizationId, authorId, reply.id)).toBe(true);
+      // Confirmed, its lease is gone: even a claim that would have lapsed stays.
+      await dataSource.query(
+        `UPDATE session_cloud_reply SET "createdAt" = now() - interval '1 hour' WHERE id = $1`,
+        [reply.id],
+      );
+      expect(await chat.collectReply(cloudId)).toBeNull();
+      expect(await chat.claimRepliesForBrowser(organizationId, authorId, 60)).toEqual([]);
+      const [seen] = await chat.findReplies(organizationId, cloudId, 10);
+      expect(seen).toMatchObject({ id: reply.id, deliveredVia: 'browser' });
+    });
+
+    it('stages the wake again for just past a held claim’s lease, and not for a confirmed one', async () => {
+      const reply = await chat.addReply(organizationId, cloudId, authorId, 'held', new Date());
+      await chat.claimRepliesForBrowser(organizationId, authorId, 60);
+      // Breaks if a reply the extension holds and never posts loses its host wake for good.
+      const at = await chat.deferWakeWhileLeased(cloudId, reply.id);
+      expect(at).not.toBeNull();
+      const staged: { availableAt: Date }[] = await dataSource.query(
+        `SELECT "availableAt" FROM outbox_message
+          WHERE "aggregateId" = $1 AND topic = $2 AND payload->>'replyId' = $3
+          ORDER BY "availableAt" DESC LIMIT 1`,
+        [cloudId, QUEUE_NAMES.CLOUD_REPLY_WAKES, reply.id],
+      );
+      expect(new Date(staged[0]?.availableAt ?? 0).getTime()).toBe(at?.getTime());
+      // Confirmed, nothing holds it: no wake comes again.
+      await chat.confirmBrowserDelivery(organizationId, authorId, reply.id);
+      expect(await chat.deferWakeWhileLeased(cloudId, reply.id)).toBeNull();
+    });
   });
 });

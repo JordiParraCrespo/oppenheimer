@@ -10,10 +10,25 @@ import { type ArgumentMetadata, Injectable, type PipeTransform } from '@nestjs/c
  * parameter (the caller's ability, access scope or session, read off the
  * request by a `createParamDecorator`) is already trusted and would be flattened.
  */
+const KEEPS_MARKUP = Symbol('keepsMarkup');
+
+/**
+ * Marks a request DTO whose strings are kept as sent: a body that carries
+ * code, a transcript line (JSON in a string) or a message typed to an agent,
+ * where `a < b` and `<div>` are content. Stripping them stored broken JSON
+ * and changed what the agent was told. Such a body is never rendered as HTML.
+ */
+export function KeepsMarkup(): ClassDecorator {
+  return (target) => {
+    Reflect.defineProperty(target, KEEPS_MARKUP, { value: true });
+  };
+}
+
 @Injectable()
 export class SanitizePipe implements PipeTransform {
   transform(value: unknown, metadata: ArgumentMetadata): unknown {
     if (metadata.type === 'custom') return value;
+    if (metadata.type === 'body' && keepsMarkup(metadata.metatype)) return value;
     return this.sanitize(value);
   }
 
@@ -59,4 +74,11 @@ export class SanitizePipe implements PipeTransform {
     }
     return kept.replace(/[<>]/g, '');
   }
+}
+
+function keepsMarkup(metatype: ArgumentMetadata['metatype']): boolean {
+  return (
+    typeof metatype === 'function' &&
+    (metatype as unknown as Record<symbol, unknown>)[KEEPS_MARKUP] === true
+  );
 }

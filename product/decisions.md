@@ -2993,6 +2993,14 @@ one its decision belongs to:
   days ago and folds the older ones under "Show *n* older" at its foot,
   Linear's "past week" display option. Nothing is archived: the header
   counts every done task, and archiving stays a later step.
+- 2026-11-27: **the browser extension carries a cloud session's chat**
+  ([Cloud agents](design/sessions/cloud-agents.md), "The chat through the
+  extension"). The chat was kept only for the sessions the console launched,
+  from the transcript their hook sends, with replies waiting for the turn to
+  end (2026-11-07). The extension now carries every cloud session's chat
+  from claude.ai's own log, the person's messages included, adopting a
+  session started elsewhere, and posts console replies on claude.ai as the
+  person.
 
 ## The roadmap
 

@@ -2,7 +2,8 @@ import { TAP_SOURCE } from './tap-message';
 
 /**
  * Runs inside claude.ai's own page (the MAIN world) and watches its fetches.
- * When claude.ai/code loads its session list, or one session, this passes
+ * When claude.ai/code loads its session list, one session or a session's
+ * event log, this passes
  * the answer on — with the URL it came from and the non-secret headers it
  * was asked with — to `bridge.ts`. That is how the extension learns the real
  * endpoint without being told, and keeps up to date for free while a
@@ -13,6 +14,8 @@ import { TAP_SOURCE } from './tap-message';
  */
 const KEPT_HEADER = /^(anthropic-|x-organization)/i;
 const SESSIONS_URL = /\/sessions(\/[^/?]+)?(\?|$)/;
+/** One session's event log: what the app reads to draw its conversation. */
+const EVENTS_URL = /\/sessions\/[^/?]+\/(teleport-)?events(\?|$)/;
 
 const original = window.fetch;
 
@@ -30,7 +33,8 @@ function watch(input: RequestInfo | URL, init: RequestInit | undefined, response
   const request = input instanceof Request ? input : undefined;
   const url = new URL(request?.url ?? String(input), location.href);
   const method = (init?.method ?? request?.method ?? 'GET').toUpperCase();
-  if (method !== 'GET' || !SESSIONS_URL.test(url.pathname + url.search)) return;
+  const path = url.pathname + url.search;
+  if (method !== 'GET' || !(SESSIONS_URL.test(path) || EVENTS_URL.test(path))) return;
   if (!response.ok || !(response.headers.get('content-type') ?? '').includes('json')) return;
 
   const headers = kept(init?.headers ?? request?.headers);

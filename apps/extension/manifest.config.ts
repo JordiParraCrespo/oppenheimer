@@ -5,7 +5,10 @@
  * person installing it, so each one is here for one reason:
  *
  * - `https://claude.ai/*` — to read your session list with the claude.ai
- *   sign-in already in Chrome, and to watch claude.ai/code load it.
+ *   sign-in already in Chrome, and to watch claude.ai/code load it; and,
+ *   connected to Oppenheimer, to post a reply you typed there from a claude.ai
+ *   tab (claude.ai takes a write only from its own pages), opening one in the
+ *   background when none is open and closing it a minute later.
  * - `cookies` — to read one cookie, `lastActiveOrg`: which organization's
  *   sessions to ask for. Never the session cookie.
  * - `alarms` — the check every minute.

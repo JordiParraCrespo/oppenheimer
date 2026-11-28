@@ -173,7 +173,10 @@ needs a name no other module uses (`FindThingsHttpController`, never
 
 - Request DTOs use Zod schemas from `packages/shared`
 - All user input is sanitized via `SanitizePipe` (strips HTML) and validated via
-  `nestjs-zod`'s `ZodValidationPipe`; both are registered globally in `apps/api/src/main.ts`
+  `nestjs-zod`'s `ZodValidationPipe`; both are registered globally in `apps/api/src/main.ts`.
+  A body whose strings are code or a transcript (JSON in a string, a message to an agent)
+  marks its DTO `@KeepsMarkup()`: stripping `<…>` there corrupts it, and it is never
+  rendered as HTML
 - Paginated list queries extend `paginationSchema` from `@oppenheimer/shared` (its bounds are
   `PAGINATION`); the controller builds the response `meta` with `toPageMeta` from
   `@oppenheimer/backend-core`

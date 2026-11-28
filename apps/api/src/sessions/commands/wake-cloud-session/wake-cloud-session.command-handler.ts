@@ -19,6 +19,7 @@ export type WakeCloudSessionResult =
   | 'sent'
   | 'unconfirmed'
   | 'taken'
+  | 'deferred'
   | 'no_session'
   | 'no_account'
   | 'no_host'
@@ -79,7 +80,9 @@ export class WakeCloudSessionCommandHandler
     }
 
     const reply = await this.chat.claimReplyForHost(sessionId, replyId);
-    if (!reply) return 'taken';
+    // Held by the extension, unconfirmed: this wake comes again when that claim lapses.
+    if (!reply)
+      return (await this.chat.deferWakeWhileLeased(sessionId, replyId)) ? 'deferred' : 'taken';
     const outcome = await this.replies.send(
       hostIds,
       cloudSessionId,

@@ -11600,6 +11600,276 @@
         ]
       }
     },
+    "/api/v1/sessions/cloud-events": {
+      "post": {
+        "description": "What the browser extension reads from claude.ai with the person’s own sign-in: events of a Claude Code cloud session’s log, oldest first, each the transcript entry claude.ai keeps. They become the session’s chat in the console, replacing the transcript its hook sent. A session this workspace does not know yet is adopted, in the unassigned project; one closed here keeps nothing (`sessionId: null`). An event already held is skipped, so sending a batch again stores nothing twice.",
+        "operationId": "recordCloudEvents",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordCloudEventsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordedCloudEventsResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SESSIONS_054 — The session with that id is not a Claude Code cloud session",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send events of a Claude Code cloud session’s log on claude.ai",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/cloud-replies/claim": {
+      "post": {
+        "description": "What the browser extension asks, over and over: every reply the caller typed in a Claude Code cloud session’s chat that nothing has delivered yet, now claimed for the extension to post on claude.ai as the caller. With none waiting, the request waits up to `wait` seconds for one. A reply claude.ai refuses is handed back with `POST /v1/sessions/cloud-replies/{replyId}/release`.",
+        "operationId": "claimCloudReplies",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimCloudRepliesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimedCloudRepliesResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_001 — Rate limit reached",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Claim the replies waiting for your Claude Code cloud sessions",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/cloud-replies/{replyId}/release": {
+      "post": {
+        "description": "What the browser extension says when claude.ai refused a reply it claimed: the reply waits again, for the session’s Stop hook. `released: false` when it was not the caller’s claim to hand back.",
+        "operationId": "releaseCloudReply",
+        "parameters": [
+          {
+            "name": "replyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseCloudReplyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleasedCloudReplyResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Hand back a reply claude.ai refused",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/cloud-replies/{replyId}/delivered": {
+      "post": {
+        "description": "What the browser extension says once claude.ai took a reply it claimed and posted: the claim stops lapsing, so the session’s Stop hook or a host never delivers it again. `delivered: false` when it was not the caller’s claim, or it lapsed and another way took it.",
+        "operationId": "confirmCloudReply",
+        "parameters": [
+          {
+            "name": "replyId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmedCloudReplyResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetailsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Say claude.ai took a reply you claimed",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
     "/api/v1/sessions/cloud-replies/take": {
       "post": {
         "description": "What the Stop hook in a Claude Code cloud session asks when its agent ends a turn: the oldest reply typed in its chat that no hook has collected, now marked collected. With none waiting, the request waits up to `wait` seconds for one, then answers `text: null`.",
@@ -11801,7 +12071,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "The number of the first line to read: a read’s `next`, or 0",
+            "description": "The number of the first line to read: a read’s `next`; absent, the copy’s first line (`start`)",
             "schema": {
               "type": "number"
             }
@@ -34404,6 +34674,155 @@
           "accepted"
         ]
       },
+      "RecordCloudEventsRequest": {
+        "type": "object",
+        "properties": {
+          "cloudSessionId": {
+            "type": "string",
+            "pattern": "^(cse|session)_[A-Za-z0-9]{8,64}$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "events": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 200,
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "line": {
+                  "type": "string",
+                  "maxLength": 64000
+                }
+              },
+              "required": [
+                "id",
+                "line"
+              ]
+            }
+          },
+          "from": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false,
+            "maximum": 10000000,
+            "exclusiveMaximum": false
+          }
+        },
+        "required": [
+          "cloudSessionId",
+          "events",
+          "from"
+        ]
+      },
+      "RecordedCloudEventsResponseDto": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid",
+            "description": "The session the events are kept under; null for one closed in the console."
+          },
+          "accepted": {
+            "type": "number",
+            "description": "How many of the events were new; one already held is not."
+          }
+        },
+        "required": [
+          "accepted"
+        ]
+      },
+      "ClaimCloudRepliesRequest": {
+        "type": "object",
+        "properties": {
+          "wait": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": false,
+            "maximum": 10,
+            "exclusiveMaximum": false,
+            "default": 0
+          }
+        }
+      },
+      "ClaimedCloudReplyResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cloudSessionId": {
+            "type": "string",
+            "description": "The claude.ai session to post it to (`session_…`)."
+          },
+          "text": {
+            "type": "string",
+            "description": "What the person typed, to post as their message."
+          }
+        },
+        "required": [
+          "id",
+          "cloudSessionId",
+          "text"
+        ]
+      },
+      "ClaimedCloudRepliesResponseDto": {
+        "type": "object",
+        "properties": {
+          "replies": {
+            "description": "Oldest first.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClaimedCloudReplyResponseDto"
+            }
+          }
+        },
+        "required": [
+          "replies"
+        ]
+      },
+      "ReleaseCloudReplyRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 64
+          }
+        }
+      },
+      "ReleasedCloudReplyResponseDto": {
+        "type": "object",
+        "properties": {
+          "released": {
+            "type": "boolean",
+            "description": "Whether it was the caller’s claim, now handed back."
+          }
+        },
+        "required": [
+          "released"
+        ]
+      },
+      "ConfirmedCloudReplyResponseDto": {
+        "type": "object",
+        "properties": {
+          "delivered": {
+            "type": "boolean",
+            "description": "Whether it was the caller’s claim, still held, now final."
+          }
+        },
+        "required": [
+          "delivered"
+        ]
+      },
       "TakeCloudReplyRequest": {
         "type": "object",
         "properties": {
@@ -34490,9 +34909,10 @@
             "nullable": true,
             "enum": [
               "hook",
-              "host"
+              "host",
+              "browser"
             ],
-            "description": "How it reached the agent: `hook`, the session’s Stop hook took it at the end of a turn; `host`, a host signed in to the session’s claude.ai account sent it, which wakes an idle session. Null while it waits."
+            "description": "How it reached the agent: `hook`, the session’s Stop hook took it at the end of a turn; `host`, a host signed in to the session’s claude.ai account sent it, which wakes an idle session; `browser`, the browser extension posted it on claude.ai as its author, which the session runs at once. Null while it waits."
           }
         },
         "required": [
@@ -34515,6 +34935,18 @@
             "type": "number",
             "description": "The number to ask from next."
           },
+          "held": {
+            "type": "number",
+            "description": "How many lines the copy holds before `next`. A reader that has read fewer since it read with no `from` missed lines that landed below what it read (a stretch of the log sent after a newer one): read again with no `from`."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "hook",
+              "browser"
+            ],
+            "description": "Where the lines come from: `hook`, the transcript the session’s hook sends; `browser`, the session’s log on claude.ai, which the browser extension reads. When it changes, the lines are numbered anew: read again from 0."
+          },
           "replies": {
             "description": "The replies typed here, oldest first.",
             "type": "array",
@@ -34526,6 +34958,8 @@
         "required": [
           "lines",
           "next",
+          "held",
+          "source",
           "replies"
         ]
       },

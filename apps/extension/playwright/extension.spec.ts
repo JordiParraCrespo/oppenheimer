@@ -360,3 +360,301 @@ test('a failed read of your hosts says so and leaves the badge, and disconnectin
   await popup.getByRole('button', { name: 'Disconnect' }).click();
   await expect.poll(async () => (await stored(worker)).badge).toBe('');
 });
+
+test('carries a session’s chat to Oppenheimer and posts a reply typed there on claude.ai', async ({
+  context,
+  claude,
+  worker,
+  extensionId,
+}) => {
+  // claude.ai's list answers `cse_` ids; the console and the API say `session_`.
+  const CSE = 'cse_01ChatBridge00';
+  const ID = 'session_01ChatBridge00';
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'POST',
+  };
+  const forwarded: Array<{ cloudSessionId: string; title?: string; events: { id: string }[] }> = [];
+  let claimable = [
+    {
+      id: '0b8f0c2e-6b8c-4f1e-9c9e-2f0e6b0e8a11',
+      cloudSessionId: ID,
+      text: 'Also the signup page',
+    },
+  ];
+  await context.route('http://localhost:3001/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    const path = new URL(request.url()).pathname;
+    if (path.endsWith('/cloud-events')) {
+      forwarded.push(request.postDataJSON());
+      return route.fulfill({ headers: cors, json: { sessionId: 'console-1', accepted: 2 } });
+    }
+    if (path.endsWith('/cloud-replies/claim')) {
+      const replies = claimable;
+      claimable = [];
+      return route.fulfill({ headers: cors, json: { replies } });
+    }
+    return route.fulfill({ headers: cors, json: { matched: 0 } });
+  });
+  const posted: unknown[] = [];
+  await context.route('https://claude.ai/v1/**', (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    // The code-session routes take the `cse_` form.
+    if (path === `/v1/code/sessions/${CSE}/teleport-events`) {
+      return route.fulfill({
+        json: {
+          data: [
+            {
+              payload: {
+                type: 'user',
+                uuid: 'u1',
+                message: { role: 'user', content: 'Fix login' },
+              },
+            },
+            {
+              payload: {
+                type: 'assistant',
+                uuid: 'a1',
+                message: { role: 'assistant', content: [{ type: 'text', text: 'On it' }] },
+              },
+            },
+          ],
+        },
+      });
+    }
+    if (path === `/v1/code/sessions/${CSE}/events` && request.method() === 'POST') {
+      // As claude.ai does: a cookie-signed write is taken from its own pages only.
+      if (request.headers().origin !== 'https://claude.ai')
+        return route.fulfill({ status: 401, json: {} });
+      posted.push(request.postDataJSON());
+      return route.fulfill({ json: {} });
+    }
+    return route.fallback();
+  });
+  await worker.evaluate(() =>
+    chrome.storage.local.set({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_test' },
+    }),
+  );
+  claude.sessions = [running(CSE, 'Fix login')];
+  const page = await context.newPage();
+  await page.goto('https://claude.ai/code');
+  await expect.poll(async () => (await stored(worker)).seeded).toBe(true);
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.getByRole('button', { name: 'Check now' }).click();
+
+  // Breaks if the reply typed in the console is not posted as the person's
+  // message from a claude.ai page (the worker's own request is refused), or
+  // if a session listed as `cse_` is dropped and its conversation never leaves.
+  await expect
+    .poll(() => posted)
+    .toEqual([
+      {
+        events: [
+          {
+            payload: {
+              type: 'user',
+              uuid: '0b8f0c2e-6b8c-4f1e-9c9e-2f0e6b0e8a11',
+              parent_tool_use_id: null,
+              message: { role: 'user', content: 'Also the signup page' },
+            },
+          },
+        ],
+      },
+    ]);
+  await expect.poll(() => forwarded.at(0)?.events.map((event) => event.id)).toEqual(['u1', 'a1']);
+  expect(forwarded[0]).toMatchObject({ cloudSessionId: ID, title: 'Fix login' });
+});
+
+test('says in the popup when the token cannot carry the chat', async ({
+  context,
+  worker,
+  extensionId,
+}) => {
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'POST',
+  };
+  await context.route('http://localhost:3001/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    if (new URL(request.url()).pathname.endsWith('/cloud-replies/claim')) {
+      // A token made before the chat needed `cloud-chat:write`.
+      return route.fulfill({
+        status: 403,
+        headers: cors,
+        json: { title: 'The credential lacks a required scope', code: 'TOKEN_005' },
+      });
+    }
+    return route.fulfill({ headers: cors, json: { matched: 0 } });
+  });
+  await worker.evaluate(() =>
+    chrome.storage.local.set({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_test' },
+    }),
+  );
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  // Breaks if the popup reads as a healthy connection while no chat goes and
+  // no reply is posted.
+  await expect(
+    popup.getByText('The chat needs a token with sessions:write and cloud-chat:write'),
+  ).toBeVisible({ timeout: 15_000 });
+});
+
+test('holds a reply claude.ai refused for its lease instead of posting it again at once', async ({
+  context,
+  claude,
+  worker,
+  extensionId,
+}) => {
+  const ID = 'session_01RefusedPost00';
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'POST',
+  };
+  let claimable = [
+    { id: '1c9f0c2e-6b8c-4f1e-9c9e-2f0e6b0e8a12', cloudSessionId: ID, text: 'go on' },
+  ];
+  const released: string[] = [];
+  await context.route('http://localhost:3001/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    const path = new URL(request.url()).pathname;
+    if (path.endsWith('/cloud-replies/claim')) {
+      const replies = claimable;
+      claimable = [];
+      return route.fulfill({ headers: cors, json: { replies } });
+    }
+    if (path.endsWith('/release')) released.push(path);
+    return route.fulfill({ headers: cors, json: { matched: 0, sessionId: null, accepted: 0 } });
+  });
+  let posts = 0;
+  await context.route('https://claude.ai/v1/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'POST') {
+      posts += 1;
+      return route.fulfill({ status: 403, json: {} });
+    }
+    // The session's log reads, empty: the refused post is the only problem.
+    if (new URL(request.url()).pathname.endsWith('/teleport-events')) {
+      return route.fulfill({ json: { data: [] } });
+    }
+    return route.fallback();
+  });
+  await worker.evaluate(() =>
+    chrome.storage.local.set({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_test' },
+    }),
+  );
+  claude.sessions = [running(ID, 'Refused')];
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.getByRole('button', { name: 'Check now' }).click();
+
+  // Both routes were tried once; the reply was neither handed back nor posted again.
+  await expect.poll(() => posts).toBe(2);
+  await popup.waitForTimeout(2_000);
+  expect(posts).toBe(2);
+  expect(released).toEqual([]);
+  // Breaks if claude.ai's refusal reads as a token problem, or not at all.
+  await expect(
+    popup.getByText(/The chats aren.t reaching Oppenheimer: claude\.ai refused a reply \(403\)/),
+  ).toBeVisible();
+});
+
+test('says in the popup when claude.ai gives no session’s log', async ({
+  context,
+  claude,
+  worker,
+  extensionId,
+}) => {
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'POST',
+  };
+  await context.route('http://localhost:3001/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    if (new URL(request.url()).pathname.endsWith('/cloud-replies/claim')) {
+      return route.fulfill({ headers: cors, json: { replies: [] } });
+    }
+    return route.fulfill({ headers: cors, json: { matched: 0 } });
+  });
+  await worker.evaluate(() =>
+    chrome.storage.local.set({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_test' },
+    }),
+  );
+  // Every log route answers 404 (the fixture's fake claude.ai), the list still works.
+  claude.sessions = [running('session_01NoLogRoute00', 'No log')];
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  // Breaks if a pass that read no log clears the warning, and the console's
+  // copy goes stale behind a healthy-looking popup.
+  await expect(popup.getByText(/claude\.ai gave no event log/)).toBeVisible({ timeout: 20_000 });
+});
+
+test('confirms a delivery again when its first confirmation does not get through', async ({
+  context,
+  claude,
+  worker,
+  extensionId,
+}) => {
+  const ID = 'session_01ConfirmAgain0';
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'POST',
+  };
+  let claimable = [
+    { id: '2c9f0c2e-6b8c-4f1e-9c9e-2f0e6b0e8a13', cloudSessionId: ID, text: 'ship it' },
+  ];
+  const confirms: number[] = [];
+  await context.route('http://localhost:3001/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    const path = new URL(request.url()).pathname;
+    if (path.endsWith('/cloud-replies/claim')) {
+      const replies = claimable;
+      claimable = [];
+      return route.fulfill({ headers: cors, json: { replies } });
+    }
+    if (path.endsWith('/delivered')) {
+      // The first confirmation is lost to a failing API; the next one lands.
+      const status = confirms.length === 0 ? 502 : 200;
+      confirms.push(status);
+      return route.fulfill({ status, headers: cors, json: { delivered: true } });
+    }
+    return route.fulfill({ headers: cors, json: { matched: 0, sessionId: null, accepted: 0 } });
+  });
+  await context.route('https://claude.ai/v1/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'POST') return route.fulfill({ json: {} });
+    if (new URL(request.url()).pathname.endsWith('/teleport-events')) {
+      return route.fulfill({ json: { data: [] } });
+    }
+    return route.fallback();
+  });
+  await worker.evaluate(() =>
+    chrome.storage.local.set({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_test' },
+    }),
+  );
+  claude.sessions = [running(ID, 'Confirm')];
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  // Breaks if a lost confirmation lets the claim lapse and the Stop hook
+  // deliver a reply claude.ai already took.
+  await expect.poll(() => confirms, { timeout: 20_000 }).toEqual([502, 200]);
+});

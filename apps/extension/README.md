@@ -38,6 +38,7 @@ Sessions the console starts in Claude Code cloud (New session → Where →
 is what this extension sees. To send it:
 
 1. In the console, create a personal API token with **`sessions:write`**,
+   and **`cloud-chat:write`** too for the chat (below),
    limited to your workspace (a token not pinned to a workspace has none to
    act in, and the API answers `AUTH_002`).
 2. In the popup's **Oppenheimer** section, enter the API's URL and the
@@ -48,8 +49,51 @@ is what this extension sees. To send it:
 
 From then on, after every check, the worker posts every session it tracks
 to `POST /api/v1/sessions/cloud-status` with the token. The API records the
-ones your workspace launched and ignores the rest; nothing of claude.ai's
+ones your workspace launched and ignores the rest. No claude.ai credential
 (no cookie, no token) is ever sent.
+
+### The chat, both ways
+
+Connected, the worker also carries each cloud session's conversation to the
+console and your replies back (`src/sessions/chat.ts`), so a session started
+on claude.ai, the phone or `claude --cloud` reads in the console the way it
+reads in the Claude apps, your messages included:
+
+- **Ids.** claude.ai's list answers `cse_…` ids; the extension keeps each
+  session under its `session_…` id (the same suffix), which claude.ai's pages,
+  the console and the API use.
+- **Out.** It reads the session's event log from claude.ai, the log the apps
+  draw, with the claude.ai sign-in in Chrome: the route claude.ai's own page
+  read it from when the tap has seen one, else
+  `/v1/code/sessions/{id}/teleport-events` and `/v1/sessions/{id}/events`,
+  the routes the Claude Code CLI reads it from. Each event is the transcript
+  entry claude.ai keeps; the worker sends the ones the console does not have
+  to `POST /api/v1/sessions/cloud-events`, which adopts a session the
+  workspace did not start (in its unassigned project) and replaces the
+  transcript the session's hook sent. Read on each pass: the sessions running
+  or waiting on you, one you just replied to, and once each, the ones active
+  in the last day. Older ones are left alone until they move.
+- **In.** A loop claims your replies from
+  `POST /api/v1/sessions/cloud-replies/claim`, waiting up to ten seconds for
+  one, and posts each to the session on claude.ai as your message: a `user`
+  event on `POST /v1/code/sessions/cse_…/events`, the call claude.ai's own
+  page makes. claude.ai takes a write signed with its cookies only from its
+  own pages (the worker's request, from `chrome-extension://…`, is refused
+  with 401), so the post is made from a claude.ai tab by its content script
+  (`content/bridge.ts`, `background/claude-tab.ts`): a tab already open, or
+  one opened in the background on claude.ai/code and closed a minute after
+  its last post. The session runs it at once, mid-turn too. One
+  claude.ai refuses is handed back (`…/cloud-replies/{id}/release`) for the
+  session's Stop hook, and one it took is confirmed (`…/{id}/delivered`).
+  An unconfirmed claim lapses after a minute, so a reply whose post never
+  happened (a lost answer, a worker Chrome stopped) waits again instead of
+  being lost.
+- **The token.** The chat's routes ask for `cloud-chat:write` beside
+  `sessions:write`: a token that only manages sessions (an `opp` or MCP one)
+  can neither read nor take the replies you type. Without it the extension
+  still reports states; the chat says why it stopped in its stored
+  `chatProblem`. The loop runs while the worker does: each open request
+  keeps it alive, and the minute's alarm or **Check now** starts it again.
 
 After the report it reads `GET /api/v1/sessions?resolved=false` with the same
 token (`sessions:write` includes `sessions:read`) and tells you, once each,

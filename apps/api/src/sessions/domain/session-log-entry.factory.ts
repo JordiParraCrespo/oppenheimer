@@ -123,6 +123,55 @@ export function requestEntries(props: {
 }
 
 /**
+ * The first entries of a Claude Code cloud session started on claude.ai that
+ * the browser extension brought here: the request, as a cloud session's says
+ * it, marked `adopted`, and the start, which records its claude.ai id the way
+ * a runner's `session.started` does for one a host started. Keyed on the
+ * claude.ai id, so two batches adopting it at once write them once.
+ */
+export function adoptedCloudEntries(props: {
+  userId: string;
+  cloudSessionId: string;
+}): NewSessionEvent[] {
+  const key = (kind: string) =>
+    WorkSessionEntity.apiIdempotencyKey(`adopt:${props.cloudSessionId}`, kind);
+  return [
+    {
+      idempotencyKey: key(SESSION_EVENT_KINDS.REQUESTED),
+      source: 'api',
+      kind: SESSION_EVENT_KINDS.REQUESTED,
+      payload: {
+        agent: 'claude-code',
+        place: 'cloud',
+        adopted: true,
+        requestedByUserId: props.userId,
+        launch: launchOf('claude-code', undefined),
+      },
+    },
+    {
+      idempotencyKey: key(SESSION_EVENT_KINDS.STARTED),
+      source: 'api',
+      kind: SESSION_EVENT_KINDS.STARTED,
+      payload: {
+        agentSessionId: props.cloudSessionId,
+        cloudUrl: claudeCodeSessionUrl(props.cloudSessionId),
+        checkouts: [],
+      },
+    },
+  ];
+}
+
+/** Where a Claude Code cloud session is open on claude.ai. */
+function claudeCodeSessionUrl(cloudSessionId: string): string {
+  return `https://claude.ai/code/${cloudSessionId}`;
+}
+
+/** The idempotency key that adopts a claude.ai session once per workspace. */
+export function adoptionKey(cloudSessionId: string): string {
+  return `claude-cloud:${cloudSessionId}`;
+}
+
+/**
  * A cloud session's first entries: the request, as a host session's says it
  * (no host, the place `cloud`), and the first task. The vendor's first answer
  * follows as entries of its own (`cloudRunEntries`).

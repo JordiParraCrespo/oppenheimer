@@ -2095,6 +2095,68 @@ export type AppendedCloudTranscriptResponseDto = {
     accepted: number;
 };
 
+export type RecordCloudEventsRequest = {
+    cloudSessionId: string;
+    title?: string;
+    events: Array<{
+        id: string;
+        line: string;
+    }>;
+    from: number;
+};
+
+export type RecordedCloudEventsResponseDto = {
+    /**
+     * The session the events are kept under; null for one closed in the console.
+     */
+    sessionId?: string | null;
+    /**
+     * How many of the events were new; one already held is not.
+     */
+    accepted: number;
+};
+
+export type ClaimCloudRepliesRequest = {
+    wait?: number;
+};
+
+export type ClaimedCloudReplyResponseDto = {
+    id: string;
+    /**
+     * The claude.ai session to post it to (`session_…`).
+     */
+    cloudSessionId: string;
+    /**
+     * What the person typed, to post as their message.
+     */
+    text: string;
+};
+
+export type ClaimedCloudRepliesResponseDto = {
+    /**
+     * Oldest first.
+     */
+    replies: Array<ClaimedCloudReplyResponseDto>;
+};
+
+export type ReleaseCloudReplyRequest = {
+    reason?: string;
+};
+
+export type ReleasedCloudReplyResponseDto = {
+    /**
+     * Whether it was the caller’s claim, now handed back.
+     */
+    released: boolean;
+};
+
+export type ConfirmedCloudReplyResponseDto = {
+    /**
+     * Whether it was the caller’s claim, still held, now final.
+     */
+    delivered: boolean;
+};
+
 export type TakeCloudReplyRequest = {
     cloudSessionId: string;
     wait?: number;
@@ -2128,9 +2190,9 @@ export type CloudChatReplyResponseDto = {
      */
     collectedAt?: string | null;
     /**
-     * How it reached the agent: `hook`, the session’s Stop hook took it at the end of a turn; `host`, a host signed in to the session’s claude.ai account sent it, which wakes an idle session. Null while it waits.
+     * How it reached the agent: `hook`, the session’s Stop hook took it at the end of a turn; `host`, a host signed in to the session’s claude.ai account sent it, which wakes an idle session; `browser`, the browser extension posted it on claude.ai as its author, which the session runs at once. Null while it waits.
      */
-    deliveredVia?: 'hook' | 'host';
+    deliveredVia?: 'hook' | 'host' | 'browser';
 };
 
 export type CloudChatResponseDto = {
@@ -2142,6 +2204,14 @@ export type CloudChatResponseDto = {
      * The number to ask from next.
      */
     next: number;
+    /**
+     * How many lines the copy holds before `next`. A reader that has read fewer since it read with no `from` missed lines that landed below what it read (a stretch of the log sent after a newer one): read again with no `from`.
+     */
+    held: number;
+    /**
+     * Where the lines come from: `hook`, the transcript the session’s hook sends; `browser`, the session’s log on claude.ai, which the browser extension reads. When it changes, the lines are numbered anew: read again from 0.
+     */
+    source: 'hook' | 'browser';
     /**
      * The replies typed here, oldest first.
      */
@@ -11463,6 +11533,126 @@ export type AppendCloudTranscriptResponses = {
 
 export type AppendCloudTranscriptResponse = AppendCloudTranscriptResponses[keyof AppendCloudTranscriptResponses];
 
+export type RecordCloudEventsData = {
+    body: RecordCloudEventsRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/cloud-events';
+};
+
+export type RecordCloudEventsErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * SESSIONS_054 — The session with that id is not a Claude Code cloud session
+     */
+    409: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type RecordCloudEventsError = RecordCloudEventsErrors[keyof RecordCloudEventsErrors];
+
+export type RecordCloudEventsResponses = {
+    200: RecordedCloudEventsResponseDto;
+};
+
+export type RecordCloudEventsResponse = RecordCloudEventsResponses[keyof RecordCloudEventsResponses];
+
+export type ClaimCloudRepliesData = {
+    body: ClaimCloudRepliesRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/sessions/cloud-replies/claim';
+};
+
+export type ClaimCloudRepliesErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * RATE_001 — Rate limit reached
+     */
+    429: ProblemDetailsDto;
+};
+
+export type ClaimCloudRepliesError = ClaimCloudRepliesErrors[keyof ClaimCloudRepliesErrors];
+
+export type ClaimCloudRepliesResponses = {
+    200: ClaimedCloudRepliesResponseDto;
+};
+
+export type ClaimCloudRepliesResponse = ClaimCloudRepliesResponses[keyof ClaimCloudRepliesResponses];
+
+export type ReleaseCloudReplyData = {
+    body: ReleaseCloudReplyRequest;
+    path: {
+        replyId: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/cloud-replies/{replyId}/release';
+};
+
+export type ReleaseCloudReplyErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type ReleaseCloudReplyError = ReleaseCloudReplyErrors[keyof ReleaseCloudReplyErrors];
+
+export type ReleaseCloudReplyResponses = {
+    200: ReleasedCloudReplyResponseDto;
+};
+
+export type ReleaseCloudReplyResponse = ReleaseCloudReplyResponses[keyof ReleaseCloudReplyResponses];
+
+export type ConfirmCloudReplyData = {
+    body?: never;
+    path: {
+        replyId: string;
+    };
+    query?: never;
+    url: '/api/v1/sessions/cloud-replies/{replyId}/delivered';
+};
+
+export type ConfirmCloudReplyErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+};
+
+export type ConfirmCloudReplyError = ConfirmCloudReplyErrors[keyof ConfirmCloudReplyErrors];
+
+export type ConfirmCloudReplyResponses = {
+    200: ConfirmedCloudReplyResponseDto;
+};
+
+export type ConfirmCloudReplyResponse = ConfirmCloudReplyResponses[keyof ConfirmCloudReplyResponses];
+
 export type CollectCloudReplyData = {
     body: TakeCloudReplyRequest;
     path?: never;
@@ -11550,7 +11740,7 @@ export type FindCloudChatData = {
          */
         limit?: number;
         /**
-         * The number of the first line to read: a read’s `next`, or 0
+         * The number of the first line to read: a read’s `next`; absent, the copy’s first line (`start`)
          */
         from?: number;
     };

@@ -3,8 +3,8 @@
 // console, both ways. One file, two hooks, in the repository's
 // `.claude/settings.json`:
 //
-//   SessionStart: node .claude/hooks/oppenheimer-cloud-chat.mjs session-start
-//   Stop:         node .claude/hooks/oppenheimer-cloud-chat.mjs stop
+//   SessionStart: node "$CLAUDE_PROJECT_DIR"/.claude/hooks/oppenheimer-cloud-chat.mjs session-start
+//   Stop:         node "$CLAUDE_PROJECT_DIR"/.claude/hooks/oppenheimer-cloud-chat.mjs stop
 //
 // `session-start` starts a streamer that follows the session's transcript (the
 // file Claude Code names on the hook's stdin) and posts each complete line to
@@ -21,6 +21,7 @@
 // session: whatever happens it exits 0.
 import { spawn } from 'node:child_process';
 import {
+  chmodSync,
   closeSync,
   existsSync,
   mkdirSync,
@@ -104,7 +105,7 @@ async function start() {
   const input = JSON.parse(readFileSync(0, 'utf8') || '{}');
   if (!input.transcript_path) return;
 
-  mkdirSync(STATE_DIR, { recursive: true });
+  mkdirSync(STATE_DIR, { recursive: true, mode: 0o700 });
   const job = {
     url,
     key,
@@ -119,11 +120,15 @@ async function start() {
   const lock = join(STATE_DIR, `${job.session}.pid`);
   if (existsSync(lock) && alive(Number(readFileSync(lock, 'utf8')))) return;
 
-  const child = spawn(
-    process.execPath,
-    [fileURLToPath(import.meta.url), '--follow', JSON.stringify(job)],
-    { detached: true, stdio: 'ignore' },
-  );
+  // The job holds the key, so it goes to the streamer in a file only this user
+  // reads, never on its command line, which every process on the machine can.
+  const jobFile = join(STATE_DIR, `${job.session}.job.json`);
+  writeFileSync(jobFile, JSON.stringify(job), { mode: 0o600 });
+  chmodSync(jobFile, 0o600);
+  const child = spawn(process.execPath, [fileURLToPath(import.meta.url), '--follow', jobFile], {
+    detached: true,
+    stdio: 'ignore',
+  });
   writeFileSync(lock, String(child.pid));
   child.unref();
   console.log(`Streaming this session to Oppenheimer as ${job.session}.`);
@@ -256,7 +261,7 @@ async function stop() {
 const mode = process.argv[2];
 const isEntry = process.argv[1] === fileURLToPath(import.meta.url);
 if (isEntry && mode === '--follow') {
-  followTranscript(JSON.parse(process.argv[3])).catch(() => {});
+  followTranscript(JSON.parse(readFileSync(process.argv[3], 'utf8'))).catch(() => {});
 } else if (isEntry) {
   (mode === 'stop' ? stop() : start()).catch(() => {}).finally(() => process.exit(0));
 }

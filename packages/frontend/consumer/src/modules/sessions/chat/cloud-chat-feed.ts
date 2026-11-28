@@ -1,5 +1,7 @@
 import {
+  CLOUD_CHAT_PAGE_LINES,
   CLOUD_REPLY_PREAMBLE,
+  type CloudChatSource as CloudChatOrigin,
   type CloudReplyDelivery,
 } from '@oppenheimer/shared/schemas/session-cloud-chat';
 import type { SessionChat } from './session-chat';
@@ -13,7 +15,8 @@ export interface CloudChatReply {
   collectedAt: Date | null;
   /**
    * `hook`: the session's Stop hook took it at the end of a turn; `host`: a
-   * host sent it with `claude -p … --cloud`, which wakes an idle session.
+   * host sent it with `claude -p … --cloud`, which wakes an idle session;
+   * `browser`: the browser extension posted it on claude.ai as its author.
    * Null while it waits.
    */
   deliveredVia: CloudReplyDelivery | null;
@@ -21,7 +24,8 @@ export interface CloudChatReply {
 
 /**
  * A reply the chat does not show yet, and why: `waiting` for the session's
- * Stop hook, or `sent` from a host and not yet back in the transcript.
+ * Stop hook, or `sent` from a host or the browser extension and not yet back
+ * in the transcript.
  */
 export interface PendingCloudReply extends CloudChatReply {
   state: 'waiting' | 'sent';
@@ -33,12 +37,26 @@ export interface CloudChatPage {
   lines: readonly string[];
   /** Where the next read starts. */
   next: number;
+  /**
+   * How many lines the copy holds before `next`. When it is not how many were
+   * read since the chat was read from its start, lines landed below what was
+   * read (a stretch of the log sent after a newer one): the chat is read
+   * again from its start. Absent when the source says nothing of it.
+   */
+  held?: number;
+  /**
+   * Where the lines come from: the session's hook, or its log on claude.ai
+   * read by the browser extension. The two number the lines apart, so a
+   * change means reading the chat again from its first line.
+   */
+  source: CloudChatOrigin;
   replies: readonly CloudChatReply[];
 }
 
 /** Where a feed reads a cloud session's chat and sends replies: the API, through the repository. */
 export interface CloudChatSource {
-  read(from: number): Promise<CloudChatPage>;
+  /** From `from` on; null, from the copy's start. */
+  read(from: number | null): Promise<CloudChatPage>;
   reply(text: string): Promise<void>;
 }
 
@@ -47,6 +65,8 @@ const PASTE_MARKS = ['\u001b[200~', '\u001b[201~'];
 const ESCAPE = '\u001b';
 const ENTER = '\r';
 const FEEDBACK = /^Stop hook feedback:\n(?:\[[^\]]*\]: )?/;
+/** How far claude.ai's clock may be behind the API's when a posted reply is matched by its words. */
+const CLOCK_SKEW_MS = 60_000;
 
 /**
  * A transcript line as the chat should read it. A reply reaches the agent as
@@ -54,9 +74,12 @@ const FEEDBACK = /^Stop hook feedback:\n(?:\[[^\]]*\]: )?/;
  * feedback" line; that line is the person's message, at the point the agent
  * took it, so it is read as one. Every other line is as it was written.
  */
-function asChatLine(raw: string): { line: string; reply: string | null } {
-  const unchanged = { line: raw, reply: null };
-  if (!raw.includes(CLOUD_REPLY_PREAMBLE)) return unchanged;
+function asChatLine(raw: string): {
+  line: string;
+  reply: string | null;
+  prompt: TypedPrompt | null;
+} {
+  const unchanged = { line: raw, reply: null, prompt: null };
   let line: Record<string, unknown>;
   try {
     line = JSON.parse(raw) as Record<string, unknown>;
@@ -65,15 +88,42 @@ function asChatLine(raw: string): { line: string; reply: string | null } {
   }
   const message = line.message as { role?: unknown; content?: unknown } | undefined;
   const content = textOf(message?.content);
-  if (line.type !== 'user' || content === null) return unchanged;
+  if (
+    line.type !== 'user' ||
+    content === null ||
+    (line.isMeta === true && !raw.includes(CLOUD_REPLY_PREAMBLE))
+  ) {
+    return unchanged;
+  }
   const body = content.replace(FEEDBACK, '');
   const at = body.indexOf(CLOUD_REPLY_PREAMBLE);
-  if (at < 0) return unchanged;
+  if (at < 0) {
+    // A prompt as the person typed it: what a reply the extension posted on
+    // claude.ai comes back as, under the reply's own id.
+    const when = typeof line.timestamp === 'string' ? Date.parse(line.timestamp) : Number.NaN;
+    return {
+      ...unchanged,
+      prompt: {
+        id: typeof line.uuid === 'string' ? line.uuid : null,
+        text: body.trim(),
+        at: Number.isFinite(when) ? when : null,
+      },
+    };
+  }
   const text = body.slice(at + CLOUD_REPLY_PREAMBLE.length).trim();
   return {
     line: JSON.stringify({ ...line, isMeta: false, message: { ...message, content: text } }),
     reply: text,
+    prompt: null,
   };
+}
+
+/** A prompt the log holds, to find a reply the extension posted in it. */
+interface TypedPrompt {
+  id: string | null;
+  text: string;
+  /** When it was written, ms; null when the line does not say. */
+  at: number | null;
 }
 
 /**
@@ -100,9 +150,24 @@ function textOf(content: unknown): string | null {
  * nothing here can, so it is dropped.
  */
 export class CloudChatFeed {
-  private next = 0;
+  /** Where the next read starts; null, from the copy's start. */
+  private next: number | null = null;
+  /** Lines read since the chat was last read from its start. */
+  private readCount = 0;
+  /** Where the lines read so far came from; null before the first read. */
+  private origin: CloudChatOrigin | null = null;
   /** How many times each reply's words came back in the transcript. */
   private readonly echoed = new Map<string, number>();
+  /** The prompts the log holds, for the replies the extension posted. */
+  private prompts: TypedPrompt[] = [];
+  /**
+   * The next read draws the chat from scratch: the first one, and the one
+   * after the source switched. It stays set until a read is drawn, so a
+   * failed read is not followed by one that appends instead.
+   */
+  private reset = true;
+  /** A reset's history is still arriving: its pages are read back to back. */
+  private loading = false;
   private typed = '';
   private stopped = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
@@ -127,8 +192,11 @@ export class CloudChatFeed {
   start(): () => void {
     const release = this.chat.connect((data) => this.type(data), undefined, {
       interruptible: false,
+      // A reply shows in the chat as it is sent; the extension posts it at
+      // once, and claude.ai writes it down mid-turn too.
+      drawsSent: true,
     });
-    void this.read(true);
+    void this.read();
     return () => {
       this.stopped = true;
       if (this.timer) clearTimeout(this.timer);
@@ -149,6 +217,30 @@ export class CloudChatFeed {
   }
 
   /**
+   * Whether a reply the extension posted is in the log: the prompt claude.ai
+   * keeps under the reply's own id, or, where claude.ai gave it another id, a
+   * prompt with its words written once it was claimed, each prompt counted
+   * once. An earlier prompt with the same words ("continue") never is.
+   */
+  private posted(reply: CloudChatReply, used: Set<TypedPrompt>): boolean {
+    const byId = this.prompts.find((prompt) => prompt.id === reply.id);
+    if (byId) {
+      used.add(byId);
+      return true;
+    }
+    const claimed = reply.collectedAt?.getTime() ?? Number.POSITIVE_INFINITY;
+    const byWords = this.prompts.find(
+      (prompt) =>
+        !used.has(prompt) &&
+        prompt.text === reply.text &&
+        prompt.at !== null &&
+        prompt.at >= claimed - CLOCK_SKEW_MS,
+    );
+    if (byWords) used.add(byWords);
+    return Boolean(byWords);
+  }
+
+  /**
    * A hook's reply is in the transcript the moment it is taken, since the hook
    * hands it over as the turn ends. A host's comes back only once the
    * session has run it, so it reads as sent until the transcript holds its
@@ -156,10 +248,15 @@ export class CloudChatFeed {
    */
   private pending(replies: readonly CloudChatReply[]): PendingCloudReply[] {
     const unmatched = new Map(this.echoed);
+    const used = new Set<TypedPrompt>();
     const pending: PendingCloudReply[] = [];
     for (const reply of replies) {
       if (reply.collectedAt === null) {
         pending.push({ ...reply, state: 'waiting' });
+        continue;
+      }
+      if (reply.deliveredVia === 'browser') {
+        if (!this.posted(reply, used)) pending.push({ ...reply, state: 'sent' });
         continue;
       }
       const seen = unmatched.get(reply.text) ?? 0;
@@ -169,27 +266,53 @@ export class CloudChatFeed {
     return pending;
   }
 
-  private async read(first: boolean): Promise<void> {
+  private async read(): Promise<void> {
     if (this.timer) clearTimeout(this.timer);
+    let failed = false;
     try {
+      const first = this.reset;
+      if (first) this.loading = true;
       const page = await this.source.read(this.next);
       if (this.stopped) return;
+      const switched = this.origin !== null && page.source !== this.origin;
+      const counted = (first ? 0 : this.readCount) + page.lines.length;
+      const moved = page.held !== undefined && page.held !== counted;
+      if (switched || moved) {
+        // The extension's lines replaced the hook's (numbered anew), an older
+        // stretch of the log landed before what was read, or the copy started
+        // again: the chat is read again from its start, as if just opened.
+        this.origin = page.source;
+        this.next = null;
+        this.echoed.clear();
+        this.prompts = [];
+        this.reset = true;
+        return this.read();
+      }
+      this.readCount = counted;
+      this.origin = page.source;
       const read = page.lines.map(asChatLine);
-      for (const { reply } of read) {
+      for (const { reply, prompt } of read) {
+        if (prompt) this.prompts.push(prompt);
         if (reply !== null) this.echoed.set(reply, (this.echoed.get(reply) ?? 0) + 1);
       }
-      if (first || read.length > 0) {
-        this.chat.apply({
-          reset: first,
-          history: first ? 'end' : undefined,
-          entries: read.map((each) => each.line),
-        });
+      // A full page has more after it. While the history loads, the next page
+      // is read at once, not a tick later: a long chat came in 500 lines a
+      // tick and showed its oldest turns for a minute before its latest.
+      const more = page.lines.length >= CLOUD_CHAT_PAGE_LINES;
+      const history = this.loading ? (more ? 'more' : 'end') : undefined;
+      if (first || read.length > 0 || history === 'end') {
+        this.chat.apply({ reset: first, history, entries: read.map((each) => each.line) });
       }
+      this.reset = false;
+      if (!more) this.loading = false;
       this.next = page.next;
       this.options.onPending(this.pending(page.replies));
     } catch {
       // A failed read is tried again on the next tick; the chat keeps what it drew.
+      failed = true;
     }
-    if (!this.stopped) this.timer = setTimeout(() => void this.read(false), this.options.everyMs);
+    if (this.stopped) return;
+    const wait = this.loading && !failed ? 0 : this.options.everyMs;
+    this.timer = setTimeout(() => void this.read(), wait);
   }
 }

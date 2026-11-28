@@ -9,11 +9,15 @@ import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn 
  */
 @Entity('session_cloud_reply')
 @Check('CHK_session_cloud_reply_text', `char_length("text") > 0`)
-@Check('CHK_session_cloud_reply_delivered_via', `"deliveredVia" IN ('hook', 'host')`)
+@Check('CHK_session_cloud_reply_delivered_via', `"deliveredVia" IN ('hook', 'host', 'browser')`)
 @Check('CHK_session_cloud_reply_delivered', `("deliveredVia" IS NULL) = ("collectedAt" IS NULL)`)
+@Check('CHK_session_cloud_reply_lease', `"leaseUntil" IS NULL OR "deliveredVia" = 'browser'`)
 @Index('IDX_session_cloud_reply_session', ['organizationId', 'sessionId', 'createdAt', 'id'])
 @Index('IDX_session_cloud_reply_waiting', ['sessionId', 'createdAt'], {
   where: '"collectedAt" IS NULL',
+})
+@Index('IDX_session_cloud_reply_leased', ['sessionId', 'leaseUntil'], {
+  where: `"deliveredVia" = 'browser' AND "leaseUntil" IS NOT NULL`,
 })
 @Index('IDX_session_cloud_reply_author', ['authorId'], { where: '"authorId" IS NOT NULL' })
 export class SessionCloudReplyOrmEntity {
@@ -42,8 +46,16 @@ export class SessionCloudReplyOrmEntity {
 
   /**
    * `hook`, the session's Stop hook took it; `host`, a host sent it with
-   * `claude -p … --cloud <id>`. Null exactly while it waits.
+   * `claude -p … --cloud <id>`; `browser`, the extension posted it on
+   * claude.ai. Null exactly while it waits.
    */
   @Column({ type: 'varchar', length: 8, nullable: true })
   deliveredVia!: CloudReplyDelivery | null;
+
+  /**
+   * Until when the extension's claim holds: past it, unconfirmed, the reply
+   * waits again. Null for every other claim and once claude.ai took it.
+   */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
+  leaseUntil!: Date | null;
 }

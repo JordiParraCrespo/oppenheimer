@@ -303,6 +303,13 @@ export interface WorkSessionRepositoryPort {
   findOneById(scope: AccessScope, id: string): Promise<Option<WorkSessionEntity>>;
 
   /**
+   * Whether the caller's workspace has a cloud session for this Claude Code id
+   * in any state, a closed one included: what decides that a claude.ai
+   * session the browser extension reads is new here, and adopted, or not.
+   */
+  hasCloudSessionFor(scope: AccessScope, cloudId: string): Promise<boolean>;
+
+  /**
    * The caller's unresolved cloud sessions among these Claude Code ids: what the
    * browser extension's status report can touch. An id this workspace did not
    * launch matches nothing.

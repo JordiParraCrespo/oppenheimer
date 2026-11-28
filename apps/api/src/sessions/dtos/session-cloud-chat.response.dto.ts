@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CLOUD_REPLY_DELIVERIES, type CloudReplyDelivery } from '@oppenheimer/shared';
+import {
+  CLOUD_CHAT_SOURCES,
+  CLOUD_REPLY_DELIVERIES,
+  type CloudChatSource,
+  type CloudReplyDelivery,
+} from '@oppenheimer/shared';
 
 /** `POST /v1/sessions/cloud-transcript`. */
 export class AppendedCloudTranscriptResponseDto {
@@ -32,7 +37,7 @@ export class CloudChatReplyResponseDto {
     nullable: true,
     enum: CLOUD_REPLY_DELIVERIES,
     description:
-      'How it reached the agent: `hook`, the session’s Stop hook took it at the end of a turn; `host`, a host signed in to the session’s claude.ai account sent it, which wakes an idle session. Null while it waits.',
+      'How it reached the agent: `hook`, the session’s Stop hook took it at the end of a turn; `host`, a host signed in to the session’s claude.ai account sent it, which wakes an idle session; `browser`, the browser extension posted it on claude.ai as its author, which the session runs at once. Null while it waits.',
   })
   deliveredVia!: CloudReplyDelivery | null;
 }
@@ -60,6 +65,19 @@ export class CloudChatResponseDto {
   next!: number;
 
   @ApiProperty({
+    description:
+      'How many lines the copy holds before `next`. A reader that has read fewer since it read with no `from` missed lines that landed below what it read (a stretch of the log sent after a newer one): read again with no `from`.',
+  })
+  held!: number;
+
+  @ApiProperty({
+    enum: CLOUD_CHAT_SOURCES,
+    description:
+      'Where the lines come from: `hook`, the transcript the session’s hook sends; `browser`, the session’s log on claude.ai, which the browser extension reads. When it changes, the lines are numbered anew: read again from 0.',
+  })
+  source!: CloudChatSource;
+
+  @ApiProperty({
     type: [CloudChatReplyResponseDto],
     description: 'The replies typed here, oldest first.',
   })
@@ -70,4 +88,48 @@ export class CloudChatResponseDto {
 export class SentCloudReplyResponseDto {
   @ApiProperty({ format: 'uuid', description: 'The reply, as the chat lists it.' })
   id!: string;
+}
+
+/** `POST /v1/sessions/cloud-events`. */
+export class RecordedCloudEventsResponseDto {
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    format: 'uuid',
+    description: 'The session the events are kept under; null for one closed in the console.',
+  })
+  sessionId!: string | null;
+
+  @ApiProperty({ description: 'How many of the events were new; one already held is not.' })
+  accepted!: number;
+}
+
+/** A reply the browser extension claimed, to post on claude.ai. */
+export class ClaimedCloudReplyResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ description: 'The claude.ai session to post it to (`session_…`).' })
+  cloudSessionId!: string;
+
+  @ApiProperty({ description: 'What the person typed, to post as their message.' })
+  text!: string;
+}
+
+/** `POST /v1/sessions/cloud-replies/claim`. */
+export class ClaimedCloudRepliesResponseDto {
+  @ApiProperty({ type: [ClaimedCloudReplyResponseDto], description: 'Oldest first.' })
+  replies!: ClaimedCloudReplyResponseDto[];
+}
+
+/** `POST /v1/sessions/cloud-replies/{replyId}/release`. */
+export class ReleasedCloudReplyResponseDto {
+  @ApiProperty({ description: 'Whether it was the caller’s claim, now handed back.' })
+  released!: boolean;
+}
+
+/** `POST /v1/sessions/cloud-replies/{replyId}/delivered`. */
+export class ConfirmedCloudReplyResponseDto {
+  @ApiProperty({ description: 'Whether it was the caller’s claim, still held, now final.' })
+  delivered!: boolean;
 }

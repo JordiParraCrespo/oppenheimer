@@ -134,8 +134,12 @@ export interface CreateWorkSessionProps {
 export interface CreateCloudSessionProps {
   /** Chosen before the vendor is asked, so the vendor's agent can carry it. */
   id: string;
-  /** What the vendor started under that id. */
-  cloudRun: SessionCloudRunEntity;
+  /**
+   * What the vendor started under that id; null for a Claude Code session
+   * started on claude.ai that the browser extension brought here, which no
+   * vendor run of ours describes.
+   */
+  cloudRun: SessionCloudRunEntity | null;
   organizationId: string;
   projectId: string;
   createdByUserId: string;
@@ -237,7 +241,8 @@ export class WorkSessionEntity extends AggregateRoot<WorkSessionProps> {
    * A requested cloud session: the row, its slug and its first entry, with
    * the id the vendor's agent was started under. No host is owed a job, so it
    * raises nothing: what the vendor says next is written to its log by
-   * whoever reads it (`CloudSessionSyncResolver`).
+   * whoever reads it (`CloudSessionSyncResolver`). An adopted Claude Code
+   * session (`adoptedCloudEntries`) is one too, with no vendor run.
    */
   static requestCloud(props: CreateCloudSessionProps): WorkSessionEntity {
     return new WorkSessionEntity({

@@ -1,5 +1,11 @@
-import type { CloudChatLine, CloudChatReply } from './database/session-cloud-chat.repository.port';
+import type { CloudChatSource } from '@oppenheimer/shared';
 import type {
+  BrowserCloudReply,
+  CloudChatLine,
+  CloudChatReply,
+} from './database/session-cloud-chat.repository.port';
+import type {
+  ClaimedCloudRepliesResponseDto,
   CloudChatReplyResponseDto,
   CloudChatResponseDto,
 } from './dtos/session-cloud-chat.response.dto';
@@ -19,15 +25,31 @@ export class SessionCloudChatMapper {
 
   /** `next` is where the next read starts: after the last line held, or where this one started. */
   static toChat(
-    from: number,
+    from: number | undefined,
+    source: CloudChatSource,
+    /** Lines the copy holds before `from`. */
+    before: number,
     lines: readonly CloudChatLine[],
     replies: readonly CloudChatReply[],
   ): CloudChatResponseDto {
     const last = lines.at(-1);
     return {
       lines: lines.map((each) => each.line),
-      next: last ? last.seq + 1 : from,
+      next: last ? last.seq + 1 : (from ?? 0),
+      held: before + lines.length,
+      source,
       replies: replies.map((reply) => SessionCloudChatMapper.toReply(reply)),
+    };
+  }
+
+  /** What the browser extension posts for each reply it claimed. */
+  static toClaimed(replies: readonly BrowserCloudReply[]): ClaimedCloudRepliesResponseDto {
+    return {
+      replies: replies.map((reply) => ({
+        id: reply.id,
+        cloudSessionId: reply.cloudSessionId,
+        text: reply.text,
+      })),
     };
   }
 }

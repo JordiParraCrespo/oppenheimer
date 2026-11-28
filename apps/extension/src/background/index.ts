@@ -1,5 +1,8 @@
 import type { TapMessage } from '@/content/tap-message';
 import { createTranslator, reasonText } from '@/i18n/translator';
+import { eventsPage, idPlaceholder, pagesNewestFirst } from '@/sessions/chat';
+import { createChatBridge } from '@/sessions/chat-bridge';
+import { deadline } from '@/sessions/deadline';
 import { CLAUDE_ORIGIN, sessionUrl } from '@/sessions/links';
 import { sendReport } from '@/sessions/report';
 import {
@@ -27,6 +30,7 @@ import {
   writeState,
 } from '@/sessions/store';
 import { ingest, needsYouCount } from '@/sessions/tracker';
+import { postFromClaudeTab } from './claude-tab';
 
 /**
  * The service worker: keeps the list of your Claude Code cloud sessions,
@@ -66,7 +70,11 @@ chrome.runtime.onInstalled.addListener(() => void start());
 chrome.runtime.onStartup.addListener(() => void start());
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === POLL_ALARM) void serial(check);
+  if (alarm.name !== POLL_ALARM) return;
+  void serial(check);
+  // The worker may have been stopped since the last minute: the chat loop
+  // starts again with it.
+  runChats();
 });
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, reply) => {
@@ -76,6 +84,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, reply) => {
   }
   if ((message as { type?: string })?.type === 'refresh') {
     void serial(check).then(() => reply(true));
+    runChats();
     return true;
   }
   if (isConnect(message)) {
@@ -103,6 +112,30 @@ chrome.notifications.onClicked.addListener((id) => {
 async function start() {
   await chrome.alarms.create(POLL_ALARM, { periodInMinutes: 1 });
   await serial(check);
+  runChats();
+}
+
+/**
+ * The chat bridge (`sessions/chat-bridge.ts`): carries the cloud sessions'
+ * chats to Oppenheimer and the replies back, while it is connected. The
+ * worker only starts it: at start-up, on the minute's alarm (Chrome may have
+ * stopped the worker), on Check now and once Oppenheimer is connected.
+ */
+const chats = createChatBridge({ claudeHeaders, serial, postToClaude: postFromClaudeTab });
+
+function runChats() {
+  chats.run();
+}
+
+/** The headers claude.ai's app asks with: its version and beta, the organization, what the page taught. */
+async function claudeHeaders(): Promise<Record<string, string>> {
+  const { endpoint } = await readState();
+  const organization = await organizationId();
+  return {
+    ...BASE_HEADERS,
+    ...(organization ? { 'x-organization-uuid': organization } : {}),
+    ...endpoint?.headers,
+  };
 }
 
 /**
@@ -178,7 +211,7 @@ async function poll() {
   for (const url of urls) {
     const path = new URL(url).pathname;
     try {
-      const first = await fetch(url, { credentials: 'include', headers });
+      const first = await fetch(url, { credentials: 'include', headers, signal: deadline() });
       if (first.status === 401 || first.status === 403) {
         failure = { problem: 'signed-out', detail: `${path} answered ${first.status}` };
         continue;
@@ -223,7 +256,11 @@ async function remainingPages(
   for (let page = 1; next && page < MAX_PAGES; page++) {
     const paged = new URL(url);
     paged.searchParams.set('cursor', next);
-    const response = await fetch(paged, { credentials: 'include', headers }).catch(() => null);
+    const response = await fetch(paged, {
+      credentials: 'include',
+      headers,
+      signal: deadline(),
+    }).catch(() => null);
     const body: unknown = response?.ok ? await response.json() : null;
     const list = sessionList(body);
     if (!list) return { records: all, complete: false };
@@ -233,7 +270,26 @@ async function remainingPages(
   return { records: all, complete: next === null };
 }
 
+/** A session's event log in a URL claude.ai's page fetched. */
+const EVENTS_PATH = /(\/sessions\/)([^/?]+)(\/(?:teleport-)?events)$/;
+
 async function fromPage({ url, headers, body }: TapMessage) {
+  const events = new URL(url);
+  if (EVENTS_PATH.test(events.pathname)) {
+    // The page read a session's log: that route, with any session's id in
+    // it, is where the chat is read from next.
+    // Only a route that reads oldest first is worth learning (`chat.ts`).
+    const page = eventsPage(body);
+    if (!page || page.newestFirst || pagesNewestFirst(url)) return;
+    events.pathname = events.pathname.replace(
+      EVENTS_PATH,
+      (_, head: string, pageId: string, tail: string) =>
+        `${head}${idPlaceholder(decodeURIComponent(pageId))}${tail}`,
+    );
+    for (const key of ['cursor', 'after_id', 'before_id']) events.searchParams.delete(key);
+    await writeState({ eventsEndpoint: decodeURI(events.href) });
+    return;
+  }
   const list = sessionList(body);
   if (list) {
     const learned = new URL(url);
@@ -290,6 +346,7 @@ async function connect(
   try {
     const matched = await sendReport(connection, sessions);
     await writeState({ oppenheimer: connection, report: { ok: true, at: now(), matched } });
+    runChats();
     return { ok: true };
   } catch (error) {
     return { ok: false, detail: String((error as Error).message ?? error) };

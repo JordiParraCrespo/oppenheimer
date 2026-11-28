@@ -1,4 +1,4 @@
-import type { CloudReplyDelivery } from '@oppenheimer/shared';
+import type { CloudChatSource, CloudReplyDelivery } from '@oppenheimer/shared';
 
 /** A line of a cloud session's transcript, numbered from 0. */
 export interface CloudChatLine {
@@ -18,6 +18,19 @@ export interface CloudChatReply {
   deliveredVia: CloudReplyDelivery | null;
 }
 
+/** An event of a session's log on claude.ai, as the browser extension read it. */
+export interface CloudChatEvent {
+  /** The id claude.ai gave it. */
+  id: string;
+  /** The transcript entry it is, as JSON text. */
+  line: string;
+}
+
+/** A reply the browser extension claimed, with the claude.ai session it is for. */
+export interface BrowserCloudReply extends CloudChatReply {
+  cloudSessionId: string;
+}
+
 /** A waiting reply's wake: the job that has a host send it once the Stop hook has had its time. */
 export interface CloudReplyWake {
   sessionId: string;
@@ -31,15 +44,39 @@ export interface CloudReplyWake {
  * ids here.
  */
 export interface SessionCloudChatRepositoryPort {
-  /** Stores `lines` as numbers `from` on; a number already held keeps what it had. How many were new. */
+  /**
+   * Stores `lines` as numbers `from` on; a number already held keeps what it
+   * had, and a session the extension has read takes none. How many were new.
+   */
   appendLines(
     organizationId: string,
     sessionId: string,
     from: number,
     lines: readonly string[],
   ): Promise<number>;
+  /**
+   * Stores events the browser extension read, after the lines already held,
+   * skipping any it holds already; the first batch for a session replaces the
+   * lines its hook sent, which `appendLines` then leaves alone. How many were new.
+   */
+  appendEvents(
+    organizationId: string,
+    sessionId: string,
+    events: readonly CloudChatEvent[],
+    /** The log place of the first event; the others follow it. */
+    from: number,
+  ): Promise<number>;
+  /**
+   * How many lines the copy holds before `before`. A reader compares it with
+   * how many it has read: lines that landed below what it read (a stretch of
+   * the log sent after a newer one) make the two differ.
+   */
+  countLinesBefore(sessionId: string, before: number): Promise<number>;
+  /** Where the session's lines came from: the extension once it has sent any, else the hook. */
+  findSource(sessionId: string): Promise<CloudChatSource>;
   /** The lines numbered `from` and on, in order, at most `limit`. */
-  findLines(sessionId: string, from: number, limit: number): Promise<CloudChatLine[]>;
+  /** The lines from `from` on, in order; with no `from`, from the copy's first line. */
+  findLines(sessionId: string, from: number | undefined, limit: number): Promise<CloudChatLine[]>;
   /**
    * A reply for the agent, waiting until the Stop hook collects it, with its
    * wake staged in the same transaction for `wakeAt`: a reply is never kept
@@ -66,6 +103,40 @@ export interface SessionCloudChatRepositoryPort {
    * claim as `collectReply`'s, so only one of them ever has it.
    */
   claimReplyForHost(sessionId: string, replyId: string): Promise<CloudChatReply | null>;
+  /**
+   * Every reply `authorId` typed that still waits, in this workspace's Claude
+   * Code cloud sessions that are still open, now claimed for the browser
+   * extension to post on claude.ai as that person; oldest first. The same
+   * claim as the hook's and the host's, so only one of them ever has a reply.
+   * The claim holds `leaseSeconds`: unconfirmed past it, the reply waits again
+   * for any of the three, so a claim whose post never happened is not lost.
+   */
+  claimRepliesForBrowser(
+    organizationId: string,
+    authorId: string,
+    leaseSeconds: number,
+  ): Promise<BrowserCloudReply[]>;
+  /**
+   * When the browser extension holds a reply's claim, unconfirmed, the wake
+   * that found it taken is staged again for just after the claim's lease ends,
+   * so a reply the extension never posts still reaches a host. Answers when,
+   * or null when nothing holds it that way (delivered, or another way's).
+   */
+  deferWakeWhileLeased(sessionId: string, replyId: string): Promise<Date | null>;
+  /**
+   * The extension's word that claude.ai took a reply it claimed: the claim no
+   * longer lapses. Whether it was the caller's claim, still held.
+   */
+  confirmBrowserDelivery(
+    organizationId: string,
+    authorId: string,
+    replyId: string,
+  ): Promise<boolean>;
+  /**
+   * Hands a reply the extension claimed back, when claude.ai refused it, so
+   * the Stop hook or a host can deliver it. Whether it was the extension's.
+   */
+  releaseBrowserClaim(organizationId: string, authorId: string, replyId: string): Promise<boolean>;
   /**
    * Hands a host's claim back to the Stop hook: the host certainly did not
    * send it. A reply the hook holds is left as it is.

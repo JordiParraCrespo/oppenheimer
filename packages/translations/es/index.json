@@ -5086,10 +5086,10 @@
       },
       "extension": {
         "title": "4. La extensión de Chrome",
-        "intro": "La extensión de Oppenheimer para Chrome lista tus sesiones de Claude Code en la nube y te dice cuáles te necesitan. Es su único propósito.",
-        "reads": "Lee tu lista de sesiones de claude.ai con la sesión que ya tienes iniciada en el navegador. Para encontrar esa lista, observa cómo la carga la propia página de claude.ai y anota la dirección a la que se pidió y las cabeceras anthropic-* y x-organization-* de la petición, que indican la organización y la versión de la aplicación. También lee una cookie, lastActiveOrg, que indica de quién son las sesiones que pide. Nunca lee, guarda ni envía tu inicio de sesión de claude.ai, ninguna otra cookie ni ningún token de claude.ai.",
-        "stores": "Guarda, en el almacenamiento de Chrome de tu ordenador: esa lista (el id, el título, el estado, el repositorio y la última actividad de cada sesión y, cuando claude.ai la da, su breve nota de estado, como por qué se detuvo); la dirección y las cabeceras que anotó; y el último error que encontró. Si la conectas a Oppenheimer, guarda también la dirección que escribiste y el token que creaste para ella.",
-        "sends": "Nada sale de tu ordenador salvo que la conectes a un espacio de trabajo de Oppenheimer. Desde entonces, tras cada comprobación envía a ese espacio el id y el estado de cada sesión que sigue; el espacio conserva las que inició y descarta el resto. Nada se vende, se usa para publicidad ni se comparte con nadie más.",
+        "intro": "La extensión de Oppenheimer para Chrome lista tus sesiones de Claude Code en la nube, te dice cuáles te necesitan y, cuando la conectas a Oppenheimer, lleva la conversación de cada sesión a tu consola de Oppenheimer y tus respuestas desde ella de vuelta a la sesión. Es su único propósito.",
+        "reads": "Lee tu lista de sesiones, y la conversación de cada sesión que está en marcha o tuvo actividad en el último día, de claude.ai con la sesión que ya tienes iniciada en el navegador. Para encontrarlas, observa cómo las carga la propia página de claude.ai y anota la dirección a la que se pidieron y las cabeceras anthropic-* y x-organization-* de la petición, que indican la organización y la versión de la aplicación. También lee una cookie, lastActiveOrg, que indica de quién son las sesiones que pide. Nunca lee, guarda ni envía tu inicio de sesión de claude.ai, ninguna otra cookie ni ningún token de claude.ai.",
+        "stores": "Guarda, en el almacenamiento de Chrome de tu ordenador: esa lista (el id, el título, el estado, el repositorio y la última actividad de cada sesión y, cuando claude.ai la da, su breve nota de estado, como por qué se detuvo); cuántos mensajes de cada sesión ha enviado ya; las direcciones y las cabeceras que anotó; y el último error que encontró. No guarda las conversaciones. Si la conectas a Oppenheimer, guarda también la dirección que escribiste y el token que creaste para ella.",
+        "sends": "Nada sale de tu ordenador salvo que la conectes a un espacio de trabajo de Oppenheimer. Desde entonces, envía a ese espacio el id y el estado de cada sesión que sigue y la conversación de cada sesión que lee (cada mensaje, tuyo y del agente, y lo que hicieron sus herramientas); el espacio las guarda como el chat de esa sesión y añade las que no inició. Cuando respondes a una sesión en Oppenheimer, publica tu respuesta en esa sesión de claude.ai como tu mensaje. Nada se vende, se usa para publicidad ni se comparte con nadie más.",
         "removal": "Desconéctala desde la ventana emergente para borrar la dirección y el token, o elimina la extensión para borrar todo lo que guardó."
       },
       "eyebrow": "Legal",
@@ -5098,7 +5098,7 @@
         "separateConsent": "El inicio de sesión con Google no da acceso a Gmail, Drive ni a ningún otro servicio de Google. Si tu organización activa más adelante una integración compatible con Google, pedimos los permisos correspondientes mediante una pantalla de consentimiento separada y usamos esos datos solo para ofrecer la integración que elegiste.",
         "title": "3. Acceso con Google y datos de usuario de Google"
       },
-      "lastUpdated": "Última actualización: 24 de noviembre de 2026.",
+      "lastUpdated": "Última actualización: 27 de noviembre de 2026.",
       "purposes": {
         "body": "Tratamos datos para prestar y administrar el servicio, autenticar usuarios, facilitar la colaboración, mantener la seguridad, responder solicitudes y cumplir la ley. Según el contexto, la base jurídica es la ejecución de un contrato, nuestro interés legítimo en operar y proteger el servicio, el consentimiento cuando sea necesario o el cumplimiento de una obligación legal.",
         "title": "5. Finalidades y bases jurídicas"
@@ -5392,6 +5392,8 @@
       "launched": "Informando a {{host}} · {{count}} iniciadas allí",
       "notReporting": "Sin informar: {{detail}}",
       "runnerUnread": "No se pueden leer las sesiones de tus equipos: {{detail}}",
+      "chatUnsent": "Los chats no llegan a Oppenheimer: {{detail}}",
+      "chatScope": "El chat necesita un token con sessions:write y cloud-chat:write. Crea uno en la consola y vuelve a conectar.",
       "notAUrl": "Eso no es una URL.",
       "permission": "Chrome necesita tu permiso para contactar con {{origin}}.",
       "refused": "Oppenheimer lo rechazó: {{detail}}",
