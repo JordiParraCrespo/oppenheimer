@@ -52,6 +52,15 @@ export class CollectedCloudReplyResponseDto {
   text!: string | null;
 }
 
+/** Where a cloud chat's copy starts. */
+export class CloudChatStartResponseDto {
+  @ApiProperty({ description: 'The first line’s number: 0 or below.' })
+  seq!: number;
+
+  @ApiProperty({ format: 'date-time', description: 'When that line was stored.' })
+  at!: string;
+}
+
 /** `GET /v1/sessions/{id}/cloud-chat`. */
 export class CloudChatResponseDto {
   @ApiProperty({
@@ -63,6 +72,14 @@ export class CloudChatResponseDto {
 
   @ApiProperty({ description: 'The number to ask from next.' })
   next!: number;
+
+  @ApiProperty({
+    type: CloudChatStartResponseDto,
+    nullable: true,
+    description:
+      'Where the copy starts: its first line’s number and when it was stored; null with no lines. When it moves, lines landed before what was read (an older stretch of the log) or the copy started again: read again with no `from`.',
+  })
+  start!: CloudChatStartResponseDto | null;
 
   @ApiProperty({
     enum: CLOUD_CHAT_SOURCES,

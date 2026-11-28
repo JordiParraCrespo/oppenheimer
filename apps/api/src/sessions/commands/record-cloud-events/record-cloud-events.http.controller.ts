@@ -67,6 +67,7 @@ export class RecordCloudEventsHttpController {
         cloudSessionId: body.cloudSessionId,
         title: body.title,
         events: body.events,
+        placement: body.placement,
       }),
     );
   }

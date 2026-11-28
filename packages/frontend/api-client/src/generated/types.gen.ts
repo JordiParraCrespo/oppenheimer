@@ -2102,6 +2102,7 @@ export type RecordCloudEventsRequest = {
         id: string;
         line: string;
     }>;
+    placement?: 'replace' | 'older';
 };
 
 export type RecordedCloudEventsResponseDto = {
@@ -2179,6 +2180,17 @@ export type SentCloudReplyResponseDto = {
     id: string;
 };
 
+export type CloudChatStartResponseDto = {
+    /**
+     * The first line’s number: 0 or below.
+     */
+    seq: number;
+    /**
+     * When that line was stored.
+     */
+    at: string;
+};
+
 export type CloudChatReplyResponseDto = {
     id: string;
     text: string;
@@ -2203,6 +2215,10 @@ export type CloudChatResponseDto = {
      * The number to ask from next.
      */
     next: number;
+    /**
+     * Where the copy starts: its first line’s number and when it was stored; null with no lines. When it moves, lines landed before what was read (an older stretch of the log) or the copy started again: read again with no `from`.
+     */
+    start: CloudChatStartResponseDto | null;
     /**
      * Where the lines come from: `hook`, the transcript the session’s hook sends; `browser`, the session’s log on claude.ai, which the browser extension reads. When it changes, the lines are numbered anew: read again from 0.
      */
@@ -11735,7 +11751,7 @@ export type FindCloudChatData = {
          */
         limit?: number;
         /**
-         * The number of the first line to read: a read’s `next`, or 0
+         * The number of the first line to read: a read’s `next`; absent, the copy’s first line (`start`)
          */
         from?: number;
     };

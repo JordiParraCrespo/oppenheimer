@@ -1,13 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OutboxService } from '@oppenheimer/backend-ddd';
-import { type CloudChatSource, type CloudReplyDelivery, QUEUE_NAMES } from '@oppenheimer/shared';
+import {
+  type CloudChatSource,
+  type CloudEventsPlacement,
+  type CloudReplyDelivery,
+  QUEUE_NAMES,
+} from '@oppenheimer/shared';
 import type { EntityManager, Repository } from 'typeorm';
 import type {
   BrowserCloudReply,
   CloudChatEvent,
   CloudChatLine,
   CloudChatReply,
+  CloudChatStart,
   CloudReplyWake,
   SessionCloudChatRepositoryPort,
 } from './session-cloud-chat.repository.port';
@@ -106,24 +112,31 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     organizationId: string,
     sessionId: string,
     events: readonly CloudChatEvent[],
+    placement?: CloudEventsPlacement,
   ): Promise<number> {
     if (events.length === 0) return 0;
     return this.outbox.transaction(async (manager) => {
       // One writer per session at a time, the hook's appends included: each
-      // new event is numbered after the last line held.
+      // new event is numbered against the lines held.
       await lockSessionLines(manager, sessionId);
-      // The first events replace the hook's copy: the two number the same
-      // conversation differently, and claude.ai's log is the whole of it.
-      await manager.query(
-        `DELETE FROM session_cloud_line
-          WHERE "sessionId" = $1 AND "eventId" IS NULL
-            AND NOT EXISTS (
-              SELECT 1 FROM session_cloud_line
-               WHERE "sessionId" = $1 AND "eventId" IS NOT NULL)`,
-        [sessionId],
-      );
+      if (placement === 'replace') {
+        // The copy starts again from this batch, the log's newest stretch.
+        await manager.query(`DELETE FROM session_cloud_line WHERE "sessionId" = $1`, [sessionId]);
+      } else {
+        // The first events replace the hook's copy: the two number the same
+        // conversation differently, and claude.ai's log is the whole of it.
+        await manager.query(
+          `DELETE FROM session_cloud_line
+            WHERE "sessionId" = $1 AND "eventId" IS NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM session_cloud_line
+                 WHERE "sessionId" = $1 AND "eventId" IS NOT NULL)`,
+          [sessionId],
+        );
+      }
       // New events only (an id held already, or twice in the batch, is
-      // skipped), numbered in the batch's order after the last line.
+      // skipped), numbered in the batch's order: after the last line, or for
+      // an older stretch, ending just before the first one.
       const inserted: unknown[] = await manager.query(
         `WITH batch AS (
            SELECT DISTINCT ON (id) id, line, ordinality
@@ -136,7 +149,10 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
               SELECT 1 FROM session_cloud_line held
                WHERE held."sessionId" = $2 AND held."eventId" = batch.id)),
          base AS (
-           SELECT coalesce(max("seq") + 1, 0) AS next FROM session_cloud_line WHERE "sessionId" = $2)
+           SELECT CASE WHEN $5::boolean
+                       THEN coalesce(min("seq"), 0) - (SELECT count(*) FROM fresh)
+                       ELSE coalesce(max("seq") + 1, 0) END AS next
+             FROM session_cloud_line WHERE "sessionId" = $2)
          INSERT INTO session_cloud_line ("organizationId", "sessionId", "seq", "eventId", "line")
          SELECT $1, $2, (base.next + fresh.n - 1)::integer, fresh.id, fresh.line
            FROM fresh, base
@@ -146,6 +162,7 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
           sessionId,
           events.map((event) => event.id),
           events.map((event) => event.line),
+          placement === 'older',
         ],
       );
       return inserted.length;
@@ -163,15 +180,29 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     return row?.browser ? 'browser' : 'hook';
   }
 
-  async findLines(sessionId: string, from: number, limit: number): Promise<CloudChatLine[]> {
+  async findLines(
+    sessionId: string,
+    from: number | undefined,
+    limit: number,
+  ): Promise<CloudChatLine[]> {
     // PK_session_cloud_line: a range of one session's numbers, in order.
     const rows: CloudChatLine[] = await this.lines.query(
       `SELECT "seq", "line" FROM session_cloud_line
-        WHERE "sessionId" = $1 AND "seq" >= $2
+        WHERE "sessionId" = $1 AND ($2::integer IS NULL OR "seq" >= $2)
         ORDER BY "seq" LIMIT $3`,
-      [sessionId, from, limit],
+      [sessionId, from ?? null, limit],
     );
     return rows;
+  }
+
+  async findStart(sessionId: string): Promise<CloudChatStart | null> {
+    // PK_session_cloud_line: the session's lowest number, one probe.
+    const [row]: { seq: number; createdAt: Date }[] = await this.lines.query(
+      `SELECT "seq", "createdAt" FROM session_cloud_line
+        WHERE "sessionId" = $1 ORDER BY "seq" LIMIT 1`,
+      [sessionId],
+    );
+    return row ? { seq: row.seq, at: new Date(row.createdAt) } : null;
   }
 
   async addReply(

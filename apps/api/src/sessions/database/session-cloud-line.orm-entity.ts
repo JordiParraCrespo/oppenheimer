@@ -1,5 +1,5 @@
 import { TIMESTAMP_COLUMN_TYPE } from '@oppenheimer/backend-ddd';
-import { Check, Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 'typeorm';
 
 /**
  * One line of a Claude Code cloud session's transcript, as its hook sent it
@@ -8,7 +8,6 @@ import { Check, Column, CreateDateColumn, Entity, Index, PrimaryColumn } from 't
  * Append-only.
  */
 @Entity('session_cloud_line')
-@Check('CHK_session_cloud_line_seq', `"seq" >= 0`)
 @Index('IDX_session_cloud_line_tenant', ['organizationId', 'sessionId'])
 @Index('UQ_session_cloud_line_event', ['sessionId', 'eventId'], {
   unique: true,
@@ -18,7 +17,11 @@ export class SessionCloudLineOrmEntity {
   @PrimaryColumn({ type: 'uuid' })
   sessionId!: string;
 
-  /** Its place in the transcript, from 0. */
+  /**
+   * Its place in the transcript. The hook's lines and a copy's newest stretch
+   * count from 0; an older stretch the extension sent after it is numbered
+   * below the first line held (`1795866522360-AllowOlderCloudLines`).
+   */
   @PrimaryColumn({ type: 'integer' })
   seq!: number;
 

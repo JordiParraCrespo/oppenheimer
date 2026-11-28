@@ -3,6 +3,7 @@ import type {
   BrowserCloudReply,
   CloudChatLine,
   CloudChatReply,
+  CloudChatStart,
 } from './database/session-cloud-chat.repository.port';
 import type {
   ClaimedCloudRepliesResponseDto,
@@ -25,15 +26,17 @@ export class SessionCloudChatMapper {
 
   /** `next` is where the next read starts: after the last line held, or where this one started. */
   static toChat(
-    from: number,
+    from: number | undefined,
     source: CloudChatSource,
+    start: CloudChatStart | null,
     lines: readonly CloudChatLine[],
     replies: readonly CloudChatReply[],
   ): CloudChatResponseDto {
     const last = lines.at(-1);
     return {
       lines: lines.map((each) => each.line),
-      next: last ? last.seq + 1 : from,
+      next: last ? last.seq + 1 : (from ?? start?.seq ?? 0),
+      start: start ? { seq: start.seq, at: start.at.toISOString() } : null,
       source,
       replies: replies.map((reply) => SessionCloudChatMapper.toReply(reply)),
     };

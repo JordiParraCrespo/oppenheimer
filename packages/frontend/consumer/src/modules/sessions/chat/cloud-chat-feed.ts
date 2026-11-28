@@ -38,6 +38,13 @@ export interface CloudChatPage {
   /** Where the next read starts. */
   next: number;
   /**
+   * Where the copy starts (its first line and when it was stored), as one
+   * token; null for an empty copy. When it moves, lines landed before those
+   * read, or the copy started again: the chat is read again from its start.
+   * Absent when the source says nothing of it.
+   */
+  start?: string | null;
+  /**
    * Where the lines come from: the session's hook, or its log on claude.ai
    * read by the browser extension. The two number the lines apart, so a
    * change means reading the chat again from its first line.
@@ -48,7 +55,8 @@ export interface CloudChatPage {
 
 /** Where a feed reads a cloud session's chat and sends replies: the API, through the repository. */
 export interface CloudChatSource {
-  read(from: number): Promise<CloudChatPage>;
+  /** From `from` on; null, from the copy's start. */
+  read(from: number | null): Promise<CloudChatPage>;
   reply(text: string): Promise<void>;
 }
 
@@ -142,7 +150,10 @@ function textOf(content: unknown): string | null {
  * nothing here can, so it is dropped.
  */
 export class CloudChatFeed {
-  private next = 0;
+  /** Where the next read starts; null, from the copy's start. */
+  private next: number | null = null;
+  /** Where the copy started when it was read from its start; undefined before then. */
+  private copyStart: string | null | undefined;
   /** Where the lines read so far came from; null before the first read. */
   private origin: CloudChatOrigin | null = null;
   /** How many times each reply's words came back in the transcript. */
@@ -260,16 +271,20 @@ export class CloudChatFeed {
       if (first) this.loading = true;
       const page = await this.source.read(this.next);
       if (this.stopped) return;
-      if (this.origin !== null && page.source !== this.origin) {
-        // The extension's lines replaced the hook's: numbered anew, so the
-        // chat is read again from its first line, as if just opened.
+      const switched = this.origin !== null && page.source !== this.origin;
+      const moved = !first && this.copyStart !== undefined && page.start !== this.copyStart;
+      if (switched || moved) {
+        // The extension's lines replaced the hook's (numbered anew), an older
+        // stretch of the log landed before what was read, or the copy started
+        // again: the chat is read again from its start, as if just opened.
         this.origin = page.source;
-        this.next = 0;
+        this.next = null;
         this.echoed.clear();
         this.prompts = [];
         this.reset = true;
         return this.read();
       }
+      if (first) this.copyStart = page.start;
       this.origin = page.source;
       const read = page.lines.map(asChatLine);
       for (const { reply, prompt } of read) {

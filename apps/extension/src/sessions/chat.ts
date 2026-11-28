@@ -105,7 +105,12 @@ export function eventsPage(
         typeof value === 'string' && value.length > 0 && value.length <= 128,
     );
     if (!id) return [];
-    const line = fitLine(JSON.stringify(entry.uuid ? entry : { ...entry, uuid: id }));
+    // An entry claude.ai stored without a time of its own (a reply posted from
+    // the console) has it on its row, as the Claude Code CLI reads it.
+    const at = typeof entry.timestamp === 'string' ? entry.timestamp : timeOf(outer?.created_at);
+    const line = fitLine(
+      JSON.stringify({ ...entry, uuid: entry.uuid ?? id, ...(at ? { timestamp: at } : {}) }),
+    );
     return line ? [{ id, line }] : [];
   });
   const next = [record.next_cursor, record.last_id].find(
@@ -199,6 +204,10 @@ export async function fetchSessionEvents(
   return null;
 }
 
+function timeOf(value: unknown): string | null {
+  return typeof value === 'string' && Number.isFinite(Date.parse(value)) ? value : null;
+}
+
 /** Whether a route asks for its log newest first. */
 export function pagesNewestFirst(url: string): boolean {
   const order =
@@ -223,26 +232,65 @@ export async function forwardEvents(
   session: Pick<TrackedSession, 'id' | 'title'>,
   events: readonly ChatEvent[],
   sent: number,
+  /** Where the first batch goes: `replace` starts the console's copy again with it. */
+  first?: 'replace',
 ): Promise<number> {
   if (!cloudSessionIdPattern.test(session.id)) return sent;
   let held = Math.min(sent, events.length);
-  const title = cutTitle(session.title ?? '');
+  let placement = first;
   while (held < events.length) {
     const batch = nextBatch(events, held);
-    const response = await fetch(apiUrl(connection, '/api/v1/sessions/cloud-events'), {
-      method: 'POST',
-      headers: jsonHeaders(connection),
-      body: JSON.stringify({
-        cloudSessionId: session.id,
-        title,
-        events: batch,
-      }),
-      signal: deadline(),
-    });
-    if (!response.ok) throw await apiError(response);
+    await sendBatch(connection, session, batch, placement);
+    placement = undefined;
     held += batch.length;
   }
   return held;
+}
+
+/**
+ * Starts the console's copy of a log read whole, newest first: its newest
+ * stretch replaces the copy, so the console opens on the latest turn, and
+ * each older stretch then goes before it. A long session's chat showed its
+ * oldest turns, and a copy read out of order kept that order, until this.
+ * Answers how many events the copy now has: all of them.
+ */
+export async function forwardNewestFirst(
+  connection: OppenheimerConnection,
+  session: Pick<TrackedSession, 'id' | 'title'>,
+  events: readonly ChatEvent[],
+): Promise<number> {
+  if (!cloudSessionIdPattern.test(session.id) || events.length === 0) return 0;
+  const batches: ChatEvent[][] = [];
+  for (let from = 0; from < events.length; ) {
+    const batch = nextBatch(events, from);
+    batches.push(batch);
+    from += batch.length;
+  }
+  batches.reverse();
+  for (const [index, batch] of batches.entries()) {
+    await sendBatch(connection, session, batch, index === 0 ? 'replace' : 'older');
+  }
+  return events.length;
+}
+
+async function sendBatch(
+  connection: OppenheimerConnection,
+  session: Pick<TrackedSession, 'id' | 'title'>,
+  events: readonly ChatEvent[],
+  placement: 'replace' | 'older' | undefined,
+): Promise<void> {
+  const response = await fetch(apiUrl(connection, '/api/v1/sessions/cloud-events'), {
+    method: 'POST',
+    headers: jsonHeaders(connection),
+    body: JSON.stringify({
+      cloudSessionId: session.id,
+      title: cutTitle(session.title ?? ''),
+      events,
+      ...(placement ? { placement } : {}),
+    }),
+    signal: deadline(),
+  });
+  if (!response.ok) throw await apiError(response);
 }
 
 /**
@@ -428,9 +476,18 @@ export function sessionsToSync(
 }
 
 /** How far a session's log has gone to the API: events sent, and the activity time read up to. */
+/**
+ * The rules a session's copy in the console was built by. A copy built by
+ * older ones (numbered as it arrived, read from a route since dropped) is
+ * started again, newest first, on the next read.
+ */
+export const CHAT_COPY_VERSION = 2;
+
 export interface ChatSync {
   /** Events of the whole log the console has. */
   sent: number;
+  /** `CHAT_COPY_VERSION` the copy was built by; absent before it had one. */
+  copy?: number;
   /** The session's activity time its log was last read to the end at. */
   at: string;
   /** Where the next read starts; absent or null from the first page. */

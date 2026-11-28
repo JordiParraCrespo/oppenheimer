@@ -87,7 +87,7 @@ describe('RecordCloudEventsCommandHandler', () => {
     sessions.findCloudByCloudIds.mockResolvedValue([known]);
     expect(await record()).toEqual({ sessionId: known.id, accepted: 1 });
     expect(sessions.createIfUnclaimed).not.toHaveBeenCalled();
-    expect(chat.appendEvents).toHaveBeenCalledWith('org-acme', known.id, EVENTS);
+    expect(chat.appendEvents).toHaveBeenCalledWith('org-acme', known.id, EVENTS, undefined);
   });
 
   it('adopts a session started on claude.ai: hostless, claude-code, named after its title, keyed on its id', async () => {

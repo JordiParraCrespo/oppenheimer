@@ -5,10 +5,16 @@ import { QueryBase } from '@oppenheimer/backend-ddd';
 export class FindCloudChatQuery extends QueryBase {
   readonly scope: AccessScope;
   readonly sessionId: string;
-  readonly from: number;
+  /** Absent: from the copy's first line. */
+  readonly from: number | undefined;
   readonly limit: number;
 
-  constructor(props: { scope: AccessScope; sessionId: string; from: number; limit: number }) {
+  constructor(props: {
+    scope: AccessScope;
+    sessionId: string;
+    from: number | undefined;
+    limit: number;
+  }) {
     super();
     this.scope = props.scope;
     this.sessionId = props.sessionId;

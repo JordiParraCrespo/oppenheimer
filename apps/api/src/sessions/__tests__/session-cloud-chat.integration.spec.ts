@@ -278,6 +278,39 @@ describe('sessions: cloud chat replies (integration)', () => {
       expect(await chat.findLines(cloudId, 0, 10)).toHaveLength(3);
     });
 
+    it('starts a copy again from its newest stretch and puts each older one before it', async () => {
+      // Regression: a log sent out of order stayed out of order, and a long
+      // chat opened on old turns. Sent newest first, the copy still reads in order.
+      const event = (n: number) => ({ id: `e${n}`, line: entry(`e${n}`, `turn ${n}`) });
+      await chat.appendEvents(organizationId, cloudId, [event(9), event(1)]);
+      const before = await chat.findStart(cloudId);
+      expect(
+        await chat.appendEvents(organizationId, cloudId, [event(4), event(5)], 'replace'),
+      ).toBe(2);
+      expect(await chat.appendEvents(organizationId, cloudId, [event(2), event(3)], 'older')).toBe(
+        2,
+      );
+      // A resent older stretch adds nothing and moves nothing.
+      expect(await chat.appendEvents(organizationId, cloudId, [event(3)], 'older')).toBe(0);
+      expect(await chat.appendEvents(organizationId, cloudId, [event(1)], 'older')).toBe(1);
+      expect(await chat.appendEvents(organizationId, cloudId, [event(6)])).toBe(1);
+
+      const lines = await chat.findLines(cloudId, undefined, 10);
+      expect(lines.map((each) => JSON.parse(each.line).uuid)).toEqual([
+        'e1',
+        'e2',
+        'e3',
+        'e4',
+        'e5',
+        'e6',
+      ]);
+      expect(lines.map((each) => each.seq)).toEqual([-3, -2, -1, 0, 1, 2]);
+      // The start moved, so a reader knows to read the copy again.
+      const start = await chat.findStart(cloudId);
+      expect(start?.seq).toBe(-3);
+      expect(start?.at.getTime()).not.toBe(before?.at.getTime());
+    });
+
     it('numbers two batches written at once without a gap or a clash', async () => {
       const batch = (from: number) =>
         Array.from({ length: 20 }, (_, i) => ({

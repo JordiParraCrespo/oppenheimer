@@ -632,6 +632,7 @@ export type {
   CloudAgentStatusResponseDto,
   CloudChatReplyResponseDto,
   CloudChatResponseDto,
+  CloudChatStartResponseDto,
   CollectCloudReplyData,
   CollectCloudReplyError,
   CollectCloudReplyErrors,

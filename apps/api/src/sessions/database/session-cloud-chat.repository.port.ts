@@ -1,9 +1,19 @@
-import type { CloudChatSource, CloudReplyDelivery } from '@oppenheimer/shared';
+import type {
+  CloudChatSource,
+  CloudEventsPlacement,
+  CloudReplyDelivery,
+} from '@oppenheimer/shared';
 
 /** A line of a cloud session's transcript, numbered from 0. */
 export interface CloudChatLine {
   seq: number;
   line: string;
+}
+
+/** Where a session's copy of its log starts (`findStart`). */
+export interface CloudChatStart {
+  seq: number;
+  at: Date;
 }
 
 /** What a person typed in a cloud session's chat. */
@@ -63,11 +73,19 @@ export interface SessionCloudChatRepositoryPort {
     organizationId: string,
     sessionId: string,
     events: readonly CloudChatEvent[],
+    placement?: CloudEventsPlacement,
   ): Promise<number>;
+  /**
+   * Where the session's copy starts: its first line's number, and when that
+   * line was stored. Either moving tells a reader the copy changed below what
+   * it read (an older stretch landed, or the copy started again).
+   */
+  findStart(sessionId: string): Promise<CloudChatStart | null>;
   /** Where the session's lines came from: the extension once it has sent any, else the hook. */
   findSource(sessionId: string): Promise<CloudChatSource>;
   /** The lines numbered `from` and on, in order, at most `limit`. */
-  findLines(sessionId: string, from: number, limit: number): Promise<CloudChatLine[]>;
+  /** The lines from `from` on, in order; with no `from`, from the copy's first line. */
+  findLines(sessionId: string, from: number | undefined, limit: number): Promise<CloudChatLine[]>;
   /**
    * A reply for the agent, waiting until the Stop hook collects it, with its
    * wake staged in the same transaction for `wakeAt`: a reply is never kept

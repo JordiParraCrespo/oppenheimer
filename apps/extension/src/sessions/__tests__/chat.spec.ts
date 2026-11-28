@@ -9,6 +9,7 @@ import {
   fetchSessionEvents,
   fitLine,
   forwardEvents,
+  forwardNewestFirst,
   idPlaceholder,
   inTimeOrder,
   nextBatch,
@@ -62,6 +63,20 @@ describe('a page of a session’s log', () => {
     expect(page?.events.map((event) => event.id)).toEqual(['ev-9', 'u2']);
     expect(JSON.parse(page?.events[0]?.line ?? '{}').uuid).toBe('ev-9');
     expect(page?.next).toBeNull();
+  });
+
+  it('gives an entry with no time of its own the time on its row', () => {
+    // Regression: a reply posted from the console has no `timestamp`, so its
+    // turn had no start ("Worked for" with no time) and the read was left unsorted.
+    const page = eventsPage({
+      data: [
+        {
+          created_at: '2026-11-28T10:00:00Z',
+          payload: { type: 'user', uuid: 'r1', message: { role: 'user', content: 'Go on' } },
+        },
+      ],
+    });
+    expect(JSON.parse(page?.events[0]?.line ?? '{}').timestamp).toBe('2026-11-28T10:00:00Z');
   });
 
   it('is no page for a body that is not one', () => {
@@ -227,6 +242,32 @@ describe('sending the log to the console', () => {
     // Nothing new: nothing sent.
     expect(await forwardEvents(connection, session, events, events.length)).toBe(events.length);
     expect(bodies).toHaveLength(2);
+  });
+
+  it('starts a copy with the log’s newest stretch, then sends each older one before it', async () => {
+    // Regression: a long session's copy was sent oldest first and kept the
+    // order it arrived in, so the console opened on its oldest turns.
+    const bodies: { events: ChatEvent[]; placement?: string }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        bodies.push(JSON.parse(String(init.body)));
+        return json({ sessionId: 's', accepted: 1 });
+      }),
+    );
+    expect(
+      await forwardNewestFirst(connection, { id: ID, title: 'Fix the login page' }, events),
+    ).toBe(events.length);
+    expect(bodies.map((body) => body.placement)).toEqual(['replace', 'older']);
+    expect(bodies[0]?.events.map((event) => event.id)).toEqual([
+      'e200',
+      'e201',
+      'e202',
+      'e203',
+      'e204',
+    ]);
+    expect(bodies[1]?.events[0]?.id).toBe('e0');
+    expect(bodies[1]?.events).toHaveLength(EVENTS_BATCH);
   });
 
   it('keeps each request under the API’s body limit, however long the lines', async () => {

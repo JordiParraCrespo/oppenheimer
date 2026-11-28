@@ -125,6 +125,7 @@ export type {
   CloudAgentStatusResponseDto,
   CloudChatReplyResponseDto,
   CloudChatResponseDto,
+  CloudChatStartResponseDto,
   CollectedCloudReplyResponseDto,
   ConfirmedCloudReplyResponseDto,
   ConfirmWhatsappOwnerRequest,

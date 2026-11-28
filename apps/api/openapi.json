@@ -12070,7 +12070,7 @@
             "name": "from",
             "required": false,
             "in": "query",
-            "description": "The number of the first line to read: a read’s `next`, or 0",
+            "description": "The number of the first line to read: a read’s `next`; absent, the copy’s first line (`start`)",
             "schema": {
               "type": "number"
             }
@@ -34706,6 +34706,13 @@
                 "line"
               ]
             }
+          },
+          "placement": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "older"
+            ]
           }
         },
         "required": [
@@ -34870,6 +34877,24 @@
           "id"
         ]
       },
+      "CloudChatStartResponseDto": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "number",
+            "description": "The first line’s number: 0 or below."
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When that line was stored."
+          }
+        },
+        "required": [
+          "seq",
+          "at"
+        ]
+      },
       "CloudChatReplyResponseDto": {
         "type": "object",
         "properties": {
@@ -34926,6 +34951,16 @@
             "type": "number",
             "description": "The number to ask from next."
           },
+          "start": {
+            "nullable": true,
+            "description": "Where the copy starts: its first line’s number and when it was stored; null with no lines. When it moves, lines landed before what was read (an older stretch of the log) or the copy started again: read again with no `from`.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CloudChatStartResponseDto"
+              }
+            ]
+          },
           "source": {
             "type": "string",
             "enum": [
@@ -34945,6 +34980,7 @@
         "required": [
           "lines",
           "next",
+          "start",
           "source",
           "replies"
         ]
