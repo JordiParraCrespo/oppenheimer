@@ -16,6 +16,9 @@ import { Check, Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn 
 @Index('IDX_session_cloud_reply_waiting', ['sessionId', 'createdAt'], {
   where: '"collectedAt" IS NULL',
 })
+@Index('IDX_session_cloud_reply_leased', ['sessionId', 'leaseUntil'], {
+  where: `"deliveredVia" = 'browser' AND "leaseUntil" IS NOT NULL`,
+})
 @Index('IDX_session_cloud_reply_author', ['authorId'], { where: '"authorId" IS NOT NULL' })
 export class SessionCloudReplyOrmEntity {
   @PrimaryGeneratedColumn('uuid')

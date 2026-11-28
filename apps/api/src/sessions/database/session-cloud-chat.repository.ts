@@ -209,7 +209,8 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
   }
 
   async collectReply(sessionId: string): Promise<CloudChatReply | null> {
-    // The claim through IDX_session_cloud_reply_waiting; SKIP LOCKED so a
+    // The claim through IDX_session_cloud_reply_waiting, and a lapsed lease
+    // through IDX_session_cloud_reply_leased; SKIP LOCKED so a
     // second hook asking at once takes the next one or none, never the same.
     // An UPDATE comes back as `[rows, affected]`.
     const [rows]: [ReplyRow[], number] = await this.replies.query(
@@ -278,7 +279,8 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
   ): Promise<boolean> {
     const [, affected]: [unknown[], number] = await this.replies.query(
       `UPDATE session_cloud_reply SET "collectedAt" = NULL, "deliveredVia" = NULL, "leaseUntil" = NULL
-        WHERE id = $1 AND "organizationId" = $2 AND "authorId" = $3 AND "deliveredVia" = 'browser'`,
+        WHERE id = $1 AND "organizationId" = $2 AND "authorId" = $3
+          AND "deliveredVia" = 'browser' AND "leaseUntil" IS NOT NULL`,
       [replyId, organizationId, authorId],
     );
     return affected === 1;

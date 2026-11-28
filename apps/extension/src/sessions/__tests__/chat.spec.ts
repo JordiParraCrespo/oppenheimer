@@ -151,6 +151,14 @@ describe('sending the log to the console', () => {
     // Breaks if a batch goes over 512 KB: the API answers 413 and the session never syncs.
     expect(await forwardEvents(connection, { id: ID, title: 't' }, big, 0)).toBe(300);
     expect(Math.max(...sizes)).toBeLessThan(512 * 1024);
+    // A tool's read of a JSON file grows by a third once escaped in the body.
+    const quoted: ChatEvent[] = Array.from({ length: 40 }, (_, i) => ({
+      id: `q${i}`,
+      line: JSON.stringify({ type: 'user', uuid: `q${i}`, output: '{"a":"b\\c"}'.repeat(2_500) }),
+    }));
+    sizes.length = 0;
+    expect(await forwardEvents(connection, { id: ID, title: 't' }, quoted, 0)).toBe(40);
+    expect(Math.max(...sizes)).toBeLessThan(512 * 1024);
     // One line too large to share a batch still goes, alone.
     const huge = [{ id: 'h', line: 'x'.repeat(EVENTS_BATCH_BYTES) }];
     expect(nextBatch(huge, 0)).toHaveLength(1);

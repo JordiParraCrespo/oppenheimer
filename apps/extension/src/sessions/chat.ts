@@ -169,7 +169,8 @@ export function nextBatch(events: readonly ChatEvent[], from: number): ChatEvent
   const batch: ChatEvent[] = [];
   let bytes = 0;
   for (const event of events.slice(from, from + EVENTS_BATCH)) {
-    const size = byteLength(event.line) + byteLength(event.id) + 32;
+    // Measured as it goes on the wire: the line is JSON inside JSON, escaped again.
+    const size = byteLength(JSON.stringify(event)) + 1;
     if (batch.length > 0 && bytes + size > EVENTS_BATCH_BYTES) break;
     batch.push(event);
     bytes += size;

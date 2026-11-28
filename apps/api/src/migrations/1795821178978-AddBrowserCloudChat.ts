@@ -24,8 +24,10 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   when the extension says claude.ai took it. A claim whose answer was lost,
  *   or whose worker Chrome stopped before it posted, would otherwise keep the
  *   reply from the hook and the hosts for good. Only a `browser` claim has
- *   one (`CHK_session_cloud_reply_lease`). No index: an expired lease is
- *   found among one session's or one author's few claimed rows.
+ *   one (`CHK_session_cloud_reply_lease`). The hook's claim now takes a
+ *   reply that waits or whose lease lapsed: `IDX_session_cloud_reply_waiting`
+ *   serves the first, `IDX_session_cloud_reply_leased` the second, so the
+ *   claim reads one session's rows and never the table.
  */
 export class AddBrowserCloudChat1795821178978 implements MigrationInterface {
   name = 'AddBrowserCloudChat1795821178978';
@@ -45,9 +47,21 @@ export class AddBrowserCloudChat1795821178978 implements MigrationInterface {
          ADD CONSTRAINT "CHK_session_cloud_reply_lease"
            CHECK ("leaseUntil" IS NULL OR "deliveredVia" = 'browser')`,
     );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_session_cloud_reply_leased"
+         ON session_cloud_reply ("sessionId", "leaseUntil")
+         WHERE "deliveredVia" = 'browser' AND "leaseUntil" IS NOT NULL`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    // A claim still leased was never confirmed posted: it waits again. One
+    // confirmed was delivered, which the older schema can only call a host's.
+    await queryRunner.query(
+      `UPDATE session_cloud_reply SET "collectedAt" = NULL, "deliveredVia" = NULL, "leaseUntil" = NULL
+        WHERE "leaseUntil" IS NOT NULL`,
+    );
+    await queryRunner.query(`DROP INDEX "IDX_session_cloud_reply_leased"`);
     await queryRunner.query(
       `UPDATE session_cloud_reply SET "deliveredVia" = 'host' WHERE "deliveredVia" = 'browser'`,
     );
