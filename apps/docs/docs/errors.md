@@ -781,7 +781,8 @@ project, which holds sessions that name none and no automations.
 issued, replaced by a newer URL, revoked, or its routine's webhook trigger removed.
 `011` is a signed URL's request whose `x-oppenheimer-signature` is absent, not
 `t=<unix seconds>,v1=<hex>`, more than five minutes from the server's clock, or not
-the HMAC-SHA256 of `<t>.<body>` under the signing secret. `012` is a body over
+the HMAC-SHA256 of `<t>.<body>` under the signing secret, or a signed request already
+received (sign it again to send it again). `012` is a body over
 256 KiB. `013` is a paused routine: turn it on from its Routines tab. A POST past
 these is `202` with the run's id, even when an hourly cap skipped it.
 

@@ -37138,8 +37138,7 @@
         "type": "object",
         "properties": {
           "signed": {
-            "type": "boolean",
-            "default": false
+            "type": "boolean"
           }
         }
       },

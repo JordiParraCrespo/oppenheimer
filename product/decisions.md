@@ -2211,6 +2211,19 @@ one its decision belongs to:
   tokens pinned to that workspace. Platform `admin` no longer holds
   `set-role` (review F).
 
+- `design/bots/bot-subscriptions.md` (2026-11-03, the owner's call) let
+  anyone who can comment on a followed pull request wake the bot, and
+  `design/automations/automations-architecture.md` let any GitHub event on
+  a watched repository fire an automation or routine. Since 2026-11-27
+  (security review E) only events the repository's insiders cause (its
+  owner, members and collaborators, by GitHub's `author_association`; a
+  check only on the repository's own branch) fire a run or wake a bot or
+  session; a stranger's issue, comment or review starts nothing, with no
+  opt-out yet (`design/automations/automations-architecture.md`, "Insiders
+  only"). `design/bots/bot-routines.md`: a routine webhook URL asked for
+  through the API without `signed` is now signed, and a signed request is
+  accepted once.
+
 ## The design
 
 - 2026-09-12: directory created; documents seeded with decisions from

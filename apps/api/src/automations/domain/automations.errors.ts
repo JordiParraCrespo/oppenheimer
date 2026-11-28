@@ -54,7 +54,7 @@ export const AutomationErrors = {
     message: 'Webhook not found',
     httpStatus: 404,
   },
-  /** A signed webhook's request with no signature, a stale one, or one that does not match. */
+  /** A signed webhook's request with no signature, a stale one, one that does not match, or one already received. */
   WEBHOOK_SIGNATURE_INVALID: {
     code: 'AUTOMATIONS_011',
     message: 'The webhook signature is missing, stale or wrong',
