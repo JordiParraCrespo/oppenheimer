@@ -294,6 +294,31 @@ export class SessionCloudChatRepository implements SessionCloudChatRepositoryPor
     return affected === 1;
   }
 
+  async deferWakeWhileLeased(sessionId: string, replyId: string): Promise<Date | null> {
+    return this.outbox.transaction(async (manager) => {
+      const [held]: { leaseUntil: Date }[] = await manager.query(
+        `SELECT "leaseUntil" FROM session_cloud_reply
+          WHERE id = $1 AND "sessionId" = $2
+            AND "deliveredVia" = 'browser' AND "leaseUntil" IS NOT NULL`,
+        [replyId, sessionId],
+      );
+      if (!held) return null;
+      // A second past the lease, when the claim has lapsed and a host can take it.
+      const at = new Date(new Date(held.leaseUntil).getTime() + 1000);
+      const wake: CloudReplyWake = { sessionId, replyId };
+      await this.outbox.stageJob(manager, {
+        queue: QUEUE_NAMES.CLOUD_REPLY_WAKES,
+        jobName: WAKE_CLOUD_SESSION_JOB,
+        payload: { ...wake },
+        reason: `wake cloud session ${sessionId} with reply ${replyId} once the browser's claim lapses`,
+        aggregateId: sessionId,
+        correlationId: null,
+        availableAt: at,
+      });
+      return at;
+    });
+  }
+
   async confirmBrowserDelivery(
     organizationId: string,
     authorId: string,

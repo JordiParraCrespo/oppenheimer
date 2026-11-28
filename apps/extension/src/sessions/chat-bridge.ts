@@ -11,7 +11,7 @@ import {
   releaseReply,
   sessionsToSync,
 } from './chat';
-import { clearChatProblem, readState, writeState } from './store';
+import { clearChatProblem, type OppenheimerConnection, readState, writeState } from './store';
 
 /** How long a session a reply was posted to is read at every turn of the loop. */
 const HOT_MS = 3 * 60_000;
@@ -25,6 +25,8 @@ const SESSIONS_PER_PASS = 10;
  * plus its two attempts (`POST_TIMEOUT_MS` each), ends inside the claim's lease.
  */
 const POST_START_WITHIN_MS = BROWSER_REPLY_LEASE_SECONDS * 1000 - 2 * POST_TIMEOUT_MS - 6_000;
+/** How long a delivery claude.ai took is confirmed again, at most. */
+const CONFIRM_FOR_MS = 10 * 60_000;
 /** A failed claim waits this long before the next one. */
 const RETRY_MS = 15_000;
 
@@ -56,6 +58,12 @@ export interface ChatBridge {
 export function createChatBridge({ claudeHeaders, serial }: ChatBridgeDeps): ChatBridge {
   /** Sessions a reply was just posted to, and when. Lost with the worker, which is fine. */
   const hot = new Map<string, number>();
+  /**
+   * Replies claude.ai took whose confirmation did not reach Oppenheimer, and
+   * since when: confirmed again on every turn, so the claim does not lapse
+   * and hand an already delivered reply to the Stop hook a second time.
+   */
+  const unconfirmed = new Map<string, number>();
   /** The last refused post, said in the popup until a post goes or its claim lapses. */
   let refusal: { reason: string; until: number } | null = null;
   let running = false;
@@ -72,6 +80,7 @@ export function createChatBridge({ claudeHeaders, serial }: ChatBridgeDeps): Cha
     for (;;) {
       const { oppenheimer, sessions } = await readState();
       if (!oppenheimer) return;
+      await confirmDeliveries(oppenheimer);
       const busy = Object.values(sessions).some((session) => session.state === 'running');
       let replies: ClaimedReply[] = [];
       try {
@@ -101,9 +110,7 @@ export function createChatBridge({ claudeHeaders, serial }: ChatBridgeDeps): Cha
           if (posted.ok) {
             refusal = null;
             hot.set(reply.cloudSessionId, Date.now());
-            // A confirmation that does not arrive lets the claim lapse, and the
-            // reply goes again: claude.ai keeps one message per id.
-            await confirmReply(oppenheimer, reply.id).catch(() => {});
+            unconfirmed.set(reply.id, Date.now());
           } else {
             // A refused post keeps its claim until the lease lapses: the
             // reply then waits for the Stop hook or a host, and this
@@ -116,6 +123,7 @@ export function createChatBridge({ claudeHeaders, serial }: ChatBridgeDeps): Cha
             };
           }
         }
+        await confirmDeliveries(oppenheimer);
         // claude.ai asked to slow down: nothing goes to it for a while.
         if (refusal?.reason === '429')
           await new Promise((resolve) => setTimeout(resolve, RETRY_MS));
@@ -134,6 +142,27 @@ export function createChatBridge({ claudeHeaders, serial }: ChatBridgeDeps): Cha
    * claude.ai and sends the console what it does not have yet. A session the
    * console has not seen is adopted there by the first batch.
    */
+  /**
+   * Tells Oppenheimer which posted replies claude.ai took. One that does not
+   * get through stays to be told again, for as long as telling can still
+   * matter: an answer of `false` means another way already has it, and past
+   * ten minutes the claim is long gone either way.
+   */
+  async function confirmDeliveries(connection: OppenheimerConnection) {
+    for (const [replyId, since] of unconfirmed) {
+      if (Date.now() - since > CONFIRM_FOR_MS) {
+        unconfirmed.delete(replyId);
+        continue;
+      }
+      try {
+        await confirmReply(connection, replyId);
+        unconfirmed.delete(replyId);
+      } catch {
+        // Told again on the next turn.
+      }
+    }
+  }
+
   /** Reads the sessions that are moving; answers why one could not be carried, or null. */
   async function syncPass(): Promise<string | null> {
     const state = await readState();

@@ -108,6 +108,13 @@ export interface SessionCloudChatRepositoryPort {
     leaseSeconds: number,
   ): Promise<BrowserCloudReply[]>;
   /**
+   * When the browser extension holds a reply's claim, unconfirmed, the wake
+   * that found it taken is staged again for just after the claim's lease ends,
+   * so a reply the extension never posts still reaches a host. Answers when,
+   * or null when nothing holds it that way (delivered, or another way's).
+   */
+  deferWakeWhileLeased(sessionId: string, replyId: string): Promise<Date | null>;
+  /**
    * The extension's word that claude.ai took a reply it claimed: the claim no
    * longer lapses. Whether it was the caller's claim, still held.
    */

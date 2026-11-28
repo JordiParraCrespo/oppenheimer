@@ -594,3 +594,58 @@ test('says in the popup when claude.ai gives no session’s log', async ({
   // copy goes stale behind a healthy-looking popup.
   await expect(popup.getByText(/claude\.ai gave no event log/)).toBeVisible({ timeout: 20_000 });
 });
+
+test('confirms a delivery again when its first confirmation does not get through', async ({
+  context,
+  claude,
+  worker,
+  extensionId,
+}) => {
+  const ID = 'session_01ConfirmAgain0';
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'authorization, content-type',
+    'access-control-allow-methods': 'POST',
+  };
+  let claimable = [
+    { id: '2c9f0c2e-6b8c-4f1e-9c9e-2f0e6b0e8a13', cloudSessionId: ID, text: 'ship it' },
+  ];
+  const confirms: number[] = [];
+  await context.route('http://localhost:3001/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    const path = new URL(request.url()).pathname;
+    if (path.endsWith('/cloud-replies/claim')) {
+      const replies = claimable;
+      claimable = [];
+      return route.fulfill({ headers: cors, json: { replies } });
+    }
+    if (path.endsWith('/delivered')) {
+      // The first confirmation is lost to a failing API; the next one lands.
+      const status = confirms.length === 0 ? 502 : 200;
+      confirms.push(status);
+      return route.fulfill({ status, headers: cors, json: { delivered: true } });
+    }
+    return route.fulfill({ headers: cors, json: { matched: 0, sessionId: null, accepted: 0 } });
+  });
+  await context.route('https://claude.ai/v1/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'POST') return route.fulfill({ json: {} });
+    if (new URL(request.url()).pathname.endsWith('/teleport-events')) {
+      return route.fulfill({ json: { data: [] } });
+    }
+    return route.fallback();
+  });
+  await worker.evaluate(() =>
+    chrome.storage.local.set({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_test' },
+    }),
+  );
+  claude.sessions = [running(ID, 'Confirm')];
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup.html`);
+  await popup.getByRole('button', { name: 'Check now' }).click();
+  // Breaks if a lost confirmation lets the claim lapse and the Stop hook
+  // deliver a reply claude.ai already took.
+  await expect.poll(() => confirms, { timeout: 20_000 }).toEqual([502, 200]);
+});

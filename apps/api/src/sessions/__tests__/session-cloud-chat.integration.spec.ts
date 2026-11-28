@@ -388,5 +388,23 @@ describe('sessions: cloud chat replies (integration)', () => {
       const [seen] = await chat.findReplies(organizationId, cloudId, 10);
       expect(seen).toMatchObject({ id: reply.id, deliveredVia: 'browser' });
     });
+
+    it('stages the wake again for just past a held claim’s lease, and not for a confirmed one', async () => {
+      const reply = await chat.addReply(organizationId, cloudId, authorId, 'held', new Date());
+      await chat.claimRepliesForBrowser(organizationId, authorId, 60);
+      // Breaks if a reply the extension holds and never posts loses its host wake for good.
+      const at = await chat.deferWakeWhileLeased(cloudId, reply.id);
+      expect(at).not.toBeNull();
+      const staged: { availableAt: Date }[] = await dataSource.query(
+        `SELECT "availableAt" FROM outbox_message
+          WHERE "aggregateId" = $1 AND topic = $2 AND payload->>'replyId' = $3
+          ORDER BY "availableAt" DESC LIMIT 1`,
+        [cloudId, QUEUE_NAMES.CLOUD_REPLY_WAKES, reply.id],
+      );
+      expect(new Date(staged[0]?.availableAt ?? 0).getTime()).toBe(at?.getTime());
+      // Confirmed, nothing holds it: no wake comes again.
+      await chat.confirmBrowserDelivery(organizationId, authorId, reply.id);
+      expect(await chat.deferWakeWhileLeased(cloudId, reply.id)).toBeNull();
+    });
   });
 });

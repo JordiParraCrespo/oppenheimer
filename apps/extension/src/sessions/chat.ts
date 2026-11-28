@@ -292,6 +292,7 @@ export async function confirmReply(
     headers: jsonHeaders(connection),
   });
   if (!response.ok) throw await apiError(response);
+  // `delivered: false` is an answer too: another way has it, nothing to tell again.
 }
 
 /** Gives a reply claude.ai refused back to the API, so the session's Stop hook can take it. */
