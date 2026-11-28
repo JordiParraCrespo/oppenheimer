@@ -3,7 +3,7 @@
 Research, 2026-11-24. It decides nothing. The owner asked for a read of
 openbot's generative UI and of the tools in the ChatGPT desktop app for
 Linux, then of OpenClaw, with a view to porting what fits into our chat.
-It follows [`visuals/README.md`](visuals/README.md) (2026-11-09), which
+It follows [`visuals-in-the-chat.md`](visuals-in-the-chat.md) (2026-11-09), which
 read Synara and an earlier ChatGPT build for charts and HTML only. This
 note reads the newer build for its whole tool list, and adds openbot and
 OpenClaw. Paths in backticks are inside the source named beside them;
@@ -43,7 +43,7 @@ What to port, in order (§6):
 - **A form decision tool for bots.**
 - **The live output tail on a running command.**
 - **The HTML frame.** OpenClaw built independently the shape that our
-  proof of concept in `visuals/poc/` measured.
+  proof of concept in `spikes/visuals-poc/` measured.
 
 What not to port: A2UI, ChatGPT's internal widget catalogue, and the
 CopilotKit runtime.
@@ -116,7 +116,7 @@ Three of its mechanics are worth naming:
 
 The app is still the Codex app under the ChatGPT brand
 (`productName: "Codex"`, `codexAppBrand: "chatgpt"`).
-[`visuals/README.md`](visuals/README.md) §4 covers how it draws (Mermaid,
+[`visuals-in-the-chat.md`](visuals-in-the-chat.md) §4 covers how it draws (Mermaid,
 `charts_widget_v2`, the `visualize` fragment, MCP Apps). This section is
 the rest: the tools.
 
@@ -174,7 +174,7 @@ The reply's markdown may also carry directives the app draws as actions:
 `git-stage`, `git-commit`, `git-push`, `git-create-pr` and `code-comment`.
 Their exact markup is inferred, not read.
 
-**Generative UI, beyond `visuals/README.md`.** There is an internal
+**Generative UI, beyond `visuals-in-the-chat.md`.** There is an internal
 catalogue of JSON component trees, `DIL`, in `async/356413…js`: Box, Row,
 Col, Card, CardCarousel, ListView, Form, Grid, Table, Markdown, Button,
 Checkbox, Select, RadioGroup, DatePicker, Slider, Input, Chart, PieChart,
@@ -258,12 +258,12 @@ Our two chats today, read from the code:
 | # | Port | From | Sessions | Bots |
 |---|---|---|---|---|
 | 1 | **A permission card**: what is asked (the command, or the file and its diff), with Allow once, Always, Deny, answered as keystrokes the way `AskUserQuestion` is | All three; OpenClaw's three buttons, ChatGPT's per-tool copy | The pending tool call is the last `tool_use` with no result while the screen reads `blocked`; its keys belong in the agent's screen manifest beside `questionKeys`. Codex has the same prompt | Already has one |
-| 2 | **Mermaid and KaTeX** in the shared `Markdown` | ChatGPT; `visuals/README.md` slice 1 | Both chats, no change to the agent | |
-| 3 | **One block format** in `packages/shared`: `markdown`, `metrics`, `table`, `bar` / `line` / `area` / `ring` chart, `checklist`, `progress` (value against a target, or steps), `record` (labelled fields), `callout`, `links`. Limits as OpenClaw's (24 blocks, 8 KB) to start. One renderer on the design system's charts | The intersection of openbot's gallery, OpenClaw's `report`, ChatGPT's `charts_widget_v2` and Synara's blocks | `runner sessions show <spec.json>`, an `oppenheimer.visual` entry, taught by `runner --skill` (`visuals/README.md` slice 3) | A `show_visual` tool on the mail draft's path (slice 2) |
+| 2 | **Mermaid and KaTeX** in the shared `Markdown` | ChatGPT; `visuals-in-the-chat.md` slice 1 | Both chats, no change to the agent | |
+| 3 | **One block format** in `packages/shared`: `markdown`, `metrics`, `table`, `bar` / `line` / `area` / `ring` chart, `checklist`, `progress` (value against a target, or steps), `record` (labelled fields), `callout`, `links`. Limits as OpenClaw's (24 blocks, 8 KB) to start. One renderer on the design system's charts | The intersection of openbot's gallery, OpenClaw's `report`, ChatGPT's `charts_widget_v2` and Synara's blocks | `runner sessions show <spec.json>`, an `oppenheimer.visual` entry, taught by `runner --skill` (`visuals-in-the-chat.md` slice 3) | A `show_visual` tool on the mail draft's path (slice 2) |
 | 4 | **A form decision**: one to eight fields (text, number, select, textarea), answered as the tool's result, one slot per call | openbot's `askForm`, ChatGPT's MCP elicitation | | Beside the approval and question cards, as a third kind of waiting a bot can do |
 | 5 | **The live tail on a running command**: the last three lines while it runs, the full output once done | OpenClaw; ChatGPT's `outputDelta` | Not traced: the console has the output once the result lands in the transcript, and the screen while it runs; drawing the tail from the screen wants checking | Bots run no commands of their own |
 | 6 | **Small markers**: worked for N s, model changed, compaction, steered | ChatGPT | `ChatMarker` already draws two of them | |
-| 7 | **HTML in a frame**, behind a flag. The fragment goes into a fixed shell on a second origin. Theme tokens are posted to it. Its only calls out are size, an open-link request that asks first, and a prompt sent only on a click, refusing `/` commands and rate-limited | OpenClaw's two frames match `visuals/poc/` | `visuals/README.md` slice 4 | Same |
+| 7 | **HTML in a frame**, behind a flag. The fragment goes into a fixed shell on a second origin. Theme tokens are posted to it. Its only calls out are size, an open-link request that asks first, and a prompt sent only on a click, refusing `/` commands and rate-limited | OpenClaw's two frames match `spikes/visuals-poc/` | `visuals-in-the-chat.md` slice 4 | Same |
 
 **What not to port:**
 
@@ -272,17 +272,17 @@ Our two chats today, read from the code:
   list (row 3) covers data, and HTML (row 7) covers the rest.
 - **The CopilotKit runtime and AG-UI.** Our stream comes from a
   transcript over the runner's link. The patterns travel; the SDK would
-  be a second protocol beside `next-steps/0.7-chat-protocol.md`.
+  be a second protocol beside `design/sessions/chat-protocol.md`.
 - **Hosting MCP Apps.** Not while neither our bots nor the runner attach
-  outside MCP servers (`visuals/README.md` §4.4).
+  outside MCP servers (`visuals-in-the-chat.md` §4.4).
 - **ChatGPT's app tools as tools for a session's agent.** Threads, fork,
   hand off and wait already exist for bots as session tools. For a
   session's agent, the way in is `opp` and the MCP server
-  (`next-steps/0.6-mcp-cli-and-agent.md`), not new chat UI.
+  (`design/clients/mcp-cli-and-agent.md`), not new chat UI.
 
 Rows 1, 4 and 5 are about decisions and feedback, not visuals, and need
 no new origin. Row 1 alone is not a visual change to a bot. Rows 3 and 7
-are the `visuals/README.md` plan, now with three products agreeing on
+are the `visuals-in-the-chat.md` plan, now with three products agreeing on
 its contents.
 
 ## 7. What is not known
@@ -293,7 +293,7 @@ its contents.
   question looks like, not yet what the answer is. This wants a recorded
   trial per agent before row 1 is built.
 - **Whether a session's agent will reach for `runner sessions show`**
-  unprompted (`visuals/README.md` §7). OpenClaw shows the tool only to
+  unprompted (`visuals-in-the-chat.md` §7). OpenClaw shows the tool only to
   clients that declare they can draw it. For us, that is `runner
   --skill` taught only on hosts whose console draws visuals.
 - **What ChatGPT's directives look like.** Their markup (`git-commit`,

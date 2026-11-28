@@ -44,7 +44,7 @@ func (s *Service) BrowserAvailable() (string, error) {
 }
 
 // Browser does one action in a bot's browser and answers with the page after
-// it (`browser.act`, 25 §4.2). The setting is read from disk on every call,
+// it (`browser.act`, product/design/bots/bots.md §4.2). The setting is read from disk on every call,
 // so `runner browser off` stops the next action without a restart, and it is
 // checked before anything is started.
 func (s *Service) Browser(ctx context.Context, req domain.BrowserRequest) (domain.BrowserPage, error) {

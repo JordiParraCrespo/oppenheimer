@@ -5,7 +5,7 @@
 "@oppenheimer/translations": patch
 ---
 
-Bots, slice 2 (`product/versions/mvp/25-bots.md` §2): a bot answers.
+Bots, slice 2 (`product/design/bots/bots.md` §2): a bot answers.
 
 - `@oppenheimer/shared`: the provider catalog (`BOT_PROVIDERS`,
   `BOT_PROVIDER_CATALOG`), the provider key schema, the turn and message

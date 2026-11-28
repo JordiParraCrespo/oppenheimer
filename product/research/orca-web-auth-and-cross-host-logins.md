@@ -13,11 +13,11 @@ running Orca runtime mints, one revocable token per paired client, and
 has no hosted identity in front of it. And Orca does **not** share agent
 logins across hosts at all: every host is logged in separately, the
 docs say so in one sentence, and the product's UI is built around that
-fact. Both answers confirm the MVP's current design (00-scope, 08-auth,
-note 01 §7). The rest of this note is the detail and the vendor rules
+fact. Both answers confirm the MVP's current design (`../design/foundations/scope.md`, `../design/foundations/auth.md`,
+`../archive/terminal-first.md` §7). The rest of this note is the detail and the vendor rules
 that bound the space. It decides nothing; §4 lists two ideas for the
 notes that own them, none adopted. Paths in backticks are relative to
-`product/`, and bare numbers name `versions/mvp/` notes.
+`product/` unless they start with `../`.
 
 Read from the source, not only the docs: `stablyai/orca` at
 `60c43695` (2026-09-22, v1.4.197), `src/main/runtime/` for pairing and
@@ -129,22 +129,22 @@ thing that authorises a runtime.
 
 Orca's answer to "web auth" is a pairing token minted by the machine and
 a network you bring yourself. Ours is the inverse and we already built
-it: the control plane is the identity (Better Auth, 08-auth), the host
+it: the control plane is the identity (Better Auth, `../design/foundations/auth.md`), the host
 pairs to *it* with a token a signed-in user mints, the runner dials out
 so nothing on the host is reachable, and the browser attaches to a
-session with a short-lived ticket the control plane mints (01-protocol).
+session with a short-lived ticket the control plane mints (`../design/foundations/protocol.md`).
 Issue #14039 is literally the product gap that the hosted control plane
 closes. Two Orca details are still worth taking:
 
 - **A grant per client, listed and revocable.** Orca shows every paired
   client on the server and lets you revoke one. Ours is already the
-  host row and the Better Auth session list (05, 08); Orca's model
+  host row and the Better Auth session list (`../design/console/screens.md`, `../design/foundations/auth.md`); Orca's model
   changes nothing in them.
 - **Account scope is stated on screen.** When a remote server is the
   active runtime, Orca's Accounts pane says "Account scope: Remote
   server `<name>`. The accounts managed on this desktop are left
   untouched." (issue #21466). If the console ever shows an agent login,
-  it is labelled with the host it belongs to; that is a rule for 05
+  it is labelled with the host it belongs to; that is a rule for `../design/console/screens.md`
   to take when it draws one.
 
 ## 2. How Orca handles agent logins across hosts: it does not share them
@@ -175,7 +175,7 @@ UI that switches which host's accounts you are looking at.
 
 ### The mechanics inside one host: Orca holds and refreshes the credential
 
-Note 06 described Orca as "a viewer over files the vendor CLI already
+`../archive/multi-account.md` described Orca as "a viewer over files the vendor CLI already
 owns". The source says otherwise, and the correction matters for what
 we copy. On one host, for a *managed* account:
 
@@ -262,7 +262,7 @@ on the manager role at all (§4).
 - Usage meters were repeatedly read from the *desktop's* credentials
   while the active account was on the remote host (#16466, #21466). Any
   per-account figure we show must be produced on the host it belongs
-  to, in the runner's heartbeat, as note 06 already says.
+  to, in the runner's heartbeat, as `../archive/multi-account.md` already says.
 
 ## 3. What the vendors permit, which is what bounds the answer
 
@@ -274,7 +274,7 @@ on the manager role at all (§4).
   when it's locked in an SSH session", the same file. That is the case
   for a Mac driven by our runner under launchd with no unlocked login
   Keychain, so both our platforms are file-based per config dir
-  (note 06 §macOS).
+  (`../archive/multi-account.md` §macOS).
 - **Login without a reachable callback.** The docs cover our exact
   topology: "If your browser shows a login code instead of redirecting
   back after you sign in, paste it into the terminal at the `Paste code
@@ -298,11 +298,11 @@ on the manager role at all (§4).
   closed as *not planned*. The documented headless path is
   `claude setup-token`: a one-year subscription OAuth token, printed
   once, meant for `CLAUDE_CODE_OAUTH_TOKEN` in CI, unable to use Remote
-  Control or claude.ai connectors. Note 06 already places that in the
+  Control or claude.ai connectors. `../archive/multi-account.md` already places that in the
   project vault for unattended runs.
 - **Expiry is visible.** Three-day warning before the login expires,
   `/status` reports `Expired — log in again`. The runner can read the
-  same state through the screen manifest and flag `needs_login` (06).
+  same state through the screen manifest and flag `needs_login` (`../archive/multi-account.md`).
 
 ### Codex
 
@@ -332,12 +332,12 @@ are left for the notes that own them.
 ### Confirmed
 
 1. **Log in once per host, on the host.** This is the MVP flow
-   (00-scope "Agent login is the host's own"), it is what Orca does, and it
+   (`../design/foundations/scope.md` "Agent login is the host's own"), it is what Orca does, and it
    is the only flow both vendors document for our topology. The console
    never runs a login on the user's laptop on a host's behalf, for the
    reason Orca gives: it would authenticate the wrong machine.
 2. **The platform never holds, copies or forwards a vendor credential**
-   (F23, note 01 §7). For Claude this is a terms line; for Codex it is
+   (F23, `../archive/terminal-first.md` §7). For Claude this is a terms line; for Codex it is
    merely unnecessary. A hosted service copying `auth.json` between
    customers' hosts would be a credential store with the platform as a
    third party in the middle, and the moment a shared workspace exists
@@ -345,10 +345,10 @@ are left for the notes that own them.
    login keeps "one subscription, one human, one machine" true without
    the platform enforcing anything.
 3. **Multiple accounts are per-host config dirs selected by an
-   environment variable on the spawned process** (note 06), never a
+   environment variable on the spawned process** (`../archive/multi-account.md`), never a
    write to the host's default `~/.claude` or `~/.codex`. Orca's #16016
    is the bug we avoid by construction: our runner launches the agent
-   inside the session's tmux with the variable set once (02-runner §6)
+   inside the session's tmux with the variable set once (`../design/runner/runner.md` §6)
    and never edits the host's own directory.
    **And the runner does not become the credential manager Orca is.**
    Orca captures the token out of the login dir, stores it under its own
@@ -356,7 +356,7 @@ are left for the notes that own them.
    id, and materialises it back before each launch. We do none of that:
    the login writes into the account's config dir directly, the CLI
    refreshes its own token, and the runner reads only presence, mtime
-   and expiry. That keeps note 06's "the platform never reads the
+   and expiry. That keeps `../archive/multi-account.md`'s "the platform never reads the
    credential file's contents" true, keeps F23 trivially true, and skips
    the whole family of stale-token and lost-refresh bugs. The one thing
    we lose is Orca's atomic refresh across concurrent sessions on one
@@ -373,44 +373,44 @@ are left for the notes that own them.
    manifest saw the `Paste code here if prompted` state, the console
    could offer an input that writes the code and Enter to the PTY, and
    show Codex's device code large with a copy button. It would be UI
-   over the existing byte stream. The owners are 02 §9 (the manifest
-   states) and 05 (the session pane), with a line in the MVP decision
+   over the existing byte stream. The owners are `../design/runner/runner.md` §9 (the manifest
+   states) and `../design/console/screens.md` (the session pane), with a line in the MVP decision
    log; until they take it, the prompt is the terminal's.
 5. **Login state per host.** Orca's remote-scope bugs (#16466, #21466,
    #20118) come from showing a figure without the machine it came from.
    If the console ever shows whether an agent is logged in on a host,
    only presence and expiry leave the host, never the credential (F23),
-   and they are facts in the heartbeat 02 §10 already defines, not a
+   and they are facts in the heartbeat `../design/runner/runner.md` §10 already defines, not a
    second inventory. On macOS the login normally lives in the Keychain,
    not in `~/.claude/.credentials.json`, so the state has to come from
-   the CLI's own status for both stores. Logging in from there is note
-   06's Add-account flow, which waits for the accounts slice.
+   the CLI's own status for both stores. Logging in from there is
+   `../archive/multi-account.md`'s Add-account flow, which waits for the accounts slice.
 
 ### Deferred, with the reason
 
 - **Codex with device code turned off.** The only other Codex login is
   the browser flow with its callback on `localhost:1455` on the host.
   Forwarding a browser to that port would be an inbound path to the
-  host, which 00 rules out ("no ports on the host, ever"), so it is not
+  host, which `../design/foundations/scope.md` rules out ("no ports on the host, ever"), so it is not
   parked here as a later option. Until the Codex slice says otherwise,
   the login prompt appears in the terminal and the person enables
   device-code login in their ChatGPT workspace.
 - **`claude setup-token` in the vault for unattended runs.** Still the
-  later slice in note 06.
-- **Per-account config dirs.** Note 06, later slice, unchanged.
+  later slice in `../archive/multi-account.md`.
+- **Per-account config dirs.** `../archive/multi-account.md`, later slice, unchanged.
 
 ## 5. Side by side
 
 | | Orca | Us (MVP) |
 |---|---|---|
 | Who authenticates the browser | the runtime, via a pairing link it mints; Tailscale or LAN for reach | the control plane (Better Auth); the browser never reaches a host |
-| Client credential | one revocable 24-byte device token per paired client plus the runtime's pinned X25519 key, in `localStorage` for the browser | cookie session; short-lived attach ticket per session socket (01) |
-| Host credential | none: the server *is* the trust root; listener on loopback until paired, self-signed `wss` | runner key pair bound to the host row; pairing token minted by a signed-in user (08, 09) |
-| Relay | optional hosted relay for phones, outbound WebSocket both ends, end-to-end encrypted, code in `cloud/` | the control plane relays every session; the runner dials out (01, 02) |
+| Client credential | one revocable 24-byte device token per paired client plus the runtime's pinned X25519 key, in `localStorage` for the browser | cookie session; short-lived attach ticket per session socket (`../design/foundations/protocol.md`) |
+| Host credential | none: the server *is* the trust root; listener on loopback until paired, self-signed `wss` | runner key pair bound to the host row; pairing token minted by a signed-in user (`../design/foundations/auth.md`, `../design/runner/runner-install-and-update.md`) |
+| Relay | optional hosted relay for phones, outbound WebSocket both ends, end-to-end encrypted, code in `cloud/` | the control plane relays every session; the runner dials out (`../design/foundations/protocol.md`, `../design/runner/runner.md`) |
 | Hosted account | optional, only for Orca Relay (mobile) and artifact publishing | required; it is the product |
 | Agent login | once per host, on the host; `orca account add` headless; *Add account* disabled in remote scope | once per host, in the session terminal; the link becomes a button |
 | Sharing logins across hosts | none, by design and by docs | none, by design and by terms (F23) |
-| Several accounts on one host | Orca captures, stores, refreshes and materialises the token per managed account; `CLAUDE_CONFIG_DIR` / `CODEX_HOME` on launch; once wrote into the default dir by mistake | note 06, later slice; env var on the spawned process only, the CLI owns and refreshes its own file |
+| Several accounts on one host | Orca captures, stores, refreshes and materialises the token per managed account; `CLAUDE_CONFIG_DIR` / `CODEX_HOME` on launch; once wrote into the default dir by mistake | `../archive/multi-account.md`, later slice; env var on the spawned process only, the CLI owns and refreshes its own file |
 | Credential on SSH hosts and cloud VMs | none carried; the remote must already be logged in | none carried (F23) |
 | Where usage/login state is read | on the host that owns the account (after several bugs where it was not) | on the host, in the runner's heartbeat, labelled with the host |
 

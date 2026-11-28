@@ -381,6 +381,12 @@
     "delete": "Delete selected",
     "clear": "Clear selection"
   },
+  "group": {
+    "actions": "Actions for {{name}}",
+    "hideAll": "Hide all sessions",
+    "showAll": "Show all sessions",
+    "deleteAll": "Delete all sessions…"
+  },
   "deleteSessions": {
     "title_one": "Delete {{count}} session?",
     "title_other": "Delete {{count}} sessions?",
@@ -412,6 +418,7 @@
     "showAll": "Show all projects",
     "pinnedOnly": "Pinned only",
     "showHidden": "Show hidden sessions",
+    "unattended": "Remind me after 30 minutes unread",
     "newProject": "New project…",
     "allStatuses": "All statuses",
     "statuses": {

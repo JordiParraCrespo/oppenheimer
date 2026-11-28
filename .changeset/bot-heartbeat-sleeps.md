@@ -4,7 +4,7 @@
 "@oppenheimer/translations": patch
 ---
 
-Bots no longer get a **Heartbeat** routine by default (`26-bot-routines.md`
+Bots no longer get a **Heartbeat** routine by default (`bot-routines.md`
 §6, "Changed 2026-11-15"). The migration `PauseDefaultBotHeartbeats` moves
 every heartbeat still on its hourly trigger to twice a day, 09:00 and 18:00
 in the zone its owner last wrote from, and pauses every running one, so it

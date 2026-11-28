@@ -2,7 +2,7 @@ import type { InboxItem } from '@oppenheimer/frontend-consumer';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { BotChatSlotContext } from '../hooks/use-bot-chat-slot';
+import { InboxSlotsContext } from '../hooks/use-inbox-slot';
 import { InboxBotNoticeCard } from '../sections/inbox-bot-notice-card';
 import { InboxItemMessage } from '../sections/inbox-item-message';
 
@@ -40,9 +40,9 @@ const copy = { sender: 'Adri', title: 'Adri has news for you', body: 'The send f
 
 function renderCard(chat: ((botId: string) => ReactNode) | null) {
   render(
-    <BotChatSlotContext value={chat}>
+    <InboxSlotsContext value={{ bot: chat, session: null }}>
       <InboxBotNoticeCard item={item} copy={copy} from="Bot" age="3m ago" />
-    </BotChatSlotContext>,
+    </InboxSlotsContext>,
   );
 }
 
@@ -74,14 +74,14 @@ describe('a bot notice answered in place', () => {
   it('stays open when the bot it answers sends a newer notice, and closes for another bot', () => {
     const chat = (botId: string) => <p>chat with {botId}</p>;
     const shown = (notice: { id: string; botId: string }) => (
-      <BotChatSlotContext value={chat}>
+      <InboxSlotsContext value={{ bot: chat, session: null }}>
         <InboxItemMessage
           item={{ ...item, key: `botNotice:${notice.botId}:${notice.id}`, notice } as never}
           copy={copy}
           from="Bot"
           age="now"
         />
-      </BotChatSlotContext>
+      </InboxSlotsContext>
     );
     const { rerender } = render(shown({ id: 'n1', botId: 'b1' }));
     fireEvent.click(screen.getByRole('button', { name: 'inbox.botNotice.reply' }));

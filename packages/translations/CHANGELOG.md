@@ -58,7 +58,7 @@
   - `@oppenheimer/design-system-web`: `EffortSlider` and `EffortPicker` take their stops from the caller; `EFFORT_STOPS` is gone.
 
 - c078d0d: `GET /health/capabilities` reports `hosts`, and the console's pairing surfaces mint no token when it is false.
-- fc0e75d: The hosts backend for the Settings page (`product/versions/mvp/14-hosts-settings.md`).
+- fc0e75d: The hosts backend for the Settings page (`product/design/runner/hosts-settings.md`).
 
   - `@oppenheimer/api`: a host read carries a derived `status` (`running`, `idle`,
     `offline`, `unpaired`) and `runningSessionCount`, counted by `sessions/`
@@ -73,7 +73,7 @@
   - `@oppenheimer/runner`: the facts report the logical CPU count as `cpus`.
   - `@oppenheimer/api`: host metadata tables (`host_inventory`, `host_presence`,
     `host_network`, `host_event`), backfilled from `host`; the old columns stay
-    until the code switches over (`product/versions/mvp/15-host-metadata.md`).
+    until the code switches over (`product/design/runner/host-metadata.md`).
   - `@oppenheimer/api`: heartbeats write `host_presence` and, only when the
     machine changed, `host_inventory`, with the change on the host's timeline;
     host responses carry `machine`, `vitals` and `network`;
@@ -120,7 +120,7 @@
 
 - d5d310c: An organization's repositories can be reached from the project dialog, and a requested organization install is said rather than dropped.
 - 2dc27d2: Plan: a task board, goals and a calendar, the console rail's third item
-  (`product/versions/mvp/17-plan.md`).
+  (`product/design/plan/plan.md`).
 
   - `@oppenheimer/api`: the `tasks` module (tasks, goals, the board's order,
     starting or linking a session, the attach rule) and the `calendar` module
@@ -199,7 +199,7 @@
 - a566fac: A session's start says when the host is downloading the repository for the
   first time: the clone step carries `download`, and the start pane explains
   the longer wait.
-- 3404cd3: A session's terminal can be shared with a link, to watch or to type, for anyone, any signed-in account or named people (`product/versions/mvp/21-session-share-links.md`).
+- 3404cd3: A session's terminal can be shared with a link, to watch or to type, for anyone, any signed-in account or named people (`product/design/sessions/session-share-links.md`).
 - f101364: English and Spanish messages for the `SESSIONS_*` catalog and for the three
   `PROJECTS_*` codes archiving adds.
 - 43a17c1: - **frontend-web**: `notifySuccess`, the success toast, which takes a `toasts.*` key.

@@ -4,7 +4,7 @@
 ---
 
 A bot's requests stay cacheable from turn to turn
-(`product/versions/mvp/25-bots.md` §2). A bot on GPT and Grok read 1% of
+(`product/design/bots/bots.md` §2). A bot on GPT and Grok read 1% of
 its input from the provider's prompt cache.
 
 - `@oppenheimer/backend-agents`: `BotTurnRequest.cacheKey`, a stable id for

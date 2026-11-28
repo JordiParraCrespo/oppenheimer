@@ -235,7 +235,7 @@ key's public half) and `RUNNER_RELEASE_BASE_URL`
 (`https://dev.example.com/releases`); it fails without them.
 
 The macOS archives carry `OppenheimerRunner.app`, which the workflow signs with
-a Developer ID and notarizes (product/versions/mvp/09-runner-install-and-update.md
+a Developer ID and notarizes (product/design/runner/runner-install-and-update.md
 §2), so a Mac keeps the runner's permissions across updates. It needs three
 repository secrets from an Apple Developer Program account, and fails without
 them:
@@ -353,7 +353,7 @@ once and never again. `BOTS_PROVIDER_KEY` is one: a server set up before bots
 needs `BOTS_PROVIDER_KEY=<openssl rand -base64 32>` in `api.env` and a reload,
 or bots cannot answer (Settings → Model providers says so). The direct terminal path's STUN server is one such line,
 `RELAY_ICE_SERVERS=stun:stun.cloudflare.com:3478`
-(`product/versions/mvp/22-direct-terminal-path.md`): without it, a terminal
+(`product/design/runner/direct-terminal-path.md`): without it, a terminal
 goes direct only for a browser on the host's own network.
 
 `api.env` is not part of a release, so `oppctl rollback` does not bring the

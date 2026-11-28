@@ -1,4 +1,4 @@
-<!-- What `use_computer` tells a model: its description, its parameters' (the tool, then the parameter), and its answers and refusals, from `bot-computer-tools.factory.ts` and `bot-computer.policy.ts` (`25-bots.md` §4.2, "Using a computer"). -->
+<!-- What `use_computer` tells a model: its description, its parameters' (the tool, then the parameter), and its answers and refusals, from `bot-computer-tools.factory.ts` and `bot-computer.policy.ts` (`product/design/bots/bots.md` §4.2, "Using a computer"). -->
 
 <!-- fragment: use-computer -->
 

@@ -1,5 +1,5 @@
 <!-- fragment: body -->
-<!-- How to use `use_browser` (`25-bots.md` §4.2, "Using a browser"). Since 2026-11-23 this is the part that holds on every turn: what it is for and where to stop. How to work a page step by step is the `use-a-browser` skill, read before the first call. -->
+<!-- How to use `use_browser` (`product/design/bots/bots.md` §4.2, "Using a browser"). Since 2026-11-23 this is the part that holds on every turn: what it is for and where to stop. How to work a page step by step is the `use-a-browser` skill, read before the first call. -->
 
 # Using a browser
 

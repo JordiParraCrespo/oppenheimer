@@ -157,7 +157,7 @@ async function grade(via: Transport, reply: string, keys: readonly Check[]) {
   const asked = keys.filter((key) => QUESTIONS[key]);
   if (asked.length === 0) return {};
   const message = `The reply:\n<reply>\n${reply}\n</reply>\n\nQuestions:\n${asked.map((key) => `- ${key}: ${QUESTIONS[key]}`).join('\n')}`;
-  const turn = await via.turn({ system: GRADER, message, tools: [], maxTurns: 1 });
+  const turn = await via.turn({ system: GRADER, message, tools: [], maxTurns: 1, grading: true });
   const json = turn.answer.match(/\{[\s\S]*\}/)?.[0];
   return json ? (JSON.parse(json) as Record<string, boolean>) : {};
 }

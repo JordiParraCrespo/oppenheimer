@@ -12,7 +12,9 @@ export function useSessionUnread(id: string) {
  * (the sidebar, the inbox, a task, a link). Keyed on the session alone: one
  * marked while it is open keeps the mark until the reader comes back to it.
  */
-export function useClearUnreadOnOpen(sessionId: string): void {
+export function useClearUnreadOnOpen(sessionId: string, enabled = true): void {
   // Syncs the device's unread marks (localStorage) with the session on screen.
-  useEffect(() => sessionUnread.set(sessionId, false), [sessionId]);
+  useEffect(() => {
+    if (enabled) sessionUnread.set(sessionId, false);
+  }, [sessionId, enabled]);
 }

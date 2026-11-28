@@ -2,7 +2,7 @@ import type { BotTurnOrigin } from '@oppenheimer/shared';
 import type { AutomationRunCause } from '@oppenheimer/shared/automations';
 
 /**
- * A bot's heartbeat (`26-bot-routines.md` §6): a routine named Heartbeat that
+ * A bot's heartbeat (`product/design/bots/bot-routines.md` §6): a routine named Heartbeat that
  * wakes the bot on its own to check in on what it looks after. Since
  * 2026-11-15 no bot is given one by default, and the ones bots had were moved
  * to twice a day (09:00 and 18:00, migration `PauseDefaultBotHeartbeats`) and

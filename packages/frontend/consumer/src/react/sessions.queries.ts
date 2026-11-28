@@ -35,6 +35,7 @@ import {
   deriveSessionStartProgress,
   type SessionStartProgress,
 } from '../modules/sessions/session-steps';
+import { settleEach } from '../modules/sessions/settle-each';
 import { useConsumerApp } from './context';
 import { useHostListQuery } from './hosts.queries';
 import {
@@ -489,6 +490,51 @@ export function useRenameSession(
   options?: UseMutationOptions<SessionEntity, Error, RenameSessionVariables>,
 ) {
   return useSessionPatch(({ sessions }, { id, name }) => sessions.rename(id, name), options);
+}
+
+export interface SetSessionsHiddenVariables {
+  ids: readonly string[];
+  hidden: boolean;
+}
+
+/** What a write to several sessions left: the rows it changed, the ids it could not, and why the first one failed. */
+export interface SessionsWriteResult {
+  changed: SessionEntity[];
+  failed: string[];
+  reason: Error | null;
+}
+
+/**
+ * Hide several sessions, or show them again (a sidebar group's Hide all).
+ * The writes are one `settleEach`, so they go out a few at a time, and the
+ * lists are re-read once, when the last has answered: one re-read per row
+ * would read every page of the list once for each session and spend the
+ * API's per-minute allowance on reads. The mutation resolves either way; the
+ * result names what landed and what did not.
+ */
+export function useSetSessionsHidden(
+  options?: UseMutationOptions<SessionsWriteResult, Error, SetSessionsHiddenVariables>,
+) {
+  const app = useConsumerApp();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ ids, hidden }: SetSessionsHiddenVariables) => {
+      const changed: SessionEntity[] = [];
+      const { failed, reason } = await settleEach(ids, async (id) => {
+        changed.push(await app.sessions.setHidden(id, hidden));
+      });
+      return { changed, failed, reason };
+    },
+    ...withCacheOnSuccess(options, (result) => {
+      for (const session of result.changed) {
+        queryClient.setQueryData(sessionsKeys.detail(session.id), session);
+      }
+      return result.changed.length > 0
+        ? queryClient.invalidateQueries({ queryKey: sessionsKeys.lists() })
+        : undefined;
+    }),
+  });
 }
 
 /** Hide a session from the sidebar, or show it again; every list takes the answered row. */

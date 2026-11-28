@@ -12,7 +12,7 @@
 
 Hidden sessions: a session can be kept out of the console's sidebar and
 shown again, and it runs the same either way
-(`product/next-steps/hidden-sessions.md`).
+(`product/design/sessions/hidden-sessions.md`).
 
 - `@oppenheimer/api`: a `session.visibility_set` log entry folded into
   `work_session.hidden` (migration `AddSessionHidden`).
