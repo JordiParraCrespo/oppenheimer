@@ -90,6 +90,9 @@ export function ModelProviders() {
               const signIn = auth === 'sign_in';
               const perKey = !signIn && row.keys.length > 1;
               const notes = modelProviderKeyNotes(row.keys);
+              // A key provider's one key is acted on by its id, never the provider's
+              // whole set: a key another tab added meanwhile is not removed unseen.
+              const onlyKey = !signIn && row.keys.length === 1 ? row.keys[0] : null;
               return (
                 <Fragment key={row.provider}>
                   <SettingsListRow
@@ -115,7 +118,11 @@ export function ModelProviders() {
                           makeDefault.isPending && makeDefault.variables === row.provider
                         }
                         defaultBusy={makeDefault.isPending}
-                        removing={remove.isPending && remove.variables === row.provider}
+                        removing={
+                          onlyKey
+                            ? removeKey.isPending && removeKey.variables?.keyId === onlyKey.id
+                            : remove.isPending && remove.variables === row.provider
+                        }
                         keyCount={row.keys.length}
                         canAddKey={
                           !signIn && row.configured && row.keys.length < MODEL_PROVIDER_KEYS_MAX
@@ -123,8 +130,23 @@ export function ModelProviders() {
                         onMakeDefault={() => {
                           if (isBotProvider(row.provider)) makeDefault.mutate(row.provider);
                         }}
-                        onRemove={() => remove.mutate(row.provider)}
-                        onEdit={() => setEditing({ mode: 'put', provider: row.provider })}
+                        onRemove={() =>
+                          onlyKey
+                            ? removeKey.mutate({ provider: row.provider, keyId: onlyKey.id })
+                            : remove.mutate(row.provider)
+                        }
+                        onEdit={() =>
+                          setEditing(
+                            onlyKey
+                              ? {
+                                  mode: 'replace',
+                                  provider: row.provider,
+                                  keyId: onlyKey.id,
+                                  hint: onlyKey.keyHint,
+                                }
+                              : { mode: 'put', provider: row.provider },
+                          )
+                        }
                         onAddKey={() => setEditing({ mode: 'add', provider: row.provider })}
                       />
                     }

@@ -256,4 +256,21 @@ describe('ModelProviders', () => {
     fireEvent.click(adds[0]);
     expect(screen.getByTestId('key-dialog').textContent).toBe('add anthropic');
   });
+
+  // What breaks this: Remove on a one-key row deletes the provider's whole set, a key another tab
+  // added meanwhile included.
+  it("removes and replaces a provider's only key by its id", () => {
+    render(<ModelProviders />);
+    const anthropic = screen
+      .getAllByTestId('model-provider')
+      .find((row) => row.textContent?.includes('Anthropic')) as HTMLElement;
+    fireEvent.click(
+      within(anthropic).getByRole('button', { name: 'settings.modelProviders.removeLabel' }),
+    );
+    expect(state.removeKey).toHaveBeenCalledWith({ provider: 'anthropic', keyId: 'a1' });
+    fireEvent.click(
+      within(anthropic).getByRole('button', { name: 'settings.modelProviders.replace' }),
+    );
+    expect(screen.getByTestId('key-dialog').textContent).toBe('replace anthropic');
+  });
 });

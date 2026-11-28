@@ -225,6 +225,25 @@ describe('RunBotTurnCommandHandler', () => {
     });
   });
 
+  // What breaks this: a provider that retried once before refusing for credit leaves the turn failed.
+  it('still moves to the next key after a retry notice, which says nothing of the turn', async () => {
+    const turn = queued();
+    const { handler, context } = setup(
+      turn,
+      (request) =>
+        request.apiKey === 'spent'
+          ? [{ type: 'retrying', reason: 'unavailable' }, outOfCredit]
+          : [
+              { type: 'text.done', text: 'Hello' },
+              { type: 'done', reason: 'completed' },
+            ],
+      { keys: ['spent', 'fresh'] },
+    );
+    await run(handler, turn.id);
+    expect(context.resolve).toHaveBeenCalledTimes(2);
+    expect(turn).toMatchObject({ status: 'completed' });
+  });
+
   it('fails as before when every key is out of credit', async () => {
     const turn = queued();
     const { handler, credentials } = setup(turn, () => [outOfCredit], {

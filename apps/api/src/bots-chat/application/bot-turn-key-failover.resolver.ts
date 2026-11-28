@@ -141,7 +141,8 @@ export class BotTurnKeyFailoverResolver {
         }
       }
       for (const written of transcript.apply(event)) {
-        wrote = true;
+        // A retry notice is passed on and never stored: the next key can still take the turn.
+        if (written.kind !== 'retrying') wrote = true;
         await io.write(written);
       }
     }
