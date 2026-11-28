@@ -132,4 +132,106 @@ describe('a pass over the sessions that are moving', () => {
       delete data.oppenheimer;
     }
   });
+
+  it('posts replies again after a disconnect and reconnect that came while a log was being read', async () => {
+    const recent = new Date().toISOString();
+    const connection = { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_x' };
+    const data = fakeStorage({
+      oppenheimer: connection,
+      sessions: {
+        [FIRST]: {
+          id: FIRST,
+          title: 'First',
+          state: 'done',
+          reason: null,
+          repo: null,
+          updatedAt: recent,
+        },
+      },
+    });
+    let offer = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string) => {
+        const url = String(input);
+        // The log takes 4 s: the sync is mid-read through the disconnect.
+        if (url.includes('claude.ai'))
+          return new Promise<Response>((resolve) =>
+            setTimeout(() => resolve(json({ data: [] })), 4_000),
+          );
+        if (url.endsWith('/cloud-replies/claim')) {
+          // Handed out once, as the API does: a claim takes it.
+          const replies = offer ? [{ id: 'r1', cloudSessionId: FIRST, text: 'hi' }] : [];
+          offer = false;
+          return json({ replies });
+        }
+        return json({ delivered: true });
+      }),
+    );
+    vi.stubGlobal('navigator', { onLine: true });
+    const posted = vi.fn(async () => ({ status: 200 }));
+    const bridge = createChatBridge({
+      claudeHeaders: async () => ({}),
+      serial: (task) => task(),
+      postToClaude: posted,
+    });
+    bridge.run();
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      delete data.oppenheimer;
+      await new Promise((resolve) => setTimeout(resolve, 2_500));
+      data.oppenheimer = connection;
+      bridge.run();
+      offer = true;
+      // Breaks if one flag holds all three loops: the sync loop, still
+      // reading, keeps it set, and the reply loop that ended never restarts.
+      await vi.waitFor(() => expect(posted).toHaveBeenCalledTimes(1), { timeout: 4_000 });
+    } finally {
+      delete data.oppenheimer;
+    }
+  }, 15_000);
+
+  it('keeps no place for a log read across a disconnect', async () => {
+    const recent = new Date().toISOString();
+    const data = fakeStorage({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_x' },
+      sessions: {
+        [FIRST]: {
+          id: FIRST,
+          title: 'First',
+          state: 'done',
+          reason: null,
+          repo: null,
+          updatedAt: recent,
+        },
+      },
+    });
+    const event = { payload: { type: 'user', uuid: 'a', message: { content: 'a' } } };
+    const read: { answer?: (response: Response) => void } = {};
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string) =>
+        String(input).includes('claude.ai')
+          ? new Promise<Response>((resolve) => {
+              read.answer = resolve;
+            })
+          : json({ accepted: 1 }),
+      ),
+    );
+    const bridge = createChatBridge({
+      claudeHeaders: async () => ({}),
+      serial: (task) => task(),
+      postToClaude: async () => ({ status: 500 }),
+    });
+    const pass = bridge.syncPass();
+    await vi.waitFor(() => expect(read.answer).toBeDefined());
+    // Disconnected while the log was on its way: the stored places go.
+    delete data.oppenheimer;
+    delete data.chatSync;
+    read.answer?.(json({ data: [event] }));
+    await pass;
+    // Breaks if the place is written back: a later connection, to another
+    // workspace, would believe this session's events already went there.
+    expect(data.chatSync).toBeUndefined();
+  });
 });

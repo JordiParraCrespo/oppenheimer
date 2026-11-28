@@ -94,14 +94,19 @@ export function createChatBridge({
   let refusal: { reason: string; until: number } | null = null;
   /** Why the last pass could not carry a log, said in the popup. */
   let syncProblem: string | null = null;
-  let running = false;
+  /**
+   * The loops running now, each on its own: a disconnect ends the reply and
+   * hot loops at once while the sync loop may be mid-read, and a reconnect
+   * then has to start the ones that ended, not wait for all three.
+   */
+  const running = new Set<() => Promise<void>>();
 
   function run() {
-    if (running) return;
-    running = true;
-    void Promise.all([replyLoop(), hotLoop(), syncLoop()]).finally(() => {
-      running = false;
-    });
+    for (const loop of [replyLoop, hotLoop, syncLoop]) {
+      if (running.has(loop)) continue;
+      running.add(loop);
+      void loop().finally(() => running.delete(loop));
+    }
   }
 
   async function connected() {
@@ -227,7 +232,10 @@ export function createChatBridge({
   /** Writes one session's place, leaving the others' as the other loop left them. */
   function keep(sessionId: string, sync: ChatSync) {
     return serial(async () => {
-      const { chatSync, sessions } = await readState();
+      const { chatSync, sessions, oppenheimer } = await readState();
+      // Disconnected meanwhile: the place was the old connection's, and
+      // kept now it would skip those events on the next one.
+      if (!oppenheimer) return;
       const kept = Object.fromEntries(
         Object.entries({ ...chatSync, [sessionId]: sync }).filter(([id]) => id in sessions),
       );
