@@ -66,7 +66,7 @@ microVM runtime (`../design/runner/runner.md` §14, `sessions-in-microvms.md`).
   (`../design/runner/runner-install-and-update.md` §5) leaves every session running; the runner adopts them on boot
   by their sockets, the way it adopts tmux sessions today (`../design/runner/runner.md` §11).
 - **One API replica holds links in v0.2**, and the seam that changes
-  when that stops being true is one file (03 open question 4, confirmed
+  when that stops being true is one file (`design/foundations/control-plane.md` open question 4, confirmed
   there): presence and dispatch go through Redis, not through a bigger
   registry.
 
@@ -187,7 +187,7 @@ Today `links/` holds every host's link in an in-process map and
 `RelayDispatchAdapter` writes frames to it. That stays the design for
 one API process, and v0.2 runs one. The seam for the day the relay
 splits (`../archive/machines-and-vm-provisioning.md` §5 says it is the first thing to) is already named in
-03 open question 4; here is its shape, so nothing built now has to be
+`design/foundations/control-plane.md` open question 4; here is its shape, so nothing built now has to be
 undone:
 
 - **Presence in Redis**: every accepted link sets `host:<id>:link` to

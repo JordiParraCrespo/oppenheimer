@@ -85,7 +85,7 @@ No API code. Everything the API slices import.
   build-only module that is not on the runtime surface, and Go structs
   are generated into `packages/go/protocol` from that JSON Schema. One
   source, two languages, no hand-written twin. Every addition to the
-  link is written into `protocol.md` in the same pull request, because 01 owns the
+  link is written into `protocol.md` in the same pull request, because `protocol.md` owns the
   wire. Slice 6 is the first consumer; the package lands here so the
   runner slices can start. **Interim, recorded on pull request #22:**
   the protocol module sits on the `zod/v4` entry point of the installed

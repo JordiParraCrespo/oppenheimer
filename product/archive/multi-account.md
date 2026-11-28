@@ -109,8 +109,8 @@ Account
 - **Creating an account is running the login inside a terminal.** The UI
   offers "Add account → Claude → on mac-studio". The runner opens a PTY
   with `CLAUDE_CONFIG_DIR=~/.oppenheimer/accounts/claude-work` and runs
-  `claude auth login`. The login URL gets the clickable badge from note
-  01. When the CLI writes its credential, the runner marks the account
+  `claude auth login`. The login URL gets the clickable badge from
+  `terminal-first.md`. When the CLI writes its credential, the runner marks the account
   `logged_in`. Same for Codex with `CODEX_HOME`, Kimi with
   `KIMI_CODE_HOME`, OpenCode with `XDG_DATA_HOME`.
 - **Choosing an account is choosing an env var.** A session has an

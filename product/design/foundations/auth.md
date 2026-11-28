@@ -149,7 +149,7 @@ history) to work on the MVP.
   email, signing devices out and deleting the account carry no scope, so
   no API token or OAuth client reaches them: a leaked token that could do
   any of them is the account. A new email is used only once a link sent
-  to it is followed (10 lists the routes).
+  to it is followed (`api-modules-and-data-model.md` lists the routes).
 - **Roles.** The platform roles (`user`, `admin`, `superadmin`) and the
   org-scoped `owner` role are the only ones the MVP needs. The role
   editor and the admin console are carried for later, not part of the

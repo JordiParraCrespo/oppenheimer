@@ -7,7 +7,7 @@ the tmux server the sessions live in, and streams their terminals. It
 opens no port and never runs as root.
 
 Installing it and keeping it current are their own document:
-[09 — Runner install and update](runner-install-and-update.md).
+[Runner install and update](runner-install-and-update.md).
 
 ## Decided
 
@@ -596,7 +596,7 @@ follows (`apps/web/src/features/sessions/lib/cursor-frames.ts`).
 - The runner **pulls** a fresh token from the control plane before
   expiry — it is the side that knows when the token is about to be used
   — and the control plane may push `credentials.revoke` to drop it early
-  (01 open question 5).
+  (`../foundations/protocol.md` open question 5).
 - Tokens live in memory, scoped to one session and one repository
   (F21), and are never logged.
 
@@ -713,7 +713,7 @@ copy lives under, so the runner points npm at the prefix the executable
 resolves under (`npm_config_prefix`, from `<prefix>/lib/node_modules/`);
 for one it installed that is `~/.local`. A failure is logged and retried;
 `runner agents
-update` runs the round by hand (09 open question 4 says what to do when it
+update` runs the round by hand (`runner-install-and-update.md` open question 4 says what to do when it
 fails). `RUNNER_AGENT_UPDATES=off` opts a host out.
 
 **Installing tools** (decided 2026-10-12). Updating is ours; installing is
@@ -851,7 +851,7 @@ capacity gate, the egress proxy, and the `hypervisor`, `guest` and
    `claude`, installer fixes `tmux`.
 6. ~~Package map~~: decided in §3.
 7. Schema language for the link messages: JSON Schema generated to both
-   languages, or protobuf (01 open question 1). The framing in §4
+   languages, or protobuf (`../foundations/protocol.md` open question 1). The framing in §4
    works either way; the decision belongs to the protocol note.
 8. Whether `sessions` should split into `sessions` and `workspaces` once
    the VM slice adds a second kind of place a worktree can live. Today

@@ -26,7 +26,7 @@ The 2026-09-26 export (`design/version1/Routines.dc.html`, drawn inside
 `SessionsConsole.dc.html`) gives the console a routines page, which the
 evening export's copy calls **Automations**; the rename is in the copy
 only, and this note keeps `routine` for the model as the frames and
-`design/README.md` do. 13 records the console's side of automations
+`design/README.md` do. `design/automations/automations.md` records the console's side of automations
 and leaves their data model open; this note is the host's side. A
 routine is a saved prompt with a project, an agent, a model and a host, plus the
 triggers that start it; each start is a **run** with a state, a cause
@@ -195,14 +195,14 @@ feed is a view of the log and not a second store.
 
 Recorded here, written into each note when its slice is built:
 
-- **01**: `drive` on `session.create`; the run events (`run.started`,
+- **`design/foundations/protocol.md`**: `drive` on `session.create`; the run events (`run.started`,
   `run.event`, `run.ended`) as session events on `events.append`.
-- **02**: the `headless` subcommand and the tailing reader beside the
+- **`design/runner/runner.md`**: the `headless` subcommand and the tailing reader beside the
   tmux adapter; the version gate; SIGINT on stop.
-- **03 / 10**: `routine`, `routine_trigger` and `routine_run` in a
+- **`design/foundations/control-plane.md` / `design/foundations/api-modules-and-data-model.md`**: `routine`, `routine_trigger` and `routine_run` in a
   `routines/` module that creates sessions through `sessions/`; schedules
   on the queue; the GitHub webhook routed to triggers.
-- **05**: the routines page from the export, and a run's view (its
+- **`design/console/screens.md`**: the routines page from the export, and a run's view (its
   activity feed and the Open in terminal button) instead of a terminal
   while it runs.
 - **The catalog**: the `headless` block.

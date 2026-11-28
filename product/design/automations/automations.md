@@ -86,7 +86,7 @@ fired, guarded and dispatched is `automations-architecture.md`; the tables and m
   once they are picked. Each trigger card has Duplicate beside Remove.
 - The feature is `apps/web/src/features/automations/` over the product
   package's `automations` module (`packages/frontend/consumer`).
-- Not built: templates (16 decides them as a fixed catalog; they come
+- Not built: templates (`automations-architecture.md` decides them as a fixed catalog; they come
   after), and the frame's run transcript beside the terminal, which is
   the headless slice's structured output (`automations-architecture.md` §5).
 

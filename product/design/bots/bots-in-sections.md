@@ -91,7 +91,7 @@ says what the bot is *for*, which permissions do not.
 
 - **The Inbox** and its bot questions and approvals: built by someone else.
 - **The built-in Oppenheimer bot** the 2026-10-25 export lists first under
-  every Bots heading. 25 decided on 2026-10-14 that there are no built-in
+  every Bots heading. `bots.md` decided on 2026-10-14 that there are no built-in
   bots yet; that stands until the owner changes it.
 
 ## Decided

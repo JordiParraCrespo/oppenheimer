@@ -274,10 +274,10 @@ one its decision belongs to:
 - The frames draw run history only once there is a run; the console now
   draws it always, thirty empty days on a new workspace, so the pages keep
   their shape from the first visit (2026-09-28).
-- 05 put Project settings behind a cog. The version-1 export's settings
+- `design/console/screens.md` put Project settings behind a cog. The version-1 export's settings
   glyph is two sliders, so both Settings controls in the console draw
   that, and `design/console/screens.md` keeps one glyph per meaning (2026-09-28).
-- 03 checked an attach ticket at redemption only. An open attachment is now
+- `design/foundations/control-plane.md` checked an attach ticket at redemption only. An open attachment is now
   judged again every minute (session state, membership, account standing,
   host access), and minting a ticket or restarting a session checks the
   host too, so a revoked grant ends a terminal already streaming
@@ -392,8 +392,8 @@ one its decision belongs to:
   PRs now fill the same queue row by a search on the person's own
   token, opt-in and kept encrypted in the control plane, with their
   notifications as the wake-up; private repositories take a second,
-  read-only token (§6.1). The App stays the main path; sessions and note
-  09 are unchanged (#271).
+  read-only token (§6.1). The App stays the main path; sessions and
+  `archive/github-app-install.md` are unchanged (#271).
 - `design/foundations/protocol.md` said the browser never reaches the runner
   directly, every byte going through the relay. On 2026-10-11 the owner
   made the session's latency the priority: `design/runner/direct-terminal-path.md`
@@ -594,7 +594,7 @@ one its decision belongs to:
   close owed (and the host's refusal of it) as columns, the hello sends an
   owed close again, a restart request supersedes it, and the console draws
   such a row as deleting or refused instead of bringing it back as it was
-  (`design/foundations/control-plane.md`, "A close is owed until the host answers it"; 01, "Hello").
+  (`design/foundations/control-plane.md`, "A close is owed until the host answers it"; `design/foundations/protocol.md`, "Hello").
 - `design/foundations/control-plane.md` keyed the `session.stopped` a hello records for a lost pane by the
   runner's `runId` alone, so a replayed hello wrote it once. That also
   merged a second loss of the same pane, after a restart, on a later link of
@@ -2247,12 +2247,12 @@ one its decision belongs to:
   serves but cannot forge, a safe window, selfcheck before the swap, a
   health gate and automatic rollback.
 - 2026-09-18: review pass on the design, and the notes moved to match it.
-  01 now owns the wire — `design/runner/runner.md` §4 had grown a second copy of it — and names
+  `design/foundations/protocol.md` now owns the wire — `design/runner/runner.md` §4 had grown a second copy of it — and names
   the **attachment** (one PTY on one window for one browser connection)
   as what the 4-byte stream id identifies; the two sockets have two
   shapes on purpose. Registration, uninstall and the release manifest are
   ordinary HTTPS, which is what lets a runner the control plane refuses
-  on protocol grounds still fetch the version that fixes it. 03 takes the
+  on protocol grounds still fetch the version that fixes it. `design/foundations/control-plane.md` takes the
   control-plane half `design/runner/runner-install-and-update.md` had been specifying from outside, and `design/console/screens.md` takes
   the host row (version, channel, pin, last outcome). `design/runner/runner-install-and-update.md`'s swap is a
   four-state transition table rather than a paragraph, and says what
@@ -2335,7 +2335,7 @@ one its decision belongs to:
   again by GitHub's repository id (unique per workspace, and the conflict target
   of the create), and its slug is immutable because it is a directory name on
   every host holding it.
-- 2026-09-19: the **`github/` module is built** and 03 gains the section that
+- 2026-09-19: the **`github/` module is built** and `design/foundations/control-plane.md` gains the section that
   says so: six routes, one `github_installation` table, no repository table,
   and `RepositoryAccessPort` as the only thing the module exports. Two
   decisions tightened while writing it. A claim is what a workspace **holds**,
@@ -2487,7 +2487,7 @@ one its decision belongs to:
   name. A versioned label over an alias that moves under it is the pair
   that drifts apart silently, and this is the list a reader chooses
   from; a pinned name can only go stale in the open. The roster itself
-  lives in `CODING_AGENTS` and nowhere else — 05 says "the harness's
+  lives in `CODING_AGENTS` and nowhere else — `design/console/screens.md` says "the harness's
   own", and open question 6 (the probe) is what the pinning makes more
   worth answering. Two console decisions came with it: the composer's
   menus are **denser than the sidebar's**, which the design system owns
@@ -2668,7 +2668,7 @@ one its decision belongs to:
 - 2026-09-28: **Settings is two sliders, not a cog** (`design/console/screens.md`). The
   version-1 export's `settings` glyph is lucide's `settings-2`, so the
   account menu's link and a project header's action both draw it, and
-  `design/console/screens.md`'s "cog" is gone. 05 now keeps the glyph map: folder for a project,
+  `design/console/screens.md`'s "cog" is gone. `design/console/screens.md` now keeps the glyph map: folder for a project,
   an arrow out for a foot action that opens another site, `Callout` and
   the Auto shield kept against the export, with the reasons.
 - 2026-09-28: **The GitHub App install redirect carries a console-minted
@@ -2819,7 +2819,7 @@ one its decision belongs to:
   1). The dev deployment sets `RELAY_ICE_SERVERS=stun:stun.cloudflare.com:3478`
   rather than run a responder of its own, which would need UDP 3478 published
   and so an exception to the rule that nothing on the server publishes a
-  port. 22 said no third-party STUN by default; Cloudflare already carries
+  port. `design/runner/direct-terminal-path.md` said no third-party STUN by default; Cloudflare already carries
   every request through the tunnel, so it adds no party, and it is free.
 - 2026-10-11: **Delete is optimistic, and a session gone from its host
   closes** (`design/console/screens.md`, `design/runner/runner.md`). The sidebar drops the row on the click and puts it
@@ -2828,7 +2828,7 @@ one its decision belongs to:
   record of, one it closed already, or one whose worktree was deleted by
   hand with `session.closed` (a restart is still refused), so the row
   resolves rather than being stuck forever.
-- 2026-10-13: 23 plans Plan's second cut from the 2026-10-13 frame. The
+- 2026-10-13: `design/plan/plan-milestones-stats-accounts.md` plans Plan's second cut from the 2026-10-13 frame. The
   owner decided: goals are renamed milestones all the way down; blocked
   is a field on a task; token and cost stats are built now on headless
   turns; Stats ships without pull requests first; each Google account
@@ -2910,7 +2910,7 @@ one its decision belongs to:
   question 4).
 - 2026-10-31: **the host proves itself on every direct channel** (`design/runner/peer-to-peer-and-the-host-proof.md`, `design/runner/direct-terminal-path.md`,
   `design/foundations/protocol.md`, `design/foundations/security-checklist.md` F30). Asked for: "as much p2p as possible … some handshake to make
-  it more robust". 22 bound the data channel to the DTLS fingerprints in the
+  it more robust". `design/runner/direct-terminal-path.md` bound the data channel to the DTLS fingerprints in the
   signalling, which the control plane carries, so a compromised one could
   splice two DTLS sessions. Built: before a byte crosses a channel the host
   signs both fingerprints and the browser's nonce with its pairing key; the
@@ -2918,14 +2918,14 @@ one its decision belongs to:
   per host on first use and refuses another; the runner moves output to the
   channel only on the browser's `ready`. The relay invites only a runner
   naming `attachment.direct.proof`, and names the host in `attached.direct`.
-  31 also orders what moves off the control plane next.
+  `design/runner/peer-to-peer-and-the-host-proof.md` also orders what moves off the control plane next.
 - 2026-10-31: **the host pin does not stop an active control plane that
   invents host ids** (`design/runner/peer-to-peer-and-the-host-proof.md`, corrected the same day after the pull request's
   security review). The pin is keyed by the host id the relay names, and an
   unseen id is first use, so a compromised control plane can name a fresh one
-  and sit in the middle with a key of its own. 31 now says so, and its open
+  and sit in the middle with a key of its own. `design/runner/peer-to-peer-and-the-host-proof.md` now says so, and its open
   question 4 asks how first use stops being automatic.
-- 2026-11-04: **the runner is an app bundle on macOS** (`design/runner/runner-install-and-update.md` §2, §5; 02 open
+- 2026-11-04: **the runner is an app bundle on macOS** (`design/runner/runner-install-and-update.md` §2, §5; `design/runner/runner.md` open
   question 4). The bare binary with an ad-hoc signature, a new file per
   version, was a new program to macOS on every update, so every Mac asked
   for its permissions again. The macOS archive now carries

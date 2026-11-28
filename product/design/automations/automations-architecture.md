@@ -46,7 +46,7 @@ Numbered as the review asked them.
 
 ### Q1. In the MVP
 
-Automations are in the MVP. 00 is updated: the scheduler, the GitHub
+Automations are in the MVP. `../foundations/scope.md` is updated: the scheduler, the GitHub
 trigger and the runs move from the out-list to the in-list, delivered in
 the slices of §5.
 

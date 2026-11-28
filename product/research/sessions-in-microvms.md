@@ -2,8 +2,8 @@
 
 > **Proposal, not adopted.** Research brought over from pull request
 > #43, which was closed on 2026-10-10 without merging. Its proposal of
-> 2026-09-22 never became a decision: libvirt first, Firecracker later (`../archive/reuse-gha-runner.md`) and the sleep tiers of note
-> 10 still stand. What governs today:
+> 2026-09-22 never became a decision: libvirt first, Firecracker later (`../archive/reuse-gha-runner.md`) and the sleep tiers of
+> `../archive/sleep-wake-and-pricing.md` still stand. What governs today:
 > [`archive/machines-and-vm-provisioning.md`](../archive/machines-and-vm-provisioning.md),
 > [`archive/reuse-gha-runner.md`](../archive/reuse-gha-runner.md) and
 > [`archive/sleep-wake-and-pricing.md`](../archive/sleep-wake-and-pricing.md) for

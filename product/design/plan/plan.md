@@ -71,7 +71,7 @@ logged in `../../decisions.md`.
 
 ## As built (first version)
 
-Where the build differs from 18–20 as written. The notes keep their text
+Where the build differs from `plan-product.md`, `plan-tasks-and-goals.md` and `plan-calendar.md` as written. The notes keep their text
 and point here.
 
 - **No flag** (decided 6): `plan-tasks-and-goals.md` §8 and the "behind the `plan` flag" lines

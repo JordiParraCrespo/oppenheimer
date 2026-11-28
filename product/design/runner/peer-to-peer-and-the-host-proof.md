@@ -110,7 +110,7 @@ a new party.
   the life of the page: a weaker pin, never a missing check.
 - **Another key for a pinned host is refused, and that stream does not ask
   again.** What answered may not be the host, so a refused proof counts as
-  every failure the stream allows (22 stops after two), not one. A valid
+  every failure the stream allows (`direct-terminal-path.md` stops after two), not one. A valid
   signature under a new key is not the host changing its mind. Re-pairing
   redeems a new token, and registration makes a new host with a new id
   (`register-host`), so a re-paired machine is met afresh and is never a

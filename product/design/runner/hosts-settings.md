@@ -158,7 +158,7 @@ already on the wire for it.
    half of the same page says so. Unpairing every host the account owns
    is the natural shape (the rows stay, as for any unpair), but it
    belongs to the account-deletion slice, not here.
-5. **The update story on the row.** 05 asks a host row to show channel,
+5. **The update story on the row.** `../console/screens.md` asks a host row to show channel,
    pin and the last update outcome, rollback included. The frame shows
    the runner version only. The fields exist once `runner-install-and-update.md`'s update reporting
    lands on the link; whether the Settings row carries them is the
