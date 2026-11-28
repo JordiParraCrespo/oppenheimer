@@ -2,6 +2,7 @@ import type { TapMessage } from '@/content/tap-message';
 import { createTranslator, reasonText } from '@/i18n/translator';
 import { eventsPage, idPlaceholder, pagesNewestFirst } from '@/sessions/chat';
 import { createChatBridge } from '@/sessions/chat-bridge';
+import { deadline } from '@/sessions/deadline';
 import { CLAUDE_ORIGIN, sessionUrl } from '@/sessions/links';
 import { sendReport } from '@/sessions/report';
 import {
@@ -210,7 +211,7 @@ async function poll() {
   for (const url of urls) {
     const path = new URL(url).pathname;
     try {
-      const first = await fetch(url, { credentials: 'include', headers });
+      const first = await fetch(url, { credentials: 'include', headers, signal: deadline() });
       if (first.status === 401 || first.status === 403) {
         failure = { problem: 'signed-out', detail: `${path} answered ${first.status}` };
         continue;
@@ -255,7 +256,11 @@ async function remainingPages(
   for (let page = 1; next && page < MAX_PAGES; page++) {
     const paged = new URL(url);
     paged.searchParams.set('cursor', next);
-    const response = await fetch(paged, { credentials: 'include', headers }).catch(() => null);
+    const response = await fetch(paged, {
+      credentials: 'include',
+      headers,
+      signal: deadline(),
+    }).catch(() => null);
     const body: unknown = response?.ok ? await response.json() : null;
     const list = sessionList(body);
     if (!list) return { records: all, complete: false };

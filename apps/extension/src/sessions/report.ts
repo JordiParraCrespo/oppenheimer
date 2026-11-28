@@ -1,5 +1,6 @@
 import { apiError } from './api-error';
 import { cloudSessionIdPattern } from './cloud-id';
+import { deadline } from './deadline';
 import type { TrackedSession } from './session';
 import type { OppenheimerConnection } from './store';
 import type { TrackedSessions } from './tracker';
@@ -31,6 +32,7 @@ export async function sendReport(
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${connection.token}` },
     body: JSON.stringify(reportBody(sessions)),
+    signal: deadline(),
   });
   if (!response.ok) throw await apiError(response);
   const { matched } = (await response.json()) as { matched: number };

@@ -1,5 +1,6 @@
 import { apiError } from './api-error';
 import { canonicalCloudId, cloudSessionIdPattern, codeSessionId } from './cloud-id';
+import { deadline, REQUEST_TIMEOUT_MS } from './deadline';
 import { CLAUDE_ORIGIN } from './links';
 import type { TrackedSession } from './session';
 import type { OppenheimerConnection } from './store';
@@ -206,7 +207,9 @@ export function pagesNewestFirst(url: string): boolean {
 }
 
 async function readPage(url: string, headers: Record<string, string>) {
-  const response = await fetch(url, { credentials: 'include', headers }).catch(() => null);
+  const response = await fetch(url, { credentials: 'include', headers, signal: deadline() }).catch(
+    () => null,
+  );
   return response?.ok ? eventsPage(await response.json().catch(() => null)) : null;
 }
 
@@ -234,6 +237,7 @@ export async function forwardEvents(
         title,
         events: batch,
       }),
+      signal: deadline(),
     });
     if (!response.ok) throw await apiError(response);
     held += batch.length;
@@ -283,7 +287,8 @@ export async function claimReplies(
     method: 'POST',
     headers: jsonHeaders(connection),
     body: JSON.stringify({ wait }),
-    signal,
+    // A long poll: the wait it asked for, then the usual deadline.
+    signal: deadline(wait * 1000 + REQUEST_TIMEOUT_MS, signal),
   });
   if (!response.ok) throw await apiError(response);
   const { replies } = (await response.json()) as { replies?: ClaimedReply[] };
@@ -302,6 +307,7 @@ export async function confirmReply(
   const response = await fetch(apiUrl(connection, path), {
     method: 'POST',
     headers: jsonHeaders(connection),
+    signal: deadline(),
   });
   if (!response.ok) throw await apiError(response);
   // `delivered: false` is an answer too: another way has it, nothing to tell again.
@@ -318,6 +324,7 @@ export async function releaseReply(
     method: 'POST',
     headers: jsonHeaders(connection),
     body: JSON.stringify({ reason: reason.slice(0, 64) }),
+    signal: deadline(),
   });
   if (!response.ok) throw await apiError(response);
 }

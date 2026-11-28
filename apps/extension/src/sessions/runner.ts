@@ -1,5 +1,6 @@
 import { noticeOccurrenceKey, sessionOccurrenceKey } from '@oppenheimer/shared/sessions';
 import { apiError } from './api-error';
+import { deadline } from './deadline';
 import type { OppenheimerConnection } from './store';
 
 /**
@@ -148,6 +149,7 @@ export async function fetchRunnerSessions(
   for (let page = 0; page < MAX_PAGES; page++) {
     const response = await fetch(runnerSessionsUrl(connection, cursor), {
       headers: { Authorization: `Bearer ${connection.token}` },
+      signal: deadline(),
     });
     if (!response.ok) throw await apiError(response);
     const parsed = runnerSessionPage(await response.json());
