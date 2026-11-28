@@ -67,9 +67,11 @@ export class ContinueBotGoalCommandHandler
     const goal = await this.goals.findForBot(ended.organizationId, ended.botId);
     if (goal?.id !== found.id || isDecidedTurn(goal, ended) || goal.paused) return;
 
-    const keyLeft =
-      ended.failure === 'usage_limit' &&
-      (await this.credentials.hasUnspentKey(ended.organizationId, ended.provider));
+    const keyLeft = await this.credentials.keyLeftAfter(
+      ended.organizationId,
+      ended.provider,
+      ended.failure,
+    );
     const decision = goalDecision(goal, ended, keyLeft);
     if (decision.kind === 'skip') return;
     if (decision.kind === 'end') {

@@ -182,7 +182,7 @@ function setup(
         Some({ running: conversation.approval !== 'ran' } as BotApprovalEntity),
     } as unknown as BotApprovalRepositoryPort),
     new BotTurnHoldPolicy(turns, {
-      hasUnspentKey: async () => false,
+      keyLeftAfter: async () => false,
     } as unknown as TurnCredentialsPort),
     new BotVoiceReplyResolver(
       {

@@ -1791,7 +1791,7 @@ describe('bots chat (integration)', () => {
       } as unknown as BotAutoReviewerFactory,
       new BotApprovalStartedPolicy(approvals),
       new BotTurnHoldPolicy(turns, {
-        hasUnspentKey: async () => false,
+        keyLeftAfter: async () => false,
       } as unknown as TurnCredentialsPort),
       // No turn here is a contact's on WhatsApp, so none is offered a voice reply.
       { maxChars: async () => null } as unknown as BotVoiceReplyResolver,

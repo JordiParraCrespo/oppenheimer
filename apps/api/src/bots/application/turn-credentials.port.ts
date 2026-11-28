@@ -1,4 +1,4 @@
-import type { ModelProvider } from '@oppenheimer/shared';
+import type { BotTurnFailure, ModelProvider } from '@oppenheimer/shared';
 
 /** What a turn runs on: the provider's key, or a sign-in's access token and the account it acts for. Never logged. */
 export interface TurnCredential {
@@ -35,12 +35,17 @@ export interface TurnCredentialsPort {
     now: Date,
   ): Promise<TurnCredential | null>;
   /**
-   * Whether the provider has a stored key not marked spent: after a refusal
-   * for credit, whether the next call would run on another key, so a hold or
-   * a pause waiting for the account to be topped up is not needed. False for
-   * a sign-in, which has no other.
+   * Whether a turn that ended with `failure` leaves the provider a key to go
+   * on with: only a refusal for credit (`usage_limit`) does, and only while a
+   * stored key is not marked spent, so a hold or a pause waiting for the
+   * account to be topped up is not needed. Never for a sign-in, which has no
+   * other. The one place that decides it; read before a hold or a pause.
    */
-  hasUnspentKey(organizationId: string, provider: ModelProvider): Promise<boolean>;
+  keyLeftAfter(
+    organizationId: string,
+    provider: ModelProvider,
+    failure: BotTurnFailure | null | undefined,
+  ): Promise<boolean>;
   /** A call on `used` got through: a spent mark it carried (it was topped up) goes. */
   worked(organizationId: string, provider: ModelProvider, used: TurnCredential): Promise<void>;
 }

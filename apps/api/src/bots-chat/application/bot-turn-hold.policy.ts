@@ -36,10 +36,11 @@ export class BotTurnHoldPolicy {
       turn.botId,
       turn.provider,
     );
-    // Asked only of a refusal for credit, which another key can get past.
-    const keyLeft =
-      last?.failure === 'usage_limit' &&
-      (await this.credentials.hasUnspentKey(turn.organizationId, turn.provider));
+    const keyLeft = await this.credentials.keyLeftAfter(
+      turn.organizationId,
+      turn.provider,
+      last?.failure,
+    );
     return heldByProvider(turn, last, now, keyLeft);
   }
 }

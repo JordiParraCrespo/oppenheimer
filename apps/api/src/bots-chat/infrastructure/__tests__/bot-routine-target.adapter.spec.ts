@@ -107,7 +107,7 @@ function setup(
     turns,
     { publish } as unknown as BotStreamPort,
     new BotTurnHoldPolicy(turns, {
-      hasUnspentKey: async () => false,
+      keyLeftAfter: async () => false,
     } as unknown as TurnCredentialsPort),
   );
   const context: RunTargetContext = {

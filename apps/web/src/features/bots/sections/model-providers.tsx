@@ -19,6 +19,7 @@ import { ModelProviderStatus } from '../components/model-provider-status';
 import { ChatgptLoginDialog } from '../dialogs/chatgpt-login';
 import { ModelProviderKeyDialog } from '../dialogs/model-provider-key';
 import { groupModelProviders } from '../lib/model-provider-groups';
+import { modelProviderKeyNotes } from '../lib/model-provider-key-note';
 import type { ModelProviderKeyTarget } from '../lib/model-provider-key-target';
 
 /**
@@ -88,6 +89,7 @@ export function ModelProviders() {
               const runsBots = isBotProvider(row.provider);
               const signIn = auth === 'sign_in';
               const perKey = !signIn && row.keys.length > 1;
+              const notes = modelProviderKeyNotes(row.keys);
               return (
                 <Fragment key={row.provider}>
                   <SettingsListRow
@@ -142,13 +144,7 @@ export function ModelProviders() {
                               spent={key.spentAt !== null}
                             />
                           }
-                          meta={t(
-                            key.spentAt !== null
-                              ? 'settings.modelProviders.keySpentNote'
-                              : key.id === row.keys.find((each) => each.spentAt === null)?.id
-                                ? 'settings.modelProviders.keyFirst'
-                                : 'settings.modelProviders.keyNext',
-                          )}
+                          meta={t(`settings.modelProviders.${notes.get(key.id) ?? 'keyNext'}`)}
                           actions={
                             <ModelProviderKeyActions
                               label={label}

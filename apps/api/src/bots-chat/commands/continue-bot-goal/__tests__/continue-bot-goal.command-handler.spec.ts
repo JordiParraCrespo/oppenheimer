@@ -109,7 +109,7 @@ function setup(
     messages as unknown as BotMessageRepositoryPort,
     goalsOf as unknown as BotGoalResolver,
     reviewer as unknown as BotGoalReviewResolver,
-    { hasUnspentKey: async () => false } as unknown as TurnCredentialsPort,
+    { keyLeftAfter: async () => false } as unknown as TurnCredentialsPort,
   );
   const run = () => handler.execute(new ContinueBotGoalCommand({ turnId: turn.id }));
   return { goals, goalsOf, reviewer, run };
