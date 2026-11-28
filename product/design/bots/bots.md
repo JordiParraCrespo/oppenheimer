@@ -500,8 +500,17 @@ over the text as soon as it is picked, and a message may be images alone.
 - **What the bot sees.** A turn is sent its own message's images, read
   from storage, before the text: image blocks to the Claude engine,
   `input_image` parts to the OpenAI one. Earlier messages are not sent
-  again; the history says an image was there and that the bot cannot see
-  it now. An image that cannot be read fails the turn rather than the bot
+  again; the history says an image was there, with its id. Since
+  2026-11-28 the bot looks at one again with `view_image` (read-only,
+  under Itself in Settings → Permissions): the image comes back as the
+  call's picture, for the model alone, nothing stored again, so a
+  question about an image sent a message earlier is answered rather than
+  met with "send it again". It takes only an image a message of the
+  turn's own conversation carries, of that bot and workspace, matched by
+  id; any other id is not found. Four a turn; one whose file cannot be
+  read, past 5 MB or of another type is refused in words that say so. A turn not
+  offered the tool is told, as before, that it cannot see the image. An
+  image that cannot be read fails the turn rather than the bot
   answering without it. Retry is not offered on a message with images: an
   image is sent once, so it is picked again.
 - **The bot's images.** A bot shows images with `show_image` (§4.7): they

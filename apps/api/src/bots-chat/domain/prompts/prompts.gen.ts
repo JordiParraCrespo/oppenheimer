@@ -204,6 +204,14 @@ export type PromptId =
   | "core/tools-guide.index"
   | "core/tools-guide.read-oppenheimer-docs"
   | "core/tools-guide.read-oppenheimer-docs-page"
+  | "core/tools-images.view-image"
+  | "core/tools-images.view-image-id"
+  | "core/tools-images.viewed"
+  | "core/tools-images.not-found"
+  | "core/tools-images.gone"
+  | "core/tools-images.unreadable"
+  | "core/tools-images.needs-eyes"
+  | "core/tools-images.views-spent"
   | "core/tools-notice.notice-sent"
   | "core/tools-notice.notices-spent"
   | "core/tools-notice.quiet-turn-answer"
@@ -317,6 +325,7 @@ export type PromptId =
   | "core/turn-history.bot-reaction-note"
   | "core/turn-images.shown"
   | "core/turn-images.came-with"
+  | "core/turn-images.came-with-unviewable"
   | "core/turn-images.attached"
   | "core/turn-images.slack-unread"
   | "core/turn-slash-command.ran-a-skill"
@@ -1310,6 +1319,12 @@ export interface PromptSlots {
   "core/tools-forms.waiting-for-answer": { pendingSummary: string };
   "core/tools-forms.form-invalid": { problem: string };
   "core/tools-guide.index": { guidePagesCount: string; site: string; lines: string };
+  "core/tools-images.view-image": { viewsPerTurn: string };
+  "core/tools-images.viewed": { name: string };
+  "core/tools-images.not-found": { id: string };
+  "core/tools-images.gone": { name: string };
+  "core/tools-images.unreadable": { name: string };
+  "core/tools-images.views-spent": { viewsPerTurn: string };
   "core/tools-notice.notices-spent": { noticesPerTurn: string };
   "core/tools-notice.notify": { worthSaying: string; noticeTextMax: string; noticesPerTurn: string };
   "core/tools-permissions.owner-lacks-permission": { tool: string; permissionName: string; scope: string };
@@ -1361,6 +1376,7 @@ export interface PromptSlots {
   "core/turn-history.bot-reaction-note": { emoji: string };
   "core/turn-images.shown": { namesCount: string; listed: string };
   "core/turn-images.came-with": { what: string; ids: string; them: string };
+  "core/turn-images.came-with-unviewable": { what: string; ids: string; them: string };
   "core/turn-images.attached": { ids: string };
   "core/turn-images.slack-unread": { what: string; why: string };
   "core/turn-slash-command.ran-a-skill": { name: string; input: string };
@@ -1936,6 +1952,14 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "core/tools-guide.index": "Oppenheimer's guide, {{guidePagesCount}} pages.{{site}} Read a page with `read_oppenheimer_docs` and its id.\n\n{{lines}}",
   "core/tools-guide.read-oppenheimer-docs": "Reads Oppenheimer's own guide: what Oppenheimer is, how its hosts, sessions, projects, bots, routines, automations, inbox, GitHub, CLI and MCP work, where things are in the console and how to set them up. Use it before answering any question about Oppenheimer itself or about what bots can do in it, and answer from what it says. With no page it lists the pages and what each covers; with a page id it returns that page.",
   "core/tools-guide.read-oppenheimer-docs-page": "The page to read, by its id from the index (e.g. \"sessions\"); a `./sessions.md` link works too. Leave it out for the index.",
+  "core/tools-images.view-image": "Looks again at an image sent earlier in this chat: you see it as a picture in the answer. A turn is shown only its own message's images, so when the person asks about, or you need, an image from an earlier message (its note gives the image id), call this with that id instead of asking them to send it again. Do not call it when the chat already says what you need. Only images of this chat; one id a call, up to {{viewsPerTurn}} a turn.",
+  "core/tools-images.view-image-id": "The image id, from the note on the earlier message (\"image id …\").",
+  "core/tools-images.viewed": "The image \"{{name}}\" from earlier in this chat, as it was sent.",
+  "core/tools-images.not-found": "No image {{id}} in this chat. Use an id from a note on an earlier message of this chat.",
+  "core/tools-images.gone": "The image \"{{name}}\" could not be read from storage: it may have been deleted, or storage is not answering just now. Say so; if you still need it, try once more later or ask the person to send it again.",
+  "core/tools-images.unreadable": "The image \"{{name}}\" cannot be shown: it is not an image type you read, or it is larger than the limit. Say so, and ask the person for it another way if you need it.",
+  "core/tools-images.needs-eyes": "The model this turn runs on reads no images, so it cannot look at one. Say so.",
+  "core/tools-images.views-spent": "Not shown: this turn has already looked at {{viewsPerTurn}} earlier images, the most one turn may. Answer from what you have seen.",
   "core/tools-notice.notice-sent": "Sent: your line is in the person's Inbox, in place of any earlier notice of yours. Do not repeat it in this turn.",
   "core/tools-notice.notices-spent": "Not sent: you have already sent {{noticesPerTurn}} notices this turn, the most one turn may send. Your last one stands.",
   "core/tools-notice.quiet-turn-answer": "Noted: nothing to report. End your turn now without writing anything: what you write after this is not kept.",
@@ -2048,7 +2072,8 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "core/turn-history.reaction-note": "[A note from Oppenheimer: the person reacted {{emoji}} to this message]",
   "core/turn-history.bot-reaction-note": "[A note from Oppenheimer: you reacted {{emoji}} to this message]",
   "core/turn-images.shown": "[Oppenheimer: here you showed the person {{namesCount}} with show_image: {{listed}}.]",
-  "core/turn-images.came-with": "[Oppenheimer: this message came with {{what}}{{ids}}. Only a turn's own images are sent, so you cannot see {{them}} now; if you need to look at {{them}} again, ask the person to send {{them}} again.]",
+  "core/turn-images.came-with": "[Oppenheimer: this message came with {{what}}{{ids}}. Only a turn's own images are sent, so you do not have {{them}} in front of you now; to look at {{them}} again, call view_image with the image id, rather than asking the person to send {{them}} again.]",
+  "core/turn-images.came-with-unviewable": "[Oppenheimer: this message came with {{what}}{{ids}}. Only a turn's own images are sent, so you cannot see {{them}} now; if you need to look at {{them}} again, ask the person to send {{them}} again.]",
   "core/turn-images.attached": "[Oppenheimer: the images with this message{{ids}}; to attach one to mail, give its id as chat_image.]",
   "core/turn-images.slack-unread": "[Oppenheimer: the owner shared {{what}} in Slack with this message that you cannot see: {{why}}.]",
   "core/turn-slash-command.ran-a-skill": "The person ran your skill /{{name}}. Follow it for this request. {{input}}",

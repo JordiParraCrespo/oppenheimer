@@ -208,6 +208,10 @@ export class BotTurnContextResolver {
       });
       tools = this.toolbox.tools({ ...context, subagents }, turn.credentialScopes, held);
     }
+    // The history tells the bot to look at an earlier image again only on a
+    // turn that can: offered the tool, on a model that reads images.
+    const viewsImages =
+      botTakesImages(turn.provider) && tools.some((tool) => tool.name === 'view_image');
     const inMind = memoryInMind(facts, {
       profileChars: BOT_MEMORY_PROFILE_IN_PROMPT_CHARS,
       logChars: BOT_MEMORY_LOG_IN_PROMPT_CHARS,
@@ -239,7 +243,10 @@ export class BotTurnContextResolver {
             : [],
         skills: reach.skills ? skills : [],
       }),
-      history: botHistory(earlier.map(withEarlierImages), summary?.content ?? null),
+      history: botHistory(
+        earlier.map((past) => withEarlierImages(past, viewsImages)),
+        summary?.content ?? null,
+      ),
       message: withTurnContext(
         composeTurnContext({
           now,

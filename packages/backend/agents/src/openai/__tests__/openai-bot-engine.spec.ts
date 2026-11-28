@@ -321,6 +321,37 @@ describe('OpenAiBotEngine', () => {
     });
   });
 
+  // An earlier image a tool loads again (`view_image`), or a screenshot, must
+  // reach the model as an image: as words alone, the model cannot see it.
+  it('hands the model the images a tool answers with, after its words, as data URLs', async () => {
+    const view: BotEngineTool = {
+      name: 'view_image',
+      description: 'Looks at an earlier image',
+      inputSchema: { type: 'object', properties: {} },
+      run: async () => ({
+        content: 'The image "image.png".',
+        images: [{ mimeType: 'image/png', data: 'cG5n' }],
+      }),
+    };
+    let modelRead: unknown;
+    scripted(async function* (seen) {
+      yield toolCalled('call_1', 'view_image', '{}');
+      modelRead = await execute(seen.agent.tools[0], {}, 'call_1');
+      yield toolOutput('call_1', 'view_image', 'The image "image.png".');
+      yield message('Oro del Sur olive oil.');
+    });
+
+    const events = await collect(new OpenAiBotEngine().run(request({ tools: [view] })));
+
+    expect(modelRead).toEqual([
+      { type: 'text', text: 'The image "image.png".' },
+      { type: 'image', image: 'data:image/png;base64,cG5n' },
+    ]);
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: 'tool.finished', isError: false }),
+    );
+  });
+
   it('sends the key, endpoint, history as native input items, then this message', async () => {
     const run = scripted(async function* () {});
 

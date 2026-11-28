@@ -2249,6 +2249,15 @@ one its decision belongs to:
   anything runs again on the next key ("A provider can hold several keys,
   and a spent one hands over").
 
+- `design/bots/bots.md` said a bot cannot see an earlier message's images
+  and asks you to send one again. On 2026-11-28 a bot asked about an image
+  sent seconds before, on a turn that was not sent it, asked for it again.
+  Since then a turn is still sent only its own message's images, but the
+  bot looks at an earlier one again with `view_image`, by the id the
+  history's note gives, only an image a message of that conversation
+  carries (§3.1). A turn not offered the tool (a token
+  without `bots:read`, a contact's turn) is told what it was before.
+
 ## The design
 
 - 2026-09-12: directory created; documents seeded with decisions from

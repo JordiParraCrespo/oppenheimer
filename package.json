@@ -63,6 +63,7 @@
     "eval:bot-first-chat": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-first-chat/run.ts",
     "eval:bot-merge-train": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-merge-train/run.ts",
     "eval:bot-react": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-react/run.ts",
+    "eval:bot-earlier-image": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-earlier-image/run.ts",
     "eval:bot-memory": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-memory/run.ts",
     "eval:bot-scope": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-scope/run.ts",
     "eval:bot-session-follow": "tsx --tsconfig apps/api/tsconfig.json scripts/evals/bot-session-follow/run.ts",
