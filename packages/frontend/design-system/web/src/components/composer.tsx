@@ -8,6 +8,7 @@ import {
   ComposerFrame,
   ComposerRecorder,
   ComposerSendButton,
+  ONE_LINE_FIELD,
   useComposerSend,
 } from '../internal/composer-send';
 import { cn } from '../lib/utils';
@@ -421,7 +422,8 @@ function ComposerPill({
             disabled={disabled}
             rows={1}
             className={cn(
-              'field-sizing-content max-h-52 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2.5 text-[15px] leading-[1.55] tracking-[-0.011em] text-fg outline-none placeholder:text-field-placeholder',
+              'field-sizing-content max-h-52 min-w-0 flex-1 resize-none bg-transparent text-fg outline-none placeholder:text-field-placeholder',
+              ONE_LINE_FIELD,
               onAttach || emoji ? 'pl-1' : 'pl-4.5',
             )}
           />

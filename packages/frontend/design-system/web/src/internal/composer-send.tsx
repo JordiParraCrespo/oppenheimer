@@ -255,4 +255,21 @@ function ComposerFoot({
   );
 }
 
-export { assignRef, ComposerFoot, ComposerFrame, ComposerRecorder, ComposerSendButton, useComposerSend };
+/**
+ * The one-line field of `ComposerPill` and an inline `ChatComposer`: 15px on
+ * 1.55, at least the 44px of the button groups beside it. 11px over and 9px
+ * under, not 10 and 10: the 23.25px line leaves 0.75px of the row spare, and
+ * the capitals sit above the line's middle, so even padding draws the text a
+ * pixel above the buttons.
+ */
+const ONE_LINE_FIELD = 'min-h-11 pt-2.75 pb-2.25 text-[15px] leading-[1.55] tracking-[-0.011em]';
+
+export {
+  assignRef,
+  ComposerFoot,
+  ComposerFrame,
+  ComposerRecorder,
+  ComposerSendButton,
+  ONE_LINE_FIELD,
+  useComposerSend,
+};
