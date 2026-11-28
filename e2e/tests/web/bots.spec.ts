@@ -187,6 +187,9 @@ test("a provider's second key, each on its own row, the one out of credit marked
   await expect(second).toBeHidden();
   await expect(anthropic).toContainText('2 keys');
   const keys = page.getByTestId('model-provider-key');
+  // Folded under the provider's chevron until it is opened.
+  await expect(keys).toHaveCount(0);
+  await anthropic.getByRole('button', { name: 'Show the Anthropic keys' }).click();
   await expect(keys).toHaveCount(2);
   await expect(keys.nth(0)).toContainText('Key ending in 1111');
   await expect(keys.nth(1)).toContainText('Key ending in 2222');
@@ -197,6 +200,7 @@ test("a provider's second key, each on its own row, the one out of credit marked
     [owner.organizationId],
   );
   await page.reload();
+  await anthropic.getByRole('button', { name: 'Show the Anthropic keys' }).click();
   await expect(keys.nth(0)).toContainText('Key ending in 1111 · out of credit');
   await expect(anthropic).toContainText('2 keys · 1 out of credit');
 

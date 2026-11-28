@@ -227,10 +227,26 @@ describe('ModelProviders', () => {
     ).toBeTruthy();
   });
 
+  // What breaks this: a provider with ten keys pushing every other provider down the page.
+  it("folds a provider's several keys until its chevron opens them, and folds them again", () => {
+    render(<ModelProviders />);
+    expect(screen.queryAllByTestId('model-provider-key')).toHaveLength(0);
+    const show = screen.getByRole('button', { name: 'settings.modelProviders.showKeys' });
+    expect(show.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(show);
+    expect(screen.getAllByTestId('model-provider-key')).toHaveLength(2);
+    const hide = screen.getByRole('button', { name: 'settings.modelProviders.hideKeys' });
+    expect(hide.getAttribute('aria-expanded')).toBe('true');
+    expect(hide.getAttribute('aria-controls')).toBe('model-provider-key-x1 model-provider-key-x2');
+    fireEvent.click(hide);
+    expect(screen.queryAllByTestId('model-provider-key')).toHaveLength(0);
+  });
+
   // What breaks this: a second key that cannot be seen, removed or replaced on its own, or a key out
   // of credit drawn with the same green check as the one calls run on.
   it('draws each of several keys on a row of its own, in order, the spent one saying so', () => {
     render(<ModelProviders />);
+    fireEvent.click(screen.getByRole('button', { name: 'settings.modelProviders.showKeys' }));
     const keys = screen.getAllByTestId('model-provider-key');
     expect(keys.map((row) => row.textContent)).toEqual([
       expect.stringContaining('settings.modelProviders.keyEndingSpent'),

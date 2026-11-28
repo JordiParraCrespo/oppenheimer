@@ -8,12 +8,17 @@ import {
 import { useDeploymentCapabilities } from '@oppenheimer/frontend-core/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { MODEL_PROVIDER_KEYS_MAX } from '@oppenheimer/shared/schemas/bot';
-import { isBotProvider, MODEL_PROVIDER_CATALOG } from '@oppenheimer/shared/schemas/model-provider';
+import {
+  isBotProvider,
+  MODEL_PROVIDER_CATALOG,
+  type ModelProvider,
+} from '@oppenheimer/shared/schemas/model-provider';
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ModelProviderActions } from '../components/model-provider-actions';
 import { ModelProviderKeyActions } from '../components/model-provider-key-actions';
 import { ModelProviderKeyStatus } from '../components/model-provider-key-status';
+import { ModelProviderKeysToggle } from '../components/model-provider-keys-toggle';
 import { ModelProviderName } from '../components/model-provider-name';
 import { ModelProviderStatus } from '../components/model-provider-status';
 import { ChatgptLoginDialog } from '../dialogs/chatgpt-login';
@@ -33,7 +38,8 @@ import type { ModelProviderKeyTarget } from '../lib/model-provider-key-target';
  * `MODEL_PROVIDER_KEYS_MAX` keys (Add key): a call runs on the first that is
  * not out of credit and moves to the next when one runs out. With more than
  * one, each key is a row of its own under the provider's, in that order,
- * with its own Remove and Replace, and a key out of credit says so. The
+ * with its own Remove and Replace, and a key out of credit says so; the rows
+ * are folded under a chevron on the provider's row until it is opened. The
  * key is typed in a dialog and never comes back. ChatGPT takes no key: its row
  * signs in to a ChatGPT subscription (Connect ChatGPT, Sign in again,
  * Disconnect), and says which account by its last characters. Read under
@@ -46,6 +52,15 @@ export function ModelProviders() {
   const { data: providers, error } = useSuspenseModelProviders();
   const { data: deployment } = useDeploymentCapabilities();
   const [editing, setEditing] = useState<ModelProviderKeyTarget | null>(null);
+  // Folded until opened: the provider's tag already says how many keys and how many are spent.
+  const [expanded, setExpanded] = useState<ReadonlySet<ModelProvider>>(() => new Set());
+  const toggle = (provider: ModelProvider, open: boolean) =>
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (open) next.add(provider);
+      else next.delete(provider);
+      return next;
+    });
   const remove = useRemoveModelProviderKey();
   const removeKey = useRemoveModelProviderKeyById();
   const makeDefault = useSetDefaultModelProvider();
@@ -93,6 +108,8 @@ export function ModelProviders() {
               // A key provider's one key is acted on by its id, never the provider's
               // whole set: a key another tab added meanwhile is not removed unseen.
               const onlyKey = !signIn && row.keys.length === 1 ? row.keys[0] : null;
+              const open = perKey && expanded.has(row.provider);
+              const keyRowId = (keyId: string) => `model-provider-key-${keyId}`;
               return (
                 <Fragment key={row.provider}>
                   <SettingsListRow
@@ -107,56 +124,67 @@ export function ModelProviders() {
                       />
                     }
                     actions={
-                      <ModelProviderActions
-                        label={label}
-                        signIn={signIn}
-                        configured={row.configured}
-                        isDefault={row.isDefault}
-                        runsBots={runsBots}
-                        unavailableReason={unavailableReason}
-                        makingDefault={
-                          makeDefault.isPending && makeDefault.variables === row.provider
-                        }
-                        defaultBusy={makeDefault.isPending}
-                        removing={
-                          onlyKey
-                            ? removeKey.isPending && removeKey.variables?.keyId === onlyKey.id
-                            : remove.isPending && remove.variables === row.provider
-                        }
-                        keyCount={row.keys.length}
-                        canAddKey={
-                          !signIn && row.configured && row.keys.length < MODEL_PROVIDER_KEYS_MAX
-                        }
-                        onMakeDefault={() => {
-                          if (isBotProvider(row.provider)) makeDefault.mutate(row.provider);
-                        }}
-                        onRemove={() =>
-                          onlyKey
-                            ? removeKey.mutate({ provider: row.provider, keyId: onlyKey.id })
-                            : remove.mutate(row.provider)
-                        }
-                        onEdit={() =>
-                          setEditing(
+                      <>
+                        {perKey ? (
+                          <ModelProviderKeysToggle
+                            label={label}
+                            expanded={open}
+                            controls={row.keys.map((key) => keyRowId(key.id)).join(' ')}
+                            onExpandedChange={(next) => toggle(row.provider, next)}
+                          />
+                        ) : null}
+                        <ModelProviderActions
+                          label={label}
+                          signIn={signIn}
+                          configured={row.configured}
+                          isDefault={row.isDefault}
+                          runsBots={runsBots}
+                          unavailableReason={unavailableReason}
+                          makingDefault={
+                            makeDefault.isPending && makeDefault.variables === row.provider
+                          }
+                          defaultBusy={makeDefault.isPending}
+                          removing={
                             onlyKey
-                              ? {
-                                  mode: 'replace',
-                                  provider: row.provider,
-                                  keyId: onlyKey.id,
-                                  hint: onlyKey.keyHint,
-                                }
-                              : { mode: 'put', provider: row.provider },
-                          )
-                        }
-                        onAddKey={() => setEditing({ mode: 'add', provider: row.provider })}
-                      />
+                              ? removeKey.isPending && removeKey.variables?.keyId === onlyKey.id
+                              : remove.isPending && remove.variables === row.provider
+                          }
+                          keyCount={row.keys.length}
+                          canAddKey={
+                            !signIn && row.configured && row.keys.length < MODEL_PROVIDER_KEYS_MAX
+                          }
+                          onMakeDefault={() => {
+                            if (isBotProvider(row.provider)) makeDefault.mutate(row.provider);
+                          }}
+                          onRemove={() =>
+                            onlyKey
+                              ? removeKey.mutate({ provider: row.provider, keyId: onlyKey.id })
+                              : remove.mutate(row.provider)
+                          }
+                          onEdit={() =>
+                            setEditing(
+                              onlyKey
+                                ? {
+                                    mode: 'replace',
+                                    provider: row.provider,
+                                    keyId: onlyKey.id,
+                                    hint: onlyKey.keyHint,
+                                  }
+                                : { mode: 'put', provider: row.provider },
+                            )
+                          }
+                          onAddKey={() => setEditing({ mode: 'add', provider: row.provider })}
+                        />
+                      </>
                     }
                   >
                     <ModelProviderName provider={row.provider} isDefault={row.isDefault} />
                   </SettingsListRow>
-                  {perKey
+                  {open
                     ? row.keys.map((key, index) => (
                         <SettingsListRow
                           key={key.id}
+                          id={keyRowId(key.id)}
                           align="center"
                           className="pl-12"
                           data-testid="model-provider-key"

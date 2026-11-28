@@ -4435,6 +4435,8 @@
       "keyFirst": "Used now.",
       "keyNext": "Used when the keys above run out of credit.",
       "keySpentNote": "Out of credit. Tried again once every key is.",
+      "showKeys": "Show the {{provider}} keys",
+      "hideKeys": "Hide the {{provider}} keys",
       "addKeyLabel": "Add another {{provider}} key",
       "removeKeyLabel": "Remove the {{provider}} key ending in {{hint}}",
       "replaceKeyLabel": "Replace the {{provider}} key ending in {{hint}}",

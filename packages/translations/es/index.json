@@ -4525,6 +4525,8 @@
       "keyFirst": "En uso.",
       "keyNext": "Se usa cuando las claves de arriba se quedan sin saldo.",
       "keySpentNote": "Sin saldo. Se vuelve a probar cuando todas lo estén.",
+      "showKeys": "Mostrar las claves de {{provider}}",
+      "hideKeys": "Ocultar las claves de {{provider}}",
       "addKeyLabel": "Añadir otra clave de {{provider}}",
       "removeKeyLabel": "Quitar la clave de {{provider}} que termina en {{hint}}",
       "replaceKeyLabel": "Reemplazar la clave de {{provider}} que termina en {{hint}}",
