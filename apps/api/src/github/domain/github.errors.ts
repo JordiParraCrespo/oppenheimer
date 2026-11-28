@@ -38,7 +38,7 @@ export const GithubErrors = {
    */
   INSTALLATION_NOT_CLAIMABLE: {
     code: 'GITHUB_004',
-    message: 'GitHub does not list that installation for your account',
+    message: 'That installation is not yours to connect',
     httpStatus: 403,
   },
   /** The OAuth code from the installation redirect was expired or already used. */

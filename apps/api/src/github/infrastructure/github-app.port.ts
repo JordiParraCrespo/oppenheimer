@@ -32,6 +32,8 @@ export interface GithubInstallationRef {
 export interface GithubInstallationClaim {
   githubInstallationId: number;
   accountLogin: string;
+  /** GitHub's own id for the account the App is installed on: a user's id, or an organization's. */
+  accountId: number;
   accountType: 'User' | 'Organization';
   repositorySelection: 'all' | 'selected';
   /** Suspended on GitHub right now, or null. Never assumed. */
@@ -69,13 +71,24 @@ export interface GithubUserAuthorization {
   tokens: GithubUserTokens;
 }
 
+/**
+ * The authorizing person's own standing in one organization, as GitHub
+ * reports it to their user token: whether the membership is accepted, and
+ * whether it is an owner's (`admin`).
+ */
+export interface GithubOrganizationMembership {
+  active: boolean;
+  admin: boolean;
+}
+
 export interface GithubAppPort {
   isConfigured(): boolean;
   /**
    * Exchange the OAuth code from the install redirect and return which
    * installations that account can see.
    *
-   * This is the claim proof, and it has no fallback: matching the
+   * This is the first half of the claim proof (seeing is not controlling: see
+   * `InstallationClaimResolver`), and it has no fallback: matching the
    * installation's `account.login` against the caller's linked GitHub account
    * fails for organization installations, where that login is the org rather
    * than a user account. The code is used once, here, and never stored. The
@@ -84,6 +97,18 @@ export interface GithubAppPort {
    * the caller decides whether to keep it.
    */
   listUserInstallations(code: string): Promise<GithubUserAuthorization>;
+  /**
+   * The authorizing person's membership in an organization, read with the user
+   * token their install code bought, counted against them.
+   *
+   * `null` when GitHub will not say (`403`, `404`): they are not a member, or
+   * the App lacks the **Members: read** organization permission. Either way a
+   * claim on that organization cannot be proven, and the caller refuses it.
+   */
+  readOrganizationMembership(
+    authorization: GithubUserAuthorization,
+    organizationLogin: string,
+  ): Promise<GithubOrganizationMembership | null>;
   /** A fresh user token from a refresh token; GitHub rotates the refresh token too. */
   refreshUserToken(refreshToken: string): Promise<GithubUserTokens>;
   /**

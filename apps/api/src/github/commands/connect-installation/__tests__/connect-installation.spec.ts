@@ -7,6 +7,7 @@ import {
   INSTALL_STATE_PREFIX,
   InstallStateResolver,
 } from '../../../application/install-state.resolver';
+import { InstallationClaimResolver } from '../../../application/installation-claim.resolver';
 import type { GithubInstallationRepositoryPort } from '../../../database/github-installation.repository.port';
 import { GithubErrors } from '../../../domain/github.errors';
 import { GithubInstallationEntity } from '../../../domain/github-installation.entity';
@@ -14,6 +15,7 @@ import { GithubInstallationMapper } from '../../../github-installation.mapper';
 import type {
   GithubAppPort,
   GithubInstallationClaim,
+  GithubOrganizationMembership,
 } from '../../../infrastructure/github-app.port';
 import { ConnectInstallationCommand } from '../connect-installation.command';
 import { ConnectInstallationCommandHandler } from '../connect-installation.command-handler';
@@ -25,14 +27,31 @@ import { ConnectInstallationCommandHandler } from '../connect-installation.comma
  * installation id comes from the browser, so trusting it would hand anyone
  * one-hour write tokens for another account's repositories); and which row the
  * claim lands on (see `ConnectInstallationCommandHandler`).
+ *
+ * The claim proof has two halves. GitHub lists an installation for anyone with
+ * explicit access to one repository it covers, so seeing it proves nothing on
+ * its own: the person must also be the account it is installed on, or an
+ * active owner of that organization.
  */
+
+/** Ana, as GitHub knows her: the account that authorizes every `build()`. */
+const ANA_GITHUB_ID = 583231;
 
 const CLAIM: GithubInstallationClaim = {
   githubInstallationId: 45678901,
   accountLogin: 'acme-labs',
+  accountId: 91004417,
   accountType: 'Organization',
   repositorySelection: 'selected',
   suspendedAt: null,
+};
+
+/** The same installation on Ana's own personal account. */
+const PERSONAL_CLAIM: GithubInstallationClaim = {
+  ...CLAIM,
+  accountLogin: 'ana',
+  accountId: ANA_GITHUB_ID,
+  accountType: 'User',
 };
 
 interface Rows {
@@ -40,6 +59,8 @@ interface Rows {
   disconnected?: GithubInstallationEntity;
   visible?: { githubInstallationId: number }[];
   claim?: GithubInstallationClaim;
+  /** Ana's membership of the installation's organization; `null` is GitHub refusing to say. */
+  membership?: GithubOrganizationMembership | null;
   insertFails?: AppError;
 }
 
@@ -84,7 +105,7 @@ function build(rows: Rows = {}) {
     isConfigured: vi.fn().mockReturnValue(true),
     listUserInstallations: vi.fn().mockResolvedValue({
       installations: rows.visible ?? [{ githubInstallationId: CLAIM.githubInstallationId }],
-      user: { githubUserId: 583231, login: 'ana' },
+      user: { githubUserId: ANA_GITHUB_ID, login: 'ana' },
       tokens: {
         accessToken: 'ghu_ana',
         accessExpiresAt: null,
@@ -93,7 +114,15 @@ function build(rows: Rows = {}) {
       },
     }),
     readInstallation: vi.fn().mockResolvedValue(rows.claim ?? CLAIM),
-  } satisfies Pick<GithubAppPort, 'isConfigured' | 'listUserInstallations' | 'readInstallation'>;
+    readOrganizationMembership: vi
+      .fn()
+      .mockResolvedValue(
+        rows.membership === undefined ? { active: true, admin: true } : rows.membership,
+      ),
+  } satisfies Pick<
+    GithubAppPort,
+    'isConfigured' | 'listUserInstallations' | 'readInstallation' | 'readOrganizationMembership'
+  >;
 
   const userGrants = { keep: vi.fn().mockResolvedValue(undefined) } satisfies Pick<
     GithubUserGrantResolver,
@@ -106,10 +135,12 @@ function build(rows: Rows = {}) {
 
   const handler = new ConnectInstallationCommandHandler(
     installations as unknown as GithubInstallationRepositoryPort,
-    github as unknown as GithubAppPort,
     new GithubInstallationMapper(),
     installState,
-    userGrants as unknown as GithubUserGrantResolver,
+    new InstallationClaimResolver(
+      github as unknown as GithubAppPort,
+      userGrants as unknown as GithubUserGrantResolver,
+    ),
   );
 
   return { handler, installations, github, cache, userGrants };
@@ -219,6 +250,92 @@ describe('the claim proof', () => {
       code: 'GITHUB_002',
     });
     expect(unconfigured.github.listUserInstallations).not.toHaveBeenCalled();
+  });
+});
+
+describe('the claim proof: control of the installation’s account', () => {
+  /** Each place a proven claim can land: a new row, a live row here, a disconnected row here. */
+  const landings = (): [string, Pick<Rows, 'live' | 'disconnected'>][] => {
+    const disconnected = connected('org-acme');
+    disconnected.disconnect();
+    return [
+      ['a new connect', {}],
+      ['a refresh of this workspace’s live row', { live: connected('org-acme') }],
+      ['a reconnect of this workspace’s disconnected row', { disconnected }],
+    ];
+  };
+
+  function expectNothingWritten(subject: ReturnType<typeof build>) {
+    expect(subject.installations.insert).not.toHaveBeenCalled();
+    expect(subject.installations.save).not.toHaveBeenCalled();
+    expect(subject.userGrants.keep).not.toHaveBeenCalled();
+  }
+
+  describe.each(landings())('on %s', (_landing, rows) => {
+    it('refuses a collaborator who sees someone else’s personal installation', async () => {
+      // The regression: GitHub lists Bob's installation for Ana because she can
+      // read one of his repositories, and the old proof stopped there.
+      const subject = build({
+        ...rows,
+        claim: { ...PERSONAL_CLAIM, accountLogin: 'bob', accountId: 7730021 },
+      });
+
+      await expect(subject.handler.execute(command())).rejects.toMatchObject({
+        code: 'GITHUB_004',
+        detail: expect.stringContaining('bob'),
+      });
+      expect(subject.github.readOrganizationMembership).not.toHaveBeenCalled();
+      expectNothingWritten(subject);
+    });
+
+    it('refuses a member of the organization who is not one of its owners', async () => {
+      const subject = build({ ...rows, membership: { active: true, admin: false } });
+
+      await expect(subject.handler.execute(command())).rejects.toMatchObject({
+        code: 'GITHUB_004',
+        detail: expect.stringContaining('acme-labs'),
+      });
+      expectNothingWritten(subject);
+    });
+
+    it('refuses an owner whose membership is still pending', async () => {
+      const subject = build({ ...rows, membership: { active: false, admin: true } });
+
+      await expect(subject.handler.execute(command())).rejects.toMatchObject({
+        code: 'GITHUB_004',
+      });
+      expectNothingWritten(subject);
+    });
+
+    it('refuses when GitHub will not say (no membership, or the App lacks Members: read)', async () => {
+      const subject = build({ ...rows, membership: null });
+
+      await expect(subject.handler.execute(command())).rejects.toMatchObject({
+        code: 'GITHUB_004',
+        detail: expect.stringContaining('Members'),
+      });
+      expectNothingWritten(subject);
+    });
+  });
+
+  it('accepts an active owner of the organization, asking about that organization with her token', async () => {
+    const subject = build();
+
+    await expect(subject.handler.execute(command())).resolves.toBeTruthy();
+    expect(subject.github.readOrganizationMembership).toHaveBeenCalledWith(
+      expect.objectContaining({ user: { githubUserId: ANA_GITHUB_ID, login: 'ana' } }),
+      'acme-labs',
+    );
+    expect(subject.installations.insert).toHaveBeenCalledTimes(1);
+    expect(subject.userGrants.keep).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepts the personal account itself, without asking about an organization', async () => {
+    const subject = build({ claim: PERSONAL_CLAIM, membership: null });
+
+    await expect(subject.handler.execute(command())).resolves.toBeTruthy();
+    expect(subject.github.readOrganizationMembership).not.toHaveBeenCalled();
+    expect(subject.installations.insert).toHaveBeenCalledTimes(1);
   });
 });
 

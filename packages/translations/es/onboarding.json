@@ -37,7 +37,7 @@
       "unstarted": "Este enlace de GitHub no se inició aquí. Vuelve a conectar GitHub.",
       "connectedAll": "Todos los repositorios de la cuenta",
       "connectedPending": "Conectado",
-      "requested": "Solicitud enviada. Un propietario de la organización tiene que aprobar la instalación en GitHub. Cuando lo haga, elige Conectar GitHub de nuevo y selecciona la organización para añadir sus repositorios aquí."
+      "requested": "Solicitud enviada. Un propietario de la organización tiene que aprobar la instalación en GitHub y después conectarla aquí: solo un propietario de la organización puede conectar su instalación."
     },
     "host": {
       "title": "Añade tu primer host",

@@ -2194,6 +2194,14 @@ one its decision belongs to:
   (`../runner/runner.md` §6). Where a line was ambiguous, the note it meant
   was read from its context.
 
+- `design/console/screens.md` had a member who could only request an
+  organization's GitHub install connect it once an owner approved, by
+  choosing the organization again. Since 2026-11-27 only the
+  installation's own account or an owner of its organization can connect
+  it (a security review: GitHub lists an installation for anyone with
+  access to one of its repositories); the owner approves and connects it
+  themselves.
+
 ## The design
 
 - 2026-09-12: directory created; documents seeded with decisions from
