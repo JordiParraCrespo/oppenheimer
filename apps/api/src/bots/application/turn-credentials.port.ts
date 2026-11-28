@@ -34,6 +34,13 @@ export interface TurnCredentialsPort {
     used: TurnCredential,
     now: Date,
   ): Promise<TurnCredential | null>;
+  /**
+   * Whether the provider has a stored key not marked spent: after a refusal
+   * for credit, whether the next call would run on another key, so a hold or
+   * a pause waiting for the account to be topped up is not needed. False for
+   * a sign-in, which has no other.
+   */
+  hasUnspentKey(organizationId: string, provider: ModelProvider): Promise<boolean>;
   /** A call on `used` got through: a spent mark it carried (it was topped up) goes. */
   worked(organizationId: string, provider: ModelProvider, used: TurnCredential): Promise<void>;
 }

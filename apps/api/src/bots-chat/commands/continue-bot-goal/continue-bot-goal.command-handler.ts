@@ -1,5 +1,7 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
+import type { TurnCredentialsPort } from '../../../bots/application/turn-credentials.port';
+import { TURN_CREDENTIALS } from '../../../bots/bots.di-tokens';
 import { BotGoalResolver, type GoalContinuationProps } from '../../application/bot-goal.resolver';
 import { BotGoalReviewResolver } from '../../application/bot-goal-review.resolver';
 import {
@@ -46,6 +48,7 @@ export class ContinueBotGoalCommandHandler
     @Inject(BOT_MESSAGE_REPOSITORY) private readonly messages: BotMessageRepositoryPort,
     private readonly goalsOf: BotGoalResolver,
     private readonly reviewer: BotGoalReviewResolver,
+    @Inject(TURN_CREDENTIALS) private readonly credentials: TurnCredentialsPort,
   ) {}
 
   async execute({ turnId, metadata }: ContinueBotGoalCommand): Promise<void> {
@@ -64,7 +67,10 @@ export class ContinueBotGoalCommandHandler
     const goal = await this.goals.findForBot(ended.organizationId, ended.botId);
     if (goal?.id !== found.id || isDecidedTurn(goal, ended) || goal.paused) return;
 
-    const decision = goalDecision(goal, ended);
+    const keyLeft =
+      ended.failure === 'usage_limit' &&
+      (await this.credentials.hasUnspentKey(ended.organizationId, ended.provider));
+    const decision = goalDecision(goal, ended, keyLeft);
     if (decision.kind === 'skip') return;
     if (decision.kind === 'end') {
       await this.goalsOf.end(goal, decision, metadata.correlationId);

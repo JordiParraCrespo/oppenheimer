@@ -135,7 +135,15 @@ export class ModelProviderCredentialRepository
     if (!organizationId) return false;
     return this.repository.manager.transaction(async (manager) => {
       const rows = await this.lockedKeys(manager, organizationId, provider);
-      const removed = rows.find((row) => row.id === keyId);
+      // The workspace's rows too, as `setDefault` locks them: a switch of default
+      // under way moves the mark first, and this reads where it landed.
+      const marks = await manager
+        .getRepository(ModelProviderCredentialOrmEntity)
+        .createQueryBuilder('credential')
+        .setLock('pessimistic_write')
+        .where('credential.organizationId = :organizationId', { organizationId })
+        .getMany();
+      const removed = marks.find((row) => row.id === keyId && row.provider === provider);
       if (!removed) return false;
       await manager.delete(ModelProviderCredentialOrmEntity, { id: keyId });
       // The provider stays the default while it has a key: the next one takes the mark.

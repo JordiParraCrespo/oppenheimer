@@ -94,7 +94,16 @@ export class BotTurnKeyFailoverResolver {
   /** After the turn ended: a completed turn on a key marked spent clears the mark. */
   async ended(turn: BotTurnEntity, credential: TurnCredential): Promise<void> {
     if (turn.status !== 'completed') return;
-    await this.credentials.worked(turn.organizationId, turn.provider, credential);
+    try {
+      await this.credentials.worked(turn.organizationId, turn.provider, credential);
+    } catch (error) {
+      // The turn has ended; a mark left behind goes on a later turn.
+      this.logger.warn({
+        message: "Could not clear a provider key's spent mark",
+        turnId: turn.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   private async attempt(

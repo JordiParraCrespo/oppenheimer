@@ -334,7 +334,9 @@ worker runs it and streams what happens back to the chat.
   turn has written nothing and taken no steer yet, it runs again from the
   start on the next key, read afresh so its reviewers and subagents move
   with it; the chat never sees the refusal. A refusal after the turn wrote
-  something ends it as before, and the next turn starts on the next key. A
+  something ends it as before, and the next turn starts on the next key:
+  the hour's hold on routines and wakes, and a goal's pause, wait for a top-up
+  only once no key is left. A
   spent key is tried again only once every key is spent, the one spent
   longest ago first, and its mark goes when a turn on it completes, or when
   it is replaced. A rate limit does not hand over: it is the provider

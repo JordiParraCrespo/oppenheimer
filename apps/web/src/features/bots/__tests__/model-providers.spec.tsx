@@ -236,7 +236,8 @@ describe('ModelProviders', () => {
       expect.stringContaining('settings.modelProviders.keyEndingSpent'),
       expect.stringContaining('settings.modelProviders.keyEnding'),
     ]);
-    expect(keys[0].textContent).toContain('settings.modelProviders.keyFirst');
+    expect(keys[0].textContent).toContain('settings.modelProviders.keySpentNote');
+    expect(keys[1].textContent).toContain('settings.modelProviders.keyFirst');
     fireEvent.click(
       within(keys[1]).getByRole('button', { name: 'settings.modelProviders.removeKeyLabel' }),
     );

@@ -120,6 +120,8 @@ const REFRESHES: RefreshTable = {
   'botTurn.changed': [
     { prefix: botsKeys.activity(), announcesEvery: false },
     { prefix: botsKeys.lists(), announcesEvery: false },
+    // A turn that ends has marked its key out of credit, or cleared the mark, before it says so.
+    { prefix: botsKeys.providerList(), announcesEvery: false },
   ],
   // Every put and delete of the caller's marks.
   'inboxMark.changed': [{ prefix: inboxKeys.marks(), announcesEvery: true }],

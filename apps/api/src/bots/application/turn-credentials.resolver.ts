@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppError } from '@oppenheimer/backend-core';
-import type { ModelProvider } from '@oppenheimer/shared';
+import { MODEL_PROVIDER_CATALOG, type ModelProvider } from '@oppenheimer/shared';
 import { MODEL_PROVIDER_CREDENTIAL_REPOSITORY, PROVIDER_KEY_SEALER } from '../bots.di-tokens';
 import type { ModelProviderCredentialRepositoryPort } from '../database/model-provider-credential.repository.port';
 import { BotErrors } from '../domain/bots.errors';
@@ -65,6 +65,12 @@ export class TurnCredentialsResolver implements TurnCredentialsPort {
     const next = (await this.credentials.findAllForRun(organizationId, provider))[0];
     if (!next || next.spentAt !== null || next.id === stored.id) return null;
     return this.opened(next);
+  }
+
+  async hasUnspentKey(organizationId: string, provider: ModelProvider): Promise<boolean> {
+    if (MODEL_PROVIDER_CATALOG[provider].auth !== 'api_key') return false;
+    const first = (await this.credentials.findAllForRun(organizationId, provider))[0];
+    return first !== undefined && first.spentAt === null;
   }
 
   async worked(

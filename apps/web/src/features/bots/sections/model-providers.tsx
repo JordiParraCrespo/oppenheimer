@@ -143,9 +143,11 @@ export function ModelProviders() {
                             />
                           }
                           meta={t(
-                            index === 0
-                              ? 'settings.modelProviders.keyFirst'
-                              : 'settings.modelProviders.keyNext',
+                            key.spentAt !== null
+                              ? 'settings.modelProviders.keySpentNote'
+                              : key.id === row.keys.find((each) => each.spentAt === null)?.id
+                                ? 'settings.modelProviders.keyFirst'
+                                : 'settings.modelProviders.keyNext',
                           )}
                           actions={
                             <ModelProviderKeyActions
