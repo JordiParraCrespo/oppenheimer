@@ -489,8 +489,8 @@ over the text as soon as it is picked, and a message may be images alone.
   question about an image sent a message earlier is answered rather than
   met with "send it again". It takes only an image a message of the
   turn's own conversation carries, of that bot and workspace, matched by
-  id; any other id is not found. Six a turn; one whose file is gone, past
-  5 MB or of another type is refused in words that say so. A turn not
+  id; any other id is not found. Four a turn; one whose file cannot be
+  read, past 5 MB or of another type is refused in words that say so. A turn not
   offered the tool is told, as before, that it cannot see the image. An
   image that cannot be read fails the turn rather than the bot
   answering without it. Retry is not offered on a message with images: an

@@ -18,7 +18,7 @@ No image {{id}} in this chat. Use an id from a note on an earlier message of thi
 
 <!-- fragment: gone -->
 
-The image "{{name}}" is no longer stored, so it cannot be looked at again. Say so, and ask the person to send it again if you still need it.
+The image "{{name}}" could not be read from storage: it may have been deleted, or storage is not answering just now. Say so; if you still need it, try once more later or ask the person to send it again.
 
 <!-- fragment: unreadable -->
 

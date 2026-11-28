@@ -1956,7 +1956,7 @@ export const PROMPT_TEXT: Readonly<Record<PromptId, string>> = {
   "core/tools-images.view-image-id": "The image id, from the note on the earlier message (\"image id …\").",
   "core/tools-images.viewed": "The image \"{{name}}\" from earlier in this chat, as it was sent.",
   "core/tools-images.not-found": "No image {{id}} in this chat. Use an id from a note on an earlier message of this chat.",
-  "core/tools-images.gone": "The image \"{{name}}\" is no longer stored, so it cannot be looked at again. Say so, and ask the person to send it again if you still need it.",
+  "core/tools-images.gone": "The image \"{{name}}\" could not be read from storage: it may have been deleted, or storage is not answering just now. Say so; if you still need it, try once more later or ask the person to send it again.",
   "core/tools-images.unreadable": "The image \"{{name}}\" cannot be shown: it is not an image type you read, or it is larger than the limit. Say so, and ask the person for it another way if you need it.",
   "core/tools-images.needs-eyes": "The model this turn runs on reads no images, so it cannot look at one. Say so.",
   "core/tools-images.views-spent": "Not shown: this turn has already looked at {{viewsPerTurn}} earlier images, the most one turn may. Answer from what you have seen.",

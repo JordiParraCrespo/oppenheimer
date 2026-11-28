@@ -124,7 +124,7 @@ describe('view_image', () => {
     const result = await tool.bind(context()).run({ image_id: ID }, { signal });
 
     expect(result.isError).toBe(true);
-    expect(result.content).toContain('"image.png" is no longer stored');
+    expect(result.content).toContain('"image.png" could not be read from storage');
     expect(result.images).toBeUndefined();
   });
 
