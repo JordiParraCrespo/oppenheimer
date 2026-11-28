@@ -11,7 +11,7 @@ import { PasteSessionImageCommand } from './paste-session-image.command';
 /**
  * Hands a file (an image, a PDF, text) to a session's window: the runner pulls it, saves it on the host and
  * pastes its path into the prompt, because the agent reads its host's clipboard, never
- * the browser's (05).
+ * the browser's (`product/design/console/screens.md`).
  *
  * **Nothing is appended**: a pasted image is input, like a keystroke. A runner's
  * refusal is the one thing worth writing down, and the relay writes its

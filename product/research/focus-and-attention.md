@@ -9,8 +9,8 @@ turns it into guidance for a person and into ideas for the console. It
 decides nothing: an idea that is taken is written into the note that owns
 its area and logged in `README.md`.
 
-It builds on note 15 (`15-reviewing-at-agent-speed.md`), which covers
-review as the bottleneck, and does not repeat its findings. Note 15 §9
+It builds on `reviewing-at-agent-speed.md` (`research/reviewing-at-agent-speed.md`), which covers
+review as the bottleneck, and does not repeat its findings. `reviewing-at-agent-speed.md` §9
 said no hard data was found on batching notifications and focus; §1.5
 below is that data.
 
@@ -85,7 +85,7 @@ Sources are in §6.
   attention on one screen fell from about 2½ minutes in 2004 to about 47
   seconds; people spend about 10½ minutes on a project before switching;
   getting back to the interrupted project takes about 25 minutes; and
-  people interrupt themselves more than others interrupt them. Note 15
+  people interrupt themselves more than others interrupt them. `reviewing-at-agent-speed.md`
   §1.5 already declined the "23 minutes" figure for the same reason.
 
 ### 1.5 Batch notifications; do not switch them off
@@ -170,7 +170,7 @@ is a product rule.
 
 Each idea names the finding behind it and what only Oppenheimer can do,
 because it owns the hosts, the sessions and their event log. Following
-note 15's rule: algorithmic first, an agent only where a rule cannot
+`reviewing-at-agent-speed.md`'s rule: algorithmic first, an agent only where a rule cannot
 read.
 
 1. **Where you left off.** When a person leaves a session (switches to
@@ -185,18 +185,18 @@ read.
    *at once* (today), *in batches* at times you choose or at the end of a
    focus block, or *only blocking* (a session that has waited longer than
    a threshold breaks through). In between, the rail shows a count, not a
-   toast. *Behind it: §1.4, §1.5.* Channels (`next-steps/channels.md`)
-   and mobile push (`next-steps/0.5-mobile.md`) would obey the same
+   toast. *Behind it: §1.4, §1.5.* Channels (`design/channels/channels.md`)
+   and mobile push (`design/clients/mobile.md`) would obey the same
    setting.
 3. **Focus blocks.** §1.1 and §1.5 suggest a protected block in which
    batched notifications wait and one task is in front of the person.
    Open: is that a kind of event on Plan's calendar, and what does the
-   block's end show? Owner: `versions/mvp/20-plan-calendar.md`.
+   block's end show? Owner: `design/plan/plan-calendar.md`.
 4. **A fan-out meter.** From session events the control plane can compute,
    per person, each session's neglect time (time running alone before it
    needs input) and interaction time (from opening a waiting session to
    the agent running again), and the person's utilisation over the last
-   hour. Stats (`versions/mvp/23-plan-milestones-stats-accounts.md` §4)
+   hour. Stats (`design/plan/plan-milestones-stats-accounts.md` §4)
    shows the trend; the sessions rail warns once when utilisation passes
    70%. Purely arithmetic. *Behind it: §1.6, and §1.7's point that
    people misjudge their own load.*
@@ -204,18 +204,18 @@ read.
    session can be left alone. Open: what at session start (a
    done-condition in the brief, a suggested permission mode) lengthens it,
    and should Stats show which sessions ask most? Owners:
-   `versions/mvp/19-plan-tasks-and-goals.md` §5 and
-   `versions/mvp/23-plan-milestones-stats-accounts.md` §4.
-6. **Out of hours.** §1.5, with note 15 §1.7 on work spilling out of
+   `design/plan/plan-tasks-and-goals.md` §5 and
+   `design/plan/plan-milestones-stats-accounts.md` §4.
+6. **Out of hours.** §1.5, with `reviewing-at-agent-speed.md` §1.7 on work spilling out of
    hours. Open: should sessions that keep running out of hours hold their
    notifications to the next batch?
 7. **Measuring ways of working.** §1.7 says people misjudge their own
    speed. Open: should Stats compare a person's time from task start to
    merged PR across ways of working (sessions in parallel, permission
-   mode, focus blocks)? Owner: `versions/mvp/23-plan-milestones-stats-accounts.md` §4.
+   mode, focus blocks)? Owner: `design/plan/plan-milestones-stats-accounts.md` §4.
 
 Ideas 1, 2 and 4 are small, rest on data the runner's state detection
-(`versions/mvp/02-runner.md` §9) and the event log already produce, and
+(`design/runner/runner.md` §9) and the event log already produce, and
 answer the strongest evidence. They are the suggested first slice.
 
 ## 4. Open questions
@@ -224,7 +224,7 @@ answer the strongest evidence. They are the suggested first slice.
    been open long enough to have context worth saving?
 2. Where does the batching setting live: per person, per project, per
    focus block? Per person first seems enough.
-3. Does the fan-out meter count bots (`versions/mvp/25-bots.md`) whose
+3. Does the fan-out meter count bots (`design/bots/bots.md`) whose
    Needs input cards also wait on the person?
 4. What does a person see when the meter says they are over capacity: a
    warning only, or an offer to pause the session that has waited

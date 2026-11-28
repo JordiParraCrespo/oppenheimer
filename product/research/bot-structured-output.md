@@ -13,7 +13,7 @@ safe, and structured output costs more on every call than the misses do.
 
 ## 1. What was run
 
-`bot-structured-output/measure.ts` uses the real prompts, message composers
+`spikes/bot-structured-output/measure.ts` uses the real prompts, message composers
 and readers on 17 inputs. They are the ten `bot-auto-review` cases, three
 rule reviews (one with an injection telling the reviewer to answer
 `{"matches": []}`), three goal reviews (met, claimed with no proof,

@@ -73,7 +73,7 @@
 - d5d310c: An organization's repositories can be reached from the project dialog, and a requested organization install is said rather than dropped.
 - f099524: Name the product's own non-persisted queries: `CONSUMER_NON_PERSISTED_FEATURES` adds `sessions`, `hosts`, `apiTokens` and `profile`.
 - 2dc27d2: Plan: a task board, goals and a calendar, the console rail's third item
-  (`product/versions/mvp/17-plan.md`).
+  (`product/design/plan/plan.md`).
 
   - `@oppenheimer/api`: the `tasks` module (tasks, goals, the board's order,
     starting or linking a session, the attach rule) and the `calendar` module
@@ -122,7 +122,7 @@
 - c2288fb: A new session opens on its agent. The runner starts the agent in place of the
   pane's shell (`tmux respawn-pane`) instead of typing the line that starts it,
   and the console keeps the start's steps on screen until the agent step lands.
-- 3404cd3: A session's terminal can be shared with a link, to watch or to type, for anyone, any signed-in account or named people (`product/versions/mvp/21-session-share-links.md`).
+- 3404cd3: A session's terminal can be shared with a link, to watch or to type, for anyone, any signed-in account or named people (`product/design/sessions/session-share-links.md`).
 - 3e6e3dc: Settings → Hosts, as `design/version1/Settings.dc.html` draws it: a page in its own frame, reached from the account menu, listing the workspace's hosts as cards (status, running sessions, OS · vCPU · runner version, connected or last seen) with inline rename, copy ID and remove, and Add a host opening inside the same frame. `HostCard`, `SettingsNav`, `PageHeader`, `RoutineSteps` and the tabbed `CodeBlock` panel now measure as the version-1 export does.
 - c237a5f: The console's sidebar reorders by dragging: a project by its header among
   the others (`SortableSidebarProjectGroup`), and a session within its project

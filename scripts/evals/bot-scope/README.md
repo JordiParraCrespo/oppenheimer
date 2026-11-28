@@ -8,7 +8,7 @@ order that the flow does not break". Oppie read seventeen things (the
 automation, its runs, the main-red issue #1066, the sessions and pull
 requests), then, within a minute, started one coding session to fix main's
 current failure *and* improve the automation, and created a task for it,
-without saying it had widened the job. Since then (`product/versions/mvp/25-bots.md`,
+without saying it had widened the job. Since then (`product/design/bots/bots.md`,
 the 2026-11-25 entry) "How a turn goes" says:
 
 - do what was asked, all of it, and nothing more: the job is the person's,

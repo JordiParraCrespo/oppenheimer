@@ -1,4 +1,4 @@
-# Lessons from the reconstructed Grok Bot desktop app (formerly note 12)
+# Lessons from the reconstructed Grok Bot desktop app
 
 Source: `b-nnett/grok-bot-0.18-reconstructed`, an unofficial
 reverse-engineering of a macOS Electron app into readable TypeScript,
@@ -61,7 +61,7 @@ Details worth knowing:
 | Idea | Where it lands |
 |------|----------------|
 | Descriptor from a broker, cached, with blocked and update-required hints | the control plane's session attach: a ticket that also carries "runner busy, retry after" and "runner too old, update" instead of bare errors |
-| Migration as a phased, resumable event stream with offsets and stall detection | host moves (note 10 §4, i7 to AX42), workspace VM recreation on image update, and hibernate-to-wake progress in the session card |
+| Migration as a phased, resumable event stream with offsets and stall detection | host moves (`../archive/sleep-wake-and-pricing.md` §4, i7 to AX42), workspace VM recreation on image update, and hibernate-to-wake progress in the session card |
 | Update = recreate with data preserved | workspace VM image revisions: recreate the VM from the new golden image, keep the overlay's worktrees and the account volumes, one command |
 | Disk-pressure guard as a status event | per-host disk watch, surfaced on the sidebar before a session fails to write |
 | Epoch counter on reconnect | the browser-to-relay and runner-to-control reconnect ladders, so a late success cannot clobber a newer connection |
@@ -71,7 +71,7 @@ Details worth knowing:
 ## 3. What we deliberately do not take
 
 - **Pipes instead of a PTY.** Its agents get command output as text;
-  ours get a terminal. That is the product difference, and note 01 stands.
+  ours get a terminal. That is the product difference, and `../archive/terminal-first.md` stands.
 - **One forever box per user.** We have one workspace VM per repo plus
   clean VMs, which is finer-grained and matches the worktree UX.
 - **VNC in the box for computer use.** Interesting for the Mac Studio QA
@@ -84,7 +84,7 @@ Details worth knowing:
   the tailnet if the host is allowed to, which is a firewall rule, not
   a subsystem.
 - **A plugin-extension host.** The gateway is a bus of 34 extensions.
-  That is the OpenClaw shape again, and note 00's verdict stands.
+  That is the OpenClaw shape again, and `../archive/vision-and-plan.md`'s verdict stands.
 
 ## 4. Verdict
 
@@ -101,7 +101,7 @@ plane as designed, without changing a boundary.
 Sections 1 to 4 read version 0.18's connection layer. On 2026-10-15 a
 static read of version 0.71.2, built by Anysphere on Cursor's agent
 stack, looked at the bot instead of the box, for the bots design
-(`versions/mvp/25-bots.md`). It found:
+(`design/bots/bots.md`). It found:
 
 - **The loop moved to the vendor's servers.** The desktop app no longer
   runs the agent; it is a client of a loop that runs elsewhere.
@@ -114,7 +114,7 @@ stack, looked at the bot instead of the box, for the bots design
 - **Bots that edit themselves without asking**, with no history to go
   back to.
 
-What note 25 takes from it, and what it does differently, is that
+What `../design/bots/bots.md` takes from it, and what it does differently, is that
 note's "Research" section: the curated chat, the source on each fact,
 queue lanes and a bounded chain for bot-to-bot turns, taken; revisions
 for the bot's documents and the owner's own permissions as the ceiling,
@@ -149,13 +149,13 @@ what a person sees anyway. No code is taken.
 - **Pin, hide, duplicate, share as a template.** Duplicating copies the
   profile, skills and routines but not history or memory.
 
-What we take (`versions/mvp/25-bots.md` §1): the one focused job, the
+What we take (`design/bots/bots.md` §1): the one focused job, the
 description as the job, the rules a bot must never break without asking,
 and the first concrete task. What we do differently: the bot does the
 setup itself in its first chat, so nobody has to find Edit Profile, and
 it is born with a first name rather than "New Bot", since a sidebar of
 "New Bot 2, New Bot 3" says nothing. The welcome tour, suggested
-teammates and templates wait for 25 §7's templates.
+teammates and templates wait for `../design/bots/bots.md` §7's templates.
 
 ## 7. Grok Bot 0.71.2: how a bot wakes (2026-10-16)
 
@@ -164,7 +164,7 @@ Cursor's download page, unpacked from its `app.asar`, for how a bot works
 when nobody writes to it. The scheduler runs on the vendor's servers, so
 this is what the client's protobuf schemas, its copy and its prompts
 show, not the scheduler itself. Ideas only; the design they fed is
-`versions/mvp/26-bot-routines.md`.
+`design/bots/bot-routines.md`.
 
 - **No heartbeat of its own.** A bot wakes for five reasons only: a
   message, a routine firing, a channel (Slack, GitHub, email) through a
@@ -194,12 +194,12 @@ show, not the scheduler itself. Ideas only; the design they fed is
 - **Offline fallback.** When the routine sync fails, event routines keep
   running locally where that is safe; scheduled ones may not.
 
-What 26 takes: routines as automations with a bot as the target, the
+What `../design/bots/bot-routines.md` takes: routines as automations with a bot as the target, the
 spread schedule, and routines from templates starting paused. What it
 does differently: a routine's run is a queued turn of the bot, so the
 turn queue is the durable record and there is no wake ledger beside it;
 "when a session ends" is a trigger like any other rather than a watcher;
-and the owner's permissions are the ceiling, as in 25. (The first
+and the owner's permissions are the ceiling, as in `../design/bots/bots.md`. (The first
 draft also had no spend guard; the second read below brings it back.)
 
 ### Second read: routines in detail (2026-10-18)
@@ -228,7 +228,7 @@ thresholds, so those stay unknown.
 - **The spend guard** is two cards, a nudge with *keep*, *pause* or *keep,
   don't ask again*, then a pause with *resume* or *keep paused*.
 
-Note 26 takes all of it as behaviour, with thresholds of its own.
+`../design/bots/bot-routines.md` takes all of it as behaviour, with thresholds of its own.
 
 ## 8. How a bot hears back from work it delegated (2026-10-22)
 
@@ -255,7 +255,7 @@ docs. It separates what was seen from what is inferred. No code is taken.
 
 - "A Bot can send an asynchronous message to another Bot", and the
   receiver "wakes, handles the request, and can reply later". This is our
-  `ask_bot` (25 §4.6).
+  `ask_bot` (`../design/bots/bots.md` §4.6).
 - Closing the app does not stop a background turn or a routine. The work
   runs on the vendor's servers.
 - A message from the person "takes priority over background work". Our
@@ -288,13 +288,13 @@ copy, not their rules.
   `response.completed`, `.failed`, `.cancelled`, `.incomplete`, and the
   same for batches, fine-tuning jobs and eval runs.
 
-**What `versions/mvp/27-bot-subscriptions.md` takes:**
+**What `design/bots/bot-subscriptions.md` takes:**
 
 | From | Idea | Ours |
 |---|---|---|
 | Grok Bot | A watcher per delegated resource, counting its wakes | `bot_subscription`, with `wakes` and a wake limit |
 | Grok Bot | The wake is a harness note, not the person's words | an `event` message the bot reads as Oppenheimer's note, with the session's words fenced as untrusted |
-| Grok Bot | The wake survives a restart | the outbox and the turn queue, already durable; there is no separate ledger, as 26 decided |
+| Grok Bot | The wake survives a restart | the outbox and the turn queue, already durable; there is no separate ledger, as `../design/bots/bot-routines.md` decided |
 | OpenAI | A thin event, then fetch the object | the wake re-reads the session as the owner and wakes for its state as it stands |
 | OpenAI | At-least-once delivery, deduplicated by an id | the outbox delivers at least once; the turn's `sourceKey` makes a wake delivered twice one turn |
 | OpenAI | One terminal event per way to end | wakes on `completed`, `failed`, `cancelled`, `expired`, plus `requires_action` |
@@ -311,7 +311,7 @@ A static read of the Linux `.deb` of version 0.78.1, fetched this time
 from `downloads.cursor.com` (sha256 `55d2a34c…3ded1d`) and unpacked from
 its `app.asar`. Nothing in it was run and no code is taken. §1 to §8 read
 the box, the onboarding and the wakes; this read asks what the agent
-harness does that ours (25 §2 to §5, `apps/api/src/bots-chat`) does not.
+harness does that ours (`../design/bots/bots.md` §2 to §5, `apps/api/src/bots-chat`) does not.
 Three sources:
 
 - **The protobuf schemas** (`proto.cjs`, `agent.v1` and `aiserver.v1`):
@@ -358,36 +358,36 @@ and there are subagents of a dozen types.
 - `Reflect`, a structured self-check.
 
 Ours keeps the coding in a session on a host and none of it on the
-control plane (25 §2). That stays, so the coding half is not a list of
+control plane (`../design/bots/bots.md` §2). That stays, so the coding half is not a list of
 things to copy.
 
 ### What we could introduce, ranked
 
 The first five are small and fit what exists. The next four are the
-unbuilt items of 25 §7 and 27, and Grok Bot shows a shape for them. The
+unbuilt items of `../design/bots/bots.md` §7 and `../design/bots/bot-subscriptions.md`, and Grok Bot shows a shape for them. The
 rest is later.
 
 | # | Grok Bot does | Evidence | Ours today | Where it would land |
 |---|---|---|---|---|
 | 1 | **Head and tail with a count.** Long output keeps its start and its end, says how much it elided, and keeps the whole output in a file | `output_head`, `output_tail`, `elided_chars`, `output_location`; `TruncatedToolCall` | `fitToolOutput` keeps the first 12,000 characters, so a session's error at the end is the part lost | `bot-tool-text.policy.ts`; `read_session` above all |
-| 2 | **The model knows its room.** The harness tells it how full the context is, and nudges it at set points | `ContextWindowStatus{percentage_remaining}`, a todo reminder `EVERY_10_TURNS`, `DiscoveryBudgetReminder` | The meter is for the person only (25 §2) | one line in `<turn_context>`, which stays out of the cached prompt |
-| 3 | **A reply has to commit.** "A confirmation on its own… is not a reply": an acknowledgement says the job taken, where it stands and when it will say more. Asking again "is the same errand: say where it stands and start nothing" | renderer prompt fragments | "Started, not done" for sessions only | the prompt's "how a turn goes" (25 §2) |
+| 2 | **The model knows its room.** The harness tells it how full the context is, and nudges it at set points | `ContextWindowStatus{percentage_remaining}`, a todo reminder `EVERY_10_TURNS`, `DiscoveryBudgetReminder` | The meter is for the person only (`../design/bots/bots.md` §2) | one line in `<turn_context>`, which stays out of the cached prompt |
+| 3 | **A reply has to commit.** "A confirmation on its own… is not a reply": an acknowledgement says the job taken, where it stands and when it will say more. Asking again "is the same errand: say where it stands and start nothing" | renderer prompt fragments | "Started, not done" for sessions only | the prompt's "how a turn goes" (`../design/bots/bots.md` §2) |
 | 4 | **Typed failures that say whether a retry helps.** "Usually temporary", "Sending it again won't help". The failure names whose account hit the limit | `TurnFailed{code USAGE_LIMIT\|RATE_LIMIT\|PROVIDER_CONTENT_BLOCKED…, account OWNER\|ACTING_USER}` | `BotRateLimitError` for summaries; a failed turn's line | the turn's failure codes and the chat's failed line |
 | 5 | **Search past chats.** The bot can look up what fell out of its summary | `SearchConversations` (query, a snippet per hit) | `recall` searches facts only; old messages are reachable only through the summary | a read-only tool over `bot_message`, offered to `delegate` too |
-| 6 | **Plain-language rules and an auto-reviewer.** A model judges each call against *allow* and *always ask* rules: "Always Ask wins, whoever wrote it", and "Built-in safety checks always apply". Its verdict carries `irreversible`, `high_stakes` and the rules it applied, and the activity line says "Auto-approved by your rule". A block proposes a rule, accepted in one click | `SandAutoReviewRulesInEffect`, `GrokBotAutoReviewRuleSave` (records where a rule came from), mode `auto-review` beside `always-allow\|needs-approval\|blocked` | Allow, Ask or Off per tool; plain-language rules are 25 §7, not built | 25 §5, as a fourth choice per tool: **Review** |
-| 7 | **Approvals with a reach.** "Allow covers every {name} request for the rest of this turn… Always allow covers them from now on." A standing grant can be scoped to a subject, such as a recipient or an app. Some actions are per call only and never standing. A machine ceiling caps the person's choice | the scope kinds `global\|setting\|subject\|call`; `NEVER\|ASK\|ALWAYS` ceiling | Approve once or *Always allow* the whole tool | 25 §5: "always allow merges in acme/xrp", while `merge_pull_request` on a protected branch stays per call |
-| 8 | **Wake on what a terminal prints.** A regex over a shell's output wakes the agent. The first match goes at once, later ones are debounced (5 s or more), at most 100, and a watch that never matched is reported "silent". Inside a turn, `Await` blocks on a task with a deadline and a regex | `ShellOutputNotificationConfig{pattern, reason, debounce, notification_limit}`; `Await{task_id, block_until_ms, regex}` → `complete\|still_running`, `regex_match` | Watches wake on a task's state only: input needed, finished, failed, stopped (27 §2) | 27 §2, a `pattern` on `watch_session`, matched by the runner on the tmux pane; a bounded wait in §4.2 |
+| 6 | **Plain-language rules and an auto-reviewer.** A model judges each call against *allow* and *always ask* rules: "Always Ask wins, whoever wrote it", and "Built-in safety checks always apply". Its verdict carries `irreversible`, `high_stakes` and the rules it applied, and the activity line says "Auto-approved by your rule". A block proposes a rule, accepted in one click | `SandAutoReviewRulesInEffect`, `GrokBotAutoReviewRuleSave` (records where a rule came from), mode `auto-review` beside `always-allow\|needs-approval\|blocked` | Allow, Ask or Off per tool; plain-language rules are `../design/bots/bots.md` §7, not built | `../design/bots/bots.md` §5, as a fourth choice per tool: **Review** |
+| 7 | **Approvals with a reach.** "Allow covers every {name} request for the rest of this turn… Always allow covers them from now on." A standing grant can be scoped to a subject, such as a recipient or an app. Some actions are per call only and never standing. A machine ceiling caps the person's choice | the scope kinds `global\|setting\|subject\|call`; `NEVER\|ASK\|ALWAYS` ceiling | Approve once or *Always allow* the whole tool | `../design/bots/bots.md` §5: "always allow merges in acme/xrp", while `merge_pull_request` on a protected branch stays per call |
+| 8 | **Wake on what a terminal prints.** A regex over a shell's output wakes the agent. The first match goes at once, later ones are debounced (5 s or more), at most 100, and a watch that never matched is reported "silent". Inside a turn, `Await` blocks on a task with a deadline and a regex | `ShellOutputNotificationConfig{pattern, reason, debounce, notification_limit}`; `Await{task_id, block_until_ms, regex}` → `complete\|still_running`, `regex_match` | Watches wake on a task's state only: input needed, finished, failed, stopped (`../design/bots/bot-subscriptions.md` §2) | `../design/bots/bot-subscriptions.md` §2, a `pattern` on `watch_session`, matched by the runner on the tmux pane; a bounded wait in §4.2 |
 | 9 | **Read only what followed your input.** Writing to stdin returns the output length before the input, so the agent reads only the answer | `terminal_file_length_before_input_written` | `send_to_session` and `answer_session` return nothing to read from | an offset from those two tools that `read_session` takes |
-| 10 | **Goals that keep it going.** A goal re-prompts the agent with a marked continuation turn until it is complete, paused or cleared. Each synthetic message says why it exists, out of 34 reasons | `CreateGoal`/`UpdateGoal`, `goal_continuation_action`, `simulated_msg_reason` (`GOAL_CONTINUATION`, `BACKGROUND_TASK_COMPLETION`, `COMMIT_REMINDER`…) | Event turns from routines and watches (26, 27) | 26, as a bounded routine the bot sets on itself, with the chain limits of 25 §4.6 |
-| 11 | **Memory with a scope and a tier.** A fact is `profile` (always in the prompt) or `log` (recalled), and scoped to the bot or to the user, so all of a person's bots share it. Shared learnings wait in a review queue | `UpdateMemory` scope `user`, tiers; `TeamReview*Change`; facts carry `learned_at_ms` | One table of facts per bot, all in the prompt | 25 §7's "project and user memory" |
-| 12 | **Cards beyond approval.** A turn can stop on a form, a sign-in to an MCP server, or "hand your computer over… instead of guessing", and resume after it, with a named failure for each resume point | `RequestUserForm`, `AuthenticateMcpServer`, `request_box_help`; "Bot failed to resume after …" | `ask_user` and the Needs input card | 25 §3, once there is more than one kind of card to resume from |
-| 13 | **Rooms where a bot may pass.** In a group chat each bot is offered a turn with a deadline and may answer `PASS`, and the chain is bounded by its root | `RequestGrokBotRoomMemberTurn{is_winding_down, deadline_ms}` → `SENT\|PASS\|SKIPPED\|TIMEOUT` | Group chats are 25 §7, not built | 25 §7 group chats, on `BotChainPolicy` |
-| 14 | **CI findings as a record.** For each failing check: root cause, how it relates to the diff, a flake verdict, the action, confidence, and the evidence for each | `RecordCiInvestigationFindings` | Review sessions report in prose | the review session's result (`next-steps/0.2-pull-requests.md`) |
+| 10 | **Goals that keep it going.** A goal re-prompts the agent with a marked continuation turn until it is complete, paused or cleared. Each synthetic message says why it exists, out of 34 reasons | `CreateGoal`/`UpdateGoal`, `goal_continuation_action`, `simulated_msg_reason` (`GOAL_CONTINUATION`, `BACKGROUND_TASK_COMPLETION`, `COMMIT_REMINDER`…) | Event turns from routines and watches (`../design/bots/bot-routines.md`, `../design/bots/bot-subscriptions.md`) | `../design/bots/bot-routines.md`, as a bounded routine the bot sets on itself, with the chain limits of `../design/bots/bots.md` §4.6 |
+| 11 | **Memory with a scope and a tier.** A fact is `profile` (always in the prompt) or `log` (recalled), and scoped to the bot or to the user, so all of a person's bots share it. Shared learnings wait in a review queue | `UpdateMemory` scope `user`, tiers; `TeamReview*Change`; facts carry `learned_at_ms` | One table of facts per bot, all in the prompt | `../design/bots/bots.md` §7's "project and user memory" |
+| 12 | **Cards beyond approval.** A turn can stop on a form, a sign-in to an MCP server, or "hand your computer over… instead of guessing", and resume after it, with a named failure for each resume point | `RequestUserForm`, `AuthenticateMcpServer`, `request_box_help`; "Bot failed to resume after …" | `ask_user` and the Needs input card | `../design/bots/bots.md` §3, once there is more than one kind of card to resume from |
+| 13 | **Rooms where a bot may pass.** In a group chat each bot is offered a turn with a deadline and may answer `PASS`, and the chain is bounded by its root | `RequestGrokBotRoomMemberTurn{is_winding_down, deadline_ms}` → `SENT\|PASS\|SKIPPED\|TIMEOUT` | Group chats are `../design/bots/bots.md` §7, not built | `../design/bots/bots.md` §7 group chats, on `BotChainPolicy` |
+| 14 | **CI findings as a record.** For each failing check: root cause, how it relates to the diff, a flake verdict, the action, confidence, and the evidence for each | `RecordCiInvestigationFindings` | Review sessions report in prose | the review session's result (`design/pull-requests/pull-requests.md`) |
 
 ### What we leave
 
 - **Its coding tools on the bot.** A shell, files and computer use on
-  the bot's own loop are what 25 §2 turned off. Code goes to a session.
+  the bot's own loop are what `../design/bots/bots.md` §2 turned off. Code goes to a session.
 - **A profile mined from 100 past chats.** The evidence bar is good: a
   rule must rest on the person correcting the agent, cited in 4
   conversations. But it writes about the person without asking. If we
@@ -395,7 +395,7 @@ rest is later.
 - **Scrubbing the session's environment.** Grok Bot drops
   `SSH_AUTH_SOCK`, the D-Bus and Wayland sockets for its children. Our
   sessions are the person's own agent on their own host, and git there
-  may need the SSH agent. Revisit with VMs (02, 04).
+  may need the SSH agent. Revisit with VMs (`../archive/targets-and-github-auth.md`, `../archive/security-review.md`).
 - **Cookie sync driven by the agent.** Grok Bot removed it itself
   ("retired: the agent-prompted cookie sync … was removed"), and only a
   manual import in Settings remains. Our cross-host logins research
@@ -417,30 +417,30 @@ Ranked by value for cost:
 Nothing here is decided. A row someone takes is written in the note in
 its last column.
 
-**Landed (2026-10-29):** rows 1 to 5, written in `versions/mvp/25-bots.md`
+**Landed (2026-10-29):** rows 1 to 5, written in `design/bots/bots.md`
 §2 to §4.1, with two pieces of the chat UI that go with them: the live
 line's wait while a provider's refusal is retried, and how long a turn
-worked. Rows 6 and 7 landed the same day in `versions/mvp/25-bots.md` §5:
+worked. Rows 6 and 7 landed the same day in `design/bots/bots.md` §5:
 grants for one thing, merging per call, and rules read by a reviewer that
 fails closed, with Settings → Permissions and the card's reach. Rows 8
-and 9 landed the same day in `versions/mvp/27-bot-subscriptions.md` §2 and
-`versions/mvp/25-bots.md` §4.2. A watch takes a pattern that the runner
+and 9 landed the same day in `design/bots/bot-subscriptions.md` §2 and
+`design/bots/bots.md` §4.2. A watch takes a pattern that the runner
 matches on the host and reports as a count, never the text; a wait inside
 the turn is bounded at 120 seconds; and `read_session` takes `after_seq`,
 which the two tools that type into a session hand back. Row 10 landed the
-same day in `versions/mvp/25-bots.md` §4.1, as a bounded goal the bot sets
+same day in `design/bots/bots.md` §4.1, as a bounded goal the bot sets
 itself rather than a routine. A continuation turn is queued when a turn
 ends with the goal open: at most 5 unless the bot asks for up to 10, never
 renewed by a continuation, and stopped by its owner from the chat. Row 11
-landed the same day in `versions/mvp/25-bots.md` §4.1: a fact is
+landed the same day in `design/bots/bots.md` §4.1: a fact is
 `profile` or `log`, and `bot` or `person`, on the same table. A person's
 fact is read by all their bots and owned by the one that learned it. The
 review queue for shared learnings was left out. Row 12 landed the same day
-in `versions/mvp/25-bots.md` §3.2 as `ask_user`: up to four questions on a
+in `design/bots/bots.md` §3.2 as `ask_user`: up to four questions on a
 card of their own beside approvals, answered with the picker a session's questions use, and
 the answers open the bot's next turn. The sign-in and computer hand-over
 resume points were left out. Row 14 landed the same day in
-`next-steps/0.2-pull-requests.md` ("CI findings") as `record_ci_findings`,
+`design/pull-requests/pull-requests.md` ("CI findings") as `record_ci_findings`,
 a bot's tool rather than the review session's result: a session has no
 channel back yet. Row 13, rooms, is left for group chats.
 
@@ -478,7 +478,7 @@ something saves for it. Ours made it dear: every save went into the prompt
 by default, the tool asked for a `recall` first to avoid duplicates, a full
 memory refused, and nothing outside the tool's description asked for a save.
 
-**Landed (2026-11-06)** in `versions/mvp/25-bots.md` §4.1: `log` by
+**Landed (2026-11-06)** in `design/bots/bots.md` §4.1: `log` by
 default; the system prompt carries the newest profile facts and the turn
 context the newest dated log entries, by characters, so a save does not
 cost the prompt cache; "How a turn goes" asks the bot to save what it

@@ -29,7 +29,7 @@ const HORIZON_HOURS = String(BOT_CHECK_BACK_HORIZON_MS / 3_600_000);
 /**
  * `check_back`: the bot asks to be woken later to look at anything it
  * delegated or waits on, as Claude Code's ScheduleWakeup does
- * (`27-bot-subscriptions.md` §7.3). It does not ask: it only wakes the bot,
+ * (`product/design/bots/bot-subscriptions.md` §7.3). It does not ask: it only wakes the bot,
  * with a turn as narrow as the one that called it, one look a turn, its
  * looks backing off and a chain of them ending after a day
  * (`bot-check-back.policy.ts`). A call in a look's own turn goes on with

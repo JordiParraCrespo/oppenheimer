@@ -229,7 +229,7 @@ async function boot(): Promise<World> {
     { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) } as HostAccessPort,
     owners,
     { forRequest: vi.fn() } as unknown as AbilityPort,
-    // The direct path (22) stays off here: this suite proves the relay's.
+    // The direct path (`product/design/runner/direct-terminal-path.md`) stays off here: this suite proves the relay's.
     { isEnabled: () => false } as unknown as FlagEvaluatorPort,
   );
   const desktops = new DesktopAttachGateway(
@@ -472,7 +472,7 @@ describe('the runner and the relay, end to end', () => {
   }, 30_000);
 
   // A bot's computer use, from the API's port to a real screen and back
-  // (`25-bots.md` §4.2): the host refuses until its own switch is on, then a
+  // (`product/design/bots/bots.md` §4.2): the host refuses until its own switch is on, then a
   // click moves the real pointer and the answer is a picture of that screen.
   // The screen is the virtual one the runner starts where there is none, so
   // it needs xdotool, Xvfb, xauth and ImageMagick's import on this machine.
@@ -513,7 +513,7 @@ describe('the runner and the relay, end to end', () => {
   );
 
   // A bot's browser, from the API's port to a real Chrome on the host and
-  // back (`25-bots.md` §4.2): refused until the host's own switch is on, then
+  // back (`product/design/bots/bots.md` §4.2): refused until the host's own switch is on, then
   // a page read as refs, a click on a ref that changes it, and the browser
   // closed. It needs Chrome or Chromium on this machine.
   it.skipIf(!['google-chrome', 'chromium', 'chromium-browser'].some(onPath))(

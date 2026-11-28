@@ -17,7 +17,7 @@ how do they organise the code behind it?
 
 The note decides nothing. Its observations are not a closed list of
 proposals; the six slices drawn from them are
-[`next-steps/0.7-chat-protocol.md`](../next-steps/0.7-chat-protocol.md).
+[`design/sessions/chat-protocol.md`](../design/sessions/chat-protocol.md).
 
 ## 1. The one fact worth the read
 

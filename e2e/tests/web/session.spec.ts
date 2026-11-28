@@ -173,7 +173,7 @@ test.describe('Session screen', () => {
   }) => {
     // The host never links (a paired row with no runner), so it lists no
     // shells and the launcher offers no Terminal; a bot and another session
-    // need no host of this session's (32-side-pane.md).
+    // need no host of this session's (side-pane.md).
     const owner = await provisionedUser('sessionside');
     const hostId = await pairHost(owner.api, 'Quiet box');
     const installationId = await connectInstallation(owner.api);

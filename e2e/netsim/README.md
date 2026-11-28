@@ -5,7 +5,7 @@ on a link of its own: somewhere in the world, behind fibre, ADSL or 4G. The
 relay stays where the API runs. It exists to answer one question with
 numbers: how a terminal feels to type in from a given place, to a host on a
 given connection, on the relay and on the direct path
-(`product/versions/mvp/22-direct-terminal-path.md`).
+(`product/design/runner/direct-terminal-path.md`).
 
 ## How it works
 

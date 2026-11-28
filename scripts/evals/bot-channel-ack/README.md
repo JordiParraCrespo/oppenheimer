@@ -12,7 +12,7 @@ in the owner's own chat:
   result;
 - the turn's end sends only what came after its last call.
 
-The design is `product/next-steps/answering-on-telegram-and-whatsapp.md` §4.
+The design is `product/design/channels/answering-on-telegram-and-whatsapp.md` §4.
 The unit and integration specs prove the plumbing. This eval proves the
 half only a model can: that a bot, reading its real prompt, writes the
 short line first, answers the mid-work question, and still brings the

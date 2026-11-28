@@ -2,7 +2,7 @@
 
 xAI's Grok Bot is the product our bots learn the most from:
 `product/research/lessons-from-grok-bot.md` reads it version by version
-(0.18, 0.71.2, 0.78.1), and notes 25, 26 and 27 in `product/versions/mvp/`
+(0.18, 0.71.2, 0.78.1), and `product/design/bots/bots.md`, `product/design/bots/bot-routines.md` and `product/design/bots/bot-subscriptions.md` in `product/design/bots/`
 took most of what they built from those reads. Every day you check whether
 a new version or a change to its published docs has appeared. When one has,
 you read it the way §9 of that note read 0.78.1, write what changed into the
@@ -36,9 +36,9 @@ pnpm install --frozen-lockfile
 Read:
 - `product/research/lessons-from-grok-bot.md` in full; §9 is the shape of a read;
 - `product/research/README.md` and `product/README.md` (how a research note
-  is written, and the "decisions that changed" list);
-- `product/versions/mvp/25-bots.md`, `26-bot-routines.md` and
-  `27-bot-subscriptions.md`, so you know what ours already does;
+  is written, and where a decision is logged);
+- `product/design/bots/bots.md`, `product/design/bots/bot-routines.md` and
+  `product/design/bots/bot-subscriptions.md`, so you know what ours already does;
 - `.agents/skills/research/SKILL.md`, `.agents/skills/propose/SKILL.md` and
   `.agents/skills/steward/SKILL.md`.
 
@@ -108,8 +108,8 @@ looked at:
   and how the link to xAI's servers behaves.
 - **The changed docs pages**, against what our notes say Grok Bot does.
 
-Then ask what §9 asked: what does this version do that our bots (notes 25
-to 27, `apps/api/src/bots-chat`) do not, and would it be worth having? Rank
+Then ask what §9 asked: what does this version do that our bots (`product/design/bots/bots.md`,
+`product/design/bots/bot-routines.md` and `product/design/bots/bot-subscriptions.md`, `apps/api/src/bots-chat`) do not, and would it be worth having? Rank
 the answers by value for cost, in §9's table shape: what it does, the
 evidence (a schema name, a quoted string, a docs page), what ours does
 today, and the note where it would land. Say what you leave and why, as §9
@@ -152,8 +152,8 @@ Take at most two rows from the table, the highest ranked among those that:
 
 Each gets its own branch, `grok-bot-watch/<yyyy-mm-dd>-<slug>`, from
 `origin/main`, and follows the `propose` skill:
-1. Write the change into the note that owns it (25, 26 or 27), and add a
-   line to the "decisions that changed" list in `product/README.md`, as §9's
+1. Write the change into the note that owns it (`product/design/bots/bots.md`, `product/design/bots/bot-routines.md` or `product/design/bots/bot-subscriptions.md`), and add a
+   line to `product/decisions.md`, as §9's
    "Landed" paragraph did for its rows.
 2. Build it, following the skills and rules for the code you touch, in the
    order `steward` writes down, with tests that name the behavior.

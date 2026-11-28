@@ -24,7 +24,7 @@ import {
 } from './bot-tool.factory';
 
 /**
- * The host's switches (`25-bots.md` §4.2, "The host's switches"): a bot
+ * The host's switches (`product/design/bots/bots.md` §4.2, "The host's switches"): a bot
  * turns a host's browser, screen or exec policy on or off when the person
  * asks it to, instead of telling them to type `runner browser on`. It is
  * offered only on the person's own turns in their chat (never a contact's,

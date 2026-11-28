@@ -7,7 +7,7 @@
 ---
 
 Lay the ground for a bot answering its owner on WhatsApp
-(`product/next-steps/answering-on-telegram-and-whatsapp.md`, slice 3),
+(`product/design/channels/answering-on-telegram-and-whatsapp.md`, slice 3),
 with Telegram answering exactly as before.
 
 - `@oppenheimer/api`: the `AnswerOnWhatsapp` migration gives a linked

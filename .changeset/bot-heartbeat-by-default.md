@@ -2,7 +2,7 @@
 "@oppenheimer/api": minor
 ---
 
-Bots are proactive by default (`26-bot-routines.md` §6): as soon as a bot
+Bots are proactive by default (`bot-routines.md` §6): as soon as a bot
 has a job (its `INSTRUCTIONS.md` first written, at its creation or later),
 it is given a **Heartbeat** routine that wakes it once an hour, at a minute
 spread by its id, to check in on what it looks after (its plan, sessions,

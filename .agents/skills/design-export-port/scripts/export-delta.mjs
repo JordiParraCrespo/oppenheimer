@@ -9,7 +9,7 @@
  * and the lines the sync commits added to the export's README (its own note
  * on the delta).
  *
- *   node export-delta.mjs [--ref origin/main] [--design product/versions/mvp/design] [--version version1] [--json]
+ *   node export-delta.mjs [--ref origin/main] [--design product/mockups] [--version version1] [--json]
  *
  * Exits 0 and prints "Up to date" when no sync landed since the last port.
  * It writes nothing but the fetch; the branch you are on does not matter. The port's pull request updates
@@ -33,7 +33,7 @@ import { fileURLToPath } from 'node:url';
 import { REPO_ROOT, args } from './lib/browser.mjs';
 
 const a = args({
-  design: { default: 'product/versions/mvp/design' },
+  design: { default: 'product/mockups' },
   version: { default: 'version1' },
   json: { type: 'boolean', default: false },
   ref: { default: 'origin/main' },
@@ -41,13 +41,24 @@ const a = args({
 const git = (...argv) => execFileSync('git', argv, { cwd: REPO_ROOT, encoding: 'utf8', maxBuffer: 64 << 20 }).trim();
 const state = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'last-port.json'), 'utf8'));
 const frames = `${a.design}/${a.version}`;
+// Where the export lived before: the paths a delta across the move must also
+// name, or git sees every frame as added rather than renamed.
+const FORMER_HOMES = ['product/versions/mvp/design'];
+const former = FORMER_HOMES.map((home) => `${home}/${a.version}`);
+const homes = [frames, ...former];
+/** A frame's path inside its version folder, whichever home it was in. */
+function inFrames(path) {
+  const home = homes.find((h) => path.startsWith(`${h}/`));
+  return home ? path.slice(home.length + 1) : path;
+}
 
 // The branch may predate the latest sync; the delta is against the base.
 const [remote, ...branch] = a.ref.split('/');
 if (branch.length) git('fetch', '--quiet', remote, branch.join('/'));
 const SYNC_SUBJECT = /^docs\(design\): sync the .+ export of /;
 
-const commits = git('log', '--format=%H%x09%ad%x09%s', '--date=short', `${state.export}..${a.ref}`, '--', frames)
+// A commit that only moved the frames (renames, no edit) changed none of them.
+const commits = git('log', '--format=%H%x09%ad%x09%s', '--date=short', '-M', '--diff-filter=ACDMT', `${state.export}..${a.ref}`, '--', ...homes)
   .split('\n')
   .filter(Boolean)
   .map((line) => line.split('\t'))
@@ -64,14 +75,15 @@ if (syncs.length === 0) {
 }
 
 const latest = syncs[0];
-const changes = git('diff', '--name-status', '--find-renames', state.export, latest.sha, '--', frames)
+const changes = git('diff', '--name-status', '--find-renames', state.export, latest.sha, '--', ...homes)
   .split('\n')
   .filter(Boolean)
   .map((line) => line.split('\t'));
 
 const delta = { added: [], changed: [], removed: [] };
 for (const [status, path, renamed] of changes) {
-  const file = (renamed ?? path).slice(frames.length + 1);
+  const file = inFrames(renamed ?? path);
+  if (status === 'R100' && inFrames(path) === file) continue;
   if (status.startsWith('A')) delta.added.push(file);
   else if (status.startsWith('D')) delta.removed.push(file);
   else delta.changed.push(file);
@@ -79,8 +91,15 @@ for (const [status, path, renamed] of changes) {
 
 /** Lines added and removed in one frame, and the props it declares at the new commit. */
 function detail(file) {
-  const path = `${frames}/${file}`;
-  const stat = git('diff', '--numstat', state.export, latest.sha, '--', path).split('\t');
+  const path = homes.map((home) => `${home}/${file}`).find((p) => {
+    try {
+      execFileSync('git', ['cat-file', '-e', `${latest.sha}:${p}`], { cwd: REPO_ROOT, stdio: 'ignore' });
+      return true;
+    } catch {
+      return false;
+    }
+  }) ?? `${frames}/${file}`;
+  const stat = git('diff', '--numstat', '-M', state.export, latest.sha, '--', ...homes.map((home) => `${home}/${file}`)).split('\t');
   let props = '';
   if (file.endsWith('.html')) {
     const raw = git('show', `${latest.sha}:${path}`).match(/data-props="([^"]*)"/)?.[1];
@@ -100,7 +119,7 @@ function detail(file) {
 const readmeAdded = syncs
   .toReversed()
   .flatMap((s) =>
-    git('show', '--format=', '--unified=0', s.sha, '--', `${a.design}/README.md`)
+    git('show', '--format=', '--unified=0', s.sha, '--', ...[a.design, ...FORMER_HOMES].map((home) => `${home}/README.md`))
       .split('\n')
       .filter((l) => l.startsWith('+') && !l.startsWith('+++'))
       .map((l) => l.slice(1)),

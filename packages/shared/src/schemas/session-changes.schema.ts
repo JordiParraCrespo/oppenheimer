@@ -5,7 +5,7 @@ import { SESSION_CHANGE_STATUSES, SESSION_CHANGES_SCOPES } from '../protocol/ses
  * A session's changes as the console reads them (`GET /sessions/{id}/changes`):
  * what each of its checkouts changed, read off the host now with git. Nothing
  * is stored: each read asks the host's runner. The Review reads it
- * (`product/versions/mvp/33-session-tabs.md` §5).
+ * (`product/design/console/session-tabs.md` §5).
  */
 
 /** What a read compares with: `base`, since the branch left its base; `uncommitted`, the edits not committed yet. */

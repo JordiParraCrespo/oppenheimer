@@ -4,7 +4,7 @@ Do not replay these. They are how one export was reconciled with one
 starter's leftovers; the next export will differ. Kept so an agent can see
 what a full run looked like and steal a trick, not a target inventory.
 
-- Export: `product/versions/mvp/design/`, Claude Design. System under
+- Export: `product/mockups/`, Claude Design. System under
   `_ds/<id>/` (readme, `tokens/*.css`, `components/*/*.css`), artboards
   under `version1/*.dc.html` with `ds-base.js` overriding the dark ramp
   (true black lifted to `#121213`) and the light sidebar surface. Component
