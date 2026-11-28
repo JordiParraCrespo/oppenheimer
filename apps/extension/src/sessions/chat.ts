@@ -195,7 +195,11 @@ export async function fetchSessionEvents(
     }
     const lastPage = pageCursor ? { url: start.url, cursor: pageCursor, offset: pageOffset } : null;
     return {
-      events: inTimeOrder(events),
+      // In the order the log pages them, as the Claude Code CLI keeps them:
+      // `sent` counts a prefix of that order, so sorting a reread by time
+      // moved an event that came late with an earlier time out of reach.
+      // A resent event is the API's to skip, by its id.
+      events,
       offset: start.offset,
       complete: stoppedAt === null,
       resume: stoppedAt ?? lastPage,
@@ -518,25 +522,6 @@ export function fitLine(line: string): string | null {
   };
   const shorter = JSON.stringify(cut(JSON.parse(line)));
   return byteLength(shorter) <= MAX_LINE_BYTES ? shorter : null;
-}
-
-/**
- * The events oldest first by the time each entry carries, whatever order the
- * route paged them in; the order read is kept between equal times, and for a
- * log whose entries carry none. One event read twice is kept once.
- */
-export function inTimeOrder(events: readonly ChatEvent[]): ChatEvent[] {
-  const seen = new Set<string>();
-  const unique = events.filter((event) => !seen.has(event.id) && seen.add(event.id));
-  const times = unique.map((event) => {
-    const at = (JSON.parse(event.line) as { timestamp?: unknown }).timestamp;
-    return typeof at === 'string' ? Date.parse(at) : Number.NaN;
-  });
-  if (times.some((time) => !Number.isFinite(time))) return unique;
-  return unique
-    .map((event, index) => ({ event, index, time: times[index] }))
-    .sort((a, b) => a.time - b.time || a.index - b.index)
-    .map(({ event }) => event);
 }
 
 function byteLength(text: string): number {

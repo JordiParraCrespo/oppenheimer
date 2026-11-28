@@ -11,7 +11,6 @@ import {
   forwardEvents,
   forwardNewestFirst,
   idPlaceholder,
-  inTimeOrder,
   nextBatch,
   pagesNewestFirst,
   postReply,
@@ -84,12 +83,6 @@ describe('a page of a session’s log', () => {
     expect(eventsPage(null)).toBeNull();
   });
 
-  it('puts events back in time order, once each, whatever order a route paged them in', () => {
-    const late = { id: 'b', line: JSON.stringify(entry('b', 'second', '2026-11-27T10:00:02Z')) };
-    const early = { id: 'a', line: JSON.stringify(entry('a', 'first', '2026-11-27T10:00:01Z')) };
-    expect(inTimeOrder([late, early, late]).map((event) => event.id)).toEqual(['a', 'b']);
-  });
-
   it('cuts a tool output too large for the API instead of losing the line', () => {
     const big = JSON.stringify({ type: 'user', uuid: 'u', output: 'x'.repeat(200_000) });
     const cut = fitLine(big);
@@ -132,6 +125,26 @@ describe('reading a session’s log from claude.ai', () => {
     expect(eventsUrls(ID, `https://claude.ai/learned/${idPlaceholder(ID)}/events`)[0]).toBe(
       `https://claude.ai/learned/${ID}/events`,
     );
+  });
+
+  it('keeps the log’s own order, so an event that comes late with an earlier time is still sent', async () => {
+    // Regression: a reread sorted by time put a late `c@10:00:02` before
+    // `b@10:00:03`, so skipping the two already sent skipped `c` for good.
+    const log = [
+      { payload: entry('a', 'first', '2026-11-27T10:00:00Z') },
+      { payload: entry('b', 'second', '2026-11-27T10:00:03Z') },
+    ];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ data: log })),
+    );
+    expect((await fetchSessionEvents(ID, {}, null))?.events.map((event) => event.id)).toEqual([
+      'a',
+      'b',
+    ]);
+    log.push({ payload: entry('c', 'third', '2026-11-27T10:00:02Z') });
+    const reread = await fetchSessionEvents(ID, {}, null);
+    expect(reread?.events.slice(2).map((event) => event.id)).toEqual(['c']);
   });
 
   it('stops a long log at the page cap and carries on from there, never from its start again', async () => {
