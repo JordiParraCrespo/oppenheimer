@@ -199,7 +199,7 @@ export default function Page() {
         id="radius"
         title="Radii"
         meta="rounded-xs · sm · md · lg · xl · pill"
-        desc="Six radii and no others. The rule reads: type into a 10, press a pill, read inside an 18. If a value is not in this list, it is wrong."
+        desc="Six radii and no others. The rule reads: type into a 10, press a pill, read inside a 12. If a value is not in this list, it is wrong."
       >
         <Radii />
       </Spec>

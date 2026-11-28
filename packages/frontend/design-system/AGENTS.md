@@ -50,8 +50,8 @@ the `version1/` artboards for what the screens actually do. Its one sentence:
   and the settings nav) is one radius, `--radius-nav` (`rounded-nav`, the
   6): its rows, group heads, search and row actions, whatever their
   height, so the column reads as one list. A surface there takes
-  `rounded-nav`, never a rung by name. A menu item stays 10, concentric
-  with its 14 popover.
+  `rounded-nav`, never a rung by name. A menu item stays 10, the same
+  `--radius-md` (10) as its popover.
 - **Surfaces never cast shadows.** Depth is tonal. Only popovers, modals and
   glass carry one.
 - **Motion** is 80 / 140 / 220 / 400ms, eased, never bouncy; a 4px rise plus
