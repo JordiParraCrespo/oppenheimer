@@ -12,12 +12,12 @@ They are the source of truth for what Plan *is*; these notes decide how
 the control plane and the console make it true. The product word is
 **Plan** for the section, **task** and **goal** for the things in it.
 
-| # | Note | What it settles |
-|---|------|-----------------|
-| 18 | [The product](plan-product.md) | What the frames say Plan is, screen by screen, and the gaps they leave |
-| 19 | [Tasks and goals: the backend](plan-tasks-and-goals.md) | The `tasks` module: tables, ordering, the API, starting a session from a task, links, and what the sessions module must add |
-| 20 | [The calendar](plan-calendar.md) | The month view composed from four reads; Google read through a port, uncached on the server; personal events in one table |
-| 23 | [Second cut](plan-milestones-stats-accounts.md) | The 2026-10-13 frame: milestones, needs input, Stats, several Google accounts (proposed) |
+| Note | What it settles |
+|------|-----------------|
+| [The product](plan-product.md) | What the frames say Plan is, screen by screen, and the gaps they leave |
+| [Tasks and goals: the backend](plan-tasks-and-goals.md) | The `tasks` module: tables, ordering, the API, starting a session from a task, links, and what the sessions module must add |
+| [The calendar](plan-calendar.md) | The month view composed from four reads; Google read through a port, uncached on the server; personal events in one table |
+| [Second cut](plan-milestones-stats-accounts.md) | The 2026-10-13 frame: milestones, needs input, Stats, several Google accounts (proposed) |
 
 ## Slices
 

@@ -1629,7 +1629,7 @@ export const attachmentClosedSchema = z.object({
 
 export type AttachmentClosedMessage = z.infer<typeof attachmentClosedSchema>;
 
-/* ------------------------------------------------------------------ the direct path (22) */
+/* ------------------------------------------------------------------ the direct path (`product/design/runner/direct-terminal-path.md`) */
 
 /**
  * An SDP blob, offer or answer, with every ICE candidate in it (no trickle).

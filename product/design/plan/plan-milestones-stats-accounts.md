@@ -1,7 +1,7 @@
 # Plan, second cut: milestones, stats and Google accounts
 
 The 2026-10-13 export redrew `../../mockups/version1/Tasks.dc.html`. Plan's
-first version (17–20) is built; this note reads the new frame against
+first version (`plan.md`, `plan-product.md`, `plan-tasks-and-goals.md` and `plan-calendar.md`) is built; this note reads the new frame against
 it and plans the backend and the architecture for what changed in
 **tasks, milestones and the calendar**. The Projects section's agents
 (the project agents, the project manager chat, their models, effort,

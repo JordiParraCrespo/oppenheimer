@@ -32,7 +32,7 @@ email already quotes.
 |---|---|---|---|
 | Terminal bytes (PTY output, keystrokes) | relay until the channel is up, then direct (`direct-terminal-path.md`) | yes, and now proved (below) | **built** |
 | Resize and credit | attach socket | could ride the channel's text messages; they are metadata, not content | later, low value |
-| A share's viewers (`../sessions/session-share-links.md`) | always the relay | yes, for named people, up to the host's cap (22 step 3) | next |
+| A share's viewers (`../sessions/session-share-links.md`) | always the relay | yes, for named people, up to the host's cap (`direct-terminal-path.md` step 3) | next |
 | Agent transcript for the chat view (`attachment.chat`) | relay | yes, a second message kind on the channel | after |
 | Pasted images and files | parked on the control plane, pulled by the runner over HTTPS (`../foundations/protocol.md`) | yes, over the channel when one is open; the control plane path stays for a pane on the relay | after |
 | Session previews' ports (`../sessions/session-previews.md`) | relay through the link | yes, a data channel per port | after |
@@ -169,7 +169,7 @@ a new party.
    changed" state rather than a silent relay; the key's fingerprint beside the
    host in its settings; a way to forget a pin after a deliberate re-key. A
    change to what the console shows, so it goes with screenshots.
-2. **Share links direct for named people** (22 step 3), now that the host
+2. **Share links direct for named people** (`direct-terminal-path.md` step 3), now that the host
    proves itself to whoever opens the channel. `anyone` audiences stay on the
    relay.
 3. **End to end on the relay path too.** The same proof, carried over the
@@ -178,7 +178,7 @@ a new party.
    (ChaCha20-Poly1305) for PTY bytes. The relay then carries ciphertext, and a
    fallback no longer hands the terminal back to the control plane. Nothing on
    the control plane reads PTY bytes (`direct-terminal-path.md`), so nothing is lost. The cost is a
-   frame header for the nonce and the end of the relay's fan-out (22 step 4)
+   frame header for the nonce and the end of the relay's fan-out (`direct-terminal-path.md` step 4)
    as a plain byte copy.
 4. **More over the channel**: the chat transcript, pasted files, previews'
    ports and the device screen, each a message kind or a channel of its own

@@ -312,7 +312,7 @@ the observability of v0.2.
 
 ## What this changes elsewhere
 
-- 01: `session.stop` may carry `snapshotUploadUrl`; `session.create`
+- `../design/foundations/protocol.md`: `session.stop` may carry `snapshotUploadUrl`; `session.create`
   and `session.restart` may carry `snapshotDownloadUrl`; `session.stopped`
   carries the snapshot's key and size. Host facts gain `vmSlots`.
 - `../design/runner/runner.md` §14: VMs run in their own transient scope and are adopted on boot;
@@ -320,7 +320,7 @@ the observability of v0.2.
 - `../design/foundations/control-plane.md` §Cloud hosts: placement and the machine jobs are this document's;
   `POST /sessions` with `cloudAccountId` runs the ladder. `machine`
   rows fold `machine.*` events like sessions fold theirs.
-- 10: `cloud_account.maxHosts`; `work_session.machineId` null while a
+- `../design/foundations/api-modules-and-data-model.md`: `cloud_account.maxHosts`; `work_session.machineId` null while a
   session waits for a host; `QUEUE_NAMES.MACHINES`.
 - `@oppenheimer/backend-storage` gains a use: the transcript snapshots,
   keyed by session.

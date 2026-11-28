@@ -229,7 +229,7 @@ async function boot(): Promise<World> {
     { assertUsable: vi.fn().mockResolvedValue({ probedTools: null }) } as HostAccessPort,
     owners,
     { forRequest: vi.fn() } as unknown as AbilityPort,
-    // The direct path (22) stays off here: this suite proves the relay's.
+    // The direct path (`product/design/runner/direct-terminal-path.md`) stays off here: this suite proves the relay's.
     { isEnabled: () => false } as unknown as FlagEvaluatorPort,
   );
   const desktops = new DesktopAttachGateway(

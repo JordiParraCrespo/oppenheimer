@@ -122,7 +122,7 @@ schemas in `packages/shared/src/schemas/task.schema.ts` and
 | Method and path | Use |
 |-----------------|-----|
 | `GET /tasks?projectId&goalId&status&dueFrom&dueTo&sessionId` | The board (all statuses, ordered), the calendar's due layer, the session header's lookup |
-| `GET /tasks/summary` | Raw counts per project and status, for the header, sidebar and rail (not built: the counts come from `GET /tasks`; 17 "As built") |
+| `GET /tasks/summary` | Raw counts per project and status, for the header, sidebar and rail (not built: the counts come from `GET /tasks`; `plan.md` "As built") |
 | `POST /tasks` | Create (title, notes, status, projectId, goalId, dueDate, dueTime) |
 | `PATCH /tasks/:id` | Edit fields |
 | `POST /tasks/:id/move` | `{ status, afterId?, beforeId? }` or `{ status, position: 'first' \| 'last' }` |
