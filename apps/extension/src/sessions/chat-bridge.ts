@@ -230,12 +230,12 @@ export function createChatBridge({
   }
 
   /** Writes one session's place, leaving the others' as the other loop left them. */
-  function keep(sessionId: string, sync: ChatSync) {
+  function keep(sessionId: string, sync: ChatSync, under: OppenheimerConnection) {
     return serial(async () => {
       const { chatSync, sessions, oppenheimer } = await readState();
-      // Disconnected meanwhile: the place was the old connection's, and
-      // kept now it would skip those events on the next one.
-      if (!oppenheimer) return;
+      // Disconnected meanwhile, or connected elsewhere: the place was the
+      // old connection's, and kept now it would skip those events on the next.
+      if (oppenheimer?.apiUrl !== under.apiUrl || oppenheimer?.token !== under.token) return;
       const kept = Object.fromEntries(
         Object.entries({ ...chatSync, [sessionId]: sync }).filter(([id]) => id in sessions),
       );
@@ -254,7 +254,9 @@ export function createChatBridge({
     try {
       const state = await readState();
       const session = state.sessions[sessionId];
-      if (!state.oppenheimer || !session) return null;
+      const connection = state.oppenheimer;
+      if (!connection || !session) return null;
+      const keepHere = (sync: ChatSync) => keep(sessionId, sync, connection);
       // A sync kept under older copy rules reads the log again from its first page.
       const known = current(state.chatSync?.[sessionId]);
       try {
@@ -267,7 +269,7 @@ export function createChatBridge({
         if (!read) {
           // A place to carry on from that no longer answers is dropped: the
           // next read starts from the first page.
-          await keep(sessionId, {
+          await keepHere({
             sent: known?.sent ?? 0,
             at: known?.at ?? '',
             readAt: now(),
@@ -280,16 +282,16 @@ export function createChatBridge({
         // a log too long for one read goes oldest stretch first.
         const sent = known
           ? await forwardEvents(
-              state.oppenheimer,
+              connection,
               session,
               read.events,
               Math.max(0, known.sent - read.offset),
               read.offset,
             )
           : read.offset === 0 && read.complete
-            ? await forwardNewestFirst(state.oppenheimer, session, read.events)
-            : await forwardEvents(state.oppenheimer, session, read.events, 0, read.offset);
-        await keep(sessionId, {
+            ? await forwardNewestFirst(connection, session, read.events)
+            : await forwardEvents(connection, session, read.events, 0, read.offset);
+        await keepHere({
           copy: CHAT_COPY_VERSION,
           sent: read.offset + sent,
           // Up to date only once read to the end; a read cut short is due again.
@@ -299,7 +301,7 @@ export function createChatBridge({
         });
         return null;
       } catch (error) {
-        await keep(sessionId, {
+        await keepHere({
           ...known,
           sent: known?.sent ?? 0,
           at: known?.at ?? '',
@@ -328,7 +330,9 @@ export function createChatBridge({
     // is said, and the others in the pass still go.
     for (const session of due.slice(0, SESSIONS_PER_PASS)) {
       if (Date.now() - clock > PASS_BUDGET_MS) break;
-      problem ??= await syncOne(session.id);
+      // Read before `??=`, which would skip the call once one has failed.
+      const failed = await syncOne(session.id);
+      problem ??= failed;
     }
     return problem;
   }

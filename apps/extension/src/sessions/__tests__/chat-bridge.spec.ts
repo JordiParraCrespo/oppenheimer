@@ -234,4 +234,95 @@ describe('a pass over the sessions that are moving', () => {
     // workspace, would believe this session's events already went there.
     expect(data.chatSync).toBeUndefined();
   });
+
+  it('carries the other sessions when one session’s log cannot be read', async () => {
+    const recent = new Date().toISOString();
+    const data = fakeStorage({
+      oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_x' },
+      sessions: {
+        [FIRST]: {
+          id: FIRST,
+          title: 'First',
+          state: 'done',
+          reason: null,
+          repo: null,
+          updatedAt: recent,
+        },
+        [SECOND]: {
+          id: SECOND,
+          title: 'Second',
+          state: 'done',
+          reason: null,
+          repo: null,
+          updatedAt: recent,
+        },
+      },
+    });
+    const event = { payload: { type: 'user', uuid: 'b', message: { content: 'b' } } };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string) => {
+        const url = String(input);
+        if (
+          url.includes('claude.ai') &&
+          (url.includes(FIRST) || url.includes(FIRST.replace('session_', 'cse_')))
+        )
+          throw new TypeError('Failed to fetch');
+        if (url.includes('claude.ai')) return json({ data: [event] });
+        return json({ accepted: 1 });
+      }),
+    );
+    const bridge = createChatBridge({
+      claudeHeaders: async () => ({}),
+      serial: (task) => task(),
+      postToClaude: async () => ({ status: 500 }),
+    });
+    expect(await bridge.syncPass()).toContain(FIRST);
+    // Breaks if the first failure ends the pass: one session claude.ai will
+    // not give, read first on every pass, would stop every other chat.
+    expect((data.chatSync as Record<string, { sent: number }>)[SECOND]?.sent).toBe(1);
+  });
+
+  it('keeps no place for a log read before a reconnect to another workspace', async () => {
+    const recent = new Date().toISOString();
+    const data = fakeStorage({
+      oppenheimer: { apiUrl: 'http://old:3001', token: 'oppenheimer_pat_old' },
+      sessions: {
+        [FIRST]: {
+          id: FIRST,
+          title: 'First',
+          state: 'done',
+          reason: null,
+          repo: null,
+          updatedAt: recent,
+        },
+      },
+    });
+    const event = { payload: { type: 'user', uuid: 'a', message: { content: 'a' } } };
+    const read: { answer?: (response: Response) => void } = {};
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string) =>
+        String(input).includes('claude.ai')
+          ? new Promise<Response>((resolve) => {
+              read.answer = resolve;
+            })
+          : json({ accepted: 1 }),
+      ),
+    );
+    const bridge = createChatBridge({
+      claudeHeaders: async () => ({}),
+      serial: (task) => task(),
+      postToClaude: async () => ({ status: 500 }),
+    });
+    const pass = bridge.syncPass();
+    await vi.waitFor(() => expect(read.answer).toBeDefined());
+    data.oppenheimer = { apiUrl: 'http://new:3001', token: 'oppenheimer_pat_new' };
+    delete data.chatSync;
+    read.answer?.(json({ data: [event] }));
+    await pass;
+    // Breaks if the old connection's place lands in the new one: the new
+    // workspace would never be sent those events.
+    expect(data.chatSync).toBeUndefined();
+  });
 });
