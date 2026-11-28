@@ -25,6 +25,18 @@ at, what was wrong on them, and what is still open.
 
 ## Fixed in a later layer
 
+- **A** (P1), on `claude/dazzling-darwin-pbdhdk-github-claim`: a GitHub
+  installation could be claimed by anyone with read access to one of its
+  repositories, since the claim only checked that `GET /user/installations`
+  listed it. The claim now also needs the authorizing account to be the
+  installation's personal account, or an active `admin` of its organization
+  (`GET /user/memberships/orgs/{org}`, refused on 403 or 404); every path that
+  lands a claim goes through it (`github/application/installation-claim.resolver.ts`).
+  Shown by handler and adapter tests that fail on the old code. The
+  organization check needs the App's **Members: read** organization
+  permission; without it every organization connect answers `GITHUB_004`,
+  which the GitHub guide page and `.env.example` now say.
+
 - **B and F**, on branch `claude/dazzling-darwin-pbdhdk-memberships`. Better
   Auth's organization writes (`/api/auth/organization/*`: create, update,
   delete, remove-member, update-member-role, leave, invite-member,
@@ -50,7 +62,6 @@ at, what was wrong on them, and what is still open.
 
 | # | Severity | What | Proposed fix |
 |---|----------|------|--------------|
-| A | P1 | **A GitHub installation can be claimed by anyone with read access to one of its repositories.** The claim only checks that GitHub lists the installation for the authorizing person (`GET /user/installations`), which GitHub does for any collaborator. The attacker's workspace then mints write tokens for every repository the installation covers, receives its webhooks, and the real owner's connect fails with "already connected" (`github/commands/connect-installation/connect-installation.command-handler.ts`) | Require that the authorizing person is the installation's account (a personal one) or an active admin of its organization (`GET /user/memberships/orgs/{org}`). The organization check needs the GitHub App's **Members: read** organization permission, which only the App's owner can grant; without it every organization connect would be refused |
 | C | P1 | **Pre-account squatting.** Sign-up does not need a verified email, and API tokens and OAuth grants survive a password reset. Someone registers `victim@corp.com` first, mints a token, and keeps it after the real owner recovers the account with "Forgot password" and pairs hosts | Require a verified email before minting a token or approving an OAuth grant, and revoke both on password reset |
 | D | P1 off Cloudflare | **Better Auth's sign-in rate limit trusts `X-Forwarded-For` as sent.** A deployment not behind Cloudflare gets unlimited password guesses by sending a new header each time; behind Cloudflare, one shared bucket can be held full | Set `advanced.ipAddress` to the same proxy depth as `TRUST_PROXY`, or have nginx overwrite the header |
 | E | P2 | A GitHub-triggered routine fires on events from **anyone** on a public repository (an issue, a comment), so a stranger can launch an agent session on the owner's host with text they wrote (wrapped as untrusted) | An "insiders only" filter on triggers, on by default for public repositories |

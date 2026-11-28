@@ -75,7 +75,7 @@
     "GITHUB_001": "No hemos encontrado esa instalación de GitHub.",
     "GITHUB_002": "GitHub no está configurado en este servidor.",
     "GITHUB_003": "Otro espacio de trabajo ya ha conectado esa instalación de GitHub.",
-    "GITHUB_004": "GitHub no muestra esa instalación para tu cuenta.",
+    "GITHUB_004": "Solo la cuenta en la que está una instalación, o un propietario de su organización, puede conectarla aquí, y GitHub tiene que mostrártela. Si eres propietario, puede que a la GitHub App le falte el permiso Members: read.",
     "GITHUB_005": "Ese enlace de GitHub ha caducado. Vuelve a empezar la instalación.",
     "GITHUB_006": "Elige un espacio de trabajo antes de conectar GitHub.",
     "GITHUB_007": "No hemos podido verificar ese webhook de GitHub.",

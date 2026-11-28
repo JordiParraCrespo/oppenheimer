@@ -8341,7 +8341,7 @@ export type ConnectInstallationErrors = {
      */
     401: ProblemDetailsDto;
     /**
-     * GITHUB_004 — GitHub does not list that installation for the authorizing account
+     * GITHUB_004 — The authorizing account is not the installation’s account or an owner of its organization, or GitHub does not list the installation for it
      */
     403: ProblemDetailsDto;
     /**

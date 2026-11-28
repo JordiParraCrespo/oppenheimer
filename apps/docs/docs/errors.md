@@ -354,7 +354,7 @@ session asks.
 | `GITHUB_001` <a id="github_001" /> | GitHub installation not found                                  | 404  |
 | `GITHUB_002` <a id="github_002" /> | The GitHub App is not configured on this server                | 503  |
 | `GITHUB_003` <a id="github_003" /> | That GitHub installation is already connected to another workspace | 409 |
-| `GITHUB_004` <a id="github_004" /> | GitHub does not list that installation for your account         | 403  |
+| `GITHUB_004` <a id="github_004" /> | That installation is not yours to connect                       | 403  |
 | `GITHUB_005` <a id="github_005" /> | GitHub rejected the authorization code                         | 400  |
 | `GITHUB_006` <a id="github_006" /> | GitHub installations are connected inside an organization      | 400  |
 | `GITHUB_007` <a id="github_007" /> | Invalid GitHub webhook signature                               | 400  |
@@ -388,6 +388,18 @@ exchanges the OAuth code GitHub attaches to the install redirect and asks GitHub
 which installations the authorizing account can see. Matching the installation's
 account login against a linked GitHub account instead would refuse every
 organization installation, where that login is the organization and not a user.
+
+Seeing an installation is not enough, because GitHub lists one for anyone with
+explicit access to a single repository it covers: an outside collaborator could
+otherwise connect an organization's whole installation to their own workspace.
+So `GITHUB_004` is also the answer, with a `detail` saying which, when the
+authorizing account does not control the installation's account: a personal
+installation connects only for that same GitHub account, and an organization's
+only for an active owner of it (`GET /user/memberships/orgs/{org}`, role
+`admin`). That read needs the App's **Members: read** organization permission;
+an App registered without it, or an installation whose owner has not accepted
+it, refuses every organization connect with a `detail` naming the permission,
+while personal installations still connect.
 
 `GITHUB_011` is the other half of that proof. The code binds a claim to *a*
 GitHub account, not to the console user whose browser posts it, so a callback
