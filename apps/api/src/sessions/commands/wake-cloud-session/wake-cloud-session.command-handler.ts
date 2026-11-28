@@ -80,13 +80,9 @@ export class WakeCloudSessionCommandHandler
     }
 
     const reply = await this.chat.claimReplyForHost(sessionId, replyId);
-    if (!reply) {
-      // The browser extension holds it, unconfirmed: this wake comes again
-      // when that claim lapses, so a post that never happens leaves the reply
-      // to a host rather than to nothing.
-      const at = await this.chat.deferWakeWhileLeased(sessionId, replyId);
-      return at ? 'deferred' : 'taken';
-    }
+    // Held by the extension, unconfirmed: this wake comes again when that claim lapses.
+    if (!reply)
+      return (await this.chat.deferWakeWhileLeased(sessionId, replyId)) ? 'deferred' : 'taken';
     const outcome = await this.replies.send(
       hostIds,
       cloudSessionId,
