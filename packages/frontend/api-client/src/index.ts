@@ -211,6 +211,7 @@ export type {
   MintedPairingTokenResponseDto,
   MintPairingTokenRequest,
   ModelProviderCredentialResponseDto,
+  ModelProviderKeyResponseDto,
   MoveSessionRequest,
   MoveTaskRequest,
   MyPermissionsResponseDto,

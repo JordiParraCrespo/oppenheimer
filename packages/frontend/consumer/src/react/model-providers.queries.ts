@@ -61,6 +61,31 @@ export const usePutModelProviderKey = mutation<void, ModelProviderKeyVariables>(
   update: (queryClient) => invalidateModelProviders(queryClient),
 });
 
+/** Stores another key for a provider, after the ones there. */
+export const useAddModelProviderKey = mutation<void, ModelProviderKeyVariables>({
+  run: (app, { provider, apiKey }) => app.bots.addModelProviderKey(provider, apiKey),
+  update: (queryClient) => invalidateModelProviders(queryClient),
+});
+
+/** Replaces one of a provider's keys, by id, in its place. */
+export const useReplaceModelProviderKey = mutation<
+  void,
+  ModelProviderKeyVariables & { keyId: string }
+>({
+  run: (app, { provider, keyId, apiKey }) =>
+    app.bots.replaceModelProviderKey(provider, keyId, apiKey),
+  update: (queryClient) => invalidateModelProviders(queryClient),
+});
+
+/** Forgets one of a provider's keys, by id; the provider keeps the others. */
+export const useRemoveModelProviderKeyById = mutation<
+  void,
+  { provider: ModelProvider; keyId: string }
+>({
+  run: (app, { provider, keyId }) => app.bots.removeModelProviderKeyById(provider, keyId),
+  update: (queryClient) => invalidateModelProviders(queryClient),
+});
+
 /** Makes a provider, one with a key, the one new bots start on. */
 export const useSetDefaultModelProvider = mutation<void, BotProvider>({
   run: (app, provider) => app.bots.setDefaultModelProvider(provider),

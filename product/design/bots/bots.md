@@ -321,10 +321,26 @@ worker runs it and streams what happens back to the chat.
 - **No path of the server reaches the chat.** The engine replaces the
   turn's scratch directory in every text, tool answer and error it hands
   back.
-- **Keys stay in Oppenheimer.** A workspace stores one key per provider,
-  encrypted (Settings → Model providers). The worker reads it for the
-  turn and hands it to the engine; it is never written to a host, never
-  returned by the API, and never logged.
+- **Keys stay in Oppenheimer.** A workspace stores its keys for a
+  provider encrypted (Settings → Model providers). The worker reads one
+  for the turn and hands it to the engine; it is never written to a host,
+  never returned by the API, and never logged.
+- **A provider can hold several keys, and a spent one hands over**
+  (2026-11-28). A key provider takes up to ten keys, in the order they were
+  added (Add key). A call runs on the first that is not marked out of
+  credit. When the provider refuses a turn because the account behind its
+  key is spent (`usage_limit`: Anthropic's billing error, OpenAI's
+  `insufficient_quota`, a `402`), the key is marked (`spentAt`) and, if the
+  turn has written nothing and taken no steer yet, it runs again from the
+  start on the next key, read afresh so its reviewers and subagents move
+  with it; the chat never sees the refusal. A refusal after the turn wrote
+  something ends it as before, and the next turn starts on the next key. A
+  spent key is tried again only once every key is spent, the one spent
+  longest ago first, and its mark goes when a turn on it completes, or when
+  it is replaced. A rate limit does not hand over: it is the provider
+  saying "not now", and keys of one account share it. The other calls on
+  the key (summaries, reviews, voice) take the first key not marked, and
+  learn of a spent one from the turns. ChatGPT's sign-in stays one.
 - **ChatGPT runs on a subscription, not a key** (2026-10-15). Connect
   ChatGPT signs the workspace in the way the Codex CLI and OpenClaw do:
   OpenAI's device code flow on the Codex CLI's public client (the

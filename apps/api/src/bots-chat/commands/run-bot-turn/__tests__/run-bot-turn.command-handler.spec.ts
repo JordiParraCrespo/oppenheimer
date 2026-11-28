@@ -7,6 +7,7 @@ import {
 import { AppError } from '@oppenheimer/backend-core';
 import { type ErrorReportContext, ErrorReporter } from '@oppenheimer/backend-error-reporting';
 import { None, Some } from 'oxide.ts';
+import type { TurnCredentialsPort } from '../../../../bots/application/turn-credentials.port';
 import { BotErrors } from '../../../../bots/domain/bots.errors';
 import { BotChannelAsItGoesFactory } from '../../../application/bot-channel-as-it-goes.factory';
 import type { BotChannelReplyResolver } from '../../../application/bot-channel-reply.resolver';
@@ -15,6 +16,7 @@ import { BotSteeringFactory } from '../../../application/bot-steering.factory';
 import type { BotSummaryTriggerPolicy } from '../../../application/bot-summary-trigger.policy';
 import type { BotTurnContextResolver } from '../../../application/bot-turn-context.resolver';
 import { BotTurnFailureReportPolicy } from '../../../application/bot-turn-failure-report.policy';
+import { BotTurnKeyFailoverResolver } from '../../../application/bot-turn-key-failover.resolver';
 import { TurnCancelWatchFactory } from '../../../application/turn-cancel-watch.factory';
 import { TurnWriteFactory } from '../../../application/turn-write.factory';
 import { BotMessageMapper } from '../../../bot-message.mapper';
@@ -81,8 +83,21 @@ function setup(
     nothingToSay?: boolean;
     /** Whether the turn may take what the person sends meanwhile; it may unless said. */
     takesSteers?: boolean;
+    /** The provider's keys, in the order a turn tries them; one unless said. */
+    keys?: string[];
   } = {},
 ) {
+  const keys = options.keys ?? ['key'];
+  let current = 0;
+  const credentialOf = (index: number) => ({ apiKey: keys[index], keyId: `id-${keys[index]}` });
+  const credentials = {
+    spent: vi.fn(async () => {
+      if (current + 1 >= keys.length) return null;
+      current += 1;
+      return credentialOf(current);
+    }),
+    worked: vi.fn(async () => undefined),
+  } satisfies Pick<TurnCredentialsPort, 'spent' | 'worked'>;
   const waiting = [...(options.steers ?? [])];
   const turns = {
     findForRun: vi.fn(async () => (turn ? Some(turn) : None)),
@@ -129,7 +144,7 @@ function setup(
       return {
         request: {
           provider: 'glm' as const,
-          apiKey: 'key',
+          apiKey: keys[current],
           model: 'glm-5.3',
           effort: null,
           systemPrompt: 'You are a bot.',
@@ -138,6 +153,7 @@ function setup(
           tools: [],
         },
         takesSteers: options.takesSteers ?? true,
+        credential: credentialOf(current),
       };
     }),
   };
@@ -149,23 +165,91 @@ function setup(
   const handler = new RunBotTurnCommandHandler(
     turns as unknown as BotTurnRepositoryPort,
     stream,
-    new FakeBotEngine(script),
     context as unknown as BotTurnContextResolver,
     new TurnCancelWatchFactory(turns as unknown as BotTurnRepositoryPort),
     summaries as unknown as BotSummaryTriggerPolicy,
     { afterTurn: vi.fn(async () => false) } as unknown as BotDreamTriggerPolicy,
-    new BotSteeringFactory(turns as unknown as BotTurnRepositoryPort, new BotMessageMapper()),
+    new BotTurnKeyFailoverResolver(
+      new FakeBotEngine(script),
+      credentials as unknown as TurnCredentialsPort,
+      context as unknown as BotTurnContextResolver,
+      new BotSteeringFactory(turns as unknown as BotTurnRepositoryPort, new BotMessageMapper()),
+    ),
     new TurnWriteFactory(messages as unknown as BotMessageRepositoryPort, stream),
     new BotTurnFailureReportPolicy(reporter),
     new BotChannelAsItGoesFactory({} as BotChannelReplyResolver),
   );
-  return { handler, turns, messages, stream, summaries, heard, context, reporter };
+  return { handler, turns, messages, stream, summaries, heard, context, reporter, credentials };
 }
 
 const run = (handler: RunBotTurnCommandHandler, turnId: string) =>
   handler.execute(new RunBotTurnCommand({ turnId }));
 
+const outOfCredit = {
+  type: 'done' as const,
+  reason: 'failed' as const,
+  error: 'Your credit balance is too low',
+  failure: 'usage_limit' as const,
+};
+
 describe('RunBotTurnCommandHandler', () => {
+  // What breaks this: a workspace with a second key still sees "out of credit" and no answer.
+  it('runs the turn again on the next key when the first is out of credit, saying nothing of it', async () => {
+    const turn = queued();
+    const { handler, messages, credentials, context } = setup(
+      turn,
+      (request) =>
+        request.apiKey === 'spent'
+          ? [outOfCredit]
+          : [
+              { type: 'text.done', text: 'Hello' },
+              { type: 'done', reason: 'completed' },
+            ],
+      { keys: ['spent', 'fresh'] },
+    );
+    await run(handler, turn.id);
+    expect(credentials.spent).toHaveBeenCalledWith(
+      turn.organizationId,
+      'glm',
+      { apiKey: 'spent', keyId: 'id-spent' },
+      expect.any(Date),
+    );
+    // Read afresh, so the turn's reviewers and subagents run on the new key too.
+    expect(context.resolve).toHaveBeenCalledTimes(2);
+    expect(messages.insert).toHaveBeenCalledTimes(1);
+    expect(messages.insert).toHaveBeenCalledWith(expect.objectContaining({ content: 'Hello' }));
+    expect(turn).toMatchObject({ status: 'completed' });
+    expect(credentials.worked).toHaveBeenCalledWith(turn.organizationId, 'glm', {
+      apiKey: 'fresh',
+      keyId: 'id-fresh',
+    });
+  });
+
+  it('fails as before when every key is out of credit', async () => {
+    const turn = queued();
+    const { handler, credentials } = setup(turn, () => [outOfCredit], {
+      keys: ['spent', 'also-spent'],
+    });
+    await run(handler, turn.id);
+    expect(credentials.spent).toHaveBeenCalledTimes(2);
+    expect(turn).toMatchObject({ status: 'failed', failure: 'usage_limit' });
+    expect(credentials.worked).not.toHaveBeenCalled();
+  });
+
+  // What breaks this: a reply already on screen is said a second time from the start on the next key.
+  it('ends the turn on a refusal after it wrote something, the key still marked for the next turn', async () => {
+    const turn = queued();
+    const { handler, context, credentials } = setup(
+      turn,
+      () => [{ type: 'text.done', text: 'Looking' }, outOfCredit],
+      { keys: ['spent', 'fresh'] },
+    );
+    await run(handler, turn.id);
+    expect(credentials.spent).toHaveBeenCalledTimes(1);
+    expect(context.resolve).toHaveBeenCalledTimes(1);
+    expect(turn).toMatchObject({ status: 'failed', failure: 'usage_limit' });
+  });
+
   it('claims the turn, stores the reply, and ends completed with its usage', async () => {
     const turn = queued();
     const { handler, turns, messages, heard, summaries } = setup(turn, () => [

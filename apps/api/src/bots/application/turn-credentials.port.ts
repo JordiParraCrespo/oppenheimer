@@ -4,6 +4,8 @@ import type { ModelProvider } from '@oppenheimer/shared';
 export interface TurnCredential {
   apiKey: string;
   accountId?: string;
+  /** The stored key it is, when it is one of a provider's keys: what `spent` names. */
+  keyId?: string;
 }
 
 /**
@@ -20,4 +22,18 @@ export interface TurnCredentialsPort {
    * A row read, never a refresh, so a caller can ask it on every request.
    */
   has(organizationId: string, provider: ModelProvider): Promise<boolean>;
+  /**
+   * The provider refused a call on `used` because the account behind it is out
+   * of credit or quota: marks that key spent (unless it was replaced since),
+   * and answers the key to try next, or null when the provider has no key left
+   * that is not spent (or `used` was a sign-in, which has no other).
+   */
+  spent(
+    organizationId: string,
+    provider: ModelProvider,
+    used: TurnCredential,
+    now: Date,
+  ): Promise<TurnCredential | null>;
+  /** A call on `used` got through: a spent mark it carried (it was topped up) goes. */
+  worked(organizationId: string, provider: ModelProvider, used: TurnCredential): Promise<void>;
 }

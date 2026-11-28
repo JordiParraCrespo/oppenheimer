@@ -618,7 +618,9 @@
       "BOTS_045": "Only your messages and the bot's words take a reaction.",
       "BOTS_046": "That form is no longer here.",
       "BOTS_047": "Some values do not fit the form.",
-      "BOTS_048": "That form was already sent, or the bot moved on."
+      "BOTS_048": "That form was already sent, or the bot moved on.",
+      "BOTS_049": "That provider already holds ten keys. Remove one before adding another.",
+      "BOTS_050": "That key is gone. Refresh to see the provider's keys."
     },
     "notFound": {
       "title": "That page does not exist",
@@ -4424,6 +4426,17 @@
       "unavailable": "This server isn’t set up to store provider keys yet (BOTS_PROVIDER_KEY), so bots can’t answer.",
       "loadFailed": "Couldn’t load the model providers.",
       "keyEnding": "Key ending in {{hint}}",
+      "keyEndingSpent": "Key ending in {{hint}} · out of credit",
+      "keys_one": "{{count}} key",
+      "keys_other": "{{count}} keys",
+      "keysSpent_one": "{{count}} key · {{spent}} out of credit",
+      "keysSpent_other": "{{count}} keys · {{spent}} out of credit",
+      "keyNumber": "Key {{number}}",
+      "keyFirst": "Used first.",
+      "keyNext": "Used when the keys above run out of credit.",
+      "addKeyLabel": "Add another {{provider}} key",
+      "removeKeyLabel": "Remove the {{provider}} key ending in {{hint}}",
+      "replaceKeyLabel": "Replace the {{provider}} key ending in {{hint}}",
       "noKey": "No key",
       "add": "Add key",
       "replace": "Replace",
@@ -4453,7 +4466,10 @@
         "label": "API key",
         "save": "Save key",
         "saving": "Saving…",
-        "failed": "Couldn’t save the key."
+        "failed": "Couldn’t save the key.",
+        "addTitle": "Another {{provider}} key",
+        "addDescription": "Paste another API key. Bots on {{provider}} move to it when the keys before it run out of credit.",
+        "replaceDescription": "Paste the API key that replaces the one ending in {{hint}}. Bots on {{provider}} use it from their next message."
       },
       "signedIn": "Signed in · {{hint}}",
       "notConnected": "Not connected",

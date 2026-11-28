@@ -21,6 +21,7 @@ const state = vi.hoisted(() => ({
   removeError: null as Error | null,
   reset: vi.fn(),
   makeDefault: vi.fn(),
+  removeKey: vi.fn(),
 }));
 
 vi.mock('@oppenheimer/frontend-core/react', () => ({
@@ -38,11 +39,51 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
         keyHint: '9f3a',
         updatedAt: null,
         isDefault: true,
+        keys: [{ id: 'a1', keyHint: '9f3a', spentAt: null }],
       },
-      { provider: 'glm', configured: false, keyHint: null, updatedAt: null, isDefault: false },
-      { provider: 'openai', configured: true, keyHint: '12ab', updatedAt: null, isDefault: false },
-      { provider: 'chatgpt', configured: false, keyHint: null, updatedAt: null, isDefault: false },
-      { provider: 'groq', configured: true, keyHint: 'gq12', updatedAt: null, isDefault: false },
+      {
+        provider: 'glm',
+        configured: false,
+        keyHint: null,
+        updatedAt: null,
+        isDefault: false,
+        keys: [],
+      },
+      {
+        provider: 'openai',
+        configured: true,
+        keyHint: '12ab',
+        updatedAt: null,
+        isDefault: false,
+        keys: [{ id: 'o1', keyHint: '12ab', spentAt: null }],
+      },
+      {
+        provider: 'chatgpt',
+        configured: false,
+        keyHint: null,
+        updatedAt: null,
+        isDefault: false,
+        keys: [],
+      },
+      {
+        provider: 'xai',
+        configured: true,
+        keyHint: 'xa01',
+        updatedAt: null,
+        isDefault: false,
+        keys: [
+          { id: 'x1', keyHint: 'xa01', spentAt: new Date('2026-11-20T10:00:00Z') },
+          { id: 'x2', keyHint: 'xa02', spentAt: null },
+        ],
+      },
+      {
+        provider: 'groq',
+        configured: true,
+        keyHint: 'gq12',
+        updatedAt: null,
+        isDefault: false,
+        keys: [{ id: 'g1', keyHint: 'gq12', spentAt: null }],
+      },
     ],
     error: null,
   }),
@@ -52,6 +93,13 @@ vi.mock('@oppenheimer/frontend-consumer/react', () => ({
     variables: undefined,
     error: state.removeError,
     reset: state.reset,
+  }),
+  useRemoveModelProviderKeyById: () => ({
+    mutate: state.removeKey,
+    isPending: false,
+    variables: undefined,
+    error: null,
+    reset: vi.fn(),
   }),
   useSetDefaultModelProvider: () => ({
     mutate: state.makeDefault,
@@ -77,8 +125,8 @@ vi.mock('@oppenheimer/frontend-web', () => ({
 }));
 
 vi.mock('../dialogs/model-provider-key', () => ({
-  ModelProviderKeyDialog: ({ provider }: { provider: string }) => (
-    <div data-testid="key-dialog">{provider}</div>
+  ModelProviderKeyDialog: ({ target }: { target: { provider: string; mode: string } }) => (
+    <div data-testid="key-dialog">{`${target.mode} ${target.provider}`}</div>
   ),
 }));
 vi.mock('../dialogs/chatgpt-login', () => ({
@@ -98,6 +146,7 @@ afterEach(() => {
   state.removeError = null;
   state.reset.mockClear();
   state.makeDefault.mockClear();
+  state.removeKey.mockClear();
 });
 
 describe('ModelProviders', () => {
@@ -108,13 +157,15 @@ describe('ModelProviders', () => {
 
   it('says Default on the provider new bots start on and offers Make default only on another with a key', () => {
     render(<ModelProviders />);
-    const [anthropic, openai, glm] = screen.getAllByTestId('model-provider');
-    expect(anthropic.textContent).toContain('settings.modelProviders.default');
-    expect(glm.textContent).not.toContain('settings.modelProviders.makeDefault');
-    const makeDefault = screen.getByRole('button', {
+    const row = (name: string) =>
+      screen
+        .getAllByTestId('model-provider')
+        .find((each) => each.textContent?.includes(name)) as HTMLElement;
+    expect(row('Anthropic').textContent).toContain('settings.modelProviders.default');
+    expect(row('GLM').textContent).not.toContain('settings.modelProviders.makeDefault');
+    const makeDefault = within(row('OpenAI')).getByRole('button', {
       name: 'settings.modelProviders.makeDefaultLabel',
     });
-    expect(openai.contains(makeDefault)).toBe(true);
     fireEvent.click(makeDefault);
     expect(state.makeDefault).toHaveBeenCalledWith('openai');
   });
@@ -128,6 +179,7 @@ describe('ModelProviders', () => {
     expect(rows(/groups\.connected/)).toEqual([
       expect.stringContaining('Anthropic'),
       expect.stringContaining('OpenAI'),
+      expect.stringContaining('Grok'),
       expect.stringContaining('Groq'),
     ]);
     expect(rows(/groups\.notConnected/)).toEqual([
@@ -173,5 +225,34 @@ describe('ModelProviders', () => {
     expect(
       within(groq).getByRole('button', { name: 'settings.modelProviders.removeLabel' }),
     ).toBeTruthy();
+  });
+
+  // What breaks this: a second key that cannot be seen, removed or replaced on its own, or a key out
+  // of credit drawn with the same green check as the one calls run on.
+  it('draws each of several keys on a row of its own, in order, the spent one saying so', () => {
+    render(<ModelProviders />);
+    const keys = screen.getAllByTestId('model-provider-key');
+    expect(keys.map((row) => row.textContent)).toEqual([
+      expect.stringContaining('settings.modelProviders.keyEndingSpent'),
+      expect.stringContaining('settings.modelProviders.keyEnding'),
+    ]);
+    expect(keys[0].textContent).toContain('settings.modelProviders.keyFirst');
+    fireEvent.click(
+      within(keys[1]).getByRole('button', { name: 'settings.modelProviders.removeKeyLabel' }),
+    );
+    expect(state.removeKey).toHaveBeenCalledWith({ provider: 'xai', keyId: 'x2' });
+    fireEvent.click(
+      within(keys[0]).getByRole('button', { name: 'settings.modelProviders.replaceKeyLabel' }),
+    );
+    expect(screen.getByTestId('key-dialog').textContent).toBe('replace xai');
+  });
+
+  it("adds another key from a connected key provider's row, and none to a sign-in", () => {
+    render(<ModelProviders />);
+    const adds = screen.getAllByRole('button', { name: 'settings.modelProviders.addKeyLabel' });
+    // Anthropic, OpenAI, Grok and Groq: every connected key provider, never ChatGPT.
+    expect(adds).toHaveLength(4);
+    fireEvent.click(adds[0]);
+    expect(screen.getByTestId('key-dialog').textContent).toBe('add anthropic');
   });
 });

@@ -81,6 +81,7 @@ import {
   type CreateBotSkillInput,
   type IssuedBotRoutineWebhook,
   ModelProviderEntity,
+  ModelProviderKeyEntity,
   PersonMemoryEntity,
   type SaveBotDocumentInput,
   type UpdateBotFactInput,
@@ -142,6 +143,10 @@ function toProvider(dto: ModelProviderCredentialResponseDto): ModelProviderEntit
     dto.keyHint,
     dto.updatedAt ? new Date(dto.updatedAt) : null,
     dto.isDefault,
+    dto.keys.map(
+      (key) =>
+        new ModelProviderKeyEntity(key.id, key.keyHint, key.spentAt ? new Date(key.spentAt) : null),
+    ),
   );
 }
 
@@ -1297,6 +1302,29 @@ export class BotsRepository {
   setDefaultModelProvider(provider: BotProvider): Promise<void> {
     return callApi(BotsErrors.SET_DEFAULT_PROVIDER_FAILED, async (api) => {
       await api.result(heyApiSdk.setDefaultModelProvider({ path: { provider } }));
+    });
+  }
+
+  /** Stores another key for `provider`, after the ones there; calls move to it when those run out of credit. */
+  addModelProviderKey(provider: ModelProvider, apiKey: string): Promise<void> {
+    return callApi(BotsErrors.SAVE_PROVIDER_KEY_FAILED, async (api) => {
+      await api.result(heyApiSdk.addModelProviderKey({ path: { provider }, body: { apiKey } }));
+    });
+  }
+
+  /** Replaces one of `provider`'s keys in its place. */
+  replaceModelProviderKey(provider: ModelProvider, keyId: string, apiKey: string): Promise<void> {
+    return callApi(BotsErrors.SAVE_PROVIDER_KEY_FAILED, async (api) => {
+      await api.result(
+        heyApiSdk.replaceModelProviderKey({ path: { provider, keyId }, body: { apiKey } }),
+      );
+    });
+  }
+
+  /** Forgets one of `provider`'s keys; the others stay. */
+  removeModelProviderKeyById(provider: ModelProvider, keyId: string): Promise<void> {
+    return callApi(BotsErrors.DELETE_PROVIDER_KEY_FAILED, async (api) => {
+      await api.result(heyApiSdk.deleteModelProviderKey({ path: { provider, keyId } }));
     });
   }
 

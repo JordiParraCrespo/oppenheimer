@@ -4550,6 +4550,19 @@ export type UpdateBotGroupRequest = {
     position?: number;
 };
 
+export type ModelProviderKeyResponseDto = {
+    id: string;
+    /**
+     * The key's last four characters, so a person can tell which one it is.
+     */
+    keyHint: string;
+    /**
+     * When a call on it was refused because the account behind it is out of credit or quota; null while it is not known to be spent. Calls move on to the next key, and come back to a spent one only once every key is spent.
+     */
+    spentAt: string | null;
+    updatedAt: string;
+};
+
 export type ModelProviderCredentialResponseDto = {
     provider: 'anthropic' | 'glm' | 'openai' | 'chatgpt' | 'xai' | 'groq' | 'elevenlabs';
     /**
@@ -4557,9 +4570,13 @@ export type ModelProviderCredentialResponseDto = {
      */
     configured: boolean;
     /**
-     * The key's last four characters, so a person can tell which one is stored.
+     * The first key's last four characters, so a person can tell which one is stored.
      */
     keyHint: string | null;
+    /**
+     * Every key stored for the provider, in the order a call tries them while none is spent. A sign-in is one.
+     */
+    keys: Array<ModelProviderKeyResponseDto>;
     updatedAt: string | null;
     /**
      * Whether a new bot starts on this provider: the one the workspace marked, else the key it stored first, else Anthropic. Exactly one row is.
@@ -17170,6 +17187,134 @@ export type PutModelProviderCredentialResponses = {
 };
 
 export type PutModelProviderCredentialResponse = PutModelProviderCredentialResponses[keyof PutModelProviderCredentialResponses];
+
+export type AddModelProviderKeyData = {
+    body: PutModelProviderCredentialRequest;
+    path: {
+        provider: string;
+    };
+    query?: never;
+    url: '/api/v1/model-providers/{provider}/keys';
+};
+
+export type AddModelProviderKeyErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_012 — No such model provider
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_049 — The provider holds as many keys as it can
+     */
+    409: ProblemDetailsDto;
+    /**
+     * BOTS_017 — ChatGPT connects by signing in, not with a key
+     */
+    422: ProblemDetailsDto;
+    /**
+     * BOTS_011 — Model providers are not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type AddModelProviderKeyError = AddModelProviderKeyErrors[keyof AddModelProviderKeyErrors];
+
+export type AddModelProviderKeyResponses = {
+    204: void;
+};
+
+export type AddModelProviderKeyResponse = AddModelProviderKeyResponses[keyof AddModelProviderKeyResponses];
+
+export type DeleteModelProviderKeyData = {
+    body?: never;
+    path: {
+        provider: string;
+        keyId: string;
+    };
+    query?: never;
+    url: '/api/v1/model-providers/{provider}/keys/{keyId}';
+};
+
+export type DeleteModelProviderKeyErrors = {
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_012 — No such model provider
+     */
+    404: ProblemDetailsDto;
+};
+
+export type DeleteModelProviderKeyError = DeleteModelProviderKeyErrors[keyof DeleteModelProviderKeyErrors];
+
+export type DeleteModelProviderKeyResponses = {
+    204: void;
+};
+
+export type DeleteModelProviderKeyResponse = DeleteModelProviderKeyResponses[keyof DeleteModelProviderKeyResponses];
+
+export type ReplaceModelProviderKeyData = {
+    body: PutModelProviderCredentialRequest;
+    path: {
+        provider: string;
+        keyId: string;
+    };
+    query?: never;
+    url: '/api/v1/model-providers/{provider}/keys/{keyId}';
+};
+
+export type ReplaceModelProviderKeyErrors = {
+    /**
+     * TENANT_001 — No active workspace
+     */
+    400: ProblemDetailsDto;
+    /**
+     * AUTH_001 / TOKEN_003 — No credential was presented, or it is invalid or expired
+     */
+    401: ProblemDetailsDto;
+    /**
+     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     */
+    403: ProblemDetailsDto;
+    /**
+     * BOTS_050 — Provider key not found
+     *
+     * BOTS_012 — No such model provider
+     */
+    404: ProblemDetailsDto;
+    /**
+     * BOTS_017 — ChatGPT connects by signing in, not with a key
+     */
+    422: ProblemDetailsDto;
+    /**
+     * BOTS_011 — Model providers are not configured on this server
+     */
+    503: ProblemDetailsDto;
+};
+
+export type ReplaceModelProviderKeyError = ReplaceModelProviderKeyErrors[keyof ReplaceModelProviderKeyErrors];
+
+export type ReplaceModelProviderKeyResponses = {
+    204: void;
+};
+
+export type ReplaceModelProviderKeyResponse = ReplaceModelProviderKeyResponses[keyof ReplaceModelProviderKeyResponses];
 
 export type SetDefaultModelProviderData = {
     body?: never;

@@ -365,7 +365,9 @@
     "BOTS_045": "Solo tus mensajes y las palabras del bot admiten una reacción.",
     "BOTS_046": "Ese formulario ya no está.",
     "BOTS_047": "Algunos valores no encajan con el formulario.",
-    "BOTS_048": "Ese formulario ya se envió, o el bot siguió adelante."
+    "BOTS_048": "Ese formulario ya se envió, o el bot siguió adelante.",
+    "BOTS_049": "Ese proveedor ya tiene diez claves. Quita una antes de añadir otra.",
+    "BOTS_050": "Esa clave ya no está. Actualiza para ver las claves del proveedor."
   },
   "notFound": {
     "title": "Esta página no existe",

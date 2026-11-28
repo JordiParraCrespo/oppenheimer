@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { AccessScope } from '@oppenheimer/backend-authz';
 import { OutboxMessageSchema, OutboxService } from '@oppenheimer/backend-ddd';
+import { MODEL_PROVIDER_KEYS_MAX } from '@oppenheimer/shared';
 import { DataSource } from 'typeorm';
 import { useTestDatabase } from '../../__tests__/integration-services';
 import { BotLookupResolver } from '../application/bot-lookup.resolver';
@@ -782,6 +783,57 @@ describe('bots (integration)', () => {
     expect(stored).toHaveLength(1);
     expect(stored[0]).toMatchObject({ provider: 'glm', keyHint: '2222' });
     expect(stored[0].sealedKey.toString()).toBe('sealed:second-key-2222');
+  });
+
+  // What breaks this: a provider's second key replaces the first, or two adds at nine keys store eleven.
+  it('adds keys after the first, in order, up to the cap, and a put replaces only the first', async () => {
+    await credentials.put(credential('first-key-1111'));
+    expect(await credentials.add(credential('second-key-2222'))).toBe('added');
+    await credentials.put(credential('first-again-3333'));
+    const ordered = (await credentials.findAllForRun(organizationId, 'glm')).map(
+      (row) => row.keyHint,
+    );
+    expect(ordered).toEqual(['3333', '2222']);
+
+    const adds = await Promise.all(
+      Array.from({ length: MODEL_PROVIDER_KEYS_MAX }, (_, index) =>
+        credentials.add(credential(`more-key-${String(index).padStart(4, '0')}`)),
+      ),
+    );
+    expect(adds.filter((outcome) => outcome === 'added')).toHaveLength(MODEL_PROVIDER_KEYS_MAX - 2);
+    expect(await credentials.findAllForRun(organizationId, 'glm')).toHaveLength(
+      MODEL_PROVIDER_KEYS_MAX,
+    );
+  });
+
+  it('moves on from a key marked spent, and only while it still holds the key that was spent', async () => {
+    await credentials.put(credential('first-key-1111'));
+    await credentials.add(credential('second-key-2222'));
+    const first = (await credentials.findForRun(organizationId, 'glm')).unwrap();
+    expect(await credentials.markSpent(first, new Date())).toBe(true);
+    expect((await credentials.findForRun(organizationId, 'glm')).unwrap().keyHint).toBe('2222');
+
+    // A key replaced since it was read is a new key: the old read marks nothing.
+    await credentials.replaceKey(
+      scope(),
+      'glm',
+      first.id,
+      Buffer.from('sealed:fresh-5555'),
+      '5555',
+    );
+    expect(await credentials.markSpent(first, new Date())).toBe(false);
+    expect((await credentials.findForRun(organizationId, 'glm')).unwrap().keyHint).toBe('5555');
+  });
+
+  it("hands the default mark to the provider's next key when its first is removed", async () => {
+    await credentials.put(credential('first-key-1111'));
+    await credentials.add(credential('second-key-2222'));
+    await credentials.put(credential('openai-key-3333', organizationId, 'openai'));
+    expect(await credentials.setDefault(scope(), 'glm')).toBe(true);
+    const first = (await credentials.findForRun(organizationId, 'glm')).unwrap();
+    expect(await credentials.deleteKey(scope(), 'glm', first.id)).toBe(true);
+    expect(await credentials.defaultProvider(scope())).toBe('glm');
+    expect(await credentials.deleteKey(scope(), 'openai', first.id)).toBe(false);
   });
 
   it("reads and deletes no other workspace's key", async () => {

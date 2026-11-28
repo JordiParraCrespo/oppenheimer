@@ -21,6 +21,10 @@ export interface ModelProviderCredentialProps {
    * the resolved default: with none marked, `defaultBotProvider` falls back.
    */
   markedDefault: boolean;
+  /** Where the key stands among its provider's: a turn tries the lowest first. */
+  position: number;
+  /** When a turn on it was refused for credit or quota; null while it is not known to be spent. */
+  spentAt: Date | null;
 }
 
 /** How many of a key's last characters the console may show. */
@@ -32,8 +36,10 @@ export function keyHintOf(key: string): string {
 }
 
 /**
- * A workspace's key for one model provider: one per workspace and provider,
- * replaced whole, read only by the worker that runs a bot's turn.
+ * One of a workspace's keys for a model provider. A provider may hold several,
+ * in order (`position`): a turn runs on the first that is not spent
+ * (`keysInTurnOrder`). A key is replaced whole, and read only by the worker
+ * that runs a call on it. A sign-in (ChatGPT) is one row, and only one.
  */
 export class ModelProviderCredentialEntity extends AggregateRoot<ModelProviderCredentialProps> {
   static create(
@@ -48,10 +54,11 @@ export class ModelProviderCredentialEntity extends AggregateRoot<ModelProviderCr
     sealedKey: Buffer;
     keyHint: string;
     updatedByUserId: string;
+    position?: number;
   }): ModelProviderCredentialEntity {
     const credential = new ModelProviderCredentialEntity({
       id: randomUUID(),
-      props: { ...props, markedDefault: false },
+      props: { position: 0, ...props, markedDefault: false, spentAt: null },
     });
     credential.validate();
     return credential;
@@ -81,6 +88,14 @@ export class ModelProviderCredentialEntity extends AggregateRoot<ModelProviderCr
     return this.props.markedDefault;
   }
 
+  get position(): number {
+    return this.props.position;
+  }
+
+  get spentAt(): Date | null {
+    return this.props.spentAt;
+  }
+
   public validate(): void {
     const { props } = this;
     if (!props.organizationId) {
@@ -94,6 +109,9 @@ export class ModelProviderCredentialEntity extends AggregateRoot<ModelProviderCr
     }
     if (props.keyHint.length > KEY_HINT_LENGTH) {
       throw new ArgumentInvalidException(`A key's hint is at most ${KEY_HINT_LENGTH} characters`);
+    }
+    if (!Number.isInteger(props.position) || props.position < 0) {
+      throw new ArgumentInvalidException('A key stands at a whole position, from 0');
     }
   }
 }

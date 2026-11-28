@@ -865,6 +865,8 @@ See `product/design/bots/bots.md`.
 | `BOTS_046` <a id="bots_046" />       | Form not found | 404  |
 | `BOTS_047` <a id="bots_047" />       | The values do not fit the form | 422  |
 | `BOTS_048` <a id="bots_048" />       | The form was already sent | 409  |
+| `BOTS_049` <a id="bots_049" />       | The provider holds as many keys as it can | 409  |
+| `BOTS_050` <a id="bots_050" />       | Provider key not found | 404  |
 
 `BOTS_001`, `BOTS_003` and `BOTS_008` are also returned for a bot, group or fact in
 another workspace.
@@ -983,6 +985,10 @@ where a number goes, an option a select does not list, an address or a day
 that does not read as one, or a field the form does not have; its `detail`
 names which. `BOTS_048` is a form already submitted or dismissed, or retired
 because a message reached the bot first.
+
+`BOTS_049` is a key added to a model provider that already holds ten; remove
+one first. `BOTS_050` is one of a provider's keys, by id, that the workspace
+does not hold (removed meanwhile, or another provider's).
 
 A home host the caller may not use answers `HOSTS_001`, as a session's does.
 

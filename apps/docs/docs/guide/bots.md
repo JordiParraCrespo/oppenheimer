@@ -36,7 +36,7 @@ Open a bot's settings from its menu. Every page saves with **Save**.
 
 ## Model providers
 
-Keys live in **Settings → Model providers**, one per provider for the workspace, stored encrypted and never shown again.
+Keys live in **Settings → Model providers**, stored encrypted and never shown again. A provider that takes an API key can hold up to ten: **Add key** stores another after the ones there. A bot uses the first key that still has credit. When a provider refuses a key because its account is out of credit or quota, that key is marked **out of credit** and the bot moves to the next one; a reply refused before the bot said anything is answered on the next key at once. A key out of credit is tried again only once every key of the provider is, and the mark goes when it works again or when you replace it. A rate limit does not move to another key. With more than one key, each has its own row with **Remove** and **Replace**.
 
 | Provider | Models | How |
 | --- | --- | --- |

@@ -287,4 +287,16 @@ export const BotErrors = {
     message: 'The form was already sent',
     httpStatus: 409,
   },
+  /** A key added to a provider that holds `MODEL_PROVIDER_KEYS_MAX` already. */
+  PROVIDER_KEYS_FULL: {
+    code: 'BOTS_049',
+    message: 'The provider holds as many keys as it can',
+    httpStatus: 409,
+  },
+  /** One of a provider's keys, by id, that the workspace does not have. */
+  PROVIDER_KEY_NOT_FOUND: {
+    code: 'BOTS_050',
+    message: 'Provider key not found',
+    httpStatus: 404,
+  },
 } as const satisfies Record<string, ErrorDefinition>;

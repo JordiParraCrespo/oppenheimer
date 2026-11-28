@@ -1,15 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { type AccessScope, ScopedRepositoryBase } from '@oppenheimer/backend-authz';
-import type { BotProvider, ModelProvider } from '@oppenheimer/shared';
+import { type BotProvider, MODEL_PROVIDER_KEYS_MAX, type ModelProvider } from '@oppenheimer/shared';
 import { None, type Option, Some } from 'oxide.ts';
-import { Repository } from 'typeorm';
+import { type EntityManager, IsNull, Not, Repository } from 'typeorm';
 import { BotResource } from '../bots.resource';
 import type { ModelProviderCredentialEntity } from '../domain/model-provider-credential.entity';
 import { defaultBotProvider } from '../domain/model-provider-default.policy';
+import { keysInStoredOrder, keysInTurnOrder } from '../domain/model-provider-key-order.policy';
 import { ModelProviderCredentialMapper } from '../model-provider-credential.mapper';
 import { ModelProviderCredentialOrmEntity } from './model-provider-credential.orm-entity';
-import type { ModelProviderCredentialRepositoryPort } from './model-provider-credential.repository.port';
+import type {
+  AddModelProviderKeyOutcome,
+  ModelProviderCredentialRepositoryPort,
+} from './model-provider-credential.repository.port';
+
+function firstOf<T>(items: readonly T[]): Option<T> {
+  return items.length > 0 ? Some(items[0]) : None;
+}
 
 @Injectable()
 export class ModelProviderCredentialRepository
@@ -28,8 +36,12 @@ export class ModelProviderCredentialRepository
   }
 
   async findAll(scope: AccessScope): Promise<ModelProviderCredentialEntity[]> {
-    // UQ_model_provider_credential_provider: one row per provider at most.
-    const records = await this.scopedQuery(scope).orderBy('credential.provider', 'ASC').getMany();
+    const records = await this.scopedQuery(scope)
+      .orderBy('credential.provider', 'ASC')
+      .addOrderBy('credential.position', 'ASC')
+      .addOrderBy('credential.createdAt', 'ASC')
+      .addOrderBy('credential.id', 'ASC')
+      .getMany();
     return records.map((record) => this.mapper.toDomain(record));
   }
 
@@ -37,18 +49,26 @@ export class ModelProviderCredentialRepository
     scope: AccessScope,
     provider: ModelProvider,
   ): Promise<Option<ModelProviderCredentialEntity>> {
-    const record = await this.scopedQuery(scope)
+    const records = await this.scopedQuery(scope)
       .andWhere('credential.provider = :provider', { provider })
-      .getOne();
-    return record ? Some(this.mapper.toDomain(record)) : None;
+      .getMany();
+    return firstOf(keysInTurnOrder(records.map((record) => this.mapper.toDomain(record))));
   }
 
   async findForRun(
     organizationId: string,
     provider: ModelProvider,
   ): Promise<Option<ModelProviderCredentialEntity>> {
-    const record = await this.repository.findOne({ where: { organizationId, provider } });
-    return record ? Some(this.mapper.toDomain(record)) : None;
+    return firstOf(await this.findAllForRun(organizationId, provider));
+  }
+
+  async findAllForRun(
+    organizationId: string,
+    provider: ModelProvider,
+  ): Promise<ModelProviderCredentialEntity[]> {
+    // IDX_model_provider_credential_order; MODEL_PROVIDER_KEYS_MAX rows at most.
+    const records = await this.repository.find({ where: { organizationId, provider } });
+    return keysInTurnOrder(records.map((record) => this.mapper.toDomain(record)));
   }
 
   async defaultProvider(scope: AccessScope): Promise<BotProvider> {
@@ -56,19 +76,94 @@ export class ModelProviderCredentialRepository
   }
 
   async put(credential: ModelProviderCredentialEntity): Promise<void> {
-    // One row per workspace and provider: a second key replaces the first.
-    // `markedDefault` is left out of the update, so a replaced key keeps its
-    // mark; `setDefault` is the only writer of it.
-    await this.repository
-      .createQueryBuilder()
-      .insert()
-      .into(ModelProviderCredentialOrmEntity)
-      .values(this.mapper.toPersistence(credential))
-      .orUpdate(
-        ['sealedKey', 'keyHint', 'updatedByUserId', 'updatedAt'],
-        ['organizationId', 'provider'],
-      )
-      .execute();
+    const { organizationId, provider } = credential;
+    await this.repository.manager.transaction(async (manager) => {
+      const rows = await this.lockedKeys(manager, organizationId, provider);
+      const first = keysInStoredOrder(rows)[0];
+      if (!first) {
+        await manager.insert(
+          ModelProviderCredentialOrmEntity,
+          this.mapper.toPersistence(credential),
+        );
+        return;
+      }
+      // The first key's row keeps its id, place and mark: only the secret changes.
+      await manager.update(
+        ModelProviderCredentialOrmEntity,
+        { id: first.id },
+        {
+          sealedKey: credential.sealedKey,
+          keyHint: credential.keyHint,
+          updatedByUserId: credential.updatedByUserId,
+          spentAt: null,
+        },
+      );
+    });
+  }
+
+  async add(credential: ModelProviderCredentialEntity): Promise<AddModelProviderKeyOutcome> {
+    const { organizationId, provider } = credential;
+    return this.repository.manager.transaction(async (manager) => {
+      // The count and the insert under one lock: two adds at nine keys store one.
+      const rows = await this.lockedKeys(manager, organizationId, provider);
+      if (rows.length >= MODEL_PROVIDER_KEYS_MAX) return 'full';
+      const record = this.mapper.toPersistence(credential);
+      record.position = rows.reduce((last, row) => Math.max(last, row.position + 1), 0);
+      await manager.insert(ModelProviderCredentialOrmEntity, record);
+      return 'added';
+    });
+  }
+
+  async replaceKey(
+    scope: AccessScope,
+    provider: ModelProvider,
+    keyId: string,
+    sealedKey: Buffer,
+    keyHint: string,
+  ): Promise<boolean> {
+    const { organizationId, userId } = scope;
+    if (!organizationId) return false;
+    const result = await this.repository.update(
+      { id: keyId, organizationId, provider },
+      { sealedKey, keyHint, updatedByUserId: userId ?? null, spentAt: null },
+    );
+    return result.affected === 1;
+  }
+
+  async deleteKey(scope: AccessScope, provider: ModelProvider, keyId: string): Promise<boolean> {
+    const { organizationId } = scope;
+    if (!organizationId) return false;
+    return this.repository.manager.transaction(async (manager) => {
+      const rows = await this.lockedKeys(manager, organizationId, provider);
+      const removed = rows.find((row) => row.id === keyId);
+      if (!removed) return false;
+      await manager.delete(ModelProviderCredentialOrmEntity, { id: keyId });
+      // The provider stays the default while it has a key: the next one takes the mark.
+      const next = keysInStoredOrder(rows.filter((row) => row.id !== keyId))[0];
+      if (removed.markedDefault && next) {
+        await manager.update(
+          ModelProviderCredentialOrmEntity,
+          { id: next.id },
+          { markedDefault: true },
+        );
+      }
+      return true;
+    });
+  }
+
+  async markSpent(credential: ModelProviderCredentialEntity, at: Date): Promise<boolean> {
+    const result = await this.repository.update(
+      { id: credential.id, sealedKey: credential.sealedKey },
+      { spentAt: at },
+    );
+    return result.affected === 1;
+  }
+
+  async clearSpent(credential: ModelProviderCredentialEntity): Promise<void> {
+    await this.repository.update(
+      { id: credential.id, sealedKey: credential.sealedKey, spentAt: Not(IsNull()) },
+      { spentAt: null },
+    );
   }
 
   async setDefault(scope: AccessScope, provider: BotProvider): Promise<boolean> {
@@ -84,10 +179,11 @@ export class ModelProviderCredentialRepository
         .setLock('pessimistic_write')
         .where('credential.organizationId = :organizationId', { organizationId })
         .getMany();
-      if (!locked.some((row) => row.provider === provider)) return false;
+      const first = keysInStoredOrder(locked.filter((row) => row.provider === provider))[0];
+      if (!first) return false;
       // The index is checked row by row: the old mark goes first.
       await rows.update({ organizationId, markedDefault: true }, { markedDefault: false });
-      await rows.update({ organizationId, provider }, { markedDefault: true });
+      await rows.update({ id: first.id }, { markedDefault: true });
       return true;
     });
   }
@@ -111,6 +207,23 @@ export class ModelProviderCredentialRepository
       { sealedKey, keyHint },
     );
     return result.affected === 1;
+  }
+
+  /**
+   * The provider's keys, read under a lock on the workspace and provider, so
+   * adds, removals and replacements of its first key run one at a time. An
+   * advisory lock rather than `FOR UPDATE`, which would not hold back a
+   * concurrent insert.
+   */
+  private async lockedKeys(
+    manager: EntityManager,
+    organizationId: string,
+    provider: ModelProvider,
+  ): Promise<ModelProviderCredentialOrmEntity[]> {
+    await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+      `model_provider_credential:${organizationId}:${provider}`,
+    ]);
+    return manager.find(ModelProviderCredentialOrmEntity, { where: { organizationId, provider } });
   }
 
   async deleteIfUnchanged(credential: ModelProviderCredentialEntity): Promise<boolean> {
