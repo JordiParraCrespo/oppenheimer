@@ -259,6 +259,18 @@
     "attachmentId": 7,
     "before": 1048576
   },
+  "attachment.history": {
+    "type": "attachment.history",
+    "attachmentId": 7,
+    "lines": 5000
+  },
+  "attachment.history.page": {
+    "type": "attachment.history.page",
+    "attachmentId": 7,
+    "text": "\u001b[32m$\u001b[0m make test\nok\n",
+    "truncated": true,
+    "failed": true
+  },
   "device.attach": {
     "type": "device.attach",
     "commandId": "b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e",

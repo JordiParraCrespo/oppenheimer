@@ -181,6 +181,10 @@ type attachment struct {
 	// dropped while one waits. Nil unless the attach said chatTail: the
 	// chat is then sent whole, and an ask has nowhere to go.
 	chatOlder chan int64
+	// history is how many lines of scrollback the console asked for, for
+	// the attachment's history reader (`attachment.history`); one at a
+	// time, a second dropped while one is read.
+	history chan int
 }
 
 // stop ends an attachment's PTY, its reads and its direct path. The caller
@@ -338,7 +342,7 @@ func (h *linkHandler) capabilities() []string {
 	named := []string{
 		link.CapabilitySessionImage, link.CapabilitySessionCreateImages, link.CapabilitySessionFiles,
 		link.CapabilityRepositoryPrepare, link.CapabilitySessionFolder, link.CapabilityFsList, link.CapabilityFsFind,
-		link.CapabilityAttachmentChat, link.CapabilityAttachmentChatOlder,
+		link.CapabilityAttachmentChat, link.CapabilityAttachmentChatOlder, link.CapabilityAttachmentHistory,
 		link.CapabilitySessionCloud, link.CapabilitySessionCloudCodexThreads, link.CapabilitySessionCloudReply,
 		link.CapabilitySessionWatch, link.CapabilitySessionTeleport,
 		link.CapabilitySharedPreview, link.CapabilityTranscriptRead, link.CapabilityHostExec, link.CapabilityTerminalDrive,
@@ -584,6 +588,18 @@ func (h *linkHandler) Message(_ context.Context, msg link.Message) {
 			if att := h.attachmentByID(m.AttachmentID); att != nil && att.chatOlder != nil {
 				select {
 				case att.chatOlder <- m.Before:
+				default:
+				}
+			}
+		}
+	case link.TypeAttachmentHistory:
+		var m link.AttachmentHistory
+		if msg.Decode(&m) == nil {
+			// A watcher scrolled back: its history reader asks tmux, never
+			// the read loop.
+			if att := h.attachmentByID(m.AttachmentID); att != nil {
+				select {
+				case att.history <- m.Lines:
 				default:
 				}
 			}

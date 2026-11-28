@@ -161,6 +161,28 @@ func TestCaptureReadsWhatTheAgentPrinted(t *testing.T) {
 	}
 }
 
+// A watcher's scrollback reaches past the screen and keeps its colours, so
+// it reads as the terminal drew it.
+func TestScrollbackKeepsTheLinesAboveTheScreenWithTheirColours(t *testing.T) {
+	s := server(t)
+	ctx := context.Background()
+	if err := s.Create(ctx, "opp-scrollback", t.TempDir(), "", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SendKeys(ctx, "opp-scrollback:0", "for i in $(seq 1 80); do printf '\\033[32mgreen-%d\\033[0m\\n' $i; done\n"); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, s, "opp-scrollback:0", "green-80")
+
+	page, err := s.CaptureHistory(ctx, "opp-scrollback:0", 200, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(page, "green-1\x1b") && !strings.Contains(page, "\x1b[32mgreen-1") {
+		t.Fatalf("the first line, scrolled off the screen, is missing or lost its colour:\n%q", page)
+	}
+}
+
 // Text that starts with a dash is typed, not read as a tmux flag: without
 // `--`, "-R" reset the terminal and "--force" failed with nothing typed.
 func TestTextStartingWithADashIsTyped(t *testing.T) {

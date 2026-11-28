@@ -470,6 +470,10 @@ export class RunnerLinkGateway {
         // The chat view's entries (0.7) are the attachment's browser's.
         link.attachment(message.attachmentId)?.chat(message);
         return;
+      case 'attachment.history.page':
+        // A watcher's scrollback is its attachment's browser's.
+        link.attachment(message.attachmentId)?.history?.(message);
+        return;
       case 'device.info':
         // Which device a device attachment shows; its frames follow.
         link.attachment(message.attachmentId)?.device?.(message);

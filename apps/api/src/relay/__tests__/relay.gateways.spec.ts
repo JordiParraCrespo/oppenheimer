@@ -1839,8 +1839,8 @@ describe('browser attach socket', () => {
       vi.mocked(h.lookup.shareAdmits).mockResolvedValue(admits);
     }
 
-    async function attachedThrough(ticket: string) {
-      const runner = await runnerUp(h);
+    async function attachedThrough(ticket: string, capabilities?: string[]) {
+      const runner = await runnerUp(h, capabilities ? { capabilities } : undefined);
       sockets.push(runner);
       const browser = ws(h.origin, '/api/v1/relay/attach', {}, [ticket]);
       sockets.push(browser);
@@ -1849,8 +1849,9 @@ describe('browser attach socket', () => {
       const attached = nextMessage(browser);
       browser.send(JSON.stringify({ type: 'resize', cols: 80, rows: 24 }));
       const message = (await attach).text;
-      expect((await attached).text).toEqual({ type: 'attached', window: 0 });
-      return { runner, browser, attach: message };
+      const said = (await attached).text;
+      expect(said).toMatchObject({ type: 'attached', window: 0 });
+      return { runner, browser, attach: message, attached: said };
     }
 
     it('never offers a direct path through a share, whatever the flag says', async () => {
@@ -1894,6 +1895,80 @@ describe('browser attach socket', () => {
       // anyone a session is shared with to watch. The resize after it is what arrives.
       const next = nextMessage(runner);
       browser.send(Buffer.from('rm -rf ~\r'), { binary: true });
+      browser.send(JSON.stringify({ type: 'resize', cols: 100, rows: 30 }));
+      expect((await next).text).toMatchObject({ type: 'session.resize', cols: 100 });
+    });
+
+    it('lets a read share scroll back: its ask reaches the runner and the page comes back', async () => {
+      // What breaks this: a watcher's terminal that cannot scroll at all, since
+      // its wheel never reaches tmux.
+      shareIs(true);
+      const { runner, browser } = await attachedThrough(shareTicket(true), ['attachment.history']);
+      const asked = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'history.ask', lines: 5000 }));
+      expect((await asked).text).toEqual({
+        type: 'attachment.history',
+        attachmentId: 1,
+        lines: 5000,
+      });
+
+      const page = nextMessage(browser);
+      runner.send(
+        JSON.stringify({
+          type: 'attachment.history.page',
+          attachmentId: 1,
+          text: '\u001b[32mok\u001b[0m\n',
+          truncated: true,
+        }),
+      );
+      expect((await page).text).toEqual({
+        type: 'history',
+        text: '\u001b[32mok\u001b[0m\n',
+        truncated: true,
+      });
+    });
+
+    it('holds a watcher to one scrollback ask in flight', async () => {
+      // What breaks this: a guest asking in a loop, each page a frame ahead
+      // of every PTY frame on the host's link, starving the owner's terminals.
+      shareIs(true);
+      const { runner, browser } = await attachedThrough(shareTicket(true), ['attachment.history']);
+      const asked = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'history.ask', lines: 5000 }));
+      expect((await asked).text).toMatchObject({ type: 'attachment.history' });
+
+      // Asked again before its page came: dropped; the resize is what arrives.
+      const next = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'history.ask', lines: 5000 }));
+      browser.send(JSON.stringify({ type: 'resize', cols: 100, rows: 30 }));
+      expect((await next).text).toMatchObject({ type: 'session.resize' });
+
+      // Its page came, a failed one, which the guest is told as such: the
+      // next ask goes through.
+      const page = nextMessage(browser);
+      runner.send(
+        JSON.stringify({
+          type: 'attachment.history.page',
+          attachmentId: 1,
+          text: '',
+          failed: true,
+        }),
+      );
+      expect((await page).text).toEqual({ type: 'history', text: '', failed: true });
+      const again = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'history.ask', lines: 5000 }));
+      expect((await again).text).toMatchObject({ type: 'attachment.history' });
+    });
+
+    it('never asks a runner that does not answer for the scrollback', async () => {
+      // What breaks this: a message the runner does not know, sent to one
+      // that predates it, or a browser not told, which waits on a page that
+      // never comes and says the read failed.
+      shareIs(true);
+      const { runner, browser, attached } = await attachedThrough(shareTicket(true));
+      expect(attached).toEqual({ type: 'attached', window: 0 });
+      const next = nextMessage(runner);
+      browser.send(JSON.stringify({ type: 'history.ask', lines: 5000 }));
       browser.send(JSON.stringify({ type: 'resize', cols: 100, rows: 30 }));
       expect((await next).text).toMatchObject({ type: 'session.resize', cols: 100 });
     });

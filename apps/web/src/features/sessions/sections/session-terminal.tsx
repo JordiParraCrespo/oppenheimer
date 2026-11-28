@@ -16,6 +16,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatCover } from '../components/chat-cover';
 import { TerminalColumn } from '../components/terminal-column';
+import { TerminalFailure } from '../components/terminal-failure';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
 import { useChatReading } from '../hooks/use-session-chat';
@@ -162,16 +163,7 @@ export function SessionTerminal({
           this reader was refused its terminal. Say why, and let them try
           again rather than sit on "Disconnected". */}
         {ended === 'forbidden' || ended === 'refused' ? (
-          <div className="px-5 pb-3">
-            <ErrorAlert
-              message={t(`sessions.session.ended.${ended}`)}
-              action={
-                <Button variant="ghost" size="sm" onClick={retryNow}>
-                  {t('sessions.session.retry')}
-                </Button>
-              }
-            />
-          </div>
+          <TerminalFailure message={t(`sessions.session.ended.${ended}`)} onRetry={retryNow} />
         ) : null}
 
         {upload.failure || upload.refused ? (

@@ -136,6 +136,14 @@ export const SAMPLES: Record<ProtocolMessageType, ProtocolMessage> = {
     ],
   },
   'attachment.chat.older': { type: 'attachment.chat.older', attachmentId: 7, before: 1_048_576 },
+  'attachment.history': { type: 'attachment.history', attachmentId: 7, lines: 5000 },
+  'attachment.history.page': {
+    type: 'attachment.history.page',
+    attachmentId: 7,
+    text: '\u001b[32m$\u001b[0m make test\nok\n',
+    truncated: true,
+    failed: true,
+  },
   'device.attach': { type: 'device.attach', commandId, sessionId, attachmentId: 9 },
   'device.info': {
     type: 'device.info',

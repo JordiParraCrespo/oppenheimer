@@ -9,9 +9,8 @@ import type { PermissionPromptSpec } from '@oppenheimer/shared/sessions';
 import { ClipboardAddon, type IClipboardProvider } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
-import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { type ILinkHandler, Terminal } from '@xterm/xterm';
+import type { ILinkHandler } from '@xterm/xterm';
 import { bindAgentActivity } from './agent-activity';
 import { CursorFrames } from './cursor-frames';
 import { bindFeedbackDraft } from './feedback-draft';
@@ -22,13 +21,10 @@ import { bindTerminalEcho } from './terminal-echo';
 import { bindFilePaste } from './terminal-files';
 import { classifyKey } from './terminal-keys';
 import { bindTerminalRenderer, type TerminalRendererKind } from './terminal-renderer';
-import {
-  readTerminalTheme,
-  readUserTurnColors,
-  TERMINAL_FONT,
-  terminalMinimumContrastRatio,
-} from './terminal-theme';
+import { readUserTurnColors } from './terminal-theme';
+import { createThemedTerminal, followAppliedTheme } from './themed-terminal';
 import { bindUserTurns } from './user-turns';
+import { bindWatcherHistory, type WatcherHistoryState } from './watcher-history';
 
 /** The platform test xterm itself uses to pick its Mac behaviour. */
 const IS_MAC = typeof navigator !== 'undefined' && /^Mac/.test(navigator.platform);
@@ -58,6 +54,12 @@ export interface SessionTerminalOptions {
    * keeps the pane from looking as though typing would do something.
    */
   readOnly?: boolean;
+  /**
+   * A watcher's scrollback page opened, failed or closed: a read-only pane
+   * scrolls back through a page the host reads for it (`bindWatcherHistory`),
+   * since its wheel never reaches tmux.
+   */
+  onHistory?: (state: WatcherHistoryState) => void;
   /**
    * Whether predictive local echo may draw (`typeahead.ts`): the
    * `terminal_typeahead` flag, read through a getter so the flag arriving
@@ -121,18 +123,11 @@ export function mountSessionTerminal(
   stream: SessionStream,
   options: SessionTerminalOptions = {},
 ): () => void {
-  const term = new Terminal({
-    ...TERMINAL_FONT,
-    theme: readTerminalTheme(),
-    cursorBlink: false,
+  const term = createThemedTerminal({
     cursorStyle: 'block',
     // A few thousand lines of build output is the normal case; the runner
     // replays its own tail on attach, so this is only what the tab keeps.
     scrollback: 5000,
-    minimumContrastRatio: terminalMinimumContrastRatio(),
-    // Unicode11Addon is a proposed API; box drawing and emoji width in
-    // agent output are wrong without it.
-    allowProposedApi: true,
     convertEol: false,
     // tmux runs with `mouse on`, so a plain drag is the program's. Shift
     // forces a selection everywhere but macOS, where it is Option.
@@ -143,9 +138,6 @@ export function mountSessionTerminal(
 
   const fit = new FitAddon();
   term.loadAddon(fit);
-  const unicode = new Unicode11Addon();
-  term.loadAddon(unicode);
-  term.unicode.activeVersion = '11';
   const serialize = new SerializeAddon();
   term.loadAddon(serialize);
   // A plain drag is tmux's selection, and tmux hands what it copies to the
@@ -247,8 +239,18 @@ export function mountSessionTerminal(
     };
   };
 
+  // A watcher's notches up open the pane's scrollback instead: tmux takes no
+  // input from it, and its copy mode would move everyone's view.
+  const history = options.readOnly
+    ? bindWatcherHistory(term, container, stream, (state) => options.onHistory?.(state))
+    : null;
+
   term.attachCustomWheelEventHandler((event) => {
     const lines = wheelLines(event, term.rows);
+    if (history && term.buffer.active.type !== 'normal') {
+      history.wheel(lines);
+      return false;
+    }
     if (term.buffer.active.type !== 'normal') {
       // The program's, batched: never xterm's own per-event report.
       if (lines !== 0) {
@@ -302,15 +304,12 @@ export function mountSessionTerminal(
   const resizeObserver = new ResizeObserver(() => nextFrame());
   resizeObserver.observe(container);
 
-  // `useAppliedTheme` toggles `.dark` / `.light` on <html>. xterm holds
-  // resolved colour strings, not the tokens, so the ramp is re-read here.
-  const themeObserver = new MutationObserver(() => {
-    term.options.theme = readTerminalTheme();
-    term.options.minimumContrastRatio = terminalMinimumContrastRatio();
+  // Light or dark: the grid follows, and so do what the echo and the user
+  // turns paint over it.
+  const unfollowTheme = followAppliedTheme(term, () => {
     userTurns?.repaint();
     echo.repaint();
   });
-  themeObserver.observe(document.documentElement, { attributeFilter: ['class'] });
 
   const cursorFrames = new CursorFrames((data) => term.write(data));
   // Announced from the chunk rather than from the write callback: the reader
@@ -370,6 +369,7 @@ export function mountSessionTerminal(
     : undefined;
 
   return () => {
+    history?.dispose();
     unbindActivity?.();
     unbindSuggestion?.();
     unbindFeedback?.();
@@ -384,7 +384,7 @@ export function mountSessionTerminal(
     input.dispose();
     cursorFrames.dispose();
     unbindRenderer();
-    themeObserver.disconnect();
+    unfollowTheme();
     resizeObserver.disconnect();
     ptySize.dispose();
     // A pane that never drew anything has no picture worth keeping. One still

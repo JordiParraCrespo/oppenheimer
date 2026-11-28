@@ -9,6 +9,7 @@ import { AppError } from '@oppenheimer/backend-core';
 import {
   ATTACH_CLOSE_CODES,
   type AttachmentChatMessage,
+  type AttachmentHistoryPageMessage,
   type AttachServerMessage,
   attachClientMessageSchema,
 } from '@oppenheimer/shared/protocol';
@@ -72,6 +73,12 @@ const MAX_INPUT_BYTES = 64 * 1024;
 
 /** The socket a browser may leave unread before its attachment is dropped. */
 const BROWSER_MAX_BUFFERED_BYTES = 4 * 1024 * 1024;
+
+/**
+ * How long a watcher's scrollback ask holds the next one back while its page
+ * has not come: longer than the host takes to read and send one.
+ */
+const HISTORY_ASK_WAIT_MS = 15_000;
 
 /**
  * How often an open attachment is judged again, the way its ticket was. What
@@ -374,6 +381,8 @@ class BrowserAttachment implements AttachmentSink {
   private recheckTimer: NodeJS.Timeout | null = null;
   private rechecking = false;
   private attached = false;
+  /** When the scrollback ask now in flight was sent; null while none is. */
+  private historyAskedAt: number | null = null;
   private finished = false;
   /** A read-only share's attachment: no input, and the host told so. */
   private readonly readOnly: boolean;
@@ -462,14 +471,7 @@ class BrowserAttachment implements AttachmentSink {
   }
 
   deliver(bytes: Uint8Array): void {
-    if (this.ws.readyState !== this.ws.OPEN) return;
-    if (this.ws.bufferedAmount > BROWSER_MAX_BUFFERED_BYTES) {
-      // A client that cannot keep up is disconnected, never allowed to stall
-      // the relay.
-      this.ws.close(1008, 'slow consumer');
-      return;
-    }
-    this.ws.send(bytes, { binary: true });
+    if (this.keepsUp()) this.ws.send(bytes, { binary: true });
   }
 
   closed(reason: AttachmentClosedReason, detail?: string): void {
@@ -488,11 +490,7 @@ class BrowserAttachment implements AttachmentSink {
   }
 
   chat(message: AttachmentChatMessage): void {
-    if (!this.chatView || this.finished || this.ws.readyState !== this.ws.OPEN) return;
-    if (this.ws.bufferedAmount > BROWSER_MAX_BUFFERED_BYTES) {
-      this.ws.close(1008, 'slow consumer');
-      return;
-    }
+    if (!this.chatView || this.finished || !this.keepsUp()) return;
     this.tell({
       type: 'chat',
       ...(message.reset ? { reset: true } : {}),
@@ -502,6 +500,29 @@ class BrowserAttachment implements AttachmentSink {
       entries: message.entries,
       ...(message.commands ? { commands: message.commands } : {}),
     });
+  }
+
+  history(message: AttachmentHistoryPageMessage): void {
+    this.historyAskedAt = null;
+    if (this.finished || !this.keepsUp()) return;
+    this.tell({
+      type: 'history',
+      text: message.text,
+      ...(message.truncated ? { truncated: true } : {}),
+      ...(message.failed ? { failed: true } : {}),
+    });
+  }
+
+  /**
+   * Whether the browser can take more: the socket is open and not too far
+   * behind. A client that cannot keep up is disconnected, never allowed to
+   * stall the relay.
+   */
+  private keepsUp(): boolean {
+    if (this.ws.readyState !== this.ws.OPEN) return false;
+    if (this.ws.bufferedAmount <= BROWSER_MAX_BUFFERED_BYTES) return true;
+    this.ws.close(1008, 'slow consumer');
+    return false;
   }
 
   refused(code: string, detail?: string): void {
@@ -547,7 +568,33 @@ class BrowserAttachment implements AttachmentSink {
       case 'chat.older':
         this.chatOlder(message.data.before);
         return;
+      case 'history.ask':
+        this.historyAsk(message.data.lines);
+        return;
     }
+  }
+
+  /**
+   * The reader scrolled back through the terminal and asks for its
+   * scrollback: a watcher, whose wheel never reaches tmux. It reads what the
+   * attachment already shows, so a share that lets someone watch lets them
+   * scroll back too. A runner that does not answer is asked nothing.
+   */
+  /** Whether the host reads a watcher's scrollback (`attachment.history`). */
+  private answersHistory(): boolean {
+    return this.link.capabilities.includes('attachment.history');
+  }
+
+  private historyAsk(lines: number): void {
+    if (!this.attached || this.attachmentId === null) return;
+    if (!this.answersHistory()) return;
+    // One ask in flight: a page is up to a frame and rides the host's link
+    // ahead of its PTY frames, so a guest asking in a loop would starve the
+    // owner's terminals. A page that never came frees the next ask in time.
+    const now = Date.now();
+    if (this.historyAskedAt !== null && now - this.historyAskedAt < HISTORY_ASK_WAIT_MS) return;
+    this.historyAskedAt = now;
+    this.link.send({ type: 'attachment.history', attachmentId: this.attachmentId, lines });
   }
 
   /**
@@ -609,6 +656,7 @@ class BrowserAttachment implements AttachmentSink {
       type: 'attached',
       window: this.claim.window,
       ...this.directPath.invitation(),
+      ...(this.answersHistory() ? { history: true as const } : {}),
     });
   }
 

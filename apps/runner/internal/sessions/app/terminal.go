@@ -96,7 +96,7 @@ func (s *Service) Drive(ctx context.Context, id string, req DriveRequest) (Drive
 			return DriveResult{}, err
 		}
 	}
-	screen, err := s.terminals.CaptureHistory(ctx, target, req.History)
+	screen, err := s.terminals.CaptureHistory(ctx, target, req.History, false)
 	if err != nil {
 		return DriveResult{}, err
 	}
@@ -190,4 +190,19 @@ func (s *Service) created(ctx context.Context, id string) (domain.Session, error
 		case <-time.After(drivePoll):
 		}
 	}
+}
+
+// Scrollback reads up to lines lines of a window's scrollback and its screen,
+// with their colours, for a watcher scrolling back through a session it may
+// not type into. It only reads the pane: tmux's copy mode is the pane's, so
+// scrolling there would move every reader's view.
+func (s *Service) Scrollback(ctx context.Context, id string, window, lines int) (string, error) {
+	session, err := s.created(ctx, id)
+	if err != nil {
+		return "", err
+	}
+	if _, ok := session.Window(window); !ok {
+		return "", domain.ErrNotFound.WithDetail("%v: %d", domain.ErrNoSuchWindow, window)
+	}
+	return s.terminals.CaptureHistory(ctx, session.Target(window), lines, true)
 }

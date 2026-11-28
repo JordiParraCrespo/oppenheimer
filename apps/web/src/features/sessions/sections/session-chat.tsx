@@ -3,16 +3,16 @@ import {
   ChatTranscript,
   cn,
   EmptyState,
-  FloatingChip,
   useStickToBottom,
 } from '@oppenheimer/design-system-web';
-import { ArrowDown, LoaderIcon } from '@oppenheimer/design-system-web/icons';
+import { LoaderIcon } from '@oppenheimer/design-system-web/icons';
 import type { SessionChat as Chat, SessionAgent } from '@oppenheimer/frontend-consumer';
 import { useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { SessionChatLoading } from '../components/session-chat-loading';
 import { TerminalColumn } from '../components/terminal-column';
+import { ToLatestChip } from '../components/to-latest-chip';
 import { useChatFind } from '../hooks/use-chat-find';
 import { CommandTailContext } from '../hooks/use-command-tail';
 import { useEarlierOnReach } from '../hooks/use-earlier-on-reach';
@@ -213,14 +213,7 @@ export function SessionChat({
             )}
           </TerminalColumn>
         </div>
-        {atLatest ? null : (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-linear-to-t from-chat-ground via-chat-ground/85 to-transparent pt-12 pb-3">
-            <FloatingChip className="pointer-events-auto" onClick={toLatest}>
-              <ArrowDown />
-              {t('sessions.chat.latest')}
-            </FloatingChip>
-          </div>
-        )}
+        {atLatest ? null : <ToLatestChip onClick={toLatest} />}
       </div>
       {readOnly ? null : (
         <TerminalColumn className="pb-3">

@@ -2193,6 +2193,14 @@ one its decision belongs to:
   and every citation is the note's path, relative to the note citing it
   (`../runner/runner.md` §6). Where a line was ambiguous, the note it meant
   was read from its context.
+- `design/sessions/session-share-links.md` kept a view-only guest out of
+  tmux entirely, which left its terminal unable to scroll: its wheel never
+  reaches tmux, and tmux's copy mode is the pane's, so passing it through
+  would scroll the owner's view. Since 2026-11-27 a guest scrolls back
+  through a page of the pane's scrollback, read with `capture-pane -e` and
+  drawn over the live grid in their own tab (`history.ask` and
+  `attachment.history`, `design/foundations/protocol.md`); the owner's pane
+  never moves ("a watcher scrolls back without moving the pane").
 
 - `design/console/screens.md` had a member who could only request an
   organization's GitHub install connect it once an owner approved, by

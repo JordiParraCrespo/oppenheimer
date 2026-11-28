@@ -177,6 +177,15 @@ runner does with it and point back.
   attaches tmux with `-f read-only,ignore-size` and drops the attachment's
   keystroke frames. The relay drops them first, so a runner that predates
   the field is still read-only to a watcher. Absent is a writer.
+- **`attachment.history` reads an attachment's scrollback**
+  (`../sessions/session-share-links.md`): up to
+  5,000 lines above the screen and the screen, as `capture-pane -e` gives
+  them, answered with one `attachment.history.page` whose text keeps its
+  last 384 KiB from a line. It only reads the pane, so a watcher scrolls
+  back without putting the pane in copy mode for everyone. Capability
+  `attachment.history`; the attach socket's side is `history.ask` and
+  `history`, and `attached` says `history: true` only when the host names
+  it, so a browser never waits on a page an older runner will not send.
 - **`session.attach` is served while a create is still running.** It needs
   the session's tmux name and nothing else, and that exists from
   `session.started`; the host makes the attach wait for the pane rather than

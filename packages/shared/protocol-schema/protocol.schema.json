@@ -2108,6 +2108,55 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "attachment.history"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "lines": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 5000
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "lines"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "attachment.history.page"
+        },
+        "attachmentId": {
+          "$ref": "#/$defs/attachmentId"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 393216
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "failed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "attachmentId",
+        "text"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "device.attach"
         },
         "commandId": {
@@ -3999,6 +4048,7 @@
       "fs.find",
       "attachment.chat",
       "attachment.chat.older",
+      "attachment.history",
       "device.screen",
       "port.forward",
       "desktop.stream",
@@ -4032,6 +4082,7 @@
     "chatCommandsMax": 200,
     "execOutputMaxBytes": 32768,
     "terminalScreenMaxBytes": 32768,
+    "attachmentHistoryMaxBytes": 393216,
     "computerScreenMaxEdge": 1280,
     "computerScreenshotMaxBytes": 262144,
     "sessionChangesMaxFiles": 500,

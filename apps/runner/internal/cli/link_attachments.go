@@ -11,6 +11,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
+	"time"
 
 	"github.com/jordiparracrespo/oppenheimer/apps/runner/internal/link"
 	sessionsapp "github.com/jordiparracrespo/oppenheimer/apps/runner/internal/sessions/app"
@@ -31,6 +33,7 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch ui
 	att := &attachment{
 		id: m.AttachmentID, sessionID: m.SessionID, window: m.Window, pty: pty, cancel: cancel,
 		flow: newFlowWindow(), epoch: epoch, input: make(chan []byte, attachmentInput), readOnly: readOnly,
+		history: make(chan int, 1),
 	}
 	if m.ChatTail {
 		// The console can ask for older turns, so the chat goes tail first.
@@ -58,6 +61,98 @@ func (h *linkHandler) attach(ctx context.Context, m link.SessionAttach, epoch ui
 	go h.pump(readCtx, att)
 	go h.inputPump(readCtx, att)
 	go h.chat(readCtx, att)
+	go h.history(readCtx, att)
+}
+
+// historyWait bounds one scrollback read: tmux answers in milliseconds, and
+// a stuck one must not hold the next ask.
+const historyWait = 10 * time.Second
+
+// historyPace is the least time between two scrollback reads of one
+// attachment. A page is up to a frame, sent ahead of every PTY frame on the
+// link, so a guest asking in a loop would otherwise starve the owner's own
+// terminals; the console asks once per scroll back.
+const historyPace = time.Second
+
+// history answers the attachment's `attachment.history` asks while it is
+// open, one at a time and at most one a `historyPace`, each with one
+// `attachment.history.page`. A read or a send that fails answers with a
+// `failed` page, so the console says so rather than show nothing to scroll.
+func (h *linkHandler) history(ctx context.Context, att *attachment) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case lines := <-att.history:
+			readCtx, cancel := context.WithTimeout(ctx, historyWait)
+			text, err := h.app.Sessions.Scrollback(readCtx, att.sessionID, att.window, lines)
+			cancel()
+			failed := err != nil
+			if failed {
+				h.logger.Debug("could not read the session's scrollback", slog.String("session", att.sessionID), slog.Any("error", err))
+				text = ""
+			}
+			if ctx.Err() != nil {
+				return
+			}
+			// encoding/json would write each invalid byte as six.
+			page, truncated := historyTail(strings.ToValidUTF8(text, ""), link.AttachmentHistoryMaxBytes)
+			answer := link.AttachmentHistoryPage{
+				Type: link.TypeAttachmentHistoryPage, AttachmentID: att.id, Text: page, Truncated: truncated, Failed: failed,
+			}
+			if err := h.client.Send(answer); err != nil {
+				h.logger.Debug("could not send the session's scrollback", slog.String("session", att.sessionID), slog.Any("error", err))
+				answer.Text, answer.Truncated, answer.Failed = "", false, true
+				_ = h.client.Send(answer)
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(historyPace):
+			}
+		}
+	}
+}
+
+// historyTail keeps the newest whole lines of text whose JSON encoding fits
+// max bytes, so the page and its envelope fit one frame: a control byte (the
+// escape every colour starts with) goes out as six. A page never opens
+// mid-line or mid-escape. It reports whether it cut.
+func historyTail(text string, max int) (string, bool) {
+	size := 0
+	start := len(text)
+	for start > 0 {
+		from := strings.LastIndexByte(text[:start-1], '\n') + 1
+		line := jsonSize(text[from:start])
+		if size+line > max {
+			return text[start:], true
+		}
+		size += line
+		start = from
+	}
+	return text, false
+}
+
+// jsonSize is how many bytes s, valid UTF-8, takes as a JSON string's
+// contents, the way encoding/json writes it: control bytes, quotes,
+// backslashes, the HTML characters and the line separators escaped.
+func jsonSize(s string) int {
+	size := 0
+	for i := 0; i < len(s); i++ {
+		switch c := s[i]; {
+		case c == '\n' || c == '\r' || c == '\t' || c == '"' || c == '\\':
+			size += 2
+		case c < 0x20 || c == '<' || c == '>' || c == '&':
+			size += 6
+		case c == 0xe2 && i+2 < len(s) && s[i+1] == 0x80 && (s[i+2] == 0xa8 || s[i+2] == 0xa9):
+			// U+2028 and U+2029 go out escaped too: three bytes become six.
+			size += 6
+			i += 2
+		default:
+			size++
+		}
+	}
+	return size
 }
 
 // chat follows the attached session's conversation for the console's chat

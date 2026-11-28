@@ -19,3 +19,14 @@
 ::highlight(chat-find-current) {
   background-color: var(--color-find-current);
 }
+
+/* xterm draws its own scrollbar (VS Code's scrollable element): a square
+   slider the width of its 14px track. Every session terminal's is drawn as
+   the console's bar instead, a 6px pill centred in that track, in the inks
+   `readTerminalTheme` hands xterm. xterm writes the slider's box inline,
+   hence `!important`. */
+.xterm .xterm-scrollable-element > .scrollbar.vertical > .slider {
+  left: 4px !important;
+  width: 6px !important;
+  border-radius: var(--radius-pill);
+}

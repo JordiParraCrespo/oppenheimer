@@ -79,6 +79,10 @@ const ExecOutputMaxBytes = 32768
 // carries: the last bytes.
 const TerminalScreenMaxBytes = 32768
 
+// AttachmentHistoryMaxBytes is how much of a pane `attachment.history.page`
+// carries, as JSON-encoded on the link: its newest whole lines.
+const AttachmentHistoryMaxBytes = 393216
+
 // The bounds of one `session.changes`: the files one checkout names, the
 // bytes one file's patch carries, and the bytes the patches of one answer
 // add up to. Past them a file keeps its counts and loses its patch, and the
@@ -111,6 +115,7 @@ const (
 	CapabilityFsFind                   = "fs.find"
 	CapabilityAttachmentChat           = "attachment.chat"
 	CapabilityAttachmentChatOlder      = "attachment.chat.older"
+	CapabilityAttachmentHistory        = "attachment.history"
 	CapabilityDeviceScreen             = "device.screen"
 	CapabilityPortForward              = "port.forward"
 	CapabilityDesktopStream            = "desktop.stream"
@@ -190,6 +195,8 @@ const (
 	TypeAttachmentPath          = "attachment.path"
 	TypeAttachmentChat          = "attachment.chat"
 	TypeAttachmentChatOlder     = "attachment.chat.older"
+	TypeAttachmentHistory       = "attachment.history"
+	TypeAttachmentHistoryPage   = "attachment.history.page"
 	TypeDeviceAttach            = "device.attach"
 	TypeDeviceInfo              = "device.info"
 	TypeDeviceInput             = "device.input"
@@ -286,6 +293,8 @@ var MessageTypes = []string{
 	TypeAttachmentPath,
 	TypeAttachmentChat,
 	TypeAttachmentChatOlder,
+	TypeAttachmentHistory,
+	TypeAttachmentHistoryPage,
 	TypeDeviceAttach,
 	TypeDeviceInfo,
 	TypeDeviceInput,
@@ -434,6 +443,10 @@ func NewMessage(messageType string) (any, bool) {
 		return new(AttachmentChat), true
 	case TypeAttachmentChatOlder:
 		return new(AttachmentChatOlder), true
+	case TypeAttachmentHistory:
+		return new(AttachmentHistory), true
+	case TypeAttachmentHistoryPage:
+		return new(AttachmentHistoryPage), true
 	case TypeDeviceAttach:
 		return new(DeviceAttach), true
 	case TypeDeviceInfo:
@@ -1087,6 +1100,22 @@ type AttachmentChatOlder struct {
 	Type         string `json:"type"`
 	AttachmentID uint32 `json:"attachmentId"`
 	Before       int64  `json:"before"`
+}
+
+// AttachmentHistory is the `attachment.history` message.
+type AttachmentHistory struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+	Lines        int    `json:"lines"`
+}
+
+// AttachmentHistoryPage is the `attachment.history.page` message.
+type AttachmentHistoryPage struct {
+	Type         string `json:"type"`
+	AttachmentID uint32 `json:"attachmentId"`
+	Text         string `json:"text"`
+	Truncated    bool   `json:"truncated,omitempty"`
+	Failed       bool   `json:"failed,omitempty"`
 }
 
 // DeviceAttach is the `device.attach` message.

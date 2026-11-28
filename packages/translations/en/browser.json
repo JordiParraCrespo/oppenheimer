@@ -1420,6 +1420,7 @@
       }
     },
     "shared": {
+      "historyFailed": "Couldn't load the terminal's history.",
       "viewOnly": "View only",
       "canWrite": "Can edit",
       "endsIn": "Ends in {{time}}",

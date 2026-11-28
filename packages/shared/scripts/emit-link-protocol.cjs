@@ -73,6 +73,7 @@ const INTEGER_TYPES = {
   // A byte offset into a transcript file, as Go's `os` reads one.
   'attachment.chat.before': 'int64',
   'attachment.chat.older.before': 'int64',
+  'attachment.history.lines': 'int',
   'transcript.read.after': 'int64',
   'transcript.read.limit': 'int',
   'transcript.page.from': 'int64',
@@ -185,6 +186,10 @@ const CONSTANT_DOCS = {
   terminalScreenMaxBytes: [
     'TerminalScreenMaxBytes is how much of a captured screen `terminal.screen`',
     'carries: the last bytes.',
+  ],
+  attachmentHistoryMaxBytes: [
+    'AttachmentHistoryMaxBytes is how much of a pane `attachment.history.page`',
+    'carries, as JSON-encoded on the link: its newest whole lines.',
   ],
   sessionChanges: [
     'The bounds of one `session.changes`: the files one checkout names, the',
@@ -465,6 +470,9 @@ function render(schema = JSON.parse(readFileSync(schemaPath, 'utf8'))) {
     '',
     ...comment(CONSTANT_DOCS.terminalScreenMaxBytes),
     `const TerminalScreenMaxBytes = ${constants.terminalScreenMaxBytes}`,
+    '',
+    ...comment(CONSTANT_DOCS.attachmentHistoryMaxBytes),
+    `const AttachmentHistoryMaxBytes = ${constants.attachmentHistoryMaxBytes}`,
     '',
     ...comment(CONSTANT_DOCS.sessionChanges),
     ...constGroup([

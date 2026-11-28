@@ -8,6 +8,7 @@ import {
 import { useSessionStream } from '@oppenheimer/frontend-consumer/react';
 import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
+import { TerminalFailure } from '../components/terminal-failure';
 import { TimeAway } from '../components/time-away';
 import { useFilePaste } from '../hooks/use-file-paste';
 import { useTerminal } from '../hooks/use-terminal';
@@ -72,16 +73,11 @@ export function SideTerminal({
           <div ref={containerRef} className="isolate size-full" />
         </div>
         {ended === 'forbidden' || ended === 'refused' ? (
-          <div className="px-3 pb-3">
-            <ErrorAlert
-              message={t(`sessions.session.ended.${ended}`)}
-              action={
-                <Button variant="ghost" size="sm" onClick={retryNow}>
-                  {t('sessions.session.retry')}
-                </Button>
-              }
-            />
-          </div>
+          <TerminalFailure
+            message={t(`sessions.session.ended.${ended}`)}
+            onRetry={retryNow}
+            className="px-3 pb-3"
+          />
         ) : null}
         {upload.failure ? (
           <div className="px-3 pb-3">

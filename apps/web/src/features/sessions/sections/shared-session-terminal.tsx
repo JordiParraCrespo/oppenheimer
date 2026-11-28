@@ -1,5 +1,4 @@
 import {
-  Button,
   cn,
   EmptyState,
   Terminal,
@@ -7,10 +6,11 @@ import {
   TerminalStatusItem,
 } from '@oppenheimer/design-system-web';
 import { useSharedSessionStream } from '@oppenheimer/frontend-consumer/react';
-import { ErrorAlert } from '@oppenheimer/frontend-web';
 import { useTranslation } from 'react-i18next';
 import { ChatCover } from '../components/chat-cover';
 import { TerminalColumn } from '../components/terminal-column';
+import { TerminalFailure } from '../components/terminal-failure';
+import { ToLatestChip } from '../components/to-latest-chip';
 import { useChatReading } from '../hooks/use-session-chat';
 import { useTerminal } from '../hooks/use-terminal';
 import type { PaneReading } from '../lib/chat-blocks';
@@ -46,7 +46,7 @@ export function SharedSessionTerminal({
   const createStream = useSharedSessionStream(slug);
   const { chat, cover } = reading;
   const { shown: chatShown } = useChatReading(reading);
-  const { containerRef, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
+  const { containerRef, history, status, hasOutput, ended, retryNow } = useTerminal(createStream, {
     chat,
     agentWindow: true,
     readOnly,
@@ -68,20 +68,20 @@ export function SharedSessionTerminal({
             </EmptyState>
           </div>
         ) : null}
+        {history?.kind === 'open' && !chatShown ? <ToLatestChip onClick={history.close} /> : null}
         {chatShown ? <ChatCover>{cover}</ChatCover> : null}
       </div>
 
+      {history?.kind === 'failed' && !chatShown ? (
+        <TerminalFailure
+          message={t('sessions.shared.historyFailed')}
+          onRetry={history.retry}
+          onDismiss={history.dismiss}
+        />
+      ) : null}
+
       {ended ? (
-        <div className="px-5 pb-3">
-          <ErrorAlert
-            message={t(`sessions.shared.ended.${ended}`)}
-            action={
-              <Button variant="ghost" size="sm" onClick={retryNow}>
-                {t('sessions.session.retry')}
-              </Button>
-            }
-          />
-        </div>
+        <TerminalFailure message={t(`sessions.shared.ended.${ended}`)} onRetry={retryNow} />
       ) : null}
 
       {/* Live, the bar above says it all, as over a member's terminal; the

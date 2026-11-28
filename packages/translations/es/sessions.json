@@ -532,6 +532,7 @@
     }
   },
   "shared": {
+    "historyFailed": "No se pudo cargar el historial del terminal.",
     "viewOnly": "Solo ver",
     "canWrite": "Puede editar",
     "endsIn": "Termina en {{time}}",
