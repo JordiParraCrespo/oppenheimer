@@ -207,17 +207,35 @@ async function syncChats() {
   // One session's failure (a refused batch, a log claude.ai will not give)
   // is said, and the others in the pass still go.
   for (const session of due.slice(0, SESSIONS_PER_PASS)) {
+    const known = synced[session.id];
     try {
-      const read = await fetchSessionEvents(session.id, headers, state.eventsEndpoint ?? null);
-      if (!read) continue;
-      const sent = await forwardEvents(
+      const read = await fetchSessionEvents(
+        session.id,
+        headers,
+        state.eventsEndpoint ?? null,
+        known?.resume ?? null,
+      );
+      if (!read) {
+        // A place to carry on from that no longer answers is dropped: the
+        // next read starts from the first page.
+        synced[session.id] = { sent: known?.sent ?? 0, at: known?.at ?? '', readAt: now() };
+        continue;
+      }
+      const held = await forwardEvents(
         state.oppenheimer,
         session,
         read.events,
-        synced[session.id]?.sent ?? 0,
+        Math.max(0, (known?.sent ?? 0) - read.offset),
       );
-      synced[session.id] = { sent, at: session.updatedAt ?? now() };
+      synced[session.id] = {
+        sent: read.offset + held,
+        // Up to date only once read to the end; a read cut short is due again.
+        at: read.complete ? (session.updatedAt ?? now()) : (known?.at ?? ''),
+        resume: read.resume,
+        readAt: now(),
+      };
     } catch (error) {
+      synced[session.id] = { ...known, sent: known?.sent ?? 0, at: known?.at ?? '', readAt: now() };
       problem ??= `${session.id}: ${String((error as Error).message ?? error)}`;
     }
   }

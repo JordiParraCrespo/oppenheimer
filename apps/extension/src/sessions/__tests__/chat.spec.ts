@@ -99,6 +99,56 @@ describe('reading a session’s log from claude.ai', () => {
     expect(read?.events.map((event) => event.id)).toEqual(['u1', 'u2']);
   });
 
+  it('stops a long log at the page cap and carries on from there, never from its start again', async () => {
+    const urls: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL) => {
+        const href = String(url);
+        urls.push(href);
+        const page = Number(new URL(href).searchParams.get('cursor') ?? '0');
+        return json({ data: [{ payload: entry(`p${page}`, 'x') }], next_cursor: String(page + 1) });
+      }),
+    );
+    const first = await fetchSessionEvents(ID, {}, null);
+    // Breaks if a log past the cap is re-read from its first page on every pass.
+    expect(first).toMatchObject({ offset: 0, complete: false });
+    expect(first?.events).toHaveLength(20);
+    expect(first?.resume).toMatchObject({ cursor: '20', offset: 20 });
+    urls.length = 0;
+    const second = await fetchSessionEvents(ID, {}, null, first?.resume ?? null);
+    expect(new URL(urls[0] ?? '').searchParams.get('cursor')).toBe('20');
+    expect(second?.offset).toBe(20);
+    expect(second?.events[0]?.id).toBe('p20');
+  });
+
+  it('says a read a failed page cut short is incomplete, and where to carry on', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL) =>
+        new URL(String(url)).searchParams.get('cursor')
+          ? json({}, 502)
+          : json({ data: [{ payload: entry('u1', 'a') }], next_cursor: 'c2' }),
+      ),
+    );
+    // Breaks if a transient failure marks the session read, and the rest of its log never comes.
+    const read = await fetchSessionEvents(ID, {}, null);
+    expect(read).toMatchObject({ complete: false, resume: { cursor: 'c2', offset: 1 } });
+  });
+
+  it('remembers the last page of a log read to its end, where new events land', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL) =>
+        new URL(String(url)).searchParams.get('cursor')
+          ? json({ data: [{ payload: entry('u2', 'b') }] })
+          : json({ data: [{ payload: entry('u1', 'a') }], next_cursor: 'c2' }),
+      ),
+    );
+    const read = await fetchSessionEvents(ID, {}, null);
+    expect(read).toMatchObject({ complete: true, resume: { cursor: 'c2', offset: 1 } });
+  });
+
   it('answers nothing when no route has the log, rather than an empty one', async () => {
     vi.stubGlobal(
       'fetch',
@@ -244,6 +294,21 @@ describe('which sessions a pass reads', () => {
     );
     // Breaks if every session ever started on claude.ai is pulled into the
     // console, or one the person is talking to waits for the next minute.
-    expect(due.map((session) => session.id)).toEqual([running.id, fresh.id, replied.id]);
+    expect(due.map((session) => session.id)).toEqual([replied.id, running.id, fresh.id]);
+  });
+
+  it('reads the longest unread first, so a cap on a pass reaches every busy session', () => {
+    const busy = Array.from({ length: 12 }, (_, i) =>
+      tracked(`session_busy${String(i).padStart(12, '0')}`, { state: 'running' }),
+    );
+    // The first ten were read on the last pass; the last two never were.
+    const synced = Object.fromEntries(
+      busy
+        .slice(0, 10)
+        .map((session) => [session.id, { sent: 1, at: '', readAt: '2026-11-27T11:59:00Z' }]),
+    );
+    // Breaks if the same ten are read on every pass and the rest never are.
+    const due = sessionsToSync(busy, synced, new Set(), now);
+    expect(due.slice(0, 2).map((session) => session.id)).toEqual([busy[10]?.id, busy[11]?.id]);
   });
 });

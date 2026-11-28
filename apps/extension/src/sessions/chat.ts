@@ -97,36 +97,84 @@ export function eventsPage(body: unknown): { events: ChatEvent[]; next: string |
   return { events: newestFirst ? events.reverse() : events, next: more ? (next ?? null) : null };
 }
 
+/** Where a read of a session's log carries on: a page of a route, and how many events come before it. */
+export interface LogPosition {
+  url: string;
+  cursor: string;
+  offset: number;
+}
+
+/** What one read of a session's log got. */
+export interface LogRead {
+  /** Oldest first, starting at `offset` in the whole log. */
+  events: ChatEvent[];
+  offset: number;
+  /** Read to the end of the log; false when the page cap or a failed page stopped it. */
+  complete: boolean;
+  /**
+   * Where the next read starts: where this one stopped, or for a log read to
+   * its end, its last page, which is where new events land. Null to start
+   * from the first page again.
+   */
+  resume: LogPosition | null;
+}
+
 /**
- * Reads a session's whole log from claude.ai, oldest first, page after page;
- * null when no route answered with one. A log cut short by the page cap or a
- * failed page is what was read: the next read carries on, the API skipping
- * what it holds.
+ * Reads a session's log from claude.ai, page after page: from its first page
+ * on the first route that answers, or from `from`, where an earlier read
+ * stopped. Null when nothing answered. A read the page cap or a failed page
+ * stopped says so (`complete: false`) and where to carry on, so a long log is
+ * read a stretch at a time and never stuck re-reading its start.
  */
 export async function fetchSessionEvents(
   sessionId: string,
   headers: Record<string, string>,
   learned: string | null,
-): Promise<{ events: ChatEvent[]; url: string } | null> {
-  for (const url of eventsUrls(sessionId, learned)) {
-    const response = await fetch(url, { credentials: 'include', headers }).catch(() => null);
-    const first = response?.ok ? eventsPage(await response.json().catch(() => null)) : null;
+  from: LogPosition | null = null,
+): Promise<LogRead | null> {
+  const starts = from
+    ? [from]
+    : eventsUrls(sessionId, learned).map((url) => ({ url, cursor: null, offset: 0 }));
+  for (const start of starts) {
+    const pageUrl = (cursor: string | null) => {
+      if (!cursor) return start.url;
+      const paged = new URL(start.url);
+      paged.searchParams.delete('from_first_event');
+      paged.searchParams.set('cursor', cursor);
+      return paged.href;
+    };
+    const first = await readPage(pageUrl(start.cursor), headers);
     if (!first) continue;
     const events = [...first.events];
+    let pageCursor = start.cursor;
+    let pageOffset = start.offset;
     let next = first.next;
-    for (let page = 1; next && page < MAX_EVENT_PAGES; page++) {
-      const paged = new URL(url);
-      paged.searchParams.delete('from_first_event');
-      paged.searchParams.set('cursor', next);
-      const more = await fetch(paged, { credentials: 'include', headers }).catch(() => null);
-      const body = more?.ok ? eventsPage(await more.json().catch(() => null)) : null;
-      if (!body) break;
+    let stoppedAt: LogPosition | null = null;
+    for (let page = 1; next; page++) {
+      const body = page < MAX_EVENT_PAGES ? await readPage(pageUrl(next), headers) : null;
+      if (!body) {
+        stoppedAt = { url: start.url, cursor: next, offset: start.offset + events.length };
+        break;
+      }
+      pageCursor = next;
+      pageOffset = start.offset + events.length;
       events.push(...body.events);
       next = body.next;
     }
-    return { events: inTimeOrder(events), url };
+    const lastPage = pageCursor ? { url: start.url, cursor: pageCursor, offset: pageOffset } : null;
+    return {
+      events: inTimeOrder(events),
+      offset: start.offset,
+      complete: stoppedAt === null,
+      resume: stoppedAt ?? lastPage,
+    };
   }
   return null;
+}
+
+async function readPage(url: string, headers: Record<string, string>) {
+  const response = await fetch(url, { credentials: 'include', headers }).catch(() => null);
+  return response?.ok ? eventsPage(await response.json().catch(() => null)) : null;
 }
 
 /**
@@ -283,7 +331,8 @@ export async function postReply(
  * The sessions whose log is read on this pass: the ones running or waiting on
  * the person, the ones a reply was just posted to (`hot`), and, once each,
  * every one active in the last day the API has not had yet. An older session
- * is left out until it moves.
+ * is left out until it moves. In the order to read them: replied-to first,
+ * then the one read longest ago.
  */
 export function sessionsToSync(
   sessions: readonly TrackedSession[],
@@ -292,7 +341,7 @@ export function sessionsToSync(
   now: number,
 ): TrackedSession[] {
   const day = 24 * 60 * 60_000;
-  return sessions.filter((session) => {
+  const due = sessions.filter((session) => {
     if (!cloudSessionIdPattern.test(session.id)) return false;
     if (hot.has(session.id)) return true;
     if (session.state === 'running' || session.state === 'needs-input') return true;
@@ -302,12 +351,23 @@ export function sessionsToSync(
     // Changed since its last read, or never read at all.
     return recent && (!known || (session.updatedAt ?? '') > known.at);
   });
+  // A pass reads a few: the ones replied to first, then the longest unread,
+  // so a cap on a pass rotates through every session that is due.
+  const order = (session: TrackedSession) =>
+    `${hot.has(session.id) ? 0 : 1}${synced[session.id]?.readAt ?? ''}`;
+  return due.sort((a, b) => order(a).localeCompare(order(b)));
 }
 
 /** How far a session's log has gone to the API: events sent, and the activity time read up to. */
 export interface ChatSync {
+  /** Events of the whole log the console has. */
   sent: number;
+  /** The session's activity time its log was last read to the end at. */
   at: string;
+  /** Where the next read starts; absent or null from the first page. */
+  resume?: LogPosition | null;
+  /** When it was last read, to read the longest-waiting first. */
+  readAt?: string;
 }
 
 /**
