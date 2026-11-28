@@ -29,6 +29,7 @@ import {
   writeState,
 } from '@/sessions/store';
 import { ingest, needsYouCount } from '@/sessions/tracker';
+import { postFromClaudeTab } from './claude-tab';
 
 /**
  * The service worker: keeps the list of your Claude Code cloud sessions,
@@ -119,7 +120,7 @@ async function start() {
  * worker only starts it: at start-up, on the minute's alarm (Chrome may have
  * stopped the worker), on Check now and once Oppenheimer is connected.
  */
-const chats = createChatBridge({ claudeHeaders, serial });
+const chats = createChatBridge({ claudeHeaders, serial, postToClaude: postFromClaudeTab });
 
 function runChats() {
   chats.run();

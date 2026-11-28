@@ -1,5 +1,5 @@
 import { apiError } from './api-error';
-import { cloudSessionIdPattern } from './cloud-id';
+import { canonicalCloudId, cloudSessionIdPattern, codeSessionId } from './cloud-id';
 import { CLAUDE_ORIGIN } from './links';
 import type { TrackedSession } from './session';
 import type { OppenheimerConnection } from './store';
@@ -311,22 +311,35 @@ export async function releaseReply(
 }
 
 /**
- * Posts a reply on claude.ai as the person's next message in the session, the
- * call the Claude Code CLI makes for `claude --cloud`: a `user` event on the
- * session's log, with the reply's own id. Tries the session API, then the
- * code-sessions route, each only when the one before certainly refused.
+ * How a post reaches claude.ai: the request made, answering its status, or
+ * throwing when it got no answer (it timed out, the connection broke). The
+ * worker's own fetch is refused (claude.ai takes a cookie-signed write only
+ * from its own pages), so the worker sends it through a claude.ai tab.
+ */
+export type ClaudePost = (
+  url: string,
+  body: unknown,
+  headers: Record<string, string>,
+) => Promise<{ status: number }>;
+
+/**
+ * Posts a reply on claude.ai as the person's next message in the session: a
+ * `user` event on the session's log under the reply's own id, the call
+ * claude.ai's own page makes (`/v1/code/sessions/cse_…/events`), then the
+ * session API's, each only when the one before certainly refused.
  *
  * - `posted`: claude.ai took it.
- * - `uncertain`: a request went and no answer came (it timed out, or the
- *   connection broke). claude.ai may have it, so it counts as delivered, as
- *   a host's unconfirmed send does: a reply the agent gets twice is worse than
- *   one the person sees stay "sent" and types again. No other route is tried.
+ * - `uncertain`: a request went and no answer came. claude.ai may have it,
+ *   so it counts as delivered, as a host's unconfirmed send does: a reply the
+ *   agent gets twice is worse than one the person sees stay "sent" and types
+ *   again. No other route is tried.
  * - `refused`: every route answered no, or this Chrome is offline and nothing
  *   went; it is safe to deliver another way.
  */
 export async function postReply(
   reply: ClaimedReply,
   headers: Record<string, string>,
+  send: ClaudePost,
   online: () => boolean = () => navigator.onLine,
 ): Promise<{ outcome: 'posted' | 'uncertain' } | { outcome: 'refused'; reason: string }> {
   if (!online()) return { outcome: 'refused', reason: 'offline' };
@@ -336,31 +349,30 @@ export async function postReply(
     parent_tool_use_id: null,
     message: { role: 'user', content: reply.text },
   };
-  const id = encodeURIComponent(reply.cloudSessionId);
-  const codeId = encodeURIComponent(reply.cloudSessionId.replace(/^session_/, 'cse_'));
   const attempts = [
-    { url: `${CLAUDE_ORIGIN}/v1/sessions/${id}/events`, body: { events: [event] } },
     {
-      url: `${CLAUDE_ORIGIN}/v1/code/sessions/${codeId}/events`,
+      url: `${CLAUDE_ORIGIN}/v1/code/sessions/${encodeURIComponent(codeSessionId(reply.cloudSessionId))}/events`,
       body: { events: [{ payload: event }] },
+    },
+    {
+      url: `${CLAUDE_ORIGIN}/v1/sessions/${encodeURIComponent(canonicalCloudId(reply.cloudSessionId))}/events`,
+      body: { events: [event] },
     },
   ];
   let reason = 'refused';
   for (const attempt of attempts) {
-    let response: Response;
+    let status: number;
     try {
-      response = await fetch(attempt.url, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify(attempt.body),
-        signal: AbortSignal.timeout(POST_TIMEOUT_MS),
-      });
+      ({ status } = await send(attempt.url, attempt.body, {
+        ...headers,
+        'Content-Type': 'application/json',
+      }));
     } catch {
       return { outcome: 'uncertain' };
     }
-    if (response.ok) return { outcome: 'posted' };
-    reason = String(response.status);
+    if (status >= 200 && status < 300) return { outcome: 'posted' };
+    // 0: no claude.ai tab could take it, so nothing went.
+    reason = status === 0 ? 'no claude.ai tab' : String(status);
   }
   return { outcome: 'refused', reason };
 }

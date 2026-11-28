@@ -2,6 +2,7 @@ import { BROWSER_REPLY_LEASE_SECONDS } from '@oppenheimer/shared/schemas/session
 import {
   type ChatSync,
   type ClaimedReply,
+  type ClaudePost,
   claimReplies,
   confirmReply,
   fetchSessionEvents,
@@ -36,6 +37,8 @@ export interface ChatBridgeDeps {
   claudeHeaders(): Promise<Record<string, string>>;
   /** The worker's one queue for read-change-write of storage. */
   serial<T>(task: () => Promise<T>): Promise<T>;
+  /** How a reply's post reaches claude.ai: from one of its own tabs. */
+  postToClaude: ClaudePost;
 }
 
 /** The bridge the worker starts. */
@@ -55,7 +58,11 @@ export interface ChatBridge {
  * (`chatSync`). One loop at a time; each request it has open keeps the worker
  * alive. What it does to a request is `chat.ts`.
  */
-export function createChatBridge({ claudeHeaders, serial }: ChatBridgeDeps): ChatBridge {
+export function createChatBridge({
+  claudeHeaders,
+  serial,
+  postToClaude,
+}: ChatBridgeDeps): ChatBridge {
   /** Sessions a reply was just posted to, and when. Lost with the worker, which is fine. */
   const hot = new Map<string, number>();
   /**
@@ -106,7 +113,7 @@ export function createChatBridge({ claudeHeaders, serial }: ChatBridgeDeps): Cha
             await releaseReply(oppenheimer, reply.id, 'lease').catch(() => {});
             continue;
           }
-          const posted = await postReply(reply, headers);
+          const posted = await postReply(reply, headers, postToClaude);
           if (posted.outcome !== 'refused') {
             // Taken, or maybe taken: either way it is this extension's to
             // confirm, so the claim never lapses into a second delivery.

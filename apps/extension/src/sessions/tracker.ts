@@ -1,3 +1,4 @@
+import { canonicalCloudId } from './cloud-id';
 import {
   type CloudSessionRecord,
   NEEDS_YOU,
@@ -28,7 +29,7 @@ export function ingest(
   for (const record of records) {
     const tracked = toTracked(record);
     if (!tracked) {
-      delete sessions[record.id];
+      delete sessions[canonicalCloudId(record.id)];
       continue;
     }
     sessions[tracked.id] = tracked;

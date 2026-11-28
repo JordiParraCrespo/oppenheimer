@@ -59,6 +59,9 @@ console and your replies back (`src/sessions/chat.ts`), so a session started
 on claude.ai, the phone or `claude --cloud` reads in the console the way it
 reads in the Claude apps, your messages included:
 
+- **Ids.** claude.ai's list answers `cse_…` ids; the extension keeps each
+  session under its `session_…` id (the same suffix), which claude.ai's pages,
+  the console and the API use.
 - **Out.** It reads the session's event log from claude.ai, the log the apps
   draw, with the claude.ai sign-in in Chrome: the route claude.ai's own page
   read it from when the tap has seen one, else
@@ -72,9 +75,14 @@ reads in the Claude apps, your messages included:
   in the last day. Older ones are left alone until they move.
 - **In.** A loop claims your replies from
   `POST /api/v1/sessions/cloud-replies/claim`, waiting up to ten seconds for
-  one, and posts each to the session on claude.ai as your message
-  (`POST /v1/sessions/{id}/events`, a `user` event, the call
-  `claude --cloud` makes). The session runs it at once, mid-turn too. One
+  one, and posts each to the session on claude.ai as your message: a `user`
+  event on `POST /v1/code/sessions/cse_…/events`, the call claude.ai's own
+  page makes. claude.ai takes a write signed with its cookies only from its
+  own pages (the worker's request, from `chrome-extension://…`, is refused
+  with 401), so the post is made from a claude.ai tab by its content script
+  (`content/bridge.ts`, `background/claude-tab.ts`): a tab already open, or
+  one opened in the background on claude.ai/code and closed a minute after
+  its last post. The session runs it at once, mid-turn too. One
   claude.ai refuses is handed back (`…/cloud-replies/{id}/release`) for the
   session's Stop hook, and one it took is confirmed (`…/{id}/delivered`).
   An unconfirmed claim lapses after a minute, so a reply whose post never

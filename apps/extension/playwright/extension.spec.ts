@@ -367,6 +367,8 @@ test('carries a session’s chat to Oppenheimer and posts a reply typed there on
   worker,
   extensionId,
 }) => {
+  // claude.ai's list answers `cse_` ids; the console and the API say `session_`.
+  const CSE = 'cse_01ChatBridge00';
   const ID = 'session_01ChatBridge00';
   const cors = {
     'access-control-allow-origin': '*',
@@ -422,7 +424,10 @@ test('carries a session’s chat to Oppenheimer and posts a reply typed there on
         },
       });
     }
-    if (path === `/v1/sessions/${ID}/events` && request.method() === 'POST') {
+    if (path === `/v1/code/sessions/${CSE}/events` && request.method() === 'POST') {
+      // As claude.ai does: a cookie-signed write is taken from its own pages only.
+      if (request.headers().origin !== 'https://claude.ai')
+        return route.fulfill({ status: 401, json: {} });
       posted.push(request.postDataJSON());
       return route.fulfill({ json: {} });
     }
@@ -433,7 +438,7 @@ test('carries a session’s chat to Oppenheimer and posts a reply typed there on
       oppenheimer: { apiUrl: 'http://localhost:3001', token: 'oppenheimer_pat_test' },
     }),
   );
-  claude.sessions = [running(ID, 'Fix login')];
+  claude.sessions = [running(CSE, 'Fix login')];
   const page = await context.newPage();
   await page.goto('https://claude.ai/code');
   await expect.poll(async () => (await stored(worker)).seeded).toBe(true);
@@ -442,17 +447,20 @@ test('carries a session’s chat to Oppenheimer and posts a reply typed there on
   await popup.getByRole('button', { name: 'Check now' }).click();
 
   // Breaks if the reply typed in the console is not posted as the person's
-  // message, or the conversation (the person's turn included) never leaves.
+  // message from a claude.ai page (the worker's own request is refused), or
+  // if a session listed as `cse_` is dropped and its conversation never leaves.
   await expect
     .poll(() => posted)
     .toEqual([
       {
         events: [
           {
-            type: 'user',
-            uuid: '0b8f0c2e-6b8c-4f1e-9c9e-2f0e6b0e8a11',
-            parent_tool_use_id: null,
-            message: { role: 'user', content: 'Also the signup page' },
+            payload: {
+              type: 'user',
+              uuid: '0b8f0c2e-6b8c-4f1e-9c9e-2f0e6b0e8a11',
+              parent_tool_use_id: null,
+              message: { role: 'user', content: 'Also the signup page' },
+            },
           },
         ],
       },

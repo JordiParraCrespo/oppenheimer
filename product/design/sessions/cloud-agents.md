@@ -511,11 +511,14 @@ it had not launched, and its hooks failed once the agent changed directory.
 - **What leaves the browser** is now the conversations too, to the person's
   own API with their own token; never a claude.ai credential. The privacy page
   and the extension's rule say so.
-- **Open.** Not yet seen against the real claude.ai: the route and the shape
-  of the page's own read of a session's events, and whether claude.ai takes a
-  posted event without a trusted-device header. Each failure is visible
-  (a read that finds no route sends nothing; a refused post goes back to the
-  hook), and the popup does not yet say when the chat stops.
+- **First tried on the real claude.ai (2026-11-28).** Two things the faked
+  claude.ai had hidden. Its session list answers `cse_…` ids, which the
+  extension's filters dropped, so nothing was carried: the extension now keeps
+  each session under its `session_…` id. And claude.ai refused the worker's
+  post (401) while its own page's identical post got 200: it takes a
+  cookie-signed write only from its own origin, so a reply is posted by the
+  content script in a claude.ai tab, one opened in the background when none
+  is. The popup says when the chat stops and why.
 
 ## Follow-ups to a cloud agent (2026-11-05)
 

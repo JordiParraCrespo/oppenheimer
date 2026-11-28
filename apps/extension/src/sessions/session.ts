@@ -1,3 +1,5 @@
+import { canonicalCloudId } from './cloud-id';
+
 /**
  * A Claude Code cloud session — one started from claude.ai/code, by
  * `claude --cloud`, or by a scheduled task — and what it is doing.
@@ -127,7 +129,7 @@ export function toTracked(session: CloudSessionRecord): TrackedSession | null {
   if (state === 'archived') return null;
   const repo = session.config?.sources?.find((source) => source.type === 'git_repository')?.url;
   return {
-    id: session.id,
+    id: canonicalCloudId(session.id),
     title: text(session.title ?? '').replace(/\s+/g, ' ') || 'Untitled',
     state,
     reason: reason ?? null,

@@ -21,7 +21,9 @@ what it does and how it reads them; these are the rules for changing it.
   rules follow the Claude Code CLI's; change them with a spec that names the
   record that motivated it.
 - **Only the worker writes storage.** The popup reads it and asks the worker
-  to `refresh`; content scripts only post what the page fetched.
+  to `refresh`; content scripts only post what the page fetched, and
+  `bridge.ts` makes the one write the worker cannot: a reply's post to
+  claude.ai's own API, from the page's origin (`background/claude-tab.ts`).
 - **The popup is built from `@oppenheimer/design-system-web`**, under
   `.agents/rules/frontend-ui.md`. Effects live in `src/popup/hooks/`.
 - **Every word is in `@oppenheimer/translations`** (`{en,es}/extension.json`):

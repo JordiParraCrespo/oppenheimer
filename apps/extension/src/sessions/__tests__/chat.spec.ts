@@ -14,7 +14,7 @@ import {
   postReply,
   sessionsToSync,
 } from '../chat';
-import type { TrackedSession } from '../session';
+import { type TrackedSession, toTracked } from '../session';
 
 /**
  * A cloud session's chat carried between claude.ai and the console: before,
@@ -266,55 +266,86 @@ describe('posting a reply on claude.ai', () => {
     cloudSessionId: ID,
     text: 'Also the signup page',
   };
+  const answering = (...statuses: number[]) =>
+    vi.fn(async (_url: string, _body: unknown, _headers: Record<string, string>) => ({
+      status: statuses.shift() ?? 500,
+    }));
 
-  it('posts it as the person’s message, with the reply’s id so a repeat is one message', async () => {
-    const init = vi.fn(async (_url: string, _init: RequestInit) => json({}));
-    vi.stubGlobal('fetch', init);
-    expect(await postReply(reply, { 'x-organization-uuid': 'org' }, online)).toEqual({
+  it('posts it as the person’s message on the route claude.ai’s own page uses, under the reply’s id', async () => {
+    const send = answering(200);
+    expect(await postReply(reply, { 'x-organization-uuid': 'org' }, send, online)).toEqual({
       outcome: 'posted',
     });
-    const [url, sent] = init.mock.calls[0] ?? [];
-    expect(url).toBe(`https://claude.ai/v1/sessions/${ID}/events`);
-    expect(JSON.parse(String(sent?.body))).toEqual({
+    const [url, body, headers] = send.mock.calls[0] ?? [];
+    // Breaks if the post goes to a route claude.ai's page does not use, or
+    // under a `session_` id that route does not take.
+    expect(url).toBe(`https://claude.ai/v1/code/sessions/${ID.replace('session_', 'cse_')}/events`);
+    expect(body).toEqual({
       events: [
         {
-          type: 'user',
-          uuid: reply.id,
-          parent_tool_use_id: null,
-          message: { role: 'user', content: 'Also the signup page' },
+          payload: {
+            type: 'user',
+            uuid: reply.id,
+            parent_tool_use_id: null,
+            message: { role: 'user', content: 'Also the signup page' },
+          },
         },
       ],
     });
-    expect(sent?.credentials).toBe('include');
+    expect(headers).toMatchObject({
+      'x-organization-uuid': 'org',
+      'Content-Type': 'application/json',
+    });
+  });
+
+  it('tries the session API when claude.ai’s own route certainly refused', async () => {
+    const send = answering(404, 200);
+    expect(await postReply(reply, {}, send, online)).toEqual({ outcome: 'posted' });
+    expect(send.mock.calls[1]?.[0]).toBe(`https://claude.ai/v1/sessions/${ID}/events`);
   });
 
   it('counts a post that got no answer as maybe delivered, and tries no other route', async () => {
-    const calls = vi.fn(async () => {
-      throw new DOMException('timed out', 'TimeoutError');
+    const send = vi.fn(async () => {
+      throw new Error('no answer');
     });
-    vi.stubGlobal('fetch', calls);
     // Breaks if a post claude.ai may have taken is handed to the hook or a
     // host, or posted again on the second route: the agent would get it twice.
-    expect(await postReply(reply, {}, online)).toEqual({ outcome: 'uncertain' });
-    expect(calls).toHaveBeenCalledTimes(1);
+    expect(await postReply(reply, {}, send, online)).toEqual({ outcome: 'uncertain' });
+    expect(send).toHaveBeenCalledTimes(1);
   });
 
   it('refuses at once when Chrome is offline, as nothing went', async () => {
-    const calls = vi.fn(async () => json({}));
-    vi.stubGlobal('fetch', calls);
-    expect(await postReply(reply, {}, () => false)).toEqual({
+    const send = answering(200);
+    expect(await postReply(reply, {}, send, () => false)).toEqual({
       outcome: 'refused',
       reason: 'offline',
     });
-    expect(calls).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
   });
 
-  it('says why when claude.ai takes it on neither route, so it is handed back', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => json({}, 403)),
-    );
-    expect(await postReply(reply, {}, online)).toEqual({ outcome: 'refused', reason: '403' });
+  it('says why when claude.ai takes it on neither route, or no claude.ai tab could take it', async () => {
+    expect(await postReply(reply, {}, answering(401, 403), online)).toEqual({
+      outcome: 'refused',
+      reason: '403',
+    });
+    expect(await postReply(reply, {}, answering(0, 0), online)).toEqual({
+      outcome: 'refused',
+      reason: 'no claude.ai tab',
+    });
+  });
+});
+
+describe('the ids claude.ai’s list answers', () => {
+  it('keeps a session listed as `cse_…` under its `session_…` id, which the console and the API take', () => {
+    // Breaks if claude.ai's own list, which answers `cse_` ids, is dropped by
+    // every filter that takes `session_` ids: nothing would be carried at all.
+    const tracked = toTracked({
+      id: 'cse_01KpKLr5SuVydUo7t2s3fBcP',
+      title: 'Fix login',
+      status: 'active',
+      worker_status: 'running',
+    });
+    expect(tracked?.id).toBe('session_01KpKLr5SuVydUo7t2s3fBcP');
   });
 });
 
