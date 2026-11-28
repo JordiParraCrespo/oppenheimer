@@ -2,7 +2,7 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import type { AggregateID } from '@oppenheimer/backend-ddd';
-import { retryHostWrite } from '../../application/host-write-retry.policy';
+import { unpairHost } from '../../application/host-unpair.policy';
 import type { HostRepositoryPort } from '../../database/host.repository.port';
 import { HostErrors } from '../../domain/hosts.errors';
 import { HOST_REPOSITORY } from '../../hosts.di-tokens';
@@ -37,16 +37,15 @@ export class UnpairHostCommandHandler implements ICommandHandler<UnpairHostComma
   ) {}
 
   async execute(command: UnpairHostCommand): Promise<AggregateID> {
-    await retryHostWrite(command.hostId, async () => {
-      const found = await this.hosts.findOneById(command.scope, command.hostId);
-      if (found.isNone()) {
-        throw new AppError(HostErrors.NOT_FOUND, { detail: `No host with id ${command.hostId}` });
-      }
-      const host = found.unwrap();
-      if (host.isUnpaired) return;
-      host.unpair(new Date(), { wipe: command.wipe });
-      await this.hosts.save(host);
-    });
+    const outcome = await unpairHost(
+      this.hosts,
+      command.hostId,
+      () => this.hosts.findOneById(command.scope, command.hostId),
+      { now: new Date(), wipe: command.wipe },
+    );
+    if (outcome === 'not-found') {
+      throw new AppError(HostErrors.NOT_FOUND, { detail: `No host with id ${command.hostId}` });
+    }
     return command.hostId;
   }
 }

@@ -45,6 +45,7 @@ function host(unpairedAt: Date | null = null) {
       publicKeyFingerprint: keyFingerprint(base64) as string,
       lastSeenAt: null,
       unpairedAt,
+      issuedVerified: true,
     },
   });
 }

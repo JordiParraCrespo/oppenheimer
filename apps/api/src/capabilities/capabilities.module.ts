@@ -5,6 +5,7 @@ import type { DeploymentCapabilities } from '@oppenheimer/shared';
 import { botsProviderKeyOf } from '../config/bots.config';
 import { calendarTokenKeyOf } from '../config/calendar.config';
 import { cloudAgentsSealKeyOf } from '../config/cloud-agents.config';
+import { emailDeliveryIsConfigured } from '../config/email.config';
 import { hostsAreConfigured, ipGeolocationIsConfigured } from '../config/hosts.config';
 import { mailTokenKeyOf } from '../config/mail.config';
 import { previewsAreConfigured } from '../config/relay.config';
@@ -41,8 +42,6 @@ export function hasGithubApp(configService: ConfigService): boolean {
  * boot loudly in their config schemas.
  */
 export function resolveCapabilities(configService: ConfigService): DeploymentCapabilities {
-  const emailProvider = configService.get<string>('email.provider');
-
   return {
     google_oauth: Boolean(
       configService.get('oauth.google.clientId') && configService.get('oauth.google.clientSecret'),
@@ -98,9 +97,13 @@ export function resolveCapabilities(configService: ConfigService): DeploymentCap
     // routes refuse on, so the Browser tab is never offered to fail.
     session_previews: previewsAreConfigured(configService),
     // The `console` provider only prints to stdout — that is not delivery.
-    email_delivery:
-      (emailProvider === 'nodemailer' && Boolean(configService.get('email.smtpHost'))) ||
-      (emailProvider === 'resend' && Boolean(configService.get('email.resendApiKey'))),
+    // Without it no address can be verified, so issuing a credential does not
+    // wait for one (`mayIssueCredential`).
+    email_delivery: emailDeliveryIsConfigured({
+      provider: configService.get('email.provider'),
+      smtpHost: configService.get('email.smtpHost'),
+      resendApiKey: configService.get('email.resendApiKey'),
+    }),
   };
 }
 

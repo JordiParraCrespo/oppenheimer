@@ -75,6 +75,7 @@ export class RegisterHostCommandHandler
             publicKeyFingerprint: fingerprint,
             facts: command.facts,
             pairingTokenId: token.id,
+            issuedVerified: token.issuedVerified,
           }),
         ),
     });

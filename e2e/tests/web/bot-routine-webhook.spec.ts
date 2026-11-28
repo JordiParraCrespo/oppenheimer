@@ -16,7 +16,8 @@ test("a routine's webhook URL, issued on the tab, posted to and revoked", async 
   page,
   request,
 }) => {
-  const owner = await provisionedUser('botwebhook');
+  // Issuing a URL needs a verified address (`TOKEN_010`).
+  const owner = await provisionedUser('botwebhook', { verified: true });
   await owner.api.put('/api/v1/model-providers/glm', { data: { apiKey: 'e2e-placeholder' } });
   const bot = (await (
     await owner.api.post('/api/v1/bots', { data: { name: 'Juno', provider: 'glm' } })

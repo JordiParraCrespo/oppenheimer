@@ -22,7 +22,7 @@ Sessions are capped at 20 per host by default.
 
 ## Adding a host
 
-Open **Add host** from **Settings → Hosts**, from the host picker in New session (Add host…), or during first-run. Each opens a **one-hour, single-use registration token**. You can hold at most five unspent tokens; **New token** replaces the one on screen and the old one stops working at once.
+Open **Add host** from **Settings → Hosts**, from the host picker in New session (Add host…), or during first-run. Each opens a **one-hour, single-use registration token**. You can hold at most five unspent tokens; **New token** replaces the one on screen and the old one stops working at once. On a deployment that sends email, a registration token needs a verified email address: until you open the link in the verification email, it is refused with "Verify your email address first" and a **Resend verification email** button, for when the first link has expired (after an hour) or never arrived.
 
 There are two ways to use it:
 

@@ -49,6 +49,7 @@ function setup(session: AuthSession | null = SESSION) {
     getSession: vi.fn().mockResolvedValue(session),
     forgotPassword: vi.fn().mockResolvedValue(undefined),
     resetPassword: vi.fn().mockResolvedValue(undefined),
+    sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
     logout: vi.fn().mockResolvedValue(undefined),
   } as unknown as AuthRepository;
 
@@ -215,5 +216,24 @@ describe('AuthService analytics', () => {
 
     await service.logout();
     expect(errors.setUser).toHaveBeenLastCalledWith(null);
+  });
+});
+
+describe('AuthService.sendVerificationEmail', () => {
+  // Better Auth refuses any address but the session's (`EMAIL_MISMATCH`).
+  // Regression: a stuck account whose first link expired had no way to ask
+  // for another.
+  it('sends the link to the signed-in account’s own address, and answers it', async () => {
+    const { service, repository } = setup();
+
+    await expect(service.sendVerificationEmail()).resolves.toBe('ada@example.com');
+    expect(repository.sendVerificationEmail).toHaveBeenCalledWith('ada@example.com');
+  });
+
+  it('sends nothing without a session', async () => {
+    const { service, repository } = setup(null);
+
+    await expect(service.sendVerificationEmail()).rejects.toThrow();
+    expect(repository.sendVerificationEmail).not.toHaveBeenCalled();
   });
 });

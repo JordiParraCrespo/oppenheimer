@@ -2,6 +2,8 @@ import { Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
+import type { CredentialIssuancePort } from '../../../auth/application/credential-issuance.port';
+import { CREDENTIAL_ISSUANCE } from '../../../auth/auth.di-tokens';
 import type { HostPairingTokenRepositoryPort } from '../../database/host-pairing-token.repository.port';
 import { HostPairingTokenEntity } from '../../domain/host-pairing-token.entity';
 import { HostErrors } from '../../domain/hosts.errors';
@@ -11,12 +13,9 @@ import { RunnerReleaseConfig } from '../../infrastructure/runner-release.config'
 import { MintPairingTokenCommand } from './mint-pairing-token.command';
 
 /**
- * Commands normally return only the aggregate id and the controller re-reads
- * through a query. Not here, for two reasons: the secret exists only inside this
- * handler — the row holds its digest, so no follow-up query could ever recover
- * it — and the row itself was just written by this transaction, so bouncing it
- * back through the query bus would be a second read of something already in
- * hand.
+ * Not just the id: the secret exists only here (the row holds its digest), and
+ * re-reading a row this transaction just wrote would be a second read of
+ * something already in hand.
  */
 export interface MintPairingTokenResult {
   token: HostPairingTokenEntity;
@@ -25,6 +24,12 @@ export interface MintPairingTokenResult {
   agentPrompt: string;
 }
 
+/**
+ * Where the deployment delivers email the account must have proven its
+ * address first (`CREDENTIAL_ISSUANCE`), or whoever registered it first would
+ * pair a machine; where it delivers none the token records that the address
+ * was unproven (`issuedVerified`), and a later reset unpairs its host.
+ */
 @CommandHandler(MintPairingTokenCommand)
 export class MintPairingTokenCommandHandler
   implements ICommandHandler<MintPairingTokenCommand, MintPairingTokenResult>
@@ -34,6 +39,8 @@ export class MintPairingTokenCommandHandler
     private readonly tokens: HostPairingTokenRepositoryPort,
     private readonly release: RunnerReleaseConfig,
     private readonly configService: ConfigService,
+    @Inject(CREDENTIAL_ISSUANCE)
+    private readonly issuance: CredentialIssuancePort,
   ) {}
 
   async execute(command: MintPairingTokenCommand): Promise<MintPairingTokenResult> {
@@ -45,6 +52,10 @@ export class MintPairingTokenCommandHandler
           'No runner release is configured, so there is no install command to hand a machine.',
       });
     }
+
+    // After the deployment's answer, so `GET /health/capabilities` still says
+    // what minting would.
+    const issuance = await this.issuance.assertMayIssue(command.userId);
 
     const now = new Date();
     const replacing = await this.replacedToken(command);
@@ -60,6 +71,7 @@ export class MintPairingTokenCommandHandler
       tokenHash: secret.hash,
       createdFromIp: command.createdFromIp,
       expiresAt: new Date(now.getTime() + lifetimeMs),
+      issuedVerified: issuance.ownerEmailVerified,
     });
 
     const minted = await this.tokens.insertWithinCap(token, {

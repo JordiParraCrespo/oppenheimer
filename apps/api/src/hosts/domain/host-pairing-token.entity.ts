@@ -25,6 +25,16 @@ export interface HostPairingTokenProps {
   revokedAt: Date | null;
   redeemedAt: Date | null;
   redeemedHostId: string | null;
+  /**
+   * Whether the owner's email was verified at the mint
+   * (`CredentialIssuance.ownerEmailVerified`); the host it pairs inherits it.
+   * Recorded here rather than at registration because the mint is the step
+   * a person takes, behind `CREDENTIAL_ISSUANCE`: registration is the
+   * machine's, proven by the secret alone, and by then the account may have
+   * been recovered by its real owner, whose verified address would otherwise
+   * vouch for a machine the squatter set up.
+   */
+  issuedVerified: boolean;
 }
 
 export interface MintHostPairingTokenProps {
@@ -34,6 +44,7 @@ export interface MintHostPairingTokenProps {
   tokenHash: string;
   createdFromIp?: string | null;
   expiresAt: Date;
+  issuedVerified: boolean;
 }
 
 /**
@@ -67,6 +78,7 @@ export class HostPairingTokenEntity extends AggregateRoot<HostPairingTokenProps>
         revokedAt: null,
         redeemedAt: null,
         redeemedHostId: null,
+        issuedVerified: props.issuedVerified,
       },
     });
   }
@@ -109,6 +121,10 @@ export class HostPairingTokenEntity extends AggregateRoot<HostPairingTokenProps>
 
   get redeemedHostId(): string | null {
     return this.props.redeemedHostId;
+  }
+
+  get issuedVerified(): boolean {
+    return this.props.issuedVerified;
   }
 
   /**

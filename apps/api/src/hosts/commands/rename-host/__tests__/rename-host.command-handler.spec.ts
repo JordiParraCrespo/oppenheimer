@@ -26,6 +26,7 @@ function host(unpairedAt: Date | null = null) {
       publicKeyFingerprint: 'f'.repeat(64),
       lastSeenAt: null,
       unpairedAt,
+      issuedVerified: true,
     },
   });
 }

@@ -1,9 +1,11 @@
 import { createHmac } from 'node:crypto';
 import { emptyScope } from '@oppenheimer/backend-authz';
 import type { CacheService } from '@oppenheimer/backend-cache';
-import { AppError, type KeySealer } from '@oppenheimer/backend-core';
+import { AppError, CapabilitiesService, type KeySealer } from '@oppenheimer/backend-core';
 import { WEBHOOK_BODY_KEPT_CHARS } from '@oppenheimer/shared/automations';
 import { None, Some } from 'oxide.ts';
+import { CredentialIssuanceResolver } from '../../auth/application/credential-issuance.resolver';
+import type { CredentialOwnerPort } from '../../auth/application/credential-owner.port';
 import type { AutomationLimitsResolver } from '../application/automation-limits.resolver';
 import { BotRoutineResolver } from '../application/bot-routine.resolver';
 import { RoutineWebhookResolver } from '../application/routine-webhook.resolver';
@@ -62,7 +64,12 @@ function claims(): Pick<CacheService, 'setIfAbsent'> & { ttls: number[] } {
 }
 
 function setup(
-  options: { triggers?: AutomationTriggerProps[]; cap?: number; sealer?: KeySealer } = {},
+  options: {
+    triggers?: AutomationTriggerProps[];
+    cap?: number;
+    sealer?: KeySealer;
+    emailVerified?: boolean;
+  } = {},
 ) {
   const routine = AutomationEntity.createRoutine({
     organizationId: 'org-1',
@@ -77,6 +84,7 @@ function setup(
   });
   let stored: (IssuedRoutineWebhook & { lastReceivedAt: Date | null }) | null = null;
   const webhooks: AutomationWebhookRepositoryPort = {
+    revokeIssuedUnverified: vi.fn(async () => 0),
     issue: vi.fn(async (webhook: IssuedRoutineWebhook) => {
       stored = { ...webhook, lastReceivedAt: null };
       return {
@@ -132,11 +140,24 @@ function setup(
       maxRunsPerWorkspaceHour: 100,
     })),
   } as unknown as AutomationLimitsResolver;
+  const owners: CredentialOwnerPort = {
+    findActiveOwner: vi.fn(),
+    requireActiveOwner: vi.fn(async (id: string) => ({
+      id,
+      email: 'owner@example.com',
+      firstName: 'Owner',
+      lastName: 'One',
+      role: 'user',
+      isActive: true,
+      emailVerified: options.emailVerified ?? true,
+    })),
+  };
   const keySealer = options.sealer ?? sealer;
   const issue = new IssueRoutineWebhookCommandHandler(
     new BotRoutineResolver(automations),
     webhooks,
     keySealer,
+    new CredentialIssuanceResolver(owners, new CapabilitiesService({ email_delivery: true })),
   );
   const cache = claims();
   const receive = new ReceiveRoutineWebhookCommandHandler(
@@ -370,6 +391,15 @@ describe("a routine's webhook", () => {
       ],
     });
     expect(await codeOf(issueUrl())).toBe('AUTOMATIONS_014');
+    expect(webhooks.issue).not.toHaveBeenCalled();
+  });
+
+  // Pre-account squatting: a URL starts runs with no sign-in and survives the
+  // real owner's password reset. Regression: an account that never proved
+  // its address was issued one.
+  it('issues no URL to an account whose email is not verified', async () => {
+    const { issueUrl, webhooks } = setup({ emailVerified: false });
+    expect(await codeOf(issueUrl())).toBe('TOKEN_010');
     expect(webhooks.issue).not.toHaveBeenCalled();
   });
 

@@ -25,6 +25,7 @@ const tokenContext = (overrides: Partial<ScopeContext> = {}): ScopeContext => ({
   scopes: ['users:read'],
   resourceScope: toResourceScope(null),
   expiresAt: null,
+  issuedAt: new Date(0),
   mintingBounds: { expiresAt: null, ipAllowlist: null },
   ...overrides,
 });

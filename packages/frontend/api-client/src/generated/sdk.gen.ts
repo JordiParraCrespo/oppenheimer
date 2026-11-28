@@ -1198,6 +1198,8 @@ export const revokeUserSessions = <ThrowOnError extends boolean = false>(options
 
 /**
  * Set a user's password
+ *
+ * Takes back what a password reset does: signs the account out everywhere, refuses its API tokens and OAuth grants issued before now, and unpairs the hosts and revokes the routine webhook URLs it was issued before its email was verified. ADMIN_008 here means the password was set but those could not be taken back: set it again.
  */
 export const setUserPassword = <ThrowOnError extends boolean = false>(options: Options<SetUserPasswordData, ThrowOnError>): RequestResult<SetUserPasswordResponses, SetUserPasswordErrors, ThrowOnError> => (options.client ?? client).post<SetUserPasswordResponses, SetUserPasswordErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],

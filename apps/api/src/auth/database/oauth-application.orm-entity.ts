@@ -28,7 +28,7 @@ export class OAuthApplicationOrmEntity {
   clientSecret!: string | null;
 
   @Column({ type: 'text' })
-  redirectURLs!: string;
+  redirectUrls!: string;
 
   @Column({ type: 'varchar' })
   type!: string;

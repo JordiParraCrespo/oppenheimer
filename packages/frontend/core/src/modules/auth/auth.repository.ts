@@ -37,6 +37,10 @@ export class AuthRepository {
     return this.client.resetPassword(token, password);
   }
 
+  sendVerificationEmail(email: string): Promise<void> {
+    return this.client.sendVerificationEmail(email);
+  }
+
   logout(): Promise<void> {
     return this.client.signOut();
   }

@@ -2,6 +2,8 @@ import { Inject } from '@nestjs/common';
 import { CommandHandler, type ICommandHandler } from '@nestjs/cqrs';
 import { AppError } from '@oppenheimer/backend-core';
 import { ungrantableScopes } from '@oppenheimer/shared';
+import type { CredentialIssuancePort } from '../../../auth/application/credential-issuance.port';
+import { CREDENTIAL_ISSUANCE } from '../../../auth/auth.di-tokens';
 import { AbilityFactory } from '../../../roles/application/ability.factory';
 import { API_TOKEN_REPOSITORY, ORGANIZATION_MEMBERSHIP_READER } from '../../api-tokens.di-tokens';
 import type { ApiTokenRepositoryPort } from '../../database/api-token.repository.port';
@@ -29,6 +31,8 @@ export interface CreateApiTokenResult {
  * credentials safe: **a token may never carry more reach than its creator**.
  * The creator's effective ability is rebuilt here from their roles rather than
  * trusted from the request, and every requested scope is checked against it.
+ * Before any of that, where the deployment delivers email, the creator must
+ * have proven their address (`CREDENTIAL_ISSUANCE`, `mayIssueCredential`).
  */
 @CommandHandler(CreateApiTokenCommand)
 export class CreateApiTokenCommandHandler
@@ -40,9 +44,13 @@ export class CreateApiTokenCommandHandler
     @Inject(ORGANIZATION_MEMBERSHIP_READER)
     private readonly memberships: OrganizationMembershipReaderPort,
     private readonly abilityFactory: AbilityFactory,
+    @Inject(CREDENTIAL_ISSUANCE)
+    private readonly issuance: CredentialIssuancePort,
   ) {}
 
   async execute(command: CreateApiTokenCommand): Promise<CreateApiTokenResult> {
+    await this.issuance.assertMayIssue(command.actor.id);
+
     const ability = await this.abilityFactory.createForUser(
       { id: command.actor.id, role: command.actor.role },
       { organizationId: command.actor.organizationId ?? null },
@@ -70,6 +78,7 @@ export class CreateApiTokenCommandHandler
       organizationIds: command.organizationIds,
       ipAllowlist: command.ipAllowlist,
       expiresInDays: command.expiresInDays,
+      issuedUnder: command.actor.issuedUnder,
     });
 
     const outcome = await this.apiTokenRepository.insertWithinLimit(

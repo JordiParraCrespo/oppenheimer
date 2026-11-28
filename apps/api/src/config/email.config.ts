@@ -14,8 +14,15 @@ const schema = z.object({
   resendApiKey: z.string().optional(),
 });
 
-export const emailConfig = registerAs('email', () =>
-  parseEnv('email', schema, {
+type EmailConfig = z.infer<typeof schema>;
+
+/**
+ * The `email` section parsed straight from the environment, for Better Auth's
+ * config, which is built at module scope and cannot inject `ConfigService`.
+ * `emailConfig` below is the same call.
+ */
+export function emailConfigFromEnv(): EmailConfig {
+  return parseEnv('email', schema, {
     provider: 'EMAIL_PROVIDER',
     from: 'EMAIL_FROM',
     smtpHost: 'SMTP_HOST',
@@ -23,5 +30,21 @@ export const emailConfig = registerAs('email', () =>
     smtpUser: 'SMTP_USER',
     smtpPass: 'SMTP_PASS',
     resendApiKey: 'RESEND_API_KEY',
-  }),
-);
+  });
+}
+
+export const emailConfig = registerAs('email', () => emailConfigFromEnv());
+
+/**
+ * Whether this deployment actually delivers mail: the `email_delivery`
+ * capability, and the one predicate both it and Better Auth's OAuth gate read.
+ * The `console` provider only prints to stdout, which is not delivery.
+ */
+export function emailDeliveryIsConfigured(
+  email: Partial<Pick<EmailConfig, 'provider' | 'smtpHost' | 'resendApiKey'>>,
+): boolean {
+  return (
+    (email.provider === 'nodemailer' && Boolean(email.smtpHost)) ||
+    (email.provider === 'resend' && Boolean(email.resendApiKey))
+  );
+}

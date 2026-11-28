@@ -21,6 +21,7 @@ export class HostPairingTokenMapper
     record.revokedAt = entity.revokedAt;
     record.redeemedAt = entity.redeemedAt;
     record.redeemedHostId = entity.redeemedHostId;
+    record.issuedVerified = entity.issuedVerified;
     return record;
   }
 
@@ -40,6 +41,7 @@ export class HostPairingTokenMapper
         revokedAt: record.revokedAt,
         redeemedAt: record.redeemedAt,
         redeemedHostId: record.redeemedHostId,
+        issuedVerified: record.issuedVerified,
       },
     });
   }

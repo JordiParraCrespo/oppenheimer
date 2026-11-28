@@ -38,6 +38,13 @@ export interface HostProps {
   lastSeenAt: Date | null;
   /** Set when the host is unpaired, from either end. The row is kept. */
   unpairedAt: Date | null;
+  /**
+   * Whether its owner's email was verified when the pairing token it spent
+   * was minted (`HostPairingTokenProps.issuedVerified`). A password reset
+   * unpairs the hosts that say `false`: they may have been paired by whoever
+   * held the address before its owner proved it.
+   */
+  issuedVerified: boolean;
 }
 
 export interface RegisterHostProps {
@@ -54,6 +61,8 @@ export interface RegisterHostProps {
   capabilities?: HostCapabilities | null;
   /** The token this host was paired with, recorded on the event. */
   pairingTokenId: string;
+  /** Inherited from that token: what held when it was minted. */
+  issuedVerified: boolean;
 }
 
 /**
@@ -109,6 +118,7 @@ export class HostEntity extends VersionedAggregateRoot<HostProps> {
         publicKeyFingerprint: props.publicKeyFingerprint,
         lastSeenAt: null,
         unpairedAt: null,
+        issuedVerified: props.issuedVerified,
       },
     });
 
@@ -170,6 +180,10 @@ export class HostEntity extends VersionedAggregateRoot<HostProps> {
 
   get unpairedAt(): Date | null {
     return this.props.unpairedAt;
+  }
+
+  get issuedVerified(): boolean {
+    return this.props.issuedVerified;
   }
 
   get isUnpaired(): boolean {

@@ -54,6 +54,8 @@ export interface HostRegistration {
   /** The machine's facts, already validated (see `RegisterHostCommand.facts`). */
   facts: HostFactsDto | undefined;
   pairingTokenId: string;
+  /** The spent token's `issuedVerified`. */
+  issuedVerified: boolean;
 }
 
 /** What a read knows about a host beyond its row. Absent reads as offline with nothing running. */
@@ -106,6 +108,7 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
       runnerVersion: facts?.runnerVersion ?? null,
       capabilities: facts ? { ...facts } : null,
       pairingTokenId: registration.pairingTokenId,
+      issuedVerified: registration.issuedVerified,
     };
   }
 
@@ -134,6 +137,7 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
     record.publicKeyFingerprint = entity.publicKeyFingerprint;
     record.lastSeenAt = entity.lastSeenAt;
     record.unpairedAt = entity.unpairedAt;
+    record.issuedVerified = entity.issuedVerified;
     record.version = entity.version;
     return record;
   }
@@ -166,6 +170,7 @@ export class HostMapper implements Mapper<HostEntity, HostOrmEntity, HostRespons
         publicKeyFingerprint: record.publicKeyFingerprint,
         lastSeenAt: metadata ? (metadata.vitals?.lastSeenAt ?? null) : record.lastSeenAt,
         unpairedAt: record.unpairedAt,
+        issuedVerified: record.issuedVerified,
       },
     });
   }

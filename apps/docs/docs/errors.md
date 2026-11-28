@@ -125,10 +125,24 @@ that does not exist, so session ids cannot be probed.
 | `TOKEN_007` <a id="token_007" /> | This credential is not scoped to that organization                 | 403  |
 | `TOKEN_008` <a id="token_008" /> | A token can only be scoped to organizations its creator belongs to | 403  |
 | `TOKEN_009` <a id="token_009" /> | The maximum number of active API tokens has been reached           | 409  |
+| `TOKEN_010` <a id="token_010" /> | Verify your email address before issuing a credential              | 403  |
 
 `TOKEN_003` is deliberately opaque: unknown, revoked and expired tokens, and
 tokens whose owner is deactivated or banned, share one code so the endpoint
 cannot be used as a probing oracle.
+
+`TOKEN_010` refuses minting an API token, approving or exchanging an OAuth
+(MCP) grant, minting a host pairing token and issuing a routine's webhook URL,
+for an account whose email address is not verified yet, on a deployment that
+delivers email (the `email_delivery` capability: SMTP or Resend configured).
+Without delivery no address can be verified, so the rule does not apply
+there; a host paired or a webhook URL issued that way records that the
+address was unverified, and a later password reset (or an administrator's
+set-password) unpairs that host and revokes that URL.
+Verify the address from the link in the verification email, then try again;
+the link expires after an hour, and the console's alert for this code offers
+**Resend verification email** (Better Auth's
+`POST /api/auth/send-verification-email`).
 
 `TOKEN_002` and `TOKEN_005` carry the offending scopes as extension members
 (`ungrantableScopes` and `missingScopes`) as well as in `detail`.

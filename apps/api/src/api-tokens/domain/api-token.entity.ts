@@ -41,6 +41,14 @@ export interface ApiTokenProps {
    */
   lastUsedAt: Date | null;
   revokedAt: Date | null;
+  /**
+   * When the chain of credentials that minted this token began: the browser
+   * session's sign-in, or the `issuedAt` of the token or grant it was minted
+   * with. Never later than the mint. A password reset refuses every token
+   * whose chain began before it, so one minted by a pre-reset credential in a
+   * request that raced the reset is refused too (`predatesCutoff`).
+   */
+  issuedAt: Date;
 }
 
 export interface IssueApiTokenProps {
@@ -51,6 +59,11 @@ export interface IssueApiTokenProps {
   ipAllowlist?: string[] | null;
   /** `null`/omitted mints a token that does not expire. */
   expiresInDays?: number | null;
+  /**
+   * When the credential minting it began its chain (`ApiTokenProps.issuedAt`);
+   * omitted, or later than `now`, the token's chain begins at its mint.
+   */
+  issuedUnder?: Date | null;
   /** Injected so the caller controls the clock (and tests stay deterministic). */
   now?: Date;
 }
@@ -113,6 +126,10 @@ export class ApiTokenEntity extends AggregateRoot<ApiTokenProps> {
             : new Date(now.getTime() + props.expiresInDays * MILLISECONDS_PER_DAY),
         lastUsedAt: null,
         revokedAt: null,
+        issuedAt:
+          props.issuedUnder && props.issuedUnder.getTime() < now.getTime()
+            ? props.issuedUnder
+            : now,
       },
     });
 
@@ -157,6 +174,10 @@ export class ApiTokenEntity extends AggregateRoot<ApiTokenProps> {
 
   get revokedAt(): Date | null {
     return this.props.revokedAt;
+  }
+
+  get issuedAt(): Date {
+    return this.props.issuedAt;
   }
 
   /** The organization restriction in the shape the shared helpers expect. */

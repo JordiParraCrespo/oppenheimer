@@ -1,5 +1,9 @@
+import { CapabilitiesService } from '@oppenheimer/backend-core';
 import { defineAbilitiesFromPermissions } from '@oppenheimer/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CredentialIssuanceResolver } from '../../../../auth/application/credential-issuance.resolver';
+import type { CredentialOwnerPort } from '../../../../auth/application/credential-owner.port';
+import type { CredentialOwner } from '../../../../auth/domain/scope-context.types';
 import type { AbilityFactory } from '../../../../roles/application/ability.factory';
 import type { ApiTokenRepositoryPort } from '../../../database/api-token.repository.port';
 import type { OrganizationMembershipReaderPort } from '../../../database/organization-membership.repository.port';
@@ -15,6 +19,18 @@ describe('CreateApiTokenCommandHandler', () => {
   let repo: Pick<ApiTokenRepositoryPort, 'insertWithinLimit'>;
   let memberships: OrganizationMembershipReaderPort;
   let abilityFactory: Pick<AbilityFactory, 'createForUser'>;
+  let owners: CredentialOwnerPort;
+
+  const owner = (overrides: Partial<CredentialOwner> = {}): CredentialOwner => ({
+    id: 'user-1',
+    email: 'owner@example.com',
+    firstName: 'Owner',
+    lastName: 'Example',
+    role: 'user',
+    isActive: true,
+    emailVerified: true,
+    ...overrides,
+  });
 
   const useAbility = (permissions: { action: string; subject: string }[]) => {
     vi.mocked(abilityFactory.createForUser).mockResolvedValue(
@@ -41,11 +57,16 @@ describe('CreateApiTokenCommandHandler', () => {
     };
     abilityFactory = { createForUser: vi.fn() };
     useAbility(ADMIN_PERMISSIONS);
+    owners = {
+      findActiveOwner: vi.fn(),
+      requireActiveOwner: vi.fn().mockResolvedValue(owner()),
+    };
 
     service = new CreateApiTokenCommandHandler(
       repo as ApiTokenRepositoryPort,
       memberships,
       abilityFactory as AbilityFactory,
+      new CredentialIssuanceResolver(owners, new CapabilitiesService({ email_delivery: true })),
     );
   });
 
@@ -57,6 +78,38 @@ describe('CreateApiTokenCommandHandler', () => {
     expect(repo.insertWithinLimit).toHaveBeenCalledTimes(1);
     expect(result.secret).toMatch(/^oppenheimer_pat_/);
     expect(result.tokenId).toBe(insertedToken().id);
+  });
+
+  // Pre-account squatting: someone registers the victim's address first and
+  // mints a token that would outlive the real owner's password reset.
+  it('refuses an account whose email is not verified, and writes nothing', async () => {
+    vi.mocked(owners.requireActiveOwner).mockResolvedValue(owner({ emailVerified: false }));
+
+    await expect(service.execute(command())).rejects.toMatchObject({ code: 'TOKEN_010' });
+    expect(owners.requireActiveOwner).toHaveBeenCalledWith('user-1');
+    expect(repo.insertWithinLimit).not.toHaveBeenCalled();
+  });
+
+  // A password reset refuses every credential whose chain began before it.
+  // Regression: a request on a pre-reset token that raced the reset minted a
+  // token stamped "now", which outlived the reset.
+  it('stamps the new token with the issue time of the credential that minted it', async () => {
+    const minterIssuedAt = new Date('2026-01-01T00:00:00.000Z');
+    await service.execute(
+      command({ actor: { id: 'user-1', role: 'user', issuedUnder: minterIssuedAt } }),
+    );
+
+    expect(insertedToken().issuedAt).toEqual(minterIssuedAt);
+  });
+
+  it('starts a token’s chain at its mint when the minter’s is unknown or in the future', async () => {
+    const before = Date.now();
+    await service.execute(
+      command({ actor: { id: 'user-1', role: 'user', issuedUnder: new Date(before + 60_000) } }),
+    );
+
+    expect(insertedToken().issuedAt.getTime()).toBeGreaterThanOrEqual(before);
+    expect(insertedToken().issuedAt.getTime()).toBeLessThanOrEqual(Date.now());
   });
 
   it('never persists the secret, only its digest', async () => {

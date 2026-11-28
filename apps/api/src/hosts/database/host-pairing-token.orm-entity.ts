@@ -51,6 +51,13 @@ export class HostPairingTokenOrmEntity {
   @Column({ type: TIMESTAMP_COLUMN_TYPE })
   expiresAt!: Date;
 
+  /**
+   * Whether the owner's email was verified at the mint; the host it pairs
+   * inherits it. A password reset revokes the unspent ones that say `false`.
+   */
+  @Column({ type: 'boolean', default: false })
+  issuedVerified!: boolean;
+
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   revokedAt!: Date | null;
 

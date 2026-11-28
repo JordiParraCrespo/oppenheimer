@@ -4,6 +4,7 @@ import { type AggregateID, OutboxService } from '@oppenheimer/backend-ddd';
 import { None, type Option, Some } from 'oxide.ts';
 import {
   type FindOptionsWhere,
+  In,
   IsNull,
   LessThanOrEqual,
   MoreThan,
@@ -107,6 +108,32 @@ export class ApiTokenRepository implements ApiTokenRepositoryPort {
           AND ("lastUsedAt" IS NULL OR "lastUsedAt" <= $2::timestamptz - $3::interval)`,
       [id, at, `${LAST_USED_GRANULARITY_MS} milliseconds`],
     );
+  }
+
+  async revokeIssuedBefore(userId: string, issuedBefore: Date, now: Date): Promise<number> {
+    const revoked = await this.outbox.transaction(async (manager) => {
+      const repository = manager.getRepository(ApiTokenOrmEntity);
+      // Locked, so a revoke racing this one waits and then finds the row
+      // revoked rather than writing a second timestamp over it.
+      const records = await repository.find({
+        where: usableWhere(userId, now).map((where) => ({
+          ...where,
+          issuedAt: LessThanOrEqual(issuedBefore),
+        })),
+        lock: { mode: 'pessimistic_write' },
+      });
+      const tokens = records.map((record) => this.mapper.toDomain(record));
+      if (tokens.length === 0) return tokens;
+      for (const token of tokens) token.revoke(now);
+      await repository.update({ id: In(tokens.map((token) => token.id)) }, { revokedAt: now });
+      await this.outbox.stageEvents(
+        manager,
+        tokens.flatMap((token) => token.domainEvents),
+      );
+      return tokens;
+    });
+    for (const token of revoked) token.clearEvents();
+    return revoked.length;
   }
 
   /**

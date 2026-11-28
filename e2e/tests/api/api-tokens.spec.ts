@@ -47,7 +47,7 @@ async function tokenContext(secret: string): Promise<APIRequestContext> {
 
 test.describe('API tokens', () => {
   test('a user can mint a token and use it as a bearer credential', async () => {
-    const { api, user } = await signedUpContext('token');
+    const { api, user } = await signedUpContext('token', { verified: true });
 
     const minted = await mintToken(api, ['profile:read']);
     expect(minted.status, JSON.stringify(minted.body)).toBe(201);
@@ -63,7 +63,7 @@ test.describe('API tokens', () => {
   });
 
   test('a token is refused on a route outside its scopes', async () => {
-    const { api } = await signedUpContext('narrowscope');
+    const { api } = await signedUpContext('narrowscope', { verified: true });
     const minted = await mintToken(api, ['profile:read'], 'read only');
     test.skip(minted.status !== 201, `could not mint: ${JSON.stringify(minted.body)}`);
 
@@ -77,7 +77,7 @@ test.describe('API tokens', () => {
   });
 
   test('a revoked token stops working', async () => {
-    const { api } = await signedUpContext('revoketoken');
+    const { api } = await signedUpContext('revoketoken', { verified: true });
     const minted = await mintToken(api, ['profile:read'], 'to be revoked');
     test.skip(minted.status !== 201, `could not mint: ${JSON.stringify(minted.body)}`);
     const asToken = await tokenContext(minted.secret as string);
@@ -115,9 +115,9 @@ test.describe('API tokens', () => {
   });
 
   test("a user cannot list another user's tokens", async () => {
-    const { api: victim } = await signedUpContext('tokenvictim');
+    const { api: victim } = await signedUpContext('tokenvictim', { verified: true });
     expect((await mintToken(victim, ['profile:read'], 'victim token')).status).toBe(201);
-    const { api: attacker } = await signedUpContext('tokenattacker');
+    const { api: attacker } = await signedUpContext('tokenattacker', { verified: true });
     expect((await mintToken(attacker, ['profile:read'], 'attacker token')).status).toBe(201);
 
     const response = await attacker.get('/api/v1/tokens', {
@@ -135,7 +135,7 @@ test.describe('API tokens', () => {
 
 test.describe('API token scope ceiling', () => {
   test('a default user cannot mint a token with platform User permissions', async () => {
-    const { api } = await signedUpContext('overscope');
+    const { api } = await signedUpContext('overscope', { verified: true });
     const minted = await mintToken(api, ['users:write'], 'unavailable platform scope');
     expect(minted.status).toBe(403);
   });
@@ -146,7 +146,7 @@ test.describe('Channel owners are named in a browser session only', () => {
   // makes its holder's phone the owner's line, whose turns get the bot's full
   // tools and memory.
   test('a token with the channel write scopes cannot name a Telegram or WhatsApp owner', async () => {
-    const { api } = await signedUpContext('chanowner');
+    const { api } = await signedUpContext('chanowner', { verified: true });
     const minted = await mintToken(api, ['telegram:write', 'whatsapp:write'], 'channel owner');
     expect(minted.status, JSON.stringify(minted.body)).toBe(201);
     const asToken = await tokenContext(minted.secret as string);

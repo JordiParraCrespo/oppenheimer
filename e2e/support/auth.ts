@@ -1,5 +1,6 @@
 import { type APIRequestContext, type APIResponse, expect, request } from '@playwright/test';
 import { API_URL, WEB_URL } from '../playwright.config';
+import { query } from './db';
 
 /** A password that satisfies every rule the app states, for the happy paths. */
 export const VALID_PASSWORD = 'Sup3rSecret!Pass';
@@ -104,16 +105,44 @@ export async function changePassword(
   });
 }
 
-/** Signs up and returns a context already carrying that user's session cookie. */
+/**
+ * Signs up and returns a context already carrying that user's session cookie.
+ *
+ * The address stays unverified unless `verified` is set, which marks it as
+ * following the verification email would. Minting an API token, approving an
+ * OAuth grant, pairing a host and issuing a routine's webhook URL need it
+ * (`TOKEN_010`) on a deployment that delivers email, which the default stack
+ * (`EMAIL_PROVIDER=console`) does not; `mintPairingToken` in
+ * support/sessions.ts sets it itself. The API reads the flag fresh from the
+ * row, so the session in hand keeps working.
+ */
 export async function signedUpContext(
   prefix = 'user',
+  { verified = false }: { verified?: boolean } = {},
 ): Promise<{ api: APIRequestContext; user: TestUser; userId: string }> {
   const api = await newContext();
   const user = newUser(prefix);
   const response = await signUp(api, user);
   expect(response.status(), `sign-up for ${user.email} should succeed`).toBe(200);
   const body = await response.json();
+  if (verified) {
+    await query(`UPDATE "user" SET "emailVerified" = true WHERE "id" = $1`, [body.user.id]);
+  }
   return { api, user, userId: body.user.id };
+}
+
+/**
+ * Marks the signed-in caller's address verified, as following the
+ * verification email would, for a helper that is handed a context rather than
+ * the account it was made for. The API reads the flag fresh from the row, so
+ * the session in hand keeps working.
+ */
+export async function verifyEmailOf(api: APIRequestContext): Promise<void> {
+  const session = await getSession(api);
+  expect(session.status(), 'the caller is signed in').toBe(200);
+  const userId = ((await session.json()) as { user?: { id?: string } } | null)?.user?.id;
+  expect(userId, 'the caller is signed in').toBeTruthy();
+  await query(`UPDATE "user" SET "emailVerified" = true WHERE "id" = $1`, [userId]);
 }
 
 /**

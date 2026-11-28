@@ -18,6 +18,7 @@
     "TOKEN_007": "That token is not scoped to this organization.",
     "TOKEN_008": "A token can only be scoped to organizations you belong to.",
     "TOKEN_009": "You have reached the maximum number of active API tokens.",
+    "TOKEN_010": "Verify your email address first: open the link we sent you, then try again.",
     "ROLE_001": "That role could not be found.",
     "ROLE_002": "A role with that name already exists.",
     "ROLE_003": "System roles cannot be deleted or renamed.",

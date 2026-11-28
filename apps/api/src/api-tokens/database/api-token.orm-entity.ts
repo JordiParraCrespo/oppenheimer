@@ -48,6 +48,10 @@ export class ApiTokenOrmEntity {
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   revokedAt!: Date | null;
 
+  /** When the chain of credentials that minted this token began (`ApiTokenProps.issuedAt`). */
+  @Column({ type: TIMESTAMP_COLUMN_TYPE, default: () => 'now()' })
+  issuedAt!: Date;
+
   @CreateDateColumn({ type: TIMESTAMP_COLUMN_TYPE })
   createdAt!: Date;
 

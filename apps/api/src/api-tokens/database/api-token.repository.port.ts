@@ -38,6 +38,17 @@ export interface ApiTokenRepositoryPort extends Omit<RepositoryPort<ApiTokenEnti
   touchLastUsedAt(id: string, at: Date): Promise<void>;
 
   /**
+   * Revoke every token of `userId` that still authenticates at `now` and whose
+   * chain began (`issuedAt`) at or before `issuedBefore`, in one transaction
+   * that locks the rows and stages each token's `ApiTokenRevokedDomainEvent`.
+   * That includes one minted after the cutoff by a credential issued before
+   * it. Tokens whose chain began later are left alone, so a redelivered
+   * request to revoke does not take a token the owner made since. Resolves
+   * how many it revoked.
+   */
+  revokeIssuedBefore(userId: string, issuedBefore: Date, now: Date): Promise<number>;
+
+  /**
    * Revoke, at `now`, every token of `userId` not yet revoked whose pin names
    * `organizationId`, in one transaction that stages each token's `ApiTokenRevokedDomainEvent`.
    * Resolves the ids it revoked; none on a second call.

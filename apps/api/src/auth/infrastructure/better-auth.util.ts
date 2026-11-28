@@ -31,6 +31,17 @@ export function asArray(value: unknown): unknown[] {
 }
 
 /** Unwrap a single-object envelope (e.g. `{ member: {...} }`); otherwise return the value itself. */
+/**
+ * A timestamp Better Auth hands back (a `Date` from its adapter, or the ISO
+ * string it serialised) as an ISO string to the millisecond. `String(date)`
+ * drops the milliseconds, which a comparison with a cutoff in the same second
+ * gets wrong. Anything else answers empty: an unknown time.
+ */
+export function isoTimeOf(value: unknown): string {
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? '' : value.toISOString();
+  return typeof value === 'string' ? value : '';
+}
+
 export function unwrap(value: unknown, key: string): unknown {
   const record = asRecord(value);
   return key in record ? record[key] : value;

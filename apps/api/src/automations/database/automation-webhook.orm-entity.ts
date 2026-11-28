@@ -25,6 +25,13 @@ export class AutomationWebhookOrmEntity {
   @Column({ type: 'bytea', nullable: true })
   signingSecretSealed!: Buffer | null;
 
+  /**
+   * Whether the issuer's email was verified when this URL was issued. A
+   * password reset revokes the URLs that say `false`.
+   */
+  @Column({ type: 'boolean', default: false })
+  issuedVerified!: boolean;
+
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   lastReceivedAt!: Date | null;
 

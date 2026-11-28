@@ -75,6 +75,7 @@ export class ApiTokenCredentialResolver implements CredentialResolverPort {
       scopes: token.scopes,
       resourceScope: token.resourceScope,
       expiresAt: token.expiresAt,
+      issuedAt: token.issuedAt,
       ipAllowlist: token.ipAllowlist,
       prefix: token.prefix,
       // A token minted with this one may not outlive it or work from outside its addresses.

@@ -70,6 +70,7 @@ const signedOut = {
   signOut: () => Promise.resolve(),
   forgotPassword: () => Promise.reject(new Error('replay')),
   resetPassword: () => Promise.reject(new Error('replay')),
+  sendVerificationEmail: () => Promise.reject(new Error('replay')),
   getSession: () => Promise.resolve(null),
   getAuthHeaders: () => Promise.resolve({}),
 };

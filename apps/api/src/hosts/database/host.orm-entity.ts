@@ -58,6 +58,13 @@ export class HostOrmEntity {
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   lastSeenAt!: Date | null;
 
+  /**
+   * Whether the owner's email was verified when the token this host spent was
+   * minted. A password reset unpairs the hosts that say `false`.
+   */
+  @Column({ type: 'boolean', default: false })
+  issuedVerified!: boolean;
+
   /** Set when the host is unpaired. Unpairing never deletes the row. */
   @Column({ type: TIMESTAMP_COLUMN_TYPE, nullable: true })
   unpairedAt!: Date | null;

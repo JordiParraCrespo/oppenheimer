@@ -6741,7 +6741,7 @@ export type CreateApiTokenErrors = {
      */
     401: ProblemDetailsDto;
     /**
-     * TOKEN_002 / TOKEN_008 — Requested scopes exceed the caller’s own permissions, or the caller is not a member of a requested organization
+     * TOKEN_010 / TOKEN_002 / TOKEN_008 — The caller’s email address is not verified, requested scopes exceed the caller’s own permissions, or the caller is not a member of a requested organization
      *
      * FLAG_003 — The "api_token_creation" feature is switched off for the caller
      */
@@ -8919,7 +8919,7 @@ export type MintPairingTokenErrors = {
      */
     401: ProblemDetailsDto;
     /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     * TOKEN_010 — The caller’s email address is not verified
      */
     403: ProblemDetailsDto;
     /**
@@ -13294,7 +13294,7 @@ export type IssueRoutineWebhookErrors = {
      */
     401: ProblemDetailsDto;
     /**
-     * AUTH_002 / TOKEN_004 / TOKEN_005 / TOKEN_006 / TOKEN_007 — The caller's roles, or their credential's scopes, do not permit this
+     * TOKEN_010 — The caller’s email address is not verified
      */
     403: ProblemDetailsDto;
     /**

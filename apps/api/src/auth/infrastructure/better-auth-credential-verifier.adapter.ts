@@ -5,7 +5,7 @@ import { describeError } from '@oppenheimer/backend-core';
 import { APIError } from 'better-auth/api';
 import { parseCookies } from 'better-auth/cookies';
 import { auth } from './better-auth.config';
-import { asRecord, betterAuthHeaders } from './better-auth.util';
+import { asRecord, betterAuthHeaders, isoTimeOf } from './better-auth.util';
 import type {
   CredentialVerifierPort,
   VerifiedOAuthGrant,
@@ -43,6 +43,10 @@ export class BetterAuthCredentialVerifierAdapter implements CredentialVerifierPo
       accessToken: session.accessToken,
       scopes: session.scopes,
       accessTokenExpiresAt: session.accessTokenExpiresAt,
+      // The plugin answers the whole `oauthAccessToken` row, though its type
+      // leaves `createdAt` out. Missing, it reads as an unknown issue time,
+      // which a password reset refuses.
+      issuedAt: isoTimeOf(asRecord(session).createdAt),
     };
   }
 

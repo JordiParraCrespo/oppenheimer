@@ -33,7 +33,7 @@ async function tokenContext(api: APIRequestContext, scopes: string[]): Promise<A
  */
 test.describe('Inbox reports', () => {
   test('an agent sends a problem with a picture, the owner answers, the agent reads the answer', async () => {
-    const { api: owner } = await signedUpContext('reports');
+    const { api: owner } = await signedUpContext('reports', { verified: true });
     const agent = await tokenContext(owner, ['inbox-reports:read', 'inbox-reports:write']);
 
     const posted = await agent.post('/api/v1/inbox/reports', {
@@ -74,7 +74,7 @@ test.describe('Inbox reports', () => {
   });
 
   test('the agent that asked cannot answer its own report', async () => {
-    const { api: owner } = await signedUpContext('reports-self');
+    const { api: owner } = await signedUpContext('reports-self', { verified: true });
     const agent = await tokenContext(owner, ['inbox-reports:read', 'inbox-reports:write']);
     const posted = await agent.post('/api/v1/inbox/reports', { multipart: { title: 'May I?' } });
     expect(posted.status(), await posted.text()).toBe(201);
@@ -93,7 +93,7 @@ test.describe('Inbox reports', () => {
   });
 
   test('a file that is not an image is refused, whatever it is called', async () => {
-    const { api: owner } = await signedUpContext('reports-type');
+    const { api: owner } = await signedUpContext('reports-type', { verified: true });
     const posted = await owner.post('/api/v1/inbox/reports', {
       multipart: {
         title: 'A script',

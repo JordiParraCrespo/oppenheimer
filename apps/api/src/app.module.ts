@@ -29,6 +29,7 @@ import { AdminModule } from './admin/admin.module';
 import { ApiTokensModule } from './api-tokens/api-tokens.module';
 import { AuthModule } from './auth/auth.module';
 import { ScopesGuard } from './auth/guards/scopes.guard';
+import { withAuthClientIp } from './auth/infrastructure/auth-client-ip.util';
 import { auth } from './auth/infrastructure/better-auth.config';
 import { bindSessionStore } from './auth/infrastructure/better-auth-secondary-storage.adapter';
 import { AuthzModule } from './authz/authz.module';
@@ -251,10 +252,14 @@ import { WorkspaceEventsModule } from './workspace-events/workspace-events.modul
       // default refused a pasted log.
       bodyParser: { json: { limit: '512kb' } },
       // Its lines go to LOG_FILE too, so sign-ins reach Loki with the rest.
-      middleware: createAuthRouteLoggingMiddleware({
-        pretty: process.env.NODE_ENV !== 'production',
-        file: resolveLogFile(process.env.LOG_FILE),
-      }),
+      // Wrapped so Better Auth's rate limit keys on the address `TRUST_PROXY`
+      // trusts, never on a forwarded header as sent (`auth-client-ip.util.ts`).
+      middleware: withAuthClientIp(
+        createAuthRouteLoggingMiddleware({
+          pretty: process.env.NODE_ENV !== 'production',
+          file: resolveLogFile(process.env.LOG_FILE),
+        }),
+      ),
     }),
     OutboxModule,
     // The bundles are the same JSON the web app loads, so a string

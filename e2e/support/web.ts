@@ -49,9 +49,12 @@ export async function createOrganization(
   return body.id;
 }
 
-/** A fresh account that already owns a workspace, with a session cookie to match. */
-export async function provisionedUser(prefix = 'user') {
-  const { api, user, userId } = await signedUpContext(prefix);
+/**
+ * A fresh account that already owns a workspace, with a session cookie to
+ * match; `verified` as on {@link signedUpContext}.
+ */
+export async function provisionedUser(prefix = 'user', options: { verified?: boolean } = {}) {
+  const { api, user, userId } = await signedUpContext(prefix, options);
   const organizationId = await createOrganization(api);
   return { api, user, userId, organizationId };
 }

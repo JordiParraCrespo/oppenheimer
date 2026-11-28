@@ -65,6 +65,7 @@ describe('HostPrincipalGuard', () => {
       scopes: ['hosts:write'],
       resourceScope: toResourceScope(null),
       expiresAt: null,
+      issuedAt: new Date(0),
       mintingBounds: { expiresAt: null, ipAllowlist: null },
     });
 

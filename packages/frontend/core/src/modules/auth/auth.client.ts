@@ -56,6 +56,13 @@ export interface IAuthClient {
   forgotPassword(email: string): Promise<void>;
   /** Complete a password reset using the token from the reset email. */
   resetPassword(token: string, newPassword: string): Promise<void>;
+  /**
+   * Send the signed-in account a new verification link for `email`, which
+   * must be its own address. The link expires (Better Auth's
+   * `emailVerification.expiresIn`), so the first one may be dead. Rejects on
+   * failure.
+   */
+  sendVerificationEmail(email: string): Promise<void>;
   getSession(): Promise<AuthSession | null>;
   /**
    * Extra headers used to authenticate non-auth REST calls (the generated

@@ -1,120 +1,41 @@
 import type { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
-import { DataSource } from 'typeorm';
-import { useTestDatabase, useTestRedis } from '../../__tests__/integration-services';
+import type { DataSource } from 'typeorm';
+import {
+  type CredentialApi,
+  credentialFlows,
+  startCredentialApi,
+  stopCredentialApi,
+} from '../../auth/__tests__/credential-flows.spec-support';
 import type { SessionCachePort } from '../../auth/application/session-cache.port';
 import { SESSION_CACHE } from '../../auth/auth.di-tokens';
 
 /**
  * This is the layer unit tests cannot reach: the migration's SQL, the guards
  * running in a real request pipeline, and the intersection of a token's scopes
- * with its owner's live roles.
+ * with its owner's live roles. An OAuth grant and a password reset's take-back
+ * are `auth/__tests__/oauth-grants.integration.spec.ts`; an administrator's
+ * set-password is `admin/__tests__/admin-set-password.integration.spec.ts`.
  */
 describe('API tokens & scopes (integration)', () => {
+  let api: CredentialApi;
   let app: INestApplication;
   let baseUrl: string;
   let dataSource: DataSource;
+  const { call, signUp, resetPassword } = credentialFlows(() => api);
 
   /** Signed-in owner of the tokens under test. */
   let user: { id: string; email: string; sessionToken: string };
 
   beforeAll(async () => {
-    await useTestDatabase();
-    await useTestRedis();
-
-    process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
-
-    // Import AppModule (and the Better Auth instance, which reads the database
-    // config at module load) only after the env vars are set.
-    const { AppModule } = await import('../../app.module');
-    // Rate limiting is skipped under NODE_ENV=test (see AppModule): a suite
-    // that mints dozens of tokens would otherwise trip the deliberately low
-    // limit on token creation.
-    const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleRef.createNestApplication({ bodyParser: false });
-
-    // Mirror `main.ts`: the global prefix, URI versioning and the validation
-    // pipes are part of the request pipeline these tests are exercising.
-    const { VersioningType } = await import('@nestjs/common');
-    const { SanitizePipe } = await import('@oppenheimer/backend-core');
-    const { ZodValidationPipe } = await import('nestjs-zod');
-
-    app.setGlobalPrefix('api');
-    app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
-    app.useGlobalPipes(new SanitizePipe(), new ZodValidationPipe());
-
-    await app.listen(0);
-    baseUrl = (await app.getUrl()).replace('[::1]', '127.0.0.1');
-    dataSource = moduleRef.get(DataSource);
+    api = await startCredentialApi();
+    ({ app, baseUrl, dataSource } = api);
 
     user = await signUp('owner@example.com');
   }, 180000);
 
-  afterAll(async () => {
-    await app?.close();
-    // `app.close()` does not reach it: see `emailQueue`.
-    const { emailQueue } = await import('../../auth/infrastructure/email-queue.util');
-    await emailQueue.close().catch(() => {});
-  });
+  afterAll(() => stopCredentialApi(api));
 
   // --- helpers -------------------------------------------------------------
-
-  interface CallOptions {
-    method?: string;
-    token?: string;
-    body?: unknown;
-    headers?: Record<string, string>;
-  }
-
-  async function call(path: string, options: CallOptions = {}) {
-    const response = await fetch(`${baseUrl}${path}`, {
-      method: options.method ?? 'GET',
-      headers: {
-        accept: 'application/json',
-        ...(options.token ? { authorization: `Bearer ${options.token}` } : {}),
-        ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
-        ...options.headers,
-      },
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    });
-
-    const text = await response.text();
-    return {
-      status: response.status,
-      body: text ? (JSON.parse(text) as Record<string, unknown>) : undefined,
-    };
-  }
-
-  /** Register a user through Better Auth and return a bearer session token. */
-  async function signUp(email: string) {
-    const response = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        password: 'Integration-test-password-1',
-        name: 'Integration Owner',
-        firstName: 'Integration',
-        lastName: 'Owner',
-      }),
-    });
-
-    expect(response.ok).toBe(true);
-    const sessionToken = response.headers.get('set-auth-token');
-    expect(sessionToken).toBeTruthy();
-
-    const payload = (await response.json()) as {
-      user: { id: string; email: string };
-    };
-    return {
-      id: payload.user.id,
-      email: payload.user.email,
-      sessionToken: sessionToken as string,
-    };
-  }
 
   async function mintToken(body: Record<string, unknown>) {
     const created = await call('/api/v1/tokens', {
@@ -925,6 +846,131 @@ describe('API tokens & scopes (integration)', () => {
       expect(metadata.scopes_supported).toEqual(
         expect.arrayContaining(['openid', 'users:read', 'roles:write']),
       );
+    });
+  });
+
+  // Pre-account squatting: someone registers the victim's address first and
+  // issues a credential that would outlive the real owner's password reset.
+  describe('an account whose email is not verified', () => {
+    let squatter: { id: string; email: string; sessionToken: string };
+
+    beforeAll(async () => {
+      squatter = await signUp('squatter@example.com', { verified: false });
+    });
+
+    it('is refused a token with TOKEN_010, and nothing is inserted', async () => {
+      const refused = await call('/api/v1/tokens', {
+        method: 'POST',
+        token: squatter.sessionToken,
+        body: { name: 'squatted', scopes: ['tokens:read'] },
+      });
+
+      expect(refused.status).toBe(403);
+      expect(refused.body?.code).toBe('TOKEN_010');
+      const rows: { n: number }[] = await dataSource.query(
+        'SELECT count(*)::int AS n FROM "api_token" WHERE "userId" = $1',
+        [squatter.id],
+      );
+      expect(rows[0].n).toBe(0);
+    });
+  });
+
+  describe('a password reset', () => {
+    // The revocation of API tokens arrives through the outbox, seconds after
+    // the reset. Regression: in that window a token holding `tokens:write`
+    // kept working, and the token it minted outlived the reset.
+    describe('before its revocation is delivered', () => {
+      let handle: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(async () => {
+        const { PasswordResetDomainEventHandler } = await import(
+          '../application/event-handlers/password-reset.domain-event-handler'
+        );
+        handle = vi
+          .spyOn(app.get(PasswordResetDomainEventHandler), 'handle')
+          .mockResolvedValue(undefined);
+      });
+
+      afterEach(() => handle.mockRestore());
+
+      it('refuses a token minted before it, and every token that token mints', async () => {
+        const owner = await signUp('raced@example.com');
+        const minted = await call('/api/v1/tokens', {
+          method: 'POST',
+          token: owner.sessionToken,
+          body: { name: 'minter', scopes: ['tokens:write'] },
+        });
+        expect(minted.status).toBe(201);
+        const minter = (minted.body as { token: string }).token;
+        const [{ issuedAt }]: { issuedAt: Date }[] = await dataSource.query(
+          'SELECT "issuedAt" FROM "api_token" WHERE "userId" = $1',
+          [owner.id],
+        );
+
+        await resetPassword(owner);
+
+        expect((await call('/api/v1/me/credential', { token: minter })).status).toBe(401);
+        const remint = await call('/api/v1/tokens', {
+          method: 'POST',
+          token: minter,
+          body: { name: 'after the reset', scopes: ['tokens:read'] },
+        });
+        expect(remint.status).toBe(401);
+
+        // A mint whose request resolved the minter before the reset and lands
+        // after it: the handler runs with the minter's issue time.
+        const { CommandBus } = await import('@nestjs/cqrs');
+        const { CreateApiTokenCommand } = await import(
+          '../commands/create-api-token/create-api-token.command'
+        );
+        const raced = await app
+          .get(CommandBus)
+          .execute<InstanceType<typeof CreateApiTokenCommand>, { secret: string }>(
+            new CreateApiTokenCommand({
+              actor: {
+                id: owner.id,
+                role: 'user',
+                credential: { scopes: ['tokens:write'], organizationIds: null },
+                issuedUnder: issuedAt,
+              },
+              name: 'raced the reset',
+              scopes: ['tokens:read'],
+            }),
+          );
+        const refused = await call('/api/v1/me/credential', { token: raced.secret });
+        expect(refused.status).toBe(401);
+        expect(refused.body?.code).toBe('TOKEN_003');
+
+        // Nothing marked them revoked: the cutoff alone refused them.
+        expect(handle).toHaveBeenCalled();
+        const tokens: { revokedAt: Date | null }[] = await dataSource.query(
+          'SELECT "revokedAt" FROM "api_token" WHERE "userId" = $1',
+          [owner.id],
+        );
+        expect(tokens.map((token) => token.revokedAt)).toEqual([null, null]);
+      });
+
+      it('keeps a token minted after it, from a session signed in after it', async () => {
+        const owner = await signUp('fresh-start@example.com');
+        await resetPassword(owner);
+        const signedIn = await fetch(`${baseUrl}/api/auth/sign-in/email`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email: owner.email, password: 'Integration-test-password-2' }),
+        });
+        expect(signedIn.ok).toBe(true);
+        const sessionToken = signedIn.headers.get('set-auth-token') as string;
+        expect(sessionToken).toBeTruthy();
+
+        const minted = await call('/api/v1/tokens', {
+          method: 'POST',
+          token: sessionToken,
+          body: { name: 'after the reset', scopes: ['tokens:read'] },
+        });
+        expect(minted.status).toBe(201);
+        const pat = (minted.body as { token: string }).token;
+        expect((await call('/api/v1/me/credential', { token: pat })).status).toBe(200);
+      });
     });
   });
 });

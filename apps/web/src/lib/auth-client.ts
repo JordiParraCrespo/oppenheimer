@@ -86,6 +86,17 @@ export const webAuthClient: IAuthClient = {
     unwrap(await authClient.resetPassword({ token, newPassword }));
   },
 
+  async sendVerificationEmail(email) {
+    unwrap(
+      await authClient.sendVerificationEmail({
+        email,
+        // Following the link signs the browser in and lands back on the screen
+        // that asked for it (an Add host step, a consent page), to try again.
+        callbackURL: window.location.href,
+      }),
+    );
+  },
+
   async getSession() {
     // `public/session-preload.js` starts this request from <head>, so on app
     // start the answer is usually already in hand. Only for a same-origin API:

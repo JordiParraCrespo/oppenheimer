@@ -7,7 +7,7 @@ import { CheckPolicies } from '../../../auth/decorators/check-policies.decorator
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 import { RequireScopes } from '../../../auth/decorators/require-scopes.decorator';
 import { tenantOrganizationIdOf } from '../../../auth/domain/request-tenant.types';
-import type { ScopedRequest } from '../../../auth/domain/scope-context.types';
+import { credentialIssuedAtOf, type ScopedRequest } from '../../../auth/domain/scope-context.types';
 import { ApiAuthGuard } from '../../../auth/guards/api-auth.guard';
 import { PoliciesGuard } from '../../../auth/guards/policies.guard';
 import { RequireFlag } from '../../../feature-flags/decorators/require-flag.decorator';
@@ -49,8 +49,8 @@ export class CreateApiTokenHttpController {
   @ApiProblemResponse({
     status: 403,
     description:
-      'Requested scopes exceed the caller’s own permissions, or the caller is not a member of a requested organization',
-    code: ['TOKEN_002', 'TOKEN_008'],
+      'The caller’s email address is not verified, requested scopes exceed the caller’s own permissions, or the caller is not a member of a requested organization',
+    code: ['TOKEN_010', 'TOKEN_002', 'TOKEN_008'],
   })
   @ApiProblemResponse({
     status: 409,
@@ -73,6 +73,7 @@ export class CreateApiTokenHttpController {
           role: user.role,
           organizationId: tenantOrganizationIdOf(request),
           credential: this.mapper.toMintingReach(request.scopeContext),
+          issuedUnder: credentialIssuedAtOf(request),
         },
         name: body.name,
         scopes: body.scopes,

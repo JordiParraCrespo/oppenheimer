@@ -1,23 +1,31 @@
 import { Global, Module, type Provider, type Type } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CredentialIssuanceResolver } from './application/credential-issuance.resolver';
 import type { CredentialResolverPort } from './application/credential-resolver.port';
 import { CredentialResolverRegistry } from './application/credential-resolver.registry';
 import { CredentialScopeResolver } from './application/credential-scope.resolver';
 import { RequestTenantResolver } from './application/request-tenant.resolver';
 import {
+  CREDENTIAL_CUTOFF_REPOSITORY,
+  CREDENTIAL_ISSUANCE,
   CREDENTIAL_SCOPE,
   CREDENTIAL_VERIFIER,
   DELEGATED_SESSION,
+  OAUTH_GRANT_REPOSITORY,
   REQUEST_TENANT,
   SESSION_CACHE,
 } from './auth.di-tokens';
+import { CompletePasswordResetCommandHandler } from './commands/complete-password-reset/complete-password-reset.command-handler';
 import { CompleteSignUpCommandHandler } from './commands/complete-sign-up/complete-sign-up.command-handler';
 import { RotateDelegatedSessionsCommandHandler } from './commands/rotate-delegated-sessions/rotate-delegated-sessions.command-handler';
 import { Account } from './database/account.orm-entity';
+import { CredentialCutoffOrmEntity } from './database/credential-cutoff.orm-entity';
+import { CredentialCutoffRepository } from './database/credential-cutoff.repository';
 import { OAuthAccessTokenOrmEntity } from './database/oauth-access-token.orm-entity';
 import { OAuthApplicationOrmEntity } from './database/oauth-application.orm-entity';
 import { OAuthConsentOrmEntity } from './database/oauth-consent.orm-entity';
+import { OAuthGrantRepository } from './database/oauth-grant.repository';
 import { Session } from './database/session.orm-entity';
 import { Verification } from './database/verification.orm-entity';
 import { ApiAuthGuard } from './guards/api-auth.guard';
@@ -59,6 +67,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
       OAuthApplicationOrmEntity,
       OAuthAccessTokenOrmEntity,
       OAuthConsentOrmEntity,
+      CredentialCutoffOrmEntity,
     ]),
   ],
   providers: [
@@ -69,6 +78,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     // `dispatchFromAuthHook` in auth-command-bus.util.ts.
     AuthCommandBusBridge,
     CompleteSignUpCommandHandler,
+    CompletePasswordResetCommandHandler,
     RotateDelegatedSessionsCommandHandler,
     PoliciesGuard,
     ApiAuthGuard,
@@ -78,9 +88,12 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     // the only place that decides Better Auth answers these questions.
     { provide: CREDENTIAL_VERIFIER, useClass: BetterAuthCredentialVerifierAdapter },
     { provide: CREDENTIAL_SCOPE, useClass: CredentialScopeResolver },
+    { provide: CREDENTIAL_ISSUANCE, useClass: CredentialIssuanceResolver },
     { provide: DELEGATED_SESSION, useClass: DelegatedSessionAdapter },
     { provide: SESSION_CACHE, useClass: BetterAuthSessionCacheAdapter },
     { provide: REQUEST_TENANT, useClass: RequestTenantResolver },
+    { provide: OAUTH_GRANT_REPOSITORY, useClass: OAuthGrantRepository },
+    { provide: CREDENTIAL_CUTOFF_REPOSITORY, useClass: CredentialCutoffRepository },
   ],
   // Guards are inbound adapters other modules apply with `@UseGuards`; the rest
   // is published as tokens, so nothing downstream names a concrete class.
@@ -90,6 +103,7 @@ import { DelegatedSessionAdapter } from './infrastructure/delegated-session.adap
     OptionalApiAuthGuard,
     ScopesGuard,
     CredentialResolverRegistry,
+    CREDENTIAL_ISSUANCE,
     CREDENTIAL_SCOPE,
     DELEGATED_SESSION,
     REQUEST_TENANT,

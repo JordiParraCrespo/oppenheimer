@@ -23,13 +23,13 @@ Triggers a routine can have:
 
 **The Routines tab** shows each routine's name, when it runs (or Paused) and its last and next run, with a switch, **Run now**, **Edit routine** and **Delete**. Edit routine opens a dialog where you change its name and prompt yourself; to change when it runs, its **Ask in chat** puts "Edit your routine: …" in the composer for the bot to change it. Using the tab yourself raises no card.
 
-A routine is skipped and paused when it cannot run, with the reason in the chat: the bot's provider has no key, its owner lost access, or an hourly run limit was hit (10 runs an hour per routine, 100 per workspace by default). A run due while the last one is still running is skipped.
+A routine that cannot run is skipped and paused, with the reason in the chat: the bot's provider has no key, its owner lost access, or an hourly run limit was hit (10 runs an hour per routine, 100 per workspace by default). A run due while the last one is still running is skipped.
 
 **The heartbeat.** A bot can have one routine of its own named **Heartbeat**. Each run the bot rereads its instructions and the plan, looks at the sessions, pull requests and mail it looks after, acts on what needs it and tells you what you must know; when nothing does, it stays quiet. No bot is given one by default: ask the bot for one in chat. A Heartbeat a bot already had was moved to twice a day, 09:00 and 18:00 in your time zone, and paused; turn it back on from the Routines tab, and change its times there or in chat like any routine. A beat with nothing new in the bot's chat since the last one (another routine or a loop does not count) is skipped without calling the model, so a quiet bot spends nothing. Run now always runs it. Events (a pull request it watches, new mail, a session it follows) still wake the bot at any hour.
 
-**Quiet runs.** A turn nobody is waiting on (a routine, a wake, a goal, a loop) can end with nothing to report: the chat shows only a collapsed line, and you get no message. A routine's quiet run shows nothing at all, unless the chat is set to show tool calls.
+**Quiet runs.** A turn nobody waits on (a routine, a wake, a goal, a loop) can end with nothing to report: the chat shows only a collapsed line, and you get no message. A routine's quiet run shows nothing at all, unless the chat is set to show tool calls.
 
-**While you're away.** Routines keep running whether or not you read what they say or open the chat. To stop one, pause it on the Routines tab or ask the bot.
+**While you're away.** Routines keep running whether or not you read them or open the chat. To stop one, pause it on the Routines tab or ask the bot.
 
 Only a repository's owner, members and collaborators trigger a GitHub routine or wake a watch.
 
@@ -39,7 +39,7 @@ Mail older than two days, spam, trash and chats never wake a Gmail routine; emai
 
 A routine with a **webhook** trigger runs whenever something is posted to its URL. Ask the bot for one in chat ("when our deploy pipeline posts here, tell me if it failed"); it adds the trigger, and you make the URL yourself: the bot never sees it.
 
-**Making the URL.** On the bot's **Routines** tab, the routine shows a Webhook row under its card. **Create URL** makes it. Tick **Require a signature** to also get a signing secret. The URL and the secret are shown once, so copy them then; afterwards the row shows only the start of the URL, whether it is signed, and when something was last posted. **New URL** replaces it (the old one stops working at once), and **Revoke** turns it off while keeping the trigger. Removing the webhook trigger in chat removes the URL too.
+**Making the URL.** On the bot's **Routines** tab, a Webhook row sits under the routine's card. **Create URL** makes it; tick **Require a signature** to also get a signing secret. Both are shown once, so copy them then; then the row shows the URL's start, if it is signed, and the last post. **New URL** replaces it (the old one stops at once); **Revoke** turns it off, keeping the trigger, and removing the trigger in chat removes the URL. Where email is sent, it needs a verified address (the refusal offers **Resend verification email**).
 
 **Posting.** Send a `POST` with any body and content type. The answer is `202` with the run's id (`runId`) and `status`: `queued`, `skipped` (an hourly cap turned it away; the run says so) or `duplicate`. It never waits for the bot. Send an `Idempotency-Key` header and a retried request with the same key is the same run.
 

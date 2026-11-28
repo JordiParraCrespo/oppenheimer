@@ -2,9 +2,20 @@ import { createHash } from 'node:crypto';
 import { Inject, Injectable, Optional } from '@nestjs/common';
 import { AppError, requestMemo } from '@oppenheimer/backend-core';
 import { parseScopeString, toResourceScope } from '@oppenheimer/shared';
-import { AUTH_FAILURE_LIMITER, CREDENTIAL_OWNER, CREDENTIAL_VERIFIER } from '../auth.di-tokens';
+import {
+  AUTH_FAILURE_LIMITER,
+  CREDENTIAL_CUTOFF_REPOSITORY,
+  CREDENTIAL_OWNER,
+  CREDENTIAL_VERIFIER,
+} from '../auth.di-tokens';
+import type { CredentialCutoffRepositoryPort } from '../database/credential-cutoff.repository.port';
 import { AuthErrors } from '../domain/auth.errors';
-import type { ScopeContext, ScopedRequest } from '../domain/scope-context.types';
+import { predatesCutoff } from '../domain/credential-cutoff.policy';
+import {
+  isHostCredential,
+  type ScopeContext,
+  type ScopedRequest,
+} from '../domain/scope-context.types';
 import type {
   CredentialVerifierPort,
   VerifiedSession,
@@ -57,6 +68,8 @@ export class CredentialScopeResolver implements CredentialScopePort {
     private readonly credentials: CredentialVerifierPort,
     @Inject(CREDENTIAL_OWNER)
     private readonly owners: CredentialOwnerPort,
+    @Inject(CREDENTIAL_CUTOFF_REPOSITORY)
+    private readonly cutoffs: CredentialCutoffRepositoryPort,
     @Optional()
     @Inject(AUTH_FAILURE_LIMITER)
     private readonly failures?: AuthFailureLimiterPort,
@@ -121,9 +134,25 @@ export class CredentialScopeResolver implements CredentialScopePort {
     // First contribution that claims the string owns the outcome: a resolver
     // that recognises and then refuses throws, and that refusal is the answer.
     const resolver = this.contributionFor(presented);
-    if (resolver) return { scope: await resolver.resolve(presented, request) };
+    const resolution = resolver
+      ? { scope: await resolver.resolve(presented, request) }
+      : await this.resolveOAuthToken(request);
+    await this.refuseIfIssuedBeforeCutoff(resolution.scope);
+    return resolution;
+  }
 
-    return this.resolveOAuthToken(request);
+  /**
+   * A password reset takes back every credential its account issued before it,
+   * whichever module issued it: one whose chain began before the owner's
+   * cutoff is refused as unusable (`TOKEN_003`). Read fresh on every request,
+   * so it holds from the reset's commit, not from when the revocation it
+   * staged on the outbox is delivered.
+   */
+  private async refuseIfIssuedBeforeCutoff(scope: ScopeContext | null): Promise<void> {
+    if (!scope || isHostCredential(scope)) return;
+    if (predatesCutoff(scope.issuedAt, await this.cutoffs.findCutoff(scope.userId))) {
+      throw new AppError(AuthErrors.INVALID_CREDENTIAL);
+    }
   }
 
   private contributionFor(presented: string): CredentialResolverPort | undefined {
@@ -158,6 +187,7 @@ export class CredentialScopeResolver implements CredentialScopePort {
         // grants permissions, and the user's own memberships bound their reach.
         resourceScope: toResourceScope(null),
         expiresAt: grant.accessTokenExpiresAt ? new Date(grant.accessTokenExpiresAt) : null,
+        issuedAt: new Date(grant.issuedAt),
         // The access token's expiry is the hour it is refreshed in, not the end
         // of the grant, and a grant is not confined to addresses: no bound.
         mintingBounds: { expiresAt: null, ipAllowlist: null },

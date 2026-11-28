@@ -2,11 +2,15 @@ import { createHash, generateKeyPairSync, type KeyObject, randomUUID, sign } fro
 import { getQueueToken } from '@nestjs/bullmq';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { CapabilitiesService } from '@oppenheimer/backend-core';
+import { EmailService } from '@oppenheimer/backend-email';
 import { QUEUE_NAMES } from '@oppenheimer/shared';
 import type { Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import { useTestDatabase, useTestRedis } from '../../__tests__/integration-services';
+import type { SessionCachePort } from '../../auth/application/session-cache.port';
+import { SESSION_CACHE } from '../../auth/auth.di-tokens';
 import type { HostClaudeAccountsPort } from '../application/host-claude-accounts.port';
 import type { HostPresencePort } from '../application/host-presence.port';
 import type { HostRepositoryPort } from '../database/host.repository.port';
@@ -53,6 +57,12 @@ describe('Hosts & pairing (integration)', () => {
 
     process.env.BETTER_AUTH_SECRET = 'integration-test-secret-value-32-chars';
 
+    // The address gate (`TOKEN_010`) holds only where the deployment delivers
+    // email, so this suite runs on one that does. The transport is never
+    // reached: `EmailService` is replaced below.
+    process.env.EMAIL_PROVIDER = 'nodemailer';
+    process.env.SMTP_HOST = '127.0.0.1';
+
     // Without the key, the release base and the installer, minting and
     // registering answer HOSTS_004 and no machine can pair.
     process.env.CONTROL_PLANE_SIGNING_KEY = controlPlane.privateKey
@@ -63,7 +73,10 @@ describe('Hosts & pairing (integration)', () => {
     process.env.RUNNER_RELEASE_CHANNEL = 'stable';
 
     const { AppModule } = await import('../../app.module');
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(EmailService)
+      .useValue(deliveredNowhere())
+      .compile();
 
     app = moduleRef.createNestApplication({ bodyParser: false });
 
@@ -117,7 +130,12 @@ describe('Hosts & pairing (integration)', () => {
     };
   }
 
-  async function signUp(email: string) {
+  /**
+   * Register a user through Better Auth and return a bearer session token. The
+   * address is marked verified unless asked otherwise, as following the
+   * verification email would: pairing a host needs it (`TOKEN_010`).
+   */
+  async function signUp(email: string, { verified = true }: { verified?: boolean } = {}) {
     const response = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -135,6 +153,12 @@ describe('Hosts & pairing (integration)', () => {
     expect(sessionToken).toBeTruthy();
 
     const payload = (await response.json()) as { user: { id: string; email: string } };
+    if (verified) {
+      await dataSource.query('UPDATE "user" SET "emailVerified" = true WHERE "id" = $1', [
+        payload.user.id,
+      ]);
+      await app.get<SessionCachePort>(SESSION_CACHE).refreshUser(payload.user.id);
+    }
     return {
       id: payload.user.id,
       email: payload.user.email,
@@ -360,6 +384,22 @@ describe('Hosts & pairing (integration)', () => {
 
       expect(replacement.status).toBe(201);
       expect(await revokedAt(held[0].body?.id as string)).not.toBeNull();
+    });
+
+    // Pre-account squatting: a paired host survives the real owner's password
+    // reset, so an address nobody proved may not pair one.
+    it('is refused with TOKEN_010 to an account whose email is not verified', async () => {
+      const squatter = await signUp('host-squatter@example.com', { verified: false });
+
+      const refused = await mintAs(squatter, { name: 'Squatted' });
+
+      expect(refused.status).toBe(403);
+      expect(refused.body?.code).toBe('TOKEN_010');
+      const rows: { n: number }[] = await dataSource.query(
+        'SELECT count(*)::int AS n FROM "host_pairing_token" WHERE "ownerUserId" = $1',
+        [squatter.id],
+      );
+      expect(rows[0].n).toBe(0);
     });
 
     it('leaves the old token alone when the mint is refused', async () => {
@@ -958,6 +998,143 @@ describe('Hosts & pairing (integration)', () => {
     });
   });
 
+  // Pre-account squatting where the deployment delivered no email when the
+  // host was paired: the gate let the squatter through (no address could be
+  // verified), and the operator configured SMTP afterwards, so the real owner
+  // could reset. Regression: the squatter's host survived the reset, and the
+  // owner's console drove sessions on the squatter's machine.
+  describe('a password reset', () => {
+    /** Mint as `owner` on a deployment that delivers no email, as it did before SMTP. */
+    async function mintWithoutDelivery(owner: { sessionToken: string }, name: string) {
+      const capabilities = app.get(CapabilitiesService, { strict: false });
+      const has = capabilities.has.bind(capabilities);
+      const spy = vi
+        .spyOn(capabilities, 'has')
+        .mockImplementation((capability: string) =>
+          capability === 'email_delivery' ? false : has(capability),
+        );
+      try {
+        const created = await call('/api/v1/hosts/pairing', {
+          method: 'POST',
+          token: owner.sessionToken,
+          body: { name },
+        });
+        expect(created.status, JSON.stringify(created.body)).toBe(201);
+        const installCommand = created.body?.installCommand as string;
+        return {
+          id: created.body?.id as string,
+          secret: /OPPENHEIMER_REGISTRATION_TOKEN=(\S+)/.exec(installCommand)?.[1] as string,
+        };
+      } finally {
+        spy.mockRestore();
+      }
+    }
+
+    /** "Forgot password", followed through: the reset link's token, then the new password. */
+    async function resetPassword(account: { id: string; email: string }) {
+      const requested = await fetch(`${baseUrl}/api/auth/request-password-reset`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: account.email, redirectTo: 'http://localhost:3000/reset' }),
+      });
+      expect(requested.ok).toBe(true);
+      const [verification]: { identifier: string }[] = await dataSource.query(
+        `SELECT "identifier" FROM "verification"
+          WHERE "value" = $1 AND "identifier" LIKE 'reset-password:%'`,
+        [account.id],
+      );
+      const reset = await fetch(`${baseUrl}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          token: verification.identifier.slice('reset-password:'.length),
+          newPassword: 'Integration-test-password-2',
+        }),
+      });
+      expect(reset.ok).toBe(true);
+    }
+
+    async function hostRow(hostId: string) {
+      const [row]: { unpairedAt: Date | null; issuedVerified: boolean }[] = await dataSource.query(
+        'SELECT "unpairedAt", "issuedVerified" FROM "host" WHERE "id" = $1',
+        [hostId],
+      );
+      return row;
+    }
+
+    /** Every listener of the reset ran: the outbox row is processed. */
+    async function resetDelivered(userId: string) {
+      await vi.waitFor(async () => {
+        const rows: { status: string }[] = await dataSource.query(
+          `SELECT "status" FROM "outbox_message"
+            WHERE "eventName" = 'PasswordResetDomainEvent' AND "aggregateId" = $1`,
+          [userId],
+        );
+        expect(rows.map((row) => row.status)).toEqual(['processed']);
+      });
+    }
+
+    it('unpairs a host an unverified account paired, and closes its link', async () => {
+      const owner = await signUp('reset-unverified-host@example.com', { verified: false });
+      const paired = await mintWithoutDelivery(owner, 'Squatted box');
+      const registered = await register(paired.secret, hostKey());
+      expect(registered.status, JSON.stringify(registered.body)).toBe(201);
+      const hostId = registered.body?.hostId as string;
+      expect(await hostRow(hostId)).toEqual({ unpairedAt: null, issuedVerified: false });
+
+      await resetPassword(owner);
+
+      await vi.waitFor(async () => {
+        expect((await hostRow(hostId)).unpairedAt).not.toBeNull();
+      });
+      // The unpair is Remove host's: `HostUnpaired` is what closes the link.
+      await vi.waitFor(async () => {
+        const rows: { status: string }[] = await dataSource.query(
+          `SELECT "status" FROM "outbox_message"
+            WHERE "eventName" = 'HostUnpairedDomainEvent' AND "aggregateId" = $1`,
+          [hostId],
+        );
+        expect(rows.map((row) => row.status)).toEqual(['processed']);
+      });
+    });
+
+    it('revokes an unspent pairing token an unverified account minted', async () => {
+      const owner = await signUp('reset-unverified-token@example.com', { verified: false });
+      const unspent = await mintWithoutDelivery(owner, 'Not yet paired');
+
+      await resetPassword(owner);
+      await resetDelivered(owner.id);
+
+      const [row]: { revokedAt: Date | null }[] = await dataSource.query(
+        'SELECT "revokedAt" FROM "host_pairing_token" WHERE "id" = $1',
+        [unspent.id],
+      );
+      expect(row.revokedAt).not.toBeNull();
+      expect((await register(unspent.secret, hostKey())).status).toBe(401);
+    });
+
+    // A real owner's reset costs them nothing they paired from a proven address.
+    it('leaves a host paired from a verified address paired', async () => {
+      const owner = await signUp('reset-verified-host@example.com');
+      const minted = await call('/api/v1/hosts/pairing', {
+        method: 'POST',
+        token: owner.sessionToken,
+        body: { name: 'Kept box' },
+      });
+      expect(minted.status).toBe(201);
+      const secret = /OPPENHEIMER_REGISTRATION_TOKEN=(\S+)/.exec(
+        minted.body?.installCommand as string,
+      )?.[1] as string;
+      const registered = await register(secret, hostKey());
+      const hostId = registered.body?.hostId as string;
+
+      await resetPassword(owner);
+      await resetDelivered(owner.id);
+
+      expect(await hostRow(hostId)).toEqual({ unpairedAt: null, issuedVerified: true });
+    });
+  });
+
   describe('scoping', () => {
     it('does not show one person’s host to another', async () => {
       const minted = await mintPairingToken();
@@ -987,3 +1164,11 @@ describe('Hosts & pairing (integration)', () => {
     });
   });
 });
+
+/** An `EmailService` whose every send succeeds and goes nowhere. */
+function deliveredNowhere(): EmailService {
+  return new Proxy({} as EmailService, {
+    get: (_target, key) =>
+      typeof key === 'string' && key.startsWith('send') ? async () => undefined : undefined,
+  });
+}

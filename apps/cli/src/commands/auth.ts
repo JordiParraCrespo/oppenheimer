@@ -122,18 +122,37 @@ async function mintToken(input: {
   const scopes = chooseScopes(input.options.permissions, catalog.grantable);
   const workspaceId = await activeWorkspaceOf(session);
 
-  const created = await session.post<CreatedApiToken>('/tokens', {
-    body: {
-      name: input.options.name ?? `opp-cli on ${hostname()}`,
-      scopes,
-      // Pinned to the account's workspace: a token acts inside an organization
-      // only when it names exactly one, so an unpinned one is refused by every
-      // workspace route (hosts' sessions, projects, automations, bots).
-      organizationIds: workspaceId ? [workspaceId] : null,
-    },
-  });
+  const created = await session
+    .post<CreatedApiToken>('/tokens', {
+      body: {
+        name: input.options.name ?? `opp-cli on ${hostname()}`,
+        scopes,
+        // Pinned to the account's workspace: a token acts inside an organization
+        // only when it names exactly one, so an unpinned one is refused by every
+        // workspace route (hosts' sessions, projects, automations, bots).
+        organizationIds: workspaceId ? [workspaceId] : null,
+      },
+    })
+    .catch((error: unknown) => {
+      throw unverifiedEmailError(error) ?? error;
+    });
 
   return { token: created.token, tokenId: created.id };
+}
+
+/**
+ * The API mints no token for an account whose email is not verified
+ * (`TOKEN_010`). Said plainly, with the way out, rather than as a missing
+ * permission `opp whoami` could not explain.
+ */
+function unverifiedEmailError(error: unknown): CliError | undefined {
+  if (!(error instanceof CliError) || error.code !== 'TOKEN_010') return undefined;
+  return new CliError(
+    'Signed in, but this account has not verified its email address, so no token can be issued.',
+    ExitCode.FORBIDDEN,
+    'Open the link in the verification email (or send a new one from the console), then run `opp login` again.',
+    error.code,
+  );
 }
 
 /**
